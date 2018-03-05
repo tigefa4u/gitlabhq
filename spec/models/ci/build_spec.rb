@@ -2026,6 +2026,16 @@ describe Ci::Build do
       end
     end
 
+    describe '#timeout' do
+      let(:build) do
+        create(:ci_build, pipeline: pipeline, options: { job_timeout: 3 })
+      end
+
+      it 'delegates to serialized options' do
+        expect(build.timeout).to eq(3)
+      end
+    end
+
     context 'when build is scheduled' do
       subject { build_stubbed(:ci_build, :scheduled) }
 

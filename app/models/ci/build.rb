@@ -424,6 +424,10 @@ module Ci
       latest_builds.where('stage_idx < ?', stage_idx)
     end
 
+    def timeout
+      options[:job_timeout]
+    end
+
     def triggered_by?(current_user)
       user == current_user
     end

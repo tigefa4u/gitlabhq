@@ -417,6 +417,46 @@ describe Gitlab::Ci::Config::Entry::Job do
           end
         end
       end
+
+      context 'when timeout value is not correct' do
+        context 'when it is not a numeric value' do
+          let(:config) { { timeout: true } }
+
+          it 'returns error about invalid type' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include 'job timeout is not a number'
+          end
+        end
+
+        context 'when it is lower than 1 minute' do
+          let(:config) { { timeout: 59 } }
+
+          it 'returns error about value too low' do
+            expect(entry).not_to be_valid
+            expect(entry.errors)
+              .to include 'job timeout must be greater than or equal to 60'
+          end
+        end
+
+        context 'when it is higher than instance wide timeout' do
+          let(:config) { { timeout: Project::MAX_BUILD_TIMEOUT + 1 } }
+
+          it 'returns error about value too high' do
+            expect(entry).not_to be_valid
+            expect(entry.errors)
+              .to include "job timeout must be less than or equal to #{Project::MAX_BUILD_TIMEOUT.to_i}"
+          end
+        end
+
+        context 'when it is not an integer' do
+          let(:config) { { timeout: 1.5 } }
+
+          it 'returns error about wrong value' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include 'job timeout must be an integer'
+          end
+        end
+      end
     end
   end
 

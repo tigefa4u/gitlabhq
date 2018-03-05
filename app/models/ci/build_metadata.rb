@@ -7,6 +7,7 @@ module Ci
     extend Gitlab::Ci::Model
     include Presentable
     include ChronicDurationAttribute
+    include Gitlab::Utils::StrongMemoize
 
     self.table_name = 'ci_builds_metadata'
 
@@ -25,23 +26,44 @@ module Ci
     enum timeout_source: {
         unknown_timeout_source: 1,
         project_timeout_source: 2,
-        runner_timeout_source: 3
+        runner_timeout_source: 3,
+        job_timeout_source: 4
     }
 
     def update_timeout_state
-      return unless build.runner.present?
+      return unless build.runner.present? || build.timeout.present?
 
-      project_timeout = project&.build_timeout
-      timeout = [project_timeout, build.runner.maximum_timeout].compact.min
-      timeout_source = timeout < project_timeout ? :runner_timeout_source : :project_timeout_source
+      timeout = [(job_timeout || project_timeout), runner_timeout].compact.min_by { |timeout| timeout[:value] }
 
-      update(timeout: timeout, timeout_source: timeout_source)
+      update(timeout: timeout[:value], timeout_source: timeout[:source])
     end
 
     private
 
     def set_build_project
       self.project_id ||= self.build.project_id
+    end
+
+    def project_timeout
+      strong_memoize(:project_timeout) do
+        { value: project&.build_timeout, source: :project_timeout_source }
+      end
+    end
+
+    def job_timeout
+      strong_memoize(:job_timeout) do
+        { value: build.timeout, source: :job_timeout_source } if build.timeout
+      end
+    end
+
+    def runner_timeout
+      strong_memoize(:runner_timeout) do
+        { value: build.runner.maximum_timeout, source: :runner_timeout_source } if runner_timeout_set?
+      end
+    end
+
+    def runner_timeout_set?
+      build.runner&.maximum_timeout.to_i > 0
     end
   end
 end

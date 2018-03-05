@@ -61,5 +61,65 @@ describe Ci::BuildMetadata do
         end
       end
     end
+
+    context 'when job timeout is specified' do
+      context 'when job timeout is higher than project timeout' do
+        let(:build) { create(:ci_build, pipeline: pipeline, options: { job_timeout: 3000 }) }
+
+        it 'sets job timeout' do
+          expect { subject.update_timeout_state }.to change { subject.reload.timeout }.to(3000)
+        end
+
+        it 'sets job_timeout_source' do
+          expect { subject.update_timeout_state }.to change { subject.reload.timeout_source }.to('job_timeout_source')
+        end
+      end
+
+      context 'when job timeout is lower than project timeout' do
+        let(:build) { create(:ci_build, pipeline: pipeline, options: { job_timeout: 1000 }) }
+
+        it 'sets job timeout' do
+          expect { subject.update_timeout_state }.to change { subject.reload.timeout }.to(1000)
+        end
+
+        it 'sets job_timeout_source' do
+          expect { subject.update_timeout_state }.to change { subject.reload.timeout_source }.to('job_timeout_source')
+        end
+      end
+
+      context 'when job timeout is higher than runner timeout' do
+        let(:build) { create(:ci_build, pipeline: pipeline, options: { job_timeout: 3000 }) }
+        let(:runner) { create(:ci_runner, maximum_timeout: 2100) }
+
+        before do
+          build.update(runner: runner)
+        end
+
+        it 'sets runner timeout' do
+          expect { subject.update_timeout_state }.to change { subject.reload.timeout }.to(2100)
+        end
+
+        it 'sets runner_timeout_source' do
+          expect { subject.update_timeout_state }.to change { subject.reload.timeout_source }.to('runner_timeout_source')
+        end
+      end
+
+      context 'when job timeout is specified bu not runner timeout' do
+        let(:build) { create(:ci_build, pipeline: pipeline, options: { job_timeout: 3000 }) }
+        let(:runner) { create(:ci_runner, maximum_timeout: nil) }
+
+        before do
+          build.update(runner: runner)
+        end
+
+        it 'sets job timeout' do
+          expect { subject.update_timeout_state }.to change { subject.reload.timeout }.to(3000)
+        end
+
+        it 'sets job_timeout_source' do
+          expect { subject.update_timeout_state }.to change { subject.reload.timeout_source }.to('job_timeout_source')
+        end
+      end
+    end
   end
 end

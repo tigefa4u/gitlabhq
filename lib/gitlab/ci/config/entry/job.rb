@@ -14,8 +14,8 @@ module Gitlab
           ALLOWED_WHEN = %w[on_success on_failure always manual delayed].freeze
           ALLOWED_KEYS = %i[tags script only except rules type image services
                             allow_failure type stage when start_in artifacts cache
-                            dependencies needs before_script after_script variables
-                            environment coverage retry parallel extends interruptible].freeze
+                            dependencies before_script needs after_script variables
+                            environment coverage retry parallel extends interruptible timeout].freeze
 
           REQUIRED_BY_NEEDS = %i[stage].freeze
 
@@ -45,6 +45,11 @@ module Gitlab
                 in: ALLOWED_WHEN,
                 message: "should be one of: #{ALLOWED_WHEN.join(', ')}"
               }
+
+              validates :timeout, numericality: { only_integer: true,
+                                                  greater_than_or_equal_to: 60,
+                                                  less_than_or_equal_to: Project::MAX_BUILD_TIMEOUT,
+                                                  allow_blank: true }
 
               validates :dependencies, array_of_strings: true
               validates :needs, array_of_strings: true
@@ -123,10 +128,10 @@ module Gitlab
           helpers :before_script, :script, :stage, :type, :after_script,
                   :cache, :image, :services, :only, :except, :variables,
                   :artifacts, :environment, :coverage, :retry, :rules,
-                  :parallel, :needs, :interruptible
+                  :parallel, :needs, :interruptible, :timeout
 
           attributes :script, :tags, :allow_failure, :when, :dependencies,
-                     :needs, :retry, :parallel, :extends, :start_in, :rules,
+                     :needs, :retry, :parallel, :timeout, :extends, :start_in, :rules,
                      :interruptible
 
           def self.matching?(name, config)
@@ -218,6 +223,7 @@ module Gitlab
               retry: retry_defined? ? retry_value : nil,
               parallel: parallel_defined? ? parallel_value.to_i : nil,
               interruptible: interruptible_defined? ? interruptible_value : nil,
+              timeout: timeout_defined? ? timeout_value.to_i : nil,
               artifacts: artifacts_value,
               after_script: after_script_value,
               ignore: ignored?,
