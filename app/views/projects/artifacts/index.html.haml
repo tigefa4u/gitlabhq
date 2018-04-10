@@ -1,0 +1,73 @@
+- @no_container = true
+- page_title _('Artifacts')
+
+%div{ class: container_class }
+  .row
+    .col-sm-9
+      = form_tag project_artifacts_path(@project), id: 'project-artifacts-search', method: :get, class: 'filter-form js-filter-form' do
+        .filtered-search-wrapper
+          .filtered-search-box
+            = dropdown_tag(custom_icon('icon_history'),
+              options: { wrapper_class: 'filtered-search-history-dropdown-wrapper',
+              toggle_class: 'filtered-search-history-dropdown-toggle-button',
+              dropdown_class: 'filtered-search-history-dropdown',
+              content_class: 'filtered-search-history-dropdown-content',
+              title: _('Recent searches') }) do
+              .js-filtered-search-history-dropdown{ data: { full_path: project_artifacts_path(@project) } }
+            .filtered-search-box-input-container.droplab-dropdown
+              .scroll-container
+                %ul.tokens-container.list-unstyled
+                  %li.input-token
+                    %input.form-control.filtered-search{ { id: 'filtered-project-artifacts', placeholder: _('Search or filter results...') } }
+              #js-dropdown-hint.filtered-search-input-dropdown-menu.dropdown-menu.hint-dropdown
+                %ul{ data: { dropdown: true } }
+                  %li.filter-dropdown-item{ data: { action: 'submit' } }
+                    = button_tag class: %w[btn btn-link] do
+                      = sprite_icon('search')
+                      %span
+                        = _('Press Enter or click to search')
+                %ul.filter-dropdown{ data: { dynamic: true, dropdown: true } }
+                  %li.filter-dropdown-item
+                    = button_tag class: %w[btn btn-link] do
+                      -# Encapsulate static class name `{{icon}}` inside #{} to bypass
+                      -# haml lint's ClassAttributeWithStaticValue
+                      %svg
+                        %use{ 'xlink:href': "#{'{{icon}}'}" }
+                      %span.js-filter-hint
+                        {{hint}}
+                      %span.js-filter-tag.dropdown-light-content
+                        {{tag}}
+
+              #js-dropdown-project-artifact-deleted-branches.filtered-search-input-dropdown-menu.dropdown-menu
+                %ul{ data: { dropdown: true } }
+                  %li.filter-dropdown-item{ data: { value: 'true' } }
+                    = button_tag class: %w[btn btn-link] do
+                      = _('Yes')
+                  %li.filter-dropdown-item{ data: { value: 'false' } }
+                    = button_tag class: %w[btn btn-link] do
+                      = _('No')
+
+            = button_tag class: %w[clear-search hidden] do
+              = icon('times')
+          .filter-dropdown-container
+            = render 'sort_dropdown'
+
+    .col-sm-3.text-right-lg
+      = _('Total artifacts size: %{total_size}') % { total_size: number_to_human_size(@total_size, precicion: 2) }
+
+  - if @jobs_with_artifacts.any?
+    .artifacts-content.content-list
+      .table-holder
+        .ci-table
+          .gl-responsive-table-row.table-row-header{ role: 'row' }
+            .table-section.section-25{ role: 'rowheader' }= _('Job')
+            .table-section.section-15{ role: 'rowheader' }= _('Name')
+            .table-section.section-20{ role: 'rowheader' }= _('Creation date')
+            .table-section.section-20{ role: 'rowheader' }= _('Expiration date')
+            .table-section.section-10{ role: 'rowheader' }= _('Size')
+            .table-section.section-10{ role: 'rowheader' }
+
+          = render partial: 'artifact', collection: @jobs_with_artifacts, as: :job, locals: { project: @project }
+      = paginate_collection @jobs_with_artifacts
+  - else
+    .nothing-here-block= _('No artifacts found')

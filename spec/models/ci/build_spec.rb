@@ -255,6 +255,48 @@ describe Ci::Build do
     end
   end
 
+  describe '.with_sum_artifacts_size' do
+    subject { described_class.with_sum_artifacts_size[0].sum_artifacts_size }
+
+    context 'when job does not have an archive' do
+      let!(:job) { create(:ci_build) }
+
+      subject(:result) { described_class.with_sum_artifacts_size }
+
+      it { expect(result).to be_empty }
+    end
+
+    context 'when job has an achive' do
+      let!(:job) { create(:ci_build, :artifacts) }
+
+      it { is_expected.to eq 106826.0 }
+    end
+
+    context 'when job has a legacy archive' do
+      let!(:job) { create(:ci_build, :legacy_artifacts) }
+
+      it { is_expected.to eq 106365.0 }
+    end
+
+    context 'when job has a job artifact archive' do
+      let!(:job) { create(:ci_build, :artifacts) }
+
+      it { is_expected.to eq 106826.0 }
+    end
+
+    context 'when job has a job artifact trace' do
+      let!(:job) { create(:ci_build, :trace_artifact) }
+
+      it { is_expected.to eq 192659.0 }
+    end
+
+    context 'when job has a job a legacy_artefact, an artiact and an artifact trace' do
+      let!(:job) { create(:ci_build, :trace_artifact, :artifacts, :legacy_artifacts) }
+
+      it { is_expected.to eq 405850.0 }
+    end
+  end
+
   describe '#actionize' do
     context 'when build is a created' do
       before do
@@ -3865,6 +3907,22 @@ describe Ci::Build do
           expect(build.metadata.read_attribute(:config_options)).to be_nil
         end
       end
+    end
+  end
+
+  describe '.search' do
+    it 'fuzzy matches the name' do
+      project = create(:project)
+
+      pipeline1 = create(:ci_empty_pipeline, project: project)
+      job1 = create(:ci_build, pipeline: pipeline1, name: 'job1')
+
+      pipeline2 = create(:ci_empty_pipeline, project: project)
+      create(:ci_build, pipeline: pipeline2, name: 'job2')
+
+      jobs = described_class.search('ob1')
+
+      expect(jobs).to match_array [job1]
     end
   end
 end

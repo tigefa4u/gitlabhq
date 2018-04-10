@@ -15,6 +15,8 @@ module Ci
     include Gitlab::Utils::StrongMemoize
     include Deployable
     include HasRef
+    include Gitlab::SQL::Pattern
+    include Sortable
 
     BuildArchivedError = Class.new(StandardError)
 
@@ -114,6 +116,14 @@ module Ci
 
     scope :with_artifacts_stored_locally, -> { with_existing_job_artifacts(Ci::JobArtifact.archive.with_files_stored_locally) }
     scope :with_archived_trace_stored_locally, -> { with_existing_job_artifacts(Ci::JobArtifact.trace.with_files_stored_locally) }
+
+    scope :with_sum_artifacts_size, ->() do
+      select('ci_builds.*, (SUM(COALESCE(ci_job_artifacts.size, 0.0)) + COALESCE(ci_builds.artifacts_size, 0.0)) AS sum_artifacts_size')
+          .joins('LEFT OUTER JOIN ci_job_artifacts ON ci_builds.id = ci_job_artifacts.job_id')
+          .having('(COUNT(ci_job_artifacts.id) > 0 OR COALESCE(ci_builds.artifacts_size, 0.0) > 0.0)')
+          .group('ci_builds.id')
+    end
+
     scope :with_artifacts_not_expired, ->() { with_artifacts_archive.where('artifacts_expire_at IS NULL OR artifacts_expire_at > ?', Time.now) }
     scope :with_expired_artifacts, ->() { with_artifacts_archive.where('artifacts_expire_at < ?', Time.now) }
     scope :last_month, ->() { where('created_at > ?', Date.today - 1.month) }
@@ -171,6 +181,19 @@ module Ci
           .new(build.project, current_user)
           .execute(build)
         # rubocop: enable CodeReuse/ServiceClass
+      end
+
+      def search(query)
+        fuzzy_search(query, [:name])
+      end
+
+      def order_by(method)
+        case method.to_s
+        when 'size_desc' then with_sum_artifacts_size.reorder('sum_artifacts_size desc')
+        when 'expired_asc' then reorder(artifacts_expire_at: :asc)
+        else
+          super(method)
+        end
       end
     end
 

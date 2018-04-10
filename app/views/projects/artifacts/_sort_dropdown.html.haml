@@ -1,0 +1,11 @@
+- sorted_by = sort_options_hash[@sort]
+
+.dropdown.inline.prepend-left-10
+  %button.dropdown-toggle{ type: 'button', data: { toggle: 'dropdown', display: 'static' } }
+    = sorted_by
+    = icon('chevron-down')
+  %ul.dropdown-menu.dropdown-menu-right.dropdown-menu-selectable.dropdown-menu-sort
+    %li
+      = sortable_item(sort_title_size,           page_filter_path(sort: sort_value_size,           label: true), sorted_by)
+      = sortable_item(sort_title_expire_date,    page_filter_path(sort: sort_value_expire_date,    label: true), sorted_by)
+      = sortable_item(sort_title_oldest_created, page_filter_path(sort: sort_value_oldest_created, label: true), sorted_by)
