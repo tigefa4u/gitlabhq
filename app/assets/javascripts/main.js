@@ -287,3 +287,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   requestIdleCallback(deferredInitialisation);
 });
+
+// Register a service worker if our browser allows it
+if (navigator.serviceWorker) {
+  navigator.serviceWorker.register('/@service_worker.js', {
+    scope: '/',
+  });
+}
