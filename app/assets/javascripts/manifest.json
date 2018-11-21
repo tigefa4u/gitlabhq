@@ -1,0 +1,16 @@
+{
+  "name": "GitLab",
+  "short_name": "GitLab",
+  "display": "standalone",
+  "theme_color": "#474D57",
+  "background_color": "#ffffff",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "touch-icon-ipad-retina.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    }
+  ]
+}

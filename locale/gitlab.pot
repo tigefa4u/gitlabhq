@@ -9911,6 +9911,15 @@ msgstr ""
 msgid "nounSeries|%{item}, and %{lastItem}"
 msgstr ""
 
+msgid "offline|It looks like your internet is down, or maybe you're just going through a tunnel."
+msgstr ""
+
+msgid "offline|We're working on adding offline support to GitLab, but it's not quite ready yet."
+msgstr ""
+
+msgid "offline|You don't currently have an internet connection"
+msgstr ""
+
 msgid "or"
 msgstr ""
 

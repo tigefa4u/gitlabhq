@@ -1,0 +1,9 @@
+- content_for(:title, 'Offline')
+= image_tag('illustrations/pipelines_failed.svg', alt: 'offline', lazy: false)
+.container
+  %h3
+    = s_('offline|You don\'t currently have an internet connection')
+  %p
+    = s_("offline|It looks like your internet is down, or maybe you're just going through a tunnel.")
+  %p
+    = s_('offline|We\'re working on adding offline support to GitLab, but it\'s not quite ready yet.')
