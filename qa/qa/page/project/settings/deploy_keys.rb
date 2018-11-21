@@ -8,6 +8,7 @@ module QA
           view 'app/views/projects/deploy_keys/_form.html.haml' do
             element :deploy_key_title, 'text_field :title' # rubocop:disable QA/ElementWithPattern
             element :deploy_key_key, 'text_area :key' # rubocop:disable QA/ElementWithPattern
+            element :write_access_allowed_checkbox
           end
 
           view 'app/assets/javascripts/deploy_keys/components/app.vue' do
@@ -57,6 +58,10 @@ module QA
             within_project_deploy_keys do
               find_element(:key_fingerprint).text
             end
+          end
+
+          def allow_write_access
+            check_element :write_access_allowed_checkbox
           end
 
           private

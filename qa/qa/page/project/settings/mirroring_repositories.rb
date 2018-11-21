@@ -15,7 +15,9 @@ module QA
             element :mirror_repository_button
             element :mirror_repository_url
             element :mirror_last_update_at
+            element :mirror_error_badge
             element :mirrored_repository_row
+            element :copy_public_key_button
           end
 
           view 'app/views/projects/mirrors/_mirror_repos_form.html.haml' do
@@ -24,6 +26,16 @@ module QA
 
           view 'app/views/shared/_remote_mirror_update_button.html.haml' do
             element :update_now_button
+          end
+
+          view 'app/views/projects/mirrors/_ssh_host_keys.html.haml' do
+            element :detect_host_keys
+            element :fingerprints_list
+          end
+
+          view 'app/views/projects/mirrors/_authentication_method.html.haml' do
+            element :authentication_method
+            element :password
           end
 
           def repository_url=(value)
@@ -35,15 +47,33 @@ module QA
           end
 
           def mirror_direction=(value)
-            raise ArgumentError, "Mirror direction must be :push or :pull" unless [:push, :pull].include? value
+            raise ArgumentError, "Mirror direction must be 'Push' or 'Pull'" unless %w(Push Pull).include? value
 
             select_element(:mirror_direction, value)
           end
 
           def authentication_method=(value)
-            raise ArgumentError, "Authentication method must be :password or :none" unless [:password, :none].include? value
+            raise ArgumentError, "Authentication method must be 'SSH public key', 'Password', or 'None'" unless %w(Password None SSH\ public\ key).include? value
 
             select_element(:authentication_method, value)
+          end
+
+          def public_key(url)
+            row_index = find_repository_row_index url
+
+            within_element_by_index(:mirrored_repository_row, row_index) do
+              find_element(:copy_public_key_button)['data-clipboard-text']
+            end
+          end
+
+          def detect_host_keys
+            click_element :detect_host_keys
+
+            # The host key detection process is interrupted if we navigate away
+            # from the page before the fingerprint appears.
+            wait(max: 5) do
+              find_element(:fingerprints_list).has_text? /.*/
+            end
           end
 
           def mirror_repository
@@ -72,16 +102,19 @@ module QA
             # Fail early if the page still shows that there has been no update
             within_element_by_index(:mirrored_repository_row, row_index) do
               find_element(:mirror_last_update_at, wait: 0).assert_no_text('Never')
+              assert_no_element(:mirror_error_badge)
             end
           end
 
           private
 
           def find_repository_row_index(target_url)
-            all_elements(:mirror_repository_url).index do |url|
-              # The url might be a sanitized url but the target_url won't be so
-              # we compare just the paths instead of the full url
-              URI.parse(url.text).path == target_url.path
+            wait(max: 5, reload: false) do
+              all_elements(:mirror_repository_url).index do |url|
+                # The url might be a sanitized url but the target_url won't be so
+                # we compare just the paths instead of the full url
+                URI.parse(url.text).path == target_url.path
+              end
             end
           end
         end

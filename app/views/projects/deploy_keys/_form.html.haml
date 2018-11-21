@@ -14,7 +14,7 @@
   = f.fields_for :deploy_keys_projects do |deploy_keys_project_form|
     .form-group.row
       = deploy_keys_project_form.label :can_push do
-        = deploy_keys_project_form.check_box :can_push
+        = deploy_keys_project_form.check_box :can_push, data: { qa_selector: "write_access_allowed_checkbox" }
         %strong Write access allowed
     .form-group.row
       %p.light.append-bottom-0

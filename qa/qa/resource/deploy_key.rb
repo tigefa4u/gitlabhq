@@ -3,7 +3,7 @@
 module QA
   module Resource
     class DeployKey < Base
-      attr_accessor :title, :key
+      attr_accessor :title, :key, :allow_write_access
 
       attribute :fingerprint do
         Page::Project::Settings::Repository.perform do |setting|
@@ -29,6 +29,7 @@ module QA
           setting.expand_deploy_keys do |page|
             page.fill_key_title(title)
             page.fill_key_value(key)
+            page.allow_write_access if allow_write_access
 
             page.add_key
           end
