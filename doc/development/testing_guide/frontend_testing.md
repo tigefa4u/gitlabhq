@@ -404,6 +404,48 @@ This also means that they are not easily parallelized.
 Migrating flaky Karma tests to Jest will help significantly as each test is executed
 in an isolated scope, improving performance and predictability.
 
+#### Component test helper (`createComponentWrapper`)
+
+`createComponentWrapper` makes mounting and cleaning up a Vue component easier and more readable.
+It uses [Vue test utils](https://vue-test-utils.vuejs.org/) internally to provide a [`factory` function](https://en.wikipedia.org/wiki/Factory_(object-oriented_programming)) for a component instance [wrapper](https://vue-test-utils.vuejs.org/api/wrapper/) as described in the [Vue cookbook](https://vuejs.org/v2/cookbook/unit-testing-vue-components.html).
+The path to the component is automatically generated from the test file name but you can also specify it by passing the `componentFileName` option.
+
+Please note that this helper is only available in Jest.
+
+Examples of usage:
+
+```javascript
+import { createComponentWrapper } from 'helpers/component_wrapper';
+
+describe('SomeComponent', () => {
+  it('renders correctly', () => {
+    const wrapper = createComponentWrapper();
+
+    expect(wrapper.is('.some-component')).toBe(true);
+    expect(wrapper.contains('button')).toBe(true);
+  });
+});
+```
+
+Wrapper and the contained component instances are automatically cleaned up in the `afterEach()` block by default.
+You can change that behavior by passing a `destroyHook` as second argument:
+
+```javascript
+import { createComponentWrapper } from 'helpers/component_wrapper';
+
+describe('SomeComponent', () => {
+  it('renders correctly', () => {
+    const destroyImmediately = callback => {
+      callback();
+    };
+    
+    const wrapper = createComponentWrapper({}, destroyImmediately);
+    
+    // ...
+  });
+});
+```
+
 ### Vue.js unit tests
 
 See this [section][vue-test].
