@@ -40,7 +40,11 @@ module Gitlab
       end
 
       def project_json
-        @project_json ||= @project.as_json(reader.project_tree)
+        @project_json ||= serializer.execute
+      end
+
+      def serializer
+        @serializer ||= ProjectHashSerializer.new(@project, reader.project_tree)
       end
 
       def reader
