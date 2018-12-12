@@ -54,7 +54,6 @@ module Gitlab
         # in batches.
         preload_data.each do |key, preload_clause|
           records = project.send(key)
-          selection = serialize_options(included_tree, key)
 
           next unless records
 
@@ -64,6 +63,7 @@ module Gitlab
           end
 
           data[key.to_s] = []
+          selection = serialize_options(included_tree, key)
 
           # Not all models use EachBatch, whereas ActiveRecord guarantees all models can use in_batches.
           records.in_batches do |batch| # rubocop:disable Cop/InBatches
