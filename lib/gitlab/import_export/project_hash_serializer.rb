@@ -47,7 +47,7 @@ module Gitlab
         preload_data = extract_preload_clause(tree)
         # Detach the top-level includes so only the project attributes
         # are serialized
-        included_tree = tree.dup.delete(:include)
+        included_tree = tree.delete(:include)
         data = project.as_json(tree)
 
         # Now serialize each top-level association (e.g. issues, merge requests, etc.)
