@@ -18,20 +18,41 @@ describe Gitlab::ImportExport::AttributesFinder do
             except: [:iid],
             include: [
               { merge_request_diff: {
-                include: []
+                include: [],
+                preload: { preload: nil }
               } },
               { merge_request_test: { include: [] } }
             ],
-            only: [:id]
+            only: [:id],
+            preload: {
+              merge_request_diff: { preload: nil },
+              merge_request_test: nil
+            }
             } },
           { commit_statuses: {
-              include: [{ commit: { include: [] } }]
+              include: [{ commit: { include: [] } }],
+              preload: { commit: nil }
             } },
           { project_members: {
               include: [{ user: { include: [],
-                                  only: [:email] } }]
+                                  only: [:email] } }],
+              preload: { user: nil }
           } }
-        ]
+        ],
+        preload: {
+          commit_statuses: {
+            commit: nil
+          },
+          issues: nil,
+          labels: nil,
+          merge_requests: {
+            merge_request_diff: { preload: nil },
+            merge_request_test: nil
+          },
+          project_members: {
+            user: nil
+          }
+        }
       }
     end
 
@@ -48,7 +69,8 @@ describe Gitlab::ImportExport::AttributesFinder do
         setup_yaml(tree: { project: [:issues] })
 
         is_expected.to match(
-          include: [{ issues: { include: [] } }]
+          include: [{ issues: { include: [] } }],
+          preload: { issues: nil }
         )
       end
 
@@ -56,7 +78,8 @@ describe Gitlab::ImportExport::AttributesFinder do
         setup_yaml(tree: { project: [:project_feature] })
 
         is_expected.to match(
-          include: [{ project_feature: { include: [] } }]
+          include: [{ project_feature: { include: [] } }],
+          preload: { project_feature: nil }
         )
       end
 
@@ -65,7 +88,8 @@ describe Gitlab::ImportExport::AttributesFinder do
 
         is_expected.to match(
           include: [{ issues: { include: [] } },
-                    { snippets: { include: [] } }]
+                    { snippets: { include: [] } }],
+          preload: { issues: nil, snippets: nil }
         )
       end
 
@@ -73,7 +97,9 @@ describe Gitlab::ImportExport::AttributesFinder do
         setup_yaml(tree: { project: [issues: [:notes]] })
 
         is_expected.to match(
-          include: [{ issues: { include: [{ notes: { include: [] } }] } }]
+          include: [{ issues: { include: [{ notes: { include: [] } }],
+                                preload: { notes: nil } } }],
+          preload: { issues: { notes: nil } }
         )
       end
 
@@ -83,7 +109,9 @@ describe Gitlab::ImportExport::AttributesFinder do
         is_expected.to match(
           include: [{ merge_requests:
                       { include: [{ notes: { include: [] } },
-                                  { merge_request_diff: { include: [] } }] } }]
+                                  { merge_request_diff: { include: [] } }],
+                        preload: { merge_request_diff: nil, notes: nil } } }],
+          preload: { merge_requests: { merge_request_diff: nil, notes: nil } }
         )
       end
 
@@ -92,8 +120,11 @@ describe Gitlab::ImportExport::AttributesFinder do
 
         is_expected.to match(
           include: [{ merge_requests: {
-                      include: [{ notes: { include: [{ author: { include: [] } }] } }]
-                    } }]
+                      include: [{ notes: { include: [{ author: { include: [] } }],
+                                          preload: { author: nil } } }],
+                      preload: { notes: { author: nil } }
+                    } }],
+          preload: { merge_requests: { notes: { author: nil } } }
         )
       end
 
@@ -103,7 +134,8 @@ describe Gitlab::ImportExport::AttributesFinder do
 
         is_expected.to match(
           include: [{ issues: { include: [],
-                                only: [:name, :description] } }]
+                                only: [:name, :description] } }],
+          preload: { issues: nil }
         )
       end
 
@@ -113,7 +145,8 @@ describe Gitlab::ImportExport::AttributesFinder do
 
         is_expected.to match(
           include: [{ issues: { except: [:name],
-                                include: [] } }]
+                                include: [] } }],
+          preload: { issues: nil }
         )
       end
 
@@ -125,7 +158,8 @@ describe Gitlab::ImportExport::AttributesFinder do
         is_expected.to match(
           include: [{ issues: { except: [:name],
                                 include: [],
-                                only: [:description] } }]
+                                only: [:description] } }],
+          preload: { issues: nil }
         )
       end
 
@@ -135,7 +169,8 @@ describe Gitlab::ImportExport::AttributesFinder do
 
         is_expected.to match(
           include: [{ issues: { include: [],
-                                methods: [:name] } }]
+                                methods: [:name] } }],
+          preload: { issues: nil }
         )
       end
 

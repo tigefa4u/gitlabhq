@@ -24,7 +24,7 @@ describe Gitlab::ImportExport::Config do
           expect { subject }.not_to raise_error
           expect(subject).to be_a(Hash)
           expect(subject.keys).to contain_exactly(
-            :tree, :excluded_attributes, :included_attributes, :methods)
+            :tree, :excluded_attributes, :included_attributes, :methods, :preloads)
         end
       end
     end
@@ -54,6 +54,10 @@ describe Gitlab::ImportExport::Config do
             events:
               - :action
 
+          preloads:
+            statuses:
+              project:
+
           ee:
             tree:
               project:
@@ -70,6 +74,9 @@ describe Gitlab::ImportExport::Config do
                 - :type_ee
               events_ee:
                 - :action_ee
+            preloads:
+              statuses:
+                bridge_ee:
         EOF
       end
 
@@ -110,6 +117,11 @@ describe Gitlab::ImportExport::Config do
               methods: {
                 labels: [:type],
                 events: [:action]
+              },
+              preloads: {
+                statuses: {
+                  project: nil
+                }
               }
             }
           )
@@ -149,6 +161,12 @@ describe Gitlab::ImportExport::Config do
                 labels: [:type, :type_ee],
                 events: [:action],
                 events_ee: [:action_ee]
+              },
+              preloads: {
+                statuses: {
+                  project: nil,
+                  bridge_ee: nil
+                }
               }
             }
           )
