@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module QA
-  context 'Manage', :orchestrated, :github do
+  context 'Manage', :github do
     describe 'Project import from GitHub' do
       let(:imported_project) do
         Resource::ProjectImportedFromGithub.fabricate! do |project|

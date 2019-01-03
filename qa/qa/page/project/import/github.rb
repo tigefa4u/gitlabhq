@@ -30,12 +30,19 @@ module QA
             choose_test_namespace(full_path)
             set_path(full_path, name)
             import_project(full_path)
+            wait_for_success
           end
 
           private
 
           def within_repo_path(full_path)
-            page.within(%Q(tr[data-qa-repo-path="#{full_path}"])) do
+            wait(reload: false) do
+              !all_elements(:project_import_row).empty?
+            end
+
+            project_import_row = all_elements(:project_import_row).detect { |row| row.has_css?('a', text: full_path, wait: 1.0)}
+
+            within(project_import_row) do
               yield
             end
           end
@@ -45,18 +52,24 @@ module QA
               click_element :project_namespace_select
             end
 
-            select_item(Runtime::Namespace.path)
+            search_and_select(Runtime::Namespace.path)
           end
 
           def set_path(full_path, name)
             within_repo_path(full_path) do
-              fill_in 'path', with: name
+              fill_element(:project_path_field, name)
             end
           end
 
           def import_project(full_path)
             within_repo_path(full_path) do
-              click_button 'Import'
+              click_element(:import_button)
+            end
+          end
+
+          def wait_for_success
+            wait(max: 60, time: 1.0, reload: false) do
+              page.has_content?('Done', wait: 1.0)
             end
           end
         end
