@@ -22,7 +22,10 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
 
-  event.respondWith(
-    fetch(request).catch(() => (request.mode === 'navigate' ? caches.match('/-/offline') : null)),
-  );
+  // We only want to intercept the GET requests for now
+  if (request.method === 'GET') {
+    event.respondWith(
+      fetch(request).catch(() => (request.mode === 'navigate' ? caches.match('/-/offline') : null)),
+    );
+  }
 });
