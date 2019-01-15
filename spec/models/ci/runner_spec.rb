@@ -71,9 +71,8 @@ describe Ci::Runner do
       end
 
       it 'should fail to save a group assigned to a project runner even if the runner is already saved' do
-        group_runner
-
-        expect { create(:group, runners: [project_runner]) }
+        group.runners << project_runner
+        expect { group.save! }
           .to raise_error(ActiveRecord::RecordInvalid)
       end
     end

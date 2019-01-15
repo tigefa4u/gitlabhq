@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'rails', '5.0.7.1'
+gem 'rails', '5.1.6.1'
 gem 'rails-deprecated_sanitizer', '~> 1.0.3'
 
 # Improves copy-on-write performance for MRI
@@ -19,7 +19,7 @@ gem 'mysql2', '~> 0.4.10', group: :mysql
 gem 'pg', '~> 1.1', group: :postgres
 
 gem 'rugged', '~> 0.27'
-gem 'grape-path-helpers', '~> 1.0'
+gem 'grape-path-helpers', '~> 1.1'
 
 gem 'faraday', '~> 0.12'
 

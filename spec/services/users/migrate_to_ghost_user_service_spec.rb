@@ -78,7 +78,7 @@ describe Users::MigrateToGhostUserService do
 
     context "when record migration fails with a rollback exception" do
       before do
-        expect_any_instance_of(MergeRequest::ActiveRecord_Associations_CollectionProxy)
+        expect_any_instance_of(ActiveRecord::Associations::CollectionProxy)
           .to receive(:update_all).and_raise(ActiveRecord::Rollback)
       end
 

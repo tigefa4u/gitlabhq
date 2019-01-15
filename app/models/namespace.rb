@@ -49,13 +49,15 @@ class Namespace < ApplicationRecord
 
   validate :nesting_level_allowed
 
+  validates_associated :runners
+
   delegate :name, to: :owner, allow_nil: true, prefix: true
 
   after_commit :refresh_access_of_projects_invited_groups, on: :update, if: -> { previous_changes.key?('share_with_group_lock') }
 
   before_create :sync_share_with_group_lock_with_parent
   before_update :sync_share_with_group_lock_with_parent, if: :parent_changed?
-  after_update :force_share_with_group_lock_on_descendants, if: -> { share_with_group_lock_changed? && share_with_group_lock? }
+  after_update :force_share_with_group_lock_on_descendants, if: -> { saved_change_to_share_with_group_lock? && share_with_group_lock? }
 
   # Legacy Storage specific hooks
 
@@ -270,7 +272,7 @@ class Namespace < ApplicationRecord
   private
 
   def path_or_parent_changed?
-    path_changed? || parent_changed?
+    saved_change_to_path? || saved_change_to_parent_id?
   end
 
   def refresh_access_of_projects_invited_groups

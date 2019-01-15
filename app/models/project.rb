@@ -91,7 +91,7 @@ class Project < ActiveRecord::Base
 
   before_save :ensure_runners_token
 
-  after_save :update_project_statistics, if: :namespace_id_changed?
+  after_save :update_project_statistics, if: :saved_change_to_namespace_id?
 
   after_save :create_import_state, if: ->(project) { project.import? && project.import_state.nil? }
 
@@ -117,7 +117,7 @@ class Project < ActiveRecord::Base
   after_initialize :use_hashed_storage
   after_create :check_repository_absence!
   after_create :ensure_storage_path_exists
-  after_save :ensure_storage_path_exists, if: :namespace_id_changed?
+  after_save :ensure_storage_path_exists, if: :saved_change_to_namespace_id?
 
   acts_as_ordered_taggable
 
@@ -1418,7 +1418,7 @@ class Project < ActiveRecord::Base
 
   # update visibility_level of forks
   def update_forks_visibility_level
-    return unless visibility_level < visibility_level_was
+    return unless visibility_level < visibility_level_before_last_save
 
     forks.each do |forked_project|
       if forked_project.visibility_level > visibility_level
