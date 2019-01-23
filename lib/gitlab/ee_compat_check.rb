@@ -125,7 +125,7 @@ module Gitlab
     def generate_patch(patch_path, source:, target:)
       FileUtils.rm(patch_path, force: true)
 
-      find_merge_base_with_master(source: source, target: target)
+      find_merge_base(source: source, target: target)
 
       step(
         "Generating the patch against #{target} in #{patch_path}",
@@ -238,8 +238,7 @@ module Gitlab
       end
     end
 
-    # TODO (rspeicher): Not always master
-    def find_merge_base_with_master(source:, target:)
+    def find_merge_base(source:, target:)
       # Start with (Math.exp(3).to_i = 20) until (Math.exp(6).to_i = 403)
       # In total we go (20 + 54 + 148 + 403 = 625) commits deeper
       depth = 20
