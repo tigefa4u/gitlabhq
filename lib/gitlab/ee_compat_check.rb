@@ -7,6 +7,7 @@ module Gitlab
     CANONICAL_CE_PROJECT_URL = 'https://gitlab.com/gitlab-org/gitlab-ce'.freeze
     CANONICAL_EE_REPO_URL = 'https://gitlab.com/gitlab-org/gitlab-ee.git'.freeze
     CHECK_DIR = Rails.root.join('ee_compat_check')
+    DEFAULT_TARGET = 'master'.freeze
     IGNORED_FILES_REGEX = /VERSION|CHANGELOG\.md/i.freeze
     PLEASE_READ_THIS_BANNER = %Q{
       ============================================================
@@ -27,13 +28,19 @@ module Gitlab
     attr_reader :ce_project_url, :ee_repo_url
     attr_reader :ce_branch, :ee_remote_with_branch, :ee_branch_found
     attr_reader :failed_files
+    attr_reader :ce_target_branch, :ee_target_branch
 
     def initialize(branch:, ce_project_url: CANONICAL_CE_PROJECT_URL)
       @ee_repo_dir = CHECK_DIR.join('ee-repo')
       @patches_dir = CHECK_DIR.join('patches')
       @ce_branch = branch
       @ce_project_url = ce_project_url
-      @ee_repo_url = ce_public_repo_url.sub('gitlab-ce', 'gitlab-ee')
+      @ee_repo_url = ce_public_repo_url.sub(/gitlab(-ce|hq)/, 'gitlab-ee')
+
+      @ce_target_branch = ENV.fetch('CI_MERGE_REQUEST_TARGET_BRANCH_NAME', DEFAULT_TARGET)
+      @ee_target_branch = @ce_target_branch.dup.tap do |target|
+        target << '-ee' unless target == DEFAULT_TARGET
+      end
     end
 
     def check
@@ -41,7 +48,7 @@ module Gitlab
       # We're generating the patch against the canonical-ce remote since forks'
       # master branch are not necessarily up-to-date.
       add_remote('canonical-ce', "#{CANONICAL_CE_PROJECT_URL}.git")
-      generate_patch(branch: ce_branch, patch_path: ce_patch_full_path, branch_remote: 'origin', master_remote: 'canonical-ce')
+      generate_patch(ce_patch_full_path, source: "origin/#{ce_branch}", target: "canonical-ce/#{ce_target_branch}")
 
       ensure_ee_repo
       Dir.chdir(ee_repo_dir) do
@@ -50,15 +57,17 @@ module Gitlab
         ee_remotes.each do |key, url|
           add_remote(key, url)
         end
-        fetch(branch: 'master', depth: 20, remote: 'canonical-ee')
+        fetch("canonical-ee/#{ee_target_branch}", depth: 20)
 
         status = catch(:halt_check) do
           ce_branch_compat_check!
           delete_ee_branches_locally!
           ee_branch_presence_check!
 
-          step("Checking out #{ee_remote_with_branch}/#{ee_branch_found}", %W[git checkout -b #{ee_branch_found} #{ee_remote_with_branch}/#{ee_branch_found}])
-          generate_patch(branch: ee_branch_found, patch_path: ee_patch_full_path, branch_remote: ee_remote_with_branch, master_remote: 'canonical-ee')
+          source = "#{ee_remote_with_branch}/#{ee_branch_found}"
+
+          step("Checking out #{source}", %W[git checkout -b #{ee_branch_found} #{source}])
+          generate_patch(ee_patch_full_path, source: source, target: "canonical-ee/#{ee_target_branch}")
           ee_branch_compat_check!
         end
 
@@ -104,7 +113,7 @@ module Gitlab
     def clone_ee_repo(url, dir)
       _, status = step(
         "Cloning #{url} into #{dir}",
-        %W[git clone --branch master --single-branch --depth=200 #{url} #{dir}]
+        %W[git clone --branch #{ee_target_branch} --single-branch --depth=200 #{url} #{dir}]
       )
       status.zero?
     end
@@ -113,14 +122,14 @@ module Gitlab
       FileUtils.mkdir_p(patches_dir)
     end
 
-    def generate_patch(branch:, patch_path:, branch_remote:, master_remote:)
+    def generate_patch(patch_path, source:, target:)
       FileUtils.rm(patch_path, force: true)
 
-      find_merge_base_with_master(branch: branch, branch_remote: branch_remote, master_remote: master_remote)
+      find_merge_base_with_master(source: source, target: target)
 
       step(
-        "Generating the patch against #{master_remote}/master in #{patch_path}",
-        %W[git diff --binary #{master_remote}/master...#{branch_remote}/#{branch}]
+        "Generating the patch against #{target} in #{patch_path}",
+        %W[git diff --binary #{target}...#{source}]
       ) do |output, status|
         throw(:halt_check, :ko) unless status.zero?
 
@@ -177,10 +186,10 @@ module Gitlab
     end
 
     def check_patch(patch_path)
-      step("Checking out master", %w[git checkout master])
-      step("Resetting to latest master", %w[git reset --hard canonical-ee/master])
+      step("Checking out #{ee_target_branch}", %W[git checkout #{ee_target_branch}])
+      step("Resetting to latest #{ee_target_branch}", %W[git reset --hard canonical-ee/#{ee_target_branch}])
       step(
-        "Checking if #{patch_path} applies cleanly to EE/master",
+        "Checking if #{patch_path} applies cleanly to EE/#{ee_target_branch}",
         # Don't use --check here because it can result in a 0-exit status even
         # though the patch doesn't apply cleanly, e.g.:
         #   > git apply --check --3way foo.patch
@@ -212,15 +221,15 @@ module Gitlab
     end
 
     def delete_ee_branches_locally!
-      command(%w[git checkout master])
+      command(%W[git checkout #{ee_target_branch}])
       command(%W[git branch --delete --force #{ee_branch_prefix}])
       command(%W[git branch --delete --force #{ee_branch_suffix}])
     end
 
-    def merge_base_found?(branch:, branch_remote:, master_remote:)
+    def merge_base_found?(source:, target:)
       step(
-        "Finding merge base with #{master_remote}/master",
-        %W[git merge-base #{master_remote}/master #{branch_remote}/#{branch}]
+        "Finding merge base with #{target}",
+        %W[git merge-base #{target} #{source}]
       ) do |output, status|
         if status.zero?
           puts "Merge base was found: #{output}"
@@ -229,7 +238,8 @@ module Gitlab
       end
     end
 
-    def find_merge_base_with_master(branch:, branch_remote:, master_remote:)
+    # TODO (rspeicher): Not always master
+    def find_merge_base_with_master(source:, target:)
       # Start with (Math.exp(3).to_i = 20) until (Math.exp(6).to_i = 403)
       # In total we go (20 + 54 + 148 + 403 = 625) commits deeper
       depth = 20
@@ -238,16 +248,18 @@ module Gitlab
           depth += Math.exp(factor).to_i
           # Repository is initially cloned with a depth of 20 so we need to fetch
           # deeper in the case the branch has more than 20 commits on top of master
-          fetch(branch: branch, depth: depth, remote: branch_remote)
-          fetch(branch: 'master', depth: depth, remote: master_remote)
+          fetch(source, depth: depth)
+          fetch(target, depth: depth)
 
-          merge_base_found?(branch: branch, branch_remote: branch_remote, master_remote: master_remote)
+          merge_base_found?(source: source, target: target)
         end
 
-      raise "\n#{branch} is too far behind #{master_remote}/master, please rebase it!\n" unless success
+      raise "\n#{source} is too far behind #{target}, please rebase it!\n" unless success
     end
 
-    def fetch(branch:, depth:, remote: 'origin')
+    def fetch(source, depth:)
+      remote, branch = source.split('/', 2)
+
       step(
         "Fetching deeper...",
         %W[git fetch --depth=#{depth} --prune #{remote} +refs/heads/#{branch}:refs/remotes/#{remote}/#{branch}]
@@ -326,7 +338,7 @@ module Gitlab
         #{PLEASE_READ_THIS_BANNER}
         🎉 Congratulations!! 🎉
 
-        The `#{branch}` branch applies cleanly to EE/master!
+        The `#{branch}` branch applies cleanly to EE/#{ee_target_branch}!
 
         Much ❤️! For more information, see
         https://docs.gitlab.com/ce/development/automatic_ce_ee_merge.html
@@ -342,7 +354,7 @@ module Gitlab
         💥 Oh no! 💥
 
         The `#{ce_branch}` branch does not apply cleanly to the current
-        EE/master, and no `#{ee_branch_prefix}` or `#{ee_branch_suffix}` branch
+        EE/#{ee_target_branch}, and no `#{ee_branch_prefix}` or `#{ee_branch_suffix}` branch
         was found in #{ee_repos.join(' nor in ')}.
 
         If you're a community contributor, don't worry, someone from
@@ -354,16 +366,16 @@ module Gitlab
 
         We advise you to create a `#{ee_branch_prefix}` or `#{ee_branch_suffix}`
         branch that includes changes from `#{ce_branch}` but also specific changes
-        than can be applied cleanly to EE/master. In some cases, the conflicts
+        than can be applied cleanly to EE/#{ee_target_branch}. In some cases, the conflicts
         are trivial and you can ignore the warning from this job. As always,
         use your best judgement!
 
         There are different ways to create such branch:
 
-        1. Create a new branch from master and cherry-pick your CE commits
+        1. Create a new branch from #{ee_target_branch} and cherry-pick your CE commits
 
           # In the EE repo
-          $ git fetch #{CANONICAL_EE_REPO_URL} master
+          $ git fetch #{CANONICAL_EE_REPO_URL} #{ee_target_branch}
           $ git checkout -b #{ee_branch_prefix} FETCH_HEAD
           $ git fetch #{ce_public_repo_url} #{ce_branch}
           $ git cherry-pick SHA # Repeat for all the commits you want to pick
@@ -373,7 +385,7 @@ module Gitlab
         2. Apply your branch's patch to EE
 
           # In the EE repo
-          $ git fetch #{CANONICAL_EE_REPO_URL} master
+          $ git fetch #{CANONICAL_EE_REPO_URL} #{ee_target_branch}
           $ git checkout -b #{ee_branch_prefix} FETCH_HEAD
           $ wget #{patch_url} && git apply --3way #{ce_patch_name}
 
@@ -417,10 +429,10 @@ module Gitlab
         #{PLEASE_READ_THIS_BANNER}
         💥 Oh no! 💥
 
-        The `#{ce_branch}` does not apply cleanly to the current EE/master, and
+        The `#{ce_branch}` does not apply cleanly to the current EE/#{ee_target_branch}, and
         even though a `#{ee_branch_found}` branch
         exists in #{ee_repo_url}, it does not apply cleanly either to
-        EE/master!
+        EE/#{ee_target_branch}!
 
         #{conflicting_files_msg}
 
