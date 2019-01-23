@@ -95,13 +95,13 @@ module Gitlab
     end
 
     def ensure_ee_repo
-      unless clone_repo(ee_repo_url, ee_repo_dir)
+      unless clone_ee_repo(ee_repo_url, ee_repo_dir)
         # Fallback to using the canonical EE if there is no forked EE
-        clone_repo(CANONICAL_EE_REPO_URL, ee_repo_dir)
+        clone_ee_repo(CANONICAL_EE_REPO_URL, ee_repo_dir)
       end
     end
 
-    def clone_repo(url, dir)
+    def clone_ee_repo(url, dir)
       _, status = step(
         "Cloning #{url} into #{dir}",
         %W[git clone --branch master --single-branch --depth=200 #{url} #{dir}]
