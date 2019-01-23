@@ -593,11 +593,9 @@ downtime_check:
 ee_compat_check:
   <<: *rake-exec
   dependencies: []
+  only:
+    - merge_requests
   except:
-    - master
-    - tags
-    - /[\d-]+-stable(-ee)?/
-    - /^security-/
     - branches@gitlab-org/gitlab-ee
     - branches@gitlab/gitlab-ee
   retry: 0
