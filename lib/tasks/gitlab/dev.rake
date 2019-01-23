@@ -6,8 +6,7 @@ namespace :gitlab do
         if ENV['CI']
           {
             ce_project_url: ENV['CI_PROJECT_URL'],
-            branch: ENV['CI_COMMIT_REF_NAME'],
-            job_id: ENV['CI_JOB_ID']
+            branch: ENV['CI_COMMIT_REF_NAME']
           }
         else
           unless args[:branch]

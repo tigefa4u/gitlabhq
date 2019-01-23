@@ -26,15 +26,14 @@ module Gitlab
     attr_reader :ee_repo_dir, :patches_dir
     attr_reader :ce_project_url, :ee_repo_url
     attr_reader :ce_branch, :ee_remote_with_branch, :ee_branch_found
-    attr_reader :job_id, :failed_files
+    attr_reader :failed_files
 
-    def initialize(branch:, ce_project_url: CANONICAL_CE_PROJECT_URL, job_id: nil)
+    def initialize(branch:, ce_project_url: CANONICAL_CE_PROJECT_URL)
       @ee_repo_dir = CHECK_DIR.join('ee-repo')
       @patches_dir = CHECK_DIR.join('patches')
       @ce_branch = branch
       @ce_project_url = ce_project_url
       @ee_repo_url = ce_public_repo_url.sub('gitlab-ce', 'gitlab-ee')
-      @job_id = job_id
     end
 
     def check
@@ -290,7 +289,7 @@ module Gitlab
     end
 
     def patch_url
-      "#{ce_project_url}/-/jobs/#{job_id}/artifacts/raw/ee_compat_check/patches/#{ce_patch_name}"
+      "#{ENV['CI_JOB_URL']}/artifacts/raw/ee_compat_check/patches/#{ce_patch_name}"
     end
 
     def step(desc, cmd = nil)
