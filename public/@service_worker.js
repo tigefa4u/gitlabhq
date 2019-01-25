@@ -1,4 +1,4 @@
-const CURRENT_CACHE = '<%= Gitlab::VERSION %>_<%= Gitlab.revision %>';
+const CURRENT_CACHE = '11.8.0-pre_0.hcqgs68jph';
 
 // eslint-disable-next-line no-restricted-globals
 self.addEventListener('install', event => {

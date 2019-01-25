@@ -7,7 +7,4 @@ class PwaController < ApplicationController
   def offline
     render 'offline', layout: 'errors'
   end
-
-  def service_worker
-  end
 end

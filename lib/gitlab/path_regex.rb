@@ -16,6 +16,7 @@ module Gitlab
     TOP_LEVEL_ROUTES = %w[
       -
       .well-known
+      @service_worker.js
       404.html
       422.html
       500.html
