@@ -151,8 +151,6 @@ Rails.application.routes.draw do
 
   root to: "root#index"
 
-  # Service Worker
-  get '@service_worker.js', to: 'pwa#service_worker'
-
+  get 'service_worker.js', to: 'pwa#service_worker'
   get '*unmatched_route', to: 'application#route_not_found'
 end

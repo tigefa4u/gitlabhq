@@ -51,6 +51,7 @@ module Gitlab
       s
       search
       sent_notifications
+      service_worker.js
       slash-command-logo.png
       snippets
       u

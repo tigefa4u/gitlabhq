@@ -26,6 +26,10 @@ class ApplicationController < ActionController::Base
   before_action :set_usage_stats_consent_flag
   before_action :check_impersonation_availability
 
+  before_action do
+    push_frontend_feature_flag(:service_worker)
+  end
+
   around_action :set_locale
 
   after_action :set_page_title_header, if: :json_request?

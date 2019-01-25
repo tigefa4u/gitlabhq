@@ -58,6 +58,7 @@ eslint-report.html
 /public/assets/
 /public/uploads.*
 /public/uploads/
+/public/service_worker.js
 /shared/artifacts/
 /spec/javascripts/fixtures/blob/pdf/
 /spec/javascripts/fixtures/blob/balsamiq/

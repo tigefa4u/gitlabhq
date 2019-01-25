@@ -285,12 +285,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // initialize field errors
   $('.gl-show-field-errors').each((i, form) => new GlFieldErrors(form));
 
+  if ('serviceWorker' in navigator && gon.features && gon.features.serviceWorker) {
+    navigator.serviceWorker.register('/service_worker.js', {
+      scope: '/',
+    });
+  }
+
   requestIdleCallback(deferredInitialisation);
 });
-
-// Register a service worker if our browser allows it
-if (navigator.serviceWorker) {
-  navigator.serviceWorker.register('/@service_worker.js', {
-    scope: '/',
-  });
-}

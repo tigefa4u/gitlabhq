@@ -7,6 +7,7 @@ const StatsWriterPlugin = require('webpack-stats-plugin').StatsWriterPlugin;
 const CompressionPlugin = require('compression-webpack-plugin');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const CopyPlugin = require('copy-webpack-plugin');
 
 const ROOT_PATH = path.resolve(__dirname, '..');
 const CACHE_PATH = process.env.WEBPACK_CACHE_PATH || path.join(ROOT_PATH, 'tmp/cache');
@@ -104,6 +105,27 @@ if (IS_EE) {
     ee_spec: path.join(ROOT_PATH, 'ee/spec/javascripts'),
     ee_else_ce: path.join(ROOT_PATH, 'ee/app/assets/javascripts'),
   });
+}
+
+function version(content) {
+  const VERSION_FILE = path.resolve(__dirname, '../VERSION');
+  const REVISION_FILE = path.resolve(__dirname, '../REVISION');
+
+  // Return the GitLab version from the version file, or unknown
+  const GITLAB_VERSION = fs.existsSync(VERSION_FILE)
+    ? fs.readFileSync(VERSION_FILE, 'utf8').trim()
+    : 'Unknown';
+
+  // Return the revision from the revision file, or a random string
+  // This helps bust the cache when changes are made locally
+  const GITLAB_REVISION = fs.existsSync(REVISION_FILE)
+    ? fs.readFileSync(REVISION_FILE, 'utf8').trim()
+    : Math.random().toString(36);
+
+  return content
+    .toString()
+    .replace('<%= Gitlab.version %>', GITLAB_VERSION.trim())
+    .replace('<%= Gitlab.revision %>', GITLAB_REVISION.trim());
 }
 
 module.exports = {
@@ -281,6 +303,17 @@ module.exports = {
         );
       }
     }),
+
+    // Copies and versions the service workers
+    new CopyPlugin([
+      {
+        from: path.join(ROOT_PATH, 'app/assets/javascripts/sw.js'),
+        to: path.join(ROOT_PATH, 'public/assets/webpack/service_worker.js'),
+        transform(content) {
+          return version(content);
+        },
+      },
+    ]),
 
     // compression can require a lot of compute time and is disabled in CI
     IS_PRODUCTION && !NO_COMPRESSION && new CompressionPlugin(),

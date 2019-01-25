@@ -16,10 +16,14 @@ module Gitlab
       end
 
       def perform_request(env)
-        if @proxy_path && env['PATH_INFO'].start_with?("/#{@proxy_path}")
+        if @proxy_path && env['PATH_INFO'].start_with?("/#{@proxy_path}", "/service_worker.js")
           if relative_url_root = Rails.application.config.relative_url_root
             env['SCRIPT_NAME'] = ""
             env['REQUEST_PATH'].sub!(/\A#{Regexp.escape(relative_url_root)}/, '')
+          end
+
+          if env['PATH_INFO'].start_with?("/service_worker.js")
+            env['PATH_INFO'] = "/assets/webpack/service_worker.js"
           end
 
           super(env)
