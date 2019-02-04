@@ -82,16 +82,19 @@ stages:
 # https://docs.gitlab.com/ce/development/documentation/#testing
 .except-docs: &except-docs
   except:
-    - /(^docs[\/-].*|.*-docs$)/
+    variables:
+      - $CI_COMMIT_REF_NAME =~ /(^docs[\/-].*|.*-docs$)/
 
 .except-qa: &except-qa
   except:
-    - /(^qa[\/-].*|.*-qa$)/
+    variables:
+      - $CI_COMMIT_REF_NAME =~ /(^qa[\/-].*|.*-qa$)/
 
 .except-docs-and-qa: &except-docs-and-qa
   except:
-    - /(^docs[\/-].*|.*-docs$)/
-    - /(^qa[\/-].*|.*-qa$)/
+    variables:
+      - $CI_COMMIT_REF_NAME =~ /(^docs[\/-].*|.*-docs$)/
+      - $CI_COMMIT_REF_NAME =~ /(^qa[\/-].*|.*-qa$)/
 
 # Jobs that only need to pull cache
 .dedicated-no-docs-pull-cache-job: &dedicated-no-docs-pull-cache-job
@@ -171,12 +174,79 @@ stages:
   <<: *rspec-metadata
   <<: *use-mysql
 
+.only-default: &only-default
+  only:
+    refs:
+      - master
+      - /^[\d-]+-stable(-ee)?$/
+      - merge_requests
+      - tags
+
+.only-canonical-ce-default: &only-canonical-ce-default
+  only:
+    refs:
+      - master@gitlab-org/gitlab-ce
+      - master@gitlab/gitlabhq
+      - /^[\d-]+-stable(-ee)?$/@gitlab-org/gitlab-ce
+      - /^[\d-]+-stable(-ee)?$/@gitlab/gitlabhq
+      - merge_requests@gitlab-org/gitlab-ce
+      - merge_requests@gitlab/gitlabhq
+      - tags@gitlab-org/gitlab-ce
+      - tags@gitlab/gitlabhq
+
+.except-tags: &except-tags
+  except:
+    refs:
+      - tags
+
+.only-merge-requests: &only-merge-requests
+  only:
+    refs:
+      - merge_requests
+
+.only-docs: &only-docs
+  <<: *only-merge-requests
+  only:
+    variables:
+      - $CI_COMMIT_REF_NAME =~ /(^docs[\/-].*|.*-docs$)/
+
 .only-canonical-masters: &only-canonical-masters
   only:
     - master@gitlab-org/gitlab-ce
     - master@gitlab-org/gitlab-ee
     - master@gitlab/gitlabhq
     - master@gitlab/gitlab-ee
+
+.only-canonical-merge-requests: &only-canonical-merge-requests
+  only:
+    refs:
+      - merge_requests@gitlab-org/gitlab-ce
+      - merge_requests@gitlab-org/gitlab-ee
+      - merge_requests@gitlab/gitlabhq
+      - merge_requests@gitlab/gitlab-ee
+
+##
+# We cannot use `only: variables` for project restriction, because
+# it's already used for $CI_COMMIT_REF_NAME evaluation
+.only-canonical-default: &only-canonical-default
+  <<: *only-canonical-masters
+  <<: *only-canonical-merge-requests
+  only:
+    refs:
+      - /^[\d-]+-stable(-ee)?$/@gitlab-org/gitlab-ce
+      - /^[\d-]+-stable(-ee)?$/@gitlab-org/gitlab-ee
+      - /^[\d-]+-stable(-ee)?$/@gitlab/gitlabhq
+      - /^[\d-]+-stable(-ee)?$/@gitlab/gitlab-ee
+      - tags@gitlab-org/gitlab-ce
+      - tags@gitlab-org/gitlab-ee
+      - tags@gitlab/gitlabhq
+      - tags@gitlab/gitlab-ee
+
+.only-docs-canonical: &only-docs-canonical
+  <<: *only-canonical-merge-requests
+  only:
+    variables:
+      - $CI_COMMIT_REF_NAME =~ /(^docs[\/-].*|.*-docs$)/
 
 .gitlab-setup: &gitlab-setup
   <<: *dedicated-no-docs-and-no-qa-pull-cache-job
@@ -227,6 +297,7 @@ stages:
 # Trigger a package build in omnibus-gitlab repository
 #
 package-and-qa:
+  <<: *only-canonical-default
   image: ruby:2.5-alpine
   stage: test
   before_script: []
@@ -243,9 +314,6 @@ package-and-qa:
     - wait_for_job_to_be_done "gitlab:assets:compile"
     - ./scripts/trigger-build omnibus
   when: manual
-  only:
-    - //@gitlab-org/gitlab-ce
-    - //@gitlab-org/gitlab-ee
 
 # Review docs base
 .review-docs: &review-docs
@@ -264,32 +332,29 @@ package-and-qa:
 # Trigger a manual docs build in gitlab-docs only on non docs-only branches.
 # Useful to preview the docs changes live.
 review-docs-deploy-manual:
+  <<: *only-canonical-default
+  <<: *except-docs-and-qa
   <<: *review-docs
   stage: build
   script:
     - gem install gitlab --no-document
     - ./$SCRIPT_NAME deploy
   when: manual
-  only:
-    - branches@gitlab-org/gitlab-ce
-    - branches@gitlab-org/gitlab-ee
-  <<: *except-docs-and-qa
 
 # Always trigger a docs build in gitlab-docs only on docs-only branches.
 # Useful to preview the docs changes live.
 review-docs-deploy:
+  <<: *only-canonical-merge-requests
   <<: *review-docs
   stage: post-test
   script:
     - gem install gitlab --no-document
     - ./$SCRIPT_NAME deploy
-  only:
-    - /(^docs[\/-].*|.*-docs$)/@gitlab-org/gitlab-ce
-    - /(^docs[\/-].*|.*-docs$)/@gitlab-org/gitlab-ee
-  <<: *except-qa
 
 # Cleanup remote environment of gitlab-docs
 review-docs-cleanup:
+  <<: *only-canonical-default
+  <<: *except-tags
   <<: *review-docs
   stage: post-cleanup
   environment:
@@ -299,9 +364,6 @@ review-docs-cleanup:
     - gem install gitlab --no-document
     - ./$SCRIPT_NAME cleanup
   when: manual
-  only:
-    - branches@gitlab-org/gitlab-ce
-    - branches@gitlab-org/gitlab-ee
 
 ##
 # Trigger a docker image build in CNG (Cloud Native GitLab) repository
@@ -326,6 +388,7 @@ cloud-native-image:
 # Retrieve knapsack and rspec_flaky reports
 retrieve-tests-metadata:
   <<: *tests-metadata-state
+  <<: *only-default
   <<: *except-docs-and-qa
   stage: prepare
   cache:
@@ -360,6 +423,8 @@ update-tests-metadata:
     - rm -f rspec_flaky/all_*.json rspec_flaky/new_*.json
 
 flaky-examples-check:
+  <<: *only-merge-requests
+  <<: *except-docs-and-qa
   <<: *dedicated-runner
   image: ruby:2.5-alpine
   services: []
@@ -371,12 +436,6 @@ flaky-examples-check:
   stage: post-test
   allow_failure: true
   retry: 0
-  only:
-    - branches
-  except:
-    - master
-    - /(^docs[\/-].*|.*-docs$)/
-    - /(^qa[\/-].*|.*-qa$)/
   artifacts:
     expire_in: 30d
     paths:
@@ -396,6 +455,7 @@ flaky-examples-check:
 
 compile-assets:
   <<: *dedicated-runner
+  <<: *only-default
   <<: *except-docs
   <<: *use-pg
   stage: prepare
@@ -417,6 +477,7 @@ compile-assets:
 
 setup-test-env:
   <<: *dedicated-runner
+  <<: *only-default
   <<: *except-docs
   <<: *use-pg
   stage: prepare
@@ -434,15 +495,10 @@ setup-test-env:
 
 # GitLab Review apps
 .review-only: &review-only
+  <<: *only-canonical-merge-requests
+  <<: *except-docs
   only:
-    refs:
-      - branches@gitlab-org/gitlab-ce
-      - branches@gitlab-org/gitlab-ee
     kubernetes: active
-  except:
-    refs:
-      - master
-      - /(^docs[\/-].*|.*-docs$)/
 
 .review-base: &review-base
   <<: *dedicated-no-docs-no-db-pull-cache-job
@@ -480,6 +536,7 @@ build-qa-image:
     - time docker push ${QA_IMAGE}
 
 danger-review:
+  <<: *only-merge-requests
   <<: *pull-cache
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:danger
   stage: test
@@ -489,8 +546,6 @@ danger-review:
     variables:
       - $DANGER_GITLAB_API_TOKEN
   except:
-    refs:
-      - master
     variables:
       - $CI_COMMIT_REF_NAME =~ /^ce-to-ee-.*/
       - $CI_COMMIT_REF_NAME =~ /.*-stable(-ee)?-prepare-.*/
@@ -501,10 +556,12 @@ danger-review:
     - danger --fail-on-errors=true
 
 rspec-pg:
+  <<: *only-default
   <<: *rspec-metadata-pg
   parallel: 50
 
 rspec-mysql:
+  <<: *only-default
   <<: *rspec-metadata-mysql
   parallel: 50
 
@@ -516,16 +573,19 @@ rspec-mysql:
     - bin/rspec --color --format documentation --tag quarantine spec/
 
 rspec-pg-quarantine:
+  <<: *only-default
   <<: *rspec-metadata-pg
   <<: *rspec-quarantine
   allow_failure: true
 
 rspec-mysql-quarantine:
+  <<: *only-default
   <<: *rspec-metadata-mysql
   <<: *rspec-quarantine
   allow_failure: true
 
 static-analysis:
+  <<: *only-default
   <<: *dedicated-no-docs-no-db-pull-cache-job
   dependencies:
     - compile-assets
@@ -544,6 +604,7 @@ static-analysis:
 # - Make sure cURL examples in API docs use the full switches
 docs lint:
   <<: *dedicated-runner
+  <<: *only-default
   <<: *except-qa
   image: "registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-docs-lint"
   stage: test
@@ -561,24 +622,24 @@ docs lint:
     - bundle exec nanoc check internal_links
 
 downtime_check:
+  <<: *only-merge-requests
   <<: *rake-exec
   except:
-    - master
-    - tags
-    - /^[\d-]+-stable(-ee)?$/
-    - /(^docs[\/-].*|.*-docs$)/
-    - /(^qa[\/-].*|.*-qa$)/
+    variables:
+      - $CI_COMMIT_REF_NAME =~ /^[\d-]+-stable(-ee)?$/
+      - $CI_COMMIT_REF_NAME =~ /(^docs[\/-].*|.*-docs$)/
+      - $CI_COMMIT_REF_NAME =~ /(^qa[\/-].*|.*-qa$)/
 
 ee_compat_check:
+  <<: *only-merge-requests
   <<: *rake-exec
   dependencies: []
   except:
-    - master
-    - tags
-    - /[\d-]+-stable(-ee)?/
-    - /^security-/
-    - branches@gitlab-org/gitlab-ee
-    - branches@gitlab/gitlab-ee
+    variables:
+      - $CI_COMMIT_REF_NAME =~ /[\d-]+-stable(-ee)?/
+      - $CI_COMMIT_REF_NAME =~ /^security-/
+      - $CI_PROJECT_PATH == "gitlab-org/gitlab-ee"
+      - $CI_PROJECT_PATH == "gitlab/gitlab-ee"
   retry: 0
   artifacts:
     name: "${CI_JOB_NAME}_${CI_COMIT_REF_NAME}_${CI_COMMIT_SHA}"
@@ -588,24 +649,29 @@ ee_compat_check:
       - ee_compat_check/patches/*.patch
 
 db:migrate:reset-pg:
+  <<: *only-default
   <<: *db-migrate-reset
   <<: *use-pg
 
 db:migrate:reset-mysql:
+  <<: *only-default
   <<: *db-migrate-reset
   <<: *use-mysql
 
 db:check-schema-pg:
+  <<: *only-default
   <<: *db-migrate-reset
   <<: *use-pg
   script:
     - source scripts/schema_changed.sh
 
 migration:path-pg:
+  <<: *only-default
   <<: *migration-paths
   <<: *use-pg
 
 migration:path-mysql:
+  <<: *only-default
   <<: *migration-paths
   <<: *use-mysql
 
@@ -616,23 +682,28 @@ migration:path-mysql:
     - bundle exec rake db:migrate
 
 db:rollback-pg:
+  <<: *only-default
   <<: *db-rollback
   <<: *use-pg
 
 db:rollback-mysql:
+  <<: *only-default
   <<: *db-rollback
   <<: *use-mysql
 
 gitlab:setup-pg:
+  <<: *only-default
   <<: *gitlab-setup
   <<: *use-pg
 
 gitlab:setup-mysql:
+  <<: *only-default
   <<: *gitlab-setup
   <<: *use-mysql
 
 # Frontend-related jobs
 gitlab:assets:compile:
+  <<: *only-canonical-default
   <<: *dedicated-no-docs-pull-cache-job
   image: dev.gitlab.org:5005/gitlab/gitlab-build-images:ruby-2.5.3-git-2.18-chrome-71.0-node-8.x-yarn-1.12-graphicsmagick-1.3.29-docker-18.06.1
   dependencies:
@@ -673,6 +744,7 @@ gitlab:assets:compile:
     - high-cpu
 
 karma:
+  <<: *only-default
   <<: *dedicated-no-docs-pull-cache-job
   <<: *use-pg
   dependencies:
@@ -699,6 +771,7 @@ karma:
       junit: junit_karma.xml
 
 jest:
+  <<: *only-default
   <<: *dedicated-no-docs-and-no-qa-pull-cache-job
   <<: *use-pg
   dependencies:
@@ -725,6 +798,7 @@ jest:
       - tmp/jest/jest/
 
 code_quality:
+  <<: *only-default
   <<: *dedicated-no-docs-no-db-pull-cache-job
   image: docker:stable
   allow_failure: true
@@ -753,6 +827,7 @@ code_quality:
     expire_in: 1 week
 
 sast:
+  <<: *only-default
   <<: *dedicated-no-docs-no-db-pull-cache-job
   image: docker:stable
   variables:
@@ -777,6 +852,7 @@ sast:
       sast: gl-sast-report.json
 
 dependency_scanning:
+  <<: *only-default
   <<: *dedicated-no-docs-no-db-pull-cache-job
   image: docker:stable
   variables:
@@ -800,6 +876,7 @@ dependency_scanning:
       dependency_scanning: gl-dependency-scanning-report.json
 
 qa:internal:
+  <<: *only-default
   <<: *dedicated-no-docs-no-db-pull-cache-job
   services: []
   script:
@@ -808,6 +885,7 @@ qa:internal:
     - bundle exec rspec
 
 qa:selectors:
+  <<: *only-default
   <<: *dedicated-no-docs-no-db-pull-cache-job
   services: []
   script:
@@ -833,14 +911,17 @@ qa:selectors:
     - yarn run webpack-prod
 
 qa-frontend-node:8:
+  <<: *only-default
   <<: *qa-frontend-node
   image: node:8-alpine
 
 qa-frontend-node:10:
+  <<: *only-default
   <<: *qa-frontend-node
   image: node:10-alpine
 
 qa-frontend-node:latest:
+  <<: *only-default
   <<: *qa-frontend-node
   image: node:alpine
   allow_failure: true
@@ -849,6 +930,7 @@ coverage:
   # Don't include dedicated-no-docs-no-db-pull-cache-job here since we need to
   # download artifacts from all the rspec jobs instead of from setup-test-env only
   <<: *dedicated-runner
+  <<: *only-default
   <<: *except-docs-and-qa
   <<: *pull-cache
   variables:
@@ -865,6 +947,7 @@ coverage:
     - coverage/assets/
 
 lint:javascript:report:
+  <<: *only-default
   <<: *dedicated-no-docs-and-no-qa-pull-cache-job
   stage: post-test
   dependencies: []
@@ -879,6 +962,7 @@ lint:javascript:report:
       - eslint-report.html
 
 jsdoc:
+  <<: *only-default
   <<: *dedicated-no-docs-pull-cache-job
   stage: post-test
   dependencies:
@@ -936,6 +1020,7 @@ cache gems:
 
 gitlab_git_test:
   <<: *dedicated-runner
+  <<: *only-default
   <<: *except-docs-and-qa
   variables:
     SETUP_DB: "false"
@@ -947,6 +1032,7 @@ gitlab_git_test:
 
 no_ee_check:
   <<: *dedicated-runner
+  <<: *only-canonical-ce-default
   <<: *except-docs-and-qa
   variables:
     SETUP_DB: "false"
@@ -955,11 +1041,10 @@ no_ee_check:
   cache: {}
   script:
     - scripts/no-ee-check
-  only:
-    - //@gitlab-org/gitlab-ce
 
 # GitLab Review apps
 review-build-cng:
+  <<: *only-default
   <<: *review-only
   image: ruby:2.5-alpine
   stage: test
