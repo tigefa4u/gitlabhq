@@ -24,7 +24,7 @@
     // Compile JS files
     "allowJs": true,
     // Check JS files
-    "checkJs": true,
+    "checkJs": false,
     // Emit no files, we are just using it as a type checker
     "noEmit": true,
     // False for now to reduce amount of errors
