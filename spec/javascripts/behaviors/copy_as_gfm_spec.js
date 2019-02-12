@@ -1,4 +1,4 @@
-import initCopyAsGFM, { CopyAsGFM } from '~/behaviors/markdown/copy_as_gfm';
+import { CopyAsGFM } from '~/behaviors/markdown/copy_as_gfm';
 
 describe('CopyAsGFM', () => {
   describe('CopyAsGFM.pasteGFM', () => {
@@ -79,46 +79,27 @@ describe('CopyAsGFM', () => {
       return clipboardData;
     };
 
-    beforeAll(done => {
-      initCopyAsGFM();
-
-      // Fake call to nodeToGfm so the import of lazy bundle happened
-      CopyAsGFM.nodeToGFM(document.createElement('div'))
-        .then(() => {
-          done();
-        })
-        .catch(done.fail);
-    });
-
     beforeEach(() => spyOn(clipboardData, 'setData'));
 
     describe('list handling', () => {
-      it('uses correct gfm for unordered lists', done => {
+      it('uses correct gfm for unordered lists', () => {
         const selection = stubSelection('<li>List Item1</li><li>List Item2</li>\n', 'UL');
-
         spyOn(window, 'getSelection').and.returnValue(selection);
         simulateCopy();
 
-        setTimeout(() => {
-          const expectedGFM = '* List Item1\n\n* List Item2';
+        const expectedGFM = '* List Item1\n\n* List Item2';
 
-          expect(clipboardData.setData).toHaveBeenCalledWith('text/x-gfm', expectedGFM);
-          done();
-        });
+        expect(clipboardData.setData).toHaveBeenCalledWith('text/x-gfm', expectedGFM);
       });
 
-      it('uses correct gfm for ordered lists', done => {
+      it('uses correct gfm for ordered lists', () => {
         const selection = stubSelection('<li>List Item1</li><li>List Item2</li>\n', 'OL');
-
         spyOn(window, 'getSelection').and.returnValue(selection);
         simulateCopy();
 
-        setTimeout(() => {
-          const expectedGFM = '1. List Item1\n\n1. List Item2';
+        const expectedGFM = '1. List Item1\n\n1. List Item2';
 
-          expect(clipboardData.setData).toHaveBeenCalledWith('text/x-gfm', expectedGFM);
-          done();
-        });
+        expect(clipboardData.setData).toHaveBeenCalledWith('text/x-gfm', expectedGFM);
       });
     });
   });

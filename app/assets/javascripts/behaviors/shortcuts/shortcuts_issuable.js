@@ -64,30 +64,26 @@ export default class ShortcutsIssuable extends Shortcuts {
     const el = CopyAsGFM.transformGFMSelection(documentFragment.cloneNode(true));
     const blockquoteEl = document.createElement('blockquote');
     blockquoteEl.appendChild(el);
-    CopyAsGFM.nodeToGFM(blockquoteEl)
-      .then(text => {
-        if (text.trim() === '') {
-          return false;
-        }
+    const text = CopyAsGFM.nodeToGFM(blockquoteEl);
 
-        // If replyField already has some content, add a newline before our quote
-        const separator = ($replyField.val().trim() !== '' && '\n\n') || '';
-        $replyField
-          .val((a, current) => `${current}${separator}${text}\n\n`)
-          .trigger('input')
-          .trigger('change');
+    if (text.trim() === '') {
+      return false;
+    }
 
-        // Trigger autosize
-        const event = document.createEvent('Event');
-        event.initEvent('autosize:update', true, false);
-        $replyField.get(0).dispatchEvent(event);
+    // If replyField already has some content, add a newline before our quote
+    const separator = ($replyField.val().trim() !== '' && '\n\n') || '';
+    $replyField
+      .val((a, current) => `${current}${separator}${text}\n\n`)
+      .trigger('input')
+      .trigger('change');
 
-        // Focus the input field
-        $replyField.focus();
+    // Trigger autosize
+    const event = document.createEvent('Event');
+    event.initEvent('autosize:update', true, false);
+    $replyField.get(0).dispatchEvent(event);
 
-        return false;
-      })
-      .catch(() => {});
+    // Focus the input field
+    $replyField.focus();
 
     return false;
   }
