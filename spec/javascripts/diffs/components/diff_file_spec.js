@@ -9,7 +9,7 @@ describe('DiffFile', () => {
   let vm;
   const diffFileMock = {
     ...diffFileMockData,
-    parallel_diff_lines: parallelize(diffFileMockData.highlighted_diff_lines),
+    parallel_diff_lines: parallelizeDiffLines(diffFileMockData.highlighted_diff_lines),
   };
 
   beforeEach(() => {

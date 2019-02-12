@@ -36,7 +36,7 @@ describe('DiffsStoreMutations', () => {
         diff_files: [
           {
             ...diffFileMockData,
-            parallel_diff_lines: parallelize(diffFileMockData.highlighted_diff_lines),
+            parallel_diff_lines: parallelizeDiffLines(diffFileMockData.highlighted_diff_lines),
           },
         ],
       };
@@ -116,7 +116,7 @@ describe('DiffsStoreMutations', () => {
 
       expect(addContextLinesSpy).toHaveBeenCalledWith({
         inlineLines: diffFile.highlighted_diff_lines,
-        parallelLines: parallelize(diffFile.highlighted_diff_lines),
+        parallelLines: parallelizeDiffLines(diffFile.highlighted_diff_lines),
         contextLines: options.contextLines,
         bottom: options.params.bottom,
         lineNumbers: options.lineNumbers,

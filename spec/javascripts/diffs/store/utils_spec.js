@@ -18,13 +18,13 @@ import { noteableDataMock } from '../../notes/mock_data';
 
 const getDiffFileMock = () =>
   Object.assign({}, diffFileMockData, {
-    parallel_diff_lines: utils.parallelize(diffFileMockData.highlighted_diff_lines),
+    parallel_diff_lines: utils.parallelizeDiffLines(diffFileMockData.highlighted_diff_lines),
   });
 
 describe('DiffsStoreUtils', () => {
   describe('parallelize', () => {
     it('returns empty array for undefined', () => {
-      expect(utils.parallelize()).toEqual([]);
+      expect(utils.parallelizeDiffLines()).toEqual([]);
     });
 
     it('puts old lines on the left', () => {
@@ -36,7 +36,7 @@ describe('DiffsStoreUtils', () => {
       };
       const highlightedDiffLines = [lineOne, lineTwo];
 
-      expect(utils.parallelize(highlightedDiffLines)).toEqual([
+      expect(utils.parallelizeDiffLines(highlightedDiffLines)).toEqual([
         {
           left: lineOne,
           right: null,
@@ -57,7 +57,7 @@ describe('DiffsStoreUtils', () => {
       };
       const highlightedDiffLines = [lineOne, lineTwo];
 
-      expect(utils.parallelize(highlightedDiffLines)).toEqual([
+      expect(utils.parallelizeDiffLines(highlightedDiffLines)).toEqual([
         {
           left: null,
           right: lineOne,
@@ -75,7 +75,7 @@ describe('DiffsStoreUtils', () => {
       };
       const highlightedDiffLines = [line];
 
-      expect(utils.parallelize(highlightedDiffLines)).toEqual([
+      expect(utils.parallelizeDiffLines(highlightedDiffLines)).toEqual([
         {
           left: line,
           right: line,
@@ -95,7 +95,7 @@ describe('DiffsStoreUtils', () => {
       };
       const highlightedDiffLines = [oldLineOne, oldLineTwo, newLine];
 
-      expect(utils.parallelize(highlightedDiffLines)).toEqual([
+      expect(utils.parallelizeDiffLines(highlightedDiffLines)).toEqual([
         {
           left: oldLineOne,
           right: newLine,

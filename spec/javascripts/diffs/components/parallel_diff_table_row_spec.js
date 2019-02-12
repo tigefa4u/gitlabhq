@@ -15,7 +15,7 @@ describe('ParallelDiffTableRow', () => {
     beforeEach(() => {
       diffFileMock = {
         ...diffFileMockData,
-        parallel_diff_lines: parallelize(diffFileMockData.highlighted_diff_lines),
+        parallel_diff_lines: parallelizeDiffLines(diffFileMockData.highlighted_diff_lines),
       };
 
       // eslint-disable-next-line prefer-destructuring
@@ -63,7 +63,7 @@ describe('ParallelDiffTableRow', () => {
     beforeEach(() => {
       diffFileMock = {
         ...diffFileMockData,
-        parallel_diff_lines: parallelize(diffFileMockData.highlighted_diff_lines),
+        parallel_diff_lines: parallelizeDiffLines(diffFileMockData.highlighted_diff_lines),
       };
 
       // eslint-disable-next-line prefer-destructuring
