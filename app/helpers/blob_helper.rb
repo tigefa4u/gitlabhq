@@ -177,7 +177,8 @@ module BlobHelper
       'relative-url-root' => Rails.application.config.relative_url_root,
       'assets-prefix' => Gitlab::Application.config.assets.prefix,
       'blob-filename' => @blob && @blob.path,
-      'project-id' => project.id
+      'project-id' => project.id,
+      'is-markdown' => @blob && @blob.path && Gitlab::MarkupHelper.gitlab_markdown?(@blob.path)
     }
   end
 
@@ -193,7 +194,7 @@ module BlobHelper
 
   def open_raw_blob_button(blob)
     return if blob.empty?
-    return if blob.raw_binary? || blob.stored_externally?
+    return if blob.binary? || blob.stored_externally?
 
     title = 'Open raw'
     link_to icon('file-code-o'), blob_raw_path, class: 'btn btn-sm has-tooltip', target: '_blank', rel: 'noopener noreferrer', title: title, data: { container: 'body' }

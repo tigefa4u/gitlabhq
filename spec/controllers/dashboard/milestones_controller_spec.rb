@@ -52,8 +52,26 @@ describe Dashboard::MilestonesController do
 
       expect(response).to have_gitlab_http_status(200)
       expect(json_response.size).to eq(2)
-      expect(json_response.map { |i| i["first_milestone"]["id"] }).to match_array([group_milestone.id, project_milestone.id])
+      expect(json_response.map { |i| i["name"] }).to match_array([group_milestone.name, project_milestone.name])
       expect(json_response.map { |i| i["group_name"] }.compact).to match_array(group.name)
+    end
+
+    it 'searches legacy project milestones by title when search_title is given' do
+      project_milestone = create(:milestone, title: 'Project milestone title', project: project)
+
+      get :index, params: { search_title: 'Project mil' }
+
+      expect(response.body).to include(project_milestone.title)
+      expect(response.body).not_to include(group_milestone.title)
+    end
+
+    it 'searches group milestones by title when search_title is given' do
+      group_milestone = create(:milestone, title: 'Group milestone title', group: group)
+
+      get :index, params: { search_title: 'Group mil' }
+
+      expect(response.body).to include(group_milestone.title)
+      expect(response.body).not_to include(project_milestone.title)
     end
 
     it 'should contain group and project milestones to which the user belongs to' do

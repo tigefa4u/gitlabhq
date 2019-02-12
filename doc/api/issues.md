@@ -31,6 +31,7 @@ GET /issues?iids[]=42&iids[]=43
 GET /issues?author_id=5
 GET /issues?assignee_id=5
 GET /issues?my_reaction_emoji=star
+GET /issues?search=foo&in=title
 ```
 
 | Attribute           | Type             | Required   | Description                                                                                                                                         |
@@ -46,13 +47,14 @@ GET /issues?my_reaction_emoji=star
 | `order_by`          | string           | no         | Return issues ordered by `created_at` or `updated_at` fields. Default is `created_at`                                                               |
 | `sort`              | string           | no         | Return issues sorted in `asc` or `desc` order. Default is `desc`                                                                                    |
 | `search`            | string           | no         | Search issues against their `title` and `description`                                                                                               |
+| `in`                | string           | no         | Modify the scope of the `search` attribute. `title`, `description`, or a string joining them with comma. Default is `title,description`              |
 | `created_after`     | datetime         | no         | Return issues created on or after the given time                                                                                                    |
 | `created_before`    | datetime         | no         | Return issues created on or before the given time                                                                                                   |
 | `updated_after`     | datetime         | no         | Return issues updated on or after the given time                                                                                                    |
 | `updated_before`    | datetime         | no         | Return issues updated on or before the given time                                                                                                   |
 
 ```bash
-curl --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/issues
+curl --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/issues
 ```
 
 Example response:
@@ -106,6 +108,8 @@ Example response:
       "created_at" : "2016-01-04T15:31:51.081Z",
       "iid" : 6,
       "labels" : [],
+      "upvotes": 4,
+      "downvotes": 0,
       "user_notes_count": 1,
       "due_date": "2016-07-22",
       "web_url": "http://example.com/example/example/issues/6",
@@ -166,7 +170,7 @@ GET /groups/:id/issues?my_reaction_emoji=star
 
 
 ```bash
-curl --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/groups/4/issues
+curl --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/groups/4/issues
 ```
 
 Example response:
@@ -214,6 +218,8 @@ Example response:
          "name" : "Dr. Luella Kovacek"
       },
       "labels" : [],
+      "upvotes": 4,
+      "downvotes": 0,
       "id" : 41,
       "title" : "Ut commodi ullam eos dolores perferendis nihil sunt.",
       "updated_at" : "2016-01-04T15:31:46.176Z",
@@ -279,7 +285,7 @@ GET /projects/:id/issues?my_reaction_emoji=star
 | `updated_before`    | datetime         | no         | Return issues updated on or before the given time                                                                             |
 
 ```bash
-curl --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/4/issues
+curl --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/4/issues
 ```
 
 Example response:
@@ -327,6 +333,8 @@ Example response:
          "name" : "Dr. Luella Kovacek"
       },
       "labels" : [],
+      "upvotes": 4,
+      "downvotes": 0,
       "id" : 41,
       "title" : "Ut commodi ullam eos dolores perferendis nihil sunt.",
       "updated_at" : "2016-01-04T15:31:46.176Z",
@@ -373,7 +381,7 @@ GET /projects/:id/issues/:issue_iid
 | `issue_iid` | integer | yes      | The internal ID of a project's issue |
 
 ```bash
-curl --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/4/issues/41
+curl --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/4/issues/41
 ```
 
 Example response:
@@ -421,6 +429,8 @@ Example response:
       "name" : "Dr. Luella Kovacek"
    },
    "labels" : [],
+   "upvotes": 4,
+   "downvotes": 0,
    "id" : 41,
    "title" : "Ut commodi ullam eos dolores perferendis nihil sunt.",
    "updated_at" : "2016-01-04T15:31:46.176Z",
@@ -476,7 +486,7 @@ POST /projects/:id/issues
 | `discussion_to_resolve`                   | string  | no       | The ID of a discussion to resolve. This will fill in the issue with a default description and mark the discussion as resolved. Use in combination with `merge_request_to_resolve_discussions_of`. |
 
 ```bash
-curl --request POST --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/4/issues?title=Issues%20with%20auth&labels=bug
+curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/4/issues?title=Issues%20with%20auth&labels=bug
 ```
 
 Example response:
@@ -494,6 +504,8 @@ Example response:
    "labels" : [
       "bug"
    ],
+   "upvotes": 4,
+   "downvotes": 0,
    "author" : {
       "name" : "Alexandra Bashirian",
       "avatar_url" : null,
@@ -558,7 +570,7 @@ PUT /projects/:id/issues/:issue_iid
 
 
 ```bash
-curl --request PUT --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/4/issues/85?state_event=close
+curl --request PUT --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/4/issues/85?state_event=close
 ```
 
 Example response:
@@ -592,6 +604,8 @@ Example response:
    "labels" : [
       "bug"
    ],
+   "upvotes": 4,
+   "downvotes": 0,
    "id" : 85,
    "assignees" : [],
    "assignee" : null,
@@ -635,7 +649,7 @@ DELETE /projects/:id/issues/:issue_iid
 | `issue_iid` | integer | yes      | The internal ID of a project's issue |
 
 ```bash
-curl --request DELETE --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/4/issues/85
+curl --request DELETE --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/4/issues/85
 ```
 
 ## Move an issue
@@ -658,7 +672,7 @@ POST /projects/:id/issues/:issue_iid/move
 | `to_project_id` | integer | yes      | The ID of the new project            |
 
 ```bash
-curl --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" --form to_project_id=5 https://gitlab.example.com/api/v4/projects/4/issues/85/move
+curl --header "PRIVATE-TOKEN: <your_access_token>" --form to_project_id=5 https://gitlab.example.com/api/v4/projects/4/issues/85/move
 ```
 
 Example response:
@@ -676,6 +690,8 @@ Example response:
   "closed_at": null,
   "closed_by": null,
   "labels": [],
+  "upvotes": 4,
+  "downvotes": 0,
   "milestone": null,
   "assignees": [{
     "name": "Miss Monserrate Beier",
@@ -740,7 +756,7 @@ POST /projects/:id/issues/:issue_iid/subscribe
 | `issue_iid` | integer | yes      | The internal ID of a project's issue |
 
 ```bash
-curl --request POST --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/5/issues/93/subscribe
+curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/5/issues/93/subscribe
 ```
 
 Example response:
@@ -758,6 +774,8 @@ Example response:
   "closed_at": null,
   "closed_by": null,
   "labels": [],
+  "upvotes": 4,
+  "downvotes": 0,
   "milestone": null,
   "assignees": [{
     "name": "Miss Monserrate Beier",
@@ -823,7 +841,7 @@ POST /projects/:id/issues/:issue_iid/unsubscribe
 | `issue_iid` | integer | yes      | The internal ID of a project's issue |
 
 ```bash
-curl --request POST --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/5/issues/93/unsubscribe
+curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/5/issues/93/unsubscribe
 ```
 
 Example response:
@@ -839,6 +857,8 @@ Example response:
   "created_at": "2016-04-05T21:41:45.217Z",
   "updated_at": "2016-04-07T13:02:37.905Z",
   "labels": [],
+  "upvotes": 4,
+  "downvotes": 0,
   "milestone": null,
   "assignee": {
     "name": "Edwardo Grady",
@@ -882,7 +902,7 @@ POST /projects/:id/issues/:issue_iid/todo
 | `issue_iid` | integer | yes      | The internal ID of a project's issue |
 
 ```bash
-curl --request POST --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/5/issues/93/todo
+curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/5/issues/93/todo
 ```
 
 Example response:
@@ -988,7 +1008,7 @@ POST /projects/:id/issues/:issue_iid/time_estimate
 | `duration`  | string  | yes      | The duration in human format. e.g: 3h30m |
 
 ```bash
-curl --request POST --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/5/issues/93/time_estimate?duration=3h30m
+curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/5/issues/93/time_estimate?duration=3h30m
 ```
 
 Example response:
@@ -1016,7 +1036,7 @@ POST /projects/:id/issues/:issue_iid/reset_time_estimate
 | `issue_iid` | integer | yes      | The internal ID of a project's issue |
 
 ```bash
-curl --request POST --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/5/issues/93/reset_time_estimate
+curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/5/issues/93/reset_time_estimate
 ```
 
 Example response:
@@ -1045,7 +1065,7 @@ POST /projects/:id/issues/:issue_iid/add_spent_time
 | `duration`  | string  | yes      | The duration in human format. e.g: 3h30m |
 
 ```bash
-curl --request POST --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/5/issues/93/add_spent_time?duration=1h
+curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/5/issues/93/add_spent_time?duration=1h
 ```
 
 Example response:
@@ -1073,7 +1093,7 @@ POST /projects/:id/issues/:issue_iid/reset_spent_time
 | `issue_iid` | integer | yes      | The internal ID of a project's issue |
 
 ```bash
-curl --request POST --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/5/issues/93/reset_spent_time
+curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/5/issues/93/reset_spent_time
 ```
 
 Example response:
@@ -1099,7 +1119,7 @@ GET /projects/:id/issues/:issue_iid/time_stats
 | `issue_iid` | integer | yes      | The internal ID of a project's issue |
 
 ```bash
-curl --request GET --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/5/issues/93/time_stats
+curl --request GET --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/5/issues/93/time_stats
 ```
 
 Example response:
@@ -1127,7 +1147,7 @@ GET /projects/:id/issues/:issue_id/related_merge_requests
 | `issue_iid` | integer | yes      | The internal ID of a project's issue |
 
 ```sh
-curl --request GET --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/1/issues/11/related_merge_requests
+curl --request GET --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/1/issues/11/related_merge_requests
 ```
 
 Example response:
@@ -1214,7 +1234,7 @@ GET /projects/:id/issues/:issue_iid/closed_by
 | `issue_iid` | integer | yes      | The internal ID of a project issue   |
 
 ```bash
-curl --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/1/issues/11/closed_by
+curl --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/1/issues/11/closed_by
 ```
 
 Example response:
@@ -1281,7 +1301,7 @@ GET /projects/:id/issues/:issue_iid/participants
 | `issue_iid` | integer | yes      | The internal ID of a project's issue |
 
 ```bash
-curl --request GET --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/5/issues/93/participants
+curl --request GET --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/5/issues/93/participants
 ```
 
 Example response:
@@ -1326,7 +1346,7 @@ GET /projects/:id/issues/:issue_iid/user_agent_detail
 | `issue_iid` | integer | yes      | The internal ID of a project's issue |
 
 ```bash
-curl --request GET --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/5/issues/93/user_agent_detail
+curl --request GET --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/5/issues/93/user_agent_detail
 ```
 
 Example response:

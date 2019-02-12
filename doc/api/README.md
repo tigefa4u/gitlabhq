@@ -16,6 +16,7 @@ The following API resources are available:
 - [Broadcast messages](broadcast_messages.md)
 - [Code snippets](snippets.md)
 - [Commits](commits.md)
+- [Container Registry](container_registry.md)
 - [Custom attributes](custom_attributes.md)
 - [Deploy keys](deploy_keys.md), and [deploy keys for multiple projects](deploy_key_multiple_projects.md)
 - [Deployments](deployments.md)
@@ -28,6 +29,7 @@ The following API resources are available:
   - [Group access requests](access_requests.md)
   - [Group badges](group_badges.md)
   - [Group issue boards](group_boards.md)
+  - [Group labels](group_labels.md)
   - [Group-level variables](group_level_variables.md)
   - [Group members](members.md)
   - [Group milestones](group_milestones.md)
@@ -49,8 +51,10 @@ The following API resources are available:
   - [Projects](projects.md) including setting Webhooks
   - [Project access requests](access_requests.md)
   - [Project badges](project_badges.md)
+  - [Project clusters](project_clusters.md)
   - [Project-level variables](project_level_variables.md)
   - [Project import/export](project_import_export.md)
+  - [Project import from GitHub](import.md)
   - [Project members](members.md)
   - [Project milestones](milestones.md)
   - [Project snippets](project_snippets.md)
@@ -68,6 +72,9 @@ The following API resources are available:
 - [Sidekiq metrics](sidekiq_metrics.md)
 - [System hooks](system_hooks.md)
 - [Tags](tags.md)
+- [Releases](releases/index.md)
+- Release Assets
+  - [Links](releases/links.md)
 - [Todos](todos.md)
 - [Users](users.md)
 - [Validate CI configuration](lint.md) (linting)
@@ -194,13 +201,13 @@ You can use a [personal access token][pat] to authenticate with the API by passi
 Example of using the personal access token in a parameter:
 
 ```shell
-curl https://gitlab.example.com/api/v4/projects?private_token=9koXpg98eAheJpvBs5tK
+curl https://gitlab.example.com/api/v4/projects?private_token=<your_access_token>
 ```
 
 Example of using the personal access token in a header:
 
 ```shell
-curl --header "Private-Token: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects
+curl --header "Private-Token: <your_access_token>" https://gitlab.example.com/api/v4/projects
 ```
 
 Read more about [personal access tokens][pat].
@@ -319,22 +326,22 @@ Example of a valid API call and a request using cURL with sudo request,
 providing a username:
 
 ```
-GET /projects?private_token=9koXpg98eAheJpvBs5tK&sudo=username
+GET /projects?private_token=<your_access_token>&sudo=username
 ```
 
 ```shell
-curl --header "Private-Token: 9koXpg98eAheJpvBs5tK" --header "Sudo: username" "https://gitlab.example.com/api/v4/projects"
+curl --header "Private-Token: <your_access_token>" --header "Sudo: username" "https://gitlab.example.com/api/v4/projects"
 ```
 
 Example of a valid API call and a request using cURL with sudo request,
 providing an ID:
 
 ```
-GET /projects?private_token=9koXpg98eAheJpvBs5tK&sudo=23
+GET /projects?private_token=<your_access_token>&sudo=23
 ```
 
 ```shell
-curl --header "Private-Token: 9koXpg98eAheJpvBs5tK" --header "Sudo: 23" "https://gitlab.example.com/api/v4/projects"
+curl --header "Private-Token: <your_access_token>" --header "Sudo: 23" "https://gitlab.example.com/api/v4/projects"
 ```
 
 ## Status codes
@@ -383,7 +390,7 @@ resources you can pass the following parameters:
 In the example below, we list 50 [namespaces](namespaces.md) per page.
 
 ```bash
-curl --request PUT --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" "https://gitlab.example.com/api/v4/namespaces?per_page=50
+curl --request PUT --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/namespaces?per_page=50
 ```
 
 ### Pagination Link header
@@ -397,7 +404,7 @@ and we request the second page (`page=2`) of [comments](notes.md) of the issue
 with ID `8` which belongs to the project with ID `8`:
 
 ```bash
-curl --head --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/8/issues/8/notes?per_page=3&page=2
+curl --head --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/8/issues/8/notes?per_page=3&page=2
 ```
 
 The response will then be:
@@ -434,6 +441,14 @@ Additional pagination headers are also sent back.
 | `X-Next-Page`   | The index of the next page |
 | `X-Prev-Page`   | The index of the previous page |
 
+CAUTION: **Caution:**
+For performance reasons since
+[GitLab 11.8](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/23931)
+and **behind the `api_kaminari_count_with_limit`
+[feature flag](../development/feature_flags.md)**, if the number of resources is
+more than 10,000, the `X-Total` and `X-Total-Pages` headers as well as the
+`rel="last"` `Link` are not present in the response headers.
+
 ## Namespaced path encoding
 
 If using namespaced API calls, make sure that the `NAMESPACE/PROJECT_NAME` is
@@ -465,7 +480,7 @@ We can call the API with `array` and `hash` types parameters as shown below:
 `import_sources` is a parameter of type `array`:
 
 ```bash
-curl --request POST --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" \
+curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" \
 -d "import_sources[]=github" \
 -d "import_sources[]=bitbucket" \
 "https://gitlab.example.com/api/v4/some_endpoint
@@ -476,7 +491,7 @@ curl --request POST --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" \
 `override_params` is a parameter of type `hash`:
 
 ```bash
-curl --request POST --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" \
+curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" \
 --form "namespace=email" \
 --form "path=impapi" \
 --form "file=@/path/to/somefile.txt"
@@ -592,7 +607,7 @@ Content-Type: application/json
 ## Encoding `+` in ISO 8601 dates
 
 If you need to include a `+` in a query parameter, you may need to use `%2B` instead due
-a [W3 recommendation](http://www.w3.org/Addressing/URL/4_URI_Recommentations.html) that
+to a [W3 recommendation](http://www.w3.org/Addressing/URL/4_URI_Recommentations.html) that
 causes a `+` to be interpreted as a space. For example, in an ISO 8601 date, you may want to pass
 a time in Mountain Standard Time, such as:
 

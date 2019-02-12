@@ -77,7 +77,7 @@ describe Issues::UpdateService, :mailer do
       end
 
       it 'enqueues ConfidentialIssueWorker when an issue is made confidential' do
-        expect(TodosDestroyer::ConfidentialIssueWorker).to receive(:perform_in).with(1.hour, issue.id)
+        expect(TodosDestroyer::ConfidentialIssueWorker).to receive(:perform_in).with(Todo::WAIT_FOR_DELETE, issue.id)
 
         update_issue(confidential: true)
       end
@@ -470,6 +470,8 @@ describe Issues::UpdateService, :mailer do
       end
 
       it { expect(issue.tasks?).to eq(true) }
+
+      it_behaves_like 'updating a single task'
 
       context 'when tasks are marked as completed' do
         before do

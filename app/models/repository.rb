@@ -25,6 +25,7 @@ class Repository
   delegate :bundle_to_disk, to: :raw_repository
 
   CreateTreeError = Class.new(StandardError)
+  AmbiguousRefError = Class.new(StandardError)
 
   # Methods that cache data from the Git repository.
   #
@@ -179,6 +180,18 @@ class Repository
 
   def find_tag(name)
     tags.find { |tag| tag.name == name }
+  end
+
+  def ambiguous_ref?(ref)
+    tag_exists?(ref) && branch_exists?(ref)
+  end
+
+  def expand_ref(ref)
+    if tag_exists?(ref)
+      Gitlab::Git::TAG_REF_PREFIX + ref
+    elsif branch_exists?(ref)
+      Gitlab::Git::BRANCH_REF_PREFIX + ref
+    end
   end
 
   def add_branch(user, branch_name, ref)
@@ -512,6 +525,8 @@ class Repository
 
   # items is an Array like: [[oid, path], [oid1, path1]]
   def blobs_at(items)
+    return [] unless exists?
+
     raw_repository.batch_blobs(items).map { |blob| Blob.decorate(blob, project) }
   end
 
@@ -599,7 +614,6 @@ class Repository
     return unless readme
 
     context = { project: project }
-    context[:markdown_engine] = :redcarpet unless MarkupHelper.commonmark_for_repositories_enabled?
 
     MarkupHelper.markup_unsafe(readme.name, readme.data, context)
   end
@@ -1016,12 +1030,12 @@ class Repository
                                        remote_branch: merge_request.target_branch)
   end
 
-  def squash(user, merge_request)
+  def squash(user, merge_request, message)
     raw.squash(user, merge_request.id, branch: merge_request.target_branch,
                                        start_sha: merge_request.diff_start_sha,
                                        end_sha: merge_request.diff_head_sha,
                                        author: merge_request.author,
-                                       message: merge_request.title)
+                                       message: message)
   end
 
   def update_submodule(user, submodule, commit_sha, message:, branch:)
@@ -1059,19 +1073,11 @@ class Repository
   end
 
   def cache
-    @cache ||= if is_wiki
-                 Gitlab::RepositoryCache.new(self, extra_namespace: 'wiki')
-               else
-                 Gitlab::RepositoryCache.new(self)
-               end
+    @cache ||= Gitlab::RepositoryCache.new(self)
   end
 
   def request_store_cache
-    @request_store_cache ||= if is_wiki
-                               Gitlab::RepositoryCache.new(self, extra_namespace: 'wiki', backend: Gitlab::SafeRequestStore)
-                             else
-                               Gitlab::RepositoryCache.new(self, backend: Gitlab::SafeRequestStore)
-                             end
+    @request_store_cache ||= Gitlab::RepositoryCache.new(self, backend: Gitlab::SafeRequestStore)
   end
 
   def tags_sorted_by_committed_date
@@ -1098,6 +1104,9 @@ class Repository
   end
 
   def initialize_raw_repository
-    Gitlab::Git::Repository.new(project.repository_storage, disk_path + '.git', Gitlab::GlRepository.gl_repository(project, is_wiki))
+    Gitlab::Git::Repository.new(project.repository_storage,
+                                disk_path + '.git',
+                                Gitlab::GlRepository.gl_repository(project, is_wiki),
+                                project.full_path)
   end
 end

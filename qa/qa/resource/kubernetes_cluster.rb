@@ -6,10 +6,14 @@ module QA
   module Resource
     class KubernetesCluster < Base
       attr_writer :project, :cluster,
-        :install_helm_tiller, :install_ingress, :install_prometheus, :install_runner
+        :install_helm_tiller, :install_ingress, :install_prometheus, :install_runner, :domain
 
       attribute :ingress_ip do
         Page::Project::Operations::Kubernetes::Show.perform(&:ingress_ip)
+      end
+
+      attribute :domain do
+        "#{ingress_ip}.nip.io"
       end
 
       def fabricate!
@@ -29,7 +33,7 @@ module QA
           page.set_api_url(@cluster.api_url)
           page.set_ca_certificate(@cluster.ca_certificate)
           page.set_token(@cluster.token)
-          page.check_rbac! if @cluster.rbac
+          page.uncheck_rbac! unless @cluster.rbac
           page.add_cluster!
         end
 

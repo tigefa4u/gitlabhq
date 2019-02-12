@@ -153,7 +153,6 @@ describe Gitlab::Ci::Config::Entry::Global do
               rspec: { name: :rspec,
                        script: %w[rspec ls],
                        before_script: %w(ls pwd),
-                       commands: "ls\npwd\nrspec\nls",
                        image: { name: 'ruby:2.2' },
                        services: [{ name: 'postgres:9.1' }, { name: 'mysql:5.5' }],
                        stage: 'test',
@@ -161,12 +160,10 @@ describe Gitlab::Ci::Config::Entry::Global do
                        variables: { 'VAR' => 'value' },
                        ignore: false,
                        after_script: ['make clean'],
-                       only: { refs: %w[branches tags] },
-                       except: {} },
+                       only: { refs: %w[branches tags] } },
               spinach: { name: :spinach,
                          before_script: [],
                          script: %w[spinach],
-                         commands: 'spinach',
                          image: { name: 'ruby:2.2' },
                          services: [{ name: 'postgres:9.1' }, { name: 'mysql:5.5' }],
                          stage: 'test',
@@ -174,8 +171,7 @@ describe Gitlab::Ci::Config::Entry::Global do
                          variables: {},
                          ignore: false,
                          after_script: ['make clean'],
-                         only: { refs: %w[branches tags] },
-                         except: {} }
+                         only: { refs: %w[branches tags] } }
             )
           end
         end

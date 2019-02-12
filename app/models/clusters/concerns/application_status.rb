@@ -20,7 +20,7 @@ module Clusters
           state :update_errored, value: 6
 
           event :make_scheduled do
-            transition [:installable, :errored] => :scheduled
+            transition [:installable, :errored, :installed, :updated, :update_errored] => :scheduled
           end
 
           event :make_installing do
@@ -29,18 +29,16 @@ module Clusters
 
           event :make_installed do
             transition [:installing] => :installed
+            transition [:updating] => :updated
           end
 
           event :make_errored do
-            transition any => :errored
+            transition any - [:updating] => :errored
+            transition [:updating] => :update_errored
           end
 
           event :make_updating do
-            transition [:installed, :updated, :update_errored] => :updating
-          end
-
-          event :make_updated do
-            transition [:updating] => :updated
+            transition [:installed, :updated, :update_errored, :scheduled] => :updating
           end
 
           event :make_update_errored do
@@ -74,8 +72,16 @@ module Clusters
         end
       end
 
+      def updateable?
+        installed? || updated? || update_errored?
+      end
+
       def available?
         installed? || updated?
+      end
+
+      def update_in_progress?
+        updating?
       end
     end
   end
