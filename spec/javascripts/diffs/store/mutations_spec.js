@@ -1,6 +1,6 @@
 import createState from '~/diffs/store/modules/diff_state';
 import mutations from '~/diffs/store/mutations';
-import { parallelize } from '~/diffs/store/utils';
+import { parallelizeDiffLines } from '~/diffs/store/utils';
 import * as types from '~/diffs/store/mutation_types';
 import { INLINE_DIFF_VIEW_TYPE } from '~/diffs/constants';
 import diffFileMockData from '../mock_data/diff_file';

@@ -22,7 +22,7 @@ const getDiffFileMock = () =>
   });
 
 describe('DiffsStoreUtils', () => {
-  describe('parallelize', () => {
+  describe('parallelizeDiffLines', () => {
     it('returns empty array for undefined', () => {
       expect(utils.parallelizeDiffLines()).toEqual([]);
     });
