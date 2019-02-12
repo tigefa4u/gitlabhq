@@ -8,9 +8,7 @@ import {
   LEGACY_DIFF_NOTE_TYPE,
   DIFF_NOTE_TYPE,
   NEW_LINE_TYPE,
-  NEW_NO_NEW_LINE_TYPE,
   OLD_LINE_TYPE,
-  OLD_NO_NEW_LINE_TYPE,
   MATCH_LINE_TYPE,
   LINES_TO_BE_RENDERED_DIRECTLY,
   MAX_LINES_TO_BE_RENDERED,
@@ -198,27 +196,13 @@ export function trimFirstCharOfLineContent(line = {}) {
   return parsedLine;
 }
 
-function unchanged(line) {
-  return (
-    !line.type || [MATCH_LINE_TYPE, NEW_NO_NEW_LINE_TYPE, OLD_NO_NEW_LINE_TYPE].includes(line.type)
-  );
-}
-
-function added(line) {
-  return [NEW_LINE_TYPE, NEW_NO_NEW_LINE_TYPE].includes(line.type);
-}
-
-function removed(line) {
-  return [OLD_LINE_TYPE, OLD_NO_NEW_LINE_TYPE].includes(line.type);
-}
-
 export function parallelizeDiffLines(highlightedDiffLines = []) {
   let i = 0;
   const lines = [];
   let freeRightIndex = null;
 
   highlightedDiffLines.forEach(line => {
-    if (removed(line)) {
+    if (line.removed) {
       lines.push({
         left: line,
         right: null,
@@ -229,7 +213,7 @@ export function parallelizeDiffLines(highlightedDiffLines = []) {
         freeRightIndex = i;
       }
       i += 1;
-    } else if (added(line)) {
+    } else if (line.added) {
       if (freeRightIndex !== null) {
         // If an old line came before this without a line on the right, this
         // line can be put to the right of it.
@@ -248,7 +232,7 @@ export function parallelizeDiffLines(highlightedDiffLines = []) {
         freeRightIndex = null;
         i += 1;
       }
-    } else if (unchanged(line)) {
+    } else if (line.unchanged) {
       // line in the right panel is the same as in the left one
       lines.push({
         left: line,
