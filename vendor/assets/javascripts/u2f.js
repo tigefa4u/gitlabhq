@@ -91,16 +91,11 @@ u2f.U2fResponse;
 
 /**
  * An error object for responses
- * @typedef {{
- *   errorCode: u2f.ErrorCodes,
- *   errorMessage: ?string
- * }}
  */
 u2f.Error;
 
 /**
  * Data object for a single sign request.
- * @typedef {enum {BLUETOOTH_RADIO, BLUETOOTH_LOW_ENERGY, USB, NFC}}
  */
 u2f.Transport;
 
