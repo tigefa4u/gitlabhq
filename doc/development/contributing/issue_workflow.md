@@ -7,8 +7,8 @@ scheduling into milestones. Labelling is a task for everyone.
 Most issues will have labels for at least one of the following:
 
 - Type: ~feature, ~bug, ~customer, etc.
-- Subject: ~wiki, ~"container registry", ~ldap, ~api, ~frontend, etc.
-- Team: ~Plan, ~Manage, ~Quality, etc.
+- Subject: ~wiki, ~"container registry", ~ldap, ~api, etc.
+- Group: ~Plan, ~Manage, ~Quality, etc.
 - Stage: ~"devops:plan", ~"devops:create", etc.
 - Release Scoping: ~Deliverable, ~Stretch, ~"Next Patch Release"
 - Priority: ~P1, ~P2, ~P3, ~P4
@@ -52,13 +52,13 @@ issue is labeled with a subject label corresponding to your expertise.
 
 Subject labels are always all-lowercase.
 
-## Team labels
+## Group labels
 
-Team labels specify what team is responsible for this issue.
-Assigning a team label makes sure issues get the attention of the appropriate
+Group labels specify what group is responsible for this issue.
+Assigning a group label makes sure issues get the attention of the appropriate
 people.
 
-The current team labels are:
+The current group labels are:
 
 - ~Configure
 - ~Create
@@ -72,17 +72,13 @@ The current team labels are:
 - ~Quality
 - ~Release
 - ~Secure
-- ~UX
 - ~Verify
 
 The descriptions on the [labels page][labels-page] explain what falls under the
-responsibility of each team.
+responsibility of each group.
 
-Within those team labels, we also have the ~backend and ~frontend labels to
-indicate if an issue needs backend work, frontend work, or both.
-
-Team labels are always capitalized so that they show up as the first label for
-any issue.
+Along with those group labels, we also have the ~UX, ~backend, and ~frontend labels to
+indicate if an issue needs UX, backend, frontend work.
 
 ## Stage labels
 
@@ -103,13 +99,13 @@ The current stage labels are:
 These labels should be mutually exclusive. If an issue belongs to multiple
 stages, the most relevant should be used.
 
-They differ from the [Team labels](#team-labels) because teams may work on
+They differ from the [Group labels](#group-labels) because groups may work on
 issues outside their stage.
 
-Normally there is a 1:1 relationship between Stage labels and Team labels, but
-any issue can be picked up by any team, depending on current priorities.
-So, an issue labeled ~"devops:create" may be scheduled by the ~Plan team, for
-example. In such cases, it's usual to include both team labels so each team can
+Normally there is a 1:1 relationship between Stage labels and Group labels, but
+any issue can be picked up by any group, depending on current priorities.
+So, an issue labeled ~"devops:create" may be scheduled by the ~Plan group, for
+example. In such cases, it's usual to include both group labels so each group can
 be aware of the progress.
 
 The Stage labels are used to generate the [direction pages][direction-pages] automatically.
