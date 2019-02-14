@@ -2,6 +2,7 @@
 
 class PrometheusMetric < ActiveRecord::Base
   belongs_to :project, validate: true, inverse_of: :prometheus_metrics
+  has_many :prometheus_queries
 
   enum group: {
     # built-in groups
