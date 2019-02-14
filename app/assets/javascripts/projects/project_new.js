@@ -122,7 +122,7 @@ const bindEvents = () => {
         icon: '.template-option .icon-express',
       },
       ios-swift: {
-        text: 'iOS',
+        text: 'iOS (Swift)',
         icon: '.template-option svg.icon-ios-swift',
       },
       android: {
