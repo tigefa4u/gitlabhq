@@ -7,6 +7,8 @@ describe Gitlab::ProjectTemplate do
         described_class.new('rails', 'Ruby on Rails', 'Includes an MVC structure, .gitignore, Gemfile, and more great stuff', 'https://gitlab.com/gitlab-org/project-templates/rails'),
         described_class.new('spring', 'Spring', 'Includes an MVC structure, .gitignore, Gemfile, and more great stuff', 'https://gitlab.com/gitlab-org/project-templates/spring'),
         described_class.new('express', 'NodeJS Express', 'Includes an MVC structure, .gitignore, Gemfile, and more great stuff', 'https://gitlab.com/gitlab-org/project-templates/express'),
+        described_class.new('ios-swift', 'iOS (Swift)', 'A ready-to-go iOS Swift app.', 'https://gitlab.com/TO_BE_DETERMINED'),
+        described_class.new('android', 'Android', 'A ready-to-go Android app.', 'https://gitlab.com/TO_BE_DETERMINED'),
         described_class.new('hugo', 'Pages/Hugo', 'Everything you need to get started using a Hugo Pages site.', 'https://gitlab.com/pages/hugo'),
         described_class.new('jekyll', 'Pages/Jekyll', 'Everything you need to get started using a Jekyll Pages site.', 'https://gitlab.com/pages/jekyll'),
         described_class.new('plainhtml', 'Pages/Plain HTML', 'Everything you need to get started using a plain HTML Pages site.', 'https://gitlab.com/pages/plain-html'),
