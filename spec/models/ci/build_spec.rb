@@ -23,6 +23,7 @@ describe Ci::Build do
   it { is_expected.to validate_presence_of(:ref) }
   it { is_expected.to respond_to(:has_trace?) }
   it { is_expected.to respond_to(:trace) }
+  it { is_expected.to delegate_method(:merge_request?).to(:pipeline) }
 
   it { is_expected.to be_a(ArtifactMigratable) }
 
@@ -3499,6 +3500,28 @@ describe Ci::Build do
 
       expect(build.reload).to be_degenerated
       expect(build.metadata).to be_nil
+    end
+  end
+
+  describe '#git_depth' do
+    subject { build.git_depth }
+
+    context 'when GIT_DEPTH variable exists' do
+      before do
+        allow(build).to receive(:yaml_variables) do
+          [{ key: 'GIT_DEPTH', value: '1' }]
+        end
+      end
+
+      it 'returns the value' do
+        is_expected.to eq(1)
+      end
+    end
+
+    context 'when GIT_DEPTH variable does not exist' do
+      it 'returns zero' do
+        is_expected.to eq(0)
+      end
     end
   end
 

@@ -46,6 +46,7 @@ module Ci
     delegate :terminal_specification, to: :runner_session, allow_nil: true
     delegate :gitlab_deploy_token, to: :project
     delegate :trigger_short_token, to: :trigger_request, allow_nil: true
+    delegate :merge_request?, to: :pipeline
 
     ##
     # Since Gitlab 11.5, deployments records started being created right after
@@ -650,6 +651,11 @@ module Ci
 
     def secret_project_variables(environment: persisted_environment)
       project.ci_variables_for(ref: git_ref, environment: environment)
+    end
+
+    def git_depth
+      yaml_variables&.find { |variable| variable[:key] == 'GIT_DEPTH' }
+                    &.dig(:value).to_i
     end
 
     def steps

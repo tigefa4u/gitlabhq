@@ -417,7 +417,9 @@ describe API::Runner, :clean_gitlab_redis_shared_state do
               'ref' => job.ref,
               'sha' => job.sha,
               'before_sha' => job.before_sha,
-              'ref_type' => 'branch' }
+              'ref_type' => 'branch',
+              'refspecs' => %w[+refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*],
+              'depth' => 0 }
           end
 
           let(:expected_steps) do
@@ -489,6 +491,19 @@ describe API::Runner, :clean_gitlab_redis_shared_state do
               expect(response).to have_gitlab_http_status(201)
               expect(json_response['git_info']['ref_type']).to eq('tag')
             end
+
+            context 'when GIT_DEPTH is specified' do
+              before do
+                allow_any_instance_of(Ci::Build).to receive(:git_depth) { 1 }
+              end
+
+              it 'specifies refspecs' do
+                request_job
+
+                expect(response).to have_gitlab_http_status(201)
+                expect(json_response['git_info']['refspecs']).to include("+refs/tags/#{job.ref}:refs/tags/#{job.ref}")
+              end
+            end
           end
 
           context 'when job is made for branch' do
@@ -497,6 +512,19 @@ describe API::Runner, :clean_gitlab_redis_shared_state do
 
               expect(response).to have_gitlab_http_status(201)
               expect(json_response['git_info']['ref_type']).to eq('branch')
+            end
+
+            context 'when GIT_DEPTH is specified' do
+              before do
+                allow_any_instance_of(Ci::Build).to receive(:git_depth) { 1 }
+              end
+
+              it 'specifies refspecs' do
+                request_job
+
+                expect(response).to have_gitlab_http_status(201)
+                expect(json_response['git_info']['refspecs']).to include("+refs/heads/#{job.ref}:refs/remotes/origin/#{job.ref}")
+              end
             end
           end
 

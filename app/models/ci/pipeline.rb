@@ -395,10 +395,6 @@ module Ci
       @commit ||= Commit.lazy(project, sha)
     end
 
-    def branch?
-      super && !merge_request?
-    end
-
     def stuck?
       pending_builds.any?(&:stuck?)
     end
@@ -733,20 +729,6 @@ module Ci
     def push_details
       strong_memoize(:push_details) do
         Gitlab::Git::Push.new(project, before_sha, sha, git_ref)
-      end
-    end
-
-    def git_ref
-      if merge_request?
-        ##
-        # In the future, we're going to change this ref to
-        # merge request's merged reference, such as "refs/merge-requests/:iid/merge".
-        # In order to do that, we have to update GitLab-Runner's source pulling
-        # logic.
-        # See https://gitlab.com/gitlab-org/gitlab-runner/merge_requests/1092
-        Gitlab::Git::BRANCH_REF_PREFIX + ref.to_s
-      else
-        super
       end
     end
 
