@@ -121,6 +121,14 @@ const bindEvents = () => {
         text: 'NodeJS Express',
         icon: '.template-option .icon-express',
       },
+      ios-swift: {
+        text: 'iOS',
+        icon: '.template-option svg.icon-ios-swift',
+      },
+      android: {
+        text: 'Android',
+        icon: '.template-option svg.icon-android',
+      },
       spring: {
         text: 'Spring',
         icon: '.template-option .icon-spring',
