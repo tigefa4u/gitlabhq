@@ -71,7 +71,8 @@ project_tree:
     - :create_access_levels
   - :project_feature
   - :custom_attributes
-  - :prometheus_metrics
+  - prometheus_metrics:
+    - :prometheus_queries
   - :project_badges
   - :ci_cd_settings
   - :error_tracking_setting
@@ -126,6 +127,8 @@ excluded_attributes:
     - :jid
   prometheus_metrics:
     - :common
+    - :identifier
+  prometheus_queries:
     - :identifier
   snippets:
     - :expired_at

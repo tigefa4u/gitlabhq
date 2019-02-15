@@ -581,6 +581,14 @@ PrometheusMetric:
 - group
 - common
 - identifier
+PrometheusQuery:
+- id
+- created_at
+- updated_at
+- prometheus_metric_id
+- unit
+- legend
+- query
 Badge:
 - id
 - link_url
