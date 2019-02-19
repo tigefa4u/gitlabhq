@@ -2,9 +2,12 @@ module QA
   module Page
     module Snippet
       class New < Page::Base
-        view 'app/views/snippets/new.html.haml' do
-          element :new_snippet_title
+        view 'app/views/shared/form_elements/_description.html.haml' do
           element :issuable_form_description
+        end
+
+        view 'app/views/shared/snippets/_form.html.haml' do
+          element :new_snippet_title
           element :create_snippet_button
         end
 

@@ -2,7 +2,7 @@ module QA
   module Page
     module Dashboard
       class Projects < Page::Base
-        view 'app/views/dashboard/projects/index.html.haml' do
+        view 'app/views/layouts/nav/_dashboard.html.haml' do
           element :link_to_user_snippets
         end
 

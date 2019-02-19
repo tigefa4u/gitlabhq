@@ -2,7 +2,7 @@ module QA
   module Page
     module Snippet
       class Index < Page::Base
-        view 'app/views/dashboard/snippets.html.haml' do
+        view 'app/views/dashboard/_snippets_head.html.haml' do
           element :new_snippet_button
         end
 
