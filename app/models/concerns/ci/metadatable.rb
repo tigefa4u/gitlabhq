@@ -15,7 +15,9 @@ module Ci
                          autosave: true
 
       delegate :timeout, to: :metadata, prefix: true, allow_nil: true
+      delegate :refspecs, to: :metadata, allow_nil: true
       before_create :ensure_metadata
+      before_create :set_refspecs
     end
 
     def ensure_metadata
@@ -47,6 +49,25 @@ module Ci
 
     def yaml_variables=(value)
       write_metadata_attribute(:yaml_variables, :config_variables, value)
+    end
+
+    def set_refspecs
+      specs = []
+
+      if git_depth > 0
+        if branch? || merge_request?
+          specs << "+#{git_branch_ref}:refs/remotes/origin/#{ref}"
+        elsif tag?
+          specs << "+#{git_tag_ref}:#{git_tag_ref}"
+        end
+      else
+        if branch? || merge_request? || tag?
+          specs << '+refs/heads/*:refs/remotes/origin/*'
+          specs << '+refs/tags/*:refs/tags/*'
+        end
+      end
+
+      self.refspecs = specs.join(HasRef::REFSPEC_DELIMITER)
     end
 
     private

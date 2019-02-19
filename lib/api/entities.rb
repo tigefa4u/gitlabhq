@@ -1377,7 +1377,9 @@ module API
       class GitInfo < Grape::Entity
         expose :repo_url, :ref, :sha, :before_sha
         expose :ref_type
-        expose :refspecs
+        expose :refspecs do |job|
+          job.refspecs.split(REFSPEC_DELIMITER)
+        end
         expose :git_depth, as: :depth
       end
 

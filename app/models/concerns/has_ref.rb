@@ -3,6 +3,8 @@
 module HasRef
   extend ActiveSupport::Concern
 
+  REFSPEC_DELIMITER = ' '.freeze
+
   def branch?
     !tag? && !merge_request?
   end
@@ -31,25 +33,6 @@ module HasRef
     elsif tag?
       'tag'
     end
-  end
-
-  def refspecs
-    spec = []
-
-    if git_depth > 0
-      if branch? || merge_request?
-        spec << "+#{git_branch_ref}:refs/remotes/origin/#{ref}"
-      elsif tag?
-        spec << "+#{git_tag_ref}:#{git_tag_ref}"
-      end
-    else
-      if branch? || merge_request? || tag?
-        spec << '+refs/heads/*:refs/remotes/origin/*'
-        spec << '+refs/tags/*:refs/tags/*'
-      end
-    end
-
-    spec
   end
 
   private

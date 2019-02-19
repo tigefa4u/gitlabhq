@@ -38,6 +38,25 @@ module Gitlab
             end
           end
 
+          def refspecs
+            specs = []
+
+            if git_depth > 0
+              if branch? || merge_request?
+                specs << "+#{git_branch_ref}:refs/remotes/origin/#{ref}"
+              elsif tag?
+                specs << "+#{git_tag_ref}:#{git_tag_ref}"
+              end
+            else
+              if branch? || merge_request? || tag?
+                specs << '+refs/heads/*:refs/remotes/origin/*'
+                specs << '+refs/tags/*:refs/tags/*'
+              end
+            end
+
+            specs.join(HasRef::REFSPEC_DELIMITER)
+          end
+
           def sha
             strong_memoize(:sha) do
               project.commit(origin_sha || origin_ref).try(:id)
