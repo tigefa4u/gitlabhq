@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module QA
-  context 'Create' do
+  context 'Create', :smoke do
     describe 'Snippet createon' do
       it 'User creates a snippet' do
         Runtime::Browser.visit(:gitlab, Page::Main::Login)
