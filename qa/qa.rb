@@ -61,6 +61,7 @@ module QA
     autoload :File, 'qa/resource/file'
     autoload :Fork, 'qa/resource/fork'
     autoload :SSHKey, 'qa/resource/ssh_key'
+    autoload :Snippet, 'qa/resource/snippet'
 
     module Events
       autoload :Base, 'qa/resource/events/base'
@@ -310,6 +311,11 @@ module QA
       module Issuable
         autoload :Common, 'qa/page/component/issuable/common'
       end
+    end
+
+    module Snippet
+      autoload :New, 'qa/page/snippet/new'
+      autoload :Index, 'qa/page/snippet/index'
     end
   end
 
