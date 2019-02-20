@@ -12,6 +12,7 @@ module Ci
     include AtomicInternalId
     include EnumWithNil
     include HasRef
+    include ShaAttribute
 
     belongs_to :project, inverse_of: :all_pipelines
     belongs_to :user
@@ -62,6 +63,9 @@ module Ci
     validates :status, presence: { unless: :importing? }
     validate :valid_commit_sha, unless: :importing?
     validates :source, exclusion: { in: %w(unknown), unless: :importing? }, on: :create
+
+    sha_attribute :source_sha
+    sha_attribute :target_sha
 
     after_create :keep_around_commits, unless: :importing?
 
@@ -189,6 +193,22 @@ module Ci
       # When merge request is matched, it selects MR pipelines.
       where(merge_request: [nil, merge_request], ref: ref, sha: sha)
         .sort_by_merge_request_pipelines
+    end
+
+    scope :triggered_by_merge_request, -> (merge_request) do
+      where(source: :merge_request, merge_request: merge_request)
+    end
+
+    scope :detached_merge_request_pipelines, -> (merge_request) do
+      triggered_by_merge_request(merge_request).where(target_sha: nil)
+    end
+
+    scope :merge_request_pipelines, -> (merge_request) do
+      triggered_by_merge_request(merge_request).where.not(target_sha: nil)
+    end
+
+    scope :mergeable_merge_request_pipelines, -> (merge_request) do
+      triggered_by_merge_request(merge_request).where(target_sha: merge_request.target_branch_sha)
     end
 
     # Returns the pipelines in descending order (= newest first), optionally
@@ -624,6 +644,8 @@ module Ci
         variables.append(key: 'CI_COMMIT_DESCRIPTION', value: git_commit_description.to_s)
 
         if merge_request? && merge_request
+          variables.append(key: 'CI_MERGE_REQUEST_SOURCE_BRANCH_SHA', value: source_sha.to_s)
+          variables.append(key: 'CI_MERGE_REQUEST_TARGET_BRANCH_SHA', value: target_sha.to_s)
           variables.concat(merge_request.predefined_variables)
         end
       end
@@ -706,6 +728,22 @@ module Ci
 
     def default_branch?
       ref == project.default_branch
+    end
+
+    def triggered_by_merge_request?
+      merge_request? && merge_request_id.present?
+    end
+
+    def detached_merge_request_pipeline?
+      triggered_by_merge_request? && target_sha.nil?
+    end
+
+    def merge_request_pipeline?
+      triggered_by_merge_request? && target_sha.present?
+    end
+
+    def mergeable_merge_request_pipeline?
+      triggered_by_merge_request? && target_sha == merge_request.target_branch_sha
     end
 
     private
