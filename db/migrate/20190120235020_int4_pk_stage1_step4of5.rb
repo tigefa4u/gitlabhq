@@ -37,7 +37,7 @@ class Int4PkStage1Step4of5 < ActiveRecord::Migration[5.0]
         foreign key (event_id) references events(id) not valid on delete cascade;
     SQL
     execute("alter table push_event_payloads validate constraint fk_36c74129da_old;") # long
-    execute("alter table push_event_payloads drop constraint fk_36c74129da;"
+    execute("alter table push_event_payloads drop constraint fk_36c74129da;")
     execute("alter table push_event_payloads rename constraint fk_36c74129da_old to fk_36c74129da;")
 
     # Remove CHECK constraints (they must exist at this point)

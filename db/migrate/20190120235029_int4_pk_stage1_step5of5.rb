@@ -63,11 +63,11 @@ class Int4PkStage1Step5of5 < ActiveRecord::Migration[5.0]
       change_column(:push_event_payloads, :event_id, :integer, :limit => 4) # Very slow on large tables
 
       add_column(:events, :id_new, :bigint)
-      install_rename_triggers_for_postgresql('int4_to_int8', :events, :id, :id_new, 'INSERT')
+      install_rename_triggers_for_postgresql(:int4_to_int8, :events, :id, :id_new, 'INSERT')
       int4_to_int8_remember_max_value(:events, :id, :id_new)
 
       add_column(:event_payloads, :event_id_new, :bigint)
-      install_rename_triggers_for_postgresql('int4_to_int8', :push_event_payloads, :event_id, :event_id_new, 'INSERT')
+      install_rename_triggers_for_postgresql(:int4_to_int8, :push_event_payloads, :event_id, :event_id_new, 'INSERT')
       int4_to_int8_remember_max_value(:push_event_payloads, :event_id, :event_id_new)
 
       execute("alter table events add constraint id_new_not_null check (id_new is not null);") # Very slow on large tables
