@@ -140,6 +140,7 @@ stages:
   script:
     - JOB_NAME=( $CI_JOB_NAME )
     - TEST_TOOL=${JOB_NAME[0]}
+    - export KNAPSACK_TEST_FILE_PATTERN=$(scripts/knapsack_file_pattern.rb)
     - export KNAPSACK_REPORT_PATH=knapsack/${CI_PROJECT_NAME}/${TEST_TOOL}_node_${CI_NODE_INDEX}_${CI_NODE_TOTAL}_report.json
     - export KNAPSACK_GENERATE_REPORT=true
     - export SUITE_FLAKY_RSPEC_REPORT_PATH=${FLAKY_RSPEC_SUITE_REPORT_PATH}
