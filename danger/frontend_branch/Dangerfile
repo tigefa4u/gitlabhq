@@ -1,0 +1,12 @@
+# frozen_string_literal: true
+
+# rubocop: disable Style/SignalException
+
+return unless ENV['CI_COMMIT_REF_NAME'] =~ /-frontend(-ee)?$/
+
+changed_backend_files = helper.all_changed_files.select do |file|
+  file.strip.match?(/\.rb\z/) && !file.match?(/\A(ee\/)?spec\/(features|javascripts\/fixtures)\//)
+end
+return if changed_backend_files.empty?
+
+fail("Branch ends with -frontend but there are the following non-frontend changes: #{changed_backend_files.join(', ')}")
