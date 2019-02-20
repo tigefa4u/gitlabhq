@@ -2,10 +2,6 @@ module QA
   module Page
     module Dashboard
       class Projects < Page::Base
-        view 'app/views/layouts/nav/_dashboard.html.haml' do
-          element :link_to_user_snippets
-        end
-
         view 'app/views/shared/projects/_search_form.html.haml' do
           element :form_filter_by_name, /form_tag.+id: 'project-filter-form'/ # rubocop:disable QA/ElementWithPattern
         end
@@ -14,10 +10,6 @@ module QA
           filter_by_name(name)
 
           find_link(text: name).click
-        end
-
-        def go_to_snippets
-          click_element :link_to_user_snippets
         end
 
         private

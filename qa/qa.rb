@@ -143,6 +143,11 @@ module QA
     module Dashboard
       autoload :Projects, 'qa/page/dashboard/projects'
       autoload :Groups, 'qa/page/dashboard/groups'
+
+      module Snippet
+        autoload :New, 'qa/page/dashboard/snippet/new'
+        autoload :Index, 'qa/page/dashboard/snippet/index'
+      end
     end
 
     module Group
@@ -311,11 +316,6 @@ module QA
       module Issuable
         autoload :Common, 'qa/page/component/issuable/common'
       end
-    end
-
-    module Snippet
-      autoload :New, 'qa/page/snippet/new'
-      autoload :Index, 'qa/page/snippet/index'
     end
   end
 

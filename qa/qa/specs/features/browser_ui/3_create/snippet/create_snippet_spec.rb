@@ -2,25 +2,25 @@
 
 module QA
   context 'Create', :smoke do
-    describe 'Snippet createon' do
+    describe 'Snippet creation' do
       it 'User creates a snippet' do
         Runtime::Browser.visit(:gitlab, Page::Main::Login)
-        Page::Main::Login.act { sign_in_using_credentials }
+        Page::Main::Login.perform(&:sign_in_using_credentials)
 
-        Page::Dashboard::Projects.act { go_to_snippets }
-        Page::Snippet::Index.act { go_to_new_snippet_page }
+        Page::Main::Menu.perform(&:go_to_snippets)
+        Page::Dashboard::Snippet::Index.perform(&:go_to_new_snippet_page)
 
-        expect(find_field('Private')).to be_checked
-
-        Resource::Snippet.fabricate! do |snippet|
+        Resource::Snippet.fabricate_via_browser_ui! do |snippet|
           snippet.title = 'Snippet title'
           snippet.description = 'Snippet description'
           snippet.content = 'Snippet file text'
+          snippet.type = 'Public'
         end
 
         expect(page).to have_content('Snippet title')
         expect(page).to have_content('Snippet description')
         expect(page).to have_content('Snippet file text')
+        expect(page).to have_content('Embed')
       end
     end
   end

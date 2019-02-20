@@ -26,6 +26,10 @@ module QA
           element :your_projects_link
         end
 
+        view 'app/views/layouts/nav/_dashboard.html.haml' do
+          element :link_to_user_snippets
+        end
+
         def go_to_groups
           within_top_menu do
             click_element :groups_dropdown
@@ -64,6 +68,10 @@ module QA
 
             has_text?('User Settings')
           end
+        end
+
+        def go_to_snippets
+          click_element :link_to_user_snippets
         end
 
         def has_personal_area?(wait: Capybara.default_max_wait_time)
