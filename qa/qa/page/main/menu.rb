@@ -19,15 +19,12 @@ module QA
           element :admin_area_link
           element :projects_dropdown
           element :groups_dropdown
+          element :link_to_user_snippets
         end
 
         view 'app/views/layouts/nav/projects_dropdown/_show.html.haml' do
           element :projects_dropdown_sidebar
           element :your_projects_link
-        end
-
-        view 'app/views/layouts/nav/_dashboard.html.haml' do
-          element :link_to_user_snippets
         end
 
         def go_to_groups
