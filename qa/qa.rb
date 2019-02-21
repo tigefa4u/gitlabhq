@@ -147,6 +147,7 @@ module QA
       module Snippet
         autoload :New, 'qa/page/dashboard/snippet/new'
         autoload :Index, 'qa/page/dashboard/snippet/index'
+        autoload :Show, 'qa/page/dashboard/snippet/show'
       end
     end
 

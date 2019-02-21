@@ -17,10 +17,12 @@ module QA
           snippet.type = 'Public'
         end
 
-        expect(page).to have_content('Snippet title')
-        expect(page).to have_content('Snippet description')
-        expect(page).to have_content('Snippet file text')
-        expect(page).to have_content('Embed')
+        Page::Dashboard::Snippet::Show.perform do |snippet|
+          expect(snippet).to have_snippet_title('Snippet title')
+          expect(snippet).to have_snippet_description('Snippet description')
+          expect(snippet).to have_snippet_content('Snippet file text')
+          expect(snippet).to have_embed_type('Embed')
+        end
       end
     end
   end
