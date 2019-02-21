@@ -57,7 +57,7 @@ server.
 ## Installing Slony
 
 Slony will be used to upgrade the database without requiring long downtimes.
-Slony can be downloaded from http://www.slony.info/. If you have installed
+Slony can be downloaded from <http://www.slony.info/>. If you have installed
 PostgreSQL using your operating system's package manager you may also be able to
 install Slony using said package manager.
 
@@ -269,7 +269,6 @@ sudo -u gitlab-psql /opt/gitlab/embedded/bin/slon_start 1 --conf /var/opt/gitlab
 ```
 
 If all went well this will produce output such as:
-
 
 ```
 Invoke slon for node 1 - /opt/gitlab/embedded/bin/slon -p /var/run/slony1/slony_replication_node1.pid -s 1000 -d2  slony_replication 'host=192.168.0.7 dbname=gitlabhq_production user=slony port=5432 password=hieng8ezohHuCeiqu0leeghai4aeyahp' > /var/log/gitlab/slony/node1/gitlabhq_production-2016-10-06.log 2>&1 &

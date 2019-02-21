@@ -41,7 +41,7 @@ Objects (usually binary and large) created by a build process. These can include
 
 ### Atlassian
 
-A [company](https://www.atlassian.com) that develops software products for developers and project managers including Bitbucket, Jira, Hipchat, Confluence, Bamboo.
+A [company](https://www.atlassian.com) that develops software products for developers and project managers including Bitbucket, Jira, Confluence, Bamboo.
 
 ### Audit Log
 
@@ -423,7 +423,7 @@ A set of symbols that are used to organize objects of various kinds so that thes
 
 ### Nginx
 
-A web [server](https://www.nginx.com/resources/wiki/) (pronounced "engine x"). [It can act]((https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/doc/settings/nginx.md) as a reverse proxy server for HTTP, HTTPS, SMTP, POP3, and IMAP protocols, as well as a load balancer and an HTTP cache.
+A web [server](https://www.nginx.com/resources/wiki/) (pronounced "engine x"). [It can act](https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/doc/settings/nginx.md) as a reverse proxy server for HTTP, HTTPS, SMTP, POP3, and IMAP protocols, as well as a load balancer and an HTTP cache.
 
 ### OAuth
 
@@ -706,4 +706,3 @@ Files that have been modified but are not committed. Check them by using the com
 ### YAML
 
 A human-readable data serialization [language](http://www.yaml.org/about.html) that takes concepts from programming languages such as C, Perl, and Python, and ideas from XML and the data format of electronic mail.
-

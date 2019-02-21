@@ -1,7 +1,7 @@
-# Configuration of your jobs with .gitlab-ci.yml
+# Configuration of your pipelines with .gitlab-ci.yml
 
 This document describes the usage of `.gitlab-ci.yml`, the file that is used by
-GitLab Runner to manage your project's jobs.
+GitLab Runner to manage your project's pipelines.
 
 From version 7.12, GitLab CI uses a [YAML](https://en.wikipedia.org/wiki/YAML)
 file (`.gitlab-ci.yml`) for the project configuration. It is placed in the root
@@ -11,7 +11,7 @@ If you want a quick introduction to GitLab CI, follow our
 [quick start guide](../quick_start/README.md).
 
 NOTE: **Note:**
-If you have a [mirrored repository where GitLab pulls from](https://docs.gitlab.com/ee/workflow/repository_mirroring.html#pulling-from-a-remote-repository),
+If you have a [mirrored repository where GitLab pulls from](https://docs.gitlab.com/ee/workflow/repository_mirroring.html#pulling-from-a-remote-repository-starter),
 you may need to enable pipeline triggering in your project's
 **Settings > Repository > Pull from a remote repository > Trigger pipelines for mirror updates**.
 
@@ -96,9 +96,9 @@ This can be an array or a multi-line string.
 jobs, including failed ones. This has to be an array or a multi-line string.
 
 The `before_script` and the main `script` are concatenated and run in a single context/container.
-The `after_script` is run separately, so depending on the executor, changes done
-outside of the working tree might not be visible, e.g. software installed in the
-`before_script`.
+The `after_script` is run separately. The current working directory is set back to
+default. Depending on the executor, changes done outside of the working tree might
+not be visible, e.g. software installed in the `before_script`.
 
 It's possible to overwrite the globally defined `before_script` and `after_script`
 if you set it per-job:
@@ -423,10 +423,28 @@ connected with merge requests yet, and because GitLab is creating pipelines
 before an user can create a merge request we don't know a target branch at
 this point.
 
-Without a target branch, it is not possible to know what the common ancestor is,
-thus we always create a job in that case. This feature works best for stable
-branches like `master` because in that case GitLab uses the previous commit
-that is present in a branch to compare against the latest SHA that was pushed.
+#### Using `changes` with `merge_requests`
+
+With [pipelines for merge requests](../merge_request_pipelines/index.md),
+make it possible to define if a job should be created base on files modified
+in a merge request.
+
+For example:
+
+```
+docker build service one:
+  script: docker build -t my-service-one-image:$CI_COMMIT_REF_SLUG .
+  only:
+    refs:
+      - merge_requests
+    changes:
+      - Dockerfile
+      - service-one/**/*
+```
+
+In the scenario above, if you create or update a merge request that changes
+either files in `service-one` folder or `Dockerfile`, GitLab creates and triggers
+the `docker build service one` job.
 
 ## `tags`
 
@@ -776,7 +794,7 @@ In the above example we set up the `review_app` job to deploy to the `review`
 environment, and we also defined a new `stop_review_app` job under `on_stop`.
 Once the `review_app` job is successfully finished, it will trigger the
 `stop_review_app` job based on what is defined under `when`. In this case we
-set it up to `manual` so it will need a [manual action](#manual-actions) via
+set it up to `manual` so it will need a [manual action](#whenmanual) via
 GitLab's web interface in order to run.
 
 The `stop_review_app` job is **required** to have the following keywords defined:
@@ -1520,7 +1538,7 @@ parallel. This value has to be greater than or equal to two (2) and less than or
 This creates N instances of the same job that run in parallel. They're named
 sequentially from `job_name 1/N` to `job_name N/N`.
 
-For every job, `CI_NODE_INDEX` and `CI_NODE_TOTAL` [environment variables](../variables/README.html#predefined-variables-environment-variables) are set.
+For every job, `CI_NODE_INDEX` and `CI_NODE_TOTAL` [environment variables](../variables/README.html#predefined-environment-variables) are set.
 
 A simple example:
 
@@ -1977,7 +1995,7 @@ The YAML-defined variables are also set to all created service containers,
 thus allowing to fine tune them.
 
 Except for the user defined variables, there are also the ones [set up by the
-Runner itself](../variables/README.md#predefined-variables-environment-variables).
+Runner itself](../variables/README.md#predefined-environment-variables).
 One example would be `CI_COMMIT_REF_NAME` which has the value of
 the branch or tag name for which project is built. Apart from the variables
 you can set in `.gitlab-ci.yml`, there are also the so called
@@ -2025,6 +2043,11 @@ rely on files brought into the project workspace from cache or artifacts.
 variables:
   GIT_STRATEGY: none
 ```
+
+NOTE: **Note:** `GIT_STRATEGY` is not supported for
+[Kubernetes executor](https://docs.gitlab.com/runner/executors/kubernetes.html),
+but may be in the future. See the [support Git strategy with Kubernetes executor feature proposal](https://gitlab.com/gitlab-org/gitlab-runner/issues/3847)
+for updates.
 
 ### Git submodule strategy
 

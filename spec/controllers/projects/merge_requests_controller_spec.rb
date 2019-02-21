@@ -153,10 +153,12 @@ describe Projects::MergeRequestsController do
 
     it_behaves_like "issuables list meta-data", :merge_request
 
-    it_behaves_like 'set sort order from user preference'
+    it_behaves_like 'set sort order from user preference' do
+      let(:sorting_param) { 'updated_asc' }
+    end
 
     context 'when page param' do
-      let(:last_page) { project.merge_requests.page().total_pages }
+      let(:last_page) { project.merge_requests.page.total_pages }
       let!(:merge_request) { create(:merge_request_with_diffs, target_project: project, source_project: project) }
 
       it 'redirects to last_page if page number is larger than number of pages' do
@@ -253,8 +255,8 @@ describe Projects::MergeRequestsController do
     end
 
     context 'there is no source project' do
-      let(:project)       { create(:project, :repository) }
-      let(:forked_project)  { fork_project_with_submodules(project) }
+      let(:project) { create(:project, :repository) }
+      let(:forked_project) { fork_project_with_submodules(project) }
       let!(:merge_request) { create(:merge_request, source_project: forked_project, source_branch: 'add-submodule-version-bump', target_branch: 'master', target_project: project) }
 
       before do
@@ -382,6 +384,23 @@ describe Projects::MergeRequestsController do
           merge_with_sha(squash: '0')
 
           expect(merge_request.reload.squash).to be_falsey
+        end
+      end
+
+      context 'when a squash commit message is passed' do
+        let(:message) { 'My custom squash commit message' }
+
+        it 'passes the same message to SquashService' do
+          params = { squash: '1', squash_commit_message: message }
+
+          expect_next_instance_of(MergeRequests::SquashService, project, user, params.merge(merge_request: merge_request)) do |squash_service|
+            expect(squash_service).to receive(:execute).and_return({
+              status: :success,
+              squash_sha: SecureRandom.hex(20)
+            })
+          end
+
+          merge_with_sha(params)
         end
       end
 
@@ -884,7 +903,7 @@ describe Projects::MergeRequestsController do
   end
 
   describe 'POST #rebase' do
-    let(:viewer)        { user }
+    let(:viewer) { user }
 
     def post_rebase
       post :rebase, params: { namespace_id: project.namespace, project_id: project, id: merge_request }

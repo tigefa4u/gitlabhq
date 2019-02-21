@@ -52,6 +52,11 @@ GitLab provides solutions for [all the stages of the DevOps lifecycle](https://a
 
 ![DevOps Stages](img/devops-stages.png)
 
+GitLab is like a top-of-the-line kitchen for making software. As the executive
+chef, you decide what software you want serve. Using your recipe, GitLab handles
+all the prep work, cooking, and delivery, so you can turn around orders faster
+than ever.
+
 The following sections provide links to documentation for each DevOps stage:
 
 | DevOps Stage            | Documentation for                                           |
@@ -279,6 +284,7 @@ The following documentation relates to the DevOps **Configure** stage:
 | [Auto DevOps](topics/autodevops/index.md)                                                                                          | Automatically employ a complete DevOps lifecycle.                         |
 | [Easy creation of Kubernetes<br/>clusters on GKE](user/project/clusters/index.md#adding-and-creating-a-new-gke-cluster-via-gitlab) | Use Google Kubernetes Engine and GitLab.                                  |
 | [Executable Runbooks](user/project/clusters/runbooks/index.md)                                                                     | Documented procedures that explain how to carry out particular processes. |
+| [GitLab ChatOps](ci/chatops/README.md)                                                                                             | Interact with CI/CD jobs through chat services.                           |
 | [Installing Applications](user/project/clusters/index.md#installing-applications)                                                  | Deploy Helm, Ingress, and Prometheus on Kubernetes.                       |
 | [Mattermost slash commands](user/project/integrations/mattermost_slash_commands.md)                                                | Enable and use slash commands from within Mattermost.                     |
 | [Protected variables](ci/variables/README.md#protected-variables)                                                                  | Restrict variables to protected branches and tags.                        |
@@ -331,7 +337,7 @@ Viewing [Container Scanning reports](https://docs.gitlab.com/ee/user/project/mer
 There are two ways to use GitLab:
 
 - [GitLab self-managed](#gitlab-self-managed): Install, administer, and maintain your own GitLab instance.
-- [GitLab.com](#gitlab-com): GitLab's SaaS offering. You don't need to install anything to use GitLab.com,
+- [GitLab.com](#gitlabcom): GitLab's SaaS offering. You don't need to install anything to use GitLab.com,
   you only need to [sign up](https://gitlab.com/users/sign_in) and start using GitLab straight away.
 
 The following sections outline tiers and features within GitLab self-managed and GitLab.com.

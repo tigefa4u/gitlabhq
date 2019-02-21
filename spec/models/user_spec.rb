@@ -925,6 +925,21 @@ describe User do
           expect(user.manageable_groups).to contain_exactly(group, subgroup)
         end
       end
+
+      describe '#manageable_groups_with_routes' do
+        it 'eager loads routes from manageable groups' do
+          control_count =
+            ActiveRecord::QueryRecorder.new(skip_cached: false) do
+              user.manageable_groups_with_routes.map(&:route)
+            end.count
+
+          create(:group, parent: subgroup)
+
+          expect do
+            user.manageable_groups_with_routes.map(&:route)
+          end.not_to exceed_all_query_limit(control_count)
+        end
+      end
     end
   end
 
@@ -1996,6 +2011,33 @@ describe User do
 
       expect(subject).to include(accessible)
       expect(subject).not_to include(other)
+    end
+
+    context 'with min_access_level' do
+      let!(:user) { create(:user) }
+      let!(:project) { create(:project, :private, namespace: user.namespace) }
+
+      before do
+        project.add_developer(user)
+      end
+
+      subject { Project.where("EXISTS (?)", user.authorizations_for_projects(min_access_level: min_access_level)) }
+
+      context 'when developer access' do
+        let(:min_access_level) { Gitlab::Access::DEVELOPER }
+
+        it 'includes projects a user has access to' do
+          expect(subject).to include(project)
+        end
+      end
+
+      context 'when owner access' do
+        let(:min_access_level) { Gitlab::Access::OWNER }
+
+        it 'does not include projects with higher access level' do
+          expect(subject).not_to include(project)
+        end
+      end
     end
   end
 

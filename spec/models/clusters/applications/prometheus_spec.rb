@@ -5,33 +5,9 @@ describe Clusters::Applications::Prometheus do
 
   include_examples 'cluster application core specs', :clusters_applications_prometheus
   include_examples 'cluster application status specs', :clusters_applications_prometheus
+  include_examples 'cluster application version specs', :clusters_applications_prometheus
   include_examples 'cluster application helm specs', :clusters_applications_prometheus
-
-  describe '.installed' do
-    subject { described_class.installed }
-
-    let!(:cluster) { create(:clusters_applications_prometheus, :installed) }
-
-    before do
-      create(:clusters_applications_prometheus, :errored)
-    end
-
-    it { is_expected.to contain_exactly(cluster) }
-  end
-
-  describe '#make_installing!' do
-    before do
-      application.make_installing!
-    end
-
-    context 'application install previously errored with older version' do
-      let(:application) { create(:clusters_applications_prometheus, :scheduled, version: '6.7.2') }
-
-      it 'updates the application version' do
-        expect(application.reload.version).to eq('6.7.3')
-      end
-    end
-  end
+  include_examples 'cluster application initial status specs'
 
   describe 'transition to installed' do
     let(:project) { create(:project) }
@@ -48,65 +24,6 @@ describe Clusters::Applications::Prometheus do
       expect(prometheus_service).to receive(:update).with(active: true)
 
       subject.make_installed
-    end
-  end
-
-  describe '#ready' do
-    let(:project) { create(:project) }
-    let(:cluster) { create(:cluster, projects: [project]) }
-
-    it 'returns true when installed' do
-      application = build(:clusters_applications_prometheus, :installed, cluster: cluster)
-
-      expect(application).to be_ready
-    end
-
-    it 'returns false when not_installable' do
-      application = build(:clusters_applications_prometheus, :not_installable, cluster: cluster)
-
-      expect(application).not_to be_ready
-    end
-
-    it 'returns false when installable' do
-      application = build(:clusters_applications_prometheus, :installable, cluster: cluster)
-
-      expect(application).not_to be_ready
-    end
-
-    it 'returns false when scheduled' do
-      application = build(:clusters_applications_prometheus, :scheduled, cluster: cluster)
-
-      expect(application).not_to be_ready
-    end
-
-    it 'returns false when installing' do
-      application = build(:clusters_applications_prometheus, :installing, cluster: cluster)
-
-      expect(application).not_to be_ready
-    end
-
-    it 'returns false when errored' do
-      application = build(:clusters_applications_prometheus, :errored, cluster: cluster)
-
-      expect(application).not_to be_ready
-    end
-
-    it 'returns true when updating' do
-      application = build(:clusters_applications_prometheus, :updating, cluster: cluster)
-
-      expect(application).to be_ready
-    end
-
-    it 'returns true when updated' do
-      application = build(:clusters_applications_prometheus, :updated, cluster: cluster)
-
-      expect(application).to be_ready
-    end
-
-    it 'returns true when errored' do
-      application = build(:clusters_applications_prometheus, :update_errored, cluster: cluster)
-
-      expect(application).to be_ready
     end
   end
 
@@ -204,7 +121,7 @@ describe Clusters::Applications::Prometheus do
     end
 
     context 'with knative installed' do
-      let(:knative) { create(:clusters_applications_knative, :installed ) }
+      let(:knative) { create(:clusters_applications_knative, :updated ) }
       let(:prometheus) { create(:clusters_applications_prometheus, cluster: knative.cluster) }
 
       subject { prometheus.install_command }
@@ -219,8 +136,8 @@ describe Clusters::Applications::Prometheus do
     let(:prometheus) { build(:clusters_applications_prometheus) }
     let(:values) { prometheus.values }
 
-    it 'returns an instance of Gitlab::Kubernetes::Helm::GetCommand' do
-      expect(prometheus.upgrade_command(values)).to be_an_instance_of(::Gitlab::Kubernetes::Helm::UpgradeCommand)
+    it 'returns an instance of Gitlab::Kubernetes::Helm::InstallCommand' do
+      expect(prometheus.upgrade_command(values)).to be_an_instance_of(::Gitlab::Kubernetes::Helm::InstallCommand)
     end
 
     it 'should be initialized with 3 arguments' do

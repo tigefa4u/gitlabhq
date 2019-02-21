@@ -288,13 +288,16 @@ class Repository
       # Rugged seems to throw a `ReferenceError` when given branch_names rather
       # than SHA-1 hashes
       number_commits_behind, number_commits_ahead =
-        raw_repository.count_commits_between(
+        raw_repository.diverging_commit_count(
           @root_ref_hash,
           branch.dereferenced_target.sha,
-          left_right: true,
           max_count: MAX_DIVERGING_COUNT)
 
-      { behind: number_commits_behind, ahead: number_commits_ahead }
+      if number_commits_behind + number_commits_ahead >= MAX_DIVERGING_COUNT
+        { distance: MAX_DIVERGING_COUNT }
+      else
+        { behind: number_commits_behind, ahead: number_commits_ahead }
+      end
     end
   end
 
@@ -525,6 +528,8 @@ class Repository
 
   # items is an Array like: [[oid, path], [oid1, path1]]
   def blobs_at(items)
+    return [] unless exists?
+
     raw_repository.batch_blobs(items).map { |blob| Blob.decorate(blob, project) }
   end
 
@@ -612,7 +617,6 @@ class Repository
     return unless readme
 
     context = { project: project }
-    context[:markdown_engine] = :redcarpet unless MarkupHelper.commonmark_for_repositories_enabled?
 
     MarkupHelper.markup_unsafe(readme.name, readme.data, context)
   end
@@ -1029,12 +1033,12 @@ class Repository
                                        remote_branch: merge_request.target_branch)
   end
 
-  def squash(user, merge_request)
+  def squash(user, merge_request, message)
     raw.squash(user, merge_request.id, branch: merge_request.target_branch,
                                        start_sha: merge_request.diff_start_sha,
                                        end_sha: merge_request.diff_head_sha,
                                        author: merge_request.author,
-                                       message: merge_request.title)
+                                       message: message)
   end
 
   def update_submodule(user, submodule, commit_sha, message:, branch:)
@@ -1103,6 +1107,9 @@ class Repository
   end
 
   def initialize_raw_repository
-    Gitlab::Git::Repository.new(project.repository_storage, disk_path + '.git', Gitlab::GlRepository.gl_repository(project, is_wiki))
+    Gitlab::Git::Repository.new(project.repository_storage,
+                                disk_path + '.git',
+                                Gitlab::GlRepository.gl_repository(project, is_wiki),
+                                project.full_path)
   end
 end

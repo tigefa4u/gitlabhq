@@ -2,7 +2,6 @@
 comments: false
 ---
 
-
 # Training
 
 This training material is the markdown used to generate training slides
@@ -50,7 +49,7 @@ project.
 - Use the tools at your disposal when you get stuck.
   - Use `git help <command>` command
   - Use Google (i.e. StackOverflow, Google groups)
-  - Read documentation at https://git-scm.com
+  - Read documentation at <https://git-scm.com>
 
 ---
 
@@ -62,7 +61,7 @@ Workshop Time!
 ### Setup
 
 - Windows: Install 'Git for Windows'
-  - https://git-for-windows.github.io
+  - <https://git-for-windows.github.io>
 - Mac: Type `git` in the Terminal application.
   - If it's not installed, it will prompt you to install it.
 - Linux
@@ -142,7 +141,7 @@ cd ~/workspace
 
 - Sign in into your gitlab.com account
 - Create a project
-- Choose to import from 'Any Repo by URL' and use https://gitlab.com/gitlab-org/training-examples.git
+- Choose to import from 'Any Repo by URL' and use <https://gitlab.com/gitlab-org/training-examples.git>
 - On your machine clone the `training-examples` project
 
 ---
@@ -204,7 +203,6 @@ git push origin squash_some_bugs
 - When accepting, always delete the branch
 - Anyone can comment, not just the assignee
 - Push corrections to the same branch
-
 
 ---
 
@@ -394,7 +392,6 @@ Don't reset after pushing
 git revert vs git reset
 Reset removes the commit while revert removes the changes but leaves the commit
 Revert is safer considering we can revert a revert
-
 
     # Changed file
     git commit -am "bug introduced"

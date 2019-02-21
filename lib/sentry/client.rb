@@ -3,6 +3,7 @@
 module Sentry
   class Client
     Error = Class.new(StandardError)
+    SentryError = Class.new(StandardError)
 
     attr_accessor :url, :token
 
@@ -16,6 +17,13 @@ module Sentry
       map_to_errors(issues)
     end
 
+    def list_projects
+      projects = get_projects
+      map_to_projects(projects)
+    rescue KeyError => e
+      raise Client::SentryError, "Sentry API response is missing keys. #{e.message}"
+    end
+
     private
 
     def request_params
@@ -27,24 +35,36 @@ module Sentry
       }
     end
 
-    def get_issues(issue_status:, limit:)
-      resp = Gitlab::HTTP.get(
-        issues_api_url,
-        **request_params.merge(query: {
-          query: "is:#{issue_status}",
-          limit: limit
-        })
-      )
+    def http_get(url, params = {})
+      resp = Gitlab::HTTP.get(url, **request_params.merge(params))
 
       handle_response(resp)
     end
 
+    def get_issues(issue_status:, limit:)
+      http_get(issues_api_url, query: {
+        query: "is:#{issue_status}",
+        limit: limit
+      })
+    end
+
+    def get_projects
+      http_get(projects_api_url)
+    end
+
     def handle_response(response)
       unless response.code == 200
-        raise Client::Error, "Sentry response error: #{response.code}"
+        raise Client::Error, "Sentry response status code: #{response.code}"
       end
 
       response.as_json
+    end
+
+    def projects_api_url
+      projects_url = URI(@url)
+      projects_url.path = '/api/0/projects/'
+
+      projects_url
     end
 
     def issues_api_url
@@ -55,9 +75,11 @@ module Sentry
     end
 
     def map_to_errors(issues)
-      issues.map do |issue|
-        map_to_error(issue)
-      end
+      issues.map(&method(:map_to_error))
+    end
+
+    def map_to_projects(projects)
+      projects.map(&method(:map_to_project))
     end
 
     def issue_url(id)
@@ -98,6 +120,20 @@ module Sentry
         project_id: project.fetch('id'),
         project_name: project.fetch('name', nil),
         project_slug: project.fetch('slug', nil)
+      )
+    end
+
+    def map_to_project(project)
+      organization = project.fetch('organization')
+
+      Gitlab::ErrorTracking::Project.new(
+        id: project.fetch('id'),
+        name: project.fetch('name'),
+        slug: project.fetch('slug'),
+        status: project.dig('status'),
+        organization_name: organization.fetch('name'),
+        organization_id: organization.fetch('id'),
+        organization_slug: organization.fetch('slug')
       )
     end
   end

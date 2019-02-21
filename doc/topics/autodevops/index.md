@@ -13,7 +13,7 @@ Starting with GitLab 11.3, the Auto DevOps pipeline is enabled by default for al
 projects. If it has not been explicitly enabled for the project, Auto DevOps will be automatically
 disabled on the first pipeline failure. Your project will continue to use an alternative
 [CI/CD configuration file](../../ci/yaml/README.md) if one is found. A GitLab
-administrator can [change this setting](../../user/admin_area/settings/continuous_integration.html#auto-devops)
+administrator can [change this setting](../../user/admin_area/settings/continuous_integration.html#auto-devops-core-only)
 in the admin area.
 
 With Auto DevOps, the software development process becomes easier to set up
@@ -58,15 +58,15 @@ project in a simple and automatic way:
 
 1. [Auto Build](#auto-build)
 1. [Auto Test](#auto-test)
-1. [Auto Code Quality](#auto-code-quality) **[STARTER]**
-1. [Auto SAST (Static Application Security Testing)](#auto-sast) **[ULTIMATE]**
-1. [Auto Dependency Scanning](#auto-dependency-scanning) **[ULTIMATE]**
-1. [Auto License Management](#auto-license-management) **[ULTIMATE]**
+1. [Auto Code Quality](#auto-code-quality-starter) **[STARTER]**
+1. [Auto SAST (Static Application Security Testing)](#auto-sast-ultimate) **[ULTIMATE]**
+1. [Auto Dependency Scanning](#auto-dependency-scanning-ultimate) **[ULTIMATE]**
+1. [Auto License Management](#auto-license-management-ultimate) **[ULTIMATE]**
 1. [Auto Container Scanning](#auto-container-scanning)
 1. [Auto Review Apps](#auto-review-apps)
-1. [Auto DAST (Dynamic Application Security Testing)](#auto-dast) **[ULTIMATE]**
+1. [Auto DAST (Dynamic Application Security Testing)](#auto-dast-ultimate) **[ULTIMATE]**
 1. [Auto Deploy](#auto-deploy)
-1. [Auto Browser Performance Testing](#auto-browser-performance-testing) **[PREMIUM]**
+1. [Auto Browser Performance Testing](#auto-browser-performance-testing-premium) **[PREMIUM]**
 1. [Auto Monitoring](#auto-monitoring)
 
 As Auto DevOps relies on many different components, it's good to have a basic
@@ -114,7 +114,7 @@ To make full use of Auto DevOps, you will need:
    will need Prometheus installed somewhere (inside or outside your cluster) and
    configured to scrape your Kubernetes cluster. To get response metrics
    (in addition to system metrics), you need to
-   [configure Prometheus to monitor NGINX](../../user/project/integrations/prometheus_library/nginx_ingress.md#configuring-prometheus-to-monitor-for-nginx-ingress-metrics).
+   [configure Prometheus to monitor NGINX](../../user/project/integrations/prometheus_library/nginx_ingress.md#configuring-nginx-ingress-monitoring).
    The [Prometheus service](../../user/project/integrations/prometheus.md)
    integration needs to be enabled for the project, or enabled as a
    [default service template](../../user/project/integrations/services_templates.md)
@@ -126,14 +126,22 @@ Auto Deploy, and Auto Monitoring will be silently skipped.
 
 ## Auto DevOps base domain
 
+NOTE: **Note**
+`AUTO_DEVOPS_DOMAIN` environment variable is deprecated and
+[is scheduled to be removed](https://gitlab.com/gitlab-org/gitlab-ce/issues/56959).
+
 The Auto DevOps base domain is required if you want to make use of [Auto
 Review Apps](#auto-review-apps) and [Auto Deploy](#auto-deploy). It can be defined
-in three places:
+in any of the following places:
 
-- either under the project's CI/CD settings while [enabling Auto DevOps](#enabling-auto-devops)
+- either under the cluster's settings, whether for [projects](../../user/project/clusters/index.md#base-domain) or [groups](../../user/group/clusters/index.md#base-domain)
 - or in instance-wide settings in the **admin area > Settings** under the "Continuous Integration and Delivery" section
-- or at the project as a variable: `AUTO_DEVOPS_DOMAIN` (required if you want to use [multiple clusters](#using-multiple-kubernetes-clusters))
-- or at the group level as a variable: `AUTO_DEVOPS_DOMAIN`
+- or at the project level as a variable: `KUBE_INGRESS_BASE_DOMAIN`
+- or at the group level as a variable: `KUBE_INGRESS_BASE_DOMAIN`.
+
+NOTE: **Note**
+The Auto DevOps base domain variable (`KUBE_INGRESS_BASE_DOMAIN`) follows the same order of precedence
+as other environment [variables](../../ci/variables/README.md#priority-of-variables).
 
 A wildcard DNS A record matching the base domain(s) is required, for example,
 given a base domain of `example.com`, you'd need a DNS entry like:
@@ -158,7 +166,7 @@ them to the Kubernetes pods that run your application(s).
 
 When using Auto DevOps, you may want to deploy different environments to
 different Kubernetes clusters. This is possible due to the 1:1 connection that
-[exists between them](../../user/project/clusters/index.md#multiple-kubernetes-clusters).
+[exists between them](../../user/project/clusters/index.md#multiple-kubernetes-clusters-premium).
 
 In the [Auto DevOps template](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/ci/templates/Auto-DevOps.gitlab-ci.yml)
 (used behind the scenes by Auto DevOps), there are currently 3 defined environment names that you need to know:
@@ -170,17 +178,17 @@ In the [Auto DevOps template](https://gitlab.com/gitlab-org/gitlab-ce/blob/maste
 Those environments are tied to jobs that use [Auto Deploy](#auto-deploy), so
 except for the environment scope, they would also need to have a different
 domain they would be deployed to. This is why you need to define a separate
-`AUTO_DEVOPS_DOMAIN` variable for all the above
-[based on the environment](../../ci/variables/README.md#limiting-environment-scopes-of-variables).
+`KUBE_INGRESS_BASE_DOMAIN` variable for all the above
+[based on the environment](https://docs.gitlab.com/ee/ci/variables/index.html#limiting-environment-scopes-of-variables-premium).
 
 The following table is an example of how the three different clusters would
 be configured.
 
-| Cluster name | Cluster environment scope | `AUTO_DEVOPS_DOMAIN` variable value | Variable environment scope | Notes |
+| Cluster name | Cluster environment scope | `KUBE_INGRESS_BASE_DOMAIN` variable value | Variable environment scope | Notes |
 | ------------ | -------------- | ----------------------------- | ------------- | ------ |
 | review       |  `review/*`    | `review.example.com`  | `review/*`      | The review cluster which will run all [Review Apps](../../ci/review_apps/index.md). `*` is a wildcard, which means it will be used by every environment name starting with `review/`. |
 | staging      |  `staging`     | `staging.example.com` | `staging`       | (Optional) The staging cluster which will run the deployments of the staging environments. You need to [enable it first](#deploy-policy-for-staging-and-production-environments). |
-| production   |  `production`  | `example.com`         | `production`    | The production cluster which will run the deployments of the production environment. You can use [incremental rollouts](#incremental-rollout-to-production). |
+| production   |  `production`  | `example.com`         | `production`    | The production cluster which will run the deployments of the production environment. You can use [incremental rollouts](#incremental-rollout-to-production-premium). |
 
 To add a different cluster for each environment:
 
@@ -190,14 +198,11 @@ To add a different cluster for each environment:
     ![Auto DevOps multiple clusters](img/autodevops_multiple_clusters.png)
 
 1. After the clusters are created, navigate to each one and install Helm Tiller
-   and Ingress.
+   and Ingress. Wait for the Ingress IP address to be assigned.
 1. Make sure you have [configured your DNS](#auto-devops-base-domain) with the
    specified Auto DevOps domains.
-1. Navigate to your project's **Settings > CI/CD > Variables** and add
-   the `AUTO_DEVOPS_DOMAIN` variables with their respective environment
-   scope.
-
-    ![Auto DevOps domain variables](img/autodevops_domain_variables.png)
+1. Navigate to each cluster's page, through **Operations > Kubernetes**,
+   and add the domain based on its Ingress IP address.
 
 Now that all is configured, you can test your setup by creating a merge request
 and verifying that your app is deployed as a review app in the Kubernetes
@@ -205,10 +210,8 @@ cluster with the `review/*` environment scope. Similarly, you can check the
 other environments.
 
 NOTE: **Note:**
-Auto DevOps is not supported for a group with multiple clusters, as it
-is not possible to set `AUTO_DEVOPS_DOMAIN` per environment on the group
-level. This will be resolved in the future with the [following issue](
-https://gitlab.com/gitlab-org/gitlab-ce/issues/52363).
+From GitLab 11.8, `KUBE_INGRESS_BASE_DOMAIN` replaces `AUTO_DEVOPS_DOMAIN`.
+`AUTO_DEVOPS_DOMAIN` [is scheduled to be removed](https://gitlab.com/gitlab-org/gitlab-ce/issues/56959).
 
 ## Enabling/Disabling Auto DevOps
 
@@ -266,12 +269,12 @@ The available options are:
 - **Continuous deployment to production**: Enables [Auto Deploy](#auto-deploy)
   with `master` branch directly deployed to production.
 - **Continuous deployment to production using timed incremental rollout**: Sets the
-  [`INCREMENTAL_ROLLOUT_MODE`](#timed-incremental-rollout-to-production) variable
+  [`INCREMENTAL_ROLLOUT_MODE`](#timed-incremental-rollout-to-production-premium) variable
   to `timed`, and production deployment will be executed with a 5 minute delay between
   each increment in rollout.
 - **Automatic deployment to staging, manual deployment to production**: Sets the
   [`STAGING_ENABLED`](#deploy-policy-for-staging-and-production-environments) and
-  [`INCREMENTAL_ROLLOUT_MODE`](#incremental-rollout-to-production) variables
+  [`INCREMENTAL_ROLLOUT_MODE`](#incremental-rollout-to-production-premium) variables
   to `1` and `manual`. This means:
 
   - `master` branch is directly deployed to staging.
@@ -500,7 +503,7 @@ Auto Deploy doesn't include deployments to staging or canary by default, but the
 [Auto DevOps template] contains job definitions for these tasks if you want to
 enable them.
 
-You can make use of [environment variables](#helm-chart-variables) to automatically
+You can make use of [environment variables](#environment-variables) to automatically
 scale your pod replicas.
 
 It's important to note that when a project is deployed to a Kubernetes cluster,
@@ -550,7 +553,7 @@ Herokuish](https://github.com/gliderlabs/herokuish#paths)
 
 > [Introduced][ce-19507] in GitLab 11.0.
 
-For internal and private projects a [GitLab Deploy Token](../../user/project/deploy_tokens/index.md###gitlab-deploy-token)
+For internal and private projects a [GitLab Deploy Token](../../user/project/deploy_tokens/index.md#gitlab-deploy-token)
 will be automatically created, when Auto DevOps is enabled and the Auto DevOps settings are saved. This Deploy Token
 can be used for permanent access to the registry.
 
@@ -578,7 +581,7 @@ The metrics include:
 
 In order to make use of monitoring you need to:
 
-1. [Deploy Prometheus](../../user/project/integrations/prometheus.md#configuring-your-own-prometheus-server-within-kubernetes) into your Kubernetes cluster
+1. [Deploy Prometheus](../../user/project/integrations/prometheus.md) into your Kubernetes cluster
 1. If you would like response metrics, ensure you are running at least version
    0.9.0 of NGINX Ingress and
    [enable Prometheus metrics](https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/customization/custom-vts-metrics-prometheus/nginx-vts-metrics-conf.yaml).
@@ -634,6 +637,11 @@ repo or by specifying a project variable:
 - **Project variable** - Create a [project variable](../../ci/variables/README.md#variables)
   `AUTO_DEVOPS_CHART` with the URL of a custom chart to use or create two project variables `AUTO_DEVOPS_CHART_REPOSITORY` with the URL of a custom chart repository and `AUTO_DEVOPS_CHART` with the path to the chart.
 
+### Custom Helm chart per environment **[PREMIUM]**
+
+You can specify the use of a custom Helm chart per environment by scoping the environment variable 
+to the desired environment. See [Limiting environment scopes of variables](https://docs.gitlab.com/ee/ci/variables/#limiting-environment-scopes-of-variables-premium).
+
 ### Customizing `.gitlab-ci.yml`
 
 If you want to modify the CI/CD pipeline used by Auto DevOps, you can copy the
@@ -676,7 +684,7 @@ also be customized, and you can easily use a [custom buildpack](#custom-buildpac
 
 | **Variable**                 | **Description**                                                                                                                                                                                                               |
 | ------------                 | ---------------                                                                                                                                                                                                               |
-| `AUTO_DEVOPS_DOMAIN`         | The [Auto DevOps domain](#auto-devops-domain); by default set automatically by the [Auto DevOps setting](#enabling-auto-devops).                                                                                              |
+| `AUTO_DEVOPS_DOMAIN`         | The [Auto DevOps domain](#auto-devops-base-domain). By default, set automatically by the [Auto DevOps setting](#enablingdisabling-auto-devops). This variable is deprecated and [is scheduled to be removed](https://gitlab.com/gitlab-org/gitlab-ce/issues/56959). Use `KUBE_INGRESS_BASE_DOMAIN` instead. |
 | `AUTO_DEVOPS_CHART`          | The Helm Chart used to deploy your apps; defaults to the one [provided by GitLab](https://gitlab.com/charts/auto-deploy-app).                                                             |
 | `AUTO_DEVOPS_CHART_REPOSITORY` | The Helm Chart repository used to search for charts; defaults to `https://charts.gitlab.io`. |
 | `REPLICAS`                   | The number of replicas to deploy; defaults to 1.                                                                                                                                                                              |
@@ -688,15 +696,15 @@ also be customized, and you can easily use a [custom buildpack](#custom-buildpac
 | `POSTGRES_ENABLED`           | Whether PostgreSQL is enabled; defaults to `"true"`. Set to `false` to disable the automatic deployment of PostgreSQL.                                                                                                        |
 | `POSTGRES_USER`              | The PostgreSQL user; defaults to `user`. Set it to use a custom username.                                                                                                                                                     |
 | `POSTGRES_PASSWORD`          | The PostgreSQL password; defaults to `testing-password`. Set it to use a custom password.                                                                                                                                     |
-| `POSTGRES_DB`                | The PostgreSQL database name; defaults to the value of [`$CI_ENVIRONMENT_SLUG`](../../ci/variables/README.md#predefined-variables-environment-variables). Set it to use a custom database name.                               |
+| `POSTGRES_DB`                | The PostgreSQL database name; defaults to the value of [`$CI_ENVIRONMENT_SLUG`](../../ci/variables/README.md#predefined-environment-variables). Set it to use a custom database name.                               |
 | `BUILDPACK_URL`              | The buildpack's full URL. It can point to either Git repositories or a tarball URL. For Git repositories, it is possible to point to a specific `ref`, for example `https://github.com/heroku/heroku-buildpack-ruby.git#v142` |
 | `SAST_CONFIDENCE_LEVEL`      | The minimum confidence level of security issues you want to be reported; `1` for Low, `2` for Medium, `3` for High; defaults to `3`.|
 | `DEP_SCAN_DISABLE_REMOTE_CHECKS` | Whether remote Dependency Scanning checks are disabled; defaults to `"false"`. Set to `"true"` to disable checks that send data to GitLab central servers. [Read more about remote checks](https://gitlab.com/gitlab-org/security-products/dependency-scanning#remote-checks).|
 | `DB_INITIALIZE`              | From GitLab 11.4, this variable can be used to specify the command to run to initialize the application's PostgreSQL database. It runs inside the application pod. |
 | `DB_MIGRATE`                 | From GitLab 11.4, this variable can be used to specify the command to run to migrate the application's PostgreSQL database. It runs inside the application pod. |
 | `STAGING_ENABLED`            | From GitLab 10.8, this variable can be used to define a [deploy policy for staging and production environments](#deploy-policy-for-staging-and-production-environments). |
-| `CANARY_ENABLED`             | From GitLab 11.0, this variable can be used to define a [deploy policy for canary environments](#deploy-policy-for-canary-environments). |
-| `INCREMENTAL_ROLLOUT_MODE`| From GitLab 11.4, this variable, if present, can be used to enable an [incremental rollout](#incremental-rollout-to-production) of your application for the production environment.<br/>Set to: <ul><li>`manual`, for manual deployment jobs.</li><li>`timed`, for automatic rollout deployments with a 5 minute delay each one.</li></ul> |
+| `CANARY_ENABLED`             | From GitLab 11.0, this variable can be used to define a [deploy policy for canary environments](#deploy-policy-for-canary-environments-premium). |
+| `INCREMENTAL_ROLLOUT_MODE`| From GitLab 11.4, this variable, if present, can be used to enable an [incremental rollout](#incremental-rollout-to-production-premium) of your application for the production environment.<br/>Set to: <ul><li>`manual`, for manual deployment jobs.</li><li>`timed`, for automatic rollout deployments with a 5 minute delay each one.</li></ul> |
 | `TEST_DISABLED`              | From GitLab 11.0, this variable can be used to disable the `test` job. If the variable is present, the job will not be created. |
 | `CODE_QUALITY_DISABLED`       | From GitLab 11.0, this variable can be used to disable the `codequality` job. If the variable is present, the job will not be created. |
 | `SAST_DISABLED`              | From GitLab 11.0, this variable can be used to disable the `sast` job. If the variable is present, the job will not be created. |
@@ -706,6 +714,7 @@ also be customized, and you can easily use a [custom buildpack](#custom-buildpac
 | `DAST_DISABLED`              | From GitLab 11.0, this variable can be used to disable the `dast` job. If the variable is present, the job will not be created. |
 | `PERFORMANCE_DISABLED`       | From GitLab 11.0, this variable can be used to disable the `performance` job. If the variable is present, the job will not be created. |
 | `K8S_SECRET_*`               | From GitLab 11.7, any variable prefixed with [`K8S_SECRET_`](#application-secret-variables) will be made available by Auto DevOps as environment variables to the deployed application. |
+| `KUBE_INGRESS_BASE_DOMAIN`   | From GitLab 11.8, this variable can be used to set a domain per cluster. See [cluster domains](../../user/project/clusters/index.md#base-domain) for more information. |
 
 TIP: **Tip:**
 Set up the replica variables using a
@@ -929,7 +938,7 @@ TIP: **Tip:**
 You can also set this inside your [project's settings](#deployment-strategy).
 
 This configuration based on
-[incremental rollout to production](#incremental-rollout-to-production).
+[incremental rollout to production](#incremental-rollout-to-production-premium).
 
 Everything behaves the same way, except:
 

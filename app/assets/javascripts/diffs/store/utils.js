@@ -1,5 +1,6 @@
 import _ from 'underscore';
-import { diffModes } from '~/ide/constants';
+import { truncatePathMiddleToLength } from '~/lib/utils/text_utility';
+import { diffModes, diffViewerModes } from '~/ide/constants';
 import {
   LINE_POSITION_LEFT,
   LINE_POSITION_RIGHT,
@@ -160,6 +161,7 @@ export function addContextLines(options) {
   const normalizedParallelLines = contextLines.map(line => ({
     left: line,
     right: line,
+    line_code: line.line_code,
   }));
 
   if (options.bottom) {
@@ -181,8 +183,6 @@ export function addContextLines(options) {
 export function trimFirstCharOfLineContent(line = {}) {
   // eslint-disable-next-line no-param-reassign
   delete line.text;
-  // eslint-disable-next-line no-param-reassign
-  line.discussions = [];
 
   const parsedLine = Object.assign({}, line);
 
@@ -222,10 +222,12 @@ export function prepareDiffData(diffData) {
         line.line_code = getLineCode(line, u);
         if (line.left) {
           line.left = trimFirstCharOfLineContent(line.left);
+          line.left.discussions = [];
           line.left.hasForm = false;
         }
         if (line.right) {
           line.right = trimFirstCharOfLineContent(line.right);
+          line.right.discussions = [];
           line.right.hasForm = false;
         }
       }
@@ -235,14 +237,19 @@ export function prepareDiffData(diffData) {
       const linesLength = file.highlighted_diff_lines.length;
       for (let u = 0; u < linesLength; u += 1) {
         const line = file.highlighted_diff_lines[u];
-        Object.assign(line, { ...trimFirstCharOfLineContent(line), hasForm: false });
+        Object.assign(line, {
+          ...trimFirstCharOfLineContent(line),
+          discussions: [],
+          hasForm: false,
+        });
       }
       showingLines += file.parallel_diff_lines.length;
     }
 
     Object.assign(file, {
       renderIt: showingLines < LINES_TO_BE_RENDERED_DIRECTLY,
-      collapsed: file.text && showingLines > MAX_LINES_TO_BE_RENDERED,
+      collapsed:
+        file.viewer.name === diffViewerModes.text && showingLines > MAX_LINES_TO_BE_RENDERED,
       discussions: [],
     });
   }
@@ -302,7 +309,7 @@ export const getLowestSingleFolder = folder => {
         if (shouldGetFolder) {
           const firstFolder = getFolder(file);
 
-          path.push(firstFolder.path);
+          path.push(...firstFolder.path);
           tree.push(...firstFolder.tree);
         }
 
@@ -317,7 +324,7 @@ export const getLowestSingleFolder = folder => {
   const { path, tree } = getFolder(folder, [folder.name]);
 
   return {
-    path: path.join('/'),
+    path: truncatePathMiddleToLength(path.join('/'), 40),
     treeAcc: tree.length ? tree[tree.length - 1].tree : null,
   };
 };
@@ -398,7 +405,9 @@ export const getDiffMode = diffFile => {
   const diffModeKey = Object.keys(diffModes).find(key => diffFile[`${key}_file`]);
   return (
     diffModes[diffModeKey] ||
-    (diffFile.mode_changed && diffModes.mode_changed) ||
+    (diffFile.viewer &&
+      diffFile.viewer.name === diffViewerModes.mode_changed &&
+      diffViewerModes.mode_changed) ||
     diffModes.replaced
   );
 };

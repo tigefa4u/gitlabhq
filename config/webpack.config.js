@@ -94,6 +94,9 @@ module.exports = {
       vendor: path.join(ROOT_PATH, 'vendor/assets/javascripts'),
       vue$: 'vue/dist/vue.esm.js',
       spec: path.join(ROOT_PATH, 'spec/javascripts'),
+
+      // the following resolves files which are different between CE and EE
+      ee_else_ce: path.join(ROOT_PATH, 'app/assets/javascripts'),
     },
   },
 
@@ -147,6 +150,7 @@ module.exports = {
             loader: 'worker-loader',
             options: {
               name: '[name].[hash:8].worker.js',
+              inline: IS_DEV_SERVER,
             },
           },
           'babel-loader',

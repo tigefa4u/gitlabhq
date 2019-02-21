@@ -25,6 +25,8 @@ module Ci
 
     has_many :stages, -> { order(position: :asc) }, inverse_of: :pipeline
     has_many :statuses, class_name: 'CommitStatus', foreign_key: :commit_id, inverse_of: :pipeline
+    has_many :processables, -> { processables },
+             class_name: 'CommitStatus', foreign_key: :commit_id, inverse_of: :pipeline
     has_many :builds, foreign_key: :commit_id, inverse_of: :pipeline
     has_many :trigger_requests, dependent: :destroy, foreign_key: :commit_id # rubocop:disable Cop/ActiveRecordDependent
     has_many :variables, class_name: 'Ci::PipelineVariable'
@@ -44,6 +46,8 @@ module Ci
 
     has_many :auto_canceled_pipelines, class_name: 'Ci::Pipeline', foreign_key: 'auto_canceled_by_id'
     has_many :auto_canceled_jobs, class_name: 'CommitStatus', foreign_key: 'auto_canceled_by_id'
+
+    has_one :chat_data, class_name: 'Ci::PipelineChatData'
 
     accepts_nested_attributes_for :variables, reject_if: :persisted?
 
@@ -313,7 +317,7 @@ module Ci
     def ordered_stages
       return legacy_stages unless complete?
 
-      if Feature.enabled?('ci_pipeline_persisted_stages')
+      if Feature.enabled?('ci_pipeline_persisted_stages', default_enabled: true)
         stages
       else
         legacy_stages
@@ -685,9 +689,18 @@ module Ci
       end
     end
 
+    # Returns the modified paths.
+    #
+    # The returned value is
+    # * Array: List of modified paths that should be evaluated
+    # * nil: Modified path can not be evaluated
     def modified_paths
       strong_memoize(:modified_paths) do
-        push_details.modified_paths
+        if merge_request?
+          merge_request.modified_paths
+        elsif branch_updated?
+          push_details.modified_paths
+        end
       end
     end
 

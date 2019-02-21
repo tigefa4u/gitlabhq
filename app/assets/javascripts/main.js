@@ -78,7 +78,6 @@ function deferredInitialisation() {
   initUserPopovers();
 
   if (document.querySelector('.search')) initSearchAutocomplete();
-  if (document.querySelector('#js-peek')) initPerformanceBar({ container: '#js-peek' });
 
   addSelectOnFocusBehaviour('.js-select-on-focus');
 
@@ -100,27 +99,30 @@ function deferredInitialisation() {
   });
 
   // Initialize select2 selects
-  $('select.select2').select2({
-    width: 'resolve',
-    dropdownAutoWidth: true,
-  });
+  if ($('select.select2').length) {
+    import(/* webpackChunkName: 'select2' */ 'select2/select2')
+      .then(() => {
+        $('select.select2').select2({
+          width: 'resolve',
+          dropdownAutoWidth: true,
+        });
 
-  // Close select2 on escape
-  $('.js-select2').on('select2-close', () => {
-    setTimeout(() => {
-      $('.select2-container-active').removeClass('select2-container-active');
-      $(':focus').blur();
-    }, 1);
-  });
+        // Close select2 on escape
+        $('.js-select2').on('select2-close', () => {
+          setTimeout(() => {
+            $('.select2-container-active').removeClass('select2-container-active');
+            $(':focus').blur();
+          }, 1);
+        });
+      })
+      .catch(() => {});
+  }
 
   // Initialize tooltips
   $body.tooltip({
     selector: '.has-tooltip, [data-toggle="tooltip"]',
     trigger: 'hover',
     boundary: 'viewport',
-    placement(tip, el) {
-      return $(el).data('placement') || 'bottom';
-    },
   });
 
   // Initialize popovers
@@ -141,6 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const $window = $(window);
   const $sidebarGutterToggle = $('.js-sidebar-toggle');
   let bootstrapBreakpoint = bp.getBreakpointSize();
+
+  if (document.querySelector('#js-peek')) initPerformanceBar({ container: '#js-peek' });
 
   initLayoutNav();
 

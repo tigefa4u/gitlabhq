@@ -144,6 +144,7 @@ export default {
 
             if (left || right) {
               return {
+                ...line,
                 left: line.left ? mapDiscussions(line.left) : null,
                 right: line.right ? mapDiscussions(line.right, () => !left) : null,
               };
@@ -237,5 +238,14 @@ export default {
   [types.SET_TREE_DATA](state, { treeEntries, tree }) {
     state.treeEntries = treeEntries;
     state.tree = tree;
+  },
+  [types.SET_RENDER_TREE_LIST](state, renderTreeList) {
+    state.renderTreeList = renderTreeList;
+  },
+  [types.SET_SHOW_WHITESPACE](state, showWhitespace) {
+    state.showWhitespace = showWhitespace;
+  },
+  [types.TOGGLE_FILE_FINDER_VISIBLE](state, visible) {
+    state.fileFinderVisible = visible;
   },
 };

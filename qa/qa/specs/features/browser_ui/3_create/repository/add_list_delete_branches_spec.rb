@@ -23,11 +23,11 @@ module QA
           proj.name = 'project-qa-test'
           proj.description = 'project for qa test'
         end
-        project.visit!
 
         Git::Repository.perform do |repository|
           repository.uri = project.repository_http_location.uri
           repository.use_default_credentials
+          repository.try_add_credentials_to_netrc
 
           repository.act do
             clone
@@ -52,7 +52,8 @@ module QA
             push_changes(third_branch)
           end
         end
-        Page::Project::Show.perform(&:wait_for_push)
+        project.wait_for_push commit_message_of_third_branch
+        project.visit!
       end
 
       it 'branches are correctly listed after CRUD operations' do

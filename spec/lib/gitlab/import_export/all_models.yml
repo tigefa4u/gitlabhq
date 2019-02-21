@@ -114,6 +114,7 @@ ci_pipelines:
 - stages
 - statuses
 - builds
+- processables
 - trigger_requests
 - variables
 - auto_canceled_by
@@ -130,6 +131,7 @@ ci_pipelines:
 - merge_request
 - deployments
 - environments
+- chat_data
 pipeline_variables:
 - pipeline
 stages:
@@ -137,6 +139,7 @@ stages:
 - pipeline
 - statuses
 - builds
+- bridges
 statuses:
 - project
 - pipeline
@@ -217,7 +220,6 @@ project:
 - packagist_service
 - pivotaltracker_service
 - prometheus_service
-- hipchat_service
 - flowdock_service
 - assembla_service
 - asana_service

@@ -6,7 +6,6 @@ module Clusters
       include PrometheusAdapter
 
       VERSION = '6.7.3'
-      READY_STATUS = [:installed, :updating, :updated, :update_errored].freeze
 
       self.table_name = 'clusters_applications_prometheus'
 
@@ -23,10 +22,6 @@ module Clusters
             project.find_or_initialize_service('prometheus').update(active: true)
           end
         end
-      end
-
-      def ready?
-        READY_STATUS.include?(status_name)
       end
 
       def chart
@@ -53,11 +48,11 @@ module Clusters
       end
 
       def upgrade_command(values)
-        ::Gitlab::Kubernetes::Helm::UpgradeCommand.new(
-          name,
+        ::Gitlab::Kubernetes::Helm::InstallCommand.new(
+          name: name,
           version: VERSION,
-          chart: chart,
           rbac: cluster.platform_kubernetes_rbac?,
+          chart: chart,
           files: files_with_replaced_values(values)
         )
       end

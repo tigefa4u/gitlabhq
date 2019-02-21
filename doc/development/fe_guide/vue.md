@@ -6,9 +6,9 @@ To get started with Vue, read through [their documentation][vue-docs].
 
 What is described in the following sections can be found in these examples:
 
-- web ide: https://gitlab.com/gitlab-org/gitlab-ce/tree/master/app/assets/javascripts/ide/stores
-- security products: https://gitlab.com/gitlab-org/gitlab-ee/tree/master/ee/app/assets/javascripts/vue_shared/security_reports
-- registry: https://gitlab.com/gitlab-org/gitlab-ce/tree/master/app/assets/javascripts/registry/stores
+- web ide: <https://gitlab.com/gitlab-org/gitlab-ce/tree/master/app/assets/javascripts/ide/stores>
+- security products: <https://gitlab.com/gitlab-org/gitlab-ee/tree/master/ee/app/assets/javascripts/vue_shared/security_reports>
+- registry: <https://gitlab.com/gitlab-org/gitlab-ce/tree/master/app/assets/javascripts/registry/stores>
 
 ## Vue architecture
 
@@ -228,7 +228,6 @@ One should apply to be a Vue.js expert by opening an MR when the Merge Request's
 - Full understanding of testing a Vue and Vuex application
 - Vuex code follows the [documented pattern](./vuex.md#actions-pattern-request-and-receive-namespaces)
 - Knowledge about the existing Vue and Vuex applications and existing reusable components
-
 
 [vue-docs]: http://vuejs.org/guide/index.html
 [issue-boards]: https://gitlab.com/gitlab-org/gitlab-ce/tree/master/app/assets/javascripts/boards

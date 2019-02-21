@@ -339,7 +339,6 @@ afterEach(() => {
 
 Some regressions only affect a specific browser version. We can install and test in particular browsers with either Firefox or Browserstack using the following steps:
 
-
 ### Browserstack
 
 [Browserstack](https://www.browserstack.com/) allows you to test more than 1200 mobile devices and browsers.
@@ -350,7 +349,7 @@ You can find the credentials on 1Password, under `frontendteam@gitlab.com`.
 
 #### macOS
 
-You can download any older version of Firefox from the releases FTP server, https://ftp.mozilla.org/pub/firefox/releases/
+You can download any older version of Firefox from the releases FTP server, <https://ftp.mozilla.org/pub/firefox/releases/>
 
 1. From the website, select a version, in this case `50.0.1`.
 1. Go to the mac folder.

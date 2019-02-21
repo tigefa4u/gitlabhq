@@ -57,6 +57,7 @@ gem 'u2f', '~> 0.2.1'
 
 # GitLab Pages
 gem 'validates_hostname', '~> 1.0.6'
+gem 'rubyzip', '~> 1.2.2', require: 'zip'
 
 # Browser detection
 gem 'browser', '~> 2.5'
@@ -112,10 +113,9 @@ gem 'seed-fu', '~> 2.3.7'
 
 # Markdown and HTML processing
 gem 'html-pipeline', '~> 2.8'
-gem 'deckar01-task_list', '2.0.1'
+gem 'deckar01-task_list', '2.2.0'
 gem 'gitlab-markup', '~> 1.6.5'
 gem 'github-markup', '~> 1.7.0', require: 'github/markup'
-gem 'redcarpet', '~> 3.4'
 gem 'commonmarker', '~> 0.17'
 gem 'RedCloth', '~> 4.3.2'
 gem 'rdoc', '~> 6.0'
@@ -143,7 +143,7 @@ gem 'diffy', '~> 3.1.0'
 gem 'rack', '2.0.6'
 
 group :unicorn do
-  gem 'unicorn', '~> 5.1.0'
+  gem 'unicorn', '~> 5.4.1'
   gem 'unicorn-worker-killer', '~> 0.4.4'
 end
 
@@ -187,7 +187,7 @@ gem 're2', '~> 1.1.1'
 gem 'version_sorter', '~> 2.1.0'
 
 # Export Ruby Regex to Javascript
-gem 'js_regex', '~> 2.2.1'
+gem 'js_regex', '~> 3.1'
 
 # User agent parsing
 gem 'device_detector'
@@ -201,9 +201,6 @@ gem 'connection_pool', '~> 2.0'
 
 # Discord integration
 gem 'discordrb-webhooks-blackst0ne', '~> 3.3', require: false
-
-# HipChat integration
-gem 'hipchat', '~> 1.5.0'
 
 # JIRA integration
 gem 'jira-ruby', '~> 1.4'
@@ -224,7 +221,7 @@ gem 'asana', '~> 0.8.1'
 gem 'ruby-fogbugz', '~> 0.2.1'
 
 # Kubernetes integration
-gem 'kubeclient', '~> 4.0.0'
+gem 'kubeclient', '~> 4.2.2'
 
 # Sanitize user input
 gem 'sanitize', '~> 4.6'
@@ -383,7 +380,7 @@ group :test do
   gem 'shoulda-matchers', '~> 3.1.2', require: false
   gem 'email_spec', '~> 2.2.0'
   gem 'json-schema', '~> 2.8.0'
-  gem 'webmock', '~> 2.3.2'
+  gem 'webmock', '~> 3.5.1'
   gem 'rails-controller-testing'
   gem 'sham_rack', '~> 1.3.6'
   gem 'concurrent-ruby', '~> 1.1'
@@ -413,7 +410,7 @@ gem 'sys-filesystem', '~> 1.1.6'
 
 # SSH host key support
 gem 'net-ssh', '~> 5.0'
-gem 'sshkey', '~> 1.9.0'
+gem 'sshkey', '~> 2.0'
 
 # Required for ED25519 SSH host key support
 group :ed25519 do
@@ -422,7 +419,7 @@ group :ed25519 do
 end
 
 # Gitaly GRPC client
-gem 'gitaly-proto', '~> 1.5.0', require: 'gitaly'
+gem 'gitaly-proto', '~> 1.10.0', require: 'gitaly'
 gem 'grpc', '~> 1.15.0'
 
 gem 'google-protobuf', '~> 3.6'

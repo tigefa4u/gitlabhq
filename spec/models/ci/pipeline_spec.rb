@@ -22,6 +22,7 @@ describe Ci::Pipeline, :mailer do
   it { is_expected.to have_many(:builds) }
   it { is_expected.to have_many(:auto_canceled_pipelines) }
   it { is_expected.to have_many(:auto_canceled_jobs) }
+  it { is_expected.to have_one(:chat_data) }
 
   it { is_expected.to validate_presence_of(:sha) }
   it { is_expected.to validate_presence_of(:status) }
@@ -36,6 +37,29 @@ describe Ci::Pipeline, :mailer do
       expect(described_class.reflect_on_association(:project).has_inverse?).to eq(:all_pipelines)
       expect(Project.reflect_on_association(:all_pipelines).has_inverse?).to eq(:project)
       expect(Project.reflect_on_association(:ci_pipelines).has_inverse?).to eq(:project)
+    end
+  end
+
+  describe '.processables' do
+    before do
+      create(:ci_build, name: 'build', pipeline: pipeline)
+      create(:ci_bridge, name: 'bridge', pipeline: pipeline)
+      create(:commit_status, name: 'commit status', pipeline: pipeline)
+      create(:generic_commit_status, name: 'generic status', pipeline: pipeline)
+    end
+
+    it 'has an association with processable CI/CD entities' do
+      pipeline.processables.pluck('name').yield_self do |processables|
+        expect(processables).to match_array %w[build bridge]
+      end
+    end
+
+    it 'makes it possible to append a new processable' do
+      pipeline.processables << build(:ci_bridge)
+
+      pipeline.save!
+
+      expect(pipeline.processables.reload.count).to eq 3
     end
   end
 
@@ -1149,8 +1173,26 @@ describe Ci::Pipeline, :mailer do
         pipeline.update_column(:before_sha, Gitlab::Git::BLANK_SHA)
       end
 
-      it 'raises an error' do
-        expect { pipeline.modified_paths }.to raise_error(ArgumentError)
+      it 'returns nil' do
+        expect(pipeline.modified_paths).to be_nil
+      end
+    end
+
+    context 'when source is merge request' do
+      let(:pipeline) do
+        create(:ci_pipeline, source: :merge_request, merge_request: merge_request)
+      end
+
+      let(:merge_request) do
+        create(:merge_request,
+               source_project: project,
+               source_branch: 'feature',
+               target_project: project,
+               target_branch: 'master')
+      end
+
+      it 'returns merge request modified paths' do
+        expect(pipeline.modified_paths).to match(merge_request.modified_paths)
       end
     end
   end

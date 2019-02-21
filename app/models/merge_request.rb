@@ -21,6 +21,8 @@ class MergeRequest < ActiveRecord::Base
   self.reactive_cache_refresh_interval = 10.minutes
   self.reactive_cache_lifetime = 10.minutes
 
+  SORTING_PREFERENCE_FIELD = :merge_requests_sort
+
   ignore_column :locked_at,
                 :ref_fetched,
                 :deleted_at
@@ -284,12 +286,12 @@ class MergeRequest < ActiveRecord::Base
     work_in_progress?(title) ? title : "WIP: #{title}"
   end
 
-  def committers
-    @committers ||= commits.committers
+  def commit_authors
+    @commit_authors ||= commits.authors
   end
 
   def authors
-    User.from_union([committers, User.where(id: self.author_id)])
+    User.from_union([commit_authors, User.where(id: self.author_id)])
   end
 
   # Verifies if title has changed not taking into account WIP prefix
@@ -937,7 +939,7 @@ class MergeRequest < ActiveRecord::Base
     self.target_project.repository.branch_exists?(self.target_branch)
   end
 
-  def merge_commit_message(include_description: false)
+  def default_merge_commit_message(include_description: false)
     closes_issues_references = visible_closing_issues_for.map do |issue|
       issue.to_reference(target_project)
     end
@@ -957,6 +959,13 @@ class MergeRequest < ActiveRecord::Base
     message.join("\n\n")
   end
 
+  # Returns the oldest multi-line commit message, or the MR title if none found
+  def default_squash_commit_message
+    strong_memoize(:default_squash_commit_message) do
+      commits.without_merge_commits.reverse.find(&:description?)&.safe_message || title
+    end
+  end
+
   def reset_merge_when_pipeline_succeeds
     return unless merge_when_pipeline_succeeds?
 
@@ -965,6 +974,7 @@ class MergeRequest < ActiveRecord::Base
     if merge_params
       merge_params.delete('should_remove_source_branch')
       merge_params.delete('commit_message')
+      merge_params.delete('squash_commit_message')
     end
 
     self.save
@@ -1312,7 +1322,7 @@ class MergeRequest < ActiveRecord::Base
   def base_pipeline
     @base_pipeline ||= project.ci_pipelines
       .order(id: :desc)
-      .find_by(sha: diff_base_sha)
+      .find_by(sha: diff_base_sha, ref: target_branch)
   end
 
   def discussions_rendered_on_frontend?

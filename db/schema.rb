@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190115054216) do
+ActiveRecord::Schema.define(version: 20190204115450) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -168,6 +168,8 @@ ActiveRecord::Schema.define(version: 20190115054216) do
     t.string "commit_email_hostname"
     t.boolean "protected_ci_variables", default: false, null: false
     t.string "runners_registration_token_encrypted"
+    t.integer "local_markdown_version", default: 0, null: false
+    t.integer "first_day_of_week", default: 0, null: false
     t.index ["usage_stats_set_by_user_id"], name: "index_application_settings_on_usage_stats_set_by_user_id", using: :btree
   end
 
@@ -419,6 +421,14 @@ ActiveRecord::Schema.define(version: 20190115054216) do
     t.index ["project_id"], name: "index_ci_job_artifacts_on_project_id", using: :btree
   end
 
+  create_table "ci_pipeline_chat_data", id: :bigserial, force: :cascade do |t|
+    t.integer "pipeline_id", null: false
+    t.integer "chat_name_id", null: false
+    t.text "response_url", null: false
+    t.index ["chat_name_id"], name: "index_ci_pipeline_chat_data_on_chat_name_id", using: :btree
+    t.index ["pipeline_id"], name: "index_ci_pipeline_chat_data_on_pipeline_id", unique: true, using: :btree
+  end
+
   create_table "ci_pipeline_schedule_variables", force: :cascade do |t|
     t.string "key", null: false
     t.text "value"
@@ -647,6 +657,7 @@ ActiveRecord::Schema.define(version: 20190115054216) do
     t.string "name", null: false
     t.string "environment_scope", default: "*", null: false
     t.integer "cluster_type", limit: 2, default: 3, null: false
+    t.string "domain"
     t.index ["enabled"], name: "index_clusters_on_enabled", using: :btree
     t.index ["user_id"], name: "index_clusters_on_user_id", using: :btree
   end
@@ -1202,8 +1213,10 @@ ActiveRecord::Schema.define(version: 20190115054216) do
     t.string "b_mode", null: false
     t.text "new_path", null: false
     t.text "old_path", null: false
-    t.text "diff", null: false
+    t.text "diff"
     t.boolean "binary"
+    t.integer "external_diff_offset"
+    t.integer "external_diff_size"
     t.index ["merge_request_diff_id", "relative_order"], name: "index_merge_request_diff_files_on_mr_diff_id_and_order", unique: true, using: :btree
   end
 
@@ -1217,6 +1230,9 @@ ActiveRecord::Schema.define(version: 20190115054216) do
     t.string "head_commit_sha"
     t.string "start_commit_sha"
     t.integer "commits_count"
+    t.string "external_diff"
+    t.integer "external_diff_store"
+    t.boolean "stored_externally"
     t.index ["merge_request_id", "id"], name: "index_merge_request_diffs_on_merge_request_id_and_id", using: :btree
   end
 
@@ -1499,7 +1515,6 @@ ActiveRecord::Schema.define(version: 20190115054216) do
 
   create_table "personal_access_tokens", force: :cascade do |t|
     t.integer "user_id", null: false
-    t.string "token"
     t.string "name", null: false
     t.boolean "revoked", default: false
     t.date "expires_at"
@@ -1508,7 +1523,6 @@ ActiveRecord::Schema.define(version: 20190115054216) do
     t.string "scopes", default: "--- []\n", null: false
     t.boolean "impersonation", default: false, null: false
     t.string "token_digest"
-    t.index ["token"], name: "index_personal_access_tokens_on_token", unique: true, using: :btree
     t.index ["token_digest"], name: "index_personal_access_tokens_on_token_digest", unique: true, using: :btree
     t.index ["user_id"], name: "index_personal_access_tokens_on_user_id", using: :btree
   end
@@ -1573,10 +1587,12 @@ ActiveRecord::Schema.define(version: 20190115054216) do
   end
 
   create_table "project_error_tracking_settings", primary_key: "project_id", id: :integer, force: :cascade do |t|
-    t.boolean "enabled", default: true, null: false
-    t.string "api_url", null: false
+    t.boolean "enabled", default: false, null: false
+    t.string "api_url"
     t.string "encrypted_token"
     t.string "encrypted_token_iv"
+    t.string "project_name"
+    t.string "organization_name"
   end
 
   create_table "project_features", force: :cascade do |t|
@@ -1926,6 +1942,7 @@ ActiveRecord::Schema.define(version: 20190115054216) do
     t.boolean "confidential_note_events", default: true
     t.index ["project_id"], name: "index_services_on_project_id", using: :btree
     t.index ["template"], name: "index_services_on_template", using: :btree
+    t.index ["type"], name: "index_services_on_type", using: :btree
   end
 
   create_table "shards", force: :cascade do |t|
@@ -2145,6 +2162,9 @@ ActiveRecord::Schema.define(version: 20190115054216) do
     t.integer "merge_request_notes_filter", limit: 2, default: 0, null: false
     t.datetime_with_timezone "created_at", null: false
     t.datetime_with_timezone "updated_at", null: false
+    t.integer "first_day_of_week"
+    t.string "issues_sort"
+    t.string "merge_requests_sort"
     t.index ["user_id"], name: "index_user_preferences_on_user_id", unique: true, using: :btree
   end
 
@@ -2331,6 +2351,8 @@ ActiveRecord::Schema.define(version: 20190115054216) do
   add_foreign_key "ci_group_variables", "namespaces", column: "group_id", name: "fk_33ae4d58d8", on_delete: :cascade
   add_foreign_key "ci_job_artifacts", "ci_builds", column: "job_id", on_delete: :cascade
   add_foreign_key "ci_job_artifacts", "projects", on_delete: :cascade
+  add_foreign_key "ci_pipeline_chat_data", "chat_names", on_delete: :cascade
+  add_foreign_key "ci_pipeline_chat_data", "ci_pipelines", column: "pipeline_id", on_delete: :cascade
   add_foreign_key "ci_pipeline_schedule_variables", "ci_pipeline_schedules", column: "pipeline_schedule_id", name: "fk_41c35fda51", on_delete: :cascade
   add_foreign_key "ci_pipeline_schedules", "projects", name: "fk_8ead60fcc4", on_delete: :cascade
   add_foreign_key "ci_pipeline_schedules", "users", column: "owner_id", name: "fk_9ea99f58d2", on_delete: :nullify

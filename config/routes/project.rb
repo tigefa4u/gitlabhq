@@ -2,6 +2,8 @@ resources :projects, only: [:index, :new, :create]
 
 draw :git_http
 
+get '/projects/:id' => 'projects#resolve'
+
 constraints(::Constraints::ProjectUrlConstrainer.new) do
   # If the route has a wildcard segment, the segment has a regex constraint,
   # the segment is potentially followed by _another_ wildcard segment, and
@@ -222,6 +224,7 @@ constraints(::Constraints::ProjectUrlConstrainer.new) do
         collection do
           get :metrics, action: :metrics_redirect
           get :folder, path: 'folders/*id', constraints: { format: /(html|json)/ }
+          get :search
         end
 
         resources :deployments, only: [:index] do
@@ -441,7 +444,11 @@ constraints(::Constraints::ProjectUrlConstrainer.new) do
         end
       end
 
-      resources :error_tracking, only: [:index], controller: :error_tracking
+      resources :error_tracking, only: [:index], controller: :error_tracking do
+        collection do
+          post :list_projects
+        end
+      end
 
       # Since both wiki and repository routing contains wildcard characters
       # its preferable to keep it below all other project routes
