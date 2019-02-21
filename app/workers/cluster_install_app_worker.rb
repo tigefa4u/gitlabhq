@@ -1,13 +1,26 @@
 # frozen_string_literal: true
 
-class ClusterInstallAppWorker
-  include ApplicationWorker
-  include ClusterQueue
-  include ClusterApplications
-
+class ClusterInstallAppWorker < ClusterApplicationBaseWorker
   def perform(app_name, app_id)
-    find_application(app_name, app_id) do |app|
-      Clusters::Applications::InstallService.new(app).execute
+    super
+    execute
+  end
+
+  def execute
+    return unless app.scheduled?
+
+    begin
+      app.make_installing!
+      helm_api.install(install_command)
+
+      ClusterWaitForAppInstallationWorker.perform_in(
+        ClusterWaitForAppInstallationWorker::INTERVAL, app.name, app.id)
+    rescue Kubeclient::HttpError => e
+      log_error(e)
+      app.make_errored!("Kubernetes error: #{e.error_code}")
+    rescue StandardError => e
+      log_error(e)
+      app.make_errored!("Can't start installation process.")
     end
   end
 end
