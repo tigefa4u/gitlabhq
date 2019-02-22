@@ -412,7 +412,7 @@ Google GSuite team collaboration tool.
 Set Hangouts Chat service for a project.
 
 ```
-PUT /projects/:id/services/hangouts_chat
+PUT /projects/:id/services/hangouts-chat
 ```
 
 >**Note:** Specific event parameters (e.g. `push_events` flag) were [introduced in v10.4][11435]
@@ -438,7 +438,7 @@ Parameters:
 Delete Hangouts Chat service for a project.
 
 ```
-DELETE /projects/:id/services/hangouts_chat
+DELETE /projects/:id/services/hangouts-chat
 ```
 
 ### Get Hangouts Chat service settings
@@ -446,46 +446,7 @@ DELETE /projects/:id/services/hangouts_chat
 Get Hangouts Chat service settings for a project.
 
 ```
-GET /projects/:id/services/hangouts_chat
-```
-
-## HipChat
-
-Private group chat and IM
-
-### Create/Edit HipChat service
-
-Set HipChat service for a project.
-
-```
-PUT /projects/:id/services/hipchat
-```
-
-Parameters:
-
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `token` | string | true | Room token |
-| `color` | string | false | The room color |
-| `notify` | boolean | false | Enable notifications |
-| `room` | string | false |Room name or ID |
-| `api_version` | string | false | Leave blank for default (v2) |
-| `server` | string | false | Leave blank for default. For example, `https://hipchat.example.com`. |
-
-### Delete HipChat service
-
-Delete HipChat service for a project.
-
-```
-DELETE /projects/:id/services/hipchat
-```
-
-### Get HipChat service settings
-
-Get HipChat service settings for a project.
-
-```
-GET /projects/:id/services/hipchat
+GET /projects/:id/services/hangouts-chat
 ```
 
 ## Irker (IRC gateway)
@@ -573,7 +534,7 @@ DELETE /projects/:id/services/jira
 
 ## Kubernetes
 
-Kubernetes / Openshift integration
+Kubernetes / OpenShift integration
 
 CAUTION: **Warning:**
 Kubernetes service integration has been deprecated in GitLab 10.3. API service endpoints will continue to work as long as the Kubernetes service is active, however if the service is inactive API endpoints will automatically return a `400 Bad Request`. Read [GitLab 10.3 release post](https://about.gitlab.com/2017/12/22/gitlab-10-3-released/#kubernetes-integration-service) for more information.
@@ -639,7 +600,7 @@ Example response:
   "job_events": true,
   "pipeline_events": true,
   "properties": {
-    "token": "9koXpg98eAheJpvBs5tK"
+    "token": "<your_access_token>"
   }
 }
 ```

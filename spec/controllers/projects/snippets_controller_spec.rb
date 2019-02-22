@@ -12,7 +12,7 @@ describe Projects::SnippetsController do
 
   describe 'GET #index' do
     context 'when page param' do
-      let(:last_page) { project.snippets.page().total_pages }
+      let(:last_page) { project.snippets.page.total_pages }
       let!(:project_snippet) { create(:project_snippet, :public, project: project, author: user) }
 
       it 'redirects to last_page if page number is larger than number of pages' do
@@ -385,7 +385,7 @@ describe Projects::SnippetsController do
     before do
       sign_in(user)
 
-      get :show, namespace_id: project.namespace, project_id: project, id: project_snippet.to_param, format: :js
+      get :show, params: { namespace_id: project.namespace, project_id: project, id: project_snippet.to_param }, format: :js
     end
 
     context 'when snippet is private' do

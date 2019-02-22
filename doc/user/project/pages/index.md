@@ -66,7 +66,7 @@ publish any website written directly in plain HTML, CSS, and JavaScript.</p>
 If you're using GitLab.com, your website will be publicly available to the internet.
 If you're using self-managed instances (Core, Starter, Premium, or Ultimate),
 your websites will be published on your own server, according to the
-[Pages admin settings](../../../administration/pages/index.md) chosen by your sysdamin,
+[Pages admin settings](../../../administration/pages/index.md) chosen by your sysadmin,
 who can opt for making them public or internal to your server.
 
 ### How it works
@@ -91,8 +91,8 @@ site under the HTTPS protocol.
 
 ## Getting started
 
-To get started with GitLab Pages, you can either [create a project from scratch](getting_started_part_two.md#create-a-project-from-scratch)
-or quickly start from copying an existing example project, as follows:
+To get started with GitLab Pages, you can either [create a project from scratch](getting_started_part_two.md#create-a-project-from-scratch), 
+use a [bundled template](getting_started_part_two.md#use-one-of-the-popular-pages-templates-bundled-with-gitlab), or copy any of our existing example projects:
 
 1. Choose an [example project](https://gitlab.com/pages) to [fork](../../../gitlab-basics/fork-project.md#how-to-fork-a-project):
    by forking a project, you create a copy of the codebase you're forking from to start from a template instead of starting from scratch.

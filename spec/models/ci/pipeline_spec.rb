@@ -39,6 +39,29 @@ describe Ci::Pipeline, :mailer do
     end
   end
 
+  describe '.processables' do
+    before do
+      create(:ci_build, name: 'build', pipeline: pipeline)
+      create(:ci_bridge, name: 'bridge', pipeline: pipeline)
+      create(:commit_status, name: 'commit status', pipeline: pipeline)
+      create(:generic_commit_status, name: 'generic status', pipeline: pipeline)
+    end
+
+    it 'has an association with processable CI/CD entities' do
+      pipeline.processables.pluck('name').yield_self do |processables|
+        expect(processables).to match_array %w[build bridge]
+      end
+    end
+
+    it 'makes it possible to append a new processable' do
+      pipeline.processables << build(:ci_bridge)
+
+      pipeline.save!
+
+      expect(pipeline.processables.reload.count).to eq 3
+    end
+  end
+
   describe '.sort_by_merge_request_pipelines' do
     subject { described_class.sort_by_merge_request_pipelines }
 
@@ -397,6 +420,10 @@ describe Ci::Pipeline, :mailer do
   end
 
   describe '#protected_ref?' do
+    before do
+      pipeline.project = create(:project, :repository)
+    end
+
     it 'delegates method to project' do
       expect(pipeline).not_to be_protected_ref
     end
@@ -1145,8 +1172,26 @@ describe Ci::Pipeline, :mailer do
         pipeline.update_column(:before_sha, Gitlab::Git::BLANK_SHA)
       end
 
-      it 'raises an error' do
-        expect { pipeline.modified_paths }.to raise_error(ArgumentError)
+      it 'returns nil' do
+        expect(pipeline.modified_paths).to be_nil
+      end
+    end
+
+    context 'when source is merge request' do
+      let(:pipeline) do
+        create(:ci_pipeline, source: :merge_request, merge_request: merge_request)
+      end
+
+      let(:merge_request) do
+        create(:merge_request,
+               source_project: project,
+               source_branch: 'feature',
+               target_project: project,
+               target_branch: 'master')
+      end
+
+      it 'returns merge request modified paths' do
+        expect(pipeline.modified_paths).to match(merge_request.modified_paths)
       end
     end
   end

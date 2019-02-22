@@ -44,11 +44,6 @@ export default {
       required: false,
       default: true,
     },
-    markdownVersion: {
-      type: Number,
-      required: false,
-      default: 0,
-    },
     helpPagePath: {
       type: String,
       required: false,
@@ -65,9 +60,11 @@ export default {
     ...mapGetters([
       'isNotesFetched',
       'discussions',
+      'convertedDisscussionIds',
       'getNotesDataByProp',
       'isLoading',
       'commentsDisabled',
+      'getNoteableData',
     ]),
     noteableType() {
       return this.noteableData.noteableType;
@@ -82,6 +79,9 @@ export default {
       }
 
       return this.discussions;
+    },
+    canReply() {
+      return this.getNoteableData.current_user.can_create_note && !this.commentsDisabled;
     },
   },
   watch: {
@@ -133,6 +133,7 @@ export default {
       'setNotesFetchedState',
       'expandDiscussion',
       'startTaskList',
+      'convertToDiscussion',
     ]),
     fetchNotes() {
       if (this.isFetching) return null;
@@ -180,6 +181,11 @@ export default {
         }
       }
     },
+    startReplying(discussionId) {
+      return this.convertToDiscussion(discussionId)
+        .then(() => this.$nextTick())
+        .then(() => eventHub.$emit('startReplying', discussionId));
+    },
   },
   systemNote: constants.SYSTEM_NOTE,
 };
@@ -198,13 +204,21 @@ export default {
           />
           <placeholder-note v-else :key="discussion.id" :note="discussion.notes[0]" />
         </template>
-        <template v-else-if="discussion.individual_note">
+        <template
+          v-else-if="discussion.individual_note && !convertedDisscussionIds.includes(discussion.id)"
+        >
           <system-note
             v-if="discussion.notes[0].system"
             :key="discussion.id"
             :note="discussion.notes[0]"
           />
-          <noteable-note v-else :key="discussion.id" :note="discussion.notes[0]" />
+          <noteable-note
+            v-else
+            :key="discussion.id"
+            :note="discussion.notes[0]"
+            :show-reply-button="canReply"
+            @startReplying="startReplying(discussion.id)"
+          />
         </template>
         <noteable-discussion
           v-else
@@ -216,10 +230,6 @@ export default {
       </template>
     </ul>
 
-    <comment-form
-      v-if="!commentsDisabled"
-      :noteable-type="noteableType"
-      :markdown-version="markdownVersion"
-    />
+    <comment-form v-if="!commentsDisabled" :noteable-type="noteableType" />
   </div>
 </template>

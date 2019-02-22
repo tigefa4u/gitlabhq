@@ -7,7 +7,6 @@ module API
     RELEASE_ENDPOINT_REQUIREMETS = API::NAMESPACE_OR_PROJECT_REQUIREMENTS
       .merge(tag_name: API::NO_SLASH_URL_PART_REGEX)
 
-    before { error!('404 Not Found', 404) unless Feature.enabled?(:releases_page, user_project) }
     before { authorize_read_releases! }
 
     params do
@@ -49,6 +48,12 @@ module API
         requires :name,        type: String, desc: 'The name of the release'
         requires :description, type: String, desc: 'The release notes'
         optional :ref,         type: String, desc: 'The commit sha or branch name'
+        optional :assets, type: Hash do
+          optional :links, type: Array do
+            requires :name, type: String
+            requires :url, type: String
+          end
+        end
       end
       post ':id/releases' do
         authorize_create_release!
@@ -92,7 +97,7 @@ module API
         success Entities::Release
       end
       params do
-        requires :tag_name,    type: String, desc: 'The name of the tag', as: :tag
+        requires :tag_name, type: String, desc: 'The name of the tag', as: :tag
       end
       delete ':id/releases/:tag_name', requirements: RELEASE_ENDPOINT_REQUIREMETS do
         authorize_destroy_release!

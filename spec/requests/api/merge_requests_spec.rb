@@ -10,7 +10,7 @@ describe API::MergeRequests do
   let!(:project)    { create(:project, :public, :repository, creator: user, namespace: user.namespace, only_allow_merge_if_pipeline_succeeds: false) }
   let(:milestone)   { create(:milestone, title: '1.0.0', project: project) }
   let(:pipeline)    { create(:ci_empty_pipeline) }
-  let(:milestone1)   { create(:milestone, title: '0.9', project: project) }
+  let(:milestone1) { create(:milestone, title: '0.9', project: project) }
   let!(:merge_request) { create(:merge_request, :simple, milestone: milestone1, author: user, assignee: user, source_project: project, target_project: project, title: "Test", created_at: base_time) }
   let!(:merge_request_closed) { create(:merge_request, state: "closed", milestone: milestone1, author: user, assignee: user, source_project: project, target_project: project, title: "Closed test", created_at: base_time + 1.second) }
   let!(:merge_request_merged) { create(:merge_request, state: "merged", author: user, assignee: user, source_project: project, target_project: project, title: "Merged test", created_at: base_time + 2.seconds, merge_commit_sha: '9999999999999999999999999999999999999999') }
@@ -260,6 +260,18 @@ describe API::MergeRequests do
           expect_response_ordered_exactly(merge_request)
         end
 
+        it 'returns merge requests matching given search string for title and scoped in title' do
+          get api("/merge_requests", user), params: { search: merge_request.title, in: 'title' }
+
+          expect_response_ordered_exactly(merge_request)
+        end
+
+        it 'returns an empty array if no merge reques matches given search string for description and scoped in title' do
+          get api("/merge_requests", user), params: { search: merge_request.description, in: 'title' }
+
+          expect_response_contain_exactly
+        end
+
         it 'returns merge requests for project matching given search string for description' do
           get api("/merge_requests", user), params: { project_id: project.id, search: merge_request.description }
 
@@ -360,6 +372,7 @@ describe API::MergeRequests do
       expect(json_response['force_close_merge_request']).to be_falsy
       expect(json_response['changes_count']).to eq(merge_request.merge_request_diff.real_size)
       expect(json_response['merge_error']).to eq(merge_request.merge_error)
+      expect(json_response['user']['can_merge']).to be_truthy
       expect(json_response).not_to include('rebase_in_progress')
     end
 
@@ -486,6 +499,15 @@ describe API::MergeRequests do
         expect(json_response['allow_collaboration']).to be_truthy
         expect(json_response['allow_maintainer_to_push']).to be_truthy
       end
+    end
+
+    it 'indicates if a user cannot merge the MR' do
+      user2 = create(:user)
+      project.add_reporter(user2)
+
+      get api("/projects/#{project.id}/merge_requests/#{merge_request.iid}", user2)
+
+      expect(json_response['user']['can_merge']).to be_falsy
     end
   end
 
@@ -698,7 +720,7 @@ describe API::MergeRequests do
       let!(:user2) { create(:user) }
       let(:project) { create(:project, :public, :repository) }
       let!(:forked_project) { fork_project(project, user2, repository: true) }
-      let!(:unrelated_project) { create(:project,  namespace: create(:user).namespace, creator_id: user2.id) }
+      let!(:unrelated_project) { create(:project, namespace: create(:user).namespace, creator_id: user2.id) }
 
       before do
         forked_project.add_reporter(user2)
@@ -938,6 +960,29 @@ describe API::MergeRequests do
       put api("/projects/#{project.id}/merge_requests/#{merge_request.id}/merge", user)
 
       expect(response).to have_gitlab_http_status(404)
+    end
+
+    describe "the squash_commit_message param" do
+      let(:squash_commit) do
+        project.repository.commits_between(json_response['diff_refs']['start_sha'], json_response['merge_commit_sha']).first
+      end
+
+      it "results in a specific squash commit message when set" do
+        squash_commit_message = 'My custom squash commit message'
+
+        put api("/projects/#{project.id}/merge_requests/#{merge_request.iid}/merge", user), params: {
+          squash: true,
+          squash_commit_message: squash_commit_message
+        }
+
+        expect(squash_commit.message.chomp).to eq(squash_commit_message)
+      end
+
+      it "results in a default squash commit message when not set" do
+        put api("/projects/#{project.id}/merge_requests/#{merge_request.iid}/merge", user), params: { squash: true }
+
+        expect(squash_commit.message).to eq(merge_request.default_squash_commit_message)
+      end
     end
   end
 
@@ -1189,13 +1234,13 @@ describe API::MergeRequests do
     end
 
     it 'returns 404 if the merge request is not found' do
-      post api("/projects/#{project.id}/merge_requests/123/merge_when_pipeline_succeeds", user)
+      post api("/projects/#{project.id}/merge_requests/123/cancel_merge_when_pipeline_succeeds", user)
 
       expect(response).to have_gitlab_http_status(404)
     end
 
     it 'returns 404 if the merge request id is used instead of iid' do
-      post api("/projects/#{project.id}/merge_requests/#{merge_request.id}/merge_when_pipeline_succeeds", user)
+      post api("/projects/#{project.id}/merge_requests/#{merge_request.id}/cancel_merge_when_pipeline_succeeds", user)
 
       expect(response).to have_gitlab_http_status(404)
     end

@@ -97,7 +97,7 @@ module Gitlab
     #
     # NOTE: It is **IMPORTANT** to also update gitlab-workhorse's filter when adding parameters here to not
     #       introduce another security vulnerability: https://gitlab.com/gitlab-org/gitlab-workhorse/issues/182
-    config.filter_parameters += [/token$/, /password/, /secret/, /key$/]
+    config.filter_parameters += [/token$/, /password/, /secret/, /key$/, /^note$/, /^text$/]
     config.filter_parameters += %i(
       certificate
       encrypted_key
@@ -161,6 +161,9 @@ module Gitlab
     config.assets.version = '1.0'
 
     config.action_view.sanitized_allowed_protocols = %w(smb)
+
+    # Can be removed once upgraded to Rails 5.1 or higher
+    config.action_controller.raise_on_unfiltered_parameters = true
 
     # Nokogiri is significantly faster and uses less memory than REXML
     ActiveSupport::XmlMini.backend = 'Nokogiri'

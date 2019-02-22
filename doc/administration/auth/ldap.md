@@ -335,7 +335,7 @@ group, you can use the following syntax:
 ```
 
 Find more information about this "LDAP_MATCHING_RULE_IN_CHAIN" filter at
-https://msdn.microsoft.com/en-us/library/aa746475(v=vs.85).aspx. Support for
+<https://docs.microsoft.com/en-us/windows/desktop/ADSI/search-filter-syntax>. Support for
 nested members in the user filter should not be confused with
 [group sync nested groups support (EE only)](https://docs.gitlab.com/ee/administration/auth/ldap-ee.html#supported-ldap-group-types-attributes).
 
@@ -447,7 +447,6 @@ ldapsearch -H ldaps://$host:$port -D "$bind_dn" -y bind_dn_password.txt  -b "$ba
   Port `389` is the default `ldap://` port and `636` is the default `ldaps://`
   port.
 - We are assuming the password for the bind_dn user is in bind_dn_password.txt.
-
 
 ### Invalid credentials when logging in
 

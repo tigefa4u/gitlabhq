@@ -210,8 +210,8 @@ describe API::Runner, :clean_gitlab_redis_shared_state do
 
       it "sets the runner's ip_address" do
         post api('/runners'),
-          params: { token: registration_token },
-          headers: { 'REMOTE_ADDR' => '123.111.123.111' }
+             params: { token: registration_token },
+             headers: { 'X-Forwarded-For' => '123.111.123.111' }
 
         expect(response).to have_gitlab_http_status 201
         expect(Ci::Runner.first.ip_address).to eq('123.111.123.111')
@@ -287,7 +287,7 @@ describe API::Runner, :clean_gitlab_redis_shared_state do
     let(:runner) { create(:ci_runner, :project, projects: [project]) }
     let(:job) do
       create(:ci_build, :artifacts, :extended_options,
-             pipeline: pipeline, name: 'spinach', stage: 'test', stage_idx: 0, commands: "ls\ndate")
+             pipeline: pipeline, name: 'spinach', stage: 'test', stage_idx: 0)
     end
 
     describe 'POST /api/v4/jobs/request' do
@@ -422,7 +422,7 @@ describe API::Runner, :clean_gitlab_redis_shared_state do
 
           let(:expected_steps) do
             [{ 'name' => 'script',
-               'script' => %w(ls date),
+               'script' => %w(echo),
                'timeout' => job.metadata_timeout,
                'when' => 'on_success',
                'allow_failure' => false },
@@ -520,7 +520,7 @@ describe API::Runner, :clean_gitlab_redis_shared_state do
           it "sets the runner's ip_address" do
             post api('/jobs/request'),
               params: { token: runner.token },
-              headers: { 'User-Agent' => user_agent, 'REMOTE_ADDR' => '123.222.123.222' }
+              headers: { 'User-Agent' => user_agent, 'X-Forwarded-For' => '123.222.123.222' }
 
             expect(response).to have_gitlab_http_status 201
             expect(runner.reload.ip_address).to eq('123.222.123.222')
@@ -588,7 +588,7 @@ describe API::Runner, :clean_gitlab_redis_shared_state do
             let!(:test_job) do
               create(:ci_build, pipeline: pipeline, token: 'test-job-token', name: 'deploy',
                                 stage: 'deploy', stage_idx: 1,
-                                options: { dependencies: [job2.name] })
+                                options: { script: ['bash'], dependencies: [job2.name] })
             end
 
             before do
@@ -612,7 +612,7 @@ describe API::Runner, :clean_gitlab_redis_shared_state do
             let!(:empty_dependencies_job) do
               create(:ci_build, pipeline: pipeline, token: 'test-job-token', name: 'empty_dependencies_job',
                                 stage: 'deploy', stage_idx: 1,
-                                options: { dependencies: [] })
+                                options: { script: ['bash'], dependencies: [] })
             end
 
             before do
@@ -1320,7 +1320,7 @@ describe API::Runner, :clean_gitlab_redis_shared_state do
                 end
 
                 before do
-                  fog_connection.directories.get('artifacts').files.create(
+                  fog_connection.directories.new(key: 'artifacts').files.create(
                     key: 'tmp/uploads/12312300',
                     body: 'content'
                   )
@@ -1584,7 +1584,7 @@ describe API::Runner, :clean_gitlab_redis_shared_state do
             context 'when artifacts are stored locally' do
               let(:download_headers) do
                 { 'Content-Transfer-Encoding' => 'binary',
-                  'Content-Disposition' => 'attachment; filename=ci_build_artifacts.zip' }
+                  'Content-Disposition' => %q(attachment; filename="ci_build_artifacts.zip"; filename*=UTF-8''ci_build_artifacts.zip) }
               end
 
               before do

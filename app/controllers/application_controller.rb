@@ -76,7 +76,7 @@ class ApplicationController < ActionController::Base
   end
 
   def redirect_back_or_default(default: root_path, options: {})
-    redirect_to request.referer.present? ? :back : default, options
+    redirect_back(fallback_location: default, **options)
   end
 
   def not_found
@@ -137,6 +137,8 @@ class ApplicationController < ActionController::Base
     if response.status == 422 && response.body.present? && response.content_type == 'application/json'.freeze
       payload[:response] = response.body
     end
+
+    payload[:queue_duration] = request.env[::Gitlab::Middleware::RailsQueueDuration::GITLAB_RAILS_QUEUE_DURATION_KEY]
   end
 
   ##
@@ -177,11 +179,17 @@ class ApplicationController < ActionController::Base
     # hide existence of the resource, rather tell them they cannot access it using
     # the provided message
     status ||= message.present? ? :forbidden : :not_found
+    template =
+      if status == :not_found
+        "errors/not_found"
+      else
+        "errors/access_denied"
+      end
 
     respond_to do |format|
       format.any { head status }
       format.html do
-        render "errors/access_denied",
+        render template,
                layout: "errors",
                status: status,
                locals: { message: message }

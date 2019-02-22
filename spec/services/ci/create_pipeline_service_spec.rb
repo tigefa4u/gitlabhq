@@ -19,12 +19,14 @@ describe Ci::CreatePipelineService do
       ref: ref_name,
       trigger_request: nil,
       variables_attributes: nil,
-      merge_request: nil)
+      merge_request: nil,
+      push_options: nil)
       params = { ref: ref,
                  before: '00000000',
                  after: after,
                  commits: [{ message: message }],
-                 variables_attributes: variables_attributes }
+                 variables_attributes: variables_attributes,
+                 push_options: push_options }
 
       described_class.new(project, user, params).execute(
         source, trigger_request: trigger_request, merge_request: merge_request)
@@ -141,7 +143,8 @@ describe Ci::CreatePipelineService do
                                                    target_branch: "branch_1",
                                                    source_project: project)
 
-            allow_any_instance_of(Ci::Pipeline).to receive(:latest?).and_return(false)
+            allow_any_instance_of(MergeRequest)
+              .to receive(:find_actual_head_pipeline) { }
 
             execute_service
 
@@ -354,6 +357,22 @@ describe Ci::CreatePipelineService do
         let(:ci_yaml) { 'invalid: file: fiile' }
 
         it_behaves_like 'a failed pipeline'
+      end
+    end
+
+    context 'when push options contain ci.skip' do
+      let(:push_options) do
+        ['ci.skip',
+         'another push option']
+      end
+
+      it 'creates a pipline in the skipped state' do
+        pipeline = execute_service(push_options: push_options)
+
+        # TODO: DRY these up with "skips builds creation if the commit message"
+        expect(pipeline).to be_persisted
+        expect(pipeline.builds.any?).to be false
+        expect(pipeline.status).to eq("skipped")
       end
     end
 
@@ -667,7 +686,7 @@ describe Ci::CreatePipelineService do
         stub_ci_pipeline_yaml_file(YAML.dump(config))
       end
 
-      let(:ref_name) { 'feature' }
+      let(:ref_name) { 'refs/heads/feature' }
 
       context 'when source is merge request' do
         let(:source) { :merge_request }
@@ -696,7 +715,7 @@ describe Ci::CreatePipelineService do
             let(:merge_request) do
               create(:merge_request,
                 source_project: project,
-                source_branch: ref_name,
+                source_branch: Gitlab::Git.ref_name(ref_name),
                 target_project: project,
                 target_branch: 'master')
             end
@@ -709,7 +728,7 @@ describe Ci::CreatePipelineService do
             end
 
             context 'when ref is tag' do
-              let(:ref_name) { 'v1.1.0' }
+              let(:ref_name) { 'refs/tags/v1.1.0' }
 
               it 'does not create a merge request pipeline' do
                 expect(pipeline).not_to be_persisted
@@ -721,7 +740,7 @@ describe Ci::CreatePipelineService do
               let(:merge_request) do
                 create(:merge_request,
                   source_project: project,
-                  source_branch: ref_name,
+                  source_branch: Gitlab::Git.ref_name(ref_name),
                   target_project: target_project,
                   target_branch: 'master')
               end
@@ -786,7 +805,7 @@ describe Ci::CreatePipelineService do
             let(:merge_request) do
               create(:merge_request,
                 source_project: project,
-                source_branch: ref_name,
+                source_branch: Gitlab::Git.ref_name(ref_name),
                 target_project: project,
                 target_branch: 'master')
             end
@@ -928,7 +947,7 @@ describe Ci::CreatePipelineService do
             let(:merge_request) do
               create(:merge_request,
                 source_project: project,
-                source_branch: ref_name,
+                source_branch: Gitlab::Git.ref_name(ref_name),
                 target_project: project,
                 target_branch: 'master')
             end

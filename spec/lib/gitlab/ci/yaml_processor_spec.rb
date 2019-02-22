@@ -3,10 +3,10 @@ require 'spec_helper'
 module Gitlab
   module Ci
     describe YamlProcessor do
-      subject { described_class.new(config) }
+      subject { described_class.new(config, user: nil) }
 
       describe '#build_attributes' do
-        subject { described_class.new(config).build_attributes(:rspec) }
+        subject { described_class.new(config, user: nil).build_attributes(:rspec) }
 
         describe 'attributes list' do
           let(:config) do
@@ -21,16 +21,12 @@ module Gitlab
               stage: "test",
               stage_idx: 1,
               name: "rspec",
-              commands: "pwd\nrspec",
-              coverage_regex: nil,
-              tag_list: [],
               options: {
                 before_script: ["pwd"],
                 script: ["rspec"]
               },
               allow_failure: false,
               when: "on_success",
-              environment: nil,
               yaml_variables: []
             })
           end
@@ -155,13 +151,9 @@ module Gitlab
              builds:
                [{ stage_idx: 1,
                   stage: "test",
-                  commands: "rspec",
-                  tag_list: [],
                   name: "rspec",
                   allow_failure: false,
                   when: "on_success",
-                  environment: nil,
-                  coverage_regex: nil,
                   yaml_variables: [],
                   options: { script: ["rspec"] },
                   only: { refs: ["branches"] },
@@ -171,13 +163,9 @@ module Gitlab
              builds:
                [{ stage_idx: 2,
                   stage: "deploy",
-                  commands: "cap prod",
-                  tag_list: [],
                   name: "prod",
                   allow_failure: false,
                   when: "on_success",
-                  environment: nil,
-                  coverage_regex: nil,
                   yaml_variables: [],
                   options: { script: ["cap prod"] },
                   only: { refs: ["tags"] },
@@ -271,7 +259,7 @@ module Gitlab
             end
 
             it "return commands with scripts concencaced" do
-              expect(subject[:commands]).to eq("global script\nscript")
+              expect(subject[:options][:before_script]).to eq(["global script"])
             end
           end
 
@@ -284,7 +272,7 @@ module Gitlab
             end
 
             it "return commands with scripts concencaced" do
-              expect(subject[:commands]).to eq("local script\nscript")
+              expect(subject[:options][:before_script]).to eq(["local script"])
             end
           end
         end
@@ -297,7 +285,7 @@ module Gitlab
           end
 
           it "return commands with scripts concencaced" do
-            expect(subject[:commands]).to eq("script")
+            expect(subject[:options][:script]).to eq(["script"])
           end
         end
 
@@ -347,9 +335,6 @@ module Gitlab
               stage: "test",
               stage_idx: 1,
               name: "rspec",
-              commands: "pwd\nrspec",
-              coverage_regex: nil,
-              tag_list: [],
               options: {
                 before_script: ["pwd"],
                 script: ["rspec"],
@@ -360,7 +345,6 @@ module Gitlab
               },
               allow_failure: false,
               when: "on_success",
-              environment: nil,
               yaml_variables: []
             })
           end
@@ -382,9 +366,6 @@ module Gitlab
               stage: "test",
               stage_idx: 1,
               name: "rspec",
-              commands: "pwd\nrspec",
-              coverage_regex: nil,
-              tag_list: [],
               options: {
                 before_script: ["pwd"],
                 script: ["rspec"],
@@ -395,7 +376,6 @@ module Gitlab
               },
               allow_failure: false,
               when: "on_success",
-              environment: nil,
               yaml_variables: []
             })
           end
@@ -415,9 +395,6 @@ module Gitlab
               stage: "test",
               stage_idx: 1,
               name: "rspec",
-              commands: "pwd\nrspec",
-              coverage_regex: nil,
-              tag_list: [],
               options: {
                 before_script: ["pwd"],
                 script: ["rspec"],
@@ -426,7 +403,6 @@ module Gitlab
               },
               allow_failure: false,
               when: "on_success",
-              environment: nil,
               yaml_variables: []
             })
           end
@@ -444,9 +420,6 @@ module Gitlab
               stage: "test",
               stage_idx: 1,
               name: "rspec",
-              commands: "pwd\nrspec",
-              coverage_regex: nil,
-              tag_list: [],
               options: {
                 before_script: ["pwd"],
                 script: ["rspec"],
@@ -455,7 +428,6 @@ module Gitlab
               },
               allow_failure: false,
               when: "on_success",
-              environment: nil,
               yaml_variables: []
             })
           end
@@ -596,7 +568,7 @@ module Gitlab
 
           it 'correctly extends rspec job' do
             expect(config_processor.builds).to be_one
-            expect(subject.dig(:commands)).to eq 'test'
+            expect(subject.dig(:options, :script)).to eq %w(test)
             expect(subject.dig(:options, :image, :name)).to eq 'ruby:alpine'
           end
         end
@@ -622,7 +594,8 @@ module Gitlab
 
           it 'correctly extends rspec job' do
             expect(config_processor.builds).to be_one
-            expect(subject.dig(:commands)).to eq "bundle install\nrspec"
+            expect(subject.dig(:options, :before_script)).to eq ["bundle install"]
+            expect(subject.dig(:options, :script)).to eq %w(rspec)
             expect(subject.dig(:options, :image, :name)).to eq 'image:test'
             expect(subject.dig(:when)).to eq 'always'
           end
@@ -769,9 +742,6 @@ module Gitlab
             stage: "test",
             stage_idx: 1,
             name: "rspec",
-            commands: "pwd\nrspec",
-            coverage_regex: nil,
-            tag_list: [],
             options: {
               before_script: ["pwd"],
               script: ["rspec"],
@@ -786,7 +756,6 @@ module Gitlab
             },
             when: "on_success",
             allow_failure: false,
-            environment: nil,
             yaml_variables: []
           })
         end
@@ -895,7 +864,7 @@ module Gitlab
           end
 
           context 'without matching job' do
-            let(:close_review) { nil  }
+            let(:close_review) { nil }
 
             it 'raises error' do
               expect { builds }.to raise_error('review job: on_stop job close_review is not defined')
@@ -983,15 +952,11 @@ module Gitlab
               stage: "test",
               stage_idx: 1,
               name: "normal_job",
-              commands: "test",
-              coverage_regex: nil,
-              tag_list: [],
               options: {
                 script: ["test"]
               },
               when: "on_success",
               allow_failure: false,
-              environment: nil,
               yaml_variables: []
             })
           end
@@ -1031,30 +996,22 @@ module Gitlab
               stage: "build",
               stage_idx: 0,
               name: "job1",
-              commands: "execute-script-for-job",
-              coverage_regex: nil,
-              tag_list: [],
               options: {
                 script: ["execute-script-for-job"]
               },
               when: "on_success",
               allow_failure: false,
-              environment: nil,
               yaml_variables: []
             })
             expect(subject.second).to eq({
               stage: "build",
               stage_idx: 0,
               name: "job2",
-              commands: "execute-script-for-job",
-              coverage_regex: nil,
-              tag_list: [],
               options: {
                 script: ["execute-script-for-job"]
               },
               when: "on_success",
               allow_failure: false,
-              environment: nil,
               yaml_variables: []
             })
           end

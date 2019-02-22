@@ -66,7 +66,7 @@ that are in common for all providers that we need to consider.
 
 To change these settings:
 
-* **For omnibus package**
+- **For omnibus package**
 
     Open the configuration file:
 
@@ -89,7 +89,7 @@ To change these settings:
     gitlab_rails['omniauth_block_auto_created_users'] = true
     ```
 
-* **For installations from source**
+- **For installations from source**
 
     Open the configuration file:
 
@@ -230,7 +230,6 @@ By default Sign In is enabled via all the OAuth Providers that have been configu
 In order to enable/disable an OmniAuth provider, go to Admin Area -> Settings -> Sign-in Restrictions section -> Enabled OAuth Sign-In sources and select the providers you want to enable or disable.
 
 ![Enabled OAuth Sign-In sources](img/enabled-oauth-sign-in-sources.png)
-
 
 ## Disabling Omniauth
 

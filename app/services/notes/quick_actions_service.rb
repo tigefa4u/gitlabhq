@@ -7,9 +7,14 @@ module Notes
       'MergeRequest' => MergeRequests::UpdateService,
       'Commit' => Commits::TagService
     }.freeze
+    private_constant :UPDATE_SERVICES
+
+    def self.update_services
+      UPDATE_SERVICES
+    end
 
     def self.noteable_update_service(note)
-      UPDATE_SERVICES[note.noteable_type]
+      update_services[note.noteable_type]
     end
 
     def self.supported?(note)
@@ -31,7 +36,7 @@ module Notes
       return if command_params.empty?
       return unless supported?(note)
 
-      self.class.noteable_update_service(note).new(project, current_user, command_params).execute(note.noteable)
+      self.class.noteable_update_service(note).new(note.parent, current_user, command_params).execute(note.noteable)
     end
   end
 end

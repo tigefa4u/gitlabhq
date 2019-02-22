@@ -253,8 +253,9 @@ to newer issues or merge requests.
 - The people participating in the discussion are trolling, abusive, or otherwise
 being unproductive.
 
-In these cases, a user with Maintainer permissions or higher in the project can lock (and unlock)
-an issue or a merge request, using the "Lock" section in the sidebar:
+In these cases, a user with Developer permissions or higher in the project can lock (and unlock)
+an issue or a merge request, using the "Lock" section in the sidebar. For issues,
+a user with Reporter permissions can lock (and unlock).
 
 | Unlock | Lock |
 | :-----------: | :----------: |
@@ -280,7 +281,7 @@ Additionally locked issues can not be reopened.
 For issues with many comments like activity notes and user comments, sometimes 
 finding useful information can be hard. There is a way to filter comments from single notes and discussions for merge requests and issues.  
 
-From a merge request's **Discussion** tab, or from an issue overview, find the filter's dropdown menu on the right side of the page, from which you can choose one of the following options:
+From a merge request's **Discussion** tab, or from an epic/issue overview, find the filter's dropdown menu on the right side of the page, from which you can choose one of the following options:
 
 - **Show all activity**: displays all user comments and system notes
 (issue updates, mentions from other issues, changes to the description, etc).

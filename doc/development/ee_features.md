@@ -831,6 +831,29 @@ should remain working as-is when EE is running without a license.
 
 Instead place EE specs in the `ee/spec` folder.
 
+### Code in `spec/factories`
+
+Use `FactoryBot.modify` to extend factories already defined in CE.
+
+Note that you cannot define new factories (even nested ones) inside the `FactoryBot.modify` block. You can do so in a
+separate `FactoryBot.define` block as shown in the example below:
+
+```ruby
+# ee/spec/factories/notes.rb
+FactoryBot.modify do
+  factory :note do
+    trait :on_epic do
+      noteable { create(:epic) }
+      project nil
+    end
+  end
+end
+
+FactoryBot.define do
+  factory :note_on_epic, parent: :note, traits: [:on_epic]
+end
+```
+
 ## JavaScript code in `assets/javascripts/`
 
 To separate EE-specific JS-files we should also move the files into an `ee` folder.
@@ -839,6 +862,20 @@ For example there can be an
 `app/assets/javascripts/protected_branches/protected_branches_bundle.js` and an
 EE counterpart
 `ee/app/assets/javascripts/protected_branches/protected_branches_bundle.js`.
+The corresponding import statement would then look like this:
+
+```javascript
+// app/assets/javascripts/protected_branches/protected_branches_bundle.js
+import bundle from '~/protected_branches/protected_branches_bundle.js';
+
+// ee/app/assets/javascripts/protected_branches/protected_branches_bundle.js
+// (only works in EE)
+import bundle from 'ee/protected_branches/protected_branches_bundle.js';
+
+// in CE: app/assets/javascripts/protected_branches/protected_branches_bundle.js
+// in EE: ee/app/assets/javascripts/protected_branches/protected_branches_bundle.js
+import bundle from 'ee_else_ce/protected_branches/protected_branches_bundle.js';
+```
 
 See the frontend guide [performance section](./fe_guide/performance.md) for
 information on managing page-specific javascript within EE.

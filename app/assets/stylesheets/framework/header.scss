@@ -565,15 +565,14 @@
 }
 
 .navbar-empty {
+  justify-content: center;
   height: $header-height;
   background: $white-light;
   border-bottom: 1px solid $white-normal;
 
-  .mx-auto {
-    .tanuki-logo,
-    img {
-      height: 36px;
-    }
+  .tanuki-logo,
+  .brand-header-logo {
+    max-height: 100%;
   }
 }
 
@@ -596,4 +595,16 @@
   .emoji-menu-toggle-button {
     @include emoji-menu-toggle-button;
   }
+
+  .input-group {
+    height: 34px;
+  }
+}
+
+.nav-links > li > a {
+  .badge.badge-pill {
+    @include media-breakpoint-down(xs) { display: none; }
+  }
+
+  @include media-breakpoint-down(xs) { margin-right: 3px; }
 }
