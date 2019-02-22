@@ -509,6 +509,7 @@ rspec-mysql:
   parallel: 50
 
 .rspec-quarantine: &rspec-quarantine
+  retry: 0
   script:
     - export CACHE_CLASSES=true
     - scripts/gitaly-test-spawn
@@ -668,8 +669,8 @@ gitlab:assets:compile:
     - //@gitlab/gitlabhq
     - //@gitlab/gitlab-ee
   tags:
-    - gitlab-org-delivery
-    - high-cpu
+    - docker
+    - gitlab-org
 
 karma:
   <<: *dedicated-no-docs-pull-cache-job
