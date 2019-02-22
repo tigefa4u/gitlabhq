@@ -12,6 +12,7 @@ module QA
       let(:response_threshold) { 270 } # milliseconds
       let(:page_load_threshold) { 5000 } # milliseconds
       let(:project) do
+        puts "here1"
         Resource::Project.fabricate! do |resource|
           resource.name = 'perf-test-project'
         end
@@ -21,8 +22,16 @@ module QA
         Runtime::API::Request.new(api_client, api_endpoint)
       end
 
+      def project_id
+        request = create_request("/projects")
+        get request.url, search: project.name
+        puts json_body[0][:id].to_s
+        json_body[0][:id]
+      end
+
       def push_new_file(branch, content, commit_message, file_path, exists = false)
-        request = create_request("/projects/#{project.id}/repository/files/#{file_path}")
+        proj_id = project_id
+        request = create_request("/projects/#{proj_id}/repository/files/#{file_path}")
         if exists
           put request.url, branch: branch, content: content, commit_message: commit_message
           expect_status(200)
@@ -33,7 +42,8 @@ module QA
       end
 
       def create_branch(branch_name)
-        request = create_request("/projects/#{project.id}/repository/branches")
+        proj_id = project_id
+        request = create_request("/projects/#{proj_id}/repository/branches")
         post request.url, branch: branch_name, ref: 'master'
         expect_status(201)
       end
@@ -41,7 +51,7 @@ module QA
       def populate_data_for_mr
         content_arr = []
 
-        20.times do |i|
+        2.times do |i|
           faker_line_arr = Faker::Lorem.sentences(1500)
           content = faker_line_arr.join("\n\r")
           push_new_file('master', content, "Add testfile-#{i}.md", "testfile-#{i}.md")
@@ -50,20 +60,26 @@ module QA
 
         create_branch("perf-testing")
 
-        20.times do |i|
+        content = ""
+        1.times do |i|
           missed_line_array = content_arr[i].each_slice(2).map(&:first)
           content = missed_line_array.join("\n\rIm new!:D \n\r ")
-          push_new_file('perf-testing', content, "Update testfile-#{i}.md", "testfile-#{i}.md", true)
+        #   push_new_file('perf-testing', content, "Update testfile-#{i}.md", "testfile-#{i}.md", true)
         end
+        return content
       end
 
       it 'user adds comment to mr' do
-        populate_data_for_mr
+        big_content = populate_data_for_mr
+        Runtime::Browser.visit(:gitlab, Page::Main::Login)
+        Page::Main::Login.act { sign_in_using_credentials }
         merge_request = Resource::MergeRequest.fabricate! do |merge_request|
           merge_request.title = 'My MR for Perf Testing'
           merge_request.description = 'My MR for Perf Testing'
           merge_request.project = project
           merge_request.source_branch = 'perf-testing'
+          merge_request.file_name = "blah.txt"
+          merge_request.file_content = big_content
         end
 
         samples_arr = []

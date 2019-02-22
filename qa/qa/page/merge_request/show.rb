@@ -46,7 +46,7 @@ module QA
         end
 
         view 'app/assets/javascripts/notes/components/note_form.vue' do
-          element :comment_button
+          element :reply_comment_button
         end
 
         view 'app/views/projects/merge_requests/_mr_title.html.haml' do
@@ -152,7 +152,7 @@ module QA
         end
 
         def comment
-          click_element :comment_button
+          click_element :reply_comment_button
         end
 
         def add_comment_to_diff(text, line_number = 0)
@@ -168,7 +168,7 @@ module QA
           fill_element :comment_input, text
           click_element :note_dropdown
           click_element :discussion_option
-          click_element :comment_button
+          click_element :reply_comment_button
         end
 
         def reply_to_discussion(reply_text)
@@ -177,7 +177,7 @@ module QA
         end
 
         def expand_diff
-          wait(time: 5) do
+          wait(interval: 5) do
             has_element? :click_to_expand
           end
           all_elements(:click_to_expand).last.click
