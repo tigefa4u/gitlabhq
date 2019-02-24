@@ -21,7 +21,7 @@ module Ci
     belongs_to :user
     belongs_to :auto_canceled_by, class_name: 'Ci::Pipeline'
     belongs_to :pipeline_schedule, class_name: 'Ci::PipelineSchedule'
-    belongs_to :merge_request, class_name: 'MergeRequest'
+    belongs_to :merge_request_as_merge_request_pipeline, foreign_key: "merge_request_id", class_name: 'MergeRequest'
 
     has_internal_id :iid, scope: :project, presence: false, init: ->(s) do
       s&.project&.all_pipelines&.maximum(:iid) || s&.project&.all_pipelines&.count
@@ -39,7 +39,7 @@ module Ci
 
     # Merge requests for which the current pipeline is running against
     # the merge request's latest commit.
-    has_many :merge_requests, foreign_key: "head_pipeline_id"
+    has_many :merge_requests_as_head_pipeline, foreign_key: "head_pipeline_id", class_name: 'MergeRequest'
 
     has_many :pending_builds, -> { pending }, foreign_key: :commit_id, class_name: 'Ci::Build'
     has_many :retryable_builds, -> { latest.failed_or_canceled.includes(:project) }, foreign_key: :commit_id, class_name: 'Ci::Build'
@@ -185,14 +185,15 @@ module Ci
     end
 
     scope :for_user, -> (user) { where(user: user) }
+    scope :for_sha, -> (sha) { where(sha: sha) }
 
-    scope :for_merge_request, -> (merge_request, ref, sha) do
-      ##
-      # We have to filter out unrelated MR pipelines.
-      # When merge request is empty, it selects general pipelines, such as push sourced pipelines.
-      # When merge request is matched, it selects MR pipelines.
-      where(merge_request: [nil, merge_request], ref: ref, sha: sha)
-        .sort_by_merge_request_pipelines
+    scope :for_merge_request, -> (merge_request) do
+      union = Gitlab::SQL::Union.new(
+        [Ci::Pipeline.triggered_by_merge_request(merge_request).select(:id),
+         Ci::Pipeline.indeterministic_pipelines_for_merge_request(merge_request).select(:id)],
+         remove_duplicates: false)
+
+      Ci::Pipeline.where("id IN (#{union.to_sql})").sort_by_merge_request_pipelines
     end
 
     scope :triggered_by_merge_request, -> (merge_request) do
@@ -209,6 +210,11 @@ module Ci
 
     scope :mergeable_merge_request_pipelines, -> (merge_request) do
       triggered_by_merge_request(merge_request).where(target_sha: merge_request.target_branch_sha)
+    end
+
+    scope :indeterministic_pipelines_for_merge_request, -> (merge_request) do
+      ci_sources.where.not(source: :merge_request)
+        .where(ref: merge_request.source_branch, project: merge_request.source_project)
     end
 
     # Returns the pipelines in descending order (= newest first), optionally
@@ -298,8 +304,10 @@ module Ci
       sources.reject { |source| source == "external" }.values
     end
 
-    def self.latest_for_merge_request(merge_request, ref, sha)
-      for_merge_request(merge_request, ref, sha).first
+    def self.latest_for_merge_request(merge_request)
+      for_merge_request(merge_request)
+        .for_sha([merge_request.diff_head_sha, merge_request.merge_ref_sha])
+        .first
     end
 
     def self.ci_sources_values
@@ -643,10 +651,10 @@ module Ci
         variables.append(key: 'CI_COMMIT_TITLE', value: git_commit_full_title.to_s)
         variables.append(key: 'CI_COMMIT_DESCRIPTION', value: git_commit_description.to_s)
 
-        if merge_request? && merge_request
+        if triggered_by_merge_request?
           variables.append(key: 'CI_MERGE_REQUEST_SOURCE_BRANCH_SHA', value: source_sha.to_s)
           variables.append(key: 'CI_MERGE_REQUEST_TARGET_BRANCH_SHA', value: target_sha.to_s)
-          variables.concat(merge_request.predefined_variables)
+          variables.concat(merge_request_as_merge_request_pipeline.predefined_variables)
         end
       end
     end
@@ -672,12 +680,19 @@ module Ci
 
     # All the merge requests for which the current pipeline runs/ran against
     def all_merge_requests
+      return @all_merge_requests if defined?(@all_merge_requests)
+      return if tag?
+
       @all_merge_requests ||=
-        if merge_request?
+        if triggered_by_merge_request?
           MergeRequest.where(id: merge_request_id)
         else
-          MergeRequest.where(source_project_id: project_id, source_branch: ref)
+          MergeRequest.with_indeterministic_pipeline(self)
         end
+    end
+
+    def first_merge_request
+      @first_merge_request ||= all_merge_requests.try(:first)
     end
 
     def detailed_status(current_user)
@@ -719,7 +734,7 @@ module Ci
     def modified_paths
       strong_memoize(:modified_paths) do
         if merge_request?
-          merge_request.modified_paths
+          merge_request_as_merge_request_pipeline.modified_paths
         elsif branch_updated?
           push_details.modified_paths
         end

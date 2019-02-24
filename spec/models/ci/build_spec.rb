@@ -1648,13 +1648,13 @@ describe Ci::Build do
       end
 
       it 'returns the single associated MR' do
-        expect(build.merge_request.id).to eq(@merge_request.id)
+        expect(build.first_merge_request.id).to eq(@merge_request.id)
       end
     end
 
     context 'when there is not a MR referencing the pipeline' do
       it 'returns nil' do
-        expect(build.merge_request).to be_nil
+        expect(build.first_merge_request).to be_nil
       end
     end
 
@@ -1671,7 +1671,7 @@ describe Ci::Build do
       end
 
       it 'returns the first MR' do
-        expect(build.merge_request.id).to eq(@merge_request.id)
+        expect(build.first_merge_request.id).to eq(@merge_request.id)
       end
     end
 

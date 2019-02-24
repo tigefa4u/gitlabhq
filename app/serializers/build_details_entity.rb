@@ -49,14 +49,14 @@ class BuildDetailsEntity < JobEntity
     terminal_project_job_path(project, build)
   end
 
-  expose :merge_request, if: -> (*) { can?(current_user, :read_merge_request, build.merge_request) } do
+  expose :merge_request, if: -> (*) { can?(current_user, :read_merge_request, build.first_merge_request) } do
     expose :iid do |build|
-      build.merge_request.iid
+      build.first_merge_request.iid
     end
 
     expose :path do |build|
-      project_merge_request_path(build.merge_request.project,
-                                 build.merge_request)
+      project_merge_request_path(build.first_merge_request.project,
+                                 build.first_merge_request)
     end
   end
 

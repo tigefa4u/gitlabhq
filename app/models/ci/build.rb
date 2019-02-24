@@ -46,7 +46,7 @@ module Ci
     delegate :terminal_specification, to: :runner_session, allow_nil: true
     delegate :gitlab_deploy_token, to: :project
     delegate :trigger_short_token, to: :trigger_request, allow_nil: true
-    delegate :merge_request?, to: :pipeline
+    delegate :merge_request?, :first_merge_request, to: :pipeline
 
     ##
     # Since Gitlab 11.5, deployments records started being created right after
@@ -461,22 +461,6 @@ module Ci
 
     def features
       { trace_sections: true }
-    end
-
-    def merge_request
-      return @merge_request if defined?(@merge_request)
-
-      @merge_request ||=
-        begin
-          merge_requests = MergeRequest.includes(:latest_merge_request_diff)
-            .where(source_branch: ref,
-                   source_project: pipeline.project)
-            .reorder(iid: :desc)
-
-          merge_requests.find do |merge_request|
-            merge_request.commit_shas.include?(pipeline.sha)
-          end
-        end
     end
 
     def repo_url

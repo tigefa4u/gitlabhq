@@ -185,6 +185,12 @@ class MergeRequest < ActiveRecord::Base
   scope :unassigned, -> { where("assignee_id IS NULL") }
   scope :assigned_to, ->(u) { where(assignee_id: u.id)}
 
+  scope :with_indeterministic_pipeline, -> (pipeline) do
+    raise ArgumentError, 'This is deterministic pipeline' if pipeline.merge_request?
+
+    where(source_branch: pipeline.ref, source_project: pipeline.project)
+  end
+
   participant :assignee
 
   after_save :keep_around_commit
@@ -1130,9 +1136,7 @@ class MergeRequest < ActiveRecord::Base
   def all_pipelines(shas: all_commit_shas)
     return Ci::Pipeline.none unless source_project
 
-    @all_pipelines ||=
-      source_project.ci_pipelines
-                    .for_merge_request(self, source_branch, all_commit_shas)
+    @all_pipelines ||= Ci::Pipeline.for_merge_request(self)
   end
 
   def update_head_pipeline
@@ -1383,10 +1387,15 @@ class MergeRequest < ActiveRecord::Base
     source_project.repository.squash_in_progress?(id)
   end
 
+  def merge_ref_sha
+    strong_memoize(:merge_ref_sha) do
+      project.repository.commit(merge_ref_path)
+    end
+  end
+
   private
 
   def find_actual_head_pipeline
-    source_project&.ci_pipelines
-                  &.latest_for_merge_request(self, source_branch, diff_head_sha)
+    Ci::Pipeline.latest_for_merge_request(self)
   end
 end
