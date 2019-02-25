@@ -10,22 +10,22 @@ or define a specific company role, e.g. "Release Manager".
 
 Existing personas are: (copy relevant personas out of this comment, and delete any persona that does not apply)
 
-- Parker, Product Manager, https://design.gitlab.com/research/personas#persona-parker
+- Parker, Product Manager, https://design.gitlab.com/research/personas/#persona-parker
 /label ~"Persona: Product Manager"
 
-- Delaney, Development Team Lead, https://design.gitlab.com/research/personas#persona-delaney
+- Delaney, Development Team Lead, https://design.gitlab.com/research/personas/#persona-delaney
 /label ~"Persona: Development Team Lead"
 
-- Sasha, Software Developer, https://design.gitlab.com/research/personas#persona-sasha
+- Sasha, Software Developer, https://design.gitlab.com/research/personas/#persona-sasha
 /label ~"Persona: Software developer"
 
-- Devon, DevOps Engineer, https://design.gitlab.com/research/personas#persona-devon
+- Devon, DevOps Engineer, https://design.gitlab.com/research/personas/#persona-devon
 /label ~"Persona: DevOps Engineer"
 
-- Sidney, Systems Administrator, https://design.gitlab.com/research/personas#persona-sidney
+- Sidney, Systems Administrator, https://design.gitlab.com/research/personas/#persona-sidney
 /label ~"Persona: Systems Administrator"
 
-- Sam, Security Analyst, https://design.gitlab.com/research/personas#persona-sam
+- Sam, Security Analyst, https://design.gitlab.com/research/personas/#persona-sam
 /label ~"Persona: Security Analyst"
 -->
 
