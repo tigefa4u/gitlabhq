@@ -632,11 +632,12 @@ class Project < ActiveRecord::Base
 
   def has_auto_devops_implicitly_enabled?
     auto_devops&.enabled.nil? &&
-      (Gitlab::CurrentSettings.auto_devops_enabled? || Feature.enabled?(:force_autodevops_on_by_default, self))
+      auto_devops_enabled_on_parents_or_instance?
   end
 
   def has_auto_devops_implicitly_disabled?
-    auto_devops&.enabled.nil? && !(Gitlab::CurrentSettings.auto_devops_enabled? || Feature.enabled?(:force_autodevops_on_by_default, self))
+    auto_devops&.enabled.nil? &&
+      auto_devops_disabled_on_parents_or_instance?
   end
 
   def daily_statistics_enabled?
@@ -2258,5 +2259,19 @@ class Project < ActiveRecord::Base
 
   def services_templates
     @services_templates ||= Service.where(template: true)
+  end
+
+  def auto_devops_enabled_on_parents_or_instance?
+    parent_with_explicit_value = namespace.self_and_ancestors
+      .where.not(auto_devops_enabled: nil)
+      .first
+
+    return parent_with_explicit_value.auto_devops_enabled unless parent_with_explicit_value.nil?
+
+    Gitlab::CurrentSettings.auto_devops_enabled? || Feature.enabled?(:force_autodevops_on_by_default, self)
+  end
+
+  def auto_devops_disabled_on_parents_or_instance?
+    !auto_devops_enabled_on_parents_or_instance?
   end
 end

@@ -66,4 +66,41 @@ describe Groups::Settings::CiCdController do
       end
     end
   end
+
+  describe 'PATCH #update_auto_devops' do
+    subject do
+      patch :update_auto_devops, params: {
+        group_id: group,
+        group: { auto_devops_enabled: '0' }
+      }
+    end
+
+    context 'when user does not have enough permission' do
+      before do
+        group.add_maintainer(user)
+      end
+
+      it { is_expected.to have_gitlab_http_status(404) }
+    end
+
+    context 'when user has enough privileges' do
+      before do
+        group.add_owner(user)
+      end
+
+      it { is_expected.to redirect_to(group_settings_ci_cd_path) }
+
+      context 'when service execution went wrong' do
+        before do
+          allow_any_instance_of(Groups::AutoDevopsService).to receive(:execute).and_return(false)
+        end
+
+        it { is_expected.to set_flash[:alert].to include('There was a problem enabling Auto DevOps pipeline') }
+      end
+
+      context 'when service execution was successful' do
+        it { is_expected.to set_flash[:notice].to eq('Auto DevOps pipeline was updated for the group') }
+      end
+    end
+  end
 end

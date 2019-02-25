@@ -267,6 +267,24 @@ class Namespace < ApplicationRecord
     owner.refresh_authorized_projects
   end
 
+  def auto_devops_enabled?
+    if auto_devops_enabled.nil?
+      has_auto_devops_implicitly_enabled?
+    else
+      auto_devops_enabled
+    end
+  end
+
+  def has_auto_devops_implicitly_enabled?
+    return false unless auto_devops_enabled.nil?
+
+    if parent.nil?
+      Gitlab::CurrentSettings.auto_devops_enabled?
+    else
+      parent.auto_devops_enabled?
+    end
+  end
+
   private
 
   def path_or_parent_changed?
