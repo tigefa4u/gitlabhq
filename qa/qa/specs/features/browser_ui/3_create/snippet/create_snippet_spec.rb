@@ -14,7 +14,7 @@ module QA
           snippet.title = 'Snippet title'
           snippet.description = 'Snippet description'
           snippet.content = 'Snippet file text'
-          snippet.type = 'Public'
+          snippet.visibility = 'Public'
         end
 
         Page::Dashboard::Snippet::Show.perform do |snippet|

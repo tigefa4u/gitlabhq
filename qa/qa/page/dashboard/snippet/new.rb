@@ -8,12 +8,12 @@ module QA
           end
 
           view 'app/views/shared/snippets/_form.html.haml' do
-            element :new_snippet_title
+            element :snippet_title
             element :create_snippet_button
           end
 
           def fill_title(title)
-            fill_element :new_snippet_title, title
+            fill_element :snippet_title, title
           end
 
           def fill_description(description)
@@ -24,8 +24,8 @@ module QA
             text_area.set content
           end
 
-          def change_snippet_type(type)
-            choose type
+          def set_visibility(visibility)
+            choose visibility
           end
 
           def create_snippet

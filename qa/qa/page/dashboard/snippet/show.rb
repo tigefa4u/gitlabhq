@@ -10,7 +10,7 @@ module QA
           end
 
           view 'app/views/shared/_file_highlight.html.haml' do
-            element :snippet_content
+            element :file_content
           end
 
           def has_snippet_title?(snippet_title)
@@ -26,7 +26,8 @@ module QA
           end
 
           def has_snippet_content?(snippet_content)
-            within_element(:snippet_content) do
+            finished_loading?
+            within_element(:file_content) do
               has_text?(snippet_content)
             end
           end
