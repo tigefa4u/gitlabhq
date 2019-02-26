@@ -12,7 +12,6 @@ module Ci
     include AtomicInternalId
     include EnumWithNil
     include HasRef
-    include ShaAttribute
 
     belongs_to :project, inverse_of: :all_pipelines
     belongs_to :user
@@ -63,9 +62,6 @@ module Ci
     validates :status, presence: { unless: :importing? }
     validate :valid_commit_sha, unless: :importing?
     validates :source, exclusion: { in: %w(unknown), unless: :importing? }, on: :create
-
-    sha_attribute :source_sha
-    sha_attribute :target_sha
 
     after_create :keep_around_commits, unless: :importing?
 
