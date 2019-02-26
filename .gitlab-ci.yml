@@ -1046,16 +1046,7 @@ review-qa-all:
   when: manual
 
 review-performance:
-  <<: *review-docker
-  allow_failure: true
-  variables:
-    <<: *review-docker-variables
-  before_script:
-    - echo "${QA_IMAGE}"
-    - echo "${CI_ENVIRONMENT_URL}"
-    - apk update && apk add curl jq
-    - source ./scripts/review_apps/review-apps.sh
-    - wait_for_job_to_be_done "review-deploy"
+  <<: *review-qa-base
   script:
     - mkdir gitlab-exporter
     - wget -O ./gitlab-exporter/index.js https://gitlab.com/gitlab-org/gl-performance/raw/master/index.js
