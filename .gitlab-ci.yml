@@ -1050,10 +1050,8 @@ review-performance:
   allow_failure: true
   variables:
     <<: *review-docker-variables
-  before_script:
-    - echo "${CI_ENVIRONMENT_URL}"
-    - source ./scripts/review_apps/review-apps.sh
-    - wait_for_job_to_be_done "review-deploy"
+  dependencies:
+    - review-deploy
   script:
     - mkdir gitlab-exporter
     - wget -O ./gitlab-exporter/index.js https://gitlab.com/gitlab-org/gl-performance/raw/master/index.js
