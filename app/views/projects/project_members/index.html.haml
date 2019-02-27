@@ -29,8 +29,9 @@
         .clearfix
           %h5.member.existing-title
             = _("Existing members and groups")
-        - if @group_links.any?
-          = render 'projects/project_members/groups', group_links: @group_links
+
+      - if can?(current_user, :read_project_group_member, @project) && @group_links.any?
+        = render 'projects/project_members/groups', group_links: @group_links
 
     = render 'projects/project_members/team', project: @project, members: @project_members
     = paginate @project_members, theme: "gitlab"

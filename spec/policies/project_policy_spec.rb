@@ -15,7 +15,7 @@ describe ProjectPolicy do
       read_project_for_iids read_issue_iid read_label
       read_milestone read_project_snippet read_project_member read_note
       create_project create_issue create_note upload_file create_merge_request_in
-      award_emoji read_release
+      award_emoji read_release read_project_group_member
     ]
   end
 
@@ -281,7 +281,7 @@ describe ProjectPolicy do
       context 'when a project has pending invites' do
         let(:group) { create(:group, :public) }
         let(:project) { create(:project, :public, namespace: group) }
-        let(:user_permissions) { [:create_merge_request_in, :create_project, :create_issue, :create_note, :upload_file, :award_emoji] }
+        let(:user_permissions) { [:create_merge_request_in, :create_project, :create_issue, :create_note, :upload_file, :award_emoji, :read_project_group_member] }
         let(:anonymous_permissions) { guest_permissions - user_permissions }
 
         subject { described_class.new(nil, project) }
