@@ -178,6 +178,16 @@ describe ProjectPolicy do
     end
   end
 
+  context 'for a not-member in a public project' do
+    let(:project) { create(:project, :public) }
+    let(:user) { create(:user) }
+    subject { described_class.new(user, project) }
+
+    it 'disallows the guest from reading the merge request and merge request iid' do
+      expect_disallowed(:read_project_group_member)
+    end
+  end
+
   context 'builds feature' do
     context 'when builds are disabled' do
       subject { described_class.new(owner, project) }

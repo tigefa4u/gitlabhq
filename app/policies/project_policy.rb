@@ -225,6 +225,7 @@ class ProjectPolicy < BasePolicy
 
   rule { owner | admin | guest | group_member }.prevent :request_access
   rule { ~request_access_enabled }.prevent :request_access
+  rule { can?(:public_user_access) & ~guest }.prevent :read_project_group_member
 
   rule { can?(:developer_access) & can?(:create_issue) }.enable :import_issues
 
