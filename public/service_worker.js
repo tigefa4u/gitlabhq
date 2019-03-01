@@ -24,6 +24,15 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
 
+  if(request.destination === 'image') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          return fetch("/nic.jpg");
+        })
+    )
+  }
+
   // We only want to intercept the GET requests for now
   if (request.method === 'GET') {
     event.respondWith(
