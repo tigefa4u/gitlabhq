@@ -9,6 +9,7 @@ module QA
 
           view 'app/views/shared/snippets/_form.html.haml' do
             element :snippet_title
+            element :snippet_file_name
             element :create_snippet_button
           end
 
@@ -20,12 +21,18 @@ module QA
             fill_element :issuable_form_description, description
           end
 
-          def add_snippet_content(content)
-            text_area.set content
-          end
-
           def set_visibility(visibility)
             choose visibility
+          end
+
+          def fill_file_name(name)
+            finished_loading?
+            fill_element :snippet_file_name, name
+          end
+
+          def fill_file_content(content)
+            finished_loading?
+            text_area.set content
           end
 
           def create_snippet

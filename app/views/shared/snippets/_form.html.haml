@@ -21,7 +21,7 @@
         .col-sm-10
           .file-holder.snippet
             .js-file-title.file-title
-              = f.text_field :file_name, placeholder: "Optionally name this file to add code highlighting, e.g. example.rb for Ruby.", class: 'form-control snippet-file-name'
+              = f.text_field :file_name, placeholder: "Optionally name this file to add code highlighting, e.g. example.rb for Ruby.", class: 'form-control snippet-file-name qa-snippet-file-name'
             .file-content.code
               %pre#editor= @snippet.content
               = f.hidden_field :content, class: 'snippet-file-content'
