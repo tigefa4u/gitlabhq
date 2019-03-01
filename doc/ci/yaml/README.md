@@ -618,9 +618,9 @@ action fails, the pipeline will eventually succeed.
 
 Manual actions are considered to be write actions, so permissions for
 [protected branches](../../user/project/protected_branches.md) are used when
-user wants to trigger an action. In other words, in order to trigger a manual
-action assigned to a branch that the pipeline is running for, user needs to
-have ability to merge to this branch.
+a user wants to trigger an action. In other words, in order to trigger a manual
+action assigned to a branch that the pipeline is running for, the user needs to
+have the ability to merge to this branch.
 
 ### `when:delayed`
 
@@ -1206,7 +1206,7 @@ job:
 `expire_in` allows you to specify how long artifacts should live before they
 expire and therefore deleted, counting from the time they are uploaded and
 stored on GitLab. If the expiry time is not defined, it defaults to the
-[instance wide setting](../../user/admin_area/settings/continuous_integration.md#default-artifacts-expiration)
+[instance wide setting](../../user/admin_area/settings/continuous_integration.md#default-artifacts-expiration-core-only)
 (30 days by default, forever on GitLab.com).
 
 You can use the **Keep** button on the job page to override expiration and
@@ -1245,7 +1245,7 @@ this with [JUnit reports](#artifactsreportsjunit).
 
 NOTE: **Note:**
 The test reports are collected regardless of the job results (success or failure).
-You can use [`artifacts:expire_in`](#artifacts-expire_in) to set up an expiration
+You can use [`artifacts:expire_in`](#artifactsexpire_in) to set up an expiration
 date for their artifacts.
 
 NOTE: **Note:**
@@ -1425,7 +1425,7 @@ deploy:
 > Introduced in GitLab 10.3.
 
 If the artifacts of the job that is set as a dependency have been
-[expired](#artifacts-expire_in) or
+[expired](#artifactsexpire_in) or
 [erased](../../user/project/pipelines/job_artifacts.md#erasing-artifacts), then
 the dependent job will fail.
 

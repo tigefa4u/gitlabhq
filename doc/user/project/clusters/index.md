@@ -41,7 +41,7 @@ integration, make sure the following requirements are met:
 
 - A [billing account](https://cloud.google.com/billing/docs/how-to/manage-billing-account)
   is set up and you have permissions to access it.
-- The Kubernetes Engine API is enabled. Follow the steps as outlined in the
+- The Kubernetes Engine API and related service are enabled. It should work immediately but may take up to 10 minutes after you create a project. For more information see the
   ["Before you begin" section of the Kubernetes Engine docs](https://cloud.google.com/kubernetes-engine/docs/quickstart#before-you-begin).
 
 ### Creating the cluster
@@ -69,6 +69,7 @@ new Kubernetes cluster to your project:
    - **Number of nodes** - Enter the number of nodes you wish the cluster to have.
    - **Machine type** - The [machine type](https://cloud.google.com/compute/docs/machine-types)
      of the Virtual Machine instance that the cluster will be based on.
+   - **RBAC-enabled cluster** - Leave this checked if using default GKE creation options, see the [RBAC section](#role-based-access-control-rbac-core-only) for more information.
 1. Finally, click the **Create Kubernetes cluster** button.
 
 After a couple of minutes, your cluster will be ready to go. You can now proceed
@@ -86,15 +87,20 @@ To add an existing Kubernetes cluster to your project:
 1. Click **Add Kubernetes cluster**.
 1. Click **Add an existing Kubernetes cluster** and fill in the details:
     - **Kubernetes cluster name** (required) - The name you wish to give the cluster.
-    - **Environment scope** (required)- The
+    - **Environment scope** (required) - The
       [associated environment](#setting-the-environment-scope) to this cluster.
     - **API URL** (required) -
       It's the URL that GitLab uses to access the Kubernetes API. Kubernetes
       exposes several APIs, we want the "base" URL that is common to all of them,
       e.g., `https://kubernetes.example.com` rather than `https://kubernetes.example.com/api/v1`.
-    - **CA certificate** (optional) -
-      If the API is using a self-signed TLS certificate, you'll also need to include
-      the `ca.crt` contents here.
+    - **CA certificate** (required) - A valid Kubernetes certificate is needed to authenticate to the EKS cluster. We will use the certificate created by default.
+      -  List the secrets with `kubectl get secrets`, and one should named similar to
+       `default-token-xxxxx`. Copy that token name for use below.
+      -  Get the certificate by running this command:
+
+        ```sh
+        kubectl get secret <secret name> -o jsonpath="{['data']['ca\.crt']}" | base64 --decode
+        ```
     - **Token** -
       GitLab authenticates against Kubernetes using service tokens, which are
       scoped to a particular `namespace`.
@@ -102,36 +108,81 @@ To add an existing Kubernetes cluster to your project:
       [`cluster-admin`](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles)
       privileges.** To create this service account:
 
-      1. Create a `gitlab` service account in the `default` namespace:
+      1. Create a file called `gitlab-admin-service-account.yaml` with contents:
 
-          ```bash
-          kubectl create -f - <<EOF
-            apiVersion: v1
-            kind: ServiceAccount
-            metadata:
-              name: gitlab
-              namespace: default
-          EOF
-          ```
-      1. Create a cluster role binding to give the `gitlab` service account
-         `cluster-admin` privileges:
-
-          ```bash
-          kubectl create -f - <<EOF
-          kind: ClusterRoleBinding
-          apiVersion: rbac.authorization.k8s.io/v1
+          ```yaml
+          apiVersion: v1
+          kind: ServiceAccount
           metadata:
-            name: gitlab-cluster-admin
-          subjects:
-          - kind: ServiceAccount
-            name: gitlab
-            namespace: default
+            name: gitlab-admin
+            namespace: kube-system
+          ```
+
+      2. Apply the service account to your cluster:
+
+          ```bash
+          kubectl apply -f gitlab-admin-service-account.yaml
+          ```
+
+          Output:
+
+            ```bash
+            serviceaccount "gitlab-admin" created
+            ```
+
+      3. Create a file called `gitlab-admin-cluster-role-binding.yaml` with contents:
+
+          ```yaml
+          apiVersion: rbac.authorization.k8s.io/v1beta1
+          kind: ClusterRoleBinding
+          metadata:
+            name: gitlab-admin
           roleRef:
+            apiGroup: rbac.authorization.k8s.io
             kind: ClusterRole
             name: cluster-admin
-            apiGroup: rbac.authorization.k8s.io
-          EOF
+          subjects:
+          - kind: ServiceAccount
+            name: gitlab-admin
+            namespace: kube-system
           ```
+
+      4. Apply the cluster role binding to your cluster:
+
+          ```bash
+          kubectl apply -f gitlab-admin-cluster-role-binding.yaml
+          ```
+
+          Output:
+
+          ```bash
+          clusterrolebinding "gitlab-admin" created
+          ```
+
+      5. Retrieve the token for the `gitlab-admin` service account:
+
+          ```bash
+          kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep gitlab-admin | awk '{print $1}')
+          ```
+
+      Copy the `<authentication_token>` value from the output:
+
+      ```yaml
+      Name:         gitlab-admin-token-b5zv4
+      Namespace:    kube-system
+      Labels:       <none>
+      Annotations:  kubernetes.io/service-account.name=gitlab-admin
+                    kubernetes.io/service-account.uid=bcfe66ac-39be-11e8-97e8-026dce96b6e8
+
+      Type:  kubernetes.io/service-account-token
+
+      Data
+      ====
+      ca.crt:     1025 bytes
+      namespace:  11 bytes
+      token:      <authentication_token>
+      ```
+      
       NOTE: **Note:**
       For GKE clusters, you will need the
       `container.clusterRoleBindings.create` permission to create a cluster
@@ -176,12 +227,19 @@ applications running on the cluster.
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/24580) in GitLab 11.8.
 
-Domains at the cluster level permit support for multiple domains
-per [multiple Kubernetes clusters](#multiple-kubernetes-clusters-premium). When specifying a domain,
-this will be automatically set as an environment variable (`KUBE_INGRESS_BASE_DOMAIN`) during
-the [Auto DevOps](../../../topics/autodevops/index.md) stages.
+NOTE: **Note:**
+You do not need to specify a base domain on cluster settings when using GitLab Serverless. The domain in that case
+will be specified as part of the Knative installation. See [Installing Applications](#installing-applications).
 
-The domain should have a wildcard DNS configured to the Ingress IP address.
+Specifying a base domain will automatically set `KUBE_INGRESS_BASE_DOMAIN` as an environment variable.
+If you are using [Auto DevOps](../../../topics/autodevops/index.md), this domain will be used for the different
+stages. For example, Auto Review Apps and Auto Deploy.
+
+The domain should have a wildcard DNS configured to the Ingress IP address. After ingress has been installed (see [Installing Applications](#installing-applications)),
+you can either:
+
+- Create an `A` record that points to the Ingress IP address with your domain provider.
+- Enter a wildcard DNS address using a service such as nip.io or xip.io. For example, `192.168.1.1.xip.io`.
 
 ## Access controls
 

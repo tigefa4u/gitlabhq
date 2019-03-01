@@ -6,6 +6,7 @@ import { truncateSha } from '~/lib/utils/text_utility';
 import { s__, __, sprintf } from '~/locale';
 import systemNote from '~/vue_shared/components/notes/system_note.vue';
 import icon from '~/vue_shared/components/icon.vue';
+import diffLineNoteFormMixin from 'ee_else_ce/notes/mixins/diff_line_note_form';
 import TimelineEntryItem from '~/vue_shared/components/notes/timeline_entry_item.vue';
 import Flash from '../../flash';
 import { SYSTEM_NOTE } from '../constants';
@@ -25,6 +26,7 @@ import noteable from '../mixins/noteable';
 import resolvable from '../mixins/resolvable';
 import discussionNavigation from '../mixins/discussion_navigation';
 import ReplyPlaceholder from './discussion_reply_placeholder.vue';
+import ResolveWithIssueButton from './discussion_resolve_with_issue_button.vue';
 import jumpToNextDiscussionButton from './discussion_jump_to_next_button.vue';
 import eventHub from '../event_hub';
 
@@ -44,13 +46,15 @@ export default {
     ReplyPlaceholder,
     placeholderNote,
     placeholderSystemNote,
+    ResolveWithIssueButton,
     systemNote,
+    DraftNote: () => import('ee_component/batch_comments/components/draft_note.vue'),
     TimelineEntryItem,
   },
   directives: {
     GlTooltip: GlTooltipDirective,
   },
-  mixins: [autosave, noteable, resolvable, discussionNavigation],
+  mixins: [autosave, noteable, resolvable, discussionNavigation, diffLineNoteFormMixin],
   props: {
     discussion: {
       type: Object,
@@ -233,6 +237,9 @@ export default {
         id: this.discussion.commit_id,
         url: this.discussion.discussion_path,
       };
+    },
+    resolveWithIssuePath() {
+      return !this.discussionResolved && this.discussion.resolve_with_issue_path;
     },
   },
   watch: {
@@ -487,16 +494,10 @@ Please check your network connection and try again.`;
                       class="btn-group discussion-actions ml-sm-2"
                       role="group"
                     >
-                      <div v-if="!discussionResolved" class="btn-group" role="group">
-                        <a
-                          v-gl-tooltip
-                          :href="discussion.resolve_with_issue_path"
-                          :title="s__('MergeRequests|Resolve this discussion in a new issue')"
-                          class="new-issue-for-discussion btn btn-default discussion-create-issue-btn"
-                        >
-                          <icon name="issue-new" />
-                        </a>
-                      </div>
+                      <resolve-with-issue-button
+                        v-if="resolveWithIssuePath"
+                        :url="resolveWithIssuePath"
+                      />
                       <jump-to-next-discussion-button
                         v-if="shouldShowJumpToNextDiscussion"
                         @onClick="jumpToNextDiscussion"
@@ -511,6 +512,7 @@ Please check your network connection and try again.`;
                   :is-editing="false"
                   :line="diffLine"
                   save-button-title="Comment"
+                  @handleFormUpdateAddToReview="addReplyToReview"
                   @handleFormUpdate="saveReply"
                   @cancelForm="cancelReplyForm"
                 />
