@@ -1,0 +1,5 @@
+---
+title: Add Variables to Auto-DevOps template to support helm chart options
+merge_request: 25531
+author:
+type: changed

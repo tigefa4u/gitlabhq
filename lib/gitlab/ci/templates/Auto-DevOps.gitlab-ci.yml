@@ -52,8 +52,8 @@ variables:
 
   KUBERNETES_VERSION: 1.11.7
   HELM_VERSION: 2.12.3
-  HELM_PARAMETER_service.externalPort: 5000
-  HELM_PARAMETER_service.internalPort: 5000
+  HELM_EXTERNAL_PORT: 5000
+  HELM_INTERNAL_PORT: 5000
 
   DOCKER_DRIVER: overlay2
 
@@ -703,8 +703,8 @@ rollout 100%:
         --set postgresql.postgresDatabase="$POSTGRES_DB" \
         --set postgresql.imageTag="$POSTGRES_VERSION" \
         --set application.initializeCommand="$DB_INITIALIZE" \
-        --set service.externalPort="$HELM_PARAMETER_service.externalPort" \
-        --set service.internalPort="$HELM_PARAMETER_service.internalPort" \
+        --set service.externalPort="$HELM_EXTERNAL_PORT" \
+        --set service.internalPort="$HELM_INTERNAL_PORT" \
         --namespace="$KUBE_NAMESPACE" \
         "$name" \
         chart/
@@ -741,8 +741,8 @@ rollout 100%:
         --set postgresql.postgresPassword="$POSTGRES_PASSWORD" \
         --set postgresql.postgresDatabase="$POSTGRES_DB" \
         --set application.migrateCommand="$DB_MIGRATE" \
-        --set service.externalPort="$HELM_PARAMETER_service.externalPort" \
-        --set service.internalPort="$HELM_PARAMETER_service.internalPort" \
+        --set service.externalPort="$HELM_EXTERNAL_PORT" \
+        --set service.internalPort="$HELM_INTERNAL_PORT" \
         --namespace="$KUBE_NAMESPACE" \
         "$name" \
         chart/
