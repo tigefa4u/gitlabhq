@@ -642,6 +642,10 @@ rollout 100%:
     echo "${name}-secret"
   }
 
+  function has_no_deployed_releases() {
+    [[ -n "$(helm list "^$name$")" ]] && [[ -z "$(helm list --deployed "^$name$")" ]]
+  }
+
   function deploy() {
     track="${1-stable}"
     percentage="${2:-100}"
@@ -676,9 +680,13 @@ rollout 100%:
       additional_hosts="{$ADDITIONAL_HOSTS}"
     fi
 
+    if has_no_deployed_releases; then
+      HELM_PARAMS=" --force"
+    fi
+
     if [[ -n "$DB_INITIALIZE" && -z "$(helm ls -q "^$name$")" ]]; then
       echo "Deploying first release with database initialization..."
-      helm upgrade --install \
+      helm upgrade --install $HELM_PARAMS \
         --wait \
         --set service.enabled="$service_enabled" \
         --set releaseOverride="$CI_ENVIRONMENT_SLUG" \
@@ -706,7 +714,7 @@ rollout 100%:
         chart/
 
       echo "Deploying second release..."
-      helm upgrade --reuse-values \
+      helm upgrade --reuse-values $HELM_PARAMS \
         --wait \
         --set application.initializeCommand="" \
         --set application.migrateCommand="$DB_MIGRATE" \
@@ -715,7 +723,7 @@ rollout 100%:
         chart/
     else
       echo "Deploying new release..."
-      helm upgrade --install \
+      helm upgrade --install $HELM_PARAMS \
         --wait \
         --set service.enabled="$service_enabled" \
         --set releaseOverride="$CI_ENVIRONMENT_SLUG" \
