@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe MergeRequestDiff do
-  let(:diff_with_commits) { create(:merge_request).merge_request_diff }
+  let(:merge_request) { create(:merge_request) }
+  let(:diff_with_commits) { merge_request.merge_request_diff }
 
   describe 'create new record' do
     subject { diff_with_commits }
@@ -221,6 +222,18 @@ describe MergeRequestDiff do
   describe '#commits_count' do
     it 'returns number of commits using serialized commits' do
       expect(diff_with_commits.commits_count).to eq(29)
+    end
+  end
+
+  describe '#last_commit_sha' do
+    let(:commit_shas) { diff_with_commits.commit_shas }
+    let(:sorted_commits) { merge_request.merge_request_diff.merge_request_diff_commits.sort_by { |x| x.committed_date } }
+    let(:last_commit_sha) { diff_with_commits.last_commit_sha }
+
+    it 'returns the most recent commit SHA' do
+      expect(last_commit_sha).to eq(commit_shas.first)
+      # Sanity check the sort order
+      expect(last_commit_sha).to eq(sorted_commits.last.sha)
     end
   end
 

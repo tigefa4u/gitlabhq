@@ -118,7 +118,7 @@ class MergeRequestDiff < ActiveRecord::Base
   end
 
   def last_commit_sha
-    commit_shas.first
+    merge_request_diff_commits.first&.sha
   end
 
   def first_commit
