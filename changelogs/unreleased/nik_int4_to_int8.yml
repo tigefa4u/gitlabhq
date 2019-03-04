@@ -1,5 +1,5 @@
 ---
-title: Prevent int4 out-of-range problem in events.id and push_event_payloads.event_id
+title: Prevent int4 out-of-range problem in events.id, push_event_payloads.event_id, ci_build_trace_sections.id (stage 1 of 2; will be finalized in the next release).
 merge_request:
 author:
 type: other
