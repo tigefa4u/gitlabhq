@@ -7,7 +7,7 @@ module Gitlab
         Rails.logger.info("#{self.class.name} - #{message}")
       end
 
-      def perform(table, old_column, new_column, delay, batch_size, batches_per_iteration)
+      def perform(table, old_column, new_column, delay, batch_size, batches_per_iteration, last_processed = 0)
         if Database.mysql?
           raise 'Int4ToInt8Update is not supported for MySQL'
         end
@@ -19,7 +19,9 @@ module Gitlab
             with rows_to_update as (
               select #{old_column}
               from #{table}
-              where #{new_column} is null
+              where
+                #{old_column} > #{last_processed}
+                #{new_column} is null
               order by #{old_column}
               limit #{batch_size}
               for update skip locked
@@ -27,12 +29,12 @@ module Gitlab
               update #{table}
               set #{new_column} = #{old_column}
               where #{old_column} in (select #{old_column} from rows_to_update)
-              returning id
+              returning #{old_column}
             )
             select
               count(*) as cnt,
-              min(id) as min_id,
-              max(id) as max_id
+              min(#{old_column}) as min_val,
+              max(#{old_column}) as max_val
             from upd;
           SQL
 
@@ -42,39 +44,18 @@ module Gitlab
             break
           end
 
-          log("#{table}.#{old_column} = #{result[0]['min_id']}..#{result[0]['max_id']}")
+          log("#{table}.#{old_column} = #{result[0]['min_val']}..#{result[0]['max_val']}")
         end
 
         if rescheduling_needed then
           BackgroundMigrationWorker.perform_in(
             delay,
             "Int4ToInt8Update",
-            [table, old_column, new_column, delay, batch_size, batches_per_iteration]
+            [table, old_column, new_column, delay, batch_size, batches_per_iteration, result[0]['max_val']]
           )
         end
       end
     end
-
-    #class Int4toInt8UpdatePushEventPayloads
-    #  def perform(start_id, stop_id)
-    #    ActiveRecord::Base.connection.execute <<~SQL
-    #      update push_event_payloads
-    #      set event_id_new = event_id
-    #      where id between #{start_id} and #{end_id}
-    #    SQL
-    #  end
-    #end
-
-    #class Int4toInt8UpdateCiBuildTraceSections
-    #  def perform(start_id, stop_id)
-    #    ActiveRecord::Base.connection.execute <<~SQL
-    #      update ci_build_trace_sections
-    #      set id_new = id
-    #      where id between #{start_id} and #{end_id}
-    #    SQL
-    #  end
-    #end
-
   end
 end
 
