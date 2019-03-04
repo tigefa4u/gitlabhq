@@ -893,7 +893,7 @@ ActiveRecord::Schema.define(version: 20190221234852) do
     t.bigint "id_new"
     t.index ["action"], name: "index_events_on_action", using: :btree
     t.index ["author_id", "project_id"], name: "index_events_on_author_id_and_project_id", using: :btree
-    t.index ["id"], name: "events_int4_to_int8_helper", where: "(id_new IS NULL)", using: :ci_build_trace_sections_int4_to_int8_helper
+    t.index ["id"], name: "events_int4_to_int8_helper", where: "(id_new IS NULL)", using: :btree
     t.index ["project_id", "created_at"], name: "index_events_on_project_id_and_created_at", using: :btree
     t.index ["project_id", "id"], name: "index_events_on_project_id_and_id", using: :btree
     t.index ["target_type", "target_id"], name: "index_events_on_target_type_and_target_id", using: :btree
