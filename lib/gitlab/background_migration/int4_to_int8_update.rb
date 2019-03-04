@@ -21,7 +21,7 @@ module Gitlab
               from #{table}
               where
                 #{old_column} > #{last_processed}
-                #{new_column} is null
+                and #{new_column} is null
               order by #{old_column}
               limit #{batch_size}
               for update skip locked
