@@ -417,6 +417,12 @@ class Project < ApplicationRecord
     where('NOT EXISTS (?)', subquery)
   end
 
+  scope :with_pages, -> do
+    subquery = GenericCommitStatus.pages_deploy.select(1).where("ci_builds.project_id = projects.id")
+
+    where('EXISTS (?)', subquery)
+  end
+
   enum auto_cancel_pending_pipelines: { disabled: 0, enabled: 1 }
 
   chronic_duration_attr :build_timeout_human_readable, :build_timeout,

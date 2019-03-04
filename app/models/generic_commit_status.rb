@@ -7,6 +7,10 @@ class GenericCommitStatus < CommitStatus
                          length: { maximum: 255 },
                          allow_nil: true
 
+  scope :pages_deploy, -> do
+    where(stage: 'deploy', name: 'pages:deploy')
+  end
+
   # GitHub compatible API
   alias_attribute :context, :name
 
