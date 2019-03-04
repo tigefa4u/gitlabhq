@@ -16,6 +16,7 @@ class Int4PkStage1of2FillColumn < ActiveRecord::Migration[5.0]
 
     say('Scheduling `Int4toInt8Update` jobs')
 
+    # [GitLab.com] events: ~290M rows, heap 19 GiB
     CONCURRENCY.times do
       BackgroundMigrationWorker.perform_in(
         DELAY,
@@ -24,6 +25,7 @@ class Int4PkStage1of2FillColumn < ActiveRecord::Migration[5.0]
       )
     end
 
+    # [GitLab.com] push_event_payloads: ~220M rows, heap 27 GiB
     CONCURRENCY.times do
       BackgroundMigrationWorker.perform_in(
         DELAY + 20,
@@ -32,6 +34,7 @@ class Int4PkStage1of2FillColumn < ActiveRecord::Migration[5.0]
       )
     end
 
+    # [GitLab.com] ci_build_trace_sections: ~600M rows, heap 43 GiB
     CONCURRENCY.times do
       BackgroundMigrationWorker.perform_in(
         DELAY + 40,

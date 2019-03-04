@@ -8,6 +8,9 @@ class Int4PkStage1of2Index < ActiveRecord::Migration[5.0]
   disable_ddl_transaction!
 
   def up
+    # Create 3 helper indexes to speed up background migrations.
+    # These indexes are to be removed in the next release.
+
     remove_concurrent_index_by_name(:events, :events_int4_to_int8_helper)
     # Time estimate for GitLab.com: ~420s (~7 min)
     add_concurrent_index(
