@@ -1079,58 +1079,6 @@ into similar problems in the future (e.g. when new tables are created).
         Gitlab::Database.mysql? ? 20 : nil
       end
 
-      # Remember the maximum value of the "old" column before filling the "old" column.
-      def int4_to_int8_remember_max_value(table, old_column, new_column)
-        if Database.mysql?
-          raise 'int4_to_int8_remember_max_value is not supported for MySQL'
-        end
-
-        execute <<-SQL.strip_heredoc
-          do $do$
-          declare
-            max_value int8;
-          begin
-            max_value := (
-              select #{old_column}
-              from #{table}
-              where #{new_column} is null
-              order by #{old_column} desc
-              limit 1
-            );
-            execute format(
-              $sql$ alter database %I set int4_to_int8.#{table}.#{old_column} = '%s'; $sql$,
-              current_database(),
-              max_value
-            );
-            -- Additionally, set it in the current session, to allow using it now.
-/*
-            execute format(
-              $sql$ set rename_triggers.#{table}.#{old_column} = '%s'; $sql$,
-              max_value
-            );
-*/
-          end;
-          $do$ language plpgsql;
-        SQL
-      end
-
-      def int4_to_int8_forget_max_value(table, old_column)
-        if Database.mysql?
-          raise 'int4_to_int8_forget_max_value is not supported for MySQL'
-        end
-
-        execute <<-SQL.strip_heredoc
-          do $$
-          begin
-            execute format(
-              e'alter database %I reset int4_to_int8.#{table}.#{old_column};',
-              current_database()
-            );
-          end;
-          $$ language plpgsql;
-        SQL
-      end
-
       # Adds a CHECK constraint with only minimal locking on the tables involved.
       # PostgreSQL only (MySQL does not have real CHECK constraint support).
       #
