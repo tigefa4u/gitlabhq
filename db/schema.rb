@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190204115450) do
+ActiveRecord::Schema.define(version: 20190221234852) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -298,7 +298,9 @@ ActiveRecord::Schema.define(version: 20190204115450) do
     t.bigint "byte_end", null: false
     t.integer "build_id", null: false
     t.integer "section_name_id", null: false
+    t.bigint "id_new"
     t.index ["build_id", "section_name_id"], name: "index_ci_build_trace_sections_on_build_id_and_section_name_id", unique: true, using: :btree
+    t.index ["id"], name: "ci_build_trace_sections_int4_to_int8_helper", where: "(id_new IS NULL)", using: :btree
     t.index ["project_id"], name: "index_ci_build_trace_sections_on_project_id", using: :btree
     t.index ["section_name_id"], name: "index_ci_build_trace_sections_on_section_name_id", using: :btree
   end
@@ -888,8 +890,10 @@ ActiveRecord::Schema.define(version: 20190204115450) do
     t.datetime_with_timezone "updated_at", null: false
     t.integer "action", limit: 2, null: false
     t.string "target_type"
+    t.bigint "id_new"
     t.index ["action"], name: "index_events_on_action", using: :btree
     t.index ["author_id", "project_id"], name: "index_events_on_author_id_and_project_id", using: :btree
+    t.index ["id"], name: "events_int4_to_int8_helper", where: "(id_new IS NULL)", using: :ci_build_trace_sections_int4_to_int8_helper
     t.index ["project_id", "created_at"], name: "index_events_on_project_id_and_created_at", using: :btree
     t.index ["project_id", "id"], name: "index_events_on_project_id_and_id", using: :btree
     t.index ["target_type", "target_id"], name: "index_events_on_target_type_and_target_id", using: :btree
@@ -1809,7 +1813,9 @@ ActiveRecord::Schema.define(version: 20190204115450) do
     t.binary "commit_to"
     t.text "ref"
     t.string "commit_title", limit: 70
+    t.bigint "event_id_new"
     t.index ["event_id"], name: "index_push_event_payloads_on_event_id", unique: true, using: :btree
+    t.index ["event_id"], name: "push_event_payloads_int4_to_int8_helper", where: "(event_id_new IS NULL)", using: :btree
   end
 
   create_table "redirect_routes", force: :cascade do |t|
