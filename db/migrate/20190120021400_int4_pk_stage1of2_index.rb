@@ -8,8 +8,8 @@ class Int4PkStage1of2Index < ActiveRecord::Migration[5.0]
   disable_ddl_transaction!
 
   def up
-    # Time estimate for GitLab.com: ~420s (~7 min)
     remove_concurrent_index_by_name(:events, :events_int4_to_int8_helper)
+    # Time estimate for GitLab.com: ~420s (~7 min)
     add_concurrent_index(
       :events,
       :id,
@@ -17,8 +17,8 @@ class Int4PkStage1of2Index < ActiveRecord::Migration[5.0]
       where: 'id_new is null'
     )
 
-    # Time estimate for GitLab.com: ~360s (~6 min)
     remove_concurrent_index_by_name(:events, :push_event_payloads_int4_to_int8_helper)
+    # Time estimate for GitLab.com: ~360s (~6 min)
     add_concurrent_index(
       :push_event_payloads,
       :event_id,
@@ -26,8 +26,8 @@ class Int4PkStage1of2Index < ActiveRecord::Migration[5.0]
       where: 'event_id_new is null'
     )
 
-    # Time estimate for GitLab.com: ~840s (~14 min)
     remove_concurrent_index_by_name(:ci_build_trace_sections, :ci_build_trace_sections_int4_to_int8_helper)
+    # Time estimate for GitLab.com: ~840s (~14 min)
     add_concurrent_index(
       :ci_build_trace_sections,
       :id,

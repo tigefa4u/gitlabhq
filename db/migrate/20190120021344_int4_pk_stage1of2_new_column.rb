@@ -23,6 +23,7 @@ class Int4PkStage1of2NewColumn < ActiveRecord::Migration[5.0]
       remove_rename_triggers_for_postgresql(:push_event_payloads, :'int4_to_int8')
       remove_rename_triggers_for_postgresql(:events, :'int4_to_int8')
     end
+
     remove_column(:ci_build_trace_sections, :id_new)
     remove_column(:push_event_payloads, :event_id_new)
     remove_column(:events, :id_new)

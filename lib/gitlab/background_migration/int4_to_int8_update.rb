@@ -39,7 +39,7 @@ module Gitlab
           SQL
 
           if result[0]['cnt'] == 0 then
-            # Nothing left. So it's time to stop the processing.
+            # Nothing is left. So it's time to stop the processing.
             rescheduling_needed = false
             break
           end
