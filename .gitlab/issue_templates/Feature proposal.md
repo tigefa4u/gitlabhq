@@ -65,4 +65,11 @@ Add all known Documentation Requirements here, per https://docs.gitlab.com/ee/de
 /label ~Monitor ~devops:monitor
 /label ~Secure ~devops:secure
 /label ~Defend ~devops:defend
+/label ~Growth
+/label ~Distribution
+/label ~Fulfillment
+/label ~Geo
+/label ~Gitaly
+/label ~Memory
+/label ~Ecosystem
 -->
