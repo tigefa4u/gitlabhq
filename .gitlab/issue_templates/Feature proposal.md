@@ -55,16 +55,16 @@ Add all known Documentation Requirements here, per https://docs.gitlab.com/ee/de
 /label ~feature
 
 <!-- Add relevant group and stage labels. Either copy/paste the appropriate line, or delete all the rest and remove the comment.
-/label ~Manage ~devops:manage
-/label ~Plan ~devops:plan
-/label ~Create ~devops:create
-/label ~Verify ~devops:verify
-/label ~Package ~devops:package
-/label ~Release ~devops:release
-/label ~Configure ~devops:configure
-/label ~Monitor ~devops:monitor
-/label ~Secure ~devops:secure
-/label ~Defend ~devops:defend
+/label ~Manage ~"devops:manage"
+/label ~Plan ~"devops:plan"
+/label ~Create ~"devops:create"
+/label ~Verify ~"devops:verify"
+/label ~Package ~"devops:package"
+/label ~Release ~"devops:release"
+/label ~Configure ~"devops:configure"
+/label ~Monitor ~"devops:monitor"
+/label ~Secure ~"devops:secure"
+/label ~Defend ~"devops:defend"
 /label ~Growth
 /label ~Distribution
 /label ~Fulfillment
