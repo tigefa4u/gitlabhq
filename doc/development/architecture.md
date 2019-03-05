@@ -58,21 +58,21 @@ GitLab can be considered to have two layers from a process perspective:
 - [Omnibus configuration options](https://gitlab.com/gitlab-org/gitaly/tree/master/doc/configuration)
 - Layer: Core Service (Data)
 
-Gitaly is a service designed by GitLab to remove our need for NFS for Git storage in distributed deployments of GitLab. (Think GitLab.com or High Availablity Deployments) As of 11.3.0, This service handles all Git level access in GitLab. You can read more about the project [in the project's readme](https://gitlab.com/gitlab-org/gitaly).
+Gitaly is a service designed by GitLab to remove our need for NFS for Git storage in distributed deployments of GitLab (Think GitLab.com or High Availability Deployments). As of 11.3.0, this service handles all Git level access in GitLab. You can read more about the project [in the project's readme](https://gitlab.com/gitlab-org/gitaly).
 
 ### gitlab-monitor
 
 - Omnibus configuration options
 - Layer: Monitoring
 
-GitLab Monitor is a process disigned in house that allows us to export metrics about GitLab application internals to prometheus. You can read more [in the project's readme](https://gitlab.com/gitlab-org/gitlab-monitor)
+GitLab Monitor is a process designed in house that allows us to export metrics about GitLab application internals to prometheus. You can read more [in the project's readme](https://gitlab.com/gitlab-org/gitlab-monitor)
 
 ### gitlab-workhorse
 
 - Omnibus configuration options
 - Layer: Core Service (Processor)
 
-[GitLab Workhorse](https://gitlab.com/gitlab-org/gitlab-workhorse) is a program designed at GitLab to help alieviate pressure from unicorn. You can read more about the [historical reasons for developing](https://about.gitlab.com/2016/04/12/a-brief-history-of-gitlab-workhorse/). It's designed to act as a smart reverse proxy to help speed up GitLab as a whole.
+[GitLab Workhorse](https://gitlab.com/gitlab-org/gitlab-workhorse) is a program designed at GitLab to help alleviate pressure from unicorn. You can read more about the [historical reasons for developing](https://about.gitlab.com/2016/04/12/a-brief-history-of-gitlab-workhorse/). It's designed to act as a smart reverse proxy to help speed up GitLab as a whole.
 
 ### logrotate
 
@@ -174,7 +174,7 @@ When making a request to an HTTP Endpoint (Think `/users/sign_in`) the request w
 - nginx - Acts as our first line reverse proxy
 - gitlab-workhorse - This determines if it needs to go to the Rails application or somewhere else to reduce load on unicorn.
 - unicorn - Since this is a web request, and it needs to access the application it will go to Unicorn.
-- Postgres/Gitaly/Redis - Depending on the type of request, it may hit these services to store or retreive data.
+- Postgres/Gitaly/Redis - Depending on the type of request, it may hit these services to store or retrieve data.
 
 ### GitLab Git Request Cycle
 

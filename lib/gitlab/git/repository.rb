@@ -11,6 +11,7 @@ module Gitlab
       include Gitlab::Git::WrapsGitalyErrors
       include Gitlab::EncodingHelper
       include Gitlab::Utils::StrongMemoize
+      include Gitlab::Git::RuggedImpl::Repository
 
       SEARCH_CONTEXT_LINES = 3
       REV_LIST_COMMIT_LIMIT = 2_000
@@ -554,6 +555,12 @@ module Gitlab
 
       def find_tag(name)
         tags.find { |tag| tag.name == name }
+      end
+
+      def merge_to_ref(user, source_sha, branch, target_ref, message)
+        wrapped_gitaly_errors do
+          gitaly_operation_client.user_merge_to_ref(user, source_sha, branch, target_ref, message)
+        end
       end
 
       def merge(user, source_sha, target_branch, message, &block)
