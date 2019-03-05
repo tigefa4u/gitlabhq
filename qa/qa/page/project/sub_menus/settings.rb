@@ -48,7 +48,6 @@ module QA
 
           def hover_settings
             within_sidebar do
-              scroll_to_element(:settings_item)
               find_element(:settings_item).hover
 
               yield
