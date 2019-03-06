@@ -158,9 +158,15 @@ module QA
         def add_comment_to_diff(text, line_number = 0)
           wait(interval: 5) do
             has_text?("No newline at end of file")
+            # has_element?(:diff_viewer)
           end
-          all_elements(:new_diff_line)[line_number].hover
+          # all_elements(:new_diff_line).first.hover
+          click_element(:diff_viewer)
+          puts "bb"
+          puts Time.now
           click_element :diff_comment
+          puts Time.now
+          puts "cc"
           fill_element :reply_input, text
         end
 
@@ -180,7 +186,7 @@ module QA
           wait(interval: 5) do
             has_element? :click_to_expand
           end
-          all_elements(:click_to_expand).last.click
+          all_elements(:click_to_expand)[2].click
         end
 
         def edit!
