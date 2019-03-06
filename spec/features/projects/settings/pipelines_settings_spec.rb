@@ -111,7 +111,7 @@ describe "Projects > Settings > Pipelines settings" do
           end
         end
 
-        context 'when auto devops is turned on group level', :nested_groups do
+        context 'when auto devops is turned on group level' do
           before do
             project.update!(namespace: create(:group, :auto_devops_enabled))
           end

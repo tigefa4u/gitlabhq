@@ -25,10 +25,10 @@ module AutoDevopsHelper
   private
 
   def badge_for_namespace_or_instance(namespace)
-    namespace.self_and_ancestors.each do |parent_group|
-      return s_('CICD|group enabled') if parent_group.auto_devops_enabled
+    if namespace.self_and_ancestors.any?(&:auto_devops_enabled)
+      s_('CICD|group enabled')
+    else
+      s_('CICD|instance enabled')
     end
-
-    s_('CICD|instance enabled')
   end
 end
