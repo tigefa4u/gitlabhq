@@ -192,6 +192,13 @@ describe AutoDevopsHelper do
       let(:group) { create(:group, :auto_devops_disabled) }
 
       it { is_expected.to be_nil }
+
+      context 'when grandparent is enabled' do
+        let(:root_parent) { create(:group, :auto_devops_enabled) }
+        let(:group) { create(:group, :auto_devops_disabled, parent: root_parent) }
+
+        it { is_expected.to be_nil }
+      end
     end
   end
 end
