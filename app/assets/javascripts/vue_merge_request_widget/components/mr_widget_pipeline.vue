@@ -113,12 +113,22 @@ export default {
                   >{{ pipeline.commit.short_id }}</a
                 >
                 on
-                <tooltip-on-truncate
-                  :title="sourceBranch"
-                  truncate-target="child"
-                  class="label-branch label-truncate"
-                  v-html="sourceBranchLink"
-                />
+                if pipeline.merge_request.exist? {
+                   <a :href="pipeline.merge_request.path" class="blah" >{{ pipeline.merge_request.iid }}</a>
+                   with
+                   <a :href="pipeline.merge_request.source_branch_path" class="blah">{{ pipeline.merge_request.source_branch }}</a>
+                   if pipeline.merge_request["flags"]["attached"] {
+                       into
+                       <a :href="pipeline.merge_request.target_branch_path" class="blah">{{ pipeline.merge_request.target_branch }}</a>
+                   }
+                } else {
+                  <tooltip-on-truncate
+                    :title="sourceBranch"
+                    truncate-target="child"
+                    class="label-branch label-truncate"
+                    v-html="sourceBranchLink"
+                  />
+                }
               </template>
             </div>
             <div v-if="pipeline.coverage" class="coverage">Coverage {{ pipeline.coverage }}%</div>
