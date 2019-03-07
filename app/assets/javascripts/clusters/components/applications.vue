@@ -169,26 +169,8 @@ export default {
     knativeUpgradeFailed() {
       return this.knative.status === APPLICATION_STATUS.UPDATE_ERRORED;
     },
-<<<<<<< HEAD
-    knativeExternalIp() {
-      return this.knative.externalIp;
-    },
-    canUpdateKnativeEndpoint() {
-      return this.knativeExternalIp && !this.knativeUpgradeFailed && !this.knativeUpgrading;
-    },
-    knativeHostname: {
-      get() {
-        return this.knative.hostname;
-      },
-      set(hostname) {
-        eventHub.$emit('setKnativeHostname', {
-          id: 'knative',
-          hostname,
-        });
-      },
-=======
     knativeExternalEndpoint() {
-      return this.applications.knative.externalIp || this.applications.knative.externalHostname;
+      return this.knative.externalIp || this.knative.externalHostname;
     },
     knativeDescription() {
       return sprintf(
@@ -204,7 +186,20 @@ export default {
         },
         false,
       );
->>>>>>> 317d055dbe3... Add support for ingress hostnames
+    },
+    canUpdateKnativeEndpoint() {
+      return this.knativeExternalEndpoint && !this.knativeUpgradeFailed && !this.knativeUpgrading;
+    },
+    knativeHostname: {
+      get() {
+        return this.knative.hostname;
+      },
+      set(hostname) {
+        eventHub.$emit('setKnativeHostname', {
+          id: 'knative',
+          hostname,
+        });
+      },
     },
   },
   created() {
@@ -227,7 +222,7 @@ export default {
     <p class="append-bottom-0">
       {{
         s__(`ClusterIntegration|Choose which applications to install on your Kubernetes cluster.
-        Helm Tiller is required to install any of the following applications.`)
+      Helm Tiller is required to install any of the following applications.`)
       }}
       <a :href="helpPath"> {{ __('More information') }} </a>
     </p>
@@ -247,9 +242,9 @@ export default {
         <div slot="description">
           {{
             s__(`ClusterIntegration|Helm streamlines installing
-            and managing Kubernetes applications.
-            Tiller runs inside of your Kubernetes Cluster,
-            and manages releases of your charts.`)
+          and managing Kubernetes applications.
+          Tiller runs inside of your Kubernetes Cluster,
+          and manages releases of your charts.`)
           }}
         </div>
       </application-row>
@@ -257,7 +252,7 @@ export default {
         <div class="svg-container" v-html="helmInstallIllustration"></div>
         {{
           s__(`ClusterIntegration|You must first install Helm Tiller before
-          installing the applications below`)
+        installing the applications below`)
         }}
       </div>
       <application-row
@@ -275,8 +270,8 @@ export default {
           <p>
             {{
               s__(`ClusterIntegration|Ingress gives you a way to route
-              requests to services based on the request host or path,
-              centralizing a number of services into a single entrypoint.`)
+            requests to services based on the request host or path,
+            centralizing a number of services into a single entrypoint.`)
             }}
           </p>
 
@@ -361,7 +356,7 @@ export default {
               <p class="form-text text-muted">
                 {{
                   s__(`ClusterIntegration|Issuers represent a certificate authority.
-                  You must provide an email address for your Issuer. `)
+                You must provide an email address for your Issuer. `)
                 }}
                 <a
                   href="http://docs.cert-manager.io/en/latest/reference/issuers.html?highlight=email"
@@ -408,9 +403,9 @@ export default {
         <div slot="description">
           {{
             s__(`ClusterIntegration|GitLab Runner connects to this
-            project's repository and executes CI/CD jobs,
-            pushing results back and deploying,
-            applications to production.`)
+          project's repository and executes CI/CD jobs,
+          pushing results back and deploying,
+          applications to production.`)
           }}
         </div>
       </application-row>
@@ -431,10 +426,10 @@ export default {
           <p>
             {{
               s__(`ClusterIntegration|JupyterHub, a multi-user Hub, spawns,
-              manages, and proxies multiple instances of the single-user
-              Jupyter notebook server. JupyterHub can be used to serve
-              notebooks to a class of students, a corporate data science group,
-              or a scientific research group.`)
+            manages, and proxies multiple instances of the single-user
+            Jupyter notebook server. JupyterHub can be used to serve
+            notebooks to a class of students, a corporate data science group,
+            or a scientific research group.`)
             }}
           </p>
 
@@ -490,13 +485,12 @@ export default {
           <p>
             {{
               s__(`ClusterIntegration|Knative extends Kubernetes to provide
-              a set of middleware components that are essential to build modern,
-              source-centric, and container-based applications that can run
-              anywhere: on premises, in the cloud, or even in a third-party data center.`)
+            a set of middleware components that are essential to build modern,
+            source-centric, and container-based applications that can run
+            anywhere: on premises, in the cloud, or even in a third-party data center.`)
             }}
           </p>
 
-<<<<<<< HEAD
           <div class="row">
             <template v-if="knativeInstalled || (helmInstalled && rbac)">
               <div
@@ -518,69 +512,22 @@ export default {
             </template>
             <template v-if="knativeInstalled">
               <div class="form-group col-sm-12 col-md-6 pl-md-0 mb-0 mt-3 mt-md-0">
-                <label for="knative-ip-address">
+                <label for="knative-endpoint">
                   <strong>
                     {{ s__('ClusterIntegration|Knative Endpoint:') }}
                   </strong>
                 </label>
-                <div v-if="knativeExternalIp" class="input-group">
+                <div v-if="knativeExternalEndpoint" class="input-group">
                   <input
-                    id="knative-ip-address"
-                    :value="knativeExternalIp"
+                    id="knative-endpoint"
+                    :value="knativeExternalEndpoint"
                     type="text"
                     class="form-control js-knative-ip-address"
                     readonly
-=======
-          <template v-if="knativeInstalled">
-            <div class="form-group">
-              <label for="knative-domainname">
-                {{ s__('ClusterIntegration|Knative Domain Name:') }}
-              </label>
-              <input
-                id="knative-domainname"
-                v-model="applications.knative.hostname"
-                type="text"
-                class="form-control js-domainname"
-                readonly
-              />
-            </div>
-          </template>
-          <template v-else-if="helmInstalled && rbac">
-            <div class="form-group">
-              <label for="knative-domainname">
-                {{ s__('ClusterIntegration|Knative Domain Name:') }}
-              </label>
-              <input
-                id="knative-domainname"
-                v-model="applications.knative.hostname"
-                type="text"
-                class="form-control js-domainname"
-              />
-            </div>
-          </template>
-          <template v-if="knativeInstalled">
-            <div class="form-group">
-              <label for="knative-endpoint">
-                {{ s__('ClusterIntegration|Knative Endpoint:') }}
-              </label>
-              <div v-if="knativeExternalEndpoint" class="input-group">
-                <input
-                  id="knative-endpoint"
-                  :value="knativeExternalEndpoint"
-                  type="text"
-                  class="form-control js-endpoint"
-                  readonly
-                />
-                <span class="input-group-append">
-                  <clipboard-button
-                    :text="knativeExternalEndpoint"
-                    :title="s__('ClusterIntegration|Copy Knative Endpoint to clipboard')"
-                    class="input-group-text js-clipboard-btn"
->>>>>>> 317d055dbe3... Add support for ingress hostnames
                   />
                   <span class="input-group-append">
                     <clipboard-button
-                      :text="knativeExternalIp"
+                      :text="knativeExternalEndpoint"
                       :title="s__('ClusterIntegration|Copy Knative Endpoint to clipboard')"
                       class="input-group-text js-knative-ip-clipboard-btn"
                     />
@@ -594,7 +541,6 @@ export default {
                   value="?"
                 />
               </div>
-<<<<<<< HEAD
 
               <p class="form-text text-muted col-12">
                 {{
@@ -608,11 +554,11 @@ export default {
               </p>
 
               <p
-                v-if="!knativeExternalIp"
-                class="settings-message js-no-knative-ip-message mt-2 mr-3 mb-0 ml-3 "
+                v-if="!knativeExternalEndpoint"
+                class="settings-message js-no-knative-ip-message mt-2 mr-3 mb-0 ml-3"
               >
                 {{
-                  s__(`ClusterIntegration|The IP address is in
+                  s__(`ClusterIntegration|The endpoint is in
                 the process of being assigned. Please check your Kubernetes
                 cluster or Quotas on Google Kubernetes Engine if it takes a long time.`)
                 }}
@@ -626,44 +572,22 @@ export default {
                 {{ s__('ClusterIntegration|Save changes') }}
               </button>
             </template>
-          </div>
-=======
-              <input v-else type="text" class="form-control js-endpoint" readonly value="?" />
-              <p class="form-text text-muted">
+            <template v-if="!knativeInstalled && rbac">
+              <div class="bs-callout bs-callout-info" v-html="knativeDescription"></div>
+            </template>
+            <template v-if="!rbac">
+              <div class="bs-callout bs-callout-info rbac-notice">
                 {{
-                  s__(`ClusterIntegration|Point a wildcard DNS to this
-                generated endpoint in order to access
-                your application after it has been deployed.`)
+                  s__(
+                    `ClusterIntegration|You must have an RBAC-enabled cluster to install Knative.`,
+                  )
                 }}
-                <a :href="ingressDnsHelpPath" target="_blank" rel="noopener noreferrer">
+                <a :href="helpPath" target="_blank" rel="noopener noreferrer">
                   {{ __('More information') }}
                 </a>
-              </p>
-            </div>
-
-            <p v-if="!knativeExternalEndpoint" class="settings-message js-no-ip-message">
-              {{
-                s__(`ClusterIntegration|The endpoint is in
-              the process of being assigned. Please check your Kubernetes
-              cluster or Quotas on Google Kubernetes Engine if it takes a long time.`)
-              }}
-            </p>
-          </template>
-          <template v-if="!knativeInstalled && rbac">
-            <div class="bs-callout bs-callout-info" v-html="knativeDescription"></div>
-          </template>
-          <template v-if="!rbac">
-            <div class="bs-callout bs-callout-info rbac-notice">
-              {{
-                s__(`ClusterIntegration|You must have an RBAC-enabled cluster
-              to install Knative.`)
-              }}
-              <a :href="helpPath" target="_blank" rel="noopener noreferrer">
-                {{ __('More information') }}
-              </a>
-            </div>
-          </template>
->>>>>>> 317d055dbe3... Add support for ingress hostnames
+              </div>
+            </template>
+          </div>
         </div>
       </application-row>
     </div>
