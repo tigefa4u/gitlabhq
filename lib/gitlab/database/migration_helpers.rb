@@ -737,7 +737,7 @@ module Gitlab
       # Performs a concurrent column rename when using PostgreSQL.
       def install_rename_triggers_for_postgresql(trigger, table, old, new, action = 'INSERT OR UPDATE')
         execute <<-EOF.strip_heredoc
-        CREATE OR REPLACE FUNCTION t_#{table}__#{trigger}()
+        CREATE OR REPLACE FUNCTION #{trigger}()
         RETURNS trigger AS
         $BODY$
         BEGIN
@@ -754,7 +754,7 @@ module Gitlab
         BEFORE #{action}
         ON #{table}
         FOR EACH ROW
-        EXECUTE PROCEDURE t_#{table}__#{trigger}()
+        EXECUTE PROCEDURE #{trigger}()
         EOF
       end
 
@@ -781,7 +781,7 @@ module Gitlab
       # Removes the triggers used for renaming a PostgreSQL column concurrently.
       def remove_rename_triggers_for_postgresql(table, trigger)
         execute("DROP TRIGGER IF EXISTS #{trigger} ON #{table}")
-        execute("DROP FUNCTION IF EXISTS t_#{table}__#{trigger}()")
+        execute("DROP FUNCTION IF EXISTS #{trigger}()")
       end
 
       # Removes the triggers used for renaming a MySQL column concurrently.
