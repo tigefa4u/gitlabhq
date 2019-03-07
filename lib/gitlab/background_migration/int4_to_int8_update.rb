@@ -70,6 +70,8 @@ module Gitlab
             break
           end
 
+          last_processed = result[0]['max_val']
+
           log("#{table}.#{old_column} = #{result[0]['min_val']}..#{result[0]['max_val']}")
         end
 
@@ -77,7 +79,7 @@ module Gitlab
           BackgroundMigrationWorker.perform_in(
             delay,
             "Int4ToInt8Update",
-            [table, old_column, new_column, delay, batch_size, batches_per_iteration, result[0]['max_val']]
+            [table, old_column, new_column, delay, batch_size, batches_per_iteration, last_processed]
           )
         end
       end
