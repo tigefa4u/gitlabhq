@@ -1,10 +1,4 @@
 module RspecProfilingExt
-  module PSQL
-    def establish_connection
-      ::RspecProfiling::Collectors::PSQL::Result.establish_connection(ENV['RSPEC_PROFILING_POSTGRES_URL'])
-    end
-  end
-
   module Git
     def branch
       if ENV['CI_COMMIT_REF_NAME']
@@ -32,14 +26,11 @@ end
 
 if Rails.env.test?
   RspecProfiling.configure do |config|
-    if ENV['RSPEC_PROFILING_POSTGRES_URL'].present?
-      RspecProfiling::Collectors::PSQL.prepend(RspecProfilingExt::PSQL)
-      config.collector = RspecProfiling::Collectors::PSQL
-    end
-
     if ENV.key?('CI')
       RspecProfiling::VCS::Git.prepend(RspecProfilingExt::Git)
       RspecProfiling::Run.prepend(RspecProfilingExt::Run)
+      config.collector = RspecProfiling::Collectors::CSV
+      config.csv_path = -> { "rspec_profiling/#{Time.now.to_i}-#{SecureRandom.hex(8)}-rspec-data.csv" }
     end
   end
 end

@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+
+require 'csv'
+require 'rspec_profiling'
+
+module RspecProfiling
+  module Collectors
+    class PSQL
+      def establish_connection
+        Result.establish_connection(results_url)
+      end
+
+      def prepared?
+        connection.data_source_exists?(table)
+      end
+
+      def results_url
+        ENV['RSPEC_PROFILING_POSTGRES_URL']
+      end
+    end
+  end
+end
+
+def insert_data(path)
+  puts "#{Time.now} Inserting CI stats..."
+
+  collector = RspecProfiling::Collectors::PSQL.new
+  collector.install
+
+  files = Dir[File.join(path, "/*.csv")]
+
+  puts "#{Time.now} Detected #{files.count} files in rspec_profiling"
+
+  files.each do |filename|
+    csv_data = CSV.open(filename, headers: :first_row)
+    count = 0
+
+    puts "#{Time.now}: Inserting #{filename}..."
+
+    csv_data.each do |entry|
+      entry = entry.to_h.each_value { |x| x&.strip! }
+      collector.insert(entry)
+      count += 1
+    end
+
+    puts "#{Time.now}: Done inserting #{count} lines in #{filename}"
+  end
+end
+
+insert_data('rspec_profiling') if ENV['RSPEC_PROFILING_POSTGRES_URL'].present?
