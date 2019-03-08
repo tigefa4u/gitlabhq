@@ -93,11 +93,6 @@ stages:
     - /(^docs[\/-].*|.*-docs$)/
     - /(^qa[\/-].*|.*-qa$)/
 
-.except-docs-and-master: &except-docs-and-master
-  except:
-    - /(^docs[\/-].*|.*-docs$)/
-    - master
-
 # Jobs that only need to pull cache
 .dedicated-no-docs-pull-cache-job: &dedicated-no-docs-pull-cache-job
   <<: *dedicated-runner
@@ -689,7 +684,6 @@ gitlab:assets:compile:
     - gitlab-org
 
 gitlab:ui:visual:
-  <<: *except-docs-and-master
   tags:
     - gitlab-org
   before_script: []
@@ -709,6 +703,9 @@ gitlab:ui:visual:
       - app/assets/stylesheets/**/*.scss
       - app/assets/stylesheets/**/**/*.scss
   except:
+    refs:
+      - /(^docs[\/-].*|.*-docs$)/
+      - master
     variables:
       - $CI_COMMIT_MESSAGE =~ /\[skip visual\]/i
   artifacts:
