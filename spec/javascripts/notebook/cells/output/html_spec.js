@@ -4,7 +4,7 @@ import sanitizeTests from './html_sanitize_tests';
 
 describe('html output cell', () => {
   function createComponent(rawCode) {
-    const Component = (htmlOutput);
+    const Component = htmlOutput;
 
     return new Component({
       propsData: {

@@ -9,7 +9,7 @@ describe('note_awards_list component', () => {
   let awardsMock;
 
   beforeEach(() => {
-    const Component = (awardsNote);
+    const Component = awardsNote;
 
     store = createStore();
     store.dispatch('setNoteableData', noteableDataMock);
@@ -63,7 +63,7 @@ describe('note_awards_list component', () => {
 
   describe('when the user cannot award emoji', () => {
     beforeEach(() => {
-      const Component = (awardsNote);
+      const Component = awardsNote;
 
       vm = new Component({
         store,

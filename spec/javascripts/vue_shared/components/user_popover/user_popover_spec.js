@@ -14,7 +14,7 @@ const DEFAULT_PROPS = {
   },
 };
 
-const UserPopover = (userPopover);
+const UserPopover = userPopover;
 
 describe('User Popover Component', () => {
   const fixtureTemplate = 'merge_requests/diff_comment.html.raw';

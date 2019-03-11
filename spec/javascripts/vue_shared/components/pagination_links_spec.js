@@ -4,7 +4,7 @@ import { s__ } from '~/locale';
 import mountComponent from '../../helpers/vue_mount_component_helper';
 
 describe('Pagination links component', () => {
-  const paginationLinksComponent = (PaginationLinks);
+  const paginationLinksComponent = PaginationLinks;
   const change = page => page;
   const pageInfo = {
     page: 3,

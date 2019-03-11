@@ -15,7 +15,7 @@ describe('DiffLineNoteForm', () => {
     diffFile = getDiffFileMock();
     diffLines = diffFile.highlighted_diff_lines;
 
-    component = createComponentWithStore((DiffLineNoteForm), store, {
+    component = createComponentWithStore(DiffLineNoteForm, store, {
       diffFileHash: diffFile.file_hash,
       diffLines,
       line: diffLines[0],

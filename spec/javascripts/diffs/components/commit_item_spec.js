@@ -22,7 +22,7 @@ const getCommitterElement = vm => vm.$el.querySelector('.commiter');
 const getCommitActionsElement = vm => vm.$el.querySelector('.commit-actions');
 
 describe('diffs/components/commit_item', () => {
-  const Component = (CommitItem);
+  const Component = CommitItem;
   const timeago = getTimeago();
   const { commit } = getDiffWithCommit();
 

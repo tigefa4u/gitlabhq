@@ -10,7 +10,7 @@ import { keyboardDownEvent } from '../../issue_show/helpers';
 describe('issue_comment_form component', () => {
   let store;
   let vm;
-  const Component = (CommentForm);
+  const Component = CommentForm;
   let mountComponent;
 
   beforeEach(() => {

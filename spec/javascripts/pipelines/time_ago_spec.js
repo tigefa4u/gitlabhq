@@ -4,7 +4,7 @@ import timeAgo from '~/pipelines/components/time_ago.vue';
 describe('Timeago component', () => {
   let TimeAgo;
   beforeEach(() => {
-    TimeAgo = (timeAgo);
+    TimeAgo = timeAgo;
   });
 
   describe('with duration', () => {

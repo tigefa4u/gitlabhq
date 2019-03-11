@@ -7,7 +7,7 @@ describe('MRWidgetHeader', () => {
   let Component;
 
   beforeEach(() => {
-    Component = (headerComponent);
+    Component = headerComponent;
   });
 
   afterEach(() => {

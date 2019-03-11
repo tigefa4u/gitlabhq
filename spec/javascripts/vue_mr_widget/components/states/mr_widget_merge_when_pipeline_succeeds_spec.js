@@ -11,7 +11,7 @@ describe('MRWidgetMergeWhenPipelineSucceeds', () => {
   const sha = '1EA2EZ34';
 
   beforeEach(() => {
-    const Component = (mwpsComponent);
+    const Component = mwpsComponent;
     spyOn(eventHub, '$emit');
 
     vm = mountComponent(Component, {

@@ -6,7 +6,7 @@ describe('MrWidgetAuthorTime', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (MrWidgetAuthorTime);
+    const Component = MrWidgetAuthorTime;
 
     vm = mountComponent(Component, {
       actionText: 'Merged by',

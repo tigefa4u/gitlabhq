@@ -5,7 +5,7 @@ import itemCaretComponent from '~/groups/components/item_caret.vue';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 const createComponent = (isGroupOpen = false) => {
-  const Component = (itemCaretComponent);
+  const Component = itemCaretComponent;
 
   return mountComponent(Component, {
     isGroupOpen,

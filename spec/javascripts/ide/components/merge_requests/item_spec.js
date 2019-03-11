@@ -4,7 +4,7 @@ import Item from '~/ide/components/merge_requests/item.vue';
 import mountCompontent from '../../../helpers/vue_mount_component_helper';
 
 describe('IDE merge request item', () => {
-  const Component = (Item);
+  const Component = Item;
   let vm;
 
   beforeEach(() => {

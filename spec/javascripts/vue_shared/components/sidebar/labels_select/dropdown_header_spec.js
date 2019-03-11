@@ -5,7 +5,7 @@ import dropdownHeaderComponent from '~/vue_shared/components/sidebar/labels_sele
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 const createComponent = () => {
-  const Component = (dropdownHeaderComponent);
+  const Component = dropdownHeaderComponent;
 
   return mountComponent(Component);
 };

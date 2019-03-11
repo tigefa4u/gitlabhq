@@ -5,7 +5,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { TEST_HOST } from 'spec/test_constants';
 
 describe('EnvironmentActions Component', () => {
-  const Component = (EnvironmentActions);
+  const Component = EnvironmentActions;
   let vm;
 
   afterEach(() => {

@@ -5,7 +5,7 @@ import { createComponentWithStore } from '../../helpers/vue_mount_component_help
 import { resetStore } from '../helpers';
 
 describe('IDE error message component', () => {
-  const Component = (ErrorMessage);
+  const Component = ErrorMessage;
   let vm;
 
   beforeEach(() => {

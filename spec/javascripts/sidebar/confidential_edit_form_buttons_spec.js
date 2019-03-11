@@ -6,7 +6,7 @@ describe('Edit Form Dropdown', () => {
   let vm2;
 
   beforeEach(() => {
-    const Component = (editForm);
+    const Component = editForm;
     const toggleForm = () => {};
     const updateConfidentialAttribute = () => {};
 

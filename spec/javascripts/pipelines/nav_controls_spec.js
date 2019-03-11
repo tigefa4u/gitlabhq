@@ -7,7 +7,7 @@ describe('Pipelines Nav Controls', () => {
   let component;
 
   beforeEach(() => {
-    NavControlsComponent = (navControlsComp);
+    NavControlsComponent = navControlsComp;
   });
 
   afterEach(() => {

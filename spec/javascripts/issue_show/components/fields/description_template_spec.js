@@ -6,7 +6,7 @@ describe('Issue description template component', () => {
   let formState;
 
   beforeEach(done => {
-    const Component = (descriptionTemplate);
+    const Component = descriptionTemplate;
     formState = {
       description: 'test',
     };

@@ -3,7 +3,7 @@ import NothingToMerge from '~/vue_merge_request_widget/components/states/nothing
 
 describe('NothingToMerge', () => {
   describe('template', () => {
-    const Component = (NothingToMerge);
+    const Component = NothingToMerge;
     const newBlobPath = '/foo';
     const vm = new Component({
       el: document.createElement('div'),

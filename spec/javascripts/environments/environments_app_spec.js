@@ -22,7 +22,7 @@ describe('Environment', () => {
   beforeEach(() => {
     mock = new MockAdapter(axios);
 
-    EnvironmentsComponent = (environmentsComponent);
+    EnvironmentsComponent = environmentsComponent;
   });
 
   afterEach(() => {

@@ -3,7 +3,7 @@ import component from '~/jobs/components/stages_dropdown.vue';
 import mountComponent from '../../helpers/vue_mount_component_helper';
 
 describe('Stages Dropdown', () => {
-  const Component = (component);
+  const Component = component;
   let vm;
 
   beforeEach(() => {

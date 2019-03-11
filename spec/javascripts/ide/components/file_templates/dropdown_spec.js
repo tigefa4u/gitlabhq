@@ -10,7 +10,7 @@ describe('IDE file templates dropdown component', () => {
   let vm;
 
   beforeAll(() => {
-    Component = (Dropdown);
+    Component = Dropdown;
   });
 
   beforeEach(() => {

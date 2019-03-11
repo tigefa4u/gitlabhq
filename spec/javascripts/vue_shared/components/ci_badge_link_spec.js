@@ -73,7 +73,7 @@ describe('CI Badge Link Component', () => {
   };
 
   beforeEach(() => {
-    CIBadge = (ciBadge);
+    CIBadge = ciBadge;
   });
 
   afterEach(() => {

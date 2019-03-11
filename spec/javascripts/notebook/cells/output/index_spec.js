@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import CodeComponent from '~/notebook/cells/output/index.vue';
 
-const Component = (CodeComponent);
+const Component = CodeComponent;
 
 describe('Output component', () => {
   let vm;

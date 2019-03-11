@@ -9,7 +9,7 @@ describe('Limit warning component', () => {
   let LimitWarningComponent;
 
   beforeEach(() => {
-    LimitWarningComponent = (limitWarningComp);
+    LimitWarningComponent = limitWarningComp;
   });
 
   it('should not render if count is not exactly than 50', () => {

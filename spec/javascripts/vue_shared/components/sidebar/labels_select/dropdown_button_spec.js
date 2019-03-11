@@ -13,7 +13,7 @@ const componentConfig = Object.assign({}, mockConfig, {
 });
 
 const createComponent = (config = componentConfig) => {
-  const Component = (dropdownButtonComponent);
+  const Component = dropdownButtonComponent;
 
   return mountComponent(Component, config);
 };

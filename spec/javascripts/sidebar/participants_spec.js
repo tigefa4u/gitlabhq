@@ -18,7 +18,7 @@ describe('Participants', function() {
   let Participants;
 
   beforeEach(() => {
-    Participants = (participants);
+    Participants = participants;
   });
 
   afterEach(() => {

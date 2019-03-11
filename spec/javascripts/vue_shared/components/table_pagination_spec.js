@@ -9,7 +9,7 @@ describe('Pagination component', () => {
 
   beforeEach(() => {
     spy = jasmine.createSpy('spy');
-    PaginationComponent = (paginationComp);
+    PaginationComponent = paginationComp;
 
     mountComponent = function(props) {
       return new PaginationComponent({

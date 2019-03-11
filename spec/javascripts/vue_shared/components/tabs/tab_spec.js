@@ -3,7 +3,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import Tab from '~/vue_shared/components/tabs/tab.vue';
 
 describe('Tab component', () => {
-  const Component = (Tab);
+  const Component = Tab;
   let vm;
 
   beforeEach(() => {

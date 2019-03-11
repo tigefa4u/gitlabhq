@@ -9,7 +9,7 @@ import job from '../mock_data';
 
 describe('Job App ', () => {
   const delayedJobFixture = getJSONFixture('jobs/delayed.json');
-  const Component = (jobApp);
+  const Component = jobApp;
   let store;
   let vm;
   let mock;

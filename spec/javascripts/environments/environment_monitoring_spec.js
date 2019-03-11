@@ -8,7 +8,7 @@ describe('Monitoring Component', () => {
   const monitoringUrl = 'https://gitlab.com';
 
   beforeEach(() => {
-    MonitoringComponent = (monitoringComp);
+    MonitoringComponent = monitoringComp;
 
     component = new MonitoringComponent({
       propsData: {

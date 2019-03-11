@@ -11,7 +11,7 @@ describe('diff_with_note', () => {
   let vm;
   const diffDiscussionMock = getJSONFixture(discussionFixture)[0];
   const diffDiscussion = diffDiscussionMock;
-  const Component = (DiffWithNote);
+  const Component = DiffWithNote;
   const props = {
     discussion: diffDiscussion,
   };

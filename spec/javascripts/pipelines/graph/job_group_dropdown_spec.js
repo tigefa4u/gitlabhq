@@ -3,7 +3,7 @@ import JobGroupDropdown from '~/pipelines/components/graph/job_group_dropdown.vu
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('job group dropdown component', () => {
-  const Component = (JobGroupDropdown);
+  const Component = JobGroupDropdown;
   let vm;
 
   const group = {

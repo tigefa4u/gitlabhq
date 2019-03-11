@@ -7,7 +7,7 @@ describe('File row component', () => {
   let vm;
 
   function createComponent(propsData) {
-    const FileRowComponent = (FileRow);
+    const FileRowComponent = FileRow;
 
     vm = mountComponent(FileRowComponent, propsData);
   }

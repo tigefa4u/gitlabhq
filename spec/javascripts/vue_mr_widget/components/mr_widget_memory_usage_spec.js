@@ -32,7 +32,7 @@ const metricsMockData = {
 };
 
 const createComponent = () => {
-  const Component = (MemoryUsage);
+  const Component = MemoryUsage;
 
   return new Component({
     el: document.createElement('div'),

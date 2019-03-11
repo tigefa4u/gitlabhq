@@ -12,7 +12,7 @@ describe('ParallelDiffView', () => {
   beforeEach(() => {
     const diffFile = getDiffFileMock();
 
-    component = createComponentWithStore((ParallelDiffView), store, {
+    component = createComponentWithStore(ParallelDiffView, store, {
       diffFile,
       diffLines: diffFile.parallel_diff_lines,
     }).$mount();

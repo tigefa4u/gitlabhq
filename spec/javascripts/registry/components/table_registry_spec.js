@@ -8,7 +8,7 @@ describe('table registry', () => {
   let Component;
 
   beforeEach(() => {
-    Component = (tableRegistry);
+    Component = tableRegistry;
     vm = new Component({
       store,
       propsData: {

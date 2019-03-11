@@ -4,7 +4,7 @@ import component from '~/reports/components/modal_open_name.vue';
 import { mountComponentWithStore } from 'spec/helpers/vue_mount_component_helper';
 
 describe('Modal open name', () => {
-  const Component = (component);
+  const Component = component;
   let vm;
 
   const store = new Vuex.Store({

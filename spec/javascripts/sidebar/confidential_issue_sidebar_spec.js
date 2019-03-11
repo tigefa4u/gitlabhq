@@ -6,7 +6,7 @@ describe('Confidential Issue Sidebar Block', () => {
   let vm2;
 
   beforeEach(() => {
-    const Component = (confidentialIssueSidebar);
+    const Component = confidentialIssueSidebar;
     const service = {
       update: () => Promise.resolve(true),
     };

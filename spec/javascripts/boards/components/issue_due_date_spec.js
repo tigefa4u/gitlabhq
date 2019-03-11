@@ -6,7 +6,7 @@ import mountComponent from '../../helpers/vue_mount_component_helper';
 describe('Issue Due Date component', () => {
   let vm;
   let date;
-  const Component = (IssueDueDate);
+  const Component = IssueDueDate;
   const createComponent = (dueDate = new Date()) =>
     mountComponent(Component, { date: dateFormat(dueDate, 'yyyy-mm-dd', true) });
 

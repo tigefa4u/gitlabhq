@@ -3,7 +3,7 @@ import ScrollButton from '~/ide/components/jobs/detail/scroll_button.vue';
 import mountComponent from '../../../../helpers/vue_mount_component_helper';
 
 describe('IDE job log scroll button', () => {
-  const Component = (ScrollButton);
+  const Component = ScrollButton;
   let vm;
 
   beforeEach(() => {

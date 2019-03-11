@@ -5,7 +5,7 @@ import itemStatsValueComponent from '~/groups/components/item_stats_value.vue';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 const createComponent = ({ title, cssClass, iconName, tooltipPlacement, value }) => {
-  const Component = (itemStatsValueComponent);
+  const Component = itemStatsValueComponent;
 
   return mountComponent(Component, {
     title,

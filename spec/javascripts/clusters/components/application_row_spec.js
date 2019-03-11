@@ -10,7 +10,7 @@ describe('Application Row', () => {
   let ApplicationRow;
 
   beforeEach(() => {
-    ApplicationRow = (applicationRow);
+    ApplicationRow = applicationRow;
   });
 
   afterEach(() => {

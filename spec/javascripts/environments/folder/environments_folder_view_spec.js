@@ -20,7 +20,7 @@ describe('Environments Folder View', () => {
   beforeEach(() => {
     mock = new MockAdapter(axios);
 
-    Component = (environmentsFolderViewComponent);
+    Component = environmentsFolderViewComponent;
   });
 
   afterEach(() => {

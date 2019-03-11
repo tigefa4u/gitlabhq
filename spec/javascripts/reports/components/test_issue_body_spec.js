@@ -7,7 +7,7 @@ import { issue } from '../mock_data/mock_data';
 
 describe('Test Issue body', () => {
   let vm;
-  const Component = (component);
+  const Component = component;
   const store = createStore();
 
   const commonProps = {

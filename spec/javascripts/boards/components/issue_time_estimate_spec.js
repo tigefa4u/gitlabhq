@@ -6,7 +6,7 @@ describe('Issue Tine Estimate component', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (IssueTimeEstimate);
+    const Component = IssueTimeEstimate;
     vm = mountComponent(Component, {
       estimate: 374460,
     });

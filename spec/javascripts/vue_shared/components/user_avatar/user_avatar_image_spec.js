@@ -18,7 +18,7 @@ describe('User Avatar Image Component', function() {
   let UserAvatarImage;
 
   beforeEach(() => {
-    UserAvatarImage = (userAvatarImage);
+    UserAvatarImage = userAvatarImage;
   });
 
   describe('Initialization', function() {

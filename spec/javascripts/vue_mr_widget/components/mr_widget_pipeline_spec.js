@@ -8,7 +8,7 @@ describe('MRWidgetPipeline', () => {
   let Component;
 
   beforeEach(() => {
-    Component = (pipelineComponent);
+    Component = pipelineComponent;
   });
 
   afterEach(() => {

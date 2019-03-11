@@ -8,7 +8,7 @@ describe('RepoTab', () => {
   let vm;
 
   function createComponent(propsData) {
-    const RepoTab = (repoTab);
+    const RepoTab = repoTab;
 
     return new RepoTab({
       store,

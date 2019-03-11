@@ -8,7 +8,7 @@ describe('note_header component', () => {
   let Component;
 
   beforeEach(() => {
-    Component = (noteHeader);
+    Component = noteHeader;
     store = createStore();
   });
 

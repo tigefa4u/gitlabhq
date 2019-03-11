@@ -7,7 +7,7 @@ describe('Diff file row stats', () => {
   let vm;
 
   beforeAll(() => {
-    Component = (FileRowStats);
+    Component = FileRowStats;
   });
 
   beforeEach(() => {

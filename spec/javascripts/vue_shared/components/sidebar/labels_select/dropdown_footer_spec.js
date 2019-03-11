@@ -11,7 +11,7 @@ const createComponent = (
   createLabelTitle,
   manageLabelsTitle,
 ) => {
-  const Component = (dropdownFooterComponent);
+  const Component = dropdownFooterComponent;
 
   return mountComponent(Component, {
     labelsWebUrl,

@@ -25,7 +25,7 @@ describe('mrWidgetOptions', () => {
     // Prevent component mounting
     delete mrWidgetOptions.el;
 
-    MrWidgetOptions = (mrWidgetOptions);
+    MrWidgetOptions = mrWidgetOptions;
     vm = mountComponent(MrWidgetOptions, {
       mrData: { ...mockData },
     });

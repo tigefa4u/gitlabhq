@@ -10,7 +10,7 @@ const createComponent = (
   labels = mockLabels,
   labelFilterBasePath = mockConfig.labelFilterBasePath,
 ) => {
-  const Component = (dropdownValueComponent);
+  const Component = dropdownValueComponent;
 
   return mountComponent(Component, {
     labels,

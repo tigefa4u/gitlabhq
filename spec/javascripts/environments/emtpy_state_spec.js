@@ -7,7 +7,7 @@ describe('environments empty state', () => {
   let Component;
 
   beforeEach(() => {
-    Component = (emptyState);
+    Component = emptyState;
   });
 
   afterEach(() => {

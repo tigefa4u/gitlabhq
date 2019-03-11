@@ -6,7 +6,7 @@ describe('MrWidgetAuthor', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (MrWidgetAuthor);
+    const Component = MrWidgetAuthor;
 
     vm = mountComponent(Component, {
       author: {

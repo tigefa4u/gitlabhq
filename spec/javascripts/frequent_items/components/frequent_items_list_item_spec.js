@@ -4,7 +4,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { mockProject } from '../mock_data'; // can also use 'mockGroup', but not useful to test here
 
 const createComponent = () => {
-  const Component = (frequentItemsListItemComponent);
+  const Component = frequentItemsListItemComponent;
 
   return mountComponent(Component, {
     itemId: mockProject.id,

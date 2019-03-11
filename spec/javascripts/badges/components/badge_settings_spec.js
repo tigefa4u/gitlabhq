@@ -6,7 +6,7 @@ import { mountComponentWithStore } from 'spec/helpers/vue_mount_component_helper
 import { createDummyBadge } from '../dummy_badge';
 
 describe('BadgeSettings component', () => {
-  const Component = (BadgeSettings);
+  const Component = BadgeSettings;
   let vm;
 
   beforeEach(() => {

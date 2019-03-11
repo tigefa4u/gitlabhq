@@ -16,7 +16,7 @@ describe('Toggle Button', () => {
       remain,
     };
 
-    const Component = ({
+    const Component = {
       components: {
         SmartVirtualScrollList,
       },
@@ -26,7 +26,7 @@ describe('Toggle Button', () => {
       <smart-virtual-scroll-list v-bind="$options.smartListProperties">
         <li v-for="(val, key) in $options.items" :key="key">{{ key + 1 }}</li>
       </smart-virtual-scroll-list>`,
-    });
+    };
 
     return mountComponent(Component);
   };

@@ -5,7 +5,7 @@ import eventHub from '~/pipelines/event_hub';
 describe('Pipelines Table Row', () => {
   const jsonFixtureName = 'pipelines/pipelines.json';
   const buildComponent = pipeline => {
-    const PipelinesTableRowComponent = (tableRowComp);
+    const PipelinesTableRowComponent = tableRowComp;
     return new PipelinesTableRowComponent({
       el: document.querySelector('.test-dom-element'),
       propsData: {

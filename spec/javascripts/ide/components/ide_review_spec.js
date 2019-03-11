@@ -7,7 +7,7 @@ import { resetStore, file } from '../helpers';
 import { projectData } from '../mock_data';
 
 describe('IDE review mode', () => {
-  const Component = (IdeReview);
+  const Component = IdeReview;
   let vm;
 
   beforeEach(() => {

@@ -12,7 +12,7 @@ const createComponent = (
   loadingData = true,
   hasFunctionData = true,
 ) => {
-  const component = (functionsComponent);
+  const component = functionsComponent;
 
   return mountComponent(component, {
     functions,

@@ -6,7 +6,7 @@ describe('LockIssueSidebar', () => {
   let vm2;
 
   beforeEach(() => {
-    const Component = (lockIssueSidebar);
+    const Component = lockIssueSidebar;
 
     const mediator = {
       service: {

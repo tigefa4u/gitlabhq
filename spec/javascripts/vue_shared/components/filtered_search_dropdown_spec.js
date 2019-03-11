@@ -3,7 +3,7 @@ import component from '~/vue_shared/components/filtered_search_dropdown.vue';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('Filtered search dropdown', () => {
-  const Component = (component);
+  const Component = component;
   let vm;
 
   afterEach(() => {

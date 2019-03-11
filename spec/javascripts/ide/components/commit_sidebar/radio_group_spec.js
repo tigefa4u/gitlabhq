@@ -8,7 +8,7 @@ describe('IDE commit sidebar radio group', () => {
   let vm;
 
   beforeEach(done => {
-    const Component = (radioGroup);
+    const Component = radioGroup;
 
     store.state.commit.commitAction = '2';
 
@@ -73,7 +73,7 @@ describe('IDE commit sidebar radio group', () => {
     beforeEach(done => {
       vm.$destroy();
 
-      const Component = (radioGroup);
+      const Component = radioGroup;
 
       store.state.commit.commitAction = '1';
 

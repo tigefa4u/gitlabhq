@@ -3,7 +3,7 @@ import EmptyState from '~/monitoring/components/empty_state.vue';
 import { statePaths } from './mock_data';
 
 function createComponent(props) {
-  const Component = (EmptyState);
+  const Component = EmptyState;
 
   return new Component({
     propsData: {

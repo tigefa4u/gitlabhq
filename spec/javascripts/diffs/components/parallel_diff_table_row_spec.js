@@ -11,7 +11,7 @@ describe('ParallelDiffTableRow', () => {
     const rightLine = diffFileMockData.parallel_diff_lines[0].right;
 
     beforeEach(() => {
-      vm = createComponentWithStore((ParallelDiffTableRow), createStore(), {
+      vm = createComponentWithStore(ParallelDiffTableRow, createStore(), {
         line: thisLine,
         fileHash: diffFileMockData.file_hash,
         contextLinesPath: 'contextLinesPath',
@@ -49,7 +49,7 @@ describe('ParallelDiffTableRow', () => {
     const rightLine = diffFileMockData.parallel_diff_lines[2].right;
 
     beforeEach(() => {
-      vm = createComponentWithStore((ParallelDiffTableRow), createStore(), {
+      vm = createComponentWithStore(ParallelDiffTableRow, createStore(), {
         line: thisLine,
         fileHash: diffFileMockData.file_hash,
         contextLinesPath: 'contextLinesPath',

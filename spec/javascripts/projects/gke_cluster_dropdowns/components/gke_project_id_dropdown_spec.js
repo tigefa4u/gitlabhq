@@ -19,7 +19,7 @@ const LABELS = {
 };
 
 const createComponent = (store, props = componentConfig) => {
-  const Component = (GkeProjectIdDropdown);
+  const Component = GkeProjectIdDropdown;
 
   return mountComponentWithStore(Component, {
     el: null,

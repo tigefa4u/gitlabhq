@@ -9,7 +9,7 @@ describe('DiffFile', () => {
   let vm;
 
   beforeEach(() => {
-    vm = createComponentWithStore((DiffFileComponent), store, {
+    vm = createComponentWithStore(DiffFileComponent, store, {
       file: JSON.parse(JSON.stringify(diffFileMockData)),
       canCurrentUserFork: false,
     }).$mount();

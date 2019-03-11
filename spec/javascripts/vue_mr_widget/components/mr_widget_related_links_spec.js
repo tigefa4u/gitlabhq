@@ -6,7 +6,7 @@ describe('MRWidgetRelatedLinks', () => {
   let vm;
 
   const createComponent = data => {
-    const Component = (relatedLinksComponent);
+    const Component = relatedLinksComponent;
 
     return mountComponent(Component, data);
   };

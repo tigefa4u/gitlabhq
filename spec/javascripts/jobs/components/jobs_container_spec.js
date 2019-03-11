@@ -3,7 +3,7 @@ import component from '~/jobs/components/jobs_container.vue';
 import mountComponent from '../../helpers/vue_mount_component_helper';
 
 describe('Jobs List block', () => {
-  const Component = (component);
+  const Component = component;
   let vm;
 
   const retried = {

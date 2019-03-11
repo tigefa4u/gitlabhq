@@ -3,7 +3,7 @@ import Vue from 'vue';
 import GlModal from '~/vue_shared/components/gl_modal.vue';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
-const modalComponent = (GlModal);
+const modalComponent = GlModal;
 
 describe('GlModal', () => {
   let vm;
@@ -161,12 +161,12 @@ describe('GlModal', () => {
         template = `<gl-modal>${slotContent}</gl-modal>`;
       }
 
-      return ({
+      return {
         components: {
           GlModal,
         },
         template,
-      });
+      };
     };
 
     describe('default slot', () => {

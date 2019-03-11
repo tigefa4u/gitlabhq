@@ -6,7 +6,7 @@ describe('MRWidgetMissingBranch', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (missingBranchComponent);
+    const Component = missingBranchComponent;
     vm = mountComponent(Component, { mr: { sourceBranchRemoved: true } });
   });
 

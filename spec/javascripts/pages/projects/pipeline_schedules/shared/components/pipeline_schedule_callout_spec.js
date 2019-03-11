@@ -2,7 +2,7 @@ import Vue from 'vue';
 import Cookies from 'js-cookie';
 import PipelineSchedulesCallout from '~/pages/projects/pipeline_schedules/shared/components/pipeline_schedules_callout.vue';
 
-const PipelineSchedulesCalloutComponent = (PipelineSchedulesCallout);
+const PipelineSchedulesCalloutComponent = PipelineSchedulesCallout;
 const cookieKey = 'pipeline_schedules_callout_dismissed';
 const docsUrl = 'help/ci/scheduled_pipelines';
 

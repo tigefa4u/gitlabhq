@@ -7,7 +7,7 @@ import { TEST_HOST } from 'spec/test_constants';
 import { reposServerResponse } from '../mock_data';
 
 describe('Registry List', () => {
-  const Component = (registry);
+  const Component = registry;
   let vm;
   let mock;
 

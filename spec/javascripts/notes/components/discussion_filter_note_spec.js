@@ -8,7 +8,7 @@ describe('DiscussionFilterNote component', () => {
   let vm;
 
   const createComponent = () => {
-    const Component = (DiscussionFilterNote);
+    const Component = DiscussionFilterNote;
 
     return mountComponent(Component);
   };

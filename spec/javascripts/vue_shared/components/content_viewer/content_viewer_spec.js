@@ -10,7 +10,7 @@ describe('ContentViewer', () => {
   let mock;
 
   function createComponent(props) {
-    const ContentViewer = (contentViewer);
+    const ContentViewer = contentViewer;
     vm = mountComponent(ContentViewer, props);
   }
 

@@ -7,7 +7,7 @@ describe('Edit Actions components', () => {
   let vm;
 
   beforeEach(done => {
-    const Component = (editActions);
+    const Component = editActions;
     const store = new Store({
       titleHtml: '',
       descriptionHtml: '',

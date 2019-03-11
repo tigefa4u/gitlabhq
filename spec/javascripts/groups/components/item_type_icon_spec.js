@@ -5,7 +5,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { ITEM_TYPE } from '../mock_data';
 
 const createComponent = (itemType = ITEM_TYPE.GROUP, isGroupOpen = false) => {
-  const Component = (itemTypeIconComponent);
+  const Component = itemTypeIconComponent;
 
   return mountComponent(Component, {
     itemType,

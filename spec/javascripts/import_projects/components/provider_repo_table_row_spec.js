@@ -17,7 +17,7 @@ describe('ProviderRepoTableRow', () => {
   };
 
   function createComponent() {
-    const ProviderRepoTableRow = (providerRepoTableRow);
+    const ProviderRepoTableRow = providerRepoTableRow;
 
     return new ProviderRepoTableRow({
       store,

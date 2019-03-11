@@ -7,7 +7,7 @@ describe('MR widget status icon component', () => {
   let Component;
 
   beforeEach(() => {
-    Component = (mrStatusIcon);
+    Component = mrStatusIcon;
   });
 
   afterEach(() => {

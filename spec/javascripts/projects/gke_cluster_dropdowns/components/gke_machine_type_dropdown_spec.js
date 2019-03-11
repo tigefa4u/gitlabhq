@@ -28,7 +28,7 @@ const LABELS = {
 };
 
 const createComponent = (store, props = componentConfig) => {
-  const Component = (GkeMachineTypeDropdown);
+  const Component = GkeMachineTypeDropdown;
 
   return mountComponentWithStore(Component, {
     el: null,

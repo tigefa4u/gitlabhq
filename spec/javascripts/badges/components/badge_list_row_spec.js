@@ -7,7 +7,7 @@ import { mountComponentWithStore } from 'spec/helpers/vue_mount_component_helper
 import { createDummyBadge } from '../dummy_badge';
 
 describe('BadgeListRow component', () => {
-  const Component = (BadgeListRow);
+  const Component = BadgeListRow;
   let badge;
   let vm;
 

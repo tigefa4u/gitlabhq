@@ -56,7 +56,7 @@ describe('Tooltip directive', () => {
 
   describe('with multiple tooltips', () => {
     beforeEach(() => {
-      const SomeComponent = ({
+      const SomeComponent = {
         directives: {
           tooltip,
         },
@@ -73,7 +73,7 @@ describe('Tooltip directive', () => {
             </div>
           </div>
         `,
-      });
+      };
 
       vm = new SomeComponent().$mount();
     });

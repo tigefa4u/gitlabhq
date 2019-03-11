@@ -11,7 +11,7 @@ describe('detailedMetric', () => {
 
   describe('when the current request has no details', () => {
     beforeEach(() => {
-      vm = mountComponent((detailedMetric), {
+      vm = mountComponent(detailedMetric, {
         currentRequest: {},
         metric: 'gitaly',
         header: 'Gitaly calls',
@@ -32,7 +32,7 @@ describe('detailedMetric', () => {
     ];
 
     beforeEach(() => {
-      vm = mountComponent((detailedMetric), {
+      vm = mountComponent(detailedMetric, {
         currentRequest: {
           details: {
             gitaly: {

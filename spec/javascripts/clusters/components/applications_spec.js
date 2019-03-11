@@ -10,7 +10,7 @@ describe('Applications', () => {
   let Applications;
 
   beforeEach(() => {
-    Applications = (applications);
+    Applications = applications;
   });
 
   afterEach(() => {

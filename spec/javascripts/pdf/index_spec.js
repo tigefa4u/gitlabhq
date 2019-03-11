@@ -6,7 +6,7 @@ import PDFLab from '~/pdf/index.vue';
 import pdf from '../fixtures/blob/pdf/test.pdf';
 
 PDFJS.workerSrc = workerSrc;
-const Component = (PDFLab);
+const Component = PDFLab;
 
 describe('PDF component', () => {
   let vm;

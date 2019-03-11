@@ -4,7 +4,7 @@ import { removeBreakLine } from 'spec/helpers/vue_component_helper';
 
 describe('PipelineFailed', () => {
   describe('template', () => {
-    const Component = (PipelineFailed);
+    const Component = PipelineFailed;
     const vm = new Component({
       el: document.createElement('div'),
     });

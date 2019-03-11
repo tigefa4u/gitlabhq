@@ -3,7 +3,7 @@ import Stage from '~/ide/components/jobs/stage.vue';
 import { stages, jobs } from '../../mock_data';
 
 describe('IDE pipeline stage', () => {
-  const Component = (Stage);
+  const Component = Stage;
   let vm;
   let stage;
 

@@ -4,7 +4,7 @@ import mountComponent from '../../../helpers/vue_mount_component_helper';
 import { jobs } from '../../mock_data';
 
 describe('IDE jobs item', () => {
-  const Component = (JobItem);
+  const Component = JobItem;
   const job = jobs[0];
   let vm;
 

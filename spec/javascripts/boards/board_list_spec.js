@@ -27,7 +27,7 @@ describe('Board list component', () => {
     gl.boardService = mockBoardService();
     boardsStore.create();
 
-    const BoardListComp = (BoardList);
+    const BoardListComp = BoardList;
     const list = new List(listObj);
     const issue = new ListIssue({
       title: 'Testing',

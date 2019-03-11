@@ -6,7 +6,7 @@ describe('MRWidgetArchived', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (archivedComponent);
+    const Component = archivedComponent;
     vm = mountComponent(Component);
   });
 

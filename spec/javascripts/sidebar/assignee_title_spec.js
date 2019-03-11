@@ -6,7 +6,7 @@ describe('AssigneeTitle component', () => {
   let AssigneeTitleComponent;
 
   beforeEach(() => {
-    AssigneeTitleComponent = (AssigneeTitle);
+    AssigneeTitleComponent = AssigneeTitle;
   });
 
   describe('assignee title', () => {

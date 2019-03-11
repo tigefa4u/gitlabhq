@@ -7,7 +7,7 @@ describe('ShaMismatch', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (ShaMismatch);
+    const Component = ShaMismatch;
     vm = mountComponent(Component);
   });
 

@@ -9,7 +9,7 @@ describe('IdeRepoTree', () => {
   let vm;
 
   beforeEach(() => {
-    const IdeRepoTree = (IdeTree);
+    const IdeRepoTree = IdeTree;
 
     store.state.currentProjectId = 'abcproject';
     store.state.currentBranchId = 'master';

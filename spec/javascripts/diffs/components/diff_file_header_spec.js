@@ -13,7 +13,7 @@ describe('diff_file_header', () => {
   let vm;
   let props;
   const diffDiscussionMock = diffDiscussionsMockData;
-  const Component = (DiffFileHeader);
+  const Component = DiffFileHeader;
 
   const store = new Vuex.Store({
     modules: {

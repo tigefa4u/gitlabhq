@@ -14,7 +14,7 @@ describe('ImportedProjectTableRow', () => {
   };
 
   function createComponent() {
-    const ImportedProjectTableRow = (importedProjectTableRow);
+    const ImportedProjectTableRow = importedProjectTableRow;
 
     const store = createStore();
     return new ImportedProjectTableRow({

@@ -6,7 +6,7 @@ const defaultHeight = '25';
 const defaultWidth = '100';
 
 const createComponent = () => {
-  const Component = (MemoryGraph);
+  const Component = MemoryGraph;
 
   return new Component({
     el: document.createElement('div'),

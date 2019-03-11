@@ -7,7 +7,7 @@ describe('placeholder system note component', () => {
   let vm;
 
   beforeEach(() => {
-    PlaceholderSystemNote = (placeholderSystemNote);
+    PlaceholderSystemNote = placeholderSystemNote;
   });
 
   afterEach(() => {

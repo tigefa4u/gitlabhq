@@ -20,7 +20,7 @@ import {
 } from '../mock_data';
 
 const createComponent = (hideProjects = false) => {
-  const Component = (appComponent);
+  const Component = appComponent;
   const store = new GroupsStore(false);
   const service = new GroupsService(mockEndpoint);
 

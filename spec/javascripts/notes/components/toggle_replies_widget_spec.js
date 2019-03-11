@@ -18,7 +18,7 @@ describe('toggle replies widget for notes', () => {
   const replies = [note, note, note, noteFromOtherUser, noteFromAnotherUser];
 
   beforeEach(() => {
-    ToggleRepliesWidget = (toggleRepliesWidget);
+    ToggleRepliesWidget = toggleRepliesWidget;
   });
 
   afterEach(() => {

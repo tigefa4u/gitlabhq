@@ -6,7 +6,7 @@ describe('Markdown field header component', () => {
   let vm;
 
   beforeEach(done => {
-    const Component = (headerComponent);
+    const Component = headerComponent;
 
     vm = new Component({
       propsData: {

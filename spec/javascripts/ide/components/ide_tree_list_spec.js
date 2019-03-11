@@ -6,7 +6,7 @@ import { resetStore, file } from '../helpers';
 import { projectData } from '../mock_data';
 
 describe('IDE tree list', () => {
-  const Component = (IdeTreeList);
+  const Component = IdeTreeList;
   let vm;
 
   beforeEach(() => {

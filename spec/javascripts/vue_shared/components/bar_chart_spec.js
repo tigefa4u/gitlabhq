@@ -24,7 +24,7 @@ describe('Bar chart component', () => {
   const graphData = generateRandomData(10);
 
   beforeEach(() => {
-    const BarChartComponent = (BarChart);
+    const BarChartComponent = BarChart;
 
     barChart = mountComponent(BarChartComponent, {
       graphData,

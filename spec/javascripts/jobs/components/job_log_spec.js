@@ -5,7 +5,7 @@ import { mountComponentWithStore } from 'spec/helpers/vue_mount_component_helper
 import { resetStore } from '../store/helpers';
 
 describe('Job Log', () => {
-  const Component = (component);
+  const Component = component;
   let store;
   let vm;
 

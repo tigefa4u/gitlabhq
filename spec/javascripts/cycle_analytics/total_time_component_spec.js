@@ -7,7 +7,7 @@ describe('Total time component', () => {
   let Component;
 
   beforeEach(() => {
-    Component = (component);
+    Component = component;
   });
 
   afterEach(() => {

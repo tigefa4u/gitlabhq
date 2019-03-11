@@ -4,7 +4,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { DUMMY_IMAGE_URL, TEST_HOST } from 'spec/test_constants';
 
 describe('Badge component', () => {
-  const Component = (Badge);
+  const Component = Badge;
   const dummyProps = {
     imageUrl: DUMMY_IMAGE_URL,
     linkUrl: `${TEST_HOST}/badge/link/url`,

@@ -4,7 +4,7 @@ import mountComponent, { mountComponentWithSlots } from 'spec/helpers/vue_mount_
 
 describe('Report section', () => {
   let vm;
-  const ReportSection = (reportSection);
+  const ReportSection = reportSection;
 
   const resolvedIssues = [
     {

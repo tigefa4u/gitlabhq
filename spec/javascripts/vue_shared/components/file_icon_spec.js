@@ -7,7 +7,7 @@ describe('File Icon component', () => {
   let FileIcon;
 
   beforeEach(() => {
-    FileIcon = (fileIcon);
+    FileIcon = fileIcon;
   });
 
   afterEach(() => {

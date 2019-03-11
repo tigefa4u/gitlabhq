@@ -6,7 +6,7 @@ import diffFileMockData from '../mock_data/diff_file';
 
 describe('DiffTableCell', () => {
   const createComponent = options =>
-    createComponentWithStore((DiffTableCell), store, {
+    createComponentWithStore(DiffTableCell, store, {
       line: diffFileMockData.highlighted_diff_lines[0],
       fileHash: diffFileMockData.file_hash,
       contextLinesPath: 'contextLinesPath',

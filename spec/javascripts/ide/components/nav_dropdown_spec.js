@@ -5,7 +5,7 @@ import NavDropdown from '~/ide/components/nav_dropdown.vue';
 import { mountComponentWithStore } from 'spec/helpers/vue_mount_component_helper';
 
 describe('IDE NavDropdown', () => {
-  const Component = (NavDropdown);
+  const Component = NavDropdown;
   let vm;
   let $dropdown;
 

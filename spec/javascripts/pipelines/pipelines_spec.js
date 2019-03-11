@@ -42,7 +42,7 @@ describe('Pipelines', () => {
 
     pipelines = getJSONFixture(jsonFixtureName);
 
-    PipelinesComponent = (pipelinesComp);
+    PipelinesComponent = pipelinesComp;
   });
 
   afterEach(() => {

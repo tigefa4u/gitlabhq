@@ -7,7 +7,7 @@ import { branches as testBranches } from '../../mock_data';
 import { resetStore } from '../../helpers';
 
 describe('IDE branches search list', () => {
-  const Component = (List);
+  const Component = List;
   let vm;
 
   beforeEach(() => {

@@ -6,7 +6,7 @@ import { removeBreakLine } from 'spec/helpers/vue_component_helper';
 describe('MRWidgetPipelineBlocked', () => {
   let vm;
   beforeEach(() => {
-    const Component = (pipelineBlockedComponent);
+    const Component = pipelineBlockedComponent;
     vm = mountComponent(Component);
   });
 

@@ -6,7 +6,7 @@ import { file } from 'spec/ide/helpers';
 import timeoutPromise from 'spec/helpers/set_timeout_promise_helper';
 
 describe('File finder item spec', () => {
-  const Component = (FindFileComponent);
+  const Component = FindFileComponent;
   let vm;
 
   function createComponent(props) {

@@ -4,7 +4,7 @@ import eventHub from '~/frequent_items/event_hub';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 const createComponent = (namespace = 'projects') => {
-  const Component = (searchComponent);
+  const Component = searchComponent;
 
   return mountComponent(Component, { namespace });
 };

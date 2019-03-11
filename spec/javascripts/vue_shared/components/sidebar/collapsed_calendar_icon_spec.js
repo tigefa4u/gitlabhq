@@ -5,7 +5,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 describe('collapsedCalendarIcon', () => {
   let vm;
   beforeEach(() => {
-    const CollapsedCalendarIcon = (collapsedCalendarIcon);
+    const CollapsedCalendarIcon = collapsedCalendarIcon;
     vm = mountComponent(CollapsedCalendarIcon, {
       containerClass: 'test-class',
       text: 'text',

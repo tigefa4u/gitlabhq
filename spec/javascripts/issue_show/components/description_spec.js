@@ -16,7 +16,7 @@ describe('Description component', () => {
   };
 
   beforeEach(() => {
-    DescriptionComponent = (Description);
+    DescriptionComponent = Description;
 
     if (!document.querySelector('.issuable-meta')) {
       const metaData = document.createElement('div');

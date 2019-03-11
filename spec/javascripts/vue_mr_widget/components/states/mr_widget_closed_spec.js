@@ -6,7 +6,7 @@ describe('MRWidgetClosed', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (closedComponent);
+    const Component = closedComponent;
     vm = mountComponent(Component, {
       mr: {
         metrics: {

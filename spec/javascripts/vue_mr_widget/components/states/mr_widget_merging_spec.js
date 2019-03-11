@@ -5,7 +5,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 describe('MRWidgetMerging', () => {
   let vm;
   beforeEach(() => {
-    const Component = (mergingComponent);
+    const Component = mergingComponent;
 
     vm = mountComponent(Component, {
       mr: {

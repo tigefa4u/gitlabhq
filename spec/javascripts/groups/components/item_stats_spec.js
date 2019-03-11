@@ -11,7 +11,7 @@ import {
 } from '../mock_data';
 
 const createComponent = (item = mockParentGroupItem) => {
-  const Component = (itemStatsComponent);
+  const Component = itemStatsComponent;
 
   return mountComponent(Component, {
     item,

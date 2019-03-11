@@ -41,7 +41,7 @@ const createTestService = () => ({
 });
 
 const createComponent = (customConfig = {}) => {
-  const Component = (ReadyToMerge);
+  const Component = ReadyToMerge;
 
   return new Component({
     el: document.createElement('div'),

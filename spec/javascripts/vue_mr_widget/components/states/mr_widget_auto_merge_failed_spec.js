@@ -8,7 +8,7 @@ describe('MRWidgetAutoMergeFailed', () => {
   const mergeError = 'This is the merge error';
 
   beforeEach(() => {
-    const Component = (autoMergeFailedComponent);
+    const Component = autoMergeFailedComponent;
     vm = mountComponent(Component, {
       mr: { mergeError },
     });

@@ -8,7 +8,7 @@ describe('issue placeholder system note component', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (issuePlaceholderNote);
+    const Component = issuePlaceholderNote;
     store = createStore();
     store.dispatch('setUserData', userDataMock);
     vm = new Component({

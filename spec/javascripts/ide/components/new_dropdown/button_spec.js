@@ -7,7 +7,7 @@ describe('IDE new entry dropdown button component', () => {
   let vm;
 
   beforeAll(() => {
-    Component = (Button);
+    Component = Button;
   });
 
   beforeEach(() => {

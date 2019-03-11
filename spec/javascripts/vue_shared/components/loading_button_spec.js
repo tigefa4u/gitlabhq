@@ -9,7 +9,7 @@ describe('LoadingButton', function() {
   let LoadingButton;
 
   beforeEach(() => {
-    LoadingButton = (loadingButton);
+    LoadingButton = loadingButton;
   });
 
   afterEach(() => {

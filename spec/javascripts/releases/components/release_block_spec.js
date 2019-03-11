@@ -5,7 +5,7 @@ import timeagoMixin from '~/vue_shared/mixins/timeago';
 import mountComponent from '../../helpers/vue_mount_component_helper';
 
 describe('Release block', () => {
-  const Component = (component);
+  const Component = component;
 
   const release = {
     name: 'Bionic Beaver',

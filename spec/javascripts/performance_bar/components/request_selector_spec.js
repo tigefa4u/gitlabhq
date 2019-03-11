@@ -18,7 +18,7 @@ describe('request selector', () => {
   let vm;
 
   beforeEach(() => {
-    vm = mountComponent((requestSelector), {
+    vm = mountComponent(requestSelector, {
       requests,
       currentRequest: requests[1],
     });

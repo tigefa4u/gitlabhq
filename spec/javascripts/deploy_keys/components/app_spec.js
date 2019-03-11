@@ -15,7 +15,7 @@ describe('Deploy keys app component', () => {
     mock = new MockAdapter(axios);
     mock.onGet(`${TEST_HOST}/dummy/`).replyOnce(200, data);
 
-    const Component = (deployKeysApp);
+    const Component = deployKeysApp;
 
     vm = new Component({
       propsData: {

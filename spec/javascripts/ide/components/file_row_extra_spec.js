@@ -12,7 +12,7 @@ describe('IDE extra file row component', () => {
   let changesCount = 0;
 
   beforeAll(() => {
-    Component = (FileRowExtra);
+    Component = FileRowExtra;
   });
 
   beforeEach(() => {

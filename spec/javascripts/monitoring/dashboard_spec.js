@@ -34,7 +34,7 @@ describe('Dashboard', () => {
     `);
 
     mock = new MockAdapter(axios);
-    DashboardComponent = (Dashboard);
+    DashboardComponent = Dashboard;
   });
 
   afterEach(() => {

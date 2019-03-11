@@ -6,7 +6,7 @@ describe('new dropdown upload', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (upload);
+    const Component = upload;
 
     vm = createComponent(Component, {
       path: '',

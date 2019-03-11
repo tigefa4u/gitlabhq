@@ -8,7 +8,7 @@ describe('Commit component', () => {
   let CommitComponent;
 
   beforeEach(() => {
-    CommitComponent = (commitComp);
+    CommitComponent = commitComp;
   });
 
   afterEach(() => {

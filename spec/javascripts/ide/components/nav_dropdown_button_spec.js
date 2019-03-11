@@ -8,7 +8,7 @@ import { resetStore } from '../helpers';
 describe('NavDropdown', () => {
   const TEST_BRANCH_ID = 'lorem-ipsum-dolar';
   const TEST_MR_ID = '12345';
-  const Component = (NavDropdownButton);
+  const Component = NavDropdownButton;
   let vm;
 
   beforeEach(() => {

@@ -6,7 +6,7 @@ describe('Environment item', () => {
   let EnvironmentItem;
 
   beforeEach(() => {
-    EnvironmentItem = (environmentItemComp);
+    EnvironmentItem = environmentItemComp;
   });
 
   describe('When item is folder', () => {

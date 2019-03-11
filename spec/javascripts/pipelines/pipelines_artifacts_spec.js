@@ -6,7 +6,7 @@ describe('Pipelines Artifacts dropdown', () => {
   let artifacts;
 
   beforeEach(() => {
-    const ArtifactsComponent = (artifactsComp);
+    const ArtifactsComponent = artifactsComp;
 
     artifacts = [
       {

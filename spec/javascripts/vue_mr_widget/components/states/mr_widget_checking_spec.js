@@ -7,7 +7,7 @@ describe('MRWidgetChecking', () => {
   let vm;
 
   beforeEach(() => {
-    Component = (checkingComponent);
+    Component = checkingComponent;
     vm = mountComponent(Component);
   });
 

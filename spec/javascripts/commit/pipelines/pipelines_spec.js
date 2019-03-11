@@ -18,7 +18,7 @@ describe('Pipelines table in Commits and Merge requests', function() {
 
     const { pipelines } = getJSONFixture(jsonFixtureName);
 
-    PipelinesTable = (pipelinesTable);
+    PipelinesTable = pipelinesTable;
     pipeline = pipelines.find(p => p.user !== null && p.commit !== null);
   });
 

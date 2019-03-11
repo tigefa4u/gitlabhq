@@ -7,7 +7,7 @@ describe('Sprite Icon Component', function() {
     let icon;
 
     beforeEach(function() {
-      const IconComponent = (Icon);
+      const IconComponent = Icon;
 
       icon = mountComponent(IconComponent, {
         name: 'commit',

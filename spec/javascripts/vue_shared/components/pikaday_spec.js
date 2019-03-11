@@ -5,7 +5,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 describe('datePicker', () => {
   let vm;
   beforeEach(() => {
-    const DatePicker = (datePicker);
+    const DatePicker = datePicker;
     vm = mountComponent(DatePicker, {
       label: 'label',
     });

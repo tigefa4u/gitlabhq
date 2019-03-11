@@ -6,7 +6,7 @@ import { mergeRequests } from '../../mock_data';
 import { resetStore } from '../../helpers';
 
 describe('IDE merge requests list', () => {
-  const Component = (List);
+  const Component = List;
   let vm;
 
   beforeEach(() => {

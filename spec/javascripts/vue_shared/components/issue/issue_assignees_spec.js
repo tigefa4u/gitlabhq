@@ -6,7 +6,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { mockAssigneesList } from 'spec/boards/mock_data';
 
 const createComponent = (assignees = mockAssigneesList, cssClass = '') => {
-  const Component = (IssueAssignees);
+  const Component = IssueAssignees;
 
   return mountComponent(Component, {
     assignees,

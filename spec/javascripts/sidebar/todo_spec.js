@@ -10,7 +10,7 @@ const createComponent = ({
   isActionActive,
   collapsed,
 }) => {
-  const Component = (SidebarTodos);
+  const Component = SidebarTodos;
 
   return mountComponent(Component, {
     issuableId,

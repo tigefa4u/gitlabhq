@@ -8,7 +8,7 @@ describe('Pipeline details header', () => {
   let props;
 
   beforeEach(() => {
-    HeaderComponent = (headerComponent);
+    HeaderComponent = headerComponent;
 
     const threeWeeksAgo = new Date();
     threeWeeksAgo.setDate(threeWeeksAgo.getDate() - 21);

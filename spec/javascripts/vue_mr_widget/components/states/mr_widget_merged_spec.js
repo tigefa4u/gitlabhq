@@ -16,7 +16,7 @@ describe('MRWidgetMerged', () => {
   };
 
   beforeEach(() => {
-    const Component = (mergedComponent);
+    const Component = mergedComponent;
     const mr = {
       isRemovingSourceBranch: false,
       cherryPickInForkPath: false,

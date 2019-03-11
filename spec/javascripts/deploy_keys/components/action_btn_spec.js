@@ -8,7 +8,7 @@ describe('Deploy keys action btn', () => {
   let vm;
 
   beforeEach(done => {
-    const ActionBtnComponent = ({
+    const ActionBtnComponent = {
       components: {
         actionBtn,
       },
@@ -23,7 +23,7 @@ describe('Deploy keys action btn', () => {
           type="enable">
             Enable
         </action-btn>`,
-    });
+    };
 
     vm = new ActionBtnComponent().$mount();
 

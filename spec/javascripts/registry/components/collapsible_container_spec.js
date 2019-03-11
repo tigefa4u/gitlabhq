@@ -10,7 +10,7 @@ import { repoPropsData, registryServerResponse, reposServerResponse } from '../m
 describe('collapsible registry container', () => {
   let vm;
   let mock;
-  const Component = (collapsibleComponent);
+  const Component = collapsibleComponent;
 
   beforeEach(() => {
     mock = new MockAdapter(axios);

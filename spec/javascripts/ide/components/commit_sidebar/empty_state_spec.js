@@ -8,7 +8,7 @@ describe('IDE commit panel empty state', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (emptyState);
+    const Component = emptyState;
 
     Vue.set(store.state, 'noChangesStateSvgPath', 'no-changes');
 

@@ -7,7 +7,7 @@ import { createComponentWithStore } from '../../../helpers/vue_mount_component_h
 import { pipelines, projectData, stages, jobs } from '../../mock_data';
 
 describe('IDE pipelines list', () => {
-  const Component = (List);
+  const Component = List;
   let vm;
   let mock;
 

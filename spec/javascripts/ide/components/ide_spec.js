@@ -9,7 +9,7 @@ describe('ide component', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (ide);
+    const Component = ide;
 
     store.state.currentProjectId = 'abcproject';
     store.state.currentBranchId = 'master';

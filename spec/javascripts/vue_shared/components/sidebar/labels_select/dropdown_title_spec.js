@@ -5,7 +5,7 @@ import dropdownTitleComponent from '~/vue_shared/components/sidebar/labels_selec
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 const createComponent = (canEdit = true) => {
-  const Component = (dropdownTitleComponent);
+  const Component = dropdownTitleComponent;
 
   return mountComponent(Component, {
     canEdit,

@@ -4,7 +4,7 @@ import CommitWidget from '~/diffs/components/commit_widget.vue';
 import getDiffWithCommit from '../mock_data/diff_with_commit';
 
 describe('diffs/components/commit_widget', () => {
-  const Component = (CommitWidget);
+  const Component = CommitWidget;
   const { commit } = getDiffWithCommit();
 
   let vm;

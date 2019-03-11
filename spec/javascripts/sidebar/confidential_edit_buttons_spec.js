@@ -6,7 +6,7 @@ describe('Edit Form Buttons', () => {
   let vm2;
 
   beforeEach(() => {
-    const Component = (editFormButtons);
+    const Component = editFormButtons;
     const toggleForm = () => {};
     const updateConfidentialAttribute = () => {};
 

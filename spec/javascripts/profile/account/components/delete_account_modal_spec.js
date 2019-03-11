@@ -11,7 +11,7 @@ describe('DeleteAccountModal component', () => {
   let vm;
 
   beforeEach(() => {
-    Component = (deleteAccountModal);
+    Component = deleteAccountModal;
   });
 
   afterEach(() => {

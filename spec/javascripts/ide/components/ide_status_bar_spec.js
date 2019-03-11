@@ -10,7 +10,7 @@ describe('ideStatusBar', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (ideStatusBar);
+    const Component = ideStatusBar;
 
     store.state.currentProjectId = 'abcproject';
     store.state.projects.abcproject = projectData;

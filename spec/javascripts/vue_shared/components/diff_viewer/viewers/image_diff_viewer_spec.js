@@ -7,7 +7,7 @@ describe('ImageDiffViewer', () => {
   let vm;
 
   function createComponent(props) {
-    const ImageDiffViewer = (imageDiffViewer);
+    const ImageDiffViewer = imageDiffViewer;
     vm = mountComponent(ImageDiffViewer, props);
   }
 

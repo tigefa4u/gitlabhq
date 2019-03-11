@@ -8,7 +8,7 @@ describe('issue_note_body component', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (noteBody);
+    const Component = noteBody;
 
     store = createStore();
     store.dispatch('setNoteableData', noteableDataMock);

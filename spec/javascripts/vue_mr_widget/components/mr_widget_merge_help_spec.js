@@ -7,7 +7,7 @@ describe('MRWidgetMergeHelp', () => {
   let Component;
 
   beforeEach(() => {
-    Component = (mergeHelpComponent);
+    Component = mergeHelpComponent;
   });
 
   afterEach(() => {

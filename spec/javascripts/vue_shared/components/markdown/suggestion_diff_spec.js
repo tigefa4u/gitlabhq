@@ -20,7 +20,7 @@ describe('Suggestion Diff component', () => {
   let vm;
 
   beforeEach(done => {
-    const Component = (SuggestionDiffComponent);
+    const Component = SuggestionDiffComponent;
 
     vm = new Component({
       propsData: MOCK_DATA,

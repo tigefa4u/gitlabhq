@@ -7,7 +7,7 @@ describe('Title component', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (titleComponent);
+    const Component = titleComponent;
     const store = new Store({
       titleHtml: '',
       descriptionHtml: '',

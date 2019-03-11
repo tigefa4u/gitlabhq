@@ -7,7 +7,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { mockLabels } from './mock_data';
 
 const createComponent = (name = 'label_id[]', value = mockLabels[0].id) => {
-  const Component = (dropdownHiddenInputComponent);
+  const Component = dropdownHiddenInputComponent;
 
   return mountComponent(Component, {
     name,

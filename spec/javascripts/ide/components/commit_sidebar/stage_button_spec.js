@@ -9,7 +9,7 @@ describe('IDE stage file button', () => {
   let f;
 
   beforeEach(() => {
-    const Component = (stageButton);
+    const Component = stageButton;
     f = file();
 
     vm = createComponentWithStore(Component, store, {

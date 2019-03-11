@@ -5,7 +5,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 describe('toggleSidebar', () => {
   let vm;
   beforeEach(() => {
-    const ToggleSidebar = (toggleSidebar);
+    const ToggleSidebar = toggleSidebar;
     vm = mountComponent(ToggleSidebar, {
       collapsed: true,
     });

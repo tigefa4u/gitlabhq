@@ -8,7 +8,7 @@ describe('new dropdown component', () => {
   let vm;
 
   beforeEach(() => {
-    const component = (newDropdown);
+    const component = newDropdown;
 
     vm = createComponentWithStore(component, store, {
       branch: 'master',

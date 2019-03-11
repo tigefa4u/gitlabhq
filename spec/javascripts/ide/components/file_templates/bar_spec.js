@@ -9,7 +9,7 @@ describe('IDE file templates bar component', () => {
   let vm;
 
   beforeAll(() => {
-    Component = (Bar);
+    Component = Bar;
   });
 
   beforeEach(() => {

@@ -8,7 +8,7 @@ const defaultLabel = 'Select';
 const customLabel = 'Select project';
 
 const createComponent = (props, slots = {}) => {
-  const Component = (dropdownButtonComponent);
+  const Component = dropdownButtonComponent;
 
   return mountComponentWithSlots(Component, { props, slots });
 };

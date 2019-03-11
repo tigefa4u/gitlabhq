@@ -9,7 +9,7 @@ const componentConfig = {
 };
 
 const createComponent = (config = componentConfig) => {
-  const Component = (dropdownSearchInputComponent);
+  const Component = dropdownSearchInputComponent;
 
   return mountComponent(Component, config);
 };

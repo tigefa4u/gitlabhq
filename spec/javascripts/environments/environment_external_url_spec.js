@@ -5,7 +5,7 @@ describe('External URL Component', () => {
   let ExternalUrlComponent;
 
   beforeEach(() => {
-    ExternalUrlComponent = (externalUrlComp);
+    ExternalUrlComponent = externalUrlComp;
   });
 
   it('should link to the provided externalUrl prop', () => {

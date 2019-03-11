@@ -3,7 +3,7 @@ import JobItem from '~/pipelines/components/graph/job_item.vue';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('pipeline graph job item', () => {
-  const JobComponent = (JobItem);
+  const JobComponent = JobItem;
   let component;
 
   const delayedJobFixture = getJSONFixture('jobs/delayed.json');

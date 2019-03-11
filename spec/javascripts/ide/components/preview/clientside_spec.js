@@ -10,7 +10,7 @@ describe('IDE clientside preview', () => {
   let Component;
 
   beforeAll(() => {
-    Component = (Clientside);
+    Component = Clientside;
   });
 
   beforeEach(done => {

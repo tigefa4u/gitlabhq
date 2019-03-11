@@ -14,7 +14,7 @@ describe('CompareVersions', () => {
     store.state.diffs.removedLines = 20;
     store.state.diffs.diffFiles.push('test');
 
-    vm = createComponentWithStore((CompareVersionsComponent), store, {
+    vm = createComponentWithStore(CompareVersionsComponent, store, {
       mergeRequestDiffs: diffsMockData,
       mergeRequestDiff: diffsMockData[0],
       targetBranch,

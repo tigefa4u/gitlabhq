@@ -6,7 +6,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { mockParentGroupItem, mockChildren } from '../mock_data';
 
 const createComponent = (group = mockParentGroupItem, parentGroup = mockChildren[0]) => {
-  const Component = (groupItemComponent);
+  const Component = groupItemComponent;
 
   return mountComponent(Component, {
     group,

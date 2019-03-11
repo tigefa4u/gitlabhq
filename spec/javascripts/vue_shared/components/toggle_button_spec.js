@@ -7,7 +7,7 @@ describe('Toggle Button', () => {
   let Component;
 
   beforeEach(() => {
-    Component = (toggleButton);
+    Component = toggleButton;
   });
 
   afterEach(() => {

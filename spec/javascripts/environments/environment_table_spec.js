@@ -15,7 +15,7 @@ describe('Environment table', () => {
   };
 
   beforeEach(() => {
-    Component = (environmentTableComp);
+    Component = environmentTableComp;
   });
 
   afterEach(() => {

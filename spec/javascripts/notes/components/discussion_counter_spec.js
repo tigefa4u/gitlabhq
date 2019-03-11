@@ -11,7 +11,7 @@ describe('DiscussionCounter component', () => {
   beforeEach(() => {
     window.mrTabs = {};
 
-    const Component = (DiscussionCounter);
+    const Component = DiscussionCounter;
 
     store = createStore();
     store.dispatch('setNoteableData', noteableDataMock);

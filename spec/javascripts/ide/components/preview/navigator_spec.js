@@ -8,7 +8,7 @@ describe('IDE clientside preview navigator', () => {
   let manager;
 
   beforeAll(() => {
-    Component = (ClientsideNavigator);
+    Component = ClientsideNavigator;
   });
 
   beforeEach(() => {

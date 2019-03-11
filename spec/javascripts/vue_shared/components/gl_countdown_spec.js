@@ -3,7 +3,7 @@ import Vue from 'vue';
 import GlCountdown from '~/vue_shared/components/gl_countdown.vue';
 
 describe('GlCountdown', () => {
-  const Component = (GlCountdown);
+  const Component = GlCountdown;
   let vm;
   let now = '2000-01-01T00:00:00Z';
 

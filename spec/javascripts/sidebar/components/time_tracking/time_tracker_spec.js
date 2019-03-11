@@ -28,7 +28,7 @@ describe('Issuable Time Tracker', () => {
       rootPath: '/',
     };
 
-    const TimeTrackingComponent = ({
+    const TimeTrackingComponent = {
       ...TimeTracker,
       components: {
         ...TimeTracker.components,
@@ -37,7 +37,7 @@ describe('Issuable Time Tracker', () => {
           template: '<div><slot></slot></div>',
         },
       },
-    });
+    };
     vm = mountComponent(TimeTrackingComponent, initialData, '#mock-container');
   };
 

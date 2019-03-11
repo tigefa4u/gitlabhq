@@ -5,7 +5,7 @@ import groupItemComponent from '~/groups/components/group_item.vue';
 import { mockGroups, mockParentGroupItem } from '../mock_data';
 
 const createComponent = (groups = mockGroups, parentGroup = mockParentGroupItem) => {
-  const Component = (groupFolderComponent);
+  const Component = groupFolderComponent;
 
   return new Component({
     propsData: {

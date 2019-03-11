@@ -4,7 +4,7 @@ import RecentSearchesDropdownContent from '~/filtered_search/components/recent_s
 import IssuableFilteredSearchTokenKeys from '~/filtered_search/issuable_filtered_search_token_keys';
 
 const createComponent = propsData => {
-  const Component = (RecentSearchesDropdownContent);
+  const Component = RecentSearchesDropdownContent;
 
   return new Component({
     el: document.createElement('div'),

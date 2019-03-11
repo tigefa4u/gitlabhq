@@ -8,7 +8,7 @@ describe('Assignee component', () => {
   let AssigneeComponent;
 
   beforeEach(() => {
-    AssigneeComponent = (Assignee);
+    AssigneeComponent = Assignee;
   });
 
   describe('No assignees/users', () => {

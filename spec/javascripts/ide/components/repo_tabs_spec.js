@@ -5,7 +5,7 @@ import { file } from '../helpers';
 
 describe('RepoTabs', () => {
   const openedFiles = [file('open1'), file('open2')];
-  const RepoTabs = (repoTabs);
+  const RepoTabs = repoTabs;
   let vm;
 
   afterEach(() => {

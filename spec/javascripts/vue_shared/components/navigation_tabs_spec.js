@@ -28,7 +28,7 @@ describe('navigation tabs component', () => {
       },
     ];
 
-    Component = (navigationTabs);
+    Component = navigationTabs;
     vm = mountComponent(Component, { tabs: data, scope: 'pipelines' });
   });
 

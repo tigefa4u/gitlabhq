@@ -9,7 +9,7 @@ describe('Rollback Component', () => {
   let RollbackComponent;
 
   beforeEach(() => {
-    RollbackComponent = (rollbackComp);
+    RollbackComponent = rollbackComp;
   });
 
   it('Should render Re-deploy label when isLastDeployment is true', () => {

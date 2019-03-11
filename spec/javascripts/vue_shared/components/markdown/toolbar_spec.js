@@ -4,7 +4,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('toolbar', () => {
   let vm;
-  const Toolbar = (toolbar);
+  const Toolbar = toolbar;
   const props = {
     markdownDocsPath: '',
   };

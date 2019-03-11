@@ -8,7 +8,7 @@ describe('IDE commit panel successful commit state', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = (successMessage);
+    const Component = successMessage;
 
     vm = createComponentWithStore(Component, store, {
       committedStateSvgPath: 'committed-state',

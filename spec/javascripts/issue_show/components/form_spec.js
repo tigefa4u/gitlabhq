@@ -5,7 +5,7 @@ describe('Inline edit form component', () => {
   let vm;
 
   beforeEach(done => {
-    const Component = (formComponent);
+    const Component = formComponent;
 
     vm = new Component({
       propsData: {

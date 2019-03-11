@@ -5,7 +5,7 @@ import { getTimeago } from '~/lib/utils/datetime_utility';
 import mountComponent from '../../helpers/vue_mount_component_helper';
 
 describe('Deployment component', () => {
-  const Component = (deploymentComponent);
+  const Component = deploymentComponent;
   let deploymentMockData;
 
   beforeEach(() => {

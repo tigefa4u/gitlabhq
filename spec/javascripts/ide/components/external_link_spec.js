@@ -8,7 +8,7 @@ describe('ExternalLink', () => {
   let vm;
 
   function createComponent() {
-    const ExternalLink = (externalLink);
+    const ExternalLink = externalLink;
 
     activeFile.permalink = 'test';
 

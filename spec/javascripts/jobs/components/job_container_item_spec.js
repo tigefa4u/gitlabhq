@@ -5,7 +5,7 @@ import job from '../mock_data';
 
 describe('JobContainerItem', () => {
   const delayedJobFixture = getJSONFixture('jobs/delayed.json');
-  const Component = (JobContainerItem);
+  const Component = JobContainerItem;
   let vm;
 
   afterEach(() => {

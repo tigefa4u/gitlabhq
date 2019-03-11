@@ -11,7 +11,7 @@ describe('simpleMetric', () => {
 
   describe('when the current request has no details', () => {
     beforeEach(() => {
-      vm = mountComponent((simpleMetric), {
+      vm = mountComponent(simpleMetric, {
         currentRequest: {},
         metric: 'gitaly',
       });
@@ -28,7 +28,7 @@ describe('simpleMetric', () => {
 
   describe('when the current request has details', () => {
     beforeEach(() => {
-      vm = mountComponent((simpleMetric), {
+      vm = mountComponent(simpleMetric, {
         currentRequest: {
           details: { gitaly: { duration: '123ms', calls: '456' } },
         },

@@ -11,7 +11,7 @@ describe('issue note attachment', () => {
       },
     };
 
-    const Component = (noteAttachment);
+    const Component = noteAttachment;
     const vm = new Component({
       propsData: props,
     }).$mount();

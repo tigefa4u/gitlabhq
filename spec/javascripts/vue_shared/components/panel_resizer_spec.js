@@ -30,7 +30,7 @@ describe('Panel Resizer component', () => {
   };
 
   beforeEach(() => {
-    PanelResizer = (panelResizer);
+    PanelResizer = panelResizer;
   });
 
   afterEach(() => {

@@ -6,7 +6,7 @@ import { createComponentWithStore } from '../../helpers/vue_mount_component_help
 import { resetStore } from '../helpers';
 
 describe('IDE activity bar', () => {
-  const Component = (ActivityBar);
+  const Component = ActivityBar;
   let vm;
 
   beforeEach(() => {

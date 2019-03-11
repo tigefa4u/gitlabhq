@@ -9,7 +9,7 @@ describe('Diffs tree list component', () => {
   let vm;
 
   beforeAll(() => {
-    Component = (TreeList);
+    Component = TreeList;
   });
 
   beforeEach(() => {
