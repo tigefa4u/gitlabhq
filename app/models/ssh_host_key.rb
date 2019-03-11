@@ -89,21 +89,17 @@ class SshHostKey
   end
 
   def calculate_reactive_cache
-    known_hosts, errors, status =
-      Open3.popen3({}, *%W[ssh-keyscan -T 5 -p #{url.port} -f-]) do |stdin, stdout, stderr, wait_thr|
-        stdin.puts(url.host)
-        stdin.close
+    result = Gitlab::Popen.popen_with_detail(%W[ssh-keyscan -T 5 -p #{url.port} -f-]) do |stdin|
+      stdin.puts(url.host)
+    end
 
-        [
-          cleanup(stdout.read),
-          cleanup(stderr.read),
-          wait_thr.value
-        ]
-      end
+    known_hosts = cleanup(result.stdout)
+    errors = cleanup(result.stderr)
+    status = result.status
 
     # ssh-keyscan returns an exit code 0 in several error conditions, such as an
     # unknown hostname, so check both STDERR and the exit code
-    if status.success? && !errors.present?
+    if status&.success? && !errors.present?
       { known_hosts: known_hosts }
     else
       Rails.logger.debug("Failed to detect SSH host keys for #{id}: #{errors}")
