@@ -7,7 +7,7 @@ describe('MRWidgetHeader', () => {
   let Component;
 
   beforeEach(() => {
-    Component = Vue.extend(headerComponent);
+    Component = (headerComponent);
   });
 
   afterEach(() => {

@@ -8,7 +8,7 @@ describe('note_signed_out_widget component', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = Vue.extend(noteSignedOut);
+    const Component = (noteSignedOut);
     store = createStore();
     store.dispatch('setNotesData', notesDataMock);
 

@@ -4,7 +4,7 @@ import graphComponent from '~/pipelines/components/graph/graph_component.vue';
 import graphJSON from './mock_data';
 
 describe('graph component', () => {
-  const GraphComponent = Vue.extend(graphComponent);
+  const GraphComponent = (graphComponent);
   let component;
 
   afterEach(() => {

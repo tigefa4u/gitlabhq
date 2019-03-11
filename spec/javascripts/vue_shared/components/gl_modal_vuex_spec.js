@@ -33,7 +33,7 @@ describe('GlModalVuex', () => {
       ...options.propsData,
     };
 
-    wrapper = shallowMount(localVue.extend(GlModalVuex), {
+    wrapper = shallowMount(local(GlModalVuex), {
       ...options,
       localVue,
       store,

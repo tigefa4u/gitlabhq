@@ -2,7 +2,7 @@ import Vue from 'vue';
 import identiconComponent from '~/vue_shared/components/identicon.vue';
 
 const createComponent = sizeClass => {
-  const Component = Vue.extend(identiconComponent);
+  const Component = (identiconComponent);
 
   return new Component({
     propsData: {

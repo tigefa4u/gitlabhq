@@ -32,7 +32,7 @@ describe('UserAvatarList', () => {
       ...options.propsData,
     };
 
-    wrapper = shallowMount(localVue.extend(UserAvatarList), {
+    wrapper = shallowMount(local(UserAvatarList), {
       ...options,
       localVue,
       propsData,

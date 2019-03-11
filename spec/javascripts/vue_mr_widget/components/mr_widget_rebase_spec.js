@@ -7,7 +7,7 @@ describe('Merge request widget rebase component', () => {
   let Component;
   let vm;
   beforeEach(() => {
-    Component = Vue.extend(component);
+    Component = (component);
   });
 
   afterEach(() => {

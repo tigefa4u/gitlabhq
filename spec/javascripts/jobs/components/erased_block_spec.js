@@ -4,7 +4,7 @@ import component from '~/jobs/components/erased_block.vue';
 import mountComponent from '../../helpers/vue_mount_component_helper';
 
 describe('Erased block', () => {
-  const Component = Vue.extend(component);
+  const Component = (component);
   let vm;
 
   const erasedAt = '2016-11-07T11:11:16.525Z';

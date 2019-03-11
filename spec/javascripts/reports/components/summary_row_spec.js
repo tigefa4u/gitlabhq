@@ -3,7 +3,7 @@ import component from '~/reports/components/summary_row.vue';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('Summary row', () => {
-  const Component = Vue.extend(component);
+  const Component = (component);
   let vm;
 
   const props = {

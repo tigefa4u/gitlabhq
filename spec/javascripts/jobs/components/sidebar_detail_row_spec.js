@@ -6,7 +6,7 @@ describe('Sidebar detail row', () => {
   let vm;
 
   beforeEach(() => {
-    SidebarDetailRow = Vue.extend(sidebarDetailRow);
+    SidebarDetailRow = (sidebarDetailRow);
   });
 
   afterEach(() => {

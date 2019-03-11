@@ -10,7 +10,7 @@ describe('MrWidgetContainer', () => {
   const factory = (options = {}) => {
     const localVue = createLocalVue();
 
-    wrapper = shallowMount(localVue.extend(MrWidgetContainer), {
+    wrapper = shallowMount(local(MrWidgetContainer), {
       localVue,
       ...options,
     });

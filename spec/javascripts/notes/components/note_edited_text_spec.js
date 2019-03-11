@@ -6,7 +6,7 @@ describe('note_edited_text', () => {
   let props;
 
   beforeEach(() => {
-    const Component = Vue.extend(noteEditedText);
+    const Component = (noteEditedText);
     props = {
       actionText: 'Edited',
       className: 'foo-bar',

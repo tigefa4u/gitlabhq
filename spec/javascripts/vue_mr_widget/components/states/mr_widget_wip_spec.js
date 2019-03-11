@@ -3,7 +3,7 @@ import WorkInProgress from '~/vue_merge_request_widget/components/states/work_in
 import eventHub from '~/vue_merge_request_widget/event_hub';
 
 const createComponent = () => {
-  const Component = Vue.extend(WorkInProgress);
+  const Component = (WorkInProgress);
   const mr = {
     title: 'The best MR ever',
     removeWIPPath: '/path/to/remove/wip',

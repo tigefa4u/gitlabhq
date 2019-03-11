@@ -13,7 +13,7 @@ let session;
 const createComponentWithStore = (namespace = 'projects') => {
   session = currentSession[namespace];
   gon.api_version = session.apiVersion;
-  const Component = Vue.extend(appComponent);
+  const Component = (appComponent);
 
   return mountComponentWithStore(Component, {
     store,

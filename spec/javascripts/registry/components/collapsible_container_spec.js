@@ -10,7 +10,7 @@ import { repoPropsData, registryServerResponse, reposServerResponse } from '../m
 describe('collapsible registry container', () => {
   let vm;
   let mock;
-  const Component = Vue.extend(collapsibleComponent);
+  const Component = (collapsibleComponent);
 
   beforeEach(() => {
     mock = new MockAdapter(axios);

@@ -6,7 +6,7 @@ import { getFirstCharacterCapitalized } from '~/lib/utils/text_utility';
 import { TEST_HOST } from 'spec/test_constants';
 
 describe('ProjectAvatarDefault component', () => {
-  const Component = Vue.extend(ProjectAvatarDefault);
+  const Component = (ProjectAvatarDefault);
   let vm;
 
   beforeEach(() => {

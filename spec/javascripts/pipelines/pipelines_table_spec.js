@@ -13,7 +13,7 @@ describe('Pipelines Table', () => {
   beforeEach(() => {
     const { pipelines } = getJSONFixture(jsonFixtureName);
 
-    PipelinesTableComponent = Vue.extend(pipelinesTableComp);
+    PipelinesTableComponent = (pipelinesTableComp);
     pipeline = pipelines.find(p => p.user !== null && p.commit !== null);
   });
 

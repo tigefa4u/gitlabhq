@@ -5,7 +5,7 @@ import { createComponentWithStore } from '../../../helpers/vue_mount_component_h
 import { jobs } from '../../mock_data';
 
 describe('IDE jobs detail view', () => {
-  const Component = Vue.extend(JobDetail);
+  const Component = (JobDetail);
   let vm;
 
   beforeEach(() => {

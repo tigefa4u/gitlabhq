@@ -6,7 +6,7 @@ import { mountComponentWithStore } from '../../helpers/vue_mount_component_helpe
 import { trimText } from '../../helpers/vue_component_helper';
 
 describe('Sidebar details block', () => {
-  const SidebarComponent = Vue.extend(sidebarDetailsBlock);
+  const SidebarComponent = (sidebarDetailsBlock);
   let vm;
   let store;
 

@@ -6,7 +6,7 @@ describe('Stop Component', () => {
   let component;
 
   beforeEach(() => {
-    StopComponent = Vue.extend(stopComp);
+    StopComponent = (stopComp);
     spyOn(window, 'confirm').and.returnValue(true);
 
     component = new StopComponent({

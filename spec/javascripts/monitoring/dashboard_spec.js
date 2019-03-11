@@ -34,7 +34,7 @@ describe('Dashboard', () => {
     `);
 
     mock = new MockAdapter(axios);
-    DashboardComponent = Vue.extend(Dashboard);
+    DashboardComponent = (Dashboard);
   });
 
   afterEach(() => {

@@ -5,7 +5,7 @@ import { getTimeago } from '~/lib/utils/datetime_utility';
 
 describe('Deploy keys key', () => {
   let vm;
-  const KeyComponent = Vue.extend(key);
+  const KeyComponent = (key);
   const data = getJSONFixture('deploy_keys/keys.json');
   const createComponent = deployKey => {
     const store = new DeployKeysStore();

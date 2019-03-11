@@ -9,7 +9,7 @@ describe('Multi-file editor commit sidebar list collapsed', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = Vue.extend(listCollapsed);
+    const Component = (listCollapsed);
 
     vm = createComponentWithStore(Component, store, {
       files: [

@@ -23,7 +23,7 @@ describe('CompareVersionsDropdown', () => {
   const findLastLink = () => findLinkElement(findVersionsListElements().length - 1);
 
   const createComponent = (props = {}) => {
-    wrapper = shallowMount(localVue.extend(CompareVersionsDropdown), {
+    wrapper = shallowMount(local(CompareVersionsDropdown), {
       localVue,
       sync: false,
       propsData: { ...props },

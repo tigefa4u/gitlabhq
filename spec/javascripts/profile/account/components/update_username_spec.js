@@ -16,7 +16,7 @@ describe('UpdateUsername component', () => {
 
   beforeEach(() => {
     axiosMock = new MockAdapter(axios);
-    Component = Vue.extend(updateUsername);
+    Component = (updateUsername);
     vm = mountComponent(Component, {
       actionUrl,
       rootUrl,

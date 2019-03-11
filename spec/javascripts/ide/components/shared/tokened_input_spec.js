@@ -26,7 +26,7 @@ function createBackspaceEvent() {
 }
 
 describe('IDE shared/TokenedInput', () => {
-  const Component = Vue.extend(TokenedInput);
+  const Component = (TokenedInput);
   let vm;
 
   beforeEach(() => {

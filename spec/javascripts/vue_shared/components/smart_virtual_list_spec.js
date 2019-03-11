@@ -16,7 +16,7 @@ describe('Toggle Button', () => {
       remain,
     };
 
-    const Component = Vue.extend({
+    const Component = ({
       components: {
         SmartVirtualScrollList,
       },

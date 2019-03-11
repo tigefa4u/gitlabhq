@@ -16,7 +16,7 @@ describe('User Avatar Link Component', function() {
       username: 'username',
     };
 
-    const UserAvatarLinkComponent = Vue.extend(UserAvatarLink);
+    const UserAvatarLinkComponent = (UserAvatarLink);
 
     this.userAvatarLink = new UserAvatarLinkComponent({
       propsData: this.propsData,

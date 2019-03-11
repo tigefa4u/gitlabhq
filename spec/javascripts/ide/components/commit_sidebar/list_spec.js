@@ -8,7 +8,7 @@ describe('Multi-file editor commit sidebar list', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = Vue.extend(commitSidebarList);
+    const Component = (commitSidebarList);
 
     vm = createComponentWithStore(Component, store, {
       title: 'Staged',

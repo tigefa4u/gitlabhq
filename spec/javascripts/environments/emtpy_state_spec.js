@@ -7,7 +7,7 @@ describe('environments empty state', () => {
   let Component;
 
   beforeEach(() => {
-    Component = Vue.extend(emptyState);
+    Component = (emptyState);
   });
 
   afterEach(() => {

@@ -7,7 +7,7 @@ import ServerlessStore from '~/serverless/stores/serverless_store';
 import { mockServerlessFunctions, mockServerlessFunctionsDiffEnv } from '../mock_data';
 
 const createComponent = (env, envName) =>
-  mountComponent(Vue.extend(environmentRowComponent), { env, envName });
+  mountComponent((environmentRowComponent), { env, envName });
 
 describe('environment row component', () => {
   describe('default global cluster case', () => {

@@ -8,7 +8,7 @@ describe('Header CI Component', () => {
   let props;
 
   beforeEach(() => {
-    HeaderCi = Vue.extend(headerCi);
+    HeaderCi = (headerCi);
     props = {
       status: {
         group: 'failed',

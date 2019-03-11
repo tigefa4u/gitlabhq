@@ -7,7 +7,7 @@ describe('Toggle Button', () => {
   let Component;
 
   beforeEach(() => {
-    Component = Vue.extend(toggleButton);
+    Component = (toggleButton);
   });
 
   afterEach(() => {

@@ -6,7 +6,7 @@ import { mountComponentWithStore } from 'spec/helpers/vue_mount_component_helper
 import { createDummyBadge } from '../dummy_badge';
 
 describe('BadgeList component', () => {
-  const Component = Vue.extend(BadgeList);
+  const Component = (BadgeList);
   const numberOfDummyBadges = 3;
   let vm;
 

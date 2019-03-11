@@ -45,7 +45,7 @@ describe('Suggestion component', () => {
   let diffTable;
 
   beforeEach(done => {
-    const Component = Vue.extend(SuggestionsComponent);
+    const Component = (SuggestionsComponent);
 
     vm = new Component({
       propsData: MOCK_DATA,

@@ -7,7 +7,7 @@ describe('Diff file row stats', () => {
   let vm;
 
   beforeAll(() => {
-    Component = Vue.extend(FileRowStats);
+    Component = (FileRowStats);
   });
 
   beforeEach(() => {

@@ -28,7 +28,7 @@ const LABELS = {
 };
 
 const createComponent = (store, props = componentConfig) => {
-  const Component = Vue.extend(GkeMachineTypeDropdown);
+  const Component = (GkeMachineTypeDropdown);
 
   return mountComponentWithStore(Component, {
     el: null,

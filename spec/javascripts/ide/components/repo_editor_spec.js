@@ -15,7 +15,7 @@ describe('RepoEditor', () => {
 
   beforeEach(done => {
     const f = file();
-    const RepoEditor = Vue.extend(repoEditor);
+    const RepoEditor = (repoEditor);
 
     vm = createComponentWithStore(RepoEditor, store, {
       file: f,

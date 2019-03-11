@@ -7,7 +7,7 @@ describe('Pipelines Nav Controls', () => {
   let component;
 
   beforeEach(() => {
-    NavControlsComponent = Vue.extend(navControlsComp);
+    NavControlsComponent = (navControlsComp);
   });
 
   afterEach(() => {

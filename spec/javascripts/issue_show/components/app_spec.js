@@ -27,7 +27,7 @@ describe('Issuable output', () => {
     `);
     spyOn(eventHub, '$emit');
 
-    const IssuableDescriptionComponent = Vue.extend(issuableApp);
+    const IssuableDescriptionComponent = (issuableApp);
 
     mock = new MockAdapter(axios);
     mock.onGet('/gitlab-org/gitlab-shell/issues/9/realtime_changes/realtime_changes').reply(() => {

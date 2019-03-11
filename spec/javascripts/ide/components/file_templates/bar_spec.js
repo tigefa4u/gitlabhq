@@ -9,7 +9,7 @@ describe('IDE file templates bar component', () => {
   let vm;
 
   beforeAll(() => {
-    Component = Vue.extend(Bar);
+    Component = (Bar);
   });
 
   beforeEach(() => {

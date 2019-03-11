@@ -10,7 +10,7 @@ describe('MRWidgetFailedToMerge', () => {
   let vm;
 
   beforeEach(() => {
-    Component = Vue.extend(failedToMergeComponent);
+    Component = (failedToMergeComponent);
     spyOn(eventHub, '$emit');
     spyOn(window, 'setInterval').and.returnValue(dummyIntervalId);
     spyOn(window, 'clearInterval').and.stub();

@@ -3,7 +3,7 @@ import component from '~/jobs/components/job_log_controllers.vue';
 import mountComponent from '../../helpers/vue_mount_component_helper';
 
 describe('Job log controllers', () => {
-  const Component = Vue.extend(component);
+  const Component = (component);
   let vm;
 
   afterEach(() => {

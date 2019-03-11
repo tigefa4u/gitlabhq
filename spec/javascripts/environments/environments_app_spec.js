@@ -22,7 +22,7 @@ describe('Environment', () => {
   beforeEach(() => {
     mock = new MockAdapter(axios);
 
-    EnvironmentsComponent = Vue.extend(environmentsComponent);
+    EnvironmentsComponent = (environmentsComponent);
   });
 
   afterEach(() => {

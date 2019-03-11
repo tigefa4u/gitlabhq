@@ -4,7 +4,7 @@ import { file } from 'spec/ide/helpers';
 import createComponent from '../../../helpers/vue_mount_component_helper';
 
 describe('File finder item spec', () => {
-  const Component = Vue.extend(ItemComponent);
+  const Component = (ItemComponent);
   let vm;
   let localFile;
 

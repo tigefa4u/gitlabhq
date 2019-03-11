@@ -21,7 +21,7 @@ const LABELS = {
 };
 
 const createComponent = (store, props = componentConfig) => {
-  const Component = Vue.extend(GkeZoneDropdown);
+  const Component = (GkeZoneDropdown);
 
   return mountComponentWithStore(Component, {
     el: null,

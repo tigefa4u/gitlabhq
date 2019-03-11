@@ -7,7 +7,7 @@ describe('ShaMismatch', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = Vue.extend(ShaMismatch);
+    const Component = (ShaMismatch);
     vm = mountComponent(Component);
   });
 

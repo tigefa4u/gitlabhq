@@ -7,7 +7,7 @@ describe('Time ago with tooltip component', () => {
   let vm;
 
   beforeEach(() => {
-    TimeagoTooltip = Vue.extend(timeagoTooltip);
+    TimeagoTooltip = (timeagoTooltip);
   });
 
   afterEach(() => {

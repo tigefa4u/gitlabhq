@@ -8,7 +8,7 @@ describe('Assignee component', () => {
   let AssigneeComponent;
 
   beforeEach(() => {
-    AssigneeComponent = Vue.extend(Assignee);
+    AssigneeComponent = (Assignee);
   });
 
   describe('No assignees/users', () => {

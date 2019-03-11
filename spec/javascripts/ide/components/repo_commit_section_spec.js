@@ -9,7 +9,7 @@ describe('RepoCommitSection', () => {
   let vm;
 
   function createComponent() {
-    const Component = Vue.extend(repoCommitSection);
+    const Component = (repoCommitSection);
 
     store.state.noChangesStateSvgPath = 'svg';
     store.state.committedStateSvgPath = 'commitsvg';
@@ -79,7 +79,7 @@ describe('RepoCommitSection', () => {
   describe('empty Stage', () => {
     it('renders no changes text', () => {
       resetStore(vm.$store);
-      const Component = Vue.extend(repoCommitSection);
+      const Component = (repoCommitSection);
 
       store.state.noChangesStateSvgPath = 'nochangessvg';
       store.state.committedStateSvgPath = 'svg';

@@ -10,7 +10,7 @@ describe('IDE file templates dropdown component', () => {
   let vm;
 
   beforeAll(() => {
-    Component = Vue.extend(Dropdown);
+    Component = (Dropdown);
   });
 
   beforeEach(() => {

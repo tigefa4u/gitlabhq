@@ -7,7 +7,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { mockSuggestedColors } from './mock_data';
 
 const createComponent = headerTitle => {
-  const Component = Vue.extend(dropdownCreateLabelComponent);
+  const Component = (dropdownCreateLabelComponent);
 
   return mountComponent(Component, {
     headerTitle,

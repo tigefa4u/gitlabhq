@@ -10,7 +10,7 @@ describe('Callout Component', () => {
   let wrapper;
 
   const factory = options => {
-    wrapper = shallowMount(localVue.extend(Callout), {
+    wrapper = shallowMount(local(Callout), {
       localVue,
       ...options,
     });

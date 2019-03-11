@@ -4,7 +4,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('stage column component', () => {
   let component;
-  const StageColumnComponent = Vue.extend(stageColumnComponent);
+  const StageColumnComponent = (stageColumnComponent);
 
   const mockJob = {
     id: 4250,

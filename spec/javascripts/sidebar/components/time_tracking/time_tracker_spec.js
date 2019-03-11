@@ -28,7 +28,7 @@ describe('Issuable Time Tracker', () => {
       rootPath: '/',
     };
 
-    const TimeTrackingComponent = Vue.extend({
+    const TimeTrackingComponent = ({
       ...TimeTracker,
       components: {
         ...TimeTracker.components,

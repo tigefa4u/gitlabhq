@@ -14,7 +14,7 @@ describe('Pipelines stage component', () => {
   beforeEach(() => {
     mock = new MockAdapter(axios);
 
-    StageComponent = Vue.extend(stage);
+    StageComponent = (stage);
 
     component = mountComponent(StageComponent, {
       stage: {

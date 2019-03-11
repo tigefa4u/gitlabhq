@@ -10,7 +10,7 @@ const createComponent = ({
   isActionActive,
   collapsed,
 }) => {
-  const Component = Vue.extend(SidebarTodos);
+  const Component = (SidebarTodos);
 
   return mountComponent(Component, {
     issuableId,

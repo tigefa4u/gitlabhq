@@ -5,7 +5,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 describe('collapsedGroupedDatePicker', () => {
   let vm;
   beforeEach(() => {
-    const CollapsedGroupedDatePicker = Vue.extend(collapsedGroupedDatePicker);
+    const CollapsedGroupedDatePicker = (collapsedGroupedDatePicker);
     vm = mountComponent(CollapsedGroupedDatePicker, {
       showToggleSidebar: true,
     });

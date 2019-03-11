@@ -25,7 +25,7 @@ describe('Commits message dropdown component', () => {
   let wrapper;
 
   const createComponent = () => {
-    wrapper = shallowMount(localVue.extend(CommitMessageDropdown), {
+    wrapper = shallowMount(local(CommitMessageDropdown), {
       localVue,
       sync: false,
       propsData: {

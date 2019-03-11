@@ -41,7 +41,7 @@ const createTestService = () => ({
 });
 
 const createComponent = (customConfig = {}) => {
-  const Component = Vue.extend(ReadyToMerge);
+  const Component = (ReadyToMerge);
 
   return new Component({
     el: document.createElement('div'),
@@ -607,7 +607,7 @@ describe('ReadyToMerge', () => {
     const localVue = createLocalVue();
 
     const createLocalComponent = (customConfig = {}) => {
-      wrapper = shallowMount(localVue.extend(ReadyToMerge), {
+      wrapper = shallowMount(local(ReadyToMerge), {
         localVue,
         propsData: {
           mr: createTestMr(customConfig),

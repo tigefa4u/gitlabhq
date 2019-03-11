@@ -20,7 +20,7 @@ describe('Environments Folder View', () => {
   beforeEach(() => {
     mock = new MockAdapter(axios);
 
-    Component = Vue.extend(environmentsFolderViewComponent);
+    Component = (environmentsFolderViewComponent);
   });
 
   afterEach(() => {

@@ -16,7 +16,7 @@ describe('Description component', () => {
   };
 
   beforeEach(() => {
-    DescriptionComponent = Vue.extend(Description);
+    DescriptionComponent = (Description);
 
     if (!document.querySelector('.issuable-meta')) {
       const metaData = document.createElement('div');

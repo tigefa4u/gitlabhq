@@ -27,7 +27,7 @@ describe('system note component', () => {
     const store = createStore();
     store.dispatch('setTargetNoteHash', `note_${props.note.id}`);
 
-    const Component = Vue.extend(issueSystemNote);
+    const Component = (issueSystemNote);
     vm = new Component({
       store,
       propsData: props,

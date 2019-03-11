@@ -7,7 +7,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { mockLabels } from './mock_data';
 
 const createComponent = (labels = mockLabels) => {
-  const Component = Vue.extend(dropdownValueCollapsedComponent);
+  const Component = (dropdownValueCollapsedComponent);
 
   return mountComponent(Component, {
     labels,

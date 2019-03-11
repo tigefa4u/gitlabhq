@@ -17,7 +17,7 @@ describe('ProviderRepoTableRow', () => {
   };
 
   function createComponent() {
-    const ProviderRepoTableRow = Vue.extend(providerRepoTableRow);
+    const ProviderRepoTableRow = (providerRepoTableRow);
 
     return new ProviderRepoTableRow({
       store,

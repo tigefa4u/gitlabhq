@@ -5,7 +5,7 @@ import stackedProgressBarComponent from '~/vue_shared/components/stacked_progres
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 const createComponent = config => {
-  const Component = Vue.extend(stackedProgressBarComponent);
+  const Component = (stackedProgressBarComponent);
   const defaultConfig = Object.assign(
     {},
     {

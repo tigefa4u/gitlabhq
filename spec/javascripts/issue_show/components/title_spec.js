@@ -7,7 +7,7 @@ describe('Title component', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = Vue.extend(titleComponent);
+    const Component = (titleComponent);
     const store = new Store({
       titleHtml: '',
       descriptionHtml: '',

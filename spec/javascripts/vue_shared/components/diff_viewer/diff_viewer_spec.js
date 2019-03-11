@@ -7,7 +7,7 @@ describe('DiffViewer', () => {
   let vm;
 
   function createComponent(props) {
-    const DiffViewer = Vue.extend(diffViewer);
+    const DiffViewer = (diffViewer);
     vm = mountComponent(DiffViewer, props);
   }
 

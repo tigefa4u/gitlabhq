@@ -5,7 +5,7 @@ import mountComponent from '../../helpers/vue_mount_component_helper';
 describe('report link', () => {
   let vm;
 
-  const Component = Vue.extend(component);
+  const Component = (component);
 
   afterEach(() => {
     vm.$destroy();

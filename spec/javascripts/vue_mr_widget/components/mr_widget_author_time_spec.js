@@ -6,7 +6,7 @@ describe('MrWidgetAuthorTime', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = Vue.extend(MrWidgetAuthorTime);
+    const Component = (MrWidgetAuthorTime);
 
     vm = mountComponent(Component, {
       actionText: 'Merged by',

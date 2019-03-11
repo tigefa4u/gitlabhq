@@ -15,7 +15,7 @@ describe('Environment table', () => {
   };
 
   beforeEach(() => {
-    Component = Vue.extend(environmentTableComp);
+    Component = (environmentTableComp);
   });
 
   afterEach(() => {

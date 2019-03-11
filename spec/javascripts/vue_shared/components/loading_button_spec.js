@@ -9,7 +9,7 @@ describe('LoadingButton', function() {
   let LoadingButton;
 
   beforeEach(() => {
-    LoadingButton = Vue.extend(loadingButton);
+    LoadingButton = (loadingButton);
   });
 
   afterEach(() => {

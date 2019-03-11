@@ -3,7 +3,7 @@ import CommitMessageField from '~/ide/components/commit_sidebar/message_field.vu
 import createComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('IDE commit message field', () => {
-  const Component = Vue.extend(CommitMessageField);
+  const Component = (CommitMessageField);
   let vm;
 
   beforeEach(() => {

@@ -10,7 +10,7 @@ describe('IdeSidebar', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = Vue.extend(ideSidebar);
+    const Component = (ideSidebar);
 
     store.state.currentProjectId = 'abcproject';
     store.state.projects.abcproject = projectData;

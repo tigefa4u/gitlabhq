@@ -3,7 +3,7 @@ import UnresolvedDiscussions from '~/vue_merge_request_widget/components/states/
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('UnresolvedDiscussions', () => {
-  const Component = Vue.extend(UnresolvedDiscussions);
+  const Component = (UnresolvedDiscussions);
   let vm;
 
   afterEach(() => {

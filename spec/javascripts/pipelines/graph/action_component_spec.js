@@ -9,7 +9,7 @@ describe('pipeline graph action component', () => {
   let mock;
 
   beforeEach(done => {
-    const ActionComponent = Vue.extend(actionComponent);
+    const ActionComponent = (actionComponent);
     mock = new MockAdapter(axios);
 
     mock.onPost('foo.json').reply(200);

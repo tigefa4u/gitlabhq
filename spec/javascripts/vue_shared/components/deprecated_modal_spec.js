@@ -3,7 +3,7 @@ import Vue from 'vue';
 import DeprecatedModal from '~/vue_shared/components/deprecated_modal.vue';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
-const modalComponent = Vue.extend(DeprecatedModal);
+const modalComponent = (DeprecatedModal);
 
 describe('DeprecatedModal', () => {
   let vm;

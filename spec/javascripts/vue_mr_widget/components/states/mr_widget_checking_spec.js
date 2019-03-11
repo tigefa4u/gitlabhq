@@ -7,7 +7,7 @@ describe('MRWidgetChecking', () => {
   let vm;
 
   beforeEach(() => {
-    Component = Vue.extend(checkingComponent);
+    Component = (checkingComponent);
     vm = mountComponent(Component);
   });
 

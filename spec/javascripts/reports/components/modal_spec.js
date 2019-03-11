@@ -5,7 +5,7 @@ import mountComponent from '../../helpers/vue_mount_component_helper';
 import { trimText } from '../../helpers/vue_component_helper';
 
 describe('Grouped Test Reports Modal', () => {
-  const Component = Vue.extend(component);
+  const Component = (component);
   const modalDataStructure = state().modal.data;
 
   // populate data

@@ -9,7 +9,7 @@ import discussionsMockData from '../mock_data/diff_discussions';
 import { diffViewerModes } from '~/ide/constants';
 
 describe('DiffContent', () => {
-  const Component = Vue.extend(DiffContentComponent);
+  const Component = (DiffContentComponent);
   let vm;
 
   beforeEach(() => {

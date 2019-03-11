@@ -8,7 +8,7 @@ describe('Deploy keys action btn', () => {
   let vm;
 
   beforeEach(done => {
-    const ActionBtnComponent = Vue.extend({
+    const ActionBtnComponent = ({
       components: {
         actionBtn,
       },

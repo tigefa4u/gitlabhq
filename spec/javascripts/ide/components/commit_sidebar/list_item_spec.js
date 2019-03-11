@@ -10,7 +10,7 @@ describe('Multi-file editor commit sidebar list item', () => {
   let f;
 
   beforeEach(() => {
-    const Component = Vue.extend(listItem);
+    const Component = (listItem);
 
     f = file('test-file');
 

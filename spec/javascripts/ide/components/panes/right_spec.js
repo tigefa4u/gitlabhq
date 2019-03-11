@@ -10,7 +10,7 @@ describe('IDE right pane', () => {
   let vm;
 
   beforeAll(() => {
-    Component = Vue.extend(RightPane);
+    Component = (RightPane);
   });
 
   beforeEach(() => {

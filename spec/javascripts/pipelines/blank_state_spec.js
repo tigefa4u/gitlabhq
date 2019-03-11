@@ -7,7 +7,7 @@ describe('Pipelines Blank State', () => {
   let Component;
 
   beforeEach(() => {
-    Component = Vue.extend(component);
+    Component = (component);
 
     vm = mountComponent(Component, {
       svgPath: 'foo',

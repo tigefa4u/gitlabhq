@@ -23,7 +23,7 @@ describe('ImportProjectsTable', () => {
   };
 
   function createComponent() {
-    const ImportProjectsTable = Vue.extend(importProjectsTable);
+    const ImportProjectsTable = (importProjectsTable);
 
     const component = new ImportProjectsTable({
       store,

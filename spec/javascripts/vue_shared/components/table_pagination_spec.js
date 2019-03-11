@@ -9,7 +9,7 @@ describe('Pagination component', () => {
 
   beforeEach(() => {
     spy = jasmine.createSpy('spy');
-    PaginationComponent = Vue.extend(paginationComp);
+    PaginationComponent = (paginationComp);
 
     mountComponent = function(props) {
       return new PaginationComponent({

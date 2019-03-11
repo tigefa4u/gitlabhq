@@ -2,7 +2,7 @@ import Vue from 'vue';
 import MarkdownComponent from '~/notebook/cells/markdown.vue';
 import katex from 'katex';
 
-const Component = Vue.extend(MarkdownComponent);
+const Component = (MarkdownComponent);
 
 window.katex = katex;
 

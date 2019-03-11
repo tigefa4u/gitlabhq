@@ -3,7 +3,7 @@ import clipboardButton from '~/vue_shared/components/clipboard_button.vue';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('clipboard button', () => {
-  const Component = Vue.extend(clipboardButton);
+  const Component = (clipboardButton);
   let vm;
 
   afterEach(() => {

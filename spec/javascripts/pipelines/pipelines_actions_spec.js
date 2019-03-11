@@ -5,7 +5,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { TEST_HOST } from 'spec/test_constants';
 
 describe('Pipelines Actions dropdown', () => {
-  const Component = Vue.extend(PipelinesActions);
+  const Component = (PipelinesActions);
   let vm;
 
   afterEach(() => {

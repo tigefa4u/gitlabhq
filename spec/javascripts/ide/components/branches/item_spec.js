@@ -12,7 +12,7 @@ const TEST_BRANCH = {
 const TEST_PROJECT_ID = projectData.name_with_namespace;
 
 describe('IDE branch item', () => {
-  const Component = Vue.extend(Item);
+  const Component = (Item);
   let vm;
 
   beforeEach(() => {

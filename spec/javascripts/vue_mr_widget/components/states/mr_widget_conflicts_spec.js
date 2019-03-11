@@ -10,7 +10,7 @@ describe('MRWidgetConflicts', () => {
   function createComponent(propsData = {}) {
     const localVue = createLocalVue();
 
-    vm = shallowMount(localVue.extend(ConflictsComponent), {
+    vm = shallowMount(local(ConflictsComponent), {
       propsData,
     });
   }

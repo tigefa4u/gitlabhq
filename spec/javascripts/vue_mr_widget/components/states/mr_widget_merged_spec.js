@@ -16,7 +16,7 @@ describe('MRWidgetMerged', () => {
   };
 
   beforeEach(() => {
-    const Component = Vue.extend(mergedComponent);
+    const Component = (mergedComponent);
     const mr = {
       isRemovingSourceBranch: false,
       cherryPickInForkPath: false,

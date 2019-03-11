@@ -2,7 +2,7 @@ import Vue from 'vue';
 import UserAvatarSvg from '~/vue_shared/components/user_avatar/user_avatar_svg.vue';
 import avatarSvg from 'icons/_icon_random.svg';
 
-const UserAvatarSvgComponent = Vue.extend(UserAvatarSvg);
+const UserAvatarSvgComponent = (UserAvatarSvg);
 
 describe('User Avatar Svg Component', function() {
   describe('Initialization', function() {

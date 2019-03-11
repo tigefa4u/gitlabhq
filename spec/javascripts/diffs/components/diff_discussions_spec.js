@@ -12,7 +12,7 @@ describe('DiffDiscussions', () => {
   function createComponent(props = {}) {
     const store = createStore();
 
-    vm = createComponentWithStore(Vue.extend(DiffDiscussions), store, {
+    vm = createComponentWithStore((DiffDiscussions), store, {
       discussions: getDiscussionsMockData(),
       ...props,
     }).$mount();

@@ -5,7 +5,7 @@ describe('Pipeline Url Component', () => {
   let PipelineUrlComponent;
 
   beforeEach(() => {
-    PipelineUrlComponent = Vue.extend(pipelineUrlComp);
+    PipelineUrlComponent = (pipelineUrlComp);
   });
 
   it('should render a table cell', () => {

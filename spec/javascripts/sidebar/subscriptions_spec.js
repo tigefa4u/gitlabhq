@@ -8,7 +8,7 @@ describe('Subscriptions', function() {
   let Subscriptions;
 
   beforeEach(() => {
-    Subscriptions = Vue.extend(subscriptions);
+    Subscriptions = (subscriptions);
   });
 
   afterEach(() => {

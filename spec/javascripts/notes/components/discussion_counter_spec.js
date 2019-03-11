@@ -11,7 +11,7 @@ describe('DiscussionCounter component', () => {
   beforeEach(() => {
     window.mrTabs = {};
 
-    const Component = Vue.extend(DiscussionCounter);
+    const Component = (DiscussionCounter);
 
     store = createStore();
     store.dispatch('setNoteableData', noteableDataMock);

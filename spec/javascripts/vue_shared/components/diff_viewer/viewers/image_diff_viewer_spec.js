@@ -7,7 +7,7 @@ describe('ImageDiffViewer', () => {
   let vm;
 
   function createComponent(props) {
-    const ImageDiffViewer = Vue.extend(imageDiffViewer);
+    const ImageDiffViewer = (imageDiffViewer);
     vm = mountComponent(ImageDiffViewer, props);
   }
 

@@ -10,7 +10,7 @@ describe('MrWidgetIcon', () => {
   beforeEach(() => {
     const localVue = createLocalVue();
 
-    wrapper = shallowMount(localVue.extend(MrWidgetIcon), {
+    wrapper = shallowMount(local(MrWidgetIcon), {
       propsData: {
         name: TEST_ICON,
       },

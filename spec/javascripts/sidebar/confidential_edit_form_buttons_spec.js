@@ -6,7 +6,7 @@ describe('Edit Form Dropdown', () => {
   let vm2;
 
   beforeEach(() => {
-    const Component = Vue.extend(editForm);
+    const Component = (editForm);
     const toggleForm = () => {};
     const updateConfidentialAttribute = () => {};
 

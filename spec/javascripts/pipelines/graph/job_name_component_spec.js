@@ -5,7 +5,7 @@ describe('job name component', () => {
   let component;
 
   beforeEach(() => {
-    const JobNameComponent = Vue.extend(jobNameComponent);
+    const JobNameComponent = (jobNameComponent);
     component = new JobNameComponent({
       propsData: {
         name: 'foo',

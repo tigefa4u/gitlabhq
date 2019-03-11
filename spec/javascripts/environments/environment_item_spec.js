@@ -6,7 +6,7 @@ describe('Environment item', () => {
   let EnvironmentItem;
 
   beforeEach(() => {
-    EnvironmentItem = Vue.extend(environmentItemComp);
+    EnvironmentItem = (environmentItemComp);
   });
 
   describe('When item is folder', () => {

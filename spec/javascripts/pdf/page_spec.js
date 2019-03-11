@@ -7,7 +7,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import testPDF from 'spec/fixtures/blob/pdf/test.pdf';
 
 describe('Page component', () => {
-  const Component = Vue.extend(PageComponent);
+  const Component = (PageComponent);
   let vm;
   let testPage;
 

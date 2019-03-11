@@ -26,7 +26,7 @@ describe('Board card', () => {
     boardsStore.create();
     boardsStore.detail.issue = {};
 
-    const BoardCardComp = Vue.extend(boardCard);
+    const BoardCardComp = (boardCard);
     const list = new List(listObj);
     const label1 = new ListLabel({
       id: 3,

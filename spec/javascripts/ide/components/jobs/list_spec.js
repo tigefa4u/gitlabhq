@@ -5,7 +5,7 @@ import { createComponentWithStore } from '../../../helpers/vue_mount_component_h
 import { stages, jobs } from '../../mock_data';
 
 describe('IDE stages list', () => {
-  const Component = Vue.extend(StageList);
+  const Component = (StageList);
   let vm;
 
   beforeEach(() => {

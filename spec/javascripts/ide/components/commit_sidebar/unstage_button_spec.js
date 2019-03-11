@@ -9,7 +9,7 @@ describe('IDE unstage file button', () => {
   let f;
 
   beforeEach(() => {
-    const Component = Vue.extend(unstageButton);
+    const Component = (unstageButton);
     f = file();
 
     vm = createComponentWithStore(Component, store, {

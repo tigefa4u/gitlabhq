@@ -6,7 +6,7 @@ describe('Changed file icon', () => {
   let vm;
 
   function factory(props = {}) {
-    const component = Vue.extend(changedFileIcon);
+    const component = (changedFileIcon);
 
     vm = createComponent(component, {
       ...props,

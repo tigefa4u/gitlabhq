@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import PromptComponent from '~/notebook/cells/prompt.vue';
 
-const Component = Vue.extend(PromptComponent);
+const Component = (PromptComponent);
 
 describe('Prompt component', () => {
   let vm;

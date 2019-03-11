@@ -7,7 +7,7 @@ import { resetStore } from '../store/helpers';
 import { releases } from '../mock_data';
 
 describe('Releases App ', () => {
-  const Component = Vue.extend(app);
+  const Component = (app);
   let store;
   let vm;
 

@@ -9,7 +9,7 @@ describe('InlineDiffTableRow', () => {
   const thisLine = diffFileMockData.highlighted_diff_lines[0];
 
   beforeEach(() => {
-    vm = createComponentWithStore(Vue.extend(InlineDiffTableRow), store, {
+    vm = createComponentWithStore((InlineDiffTableRow), store, {
       line: thisLine,
       fileHash: diffFileMockData.file_hash,
       contextLinesPath: 'contextLinesPath',

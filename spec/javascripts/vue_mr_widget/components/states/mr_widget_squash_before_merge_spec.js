@@ -7,7 +7,7 @@ describe('Squash before merge component', () => {
   let wrapper;
 
   const createComponent = props => {
-    wrapper = shallowMount(localVue.extend(SquashBeforeMerge), {
+    wrapper = shallowMount(local(SquashBeforeMerge), {
       localVue,
       sync: false,
       propsData: {

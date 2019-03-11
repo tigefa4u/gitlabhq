@@ -7,7 +7,7 @@ describe('Sprite Icon Component', function() {
     let icon;
 
     beforeEach(function() {
-      const IconComponent = Vue.extend(Icon);
+      const IconComponent = (Icon);
 
       icon = mountComponent(IconComponent, {
         name: 'commit',

@@ -8,7 +8,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { mockGroups, mockPageInfo } from '../mock_data';
 
 const createComponent = (searchEmpty = false) => {
-  const Component = Vue.extend(groupsComponent);
+  const Component = (groupsComponent);
 
   return mountComponent(Component, {
     groups: mockGroups,

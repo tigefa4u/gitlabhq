@@ -8,7 +8,7 @@ describe('Commits header component', () => {
   let wrapper;
 
   const createComponent = props => {
-    wrapper = shallowMount(localVue.extend(CommitsHeader), {
+    wrapper = shallowMount(local(CommitsHeader), {
       localVue,
       sync: false,
       propsData: {

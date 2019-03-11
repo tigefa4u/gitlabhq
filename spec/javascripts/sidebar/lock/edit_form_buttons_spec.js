@@ -7,7 +7,7 @@ describe('EditFormButtons', () => {
   let vm2;
 
   beforeEach(() => {
-    const Component = Vue.extend(editFormButtons);
+    const Component = (editFormButtons);
     const toggleForm = () => {};
     const updateLockedAttribute = () => {};
 

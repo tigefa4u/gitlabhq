@@ -12,7 +12,7 @@ const createComponent = (
   loadingData = true,
   hasFunctionData = true,
 ) => {
-  const component = Vue.extend(functionsComponent);
+  const component = (functionsComponent);
 
   return mountComponent(component, {
     functions,

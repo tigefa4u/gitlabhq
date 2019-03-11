@@ -13,7 +13,7 @@ describe('Diff no changes empty state', () => {
     const store = createStore();
     extendStore(store);
 
-    vm = shallowMount(localVue.extend(NoChanges), {
+    vm = shallowMount(local(NoChanges), {
       localVue,
       store,
       propsData: {

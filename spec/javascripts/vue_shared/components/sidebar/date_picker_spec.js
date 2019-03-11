@@ -5,7 +5,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 describe('sidebarDatePicker', () => {
   let vm;
   beforeEach(() => {
-    const SidebarDatePicker = Vue.extend(sidebarDatePicker);
+    const SidebarDatePicker = (sidebarDatePicker);
     vm = mountComponent(SidebarDatePicker, {
       label: 'label',
       isLoading: true,

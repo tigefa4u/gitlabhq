@@ -10,7 +10,7 @@ describe('performance bar app', () => {
   beforeEach(() => {
     const store = new PerformanceBarStore();
 
-    vm = mountComponent(Vue.extend(performanceBarApp), {
+    vm = mountComponent((performanceBarApp), {
       store,
       env: 'development',
       requestId: '123',

@@ -8,7 +8,7 @@ import diffFileMockData from '../mock_data/diff_file';
 describe('DiffLineGutterContent', () => {
   const getDiffFileMock = () => Object.assign({}, diffFileMockData);
   const createComponent = (options = {}) => {
-    const cmp = Vue.extend(DiffLineGutterContent);
+    const cmp = (DiffLineGutterContent);
     const props = Object.assign({}, options);
     props.line = {
       line_code: 'LC_42',
@@ -53,7 +53,7 @@ describe('DiffLineGutterContent', () => {
       });
 
       it('should return discussions for the given lineCode', () => {
-        const cmp = Vue.extend(DiffLineGutterContent);
+        const cmp = (DiffLineGutterContent);
         const props = {
           line: getDiffFileMock().highlighted_diff_lines[1],
           fileHash: getDiffFileMock().file_hash,

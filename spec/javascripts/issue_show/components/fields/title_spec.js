@@ -9,7 +9,7 @@ describe('Title field component', () => {
   let store;
 
   beforeEach(() => {
-    const Component = Vue.extend(titleField);
+    const Component = (titleField);
     store = new Store({
       titleHtml: '',
       descriptionHtml: '',

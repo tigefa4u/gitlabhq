@@ -8,7 +8,7 @@ describe('Boards blank state', () => {
   let fail = false;
 
   beforeEach(done => {
-    const Comp = Vue.extend(BoardBlankState);
+    const Comp = (BoardBlankState);
 
     boardsStore.create();
     gl.boardService = mockBoardService();

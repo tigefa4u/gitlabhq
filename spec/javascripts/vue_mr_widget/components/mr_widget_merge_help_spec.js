@@ -7,7 +7,7 @@ describe('MRWidgetMergeHelp', () => {
   let Component;
 
   beforeEach(() => {
-    Component = Vue.extend(mergeHelpComponent);
+    Component = (mergeHelpComponent);
   });
 
   afterEach(() => {

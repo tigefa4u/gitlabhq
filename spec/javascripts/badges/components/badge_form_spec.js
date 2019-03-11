@@ -11,7 +11,7 @@ import { DUMMY_IMAGE_URL, TEST_HOST } from '../../test_constants';
 BadgeForm.methods.debouncedPreview = () => {};
 
 describe('BadgeForm component', () => {
-  const Component = Vue.extend(BadgeForm);
+  const Component = (BadgeForm);
   let axiosMock;
   let vm;
 

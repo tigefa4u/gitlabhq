@@ -2,7 +2,7 @@ import Vue from 'vue';
 import issueWarning from '~/vue_shared/components/issue/issue_warning.vue';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
-const IssueWarning = Vue.extend(issueWarning);
+const IssueWarning = (issueWarning);
 
 function formatWarning(string) {
   // Replace newlines with a space then replace multiple spaces with one space

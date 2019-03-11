@@ -6,7 +6,7 @@ describe('LockIssueSidebar', () => {
   let vm2;
 
   beforeEach(() => {
-    const Component = Vue.extend(lockIssueSidebar);
+    const Component = (lockIssueSidebar);
 
     const mediator = {
       service: {

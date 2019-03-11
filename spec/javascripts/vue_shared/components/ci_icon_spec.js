@@ -3,7 +3,7 @@ import ciIcon from '~/vue_shared/components/ci_icon.vue';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('CI Icon component', () => {
-  const Component = Vue.extend(ciIcon);
+  const Component = (ciIcon);
   let vm;
 
   afterEach(() => {

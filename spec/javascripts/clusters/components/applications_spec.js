@@ -10,7 +10,7 @@ describe('Applications', () => {
   let Applications;
 
   beforeEach(() => {
-    Applications = Vue.extend(applications);
+    Applications = (applications);
   });
 
   afterEach(() => {

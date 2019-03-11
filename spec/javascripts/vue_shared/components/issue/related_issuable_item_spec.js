@@ -27,7 +27,7 @@ describe('RelatedIssuableItem', () => {
   beforeEach(() => {
     const localVue = createLocalVue();
 
-    wrapper = mount(localVue.extend(RelatedIssuableItem), {
+    wrapper = mount(local(RelatedIssuableItem), {
       localVue,
       slots,
       sync: false,

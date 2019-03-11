@@ -28,7 +28,7 @@ describe('navigation tabs component', () => {
       },
     ];
 
-    Component = Vue.extend(navigationTabs);
+    Component = (navigationTabs);
     vm = mountComponent(Component, { tabs: data, scope: 'pipelines' });
   });
 

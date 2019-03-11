@@ -9,7 +9,7 @@ describe('IDE merge request details', () => {
   let vm;
 
   beforeAll(() => {
-    Component = Vue.extend(Info);
+    Component = (Info);
   });
 
   beforeEach(() => {

@@ -19,7 +19,7 @@ describe('Commit pipeline status component', () => {
   };
 
   beforeEach(() => {
-    Component = Vue.extend(commitPipelineStatus);
+    Component = (commitPipelineStatus);
   });
 
   describe('While polling pipeline data successfully', () => {

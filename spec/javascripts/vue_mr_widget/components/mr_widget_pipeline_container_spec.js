@@ -9,7 +9,7 @@ describe('MrWidgetPipelineContainer', () => {
   const factory = (props = {}) => {
     const localVue = createLocalVue();
 
-    wrapper = shallowMount(localVue.extend(MrWidgetPipelineContainer), {
+    wrapper = shallowMount(local(MrWidgetPipelineContainer), {
       propsData: {
         mr: Object.assign({}, mockStore),
         ...props,

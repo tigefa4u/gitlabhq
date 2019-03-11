@@ -11,7 +11,7 @@ describe('Suggestion Diff component', () => {
   let vm;
 
   function createComponent(propsData) {
-    const Component = Vue.extend(SuggestionDiffHeaderComponent);
+    const Component = (SuggestionDiffHeaderComponent);
 
     return new Component({
       propsData,

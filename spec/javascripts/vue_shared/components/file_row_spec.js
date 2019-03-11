@@ -7,7 +7,7 @@ describe('File row component', () => {
   let vm;
 
   function createComponent(propsData) {
-    const FileRowComponent = Vue.extend(FileRow);
+    const FileRowComponent = (FileRow);
 
     vm = mountComponent(FileRowComponent, propsData);
   }

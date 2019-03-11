@@ -9,7 +9,7 @@ describe('Rollback Component', () => {
   let RollbackComponent;
 
   beforeEach(() => {
-    RollbackComponent = Vue.extend(rollbackComp);
+    RollbackComponent = (rollbackComp);
   });
 
   it('Should render Re-deploy label when isLastDeployment is true', () => {

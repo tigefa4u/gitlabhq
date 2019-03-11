@@ -9,7 +9,7 @@ describe('IDE commit sidebar actions', () => {
   let vm;
 
   beforeEach(done => {
-    const Component = Vue.extend(commitActions);
+    const Component = (commitActions);
 
     vm = createComponentWithStore(Component, store);
 

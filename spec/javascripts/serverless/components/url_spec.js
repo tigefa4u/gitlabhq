@@ -4,7 +4,7 @@ import urlComponent from '~/serverless/components/url.vue';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 const createComponent = uri => {
-  const component = Vue.extend(urlComponent);
+  const component = (urlComponent);
 
   return mountComponent(component, {
     uri,

@@ -4,7 +4,7 @@ import modal from '~/ide/components/new_dropdown/modal.vue';
 import { createComponentWithStore } from 'spec/helpers/vue_mount_component_helper';
 
 describe('new file modal component', () => {
-  const Component = Vue.extend(modal);
+  const Component = (modal);
   let vm;
 
   afterEach(() => {

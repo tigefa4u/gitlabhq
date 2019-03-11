@@ -7,7 +7,7 @@ describe('placeholder system note component', () => {
   let vm;
 
   beforeEach(() => {
-    PlaceholderSystemNote = Vue.extend(placeholderSystemNote);
+    PlaceholderSystemNote = (placeholderSystemNote);
   });
 
   afterEach(() => {

@@ -10,7 +10,7 @@ describe('DiffGutterAvatars', () => {
   const getDiscussionsMockData = () => [Object.assign({}, discussionsMockData)];
 
   beforeEach(() => {
-    component = createComponentWithStore(Vue.extend(DiffGutterAvatarsComponent), store, {
+    component = createComponentWithStore((DiffGutterAvatarsComponent), store, {
       discussions: getDiscussionsMockData(),
     }).$mount();
   });

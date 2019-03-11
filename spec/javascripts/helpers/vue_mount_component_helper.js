@@ -1,24 +1,24 @@
 import Vue from 'vue';
 
 const mountComponent = (Component, props = {}, el = null) =>
-  new Component({
+  new Vue.extend(Component)({
     propsData: props,
   }).$mount(el);
 
 export const createComponentWithStore = (Component, store, propsData = {}) =>
-  new Component({
+  new Vue.extend(Component)({
     store,
     propsData,
   });
 
 export const mountComponentWithStore = (Component, { el, props, store }) =>
-  new Component({
+  new Vue.extend(Component)({
     store,
     propsData: props || {},
   }).$mount(el);
 
 export const mountComponentWithSlots = (Component, { props, slots }) => {
-  const component = new Component({
+  const component = new Vue.extend(Component)({
     propsData: props || {},
   });
 

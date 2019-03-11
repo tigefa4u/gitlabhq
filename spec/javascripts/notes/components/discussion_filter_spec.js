@@ -20,7 +20,7 @@ describe('DiscussionFilter component', () => {
         notes: [{ ...discussionMock.notes[0], resolvable: true, resolved: true }],
       },
     ];
-    const Component = Vue.extend(DiscussionFilter);
+    const Component = (DiscussionFilter);
     const selectedValue = DISCUSSION_FILTERS_DEFAULT_VALUE;
     const props = { filters: discussionFiltersMock, selectedValue };
 

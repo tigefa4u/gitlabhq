@@ -8,7 +8,7 @@ import { projectData } from 'spec/ide/mock_data';
 import { resetStore } from '../../helpers';
 
 describe('IDE commit form', () => {
-  const Component = Vue.extend(CommitForm);
+  const Component = (CommitForm);
   let vm;
 
   beforeEach(() => {

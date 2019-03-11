@@ -30,7 +30,7 @@ describe('diffs/components/app', () => {
 
     extendStore(store);
 
-    wrapper = shallowMount(localVue.extend(App), {
+    wrapper = shallowMount(local(App), {
       localVue,
       propsData: {
         endpoint: `${TEST_HOST}/diff/endpoint`,

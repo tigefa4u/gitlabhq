@@ -3,7 +3,7 @@ import component from '~/jobs/components/trigger_block.vue';
 import mountComponent from '../../helpers/vue_mount_component_helper';
 
 describe('Trigger block', () => {
-  const Component = Vue.extend(component);
+  const Component = (component);
   let vm;
 
   afterEach(() => {

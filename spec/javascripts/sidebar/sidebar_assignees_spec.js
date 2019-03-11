@@ -22,7 +22,7 @@ describe('sidebar assignees', () => {
     spyOn(mediator, 'saveAssignees').and.callThrough();
     spyOn(mediator, 'assignYourself').and.callThrough();
 
-    const SidebarAssigneeComponent = Vue.extend(SidebarAssignees);
+    const SidebarAssigneeComponent = (SidebarAssignees);
     sidebarAssigneesEl = document.querySelector('#js-vue-sidebar-assignees');
     vm = mountComponent(
       SidebarAssigneeComponent,

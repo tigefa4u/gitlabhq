@@ -31,7 +31,7 @@ describe('Issue boards new issue form', () => {
   beforeEach(done => {
     setFixtures('<div class="test-container"></div>');
 
-    const BoardNewIssueComp = Vue.extend(boardNewIssue);
+    const BoardNewIssueComp = (boardNewIssue);
 
     mock = new MockAdapter(axios);
     mock.onAny().reply(boardsMockInterceptor);

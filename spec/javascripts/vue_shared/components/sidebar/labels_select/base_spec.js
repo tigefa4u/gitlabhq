@@ -8,7 +8,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { mockConfig, mockLabels } from './mock_data';
 
 const createComponent = (config = mockConfig) => {
-  const Component = Vue.extend(baseComponent);
+  const Component = (baseComponent);
 
   return mountComponent(Component, config);
 };

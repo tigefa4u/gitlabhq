@@ -3,7 +3,7 @@ import expandButton from '~/vue_shared/components/expand_button.vue';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('expand button', () => {
-  const Component = Vue.extend(expandButton);
+  const Component = (expandButton);
   let vm;
 
   beforeEach(() => {

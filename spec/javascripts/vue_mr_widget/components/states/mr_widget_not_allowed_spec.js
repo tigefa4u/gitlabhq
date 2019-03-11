@@ -5,7 +5,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 describe('MRWidgetNotAllowed', () => {
   let vm;
   beforeEach(() => {
-    const Component = Vue.extend(notAllowedComponent);
+    const Component = (notAllowedComponent);
     vm = mountComponent(Component);
   });
 

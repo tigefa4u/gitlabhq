@@ -4,7 +4,7 @@ import mountComponent from '../../../../helpers/vue_mount_component_helper';
 import { jobs } from '../../../mock_data';
 
 describe('IDE job description', () => {
-  const Component = Vue.extend(Description);
+  const Component = (Description);
   let vm;
 
   beforeEach(() => {

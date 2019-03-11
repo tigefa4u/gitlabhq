@@ -6,7 +6,7 @@ function formatText(text) {
 }
 
 describe('edited', () => {
-  const EditedComponent = Vue.extend(edited);
+  const EditedComponent = (edited);
 
   it('should render an edited at+by string', () => {
     const editedComponent = new EditedComponent({

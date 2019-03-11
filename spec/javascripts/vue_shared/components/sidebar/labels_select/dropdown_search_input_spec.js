@@ -5,7 +5,7 @@ import dropdownSearchInputComponent from '~/vue_shared/components/sidebar/labels
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 const createComponent = () => {
-  const Component = Vue.extend(dropdownSearchInputComponent);
+  const Component = (dropdownSearchInputComponent);
 
   return mountComponent(Component);
 };

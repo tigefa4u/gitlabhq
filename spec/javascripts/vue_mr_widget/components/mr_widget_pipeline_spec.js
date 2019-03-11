@@ -8,7 +8,7 @@ describe('MRWidgetPipeline', () => {
   let Component;
 
   beforeEach(() => {
-    Component = Vue.extend(pipelineComponent);
+    Component = (pipelineComponent);
   });
 
   afterEach(() => {

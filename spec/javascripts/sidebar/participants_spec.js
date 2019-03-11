@@ -18,7 +18,7 @@ describe('Participants', function() {
   let Participants;
 
   beforeEach(() => {
-    Participants = Vue.extend(participants);
+    Participants = (participants);
   });
 
   afterEach(() => {

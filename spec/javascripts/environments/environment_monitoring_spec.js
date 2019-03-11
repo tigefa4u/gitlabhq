@@ -8,7 +8,7 @@ describe('Monitoring Component', () => {
   const monitoringUrl = 'https://gitlab.com';
 
   beforeEach(() => {
-    MonitoringComponent = Vue.extend(monitoringComp);
+    MonitoringComponent = (monitoringComp);
 
     component = new MonitoringComponent({
       propsData: {

@@ -6,7 +6,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { mockMilestone } from 'spec/boards/mock_data';
 
 const createComponent = (milestone = mockMilestone) => {
-  const Component = Vue.extend(IssueMilestone);
+  const Component = (IssueMilestone);
 
   return mountComponent(Component, {
     milestone,

@@ -6,7 +6,7 @@ describe('MRWidgetArchived', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = Vue.extend(archivedComponent);
+    const Component = (archivedComponent);
     vm = mountComponent(Component);
   });
 

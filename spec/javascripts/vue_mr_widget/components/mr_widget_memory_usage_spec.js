@@ -32,7 +32,7 @@ const metricsMockData = {
 };
 
 const createComponent = () => {
-  const Component = Vue.extend(MemoryUsage);
+  const Component = (MemoryUsage);
 
   return new Component({
     el: document.createElement('div'),

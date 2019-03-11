@@ -42,7 +42,7 @@ describe('Pipelines', () => {
 
     pipelines = getJSONFixture(jsonFixtureName);
 
-    PipelinesComponent = Vue.extend(pipelinesComp);
+    PipelinesComponent = (pipelinesComp);
   });
 
   afterEach(() => {

@@ -6,7 +6,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('Promote label modal', () => {
   let vm;
-  const Component = Vue.extend(promoteLabelModal);
+  const Component = (promoteLabelModal);
   const labelMockData = {
     labelTitle: 'Documentation',
     labelColor: '#5cb85c',

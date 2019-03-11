@@ -7,7 +7,7 @@ import eventHub from '~/pages/milestones/shared/event_hub';
 import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('delete_milestone_modal.vue', () => {
-  const Component = Vue.extend(deleteMilestoneModal);
+  const Component = (deleteMilestoneModal);
   const props = {
     issueCount: 1,
     mergeRequestCount: 2,

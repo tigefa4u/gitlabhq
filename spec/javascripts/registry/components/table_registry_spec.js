@@ -8,7 +8,7 @@ describe('table registry', () => {
   let Component;
 
   beforeEach(() => {
-    Component = Vue.extend(tableRegistry);
+    Component = (tableRegistry);
     vm = new Component({
       store,
       propsData: {

@@ -9,7 +9,7 @@ describe('Diffs tree list component', () => {
   let vm;
 
   beforeAll(() => {
-    Component = Vue.extend(TreeList);
+    Component = (TreeList);
   });
 
   beforeEach(() => {

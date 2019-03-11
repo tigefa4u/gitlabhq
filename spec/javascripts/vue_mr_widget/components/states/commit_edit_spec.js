@@ -10,7 +10,7 @@ describe('Commits edit component', () => {
   let wrapper;
 
   const createComponent = (slots = {}) => {
-    wrapper = shallowMount(localVue.extend(CommitEdit), {
+    wrapper = shallowMount(local(CommitEdit), {
       localVue,
       sync: false,
       propsData: {

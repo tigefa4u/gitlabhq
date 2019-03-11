@@ -16,7 +16,7 @@ describe('stop_jobs_modal.vue', () => {
   });
 
   beforeEach(() => {
-    const Component = Vue.extend(stopJobsModal);
+    const Component = (stopJobsModal);
     vm = mountComponent(Component, props);
   });
 

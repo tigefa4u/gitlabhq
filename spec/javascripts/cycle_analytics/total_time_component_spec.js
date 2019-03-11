@@ -7,7 +7,7 @@ describe('Total time component', () => {
   let Component;
 
   beforeEach(() => {
-    Component = Vue.extend(component);
+    Component = (component);
   });
 
   afterEach(() => {

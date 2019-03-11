@@ -4,7 +4,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 import { mockFrequentProjects } from '../mock_data';
 
 const createComponent = (namespace = 'projects') => {
-  const Component = Vue.extend(frequentItemsListComponent);
+  const Component = (frequentItemsListComponent);
 
   return mountComponent(Component, {
     namespace,

@@ -7,7 +7,7 @@ describe('File Icon component', () => {
   let FileIcon;
 
   beforeEach(() => {
-    FileIcon = Vue.extend(fileIcon);
+    FileIcon = (fileIcon);
   });
 
   afterEach(() => {

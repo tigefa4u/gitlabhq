@@ -6,7 +6,7 @@ describe('Stop Component', () => {
   const terminalPath = '/path';
 
   const mountWithProps = props => {
-    const TerminalComponent = Vue.extend(terminalComp);
+    const TerminalComponent = (terminalComp);
     component = new TerminalComponent({
       propsData: props,
     }).$mount();

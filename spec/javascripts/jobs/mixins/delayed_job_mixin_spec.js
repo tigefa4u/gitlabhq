@@ -4,7 +4,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('DelayedJobMixin', () => {
   const delayedJobFixture = getJSONFixture('jobs/delayed.json');
-  const dummyComponent = Vue.extend({
+  const dummyComponent = ({
     mixins: [delayedJobMixin],
     props: {
       job: {

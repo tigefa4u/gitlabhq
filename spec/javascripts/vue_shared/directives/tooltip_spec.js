@@ -56,7 +56,7 @@ describe('Tooltip directive', () => {
 
   describe('with multiple tooltips', () => {
     beforeEach(() => {
-      const SomeComponent = Vue.extend({
+      const SomeComponent = ({
         directives: {
           tooltip,
         },

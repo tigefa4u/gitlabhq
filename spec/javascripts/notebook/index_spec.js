@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import Notebook from '~/notebook/index.vue';
 
-const Component = Vue.extend(Notebook);
+const Component = (Notebook);
 
 describe('Notebook component', () => {
   let vm;

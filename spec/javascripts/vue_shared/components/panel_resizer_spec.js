@@ -30,7 +30,7 @@ describe('Panel Resizer component', () => {
   };
 
   beforeEach(() => {
-    PanelResizer = Vue.extend(panelResizer);
+    PanelResizer = (panelResizer);
   });
 
   afterEach(() => {

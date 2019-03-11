@@ -7,7 +7,7 @@ describe('Deploy keys panel', () => {
   let vm;
 
   beforeEach(done => {
-    const DeployKeysPanelComponent = Vue.extend(deployKeysPanel);
+    const DeployKeysPanelComponent = (deployKeysPanel);
     const store = new DeployKeysStore();
     store.keys = data;
 

@@ -6,7 +6,7 @@ describe('Cycle analytics banner', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = Vue.extend(banner);
+    const Component = (banner);
     vm = mountComponent(Component, {
       documentationLink: 'path',
     });

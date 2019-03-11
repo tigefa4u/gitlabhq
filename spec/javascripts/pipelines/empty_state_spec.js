@@ -7,7 +7,7 @@ describe('Pipelines Empty State', () => {
   let EmptyStateComponent;
 
   beforeEach(() => {
-    EmptyStateComponent = Vue.extend(emptyStateComp);
+    EmptyStateComponent = (emptyStateComp);
 
     component = mountComponent(EmptyStateComponent, {
       helpPagePath: 'foo',

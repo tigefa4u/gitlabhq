@@ -6,7 +6,7 @@ import mountComponent from 'spec/helpers/vue_mount_component_helper';
 
 describe('Promote milestone modal', () => {
   let vm;
-  const Component = Vue.extend(promoteMilestoneModal);
+  const Component = (promoteMilestoneModal);
   const milestoneMockData = {
     milestoneTitle: 'v1.0',
     url: `${gl.TEST_HOST}/dummy/promote/milestones`,

@@ -25,7 +25,7 @@ describe('Diffs image diff overlay component', () => {
   }
 
   beforeAll(() => {
-    Component = Vue.extend(ImageDiffOverlay);
+    Component = (ImageDiffOverlay);
   });
 
   afterEach(() => {

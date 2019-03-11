@@ -6,7 +6,7 @@ describe('MRWidgetRelatedLinks', () => {
   let vm;
 
   const createComponent = data => {
-    const Component = Vue.extend(relatedLinksComponent);
+    const Component = (relatedLinksComponent);
 
     return mountComponent(Component, data);
   };

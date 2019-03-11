@@ -20,7 +20,7 @@ describe('Suggestion Diff component', () => {
   let vm;
 
   beforeEach(done => {
-    const Component = Vue.extend(SuggestionDiffComponent);
+    const Component = (SuggestionDiffComponent);
 
     vm = new Component({
       propsData: MOCK_DATA,

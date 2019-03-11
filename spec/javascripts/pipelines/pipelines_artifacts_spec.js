@@ -6,7 +6,7 @@ describe('Pipelines Artifacts dropdown', () => {
   let artifacts;
 
   beforeEach(() => {
-    const ArtifactsComponent = Vue.extend(artifactsComp);
+    const ArtifactsComponent = (artifactsComp);
 
     artifacts = [
       {

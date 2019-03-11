@@ -12,7 +12,7 @@ import resolvedFailures from '../mock_data/resolved_failures.json';
 describe('Grouped Test Reports App', () => {
   let vm;
   let mock;
-  const Component = Vue.extend(component);
+  const Component = (component);
 
   beforeEach(() => {
     mock = new MockAdapter(axios);

@@ -3,7 +3,7 @@ import component from '~/vue_shared/components/code_block.vue';
 import mountComponent from '../../helpers/vue_mount_component_helper';
 
 describe('Code Block', () => {
-  const Component = Vue.extend(component);
+  const Component = (component);
   let vm;
 
   afterEach(() => {

@@ -8,7 +8,7 @@ describe('DiscussionFilterNote component', () => {
   let vm;
 
   const createComponent = () => {
-    const Component = Vue.extend(DiscussionFilterNote);
+    const Component = (DiscussionFilterNote);
 
     return mountComponent(Component);
   };
