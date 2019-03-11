@@ -680,6 +680,8 @@ rollout 100%:
       additional_hosts="{$ADDITIONAL_HOSTS}"
     fi
 
+    # Temporary fix for `no RESOURCE with the name NAME found` after trying to deploy after a failed install
+    # Waiting for upstream Helm fix (see https://github.com/helm/helm/pull/4871) or Helm 3.x release
     if has_no_deployed_releases; then
       HELM_PARAMS=" --force"
     fi
