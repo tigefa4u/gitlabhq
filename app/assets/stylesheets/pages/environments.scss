@@ -213,9 +213,18 @@
       }
     }
 
-    .dropdown-menu-toggle,
-    .dropdown-menu {
-      width: 240px;
+    .environments-dropdown {
+      .dropdown-menu-toggle,
+      .dropdown-menu {
+        width: 240px;
+      }
+    }
+
+    .time-windows-dropdown {
+      .dropdown-menu-toggle,
+      .dropdown-menu {
+        width: 420px;
+      }
     }
   }
 }

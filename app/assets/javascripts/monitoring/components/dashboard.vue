@@ -1,5 +1,5 @@
 <script>
-import { GlDropdown, GlDropdownItem } from '@gitlab/ui';
+import { GlButton, GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem } from '@gitlab/ui';
 import { s__ } from '~/locale';
 import Icon from '~/vue_shared/components/icon.vue';
 import Flash from '../../flash';
@@ -21,6 +21,9 @@ export default {
     Icon,
     GlDropdown,
     GlDropdownItem,
+    GlButton,
+    GlFormGroup,
+    GlFormInput,
   },
   props: {
     hasMetrics: {
@@ -94,6 +97,8 @@ export default {
       showEmptyState: true,
       elWidth: 0,
       selectedTimeWindow: '',
+      customTimeWindowFrom: 'Now - 8hrs',
+      customTimeWindowTo: 'Now',
     };
   },
   created() {
@@ -173,7 +178,7 @@ export default {
     <div class="dropdowns d-flex align-items-center justify-content-between">
       <div class="d-flex align-items-center">
         <span class="font-weight-bold">{{ s__('Metrics|Environment') }}</span>
-        <div class="dropdown prepend-left-10">
+        <div class="dropdown prepend-left-10 environments-dropdown">
           <button class="dropdown-menu-toggle" data-toggle="dropdown" type="button">
             <span>{{ currentEnvironmentName }}</span>
             <icon name="chevron-down" />
@@ -199,16 +204,55 @@ export default {
         <span class="font-weight-bold">{{ s__('Metrics|Show Last') }}</span>
         <gl-dropdown
           id="time-window-dropdown"
-          class="prepend-left-10"
+          class="prepend-left-10 time-windows-dropdown"
           toggle-class="dropdown-menu-toggle"
           :text="selectedTimeWindow"
         >
-          <gl-dropdown-item
-            v-for="(value, key) in timeWindows"
-            :key="key"
-            :active="activeTimeWindow(key)"
-            @click="getGraphsDataWithTime(key)"
-            >{{ value }}</gl-dropdown-item>
+          <div class="container">
+            <div class="row no-gutters">
+              <div class="col-sm">
+                <span class="font-weight-bold">Custom Range</span>
+                <gl-form-group
+                  :label="__('From')"
+                  label-for="time_window_from"
+                  label-class="label-bold"
+                >
+                  <gl-form-input
+                    id="time_window_from"
+                    v-model="customTimeWindowFrom"
+                    :value="customTimeWindowFrom"
+                    class="form-control"
+                    placeholder="Now - 8hrs"
+                  />
+                </gl-form-group>
+                <gl-form-group
+                  :label="__('To')"
+                  label-for="time_window_to"
+                  label-class="label-bold"
+                >
+                  <gl-form-input
+                    id="time_window_to"
+                    v-model="customTimeWindowTo"
+                    :value="customTimeWindowTo"
+                    class="form-control"
+                    placeholder="Now"
+                  />
+                </gl-form-group>
+                <gl-button variant="secondary">{{ __('Cancel') }}</gl-button>
+                <gl-button variant="success">{{ __('Apply') }}</gl-button>
+              </div>
+              <div class="col-sm">
+                <span class="font-weight-bold">Quick range</span>
+                <gl-dropdown-item
+                  v-for="(value, key) in timeWindows"
+                  :key="key"
+                  :active="activeTimeWindow(key)"
+                  @click="getGraphsDataWithTime(key)"
+                  >{{ value }}</gl-dropdown-item
+                >
+              </div>
+            </div>
+          </div>
         </gl-dropdown>
       </div>
     </div>
