@@ -228,7 +228,7 @@ module Gitlab
       result
     end
 
-    SERVER_FEATURE_FLAGS = %w[].freeze
+    SERVER_FEATURE_FLAGS = %w[go-find-all-tags].freeze
 
     def self.server_feature_flags
       SERVER_FEATURE_FLAGS.map do |f|
@@ -244,7 +244,9 @@ module Gitlab
     end
 
     def self.feature_enabled?(feature_name)
-      Feature.enabled?("gitaly_#{feature_name}")
+      Feature::FlipperFeature.table_exists? && Feature.enabled?("gitaly_#{feature_name}")
+    rescue ActiveRecord::NoDatabaseError
+      false
     end
 
     # Ensures that Gitaly is not being abuse through n+1 misuse etc
@@ -255,8 +257,7 @@ module Gitlab
       # This is this actual number of times this call was made. Used for information purposes only
       actual_call_count = increment_call_count("gitaly_#{call_site}_actual")
 
-      # Do no enforce limits in production
-      return if Rails.env.production? || ENV["GITALY_DISABLE_REQUEST_LIMITS"]
+      return unless enforce_gitaly_request_limits?
 
       # Check if this call is nested within a allow_n_plus_1_calls
       # block and skip check if it is
@@ -272,6 +273,19 @@ module Gitlab
 
       raise TooManyInvocationsError.new(call_site, actual_call_count, max_call_count, max_stacks)
     end
+
+    def self.enforce_gitaly_request_limits?
+      # We typically don't want to enforce request limits in production
+      # However, we have some production-like test environments, i.e., ones
+      # where `Rails.env.production?` returns `true`. We do want to be able to
+      # check if the limit is being exceeded while testing in those environments
+      # In that case we can use a feature flag to indicate that we do want to
+      # enforce request limits.
+      return true if feature_enabled?('enforce_requests_limits')
+
+      !(Rails.env.production? || ENV["GITALY_DISABLE_REQUEST_LIMITS"])
+    end
+    private_class_method :enforce_gitaly_request_limits?
 
     def self.allow_n_plus_1_calls
       return yield unless Gitlab::SafeRequestStore.active?
@@ -384,13 +398,13 @@ module Gitlab
 
     # Returns the stacks that calls Gitaly the most times. Used for n+1 detection
     def self.max_stacks
-      return nil unless Gitlab::SafeRequestStore.active?
+      return unless Gitlab::SafeRequestStore.active?
 
       stack_counter = Gitlab::SafeRequestStore[:stack_counter]
-      return nil unless stack_counter
+      return unless stack_counter
 
       max = max_call_count
-      return nil if max.zero?
+      return if max.zero?
 
       stack_counter.select { |_, v| v == max }.keys
     end

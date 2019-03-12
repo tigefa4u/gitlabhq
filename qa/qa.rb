@@ -349,6 +349,10 @@ module QA
   module Specs
     autoload :Config, 'qa/specs/config'
     autoload :Runner, 'qa/specs/runner'
+
+    module Helpers
+      autoload :Quarantine, 'qa/specs/helpers/quarantine'
+    end
   end
 
   ##
