@@ -41,26 +41,26 @@ module Gitlab
           # then UPDATE them, and return number of updated rows,
           # as well as min and max values.
           result = ActiveRecord::Base.connection.execute <<~SQL.strip_heredoc
-            with rows_to_update as (
-              select #{old_column}
-              from #{table}
-              where
+            WITH rows_to_update AS (
+              SELECT #{old_column}
+              FROM #{table}
+              WHERE
                 #{old_column} > #{last_processed}
-                and #{new_column} is null
-              order by #{old_column}
-              limit #{batch_size}
-              for update skip locked
-            ), upd as (
-              update #{table}
-              set #{new_column} = #{old_column}
-              where #{old_column} in (select #{old_column} from rows_to_update)
-              returning #{old_column}
+                AND #{new_column} IS NULL
+              ORDER BY #{old_column}
+              LIMIT #{batch_size}
+              FOR UPDATE SKIP LOCKED
+            ), upd AS (
+              UPDATE #{table}
+              SET #{new_column} = #{old_column}
+              WHERE #{old_column} IN (SELECT #{old_column} FROM rows_to_update)
+              RETURNING #{old_column}
             )
-            select
-              count(*) as cnt,
-              min(#{old_column}) as min_val,
-              max(#{old_column}) as max_val
-            from upd;
+            SELECT
+              COUNT(*) AS cnt,
+              MIN(#{old_column}) AS min_val,
+              MAX(#{old_column}) AS max_val
+            FROM upd;
           SQL
 
           # If nothing has been processed, we assume that nothing is left.
@@ -78,7 +78,7 @@ module Gitlab
         if rescheduling_needed then
           BackgroundMigrationWorker.perform_in(
             delay,
-            "Int4ToInt8Update",
+            self.class.name,
             [table, old_column, new_column, delay, batch_size, batches_per_iteration, last_processed]
           )
         end

@@ -882,7 +882,7 @@ ActiveRecord::Schema.define(version: 20190221234852) do
     t.index ["project_id", "slug"], name: "index_environments_on_project_id_and_slug", unique: true, using: :btree
   end
 
-  create_table "events", id: :bigserial, force: :cascade do |t|
+  create_table "events", force: :cascade do |t|
     t.integer "project_id"
     t.integer "author_id", null: false
     t.integer "target_id"
