@@ -1,4 +1,5 @@
 <script>
+import { GlDropdown, GlDropdownItem } from '@gitlab/ui';
 import { s__ } from '~/locale';
 import Icon from '~/vue_shared/components/icon.vue';
 import Flash from '../../flash';
@@ -7,6 +8,7 @@ import MonitorAreaChart from './charts/area.vue';
 import GraphGroup from './graph_group.vue';
 import EmptyState from './empty_state.vue';
 import MonitoringStore from '../stores/monitoring_store';
+import { timeWindows } from '../constants';
 
 const sidebarAnimationDuration = 150;
 let sidebarMutationObserver;
@@ -17,6 +19,8 @@ export default {
     GraphGroup,
     EmptyState,
     Icon,
+    GlDropdown,
+    GlDropdownItem,
   },
   props: {
     hasMetrics: {
@@ -89,6 +93,7 @@ export default {
       state: 'gettingStarted',
       showEmptyState: true,
       elWidth: 0,
+      selectedTimeWindow: '',
     };
   },
   created() {
@@ -97,6 +102,9 @@ export default {
       deploymentEndpoint: this.deploymentEndpoint,
       environmentsEndpoint: this.environmentsEndpoint,
     });
+
+    this.timeWindows = timeWindows;
+    this.selectedTimeWindow = this.timeWindows.eightHours;
   },
   beforeDestroy() {
     if (sidebarMutationObserver) {
@@ -145,10 +153,16 @@ export default {
           this.state = 'unableToConnect';
         });
     },
+    getGraphsDataWithTime(timeFrame) {
+      this.selectedTimeWindow = this.timeWindows[timeFrame];
+    },
     onSidebarMutation() {
       setTimeout(() => {
         this.elWidth = this.$el.clientWidth;
       }, sidebarAnimationDuration);
+    },
+    activeTimeWindow(key) {
+      return this.timeWindows[key] === this.selectedTimeWindow;
     },
   },
 };
@@ -156,28 +170,46 @@ export default {
 
 <template>
   <div v-if="!showEmptyState" class="prometheus-graphs prepend-top-default">
-    <div class="environments d-flex align-items-center">
-      {{ s__('Metrics|Environment') }}
-      <div class="dropdown prepend-left-10">
-        <button class="dropdown-menu-toggle" data-toggle="dropdown" type="button">
-          <span>{{ currentEnvironmentName }}</span>
-          <icon name="chevron-down" />
-        </button>
-        <div
-          v-if="store.environmentsData.length > 0"
-          class="dropdown-menu dropdown-menu-selectable dropdown-menu-drop-up"
-        >
-          <ul>
-            <li v-for="environment in store.environmentsData" :key="environment.id">
-              <a
-                :href="environment.metrics_path"
-                :class="{ 'is-active': environment.name == currentEnvironmentName }"
-                class="dropdown-item"
-                >{{ environment.name }}</a
-              >
-            </li>
-          </ul>
+    <div class="dropdowns d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center">
+        <span class="font-weight-bold">{{ s__('Metrics|Environment') }}</span>
+        <div class="dropdown prepend-left-10">
+          <button class="dropdown-menu-toggle" data-toggle="dropdown" type="button">
+            <span>{{ currentEnvironmentName }}</span>
+            <icon name="chevron-down" />
+          </button>
+          <div
+            v-if="store.environmentsData.length > 0"
+            class="dropdown-menu dropdown-menu-selectable dropdown-menu-drop-up js-environments-dropdown"
+          >
+            <ul>
+              <li v-for="environment in store.environmentsData" :key="environment.id">
+                <a
+                  :href="environment.metrics_path"
+                  :class="{ 'is-active': environment.name == currentEnvironmentName }"
+                  class="dropdown-item"
+                  >{{ environment.name }}</a
+                >
+              </li>
+            </ul>
+          </div>
         </div>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="font-weight-bold">{{ s__('Metrics|Show Last') }}</span>
+        <gl-dropdown
+          id="time-window-dropdown"
+          class="prepend-left-10"
+          toggle-class="dropdown-menu-toggle"
+          :text="selectedTimeWindow"
+        >
+          <gl-dropdown-item
+            v-for="(value, key) in timeWindows"
+            :key="key"
+            :active="activeTimeWindow(key)"
+            @click="getGraphsDataWithTime(key)"
+            >{{ value }}</gl-dropdown-item>
+        </gl-dropdown>
       </div>
     </div>
     <graph-group

@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import MockAdapter from 'axios-mock-adapter';
 import Dashboard from '~/monitoring/components/dashboard.vue';
+import { timeWindows } from '~/monitoring/constants';
 import axios from '~/lib/utils/axios_utils';
 import { metricsGroupsAPIResponse, mockApiEndpoint, environmentData } from './mock_data';
 
@@ -98,7 +99,7 @@ describe('Dashboard', () => {
       });
     });
 
-    it('renders the dropdown with a number of environments', done => {
+    it('renders the environments dropdown with a number of environments', done => {
       const component = new DashboardComponent({
         el: document.querySelector('.prometheus-graphs'),
         propsData: { ...propsData, hasMetrics: true, showPanels: false },
@@ -107,14 +108,16 @@ describe('Dashboard', () => {
       component.store.storeEnvironmentsData(environmentData);
 
       setTimeout(() => {
-        const dropdownMenuEnvironments = component.$el.querySelectorAll('.dropdown-menu ul li a');
+        const dropdownMenuEnvironments = component.$el.querySelectorAll(
+          '.js-environments-dropdown ul li a',
+        );
 
         expect(dropdownMenuEnvironments.length).toEqual(component.store.environmentsData.length);
         done();
       });
     });
 
-    it('hides the dropdown list when there is no environments', done => {
+    it('hides the environments dropdown list when there is no environments', done => {
       const component = new DashboardComponent({
         el: document.querySelector('.prometheus-graphs'),
         propsData: { ...propsData, hasMetrics: true, showPanels: false },
@@ -123,14 +126,16 @@ describe('Dashboard', () => {
       component.store.storeEnvironmentsData([]);
 
       setTimeout(() => {
-        const dropdownMenuEnvironments = component.$el.querySelectorAll('.dropdown-menu ul');
+        const dropdownMenuEnvironments = component.$el.querySelectorAll(
+          '.js-environments-dropdown ul',
+        );
 
         expect(dropdownMenuEnvironments.length).toEqual(0);
         done();
       });
     });
 
-    it('renders the dropdown with a single is-active element', done => {
+    it('renders the environments dropdown with a single is-active element', done => {
       const component = new DashboardComponent({
         el: document.querySelector('.prometheus-graphs'),
         propsData: { ...propsData, hasMetrics: true, showPanels: false },
@@ -140,13 +145,35 @@ describe('Dashboard', () => {
 
       setTimeout(() => {
         const dropdownIsActiveElement = component.$el.querySelectorAll(
-          '.dropdown-menu ul li a.is-active',
+          '.js-environments-dropdown ul li a.is-active',
         );
 
         expect(dropdownIsActiveElement.length).toEqual(1);
         expect(dropdownIsActiveElement[0].textContent.trim()).toEqual(
           component.currentEnvironmentName,
         );
+        done();
+      });
+    });
+
+    it('renders the time window dropdown with a set of options ', done => {
+      const component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: { ...propsData, hasMetrics: true, showPanels: false },
+      });
+      const numberOfTimeWindows = Object.keys(timeWindows).length;
+
+      setTimeout(() => {
+        const timeWindowDropdown = component.$el.querySelector(
+          '#time-window-dropdown',
+        );
+        const timeWindowDropdownEls = component.$el.querySelectorAll(
+          '#time-window-dropdown .dropdown-item'
+        );
+
+        expect(timeWindowDropdown).not.toBeNull();
+        expect(timeWindowDropdownEls.length).toEqual(numberOfTimeWindows);
+
         done();
       });
     });
