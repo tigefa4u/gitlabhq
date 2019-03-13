@@ -109,7 +109,7 @@ describe('Dashboard', () => {
 
       setTimeout(() => {
         const dropdownMenuEnvironments = component.$el.querySelectorAll(
-          '.js-environments-dropdown ul li a',
+          '#environments-dropdown .dropdown-item',
         );
 
         expect(dropdownMenuEnvironments.length).toEqual(component.store.environmentsData.length);
@@ -127,7 +127,7 @@ describe('Dashboard', () => {
 
       setTimeout(() => {
         const dropdownMenuEnvironments = component.$el.querySelectorAll(
-          '.js-environments-dropdown ul',
+          '#environments-dropdown .dropdown-item',
         );
 
         expect(dropdownMenuEnvironments.length).toEqual(0);
@@ -144,12 +144,14 @@ describe('Dashboard', () => {
       component.store.storeEnvironmentsData(environmentData);
 
       setTimeout(() => {
-        const dropdownIsActiveElement = component.$el.querySelectorAll(
-          '.js-environments-dropdown ul li a.is-active',
+        const dropdownItems = component.$el.querySelectorAll(
+          '#environments-dropdown .dropdown-item',
         );
 
-        expect(dropdownIsActiveElement.length).toEqual(1);
-        expect(dropdownIsActiveElement[0].textContent.trim()).toEqual(
+        const dropdownActiveElements = Array.from(dropdownItems).filter(el => el.getAttribute('active') === 'true')
+
+        expect(dropdownActiveElements.length).toEqual(1);
+        expect(dropdownActiveElements[0].textContent.trim()).toEqual(
           component.currentEnvironmentName,
         );
         done();

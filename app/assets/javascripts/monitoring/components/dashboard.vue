@@ -173,27 +173,20 @@ export default {
     <div class="dropdowns d-flex align-items-center justify-content-between">
       <div class="d-flex align-items-center">
         <span class="font-weight-bold">{{ s__('Metrics|Environment') }}</span>
-        <div class="dropdown prepend-left-10">
-          <button class="dropdown-menu-toggle" data-toggle="dropdown" type="button">
-            <span>{{ currentEnvironmentName }}</span>
-            <icon name="chevron-down" />
-          </button>
-          <div
-            v-if="store.environmentsData.length > 0"
-            class="dropdown-menu dropdown-menu-selectable dropdown-menu-drop-up js-environments-dropdown"
-          >
-            <ul>
-              <li v-for="environment in store.environmentsData" :key="environment.id">
-                <a
-                  :href="environment.metrics_path"
-                  :class="{ 'is-active': environment.name == currentEnvironmentName }"
-                  class="dropdown-item"
-                  >{{ environment.name }}</a
-                >
-              </li>
-            </ul>
-          </div>
-        </div>
+        <gl-dropdown
+          id="environments-dropdown"
+          class="prepend-left-10"
+          toggle-class="dropdown-menu-toggle"
+          :text="currentEnvironmentName"
+          :disabled="!store.environmentsData.length > 0"
+        >
+          <gl-dropdown-item
+            v-for="environment in store.environmentsData" 
+            :key="environment.id"
+            :active="environment.name == currentEnvironmentName"
+            active-class="is-active"
+            >{{ environment.name }}</gl-dropdown-item>
+        </gl-dropdown>
       </div>
       <div class="d-flex align-items-center">
         <span class="font-weight-bold">{{ s__('Metrics|Show Last') }}</span>
