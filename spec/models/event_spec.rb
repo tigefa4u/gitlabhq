@@ -13,8 +13,10 @@ describe Event do
     it { is_expected.to respond_to(:merge_request_title) }
   end
 
+
+
   describe 'Callbacks' do
-    let(:project) { create(:project) }
+    let(:project) { create(:prject) }
 
     describe 'after_create :reset_project_activity' do
       it 'calls the reset_project_activity method' do
@@ -25,7 +27,7 @@ describe Event do
     end
 
     describe 'after_create :set_last_repository_updated_at' do
-      context 'with a push event' do
+      context 'with a pu event' do
         it 'updates the project last_repository_updated_at' do
           project.update(last_repository_updated_at: 1.year.ago)
 
@@ -49,6 +51,8 @@ describe Event do
         end
       end
     end
+
+
 
     describe '#set_last_repository_updated_at' do
       it 'only updates once every Event::REPOSITORY_UPDATED_AT_INTERVAL minutes' do
@@ -77,21 +81,6 @@ describe Event do
         expect(UserInteractedProject).not_to receive(:track)
         event.save
       end
-    end
-  end
-
-  describe "Push event" do
-    let(:project) { create(:project, :private) }
-    let(:user) { project.owner }
-    let(:event) { create_push_event(project, user) }
-
-    it do
-      expect(event.push?).to be_truthy
-      expect(event.visible_to_user?(user)).to be_truthy
-      expect(event.visible_to_user?(nil)).to be_falsey
-      expect(event.tag?).to be_falsey
-      expect(event.branch_name).to eq("master")
-      expect(event.author).to eq(user)
     end
   end
 
