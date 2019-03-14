@@ -45,4 +45,3 @@ class Int4PkStage1of2Index < ActiveRecord::Migration[5.0]
     remove_concurrent_index_by_name(:events, :events_int4_to_int8_helper)
   end
 end
-

@@ -7,7 +7,7 @@ class Int4PkStage1of2FillColumn < ActiveRecord::Migration[5.0]
 
   DELAY = 2.minutes.to_i
   BATCH_SIZE = 2_500
-  BATCHES_IN_ITERATION = 20
+  BATCHES_PER_ITERATION = 20
   CONCURRENCY = 5
   MIGRATION = 'Int4ToInt8Update'
 
@@ -21,7 +21,7 @@ class Int4PkStage1of2FillColumn < ActiveRecord::Migration[5.0]
       BackgroundMigrationWorker.perform_in(
         DELAY,
         MIGRATION,
-        [:events, :id, :id_new, DELAY, BATCH_SIZE, BATCHES_IN_ITERATION]
+        [:events, :id, :id_new, DELAY, BATCH_SIZE, BATCHES_PER_ITERATION]
       )
     end
 
@@ -30,7 +30,7 @@ class Int4PkStage1of2FillColumn < ActiveRecord::Migration[5.0]
       BackgroundMigrationWorker.perform_in(
         DELAY + 20,
         MIGRATION,
-        [:push_event_payloads, :event_id, :event_id_new, DELAY, BATCH_SIZE, BATCHES_IN_ITERATION]
+        [:push_event_payloads, :event_id, :event_id_new, DELAY, BATCH_SIZE, BATCHES_PER_ITERATION]
       )
     end
 
@@ -39,7 +39,7 @@ class Int4PkStage1of2FillColumn < ActiveRecord::Migration[5.0]
       BackgroundMigrationWorker.perform_in(
         DELAY + 40,
         MIGRATION,
-        [:ci_build_trace_sections, :id, :id_new, DELAY, BATCH_SIZE, BATCHES_IN_ITERATION]
+        [:ci_build_trace_sections, :id, :id_new, DELAY, BATCH_SIZE, BATCHES_PER_ITERATION]
       )
     end
   end

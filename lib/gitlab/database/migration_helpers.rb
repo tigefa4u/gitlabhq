@@ -1112,7 +1112,6 @@ into similar problems in the future (e.g. when new tables are created).
           execute("alter table #{table} validate constraint #{name};")
         end
       end
-
     end
   end
 end
