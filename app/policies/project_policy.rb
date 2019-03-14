@@ -169,6 +169,7 @@ class ProjectPolicy < BasePolicy
     enable :read_milestone
     enable :read_project_snippet
     enable :read_project_member
+    enable :read_project_group_member
     enable :read_note
     enable :create_project
     enable :create_issue
@@ -178,7 +179,6 @@ class ProjectPolicy < BasePolicy
     enable :award_emoji
     enable :read_pages_content
     enable :read_release
-    enable :read_project_group_member
   end
 
   # These abilities are not allowed to admins that are not members of the project,
