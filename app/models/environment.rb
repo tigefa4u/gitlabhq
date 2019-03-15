@@ -170,8 +170,12 @@ class Environment < ActiveRecord::Base
     prometheus_adapter.query(:environment, self) if has_metrics?
   end
 
-  def additional_metrics
-    prometheus_adapter.query(:additional_metrics_environment, self) if has_metrics?
+  def additional_metrics(timeframe_start = nil, timeframe_end = nil)
+    return unless has_metrics?
+
+    timeframe_bounds = [timeframe_start, timeframe_end].compact.map(&:to_f)
+
+    prometheus_adapter.query(:additional_metrics_environment, self, *timeframe_bounds)
   end
 
   # rubocop: disable CodeReuse/ServiceClass
