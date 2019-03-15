@@ -23,12 +23,6 @@ To add or import a user, you can follow the
 
 See our [product handbook on permissions](https://about.gitlab.com/handbook/product#permissions-in-gitlab)
 
-## Instance-wide user permissions
-
-By default, users can create top-level groups and change their 
-usernames. A GitLab administrator can configure the GitLab instance to
-[modify this behavior](../administration/user_settings.md).
-
 ## Project members permissions
 
 NOTE: **Note:**

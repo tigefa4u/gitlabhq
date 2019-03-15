@@ -25,7 +25,7 @@ describe Gitlab::RequestContext do
           [200, {}, ["Hello"]]
         end
 
-        described_class.new(endpoint).call(env)
+        Rails.application.middleware.build(endpoint).call(env)
 
         expect(client_ip).to eq(load_balancer_ip)
       end

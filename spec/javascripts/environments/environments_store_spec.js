@@ -34,46 +34,54 @@ describe('Store', () => {
     expect(store.state.stoppedCounter).toEqual(2);
   });
 
-  it('should add folder keys when environment is a folder', () => {
-    const environment = {
-      name: 'bar',
-      size: 3,
-      id: 2,
-    };
+  describe('store environments', () => {
+    it('should store environments', () => {
+      store.storeEnvironments(serverData);
 
-    store.storeEnvironments([environment]);
+      expect(store.state.environments.length).toEqual(serverData.length);
+    });
 
-    expect(store.state.environments[0].isFolder).toEqual(true);
-    expect(store.state.environments[0].folderName).toEqual('bar');
-  });
+    it('should add folder keys when environment is a folder', () => {
+      const environment = {
+        name: 'bar',
+        size: 3,
+        id: 2,
+      };
 
-  it('should extract content of `latest` key when provided', () => {
-    const environment = {
-      name: 'bar',
-      size: 3,
-      id: 2,
-      latest: {
-        last_deployment: {},
-        isStoppable: true,
-      },
-    };
+      store.storeEnvironments([environment]);
 
-    store.storeEnvironments([environment]);
+      expect(store.state.environments[0].isFolder).toEqual(true);
+      expect(store.state.environments[0].folderName).toEqual('bar');
+    });
 
-    expect(store.state.environments[0].last_deployment).toEqual({});
-    expect(store.state.environments[0].isStoppable).toEqual(true);
-  });
+    it('should extract content of `latest` key when provided', () => {
+      const environment = {
+        name: 'bar',
+        size: 3,
+        id: 2,
+        latest: {
+          last_deployment: {},
+          isStoppable: true,
+        },
+      };
 
-  it('should store latest.name when the environment is not a folder', () => {
-    store.storeEnvironments(serverData);
+      store.storeEnvironments([environment]);
 
-    expect(store.state.environments[0].name).toEqual(serverData[0].latest.name);
-  });
+      expect(store.state.environments[0].last_deployment).toEqual({});
+      expect(store.state.environments[0].isStoppable).toEqual(true);
+    });
 
-  it('should store root level name when environment is a folder', () => {
-    store.storeEnvironments(serverData);
+    it('should store latest.name when the environment is not a folder', () => {
+      store.storeEnvironments(serverData);
 
-    expect(store.state.environments[1].folderName).toEqual(serverData[1].name);
+      expect(store.state.environments[0].name).toEqual(serverData[0].latest.name);
+    });
+
+    it('should store root level name when environment is a folder', () => {
+      store.storeEnvironments(serverData);
+
+      expect(store.state.environments[1].folderName).toEqual(serverData[1].name);
+    });
   });
 
   describe('toggleFolder', () => {

@@ -80,10 +80,11 @@ yield a useful result, and ensuring content is helpful and easy to consume.
 
 ## Text
 
-- Splitting long lines (preferably up to 100 characters) can make it easier to provide feedback on small chunks of text.
-- Insert an empty line for new paragraphs.
+- Split up long lines (wrap text), this makes it much easier to review and edit. Only
+  double line breaks are shown as a full line break by creating new paragraphs.
+  80-100 characters is the recommended line length.
 - Use sentence case for titles, headings, labels, menu items, and buttons.
-- Insert an empty line between different markups (e.g., after every paragraph, header, list, etc). Example:
+- Jump a line between different markups (e.g., after every paragraph, header, list, etc). Example:
 
     ```md
     ## Header

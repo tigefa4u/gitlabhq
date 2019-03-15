@@ -10,5 +10,6 @@
       "items": { "$ref": "issue_board.json" }
     },
     "size": { "type": "integer" }
-  }
+  },
+  "additionalProperties": false
 }

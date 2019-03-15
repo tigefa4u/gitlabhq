@@ -58,24 +58,11 @@ class GroupsController < Groups::ApplicationController
 
   def show
     respond_to do |format|
-      format.html do
-        render_show_html
-      end
+      format.html
 
       format.atom do
-        render_details_view_atom
-      end
-    end
-  end
-
-  def details
-    respond_to do |format|
-      format.html do
-        render_details_html
-      end
-
-      format.atom do
-        render_details_view_atom
+        load_events
+        render layout: 'xml.atom'
       end
     end
   end
@@ -131,19 +118,6 @@ class GroupsController < Groups::ApplicationController
   # rubocop: enable CodeReuse/ActiveRecord
 
   protected
-
-  def render_show_html
-    render 'groups/show'
-  end
-
-  def render_details_html
-    render 'groups/show'
-  end
-
-  def render_details_view_atom
-    load_events
-    render layout: 'xml.atom', template: 'groups/show'
-  end
 
   # rubocop: disable CodeReuse/ActiveRecord
   def authorize_create_group!
@@ -204,8 +178,8 @@ class GroupsController < Groups::ApplicationController
                   .includes(:namespace)
 
     @events = EventCollection
-                .new(@projects, offset: params[:offset].to_i, filter: event_filter)
-                .to_a
+      .new(@projects, offset: params[:offset].to_i, filter: event_filter)
+      .to_a
 
     Events::RenderService
       .new(current_user)

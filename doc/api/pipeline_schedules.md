@@ -1,4 +1,4 @@
-# Pipeline schedules API
+# Pipeline schedules
 
 You can read more about [pipeline schedules](../user/project/pipelines/schedules.md).
 
@@ -280,7 +280,7 @@ curl --request DELETE --header "PRIVATE-TOKEN: k5ESFgWY2Qf5xEvDcFxZ" "https://gi
 
 ## Pipeline schedule variable
 
-> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/issues/34518) in GitLab 10.0.
+> [Introduced][ce-34518] in GitLab 10.0.
 
 ## Create a new pipeline schedule variable
 
@@ -358,3 +358,5 @@ curl --request DELETE --header "PRIVATE-TOKEN: k5ESFgWY2Qf5xEvDcFxZ" "https://gi
     "value": "updated value"
 }
 ```
+
+[ce-34518]: https://gitlab.com/gitlab-org/gitlab-ce/issues/34518

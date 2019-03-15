@@ -1,7 +1,6 @@
 <script>
 import _ from 'underscore';
 import helmInstallIllustration from '@gitlab/svgs/dist/illustrations/kubernetes-installation.svg';
-import { GlLoadingIcon } from '@gitlab/ui';
 import elasticsearchLogo from 'images/cluster_app_logos/elasticsearch.png';
 import gitlabLogo from 'images/cluster_app_logos/gitlab.png';
 import helmLogo from 'images/cluster_app_logos/helm.png';
@@ -24,7 +23,6 @@ export default {
     applicationRow,
     clipboardButton,
     LoadingButton,
-    GlLoadingIcon,
   },
   props: {
     type: {
@@ -298,12 +296,7 @@ export default {
                   />
                 </span>
               </div>
-              <div v-else class="input-group">
-                <input type="text" class="form-control js-endpoint" readonly />
-                <gl-loading-icon
-                  class="position-absolute align-self-center ml-2 js-ingress-ip-loading-icon"
-                />
-              </div>
+              <input v-else type="text" class="form-control js-endpoint" readonly value="?" />
               <p class="form-text text-muted">
                 {{
                   s__(`ClusterIntegration|Point a wildcard DNS to this
@@ -552,12 +545,13 @@ export default {
                     />
                   </span>
                 </div>
-                <div v-else class="input-group">
-                  <input type="text" class="form-control js-endpoint" readonly />
-                  <gl-loading-icon
-                    class="position-absolute align-self-center ml-2 js-knative-ip-loading-icon"
-                  />
-                </div>
+                <input
+                  v-else
+                  type="text"
+                  class="form-control js-knative-endpoint"
+                  readonly
+                  value="?"
+                />
               </div>
 
               <p class="form-text text-muted col-12">
