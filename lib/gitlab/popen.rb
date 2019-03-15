@@ -35,7 +35,7 @@ module Gitlab
       cmd_status = nil
       start = Time.now
 
-      Open3.popen3(vars, *cmd, options) do |stdin, stdout, stderr, wait_thr|
+      Open3.popen3(vars, *cmd, options) do |stdin, stdout, stderr, wait_thr| # rubocop:disable Gitlab/Popen
         # stderr and stdout pipes can block if stderr/stdout aren't drained: https://bugs.ruby-lang.org/issues/9082
         # Mimic what Ruby does with capture3: https://github.com/ruby/ruby/blob/1ec544695fa02d714180ef9c34e755027b6a2103/lib/open3.rb#L257-L273
         out_reader = Thread.new { stdout.read }
