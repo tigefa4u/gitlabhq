@@ -42,8 +42,12 @@ describe SshHostKey do
     stdout = double(:stdout, read: stdout)
     stderr = double(:stderr, read: stderr)
     wait_thr = double(:wait_thr, value: double(success?: status))
+    path = Dir.pwd
+    vars = { 'PWD' => path }
+    cmd = ['ssh-keyscan'].concat(args)
+    options = { chdir: path }
 
-    expect(Open3).to receive(:popen3).with({}, 'ssh-keyscan', *args).and_yield(stdin, stdout, stderr, wait_thr)
+    expect(Open3).to receive(:popen3).with(vars, *cmd, options).and_yield(stdin, stdout, stderr, wait_thr)
 
     stdin
   end
