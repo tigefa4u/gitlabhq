@@ -176,3 +176,65 @@ class Commit
   request_cache(:author) { author_email }
 end
 ```
+
+## Popen
+
+This [`Popen`](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/popen.rb)
+module provides a safe way to call the Ruby Standard Library method
+`Open3.popen3`. It avoids potential deadlocks by ensuring that standard
+out and standard error pipes are drained in separate threads before
+returning a response.
+
+TIP: **Tip:**
+If you do not need to read the standard error output, use the
+Ruby Standard Library
+[`Open3.popen2`](http://ruby-doc.org/stdlib-2.5.3/libdoc/open3/rdoc/Open3.html#method-c-popen2)
+instead.
+
+This module has two methods:
+
+- [`popen`](#popen-method)
+- [`popen_with_detail`](#popen_with_detail)
+
+### <span id="popen-method">`popen`</span>
+
+``` ruby
+Gitlab::Popen.popen(%w[echo "hello, world!"])
+```
+
+This method returns a simple array comprised of `[output, exit_code]`:
+
+- The first element of the array contains a string with all standard out
+  and standard error output of the command
+- The second element of the array contains the exit code of the command
+
+### `popen_with_detail`
+
+```ruby
+Gitlab::Popen.popen_with_detail(%w[echo "hello, world!"])
+```
+
+This method returns a `Struct` with the following properties:
+
+- `cmd`: the command that was executed.
+- `stdout`: all standard out response of the command.
+- `stderr`: all standard error response of the command.
+- `status`: a
+  [`Process::Status` object](https://ruby-doc.org/core-2.5.3/Process/Status.html)
+  containing information about the exit status of the command.
+- `duration`: the elapsed time in seconds of the command.
+
+### Extend your class with the module
+
+If your class will call methods in `Gitlab::Popen` more than once then
+consider extending the module to mix the methods into your class:
+
+```ruby
+class MyService
+  extend Gitlab::Popen
+
+  def execute
+    popen(%w[echo "hello, world!"])
+  end
+end
+```
