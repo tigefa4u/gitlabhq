@@ -236,7 +236,6 @@ module Gitlab
           commit = call_find_commit(revision)
           return unless commit
 
-          key[:commit_id] = commit.id
           RequestStore[key] = commit
         else
           call_find_commit(revision)
