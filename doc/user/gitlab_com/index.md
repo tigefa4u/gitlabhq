@@ -51,7 +51,7 @@ Below are the settings for [GitLab Pages].
 | TLS certificates support| yes               | no            |
 
 The maximum size of your Pages site is regulated by the artifacts maximum size
-which is part of [GitLab CI/CD](#gitlab-ci-cd).
+which is part of [GitLab CI/CD](#gitlab-cicd).
 
 ## GitLab CI/CD
 
@@ -60,7 +60,7 @@ Below are the current settings regarding [GitLab CI/CD](../../ci/README.md).
 | Setting                 | GitLab.com        | Default       |
 | -----------             | ----------------- | ------------- |
 | Artifacts maximum size  | 1G                | 100M          |
-| Artifacts [expiry time](../../ci/yaml/README.md#artifacts-expire_in)   | kept forever           | deleted after 30 days unless otherwise specified    |
+| Artifacts [expiry time](../../ci/yaml/README.md#artifactsexpire_in)   | kept forever           | deleted after 30 days unless otherwise specified    |
 
 ## Repository size limit
 

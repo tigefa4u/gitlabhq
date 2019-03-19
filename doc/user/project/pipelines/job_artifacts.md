@@ -38,7 +38,7 @@ turn are defined with the `paths` keyword. All paths to files and directories
 are relative to the repository that was cloned during the build. These uploaded
 artifacts will be kept in GitLab for 1 week as defined by the `expire_in`
 definition. You have the option to keep the artifacts from expiring via the
-[web interface](#browsing-job-artifacts). If the expiry time is not defined,
+[web interface](#browsing-artifacts). If the expiry time is not defined,
 it defaults to the [instance wide
 setting](../../admin_area/settings/continuous_integration.md#default-artifacts-expiration-core-only).
 
@@ -183,7 +183,7 @@ information in the UI.
 DANGER: **Warning:**
 This is a destructive action that leads to data loss. Use with caution.
 
-If you have at least Developer [permissions](../../permissions.md#gitlab-ci-cd-permissions)
+If you have at least Developer [permissions](../../permissions.md#gitlab-cicd-permissions)
 on the project, you can erase a single job via the UI which will also remove the
 artifacts and the job's trace.
 
@@ -195,5 +195,5 @@ artifacts and the job's trace.
 
 In order to retrieve a job artifact of a different project, you might need to use a private token in order to [authenticate and download](../../../api/jobs.md#get-job-artifacts) the artifacts.
 
-[expiry date]: ../../../ci/yaml/README.md#artifacts-expire_in
+[expiry date]: ../../../ci/yaml/README.md#artifactsexpire_in
 [ce-14399]: https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/14399
