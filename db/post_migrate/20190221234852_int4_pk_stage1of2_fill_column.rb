@@ -7,7 +7,7 @@ class Int4PkStage1of2FillColumn < ActiveRecord::Migration[5.0]
 
   DELAY = 2.minutes.to_i
   BATCH_SIZE = 2_500
-  BATCHES_PER_ITERATION = 20
+  BATCHES_PER_ITERATION = 80
   CONCURRENCY = 5
   MIGRATION = 'Int4ToInt8Update'
 
