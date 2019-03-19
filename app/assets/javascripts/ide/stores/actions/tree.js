@@ -3,6 +3,7 @@ import { __ } from '../../../locale';
 import service from '../../services';
 import * as types from '../mutation_types';
 import { decorateFiles } from '../../lib/files';
+import { sortTree } from '../utils';
 
 export const toggleTreeOpen = ({ commit }, path) => {
   commit(types.TOGGLE_TREE_OPEN, path);
@@ -33,8 +34,13 @@ export const handleTreeEntryAction = ({ commit, dispatch }, row) => {
   dispatch('showTreeEntry', row.path);
 };
 
-export const setDirectoryData = ({ state, commit }, { projectId, branchId, treeList }) => {
+export const setDirectoryData = ({ state, commit }, { projectId, branchId }) => {
   const selectedTree = state.trees[`${projectId}/${branchId}`];
+  const { entries } = state;
+
+  // build treeList from entries
+  const treeList = sortTree(Object.values(entries).filter(x => !x.parentPath));
+  console.log(treeList);
 
   commit(types.SET_DIRECTORY_DATA, {
     treePath: `${projectId}/${branchId}`,
@@ -59,7 +65,7 @@ export const getFiles = ({ state, commit, dispatch }, { projectId, branchId } = 
       service
         .getFiles(selectedProject.web_url, branchId)
         .then(({ data }) => {
-          const { entries, treeList } = decorateFiles({
+          const { entries } = decorateFiles({
             data,
             projectId,
             branchId,
@@ -69,7 +75,7 @@ export const getFiles = ({ state, commit, dispatch }, { projectId, branchId } = 
 
           // Defer setting the directory data because this triggers some intense rendering.
           // The entries is all we need to load the file editor.
-          _.defer(() => dispatch('setDirectoryData', { projectId, branchId, treeList }));
+          _.defer(() => dispatch('setDirectoryData', { projectId, branchId }));
 
           resolve();
         })

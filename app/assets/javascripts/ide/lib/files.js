@@ -21,7 +21,6 @@ export const decorateFiles = ({
   content = '',
   base64 = false,
 }) => {
-  const treeList = [];
   const entries = {};
 
   // These mutable variable references end up being exported and used by `createTempEntry`
@@ -60,8 +59,6 @@ export const decorateFiles = ({
 
     if (parentFolder) {
       parentFolder.tree.push(tree);
-    } else {
-      treeList.push(tree);
     }
 
     return tree;
@@ -98,15 +95,12 @@ export const decorateFiles = ({
 
       if (fileFolder) {
         fileFolder.tree.push(file);
-      } else {
-        treeList.push(file);
       }
     }
   });
 
   return {
     entries,
-    treeList: sortTree(treeList),
     file,
     parentPath,
   };

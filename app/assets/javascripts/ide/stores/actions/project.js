@@ -148,7 +148,7 @@ export const openBranch = ({ dispatch, state }, { projectId, branchId, basePath 
         if (treeEntry) {
           dispatch('handleTreeEntryAction', treeEntry);
         } else {
-          dispatch('createTempEntry', { name: path, type: 'blob' });
+          setTimeout(() => dispatch('createTempEntry', { name: path, type: 'blob' }), 3000);
         }
       }
     })
@@ -157,5 +157,5 @@ export const openBranch = ({ dispatch, state }, { projectId, branchId, basePath 
         projectId,
         branchId,
       });
-    })
+    });
 };
