@@ -16,5 +16,7 @@
         sites. Users are required to demonstrate they control a domain before
         it is enabled
         = link_to icon('question-circle'), help_page_path('user/project/pages/getting_started_part_three.md', anchor: 'dns-txt-record')
-
+    .form-group
+      = f.label :acme_private_key, "Let's Encrypt private key", class: 'label-bold'
+      = f.text_area :acme_private_key, class: 'form-control'
   = f.submit 'Save changes', class: "btn btn-success"

@@ -121,6 +121,7 @@ module ApplicationSettingsHelper
 
   def visible_attributes
     [
+      :acme_private_key,
       :admin_notification_email,
       :after_sign_out_path,
       :after_sign_up_text,
