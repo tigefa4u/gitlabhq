@@ -745,6 +745,10 @@ module Ci
       MergeRequest.merge_request_ref?(ref)
     end
 
+    def matches_sha_or_source_sha?(sha)
+      self.sha == sha || self.source_sha == sha
+    end
+
     private
 
     def ci_yaml_from_repo
