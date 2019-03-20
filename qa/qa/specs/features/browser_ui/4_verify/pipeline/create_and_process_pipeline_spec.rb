@@ -9,7 +9,7 @@ module QA
         Service::Runner.new(executor).remove!
       end
 
-      it 'users creates a pipeline which gets processed' do
+      it 'user creates a pipeline which gets processed' do
         Runtime::Browser.visit(:gitlab, Page::Main::Login)
         Page::Main::Login.perform(&:sign_in_using_credentials)
 
@@ -78,6 +78,41 @@ module QA
           expect(pipeline).to have_build('test-failure', status: :failed)
           expect(pipeline).to have_build('test-tags', status: :pending)
           expect(pipeline).to have_build('test-artifacts', status: :success)
+        end
+      end
+
+      it 'user creates a pipeline which gets started', :smoke do
+        Runtime::Browser.visit(:gitlab, Page::Main::Login)
+        Page::Main::Login.act { sign_in_using_credentials }
+
+        project = Resource::Project.fabricate! do |project|
+          project.name = 'project-with-pipeline'
+          project.description = 'Project with CI/CD Pipeline.'
+        end
+
+        Resource::Runner.fabricate! do |runner|
+          runner.project = project
+          runner.name = executor
+          runner.tags = %w[qa test]
+        end
+
+        Resource::Repository::ProjectPush.fabricate! do |push|
+          push.project = project
+          push.file_name = '.gitlab-ci.yml'
+          push.commit_message = 'Add .gitlab-ci.yml'
+          push.file_content = <<~EOF
+            test-running:
+              tags:
+                - qa
+                - test
+              script: echo 'running';sleep 10s;echo 'completed'
+          EOF
+        end
+
+        Page::Project::Menu.act { click_ci_cd_pipelines }
+        Page::Project::Pipeline::Index.act { go_to_latest_pipeline }
+        Page::Project::Pipeline::Show.perform do |pipeline|
+          expect(pipeline).to be_running
         end
       end
     end
