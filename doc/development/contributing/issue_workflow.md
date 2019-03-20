@@ -8,7 +8,7 @@ Most issues will have labels for at least one of the following:
 
 - Type: ~feature, ~bug, ~customer, etc.
 - Subject: ~wiki, ~"container registry", ~ldap, ~api, etc.
-- Group: ~Plan, ~Manage, ~Quality, etc.
+- Group: ~Plan, ~Create, etc.
 - Stage: ~"devops:plan", ~"devops:create", etc.
 - Release Scoping: ~Deliverable, ~Stretch, ~"Next Patch Release"
 - Priority: ~P1, ~P2, ~P3, ~P4
@@ -69,7 +69,6 @@ The current group labels are:
 - ~Manage
 - ~Monitor
 - ~Plan
-- ~Quality
 - ~Release
 - ~Secure
 - ~Verify
@@ -77,8 +76,9 @@ The current group labels are:
 The descriptions on the [labels page][labels-page] explain what falls under the
 responsibility of each group.
 
-Along with those group labels, we also have the ~UX, ~backend, and ~frontend labels to
-indicate if an issue needs UX, backend, frontend work.
+Along with those group labels, we also have the ~UX, ~Quality, ~backend, and
+~frontend labels to indicate if an issue needs UX, Quality, backend, and
+frontend work.
 
 ## Stage labels
 
