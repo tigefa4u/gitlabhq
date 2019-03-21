@@ -749,6 +749,10 @@ module Ci
       self.sha == sha || self.source_sha == sha
     end
 
+    def legacy_detached_merge_request_pipeline?
+      merge_request_event? && !merge_request_ref?
+    end
+
     private
 
     def ci_yaml_from_repo

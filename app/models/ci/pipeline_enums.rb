@@ -7,7 +7,8 @@ module Ci
     def self.failure_reasons
       {
         unknown_failure: 0,
-        config_error: 1
+        config_error: 1,
+        reference_not_found: 2
       }
     end
 

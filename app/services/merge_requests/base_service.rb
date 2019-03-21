@@ -65,7 +65,7 @@ module MergeRequests
       return if merge_request.merge_request_pipeline_exists?
       return if merge_request.has_no_commits?
 
-      if Feature.enabled?(:ci_merge_request_head_ref, merge_request.source_project, default_enabled: true)
+      if Feature.enabled?(:ci_use_merge_request_head_ref, merge_request.source_project, default_enabled: true)
         create_detached_merge_request_pipeline(merge_request, user)
       else
         create_legacy_detached_merge_request_pipeline(merge_request, user)
@@ -77,8 +77,7 @@ module MergeRequests
     def create_detached_merge_request_pipeline(merge_request, user)
       Ci::CreatePipelineService
         .new(merge_request.source_project, user,
-          ref: merge_request.ref_path,
-          checkout_sha: merge_request.source_branch_sha)
+          ref: merge_request.ref_path)
         .execute(:merge_request_event, merge_request: merge_request)
     end
 

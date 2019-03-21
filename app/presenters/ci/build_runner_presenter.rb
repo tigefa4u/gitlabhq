@@ -36,11 +36,10 @@ module Ci
     def refspecs
       specs = []
 
-      specs << refspec_for_merge_request if merge_request?
-
       if git_depth > 0
-        specs << refspec_for_branch(ref) if branch? || Feature.disabled?(:ci_merge_request_head_ref, merge_request.source_project, default_enabled: true)
+        specs << refspec_for_branch(ref) if branch? || legacy_detached_merge_request_pipeline?
         specs << refspec_for_tag(ref) if tag?
+        specs << refspec_for_merge_request_ref if merge_request_ref?
       else
         specs << refspec_for_branch
         specs << refspec_for_tag
@@ -88,13 +87,8 @@ module Ci
       "+#{Gitlab::Git::TAG_REF_PREFIX}#{ref}:#{RUNNER_REMOTE_TAG_PREFIX}#{ref}"
     end
 
-    def refspec_for_merge_request
-      if merge_request_ref?
-        "+#{ref}:#{ref}"
-      else
-        # Legacy MR pipelines still fetch source code from the branch ref
-        refspec_for_branch(ref)
-      end
+    def refspec_for_merge_request_ref
+      "+#{ref}:#{ref}"
     end
   end
 end
