@@ -126,13 +126,13 @@ class Projects::LabelsController < Projects::ApplicationController
         end
       end
     rescue ActiveRecord::RecordInvalid => e
-      Gitlab::AppLogger.error "Failed to promote label \"#{@label.title}\" to group label"
+      Gitlab::AppLogger.error _("Failed to promote label \"%{label_title}\" to group label") % { label_title: @label.title }
       Gitlab::AppLogger.error e
 
       respond_to do |format|
         format.html do
           redirect_to(project_labels_path(@project),
-                      notice: 'Failed to promote label due to internal error. Please contact administrators.')
+                      notice: _('Failed to promote label due to internal error. Please contact administrators.'))
         end
         format.js
       end

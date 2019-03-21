@@ -55,7 +55,7 @@ class Projects::GitHttpClientController < Projects::ApplicationController
     end
 
     send_challenges
-    render plain: "HTTP Basic: Access denied\n", status: :unauthorized
+    render plain: _("HTTP Basic: Access denied\n"), status: :unauthorized
   rescue Gitlab::Auth::MissingPersonalAccessTokenError
     render_missing_personal_access_token
   end

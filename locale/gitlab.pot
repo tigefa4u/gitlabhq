@@ -144,6 +144,12 @@ msgstr ""
 msgid "%{percent}%% complete"
 msgstr ""
 
+msgid "%{service_title} activated."
+msgstr ""
+
+msgid "%{service_title} settings saved, but not activated."
+msgstr ""
+
 msgid "%{strong_start}%{branch_count}%{strong_end} Branch"
 msgid_plural "%{strong_start}%{branch_count}%{strong_end} Branches"
 msgstr[0] ""
@@ -604,6 +610,9 @@ msgid "All features are enabled for blank projects, from templates, or when impo
 msgstr ""
 
 msgid "All issues for this milestone are closed. You may close this milestone now."
+msgstr ""
+
+msgid "All merge conflicts were resolved. The merge request can now be merged."
 msgstr ""
 
 msgid "All users"
@@ -2423,6 +2432,12 @@ msgstr ""
 msgid "Copy token to clipboard"
 msgstr ""
 
+msgid "Could not create Wiki Repository at this time. Please try again later."
+msgstr ""
+
+msgid "Could not remove the trigger."
+msgstr ""
+
 msgid "Could not retrieve the pipeline status. For troubleshooting steps, read the %{linkStart}documentation.%{linkEnd}"
 msgstr ""
 
@@ -2702,6 +2717,9 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "Deploy Keys"
+msgstr ""
+
+msgid "Deploy key was successfully updated."
 msgstr ""
 
 msgid "DeployKeys|+%{count} others"
@@ -3496,6 +3514,12 @@ msgstr ""
 msgid "Failed to load errors from Sentry. Error message: %{errorMessage}"
 msgstr ""
 
+msgid "Failed to promote label \"%{label_title}\" to group label"
+msgstr ""
+
+msgid "Failed to promote label due to internal error. Please contact administrators."
+msgstr ""
+
 msgid "Failed to remove issue from board, please try again."
 msgstr ""
 
@@ -4002,6 +4026,10 @@ msgstr ""
 msgid "GroupsTree|Search by name"
 msgstr ""
 
+msgid ""
+"HTTP Basic: Access denied\n"
+msgstr ""
+
 msgid "Header message"
 msgstr ""
 
@@ -4056,6 +4084,9 @@ msgid "Hide values"
 msgstr ""
 
 msgid "History"
+msgstr ""
+
+msgid "Hook was successfully updated."
 msgstr ""
 
 msgid "Housekeeping successfully started"
@@ -4404,6 +4435,9 @@ msgid "Job ID"
 msgstr ""
 
 msgid "Job has been erased"
+msgstr ""
+
+msgid "Job has been successfully erased!"
 msgstr ""
 
 msgid "Job is stuck. Check runners."
@@ -4890,6 +4924,9 @@ msgstr ""
 msgid "Merged"
 msgstr ""
 
+msgid "Merged branches are being deleted. This can take some time depending on the number of branches. Please refresh the page to see changes."
+msgstr ""
+
 msgid "Messages"
 msgstr ""
 
@@ -4983,6 +5020,9 @@ msgstr ""
 msgid "Mirroring repositories"
 msgstr ""
 
+msgid "Mirroring settings were successfully updated."
+msgstr ""
+
 msgid "MissingSSHKeyWarningLink|add an SSH key"
 msgstr ""
 
@@ -5067,6 +5107,9 @@ msgstr ""
 msgid "Never"
 msgstr ""
 
+msgid "Never reached"
+msgstr ""
+
 msgid "New"
 msgstr ""
 
@@ -5145,6 +5188,9 @@ msgid "New pipelines will cancel older, pending pipelines on the same branch"
 msgstr ""
 
 msgid "New project"
+msgstr ""
+
+msgid "New runners registration token has been generated!"
 msgstr ""
 
 msgid "New schedule"
@@ -5387,6 +5433,9 @@ msgstr ""
 msgid "November"
 msgstr ""
 
+msgid "Object does not exist on the server or you don't have permissions to access it"
+msgstr ""
+
 msgid "Oct"
 msgstr ""
 
@@ -5486,6 +5535,12 @@ msgid "Overview"
 msgstr ""
 
 msgid "Owner"
+msgstr ""
+
+msgid "Page not found"
+msgstr ""
+
+msgid "Page was successfully deleted"
 msgstr ""
 
 msgid "Pages"
@@ -5650,6 +5705,9 @@ msgstr ""
 msgid "Pipelines for last year"
 msgstr ""
 
+msgid "Pipelines settings for '%{project_name}' were successfully updated."
+msgstr ""
+
 msgid "Pipelines|Build with confidence"
 msgstr ""
 
@@ -5777,6 +5835,9 @@ msgid "Please fill in a descriptive name for your group."
 msgstr ""
 
 msgid "Please note that this application is not provided by GitLab and you should verify its authenticity before allowing access."
+msgstr ""
+
+msgid "Please select a group."
 msgstr ""
 
 msgid "Please select at least one filter to see results"
@@ -6576,6 +6637,12 @@ msgstr ""
 msgid "Resolved"
 msgstr ""
 
+msgid "Resolved 1 discussion."
+msgstr ""
+
+msgid "Resolved all discussions."
+msgstr ""
+
 msgid "Response metrics (AWS ELB)"
 msgstr ""
 
@@ -6648,6 +6715,12 @@ msgid "Runner runs jobs from assigned projects"
 msgstr ""
 
 msgid "Runner token"
+msgstr ""
+
+msgid "Runner was not updated."
+msgstr ""
+
+msgid "Runner was successfully updated."
 msgstr ""
 
 msgid "Runner will not receive any new jobs"
@@ -6890,6 +6963,9 @@ msgstr ""
 msgid "September"
 msgstr ""
 
+msgid "Server supports batch API only, please update your Git LFS client to version 1.0.1 and up."
+msgstr ""
+
 msgid "Server version"
 msgstr ""
 
@@ -6978,6 +7054,9 @@ msgid "Set up a %{type} Runner manually"
 msgstr ""
 
 msgid "Set up a specific Runner automatically"
+msgstr ""
+
+msgid "Set up auto deploy"
 msgstr ""
 
 msgid "Set up new U2F device"
@@ -7459,6 +7538,9 @@ msgstr ""
 msgid "Subscribed"
 msgstr ""
 
+msgid "Successfully scheduled a pipeline to run. Go to the <a href=\"%{project_pipelines_ref}\">Pipelines page</a> for details."
+msgstr ""
+
 msgid "Suggested change"
 msgstr ""
 
@@ -7603,6 +7685,9 @@ msgstr ""
 msgid "Test coverage parsing"
 msgstr ""
 
+msgid "Test failed."
+msgstr ""
+
 msgid "The Git LFS objects will <strong>not</strong> be synced."
 msgstr ""
 
@@ -7621,7 +7706,19 @@ msgstr ""
 msgid "The collection of events added to the data gathered for that stage."
 msgstr ""
 
+msgid "The content of this page is not encoded in UTF-8. Edits can only be made via the Git repository."
+msgstr ""
+
 msgid "The deployment of this job to %{environmentLink} did not succeed."
+msgstr ""
+
+msgid "The directory has been successfully created."
+msgstr ""
+
+msgid "The file has been successfully created."
+msgstr ""
+
+msgid "The file has been successfully deleted."
 msgstr ""
 
 msgid "The fork relationship has been removed."
@@ -7643,6 +7740,15 @@ msgid "The maximum file size allowed is %{size}."
 msgstr ""
 
 msgid "The maximum file size allowed is 200KB."
+msgstr ""
+
+msgid "The merge conflicts for this merge request cannot be resolved through GitLab. Please try to resolve them locally."
+msgstr ""
+
+msgid "The merge conflicts for this merge request have already been resolved."
+msgstr ""
+
+msgid "The merge conflicts for this merge request have already been resolved. Please return to the merge request."
 msgstr ""
 
 msgid "The name %{entryName} is already taken in this directory."
@@ -7667,6 +7773,15 @@ msgid "The project can be accessed by any logged in user."
 msgstr ""
 
 msgid "The project can be accessed without any authentication."
+msgstr ""
+
+msgid "The project was successfully forked."
+msgstr ""
+
+msgid "The project was successfully imported."
+msgstr ""
+
+msgid "The remote repository is being updated..."
 msgstr ""
 
 msgid "The repository for this project does not exist."
@@ -7946,6 +8061,9 @@ msgid "This project does not have billing enabled. To create a cluster, <a href=
 msgstr ""
 
 msgid "This repository"
+msgstr ""
+
+msgid "This repository is currently empty. A new Auto DevOps pipeline will be created after a new file has been pushed to a branch."
 msgstr ""
 
 msgid "This runner will only run on pipelines triggered on protected branches"
@@ -8288,6 +8406,9 @@ msgstr ""
 msgid "Trending"
 msgstr ""
 
+msgid "Trigger removed."
+msgstr ""
+
 msgid "Trigger this manual action"
 msgstr ""
 
@@ -8295,6 +8416,15 @@ msgid "Trigger token:"
 msgstr ""
 
 msgid "Trigger variables:"
+msgstr ""
+
+msgid "Trigger was created successfully."
+msgstr ""
+
+msgid "Trigger was re-assigned."
+msgstr ""
+
+msgid "Trigger was successfully updated."
 msgstr ""
 
 msgid "Triggers can force a specific branch or tag to get rebuilt with an API call.  These tokens will impersonate their associated user including their access to projects and their project permissions."
@@ -8319,6 +8449,9 @@ msgid "Type"
 msgstr ""
 
 msgid "Unable to load the diff. %{button_try_again}"
+msgstr ""
+
+msgid "Unable to schedule a pipeline to run immediately"
 msgstr ""
 
 msgid "Unblock"
@@ -8394,6 +8527,9 @@ msgid "Update failed"
 msgstr ""
 
 msgid "Update now"
+msgstr ""
+
+msgid "Update your bookmarked URLs as filtered/sorted branches URL has been changed."
 msgstr ""
 
 msgid "Update your group name, description, avatar, and visibility."
@@ -8558,6 +8694,9 @@ msgstr ""
 msgid "Validate your GitLab CI configuration file"
 msgstr ""
 
+msgid "Validations failed."
+msgstr ""
+
 msgid "Value"
 msgstr ""
 
@@ -8694,6 +8833,9 @@ msgid "Who will be able to see this group?"
 msgstr ""
 
 msgid "Wiki"
+msgstr ""
+
+msgid "Wiki was successfully updated."
 msgstr ""
 
 msgid "WikiClone|Clone your wiki"
@@ -8930,7 +9072,16 @@ msgstr ""
 msgid "You can test your .gitlab-ci.yml in %{linkStart}CI Lint%{linkEnd}."
 msgstr ""
 
+msgid "You cannot play this scheduled pipeline at the moment. Please wait a minute."
+msgstr ""
+
 msgid "You cannot write to this read-only GitLab instance."
+msgstr ""
+
+msgid "You could not create a new trigger."
+msgstr ""
+
+msgid "You could not take ownership of trigger."
 msgstr ""
 
 msgid "You do not have any subscriptions yet"
