@@ -19,6 +19,9 @@ msgstr ""
 msgid " Status"
 msgstr ""
 
+msgid " You need to do this before %{grace_period_deadline}."
+msgstr ""
+
 msgid " or "
 msgstr ""
 
@@ -1380,6 +1383,9 @@ msgstr ""
 msgid "Cannot render the image. Maximum character count (%{charLimit}) has been exceeded."
 msgstr ""
 
+msgid "Cannot skip two factor authentication setup"
+msgstr ""
+
 msgid "Certificate"
 msgstr ""
 
@@ -1512,6 +1518,9 @@ msgstr ""
 msgid "CiStatusLabel|pending"
 msgstr ""
 
+msgid "CiStatusLabel|preparing"
+msgstr ""
+
 msgid "CiStatusLabel|skipped"
 msgstr ""
 
@@ -1543,6 +1552,9 @@ msgid "CiStatusText|passed"
 msgstr ""
 
 msgid "CiStatusText|pending"
+msgstr ""
+
+msgid "CiStatusText|preparing"
 msgstr ""
 
 msgid "CiStatusText|skipped"
@@ -4328,6 +4340,9 @@ msgstr ""
 msgid "Invalid input, please avoid emojis"
 msgstr ""
 
+msgid "Invalid pin code"
+msgstr ""
+
 msgid "Invitation"
 msgstr ""
 
@@ -6004,7 +6019,7 @@ msgstr ""
 msgid "Profiles|This email will be displayed on your public profile"
 msgstr ""
 
-msgid "Profiles|This email will be used for web based operations, such as edits and merges. %{learn_more}"
+msgid "Profiles|This email will be used for web based operations, such as edits and merges. %{commit_email_link_start}Learn more%{commit_email_link_end}"
 msgstr ""
 
 msgid "Profiles|This emoji and message will appear on your profile and throughout the interface."
@@ -7639,6 +7654,12 @@ msgstr ""
 msgid "The fork relationship has been removed."
 msgstr ""
 
+msgid "The global settings require you to enable Two-Factor Authentication for your account."
+msgstr ""
+
+msgid "The group settings for %{group_links} require you to enable Two-Factor Authentication for your account. You can %{leave_group_links}."
+msgstr ""
+
 msgid "The import will time out after %{timeout}. For repositories that take longer, use a clone/push combination."
 msgstr ""
 
@@ -7891,6 +7912,12 @@ msgstr ""
 msgid "This job is in pending state and is waiting to be picked by a runner"
 msgstr ""
 
+msgid "This job is performing tasks that must complete before it can start"
+msgstr ""
+
+msgid "This job is preparing to start"
+msgstr ""
+
 msgid "This job is stuck because you don't have any active runners online with any of these tags assigned to them:"
 msgstr ""
 
@@ -7922,9 +7949,6 @@ msgid "This page is unavailable because you are not allowed to read information 
 msgstr ""
 
 msgid "This page will be removed in a future release."
-msgstr ""
-
-msgid "This pipeline is run on the merged ref"
 msgstr ""
 
 msgid "This pipeline is run on the source branch"
@@ -9038,6 +9062,12 @@ msgstr ""
 msgid "Your U2F device needs to be set up. Plug it in (if not already) and click the button on the left."
 msgstr ""
 
+msgid "Your U2F device was registered!"
+msgstr ""
+
+msgid "Your account uses dedicated credentials for the \"%{group_name}\" group and can only be updated through SSO."
+msgstr ""
+
 msgid "Your applications (%{size})"
 msgstr ""
 
@@ -9226,6 +9256,9 @@ msgid "latest deployment"
 msgstr ""
 
 msgid "latest version"
+msgstr ""
+
+msgid "leave %{group_name}"
 msgstr ""
 
 msgid "manual"

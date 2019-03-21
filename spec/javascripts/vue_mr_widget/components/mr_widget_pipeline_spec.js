@@ -220,7 +220,7 @@ describe('MRWidgetPipeline', () => {
     });
 
     describe('with pipeline.merge_request and flags.merge_request_pipeline', () => {
-      it('should render info that includes the commit and branch details', () => {
+      it('should render info that includes the commit, MR, source branch, and target branch details', () => {
         const mockCopy = JSON.parse(JSON.stringify(mockData));
         const { pipeline } = mockCopy;
         pipeline.flags.merge_request_pipeline = true;
@@ -236,7 +236,9 @@ describe('MRWidgetPipeline', () => {
 
         const expected = `Pipeline #${pipeline.id} ${pipeline.details.status.label} for ${
           pipeline.commit.short_id
-        } on !${pipeline.merge_request.iid} with ${pipeline.merge_request.source_branch}`;
+        } on !${pipeline.merge_request.iid} with ${pipeline.merge_request.source_branch} into ${
+          pipeline.merge_request.target_branch
+        }`;
 
         const actual = trimText(vm.$el.querySelector('.js-pipeline-info-container').innerText);
 
@@ -245,7 +247,7 @@ describe('MRWidgetPipeline', () => {
     });
 
     describe('with pipeline.merge_request and flags.detached_merge_request_pipeline', () => {
-      it('should render info that includes the commit and branch details', () => {
+      it('should render info that includes the commit, MR, and source branch details', () => {
         const mockCopy = JSON.parse(JSON.stringify(mockData));
         const { pipeline } = mockCopy;
         pipeline.flags.merge_request_pipeline = false;
@@ -261,9 +263,7 @@ describe('MRWidgetPipeline', () => {
 
         const expected = `Pipeline #${pipeline.id} ${pipeline.details.status.label} for ${
           pipeline.commit.short_id
-        } on !${pipeline.merge_request.iid} with ${pipeline.merge_request.source_branch} into ${
-          pipeline.merge_request.target_branch
-        }`;
+        } on !${pipeline.merge_request.iid} with ${pipeline.merge_request.source_branch}`;
 
         const actual = trimText(vm.$el.querySelector('.js-pipeline-info-container').innerText);
 

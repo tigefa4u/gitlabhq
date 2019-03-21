@@ -183,7 +183,7 @@ describe 'Pipelines', :js do
           visit project_pipelines_path(source_project)
         end
 
-        shared_examples_for 'Correct detached merge request pipeline information' do
+        shared_examples_for 'showing detached merge request pipeline information' do
           it 'shows detached tag for the pipeline' do
             within '.pipeline-tags' do
               expect(page).to have_content('detached')
@@ -204,12 +204,12 @@ describe 'Pipelines', :js do
           end
         end
 
-        it_behaves_like 'Correct detached merge request pipeline information'
+        it_behaves_like 'showing detached merge request pipeline information'
 
         context 'when source project is a forked project' do
           let(:source_project) { fork_project(project, user, repository: true) }
 
-          it_behaves_like 'Correct detached merge request pipeline information'
+          it_behaves_like 'showing detached merge request pipeline information'
         end
       end
 
@@ -377,6 +377,30 @@ describe 'Pipelines', :js do
       end
 
       context 'for generic statuses' do
+        context 'when preparing' do
+          let!(:pipeline) do
+            create(:ci_empty_pipeline,
+              status: 'preparing', project: project)
+          end
+
+          let!(:status) do
+            create(:generic_commit_status,
+              :preparing, pipeline: pipeline)
+          end
+
+          before do
+            visit_project_pipelines
+          end
+
+          it 'is cancelable' do
+            expect(page).to have_selector('.js-pipelines-cancel-button')
+          end
+
+          it 'shows the pipeline as preparing' do
+            expect(page).to have_selector('.ci-preparing')
+          end
+        end
+
         context 'when running' do
           let!(:running) do
             create(:generic_commit_status,

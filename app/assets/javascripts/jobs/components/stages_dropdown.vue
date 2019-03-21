@@ -29,10 +29,10 @@ export default {
       return !_.isEmpty(this.pipeline.ref);
     },
     isTriggeredByMergeRequest() {
-      return this.pipeline.merge_request;
+      return Boolean(this.pipeline.merge_request);
     },
     isMergeRequestPipeline() {
-      return this.pipeline.flags && this.pipeline.flags.merge_request_pipeline;
+      return Boolean(this.pipeline.flags && this.pipeline.flags.merge_request_pipeline);
     },
   },
   methods: {
