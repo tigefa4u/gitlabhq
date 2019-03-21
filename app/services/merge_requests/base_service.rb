@@ -69,7 +69,7 @@ module MergeRequests
     end
 
     def create_detached_merge_request_pipeline(merge_request, user)
-      if Feature.enabled?(:use_merge_request_ref_for_detached_merge_request_pipeline, merge_request.source_project, default_enabled: true)
+      if can_use_merge_request_ref?(merge_request)
         Ci::CreatePipelineService.new(merge_request.source_project, user,
                                       ref: merge_request.ref_path)
           .execute(:merge_request_event, merge_request: merge_request)
@@ -78,6 +78,11 @@ module MergeRequests
                                       ref: merge_request.source_branch)
           .execute(:merge_request_event, merge_request: merge_request)
       end
+    end
+
+    def can_use_merge_request_ref?(merge_request)
+      Feature.enabled?(:ci_use_merge_request_ref, project, default_enabled: true) &&
+         !merge_request.for_fork?
     end
 
     # Returns all origin and fork merge requests from `@project` satisfying passed arguments.
