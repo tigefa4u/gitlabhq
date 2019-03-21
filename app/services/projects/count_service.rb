@@ -20,7 +20,7 @@ module Projects
     def cache_key_name
       raise(
         NotImplementedError,
-        '"cache_key_name" must be implemented and return a String'
+        _('"cache_key_name" must be implemented and return a String')
       )
     end
 
@@ -33,7 +33,7 @@ module Projects
     def self.query(project_ids)
       raise(
         NotImplementedError,
-        '"query" must be implemented and return an ActiveRecord::Relation'
+        _('"query" must be implemented and return an ActiveRecord::Relation')
       )
     end
   end

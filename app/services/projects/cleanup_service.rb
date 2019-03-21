@@ -7,7 +7,7 @@ module Projects
   # Before executing this service, all refs rewritten by BFG should have been
   # pushed to the repository
   class CleanupService < BaseService
-    NoUploadError = StandardError.new("Couldn't find uploaded object map")
+    NoUploadError = StandardError.new(_("Couldn't find uploaded object map"))
 
     include Gitlab::Utils::StrongMemoize
 

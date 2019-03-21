@@ -27,22 +27,22 @@ module Projects
 
       def move_folder!(old_path, new_path)
         unless File.directory?(old_path)
-          logger.info("Skipped attachments move from '#{old_path}' to '#{new_path}', source path doesn't exist or is not a directory (PROJECT_ID=#{project.id})")
+          logger.info(_("Skipped attachments move from '%{old_path}' to '%{new_path}', source path doesn't exist or is not a directory (PROJECT_ID=%{project_id})") % { old_path: old_path, new_path: new_path, project_id: project.id })
           @skipped = true
 
           return true
         end
 
         if File.exist?(new_path)
-          logger.error("Cannot move attachments from '#{old_path}' to '#{new_path}', target path already exist (PROJECT_ID=#{project.id})")
-          raise AttachmentCannotMoveError, "Target path '#{new_path}' already exists"
+          logger.error(_("Cannot move attachments from '%{old_path}' to '%{new_path}', target path already exist (PROJECT_ID=%{project_id})") % { old_path: old_path, new_path: new_path, project_id: project.id })
+          raise AttachmentCannotMoveError, _("Target path '%{new_path}' already exists") % { new_path: new_path }
         end
 
         # Create base path folder on the new storage layout
         FileUtils.mkdir_p(File.dirname(new_path))
 
         FileUtils.mv(old_path, new_path)
-        logger.info("Project attachments moved from '#{old_path}' to '#{new_path}' (PROJECT_ID=#{project.id})")
+        logger.info(_("Project attachments moved from '%{old_path}' to '%{new_path}' (PROJECT_ID=%{project_id})") % { old_path: old_path, new_path: new_path, project_id: project.id })
 
         true
       end

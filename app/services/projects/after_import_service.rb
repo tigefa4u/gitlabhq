@@ -14,7 +14,7 @@ module Projects
       end
     rescue Projects::HousekeepingService::LeaseTaken => e
       Rails.logger.info(
-        "Could not perform housekeeping for project #{@project.full_path} (#{@project.id}): #{e}")
+        _("Could not perform housekeeping for project %{project_full_path} (%{project_id}): %{e}") % { project_full_path: @project.full_path, project_id: @project.id, e: e })
     end
 
     private

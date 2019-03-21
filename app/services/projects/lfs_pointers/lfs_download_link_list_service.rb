@@ -50,7 +50,7 @@ module Projects
                                              size: entry['size'],
                                              link: add_credentials(link))
         rescue DownloadLinkNotFound, Addressable::URI::InvalidURIError
-          log_error("Link for Lfs Object with oid #{entry['oid']} not found or invalid.")
+          log_error(_("Link for Lfs Object with oid %{entry_oid} not found or invalid.") % { entry_oid: entry['oid'] })
         end
       end
 

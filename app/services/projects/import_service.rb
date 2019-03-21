@@ -27,13 +27,13 @@ module Projects
     rescue Gitlab::UrlBlocker::BlockedUrlError => e
       Gitlab::Sentry.track_acceptable_exception(e, extra: { project_path: project.full_path, importer: project.import_type })
 
-      error("Error importing repository #{project.safe_import_url} into #{project.full_path} - #{e.message}")
+      error(_("Error importing repository %{import_url} into %{project_full_path} - %{message}") % { import_url: project.safe_import_url, project_full_path: project.full_path, message: e.message })
     rescue => e
       message = Projects::ImportErrorFilter.filter_message(e.message)
 
       Gitlab::Sentry.track_acceptable_exception(e, extra: { project_path: project.full_path, importer: project.import_type })
 
-      error("Error importing repository #{project.safe_import_url} into #{project.full_path} - #{message}")
+      error(_("Error importing repository %{import_url} into %{project.full_path} - %{message}") % { import_url: project.safe_import_url, project_full_path: project.full_path, message: message })
     end
 
     private
@@ -43,7 +43,7 @@ module Projects
         begin
           Gitlab::UrlBlocker.validate!(project.import_url, ports: Project::VALID_IMPORT_PORTS)
         rescue Gitlab::UrlBlocker::BlockedUrlError => e
-          raise e, "Blocked import URL: #{e.message}"
+          raise e, _("Blocked import URL: %{message}") % { message: e.message }
         end
       end
 
@@ -61,7 +61,7 @@ module Projects
 
     def create_repository
       unless project.create_repository
-        raise Error, 'The repository could not be created.'
+        raise Error, _('The repository could not be created.')
       end
     end
 
@@ -103,7 +103,7 @@ module Projects
     rescue => e
       # Right now, to avoid aborting the importing process, we silently fail
       # if any exception raises.
-      Rails.logger.error("The Lfs import process failed. #{e.message}")
+      Rails.logger.error(_("The Lfs import process failed. %{message}") % { message: e.message })
     end
 
     def import_data
@@ -112,7 +112,7 @@ module Projects
       project.repository.expire_content_cache unless project.gitlab_project_import?
 
       unless importer.execute
-        raise Error, 'The remote data could not be imported.'
+        raise Error, _('The remote data could not be imported.')
       end
     end
 

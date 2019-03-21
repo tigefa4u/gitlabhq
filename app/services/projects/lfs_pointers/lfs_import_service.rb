@@ -28,7 +28,7 @@ module Projects
 
         get_download_links
       rescue LfsDownloadLinkListService::DownloadLinksError => e
-        raise LfsImportError, "The LFS objects download list couldn't be imported. Error: #{e.message}"
+        raise LfsImportError, _("The LFS objects download list couldn't be imported. Error: %{emessage}") % { message: e.message }
       end
 
       private
@@ -68,13 +68,13 @@ module Projects
           end
         end
       rescue URI::InvalidURIError
-        raise LfsImportError, 'Invalid URL in .lfsconfig file'
+        raise LfsImportError, _('Invalid URL in .lfsconfig file')
       end
 
       def import_uri
         @import_uri ||= URI.parse(project.import_url)
       rescue URI::InvalidURIError
-        raise LfsImportError, 'Invalid project import URL'
+        raise LfsImportError, _('Invalid project import URL')
       end
 
       def current_endpoint_uri

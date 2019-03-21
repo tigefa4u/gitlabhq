@@ -27,8 +27,8 @@ module Projects
       @status.enqueue!
       @status.run!
 
-      raise InvalidStateError, 'missing pages artifacts' unless build.artifacts?
-      raise InvalidStateError, 'pages are outdated' unless latest?
+      raise InvalidStateError, _('missing pages artifacts') unless build.artifacts?
+      raise InvalidStateError, _('pages are outdated') unless latest?
 
       # Create temporary directory in which we will extract the artifacts
       make_secure_tmp_dir(tmp_path) do |archive_path|
@@ -36,8 +36,8 @@ module Projects
 
         # Check if we did extract public directory
         archive_public_path = File.join(archive_path, PUBLIC_DIR)
-        raise InvalidStateError, 'pages miss the public folder' unless Dir.exist?(archive_public_path)
-        raise InvalidStateError, 'pages are outdated' unless latest?
+        raise InvalidStateError, _('pages miss the public folder') unless Dir.exist?(archive_public_path)
+        raise InvalidStateError, _('pages are outdated') unless latest?
 
         deploy_page!(archive_public_path)
         success
@@ -80,18 +80,18 @@ module Projects
       if artifacts.ends_with?('.zip')
         extract_zip_archive!(temp_path)
       else
-        raise InvalidStateError, 'unsupported artifacts format'
+        raise InvalidStateError, _('unsupported artifacts format')
       end
     end
 
     def extract_zip_archive!(temp_path)
-      raise InvalidStateError, 'missing artifacts metadata' unless build.artifacts_metadata?
+      raise InvalidStateError, _('missing artifacts metadata') unless build.artifacts_metadata?
 
       # Calculate page size after extract
       public_entry = build.artifacts_metadata_entry(PUBLIC_DIR + '/', recursive: true)
 
       if public_entry.total_size > max_size
-        raise InvalidStateError, "artifacts for pages are too large: #{public_entry.total_size}"
+        raise InvalidStateError, _("artifacts for pages are too large: %{total_size}") % { total_size: public_entry.total_size }
       end
 
       build.artifacts_file.use_file do |artifacts_path|
@@ -181,11 +181,11 @@ module Projects
     end
 
     def pages_deployments_total_counter
-      @pages_deployments_total_counter ||= Gitlab::Metrics.counter(:pages_deployments_total, "Counter of GitLab Pages deployments triggered")
+      @pages_deployments_total_counter ||= Gitlab::Metrics.counter(:pages_deployments_total, _("Counter of GitLab Pages deployments triggered"))
     end
 
     def pages_deployments_failed_total_counter
-      @pages_deployments_failed_total_counter ||= Gitlab::Metrics.counter(:pages_deployments_failed_total, "Counter of GitLab Pages deployments which failed")
+      @pages_deployments_failed_total_counter ||= Gitlab::Metrics.counter(:pages_deployments_failed_total, _("Counter of GitLab Pages deployments which failed"))
     end
 
     def make_secure_tmp_dir(tmp_path)

@@ -58,7 +58,7 @@ module Projects
 
       @project
     rescue ActiveRecord::RecordInvalid => e
-      message = "Unable to save #{e.record.type}: #{e.record.errors.full_messages.join(", ")} "
+      message = _("Unable to save %{record_type}: %{full_messages} ") % { record_type: e.record.type, full_messages: e.record.errors.full_messages.join(", ") }
       fail(error: message)
     rescue => e
       @project.errors.add(:base, e.message) if @project
@@ -142,14 +142,14 @@ module Projects
           end
 
           unless @project.import?
-            raise 'Failed to create repository' unless @project.create_repository
+            raise _('Failed to create repository') unless @project.create_repository
           end
         end
       end
     end
 
     def fail(error:)
-      message = "Unable to save project. Error: #{error}"
+      message = _("Unable to save project. Error: %{error_msg}") % { error_msg: error }
       log_message = message.dup
 
       log_message << " Project ID: #{@project.id}" if @project&.id

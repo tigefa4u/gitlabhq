@@ -25,6 +25,12 @@ msgstr ""
 msgid " or "
 msgstr ""
 
+msgid "\"cache_key_name\" must be implemented and return a String"
+msgstr ""
+
+msgid "\"query\" must be implemented and return an ActiveRecord::Relation"
+msgstr ""
+
 msgid "%d commit"
 msgid_plural "%d commits"
 msgstr[0] ""
@@ -930,6 +936,9 @@ msgstr ""
 msgid "Attach a file by drag &amp; drop or %{upload_link}"
 msgstr ""
 
+msgid "Attempting to destroy %{project_full_path} (%{project_id})"
+msgstr ""
+
 msgid "Aug"
 msgstr ""
 
@@ -1135,6 +1144,9 @@ msgid "Block"
 msgstr ""
 
 msgid "Blocked"
+msgstr ""
+
+msgid "Blocked import URL: %{message}"
 msgstr ""
 
 msgid "Blog"
@@ -1387,6 +1399,15 @@ msgid "Cannot be merged automatically"
 msgstr ""
 
 msgid "Cannot modify managed Kubernetes cluster"
+msgstr ""
+
+msgid "Cannot move attachments from '%{old_path}' to '%{new_path}', target path already exist (PROJECT_ID=%{project_id})"
+msgstr ""
+
+msgid "Cannot move project"
+msgstr ""
+
+msgid "Cannot rename project because it contains container registry tags!"
 msgstr ""
 
 msgid "Cannot render the image. Maximum character count (%{charLimit}) has been exceeded."
@@ -2435,10 +2456,31 @@ msgstr ""
 msgid "Could not create Wiki Repository at this time. Please try again later."
 msgstr ""
 
+msgid "Could not create wiki for %{project_full_name}"
+msgstr ""
+
+msgid "Could not perform housekeeping for project %{project_full_path} (%{project_id}): %{e}"
+msgstr ""
+
 msgid "Could not remove the trigger."
 msgstr ""
 
 msgid "Could not retrieve the pipeline status. For troubleshooting steps, read the %{linkStart}documentation.%{linkEnd}"
+msgstr ""
+
+msgid "Could not set the default branch"
+msgstr ""
+
+msgid "Couldn't find uploaded object map"
+msgstr ""
+
+msgid "Counter of GitLab Pages deployments triggered"
+msgstr ""
+
+msgid "Counter of GitLab Pages deployments which failed"
+msgstr ""
+
+msgid "Counts the times we failed to create a wiki"
 msgstr ""
 
 msgid "Coverage"
@@ -2706,6 +2748,9 @@ msgid "Delete this attachment"
 msgstr ""
 
 msgid "Deleted"
+msgstr ""
+
+msgid "Deletion failed on %{project_full_path} with the following message: %{message}"
 msgstr ""
 
 msgid "Deny"
@@ -3304,6 +3349,12 @@ msgstr ""
 msgid "Error fetching usage ping data."
 msgstr ""
 
+msgid "Error importing repository %{import_url} into %{project.full_path} - %{message}"
+msgstr ""
+
+msgid "Error importing repository %{import_url} into %{project_full_path} - %{message}"
+msgstr ""
+
 msgid "Error loading branch data. Please try again."
 msgstr ""
 
@@ -3505,6 +3556,9 @@ msgstr ""
 msgid "Failed to check related branches."
 msgstr ""
 
+msgid "Failed to create repository"
+msgstr ""
+
 msgid "Failed to deploy to"
 msgstr ""
 
@@ -3526,7 +3580,22 @@ msgstr ""
 msgid "Failed to remove mirror."
 msgstr ""
 
+msgid "Failed to remove project repository. Please try again or contact administrator."
+msgstr ""
+
+msgid "Failed to remove some tags in project container registry. Please try again or contact administrator."
+msgstr ""
+
 msgid "Failed to remove the pipeline schedule"
+msgstr ""
+
+msgid "Failed to remove wiki repository. Please try again or contact administrator."
+msgstr ""
+
+msgid "Failed to restore project repository. Please contact the administrator."
+msgstr ""
+
+msgid "Failed to restore wiki repository. Please contact the administrator."
 msgstr ""
 
 msgid "Failed to update issues, please try again."
@@ -4026,10 +4095,6 @@ msgstr ""
 msgid "GroupsTree|Search by name"
 msgstr ""
 
-msgid ""
-"HTTP Basic: Access denied\n"
-msgstr ""
-
 msgid "Header message"
 msgstr ""
 
@@ -4368,10 +4433,16 @@ msgstr ""
 msgid "Introducing Your Conversational Development Index"
 msgstr ""
 
+msgid "Invalid URL in .lfsconfig file"
+msgstr ""
+
 msgid "Invalid input, please avoid emojis"
 msgstr ""
 
 msgid "Invalid pin code"
+msgstr ""
+
+msgid "Invalid project import URL"
 msgstr ""
 
 msgid "Invitation"
@@ -4668,6 +4739,9 @@ msgid "Limited to showing %d event at most"
 msgid_plural "Limited to showing %d events at most"
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "Link for Lfs Object with oid %{entry_oid} not found or invalid."
+msgstr ""
 
 msgid "LinkedIn"
 msgstr ""
@@ -5206,6 +5280,9 @@ msgid "New tag"
 msgstr ""
 
 msgid "New users set to external"
+msgstr ""
+
+msgid "New visibility level not allowed!"
 msgstr ""
 
 msgid "New..."
@@ -5840,6 +5917,9 @@ msgstr ""
 msgid "Please select a group."
 msgstr ""
 
+msgid "Please select a new namespace for your project."
+msgstr ""
+
 msgid "Please select at least one filter to see results"
 msgstr ""
 
@@ -6161,6 +6241,12 @@ msgstr ""
 msgid "Project \"%{name}\" is no longer available. Select another project to continue."
 msgstr ""
 
+msgid "Project %{full_path_before} cannot be renamed because images are present in its container registry"
+msgstr ""
+
+msgid "Project %{project_id} has been renamed from %{full_path_before} to %{full_path_after}"
+msgstr ""
+
 msgid "Project '%{project_name}' is in the process of being deleted."
 msgstr ""
 
@@ -6182,10 +6268,19 @@ msgstr ""
 msgid "Project access must be granted explicitly to each user."
 msgstr ""
 
+msgid "Project attachments moved from '%{old_path}' to '%{new_path}' (PROJECT_ID=%{project_id})"
+msgstr ""
+
 msgid "Project avatar"
 msgstr ""
 
 msgid "Project avatar in repository: %{link}"
+msgstr ""
+
+msgid "Project cannot be transferred, because tags are present in its container registry"
+msgstr ""
+
+msgid "Project could not be updated!"
 msgstr ""
 
 msgid "Project details"
@@ -6216,6 +6311,9 @@ msgid "Project name"
 msgstr ""
 
 msgid "Project slug"
+msgstr ""
+
+msgid "Project with same name or path in target namespace already exists"
 msgstr ""
 
 msgid "Project:"
@@ -6578,6 +6676,9 @@ msgid "Reports|no changed test results"
 msgstr ""
 
 msgid "Repository"
+msgstr ""
+
+msgid "Repository %{full_path_before} could not be renamed to %{full_path_after}"
 msgstr ""
 
 msgid "Repository Settings"
@@ -7169,6 +7270,9 @@ msgstr ""
 msgid "Size and domain settings for static websites"
 msgstr ""
 
+msgid "Skipped attachments move from '%{old_path}' to '%{new_path}', source path doesn't exist or is not a directory (PROJECT_ID=%{project_id})"
+msgstr ""
+
 msgid "Slower but makes sure the project workspace is pristine as it clones the repository from scratch for every job"
 msgstr ""
 
@@ -7664,6 +7768,9 @@ msgstr ""
 msgid "Target branch"
 msgstr ""
 
+msgid "Target path '%{new_path}' already exists"
+msgstr ""
+
 msgid "Team"
 msgstr ""
 
@@ -7695,6 +7802,12 @@ msgid "The Issue Tracker is the place to add things that need to be improved or 
 msgstr ""
 
 msgid "The Issue Tracker is the place to add things that need to be improved or solved in a project. You can register or sign in to create issues for this project."
+msgstr ""
+
+msgid "The LFS objects download list couldn't be imported. Error: %{emessage}"
+msgstr ""
+
+msgid "The Lfs import process failed. %{message}"
 msgstr ""
 
 msgid "The character highlighter helps you keep the subject line to %{titleLength} characters and wrap the body at %{bodyLength} so they are readable in git."
@@ -7781,7 +7894,13 @@ msgstr ""
 msgid "The project was successfully imported."
 msgstr ""
 
+msgid "The remote data could not be imported."
+msgstr ""
+
 msgid "The remote repository is being updated..."
+msgstr ""
+
+msgid "The repository could not be created."
 msgstr ""
 
 msgid "The repository for this project does not exist."
@@ -8400,6 +8519,9 @@ msgstr ""
 msgid "Track time with quick actions"
 msgstr ""
 
+msgid "Transfer failed, please contact an admin."
+msgstr ""
+
 msgid "Tree view"
 msgstr ""
 
@@ -8449,6 +8571,12 @@ msgid "Type"
 msgstr ""
 
 msgid "Unable to load the diff. %{button_try_again}"
+msgstr ""
+
+msgid "Unable to save %{record_type}: %{full_messages} "
+msgstr ""
+
+msgid "Unable to save project. Error: %{error_msg}"
 msgstr ""
 
 msgid "Unable to schedule a pipeline to run immediately"
@@ -9249,6 +9377,9 @@ msgstr ""
 msgid "among other things"
 msgstr ""
 
+msgid "artifacts for pages are too large: %{total_size}"
+msgstr ""
+
 msgid "assign yourself"
 msgstr ""
 
@@ -9271,6 +9402,9 @@ msgid "confidentiality|You are going to turn on the confidentiality. This means 
 msgstr ""
 
 msgid "connecting"
+msgstr ""
+
+msgid "count_service must be implemented and return a Projects::CountService object"
 msgstr ""
 
 msgid "customize"
@@ -9326,6 +9460,9 @@ msgid "for this project"
 msgstr ""
 
 msgid "from"
+msgstr ""
+
+msgid "global_count must be implemented and return an hash indexed by the project id"
 msgstr ""
 
 msgid "group"
@@ -9388,6 +9525,12 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "missing"
+msgstr ""
+
+msgid "missing artifacts metadata"
+msgstr ""
+
+msgid "missing pages artifacts"
 msgstr ""
 
 msgid "mrWidgetCommitsAdded|%{commitCount} and %{mergeCommitCount} will be added to %{targetBranch}."
@@ -9623,6 +9766,12 @@ msgid_plural "out of %d total tests"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "pages are outdated"
+msgstr ""
+
+msgid "pages miss the public folder"
+msgstr ""
+
 msgid "parent"
 msgid_plural "parents"
 msgstr[0] ""
@@ -9697,6 +9846,9 @@ msgid "this document"
 msgstr ""
 
 msgid "triggered"
+msgstr ""
+
+msgid "unsupported artifacts format"
 msgstr ""
 
 msgid "updated"

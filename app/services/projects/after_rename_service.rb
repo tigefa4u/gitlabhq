@@ -50,8 +50,8 @@ module Projects
       return unless project.has_container_registry_tags?
 
       raise RenameFailedError.new(
-        "Project #{full_path_before} cannot be renamed because images are " \
-          "present in its container registry"
+        _("Project %{full_path_before} cannot be renamed because images are " \
+          "present in its container registry") % { full_path_before: full_path_before }
       )
     end
 
@@ -103,8 +103,8 @@ module Projects
 
     def log_completion
       Gitlab::AppLogger.info(
-        "Project #{project.id} has been renamed from " \
-          "#{full_path_before} to #{full_path_after}"
+        _("Project %{project_id} has been renamed from " \
+          "%{full_path_before} to %{full_path_after}") % { project_id: project.id, full_path_before: full_path_before, full_path_after: full_path_after }
       )
     end
 
@@ -131,7 +131,7 @@ module Projects
     end
 
     def rename_failed!
-      error = "Repository #{full_path_before} could not be renamed to #{full_path_after}"
+      error = _("Repository %{full_path_before} could not be renamed to %{full_path_after}") % { full_path_before: full_path_before, full_path_after: full_path_after }
 
       Gitlab::AppLogger.error(error)
 
