@@ -70,18 +70,12 @@ module MergeRequests
 
     def create_detached_merge_request_pipeline(merge_request, user)
       if Feature.enabled?(:use_merge_request_ref_for_detached_merge_request_pipeline, merge_request.source_project, default_enabled: true)
-        ##
-        # This pipeline is a run on a merge request head ref (e.g. refs/merge-requests/:iid/head)
-        Ci::CreatePipelineService
-          .new(merge_request.source_project, user,
-            ref: merge_request.ref_path)
+        Ci::CreatePipelineService.new(merge_request.source_project, user,
+                                      ref: merge_request.ref_path)
           .execute(:merge_request_event, merge_request: merge_request)
       else
-        ##
-        # This pipeline is a run on a branch (e.g. refs/heads/feature)
-        Ci::CreatePipelineService
-          .new(merge_request.source_project, user,
-            ref: merge_request.source_branch)
+        Ci::CreatePipelineService.new(merge_request.source_project, user,
+                                      ref: merge_request.source_branch)
           .execute(:merge_request_event, merge_request: merge_request)
       end
     end
