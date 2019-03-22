@@ -6,6 +6,8 @@ class PagesDomain < ApplicationRecord
 
   belongs_to :project
 
+  before_validation :cleanup_ssl_cert, if: -> { auto_ssl_enabled_changed? }
+
   validates :domain, hostname: { allow_numeric_hostname: true }
   validates :domain, uniqueness: { case_sensitive: false }
   validates :certificate, presence: { message: 'must be present if HTTPS-only is enabled' }, if: ->(domain) { domain.project&.pages_https_only? }
@@ -197,5 +199,10 @@ class PagesDomain < ApplicationRecord
     @pkey ||= OpenSSL::PKey::RSA.new(key)
   rescue OpenSSL::PKey::PKeyError, OpenSSL::Cipher::CipherError
     nil
+  end
+
+  def cleanup_ssl_cert
+    self.certificate = nil
+    self.key = nil
   end
 end
