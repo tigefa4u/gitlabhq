@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190320174702) do
+ActiveRecord::Schema.define(version: 20190321101734) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -178,6 +178,7 @@ ActiveRecord::Schema.define(version: 20190320174702) do
     t.integer "local_markdown_version", default: 0, null: false
     t.integer "first_day_of_week", default: 0, null: false
     t.text "acme_private_key"
+    t.string "acme_account_kid"
     t.index ["usage_stats_set_by_user_id"], name: "index_application_settings_on_usage_stats_set_by_user_id", using: :btree
   end
 
@@ -1517,7 +1518,6 @@ ActiveRecord::Schema.define(version: 20190320174702) do
     t.integer "pages_domain_id", null: false
     t.string "url", null: false
     t.string "token", null: false
-    t.string "content_type", null: false
     t.text "file_content", null: false
     t.datetime_with_timezone "created_at", null: false
     t.datetime_with_timezone "updated_at", null: false

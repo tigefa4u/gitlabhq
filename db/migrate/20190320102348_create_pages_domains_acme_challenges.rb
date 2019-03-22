@@ -14,7 +14,6 @@ class CreatePagesDomainsAcmeChallenges < ActiveRecord::Migration[5.0]
 
       t.string :url, null: false
       t.string :token, null: false
-      t.string :content_type, null: false
       t.text :file_content, null: false
 
       t.timestamps_with_timezone null: false
