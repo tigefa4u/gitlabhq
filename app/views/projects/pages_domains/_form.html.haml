@@ -1,8 +1,12 @@
-- if @domain.errors.any?
+- if @domain.errors.any? || @domain.ssl_status_message
   #error_explanation
-    .alert.alert-danger
-      - @domain.errors.full_messages.each do |msg|
-        %p= msg
+    - if @domain.errors.any?
+      .alert.alert-danger
+        - @domain.errors.full_messages.each do |msg|
+          %p= msg
+    - if @domain.ssl_status_message
+      .alert.alert-warning
+        %p= @domain.ssl_status_message
 
 .form-group.row
   = f.label :domain, class: 'col-form-label col-sm-2' do
@@ -11,6 +15,14 @@
     = f.text_field :domain, required: true, autocomplete: 'off', class: 'form-control', disabled: @domain.persisted?
 
 - if Gitlab.config.pages.external_https
+  - if Feature.enabled?(:pages_auto_ssl)
+    .form-group.row
+      = f.label :auto_ssl_enabled, class: 'col-form-label col-sm-2' do
+        = _("Auto SSL enabled")
+      .col-sm-10
+        = f.check_box :auto_ssl_enabled, class: 'form-control'
+        %span.help-inline= _("Generate ssl certificate by Let's Encrypt")
+
   .form-group.row
     = f.label :certificate, class: 'col-form-label col-sm-2' do
       = _("Certificate (PEM)")
@@ -18,12 +30,13 @@
       = f.text_area :certificate, rows: 5, class: 'form-control'
       %span.help-inline= _("Upload a certificate for your domain with all intermediates")
 
-  .form-group.row
-    = f.label :key, class: 'col-form-label col-sm-2' do
-      = _("Key (PEM)")
-    .col-sm-10
-      = f.text_area :key, rows: 5, class: 'form-control'
-      %span.help-inline= _("Upload a private key for your certificate")
+  - unless @domain.auto_ssl_enabled?
+    .form-group.row
+      = f.label :key, class: 'col-form-label col-sm-2' do
+        = _("Key (PEM)")
+      .col-sm-10
+        = f.text_area :key, rows: 5, class: 'form-control'
+        %span.help-inline= _("Upload a private key for your certificate")
 - else
   .nothing-here-block
     = _("Support for custom certificates is disabled. Ask your system's administrator to enable it.")

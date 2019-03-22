@@ -134,6 +134,12 @@ class PagesDomain < ApplicationRecord
     "#{VERIFICATION_KEY}=#{verification_code}"
   end
 
+  def ssl_status_message
+    return unless Feature.enabled?(:pages_auto_ssl)
+
+    "Your ssl certificate has been requested"
+  end
+
   private
 
   def set_verification_code

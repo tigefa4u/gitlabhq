@@ -69,7 +69,9 @@ class Projects::PagesDomainsController < Projects::ApplicationController
   end
 
   def update_params
-    params.require(:pages_domain).permit(:key, :certificate)
+    permitted_params = [:key, :certificate]
+    permitted_params << :auto_ssl_enabled if Feature.enabled?(:pages_auto_ssl)
+    params.require(:pages_domain).permit(permitted_params)
   end
 
   # rubocop: disable CodeReuse/ActiveRecord
