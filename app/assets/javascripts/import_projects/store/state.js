@@ -12,4 +12,7 @@ export default () => ({
   isLoadingRepos: false,
   canSelectNamespace: false,
   ciCdOnly: false,
+  currentPage: 1,
+  totalItems: 0,
+  itemsPerPage: 20,
 });

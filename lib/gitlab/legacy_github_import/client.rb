@@ -55,6 +55,10 @@ module Gitlab
         client.auth_code.get_token(code).token
       end
 
+      def paginated_repos(user, options)
+        api.repos(user, options)
+      end
+
       def method_missing(method, *args, &block)
         if api.respond_to?(method)
           request(method, *args, &block)

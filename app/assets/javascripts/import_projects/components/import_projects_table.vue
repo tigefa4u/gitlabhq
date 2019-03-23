@@ -1,6 +1,6 @@
 <script>
 import { mapActions, mapState, mapGetters } from 'vuex';
-import { GlLoadingIcon } from '@gitlab/ui';
+import { GlLoadingIcon, GlPagination } from '@gitlab/ui';
 import LoadingButton from '~/vue_shared/components/loading_button.vue';
 import { __, sprintf } from '~/locale';
 import ImportedProjectTableRow from './imported_project_table_row.vue';
@@ -14,6 +14,7 @@ export default {
     ProviderRepoTableRow,
     LoadingButton,
     GlLoadingIcon,
+    GlPagination,
   },
   props: {
     providerTitle: {
@@ -23,7 +24,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['importedProjects', 'providerRepos', 'isLoadingRepos']),
+    ...mapState(['importedProjects', 'providerRepos', 'isLoadingRepos', 'currentPage', 'totalItems', 'itemsPerPage']),
     ...mapGetters(['isImportingAnyRepo', 'hasProviderRepos', 'hasImportedProjects']),
 
     emptyStateText() {
@@ -48,6 +49,10 @@ export default {
 
   methods: {
     ...mapActions(['fetchRepos', 'fetchJobs', 'stopJobsPolling', 'clearJobsEtagPoll']),
+
+    changePage(page) {
+      this.fetchRepos({ page });
+    },
 
     importAll() {
       eventHub.$emit('importAll');
@@ -93,6 +98,8 @@ export default {
           <provider-repo-table-row v-for="repo in providerRepos" :key="repo.id" :repo="repo" />
         </tbody>
       </table>
+
+      <gl-pagination :change="changePage" :page="currentPage" :per-page="itemsPerPage" :total-items="totalItems" align="center" />
     </div>
     <div v-else class="text-center">
       <strong>{{ emptyStateText }}</strong>

@@ -104,7 +104,11 @@ class Import::GithubController < Import::BaseController
   end
 
   def client_repos
-    @client_repos ||= client.repos
+    @client_repos ||= client.paginated_repos(nil, page_options)
+  end
+
+  def page_options
+    params.permit(:page, :per_page)
   end
 
   def verify_import_enabled

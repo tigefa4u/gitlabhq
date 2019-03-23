@@ -24,13 +24,21 @@ export const requestRepos = ({ commit }, repos) => commit(types.REQUEST_REPOS, r
 export const receiveReposSuccess = ({ commit }, repos) =>
   commit(types.RECEIVE_REPOS_SUCCESS, repos);
 export const receiveReposError = ({ commit }) => commit(types.RECEIVE_REPOS_ERROR);
-export const fetchRepos = ({ state, dispatch }) => {
-  dispatch('requestRepos');
+export const fetchRepos = ({ state, dispatch }, options = {}) => {
+  dispatch('requestRepos', options);
 
   return axios
-    .get(state.reposPath)
-    .then(({ data }) =>
-      dispatch('receiveReposSuccess', convertObjectPropsToCamelCase(data, { deep: true })),
+    .get(state.reposPath, {
+      params: {
+        per_page: state.itemsPerPage,
+        page: state.currentPage,
+      },
+    })
+    .then(({ data, headers }) =>
+      dispatch('receiveReposSuccess', {
+        ...convertObjectPropsToCamelCase(data, { deep: true }),
+        totalItems: headers['x-total'],
+      }),
     )
     .then(() => dispatch('fetchJobs'))
     .catch(() => {

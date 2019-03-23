@@ -6,16 +6,22 @@ export default {
     Object.assign(state, data);
   },
 
-  [types.REQUEST_REPOS](state) {
+  [types.REQUEST_REPOS](state, options = {}) {
     state.isLoadingRepos = true;
+    state.currentPage = options.page || 1;
   },
 
-  [types.RECEIVE_REPOS_SUCCESS](state, { importedProjects, providerRepos, namespaces }) {
+  [types.RECEIVE_REPOS_SUCCESS](
+    state,
+    { importedProjects, providerRepos, namespaces, totalItems },
+  ) {
     state.isLoadingRepos = false;
 
     state.importedProjects = importedProjects;
     state.providerRepos = providerRepos;
     state.namespaces = namespaces;
+
+    state.totalItems = totalItems || importedProjects.length + providerRepos.length; // OR can be removed when X-total exists. Just here to demonstrate.
   },
 
   [types.RECEIVE_REPOS_ERROR](state) {
