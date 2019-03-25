@@ -8,14 +8,15 @@ describe Int4PkStage1of2FillColumn, :migration do
   let(:events) { table(:events) }
   let(:push_event_payloads) { table(:push_event_payloads) }
   let(:ci_build_trace_sections) { table(:ci_build_trace_sections) }
+  let(:migration) { described_class::MIGRATION }
+  let(:concurrency) { described_class::CONCURRENCY }
+  let(:batch_size) { described_class::BATCH_SIZE }
+  let(:interval) { described_class::DELAY }
+  let(:batches_per_iteration) { described_class::BATCHES_PER_ITERATION }
 
   before do
     @user = users.create!(projects_limit: 10, name: 'The User')
 
-    # Avoid transient errors
-    events.delete_all
-    push_event_payloads.delete_all
-    ci_build_trace_sections.delete_all
     Sidekiq::Worker.clear_all
   end
 
@@ -33,21 +34,12 @@ describe Int4PkStage1of2FillColumn, :migration do
 
       Sidekiq::Testing.fake! do
         Timecop.freeze do
-          migration = described_class::MIGRATION
-          concurrency = described_class::CONCURRENCY
-          batch_size = described_class::BATCH_SIZE
-          interval = described_class::DELAY
-          batches_per_iteration = described_class::BATCHES_PER_ITERATION
-
           migrate!
 
-          # Check how many times the migration has been scheduled
-          # deleting the last job that updates the table and then checking again
-          concurrency.times do
-            expect(migration).to be_scheduled_delayed_migration(delay, model_class.table_name, old_column, new_column, interval, batch_size, batches_per_iteration)
-            job_index = BackgroundMigrationWorker.jobs.index { |job| job['args'][1][0] == model_class.table_name}
-            BackgroundMigrationWorker.jobs.delete_at(job_index)
-          end
+          # Check how many times the migration has been scheduled for the same table.
+          # Should be equal to concurrency.
+          jobs = BackgroundMigrationWorker.jobs.select { |job| job['args'][1][0] == model_class.table_name}
+          expect(jobs.count).to eq(concurrency)
         end
       end
     end
@@ -67,6 +59,8 @@ describe Int4PkStage1of2FillColumn, :migration do
           migrate!
 
           # Delete unrelated jobs
+          # There are migrations being scheduled for three different tables,
+          # we want to check them separately here.
           BackgroundMigrationWorker.jobs.delete_if do |job|
             job_params = job['args']
             job_params[0] == migration && job_params[1][0] != model_class.table_name
@@ -74,7 +68,7 @@ describe Int4PkStage1of2FillColumn, :migration do
 
           # Given 8 records, in each iteration we should have:
           # - 2 jobs rescheduled if there are still records
-          # - 4 records processed on each interation since they run concurrently
+          # - 4 records processed on each iteration since they run concurrently
           processed_rows = 0
 
           concurrency.times do |iteration_count|
@@ -144,14 +138,15 @@ describe Int4PkStage1of2FillColumn, :migration do
         8.times do |i|
           build = ci_builds.create!(name: "a build")
 
-          ci_build_trace_sections.create!(project_id: project.id,
-                                          build_id: build.id,
-                                          section_name_id: build_section_name.id,
-                                          date_start: i.days.ago,
-                                          date_end: i.days.from_now,
-                                          byte_start: i,
-                                          byte_end: i + 1
-                                         )
+          ci_build_trace_sections.create!(
+            project_id: project.id,
+            build_id: build.id,
+            section_name_id: build_section_name.id,
+            date_start: i.days.ago,
+            date_end: i.days.from_now,
+            byte_start: i,
+            byte_end: i + 1
+          )
         end
       end
 
