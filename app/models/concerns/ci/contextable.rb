@@ -20,7 +20,6 @@ module Ci
         variables.concat(user_variables)
         variables.concat(secret_group_variables)
         variables.concat(secret_project_variables(environment: environment))
-        variables.concat(trigger_request.user_variables) if trigger_request
         variables.concat(pipeline.variables)
         variables.concat(pipeline.pipeline_schedule.job_variables) if pipeline.pipeline_schedule
       end
