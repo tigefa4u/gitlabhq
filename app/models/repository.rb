@@ -264,16 +264,10 @@ class Repository
   # For Geo's sake, pass in multiple shas rather than calling it multiple times,
   # to avoid unnecessary syncing.
   def keep_around(*shas)
-    shas.each do |sha|
-      next unless sha.present? && commit_by(oid: sha)
-
-      next if kept_around?(sha)
-
-      # This will still fail if the file is corrupted (e.g. 0 bytes)
-      raw_repository.write_ref(keep_around_ref_name(sha), sha)
-    rescue Gitlab::Git::CommandError => ex
-      Rails.logger.error "Unable to create keep-around reference for repository #{disk_path}: #{ex}"
-    end
+    shas
+      .map(&method(:transform_keep_around))
+      .uniq
+      .each(&method(:store_keep_around))
   end
 
   def kept_around?(sha)
@@ -1065,6 +1059,27 @@ class Repository
   end
 
   private
+
+  def transform_keep_around(sha)
+    # transform sha to head sha
+    # to reduce amount of created
+    # keep arounds
+    if head_sha = head_commit&.sha
+      return head_sha if raw_repository.ancestor?(sha, head_sha)
+    end
+
+    sha
+  end
+
+  def store_keep_around(sha)
+    return unless sha.present? && commit_by(oid: sha)
+    return if kept_around?(sha)
+
+    # This will still fail if the file is corrupted (e.g. 0 bytes)
+    raw_repository.write_ref(keep_around_ref_name(sha), sha)
+  rescue Gitlab::Git::CommandError => ex
+    Rails.logger.error "Unable to create keep-around reference for repository #{disk_path}: #{ex}"
+  end
 
   # TODO Generice finder, later split this on finders by Ref or Oid
   # gitlab-org/gitlab-ce#39239
