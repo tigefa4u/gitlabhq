@@ -156,7 +156,7 @@
   .block {
     @include clearfix;
     padding: $gl-padding 0;
-    border-bottom: 1px solid $border-gray-normal;
+    border-bottom: 1px solid $border-color;
     // This prevents the mess when resizing the sidebar
     // of elements repositioning themselves..
     width: $gutter-inner-width;
@@ -331,7 +331,7 @@
 
     .gutter-toggle {
       margin-top: 7px;
-      border-left: 1px solid $border-gray-normal;
+      border-left: 1px solid $border-color;
       text-align: center;
     }
 
@@ -389,7 +389,7 @@
     }
 
     .participants {
-      border-bottom: 1px solid $border-gray-normal;
+      border-bottom: 1px solid $border-color;
     }
 
     .hide-collapsed {
@@ -401,7 +401,7 @@
       height: $sidebar-toggle-height;
       margin-left: 0;
       padding-left: 0;
-      border-bottom: 1px solid $border-gray-dark;
+      border-bottom: 1px solid $border-color;
     }
 
     a.gutter-toggle {
@@ -859,8 +859,8 @@
     background: $white-light;
     margin: 16px -20px 0;
     padding: 16px 20px;
-    border-top: 1px solid $border-gray-light;
-    border-bottom: 1px solid $border-gray-light;
+    border-top: 1px solid $border-color;
+    border-bottom: 1px solid $border-color;
 
     a:hover {
       color: $btn-white-active;

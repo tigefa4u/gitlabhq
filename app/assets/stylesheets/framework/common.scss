@@ -229,7 +229,7 @@ li.note {
   .progress {
     margin-top: 4px;
     box-shadow: none;
-    background-color: $border-gray-light;
+    background-color: $border-color; // TODO: check this
   }
 }
 

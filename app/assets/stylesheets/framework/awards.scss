@@ -18,7 +18,7 @@
   width: $award-emoji-width;
   font-size: 14px;
   background-color: $white-light;
-  border: 1px solid $border-white-light;
+  border: 1px solid $border-color;
   border-radius: $border-radius-base;
   box-shadow: 0 6px 12px $award-emoji-menu-shadow;
   pointer-events: none;
@@ -224,7 +224,7 @@
   }
 
   .award-control-icon {
-    color: $border-gray-normal;
+    color: $border-color;
     margin-top: 1px;
     padding: 0 2px;
 
@@ -236,7 +236,7 @@
     }
 
     path {
-      fill: $border-gray-normal;
+      fill: $border-color;
     }
   }
 

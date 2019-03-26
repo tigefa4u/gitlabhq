@@ -59,7 +59,7 @@
     border-radius: 2px 2px 0 0;
     color: $orange-600;
     background-color: $orange-100;
-    border: 1px solid $border-gray-normal;
+    border: 1px solid $border-color;
     padding: 3px 12px;
     margin: auto;
     align-items: center;
@@ -220,7 +220,7 @@
     word-break: break-word;
 
     &:last-child {
-      border-bottom: 1px solid $border-gray-normal;
+      border-bottom: 1px solid $border-color;
     }
 
     &.coverage {
