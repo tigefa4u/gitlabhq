@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe GraphqlController do
@@ -19,15 +21,16 @@ describe GraphqlController do
         expect(response).to have_gitlab_http_status(200)
       end
 
-      it 'returns 404 when user cannot access API' do
+      it 'returns access denied template when user cannot access API' do
         # User cannot access API in a couple of cases
         # * When user is internal(like ghost users)
         # * When user is blocked
-        allow(Ability).to receive(:allowed?).with(user, :access_api, :global).and_return(false)
+        expect(Ability).to receive(:allowed?).with(user, :access_api, :global).and_return(false)
 
         post :execute
 
-        expect(response).to have_gitlab_http_status(404)
+        expect(response.status).to eq(403)
+        expect(response).to render_template('errors/access_denied')
       end
     end
 

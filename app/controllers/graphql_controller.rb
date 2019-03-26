@@ -39,7 +39,7 @@ class GraphqlController < ApplicationController
   private
 
   def authorize_access_api!
-    render_404 unless can?(current_user, :access_api)
+    access_denied!("API not accessible for user.") unless can?(current_user, :access_api)
   end
 
   # Overridden from the ApplicationController to make the response look like
