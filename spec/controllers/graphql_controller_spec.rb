@@ -5,7 +5,7 @@ describe GraphqlController do
     stub_feature_flags(graphql: true)
   end
 
-  describe '.execute' do
+  describe 'POST #execute' do
     context 'when user is logged in' do
       let(:user) { create(:user) }
 
