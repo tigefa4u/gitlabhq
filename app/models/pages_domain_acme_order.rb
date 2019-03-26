@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-class PagesDomainAcmeChallenge < ActiveRecord::Base
+class PagesDomainAcmeOrder < ActiveRecord::Base
   belongs_to :pages_domain
 end

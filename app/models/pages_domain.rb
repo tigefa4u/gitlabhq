@@ -5,7 +5,7 @@ class PagesDomain < ActiveRecord::Base
   VERIFICATION_THRESHOLD = 3.days.freeze
 
   belongs_to :project
-  has_many :acme_challenges, class_name: "PagesDomainAcmeChallenge"
+  has_many :acme_orders, class_name: "PagesDomainAcmeOrder"
 
   validates :domain, hostname: { allow_numeric_hostname: true }
   validates :domain, uniqueness: { case_sensitive: false }

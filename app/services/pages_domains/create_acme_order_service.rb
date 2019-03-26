@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module PagesDomains
-  class CreateAcmeChallengeService
+  class CreateAcmeOrderService
     attr_reader :pages_domain
 
     def initialize(pages_domain)
@@ -15,10 +15,13 @@ module PagesDomains
       authorization = order.authorizations.first
       challenge = authorization.http
 
-      pages_domain.acme_challenges.create!(
-        url: challenge.url,
-        token: challenge.token,
-        file_content: challenge.file_content
+      pages_domain.acme_orders.create!(
+        url: order.url,
+        finalize_url: order.finalize_url,
+        expires: order.expires,
+
+        challenge_token: challenge.token,
+        challenge_file_content: challenge.file_content
       )
 
       challenge.request_validation
