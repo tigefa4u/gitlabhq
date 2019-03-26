@@ -75,6 +75,8 @@ Rails.application.routes.draw do
       resources :issues, module: :boards, only: [:index, :update]
     end
 
+    get 'acme-challenge/:domain/:token' => 'acme_challenges#show', constraints: { domain: %r{[^/]+}, token: %r{[^/]+}}
+
     # UserCallouts
     resources :user_callouts, only: [:create]
 

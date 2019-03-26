@@ -15,7 +15,7 @@ module PagesDomains
       authorization = order.authorizations.first
       challenge = authorization.http
 
-      pages_domain.acme_orders.create!(
+      acme_order = pages_domain.acme_orders.create!(
         url: order.url,
         finalize_url: order.finalize_url,
         expires: order.expires,
@@ -25,6 +25,7 @@ module PagesDomains
       )
 
       challenge.request_validation
+      ObtainAcmeSslCertWorker.perform_in(1.minute, acme_order.id)
     end
   end
 end

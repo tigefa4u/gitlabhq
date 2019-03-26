@@ -2,6 +2,7 @@
 
 module Gitlab
   module AcmeClient
+    PRODUCTION_DIRECTORY_URL = 'https://acme-v02.api.letsencrypt.org/directory'
     STAGING_DIRECTORY_URL = 'https://acme-staging-v02.api.letsencrypt.org/directory'
 
     class << self
@@ -62,9 +63,11 @@ module Gitlab
       end
 
       def directory
-        return if Rails.env.production?
-
-        STAGING_DIRECTORY_URL
+        if Rails.env.production?
+          PRODUCTION_DIRECTORY_URL
+        else
+          STAGING_DIRECTORY_URL
+        end
       end
     end
   end
