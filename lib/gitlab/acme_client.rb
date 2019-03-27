@@ -63,7 +63,7 @@ module Gitlab
       end
 
       def directory
-        if Rails.env.production?
+        if Rails.env.production? || true
           PRODUCTION_DIRECTORY_URL
         else
           STAGING_DIRECTORY_URL

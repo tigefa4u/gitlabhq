@@ -15,10 +15,12 @@ module PagesDomains
       authorization = order.authorizations.first
       challenge = authorization.http
 
+      private_key = OpenSSL::PKey::RSA.new(4096)
       acme_order = pages_domain.acme_orders.create!(
         url: order.url,
         finalize_url: order.finalize_url,
         expires: order.expires,
+        private_key: private_key,
 
         challenge_token: challenge.token,
         challenge_file_content: challenge.file_content

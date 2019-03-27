@@ -19,6 +19,7 @@ class CreatePagesDomainsAcmeOrders < ActiveRecord::Migration[5.0]
       t.string :challenge_token, null: false
       t.text :challenge_file_content, null: false
 
+      t.text :private_key, null: false
       t.timestamps_with_timezone null: false
     end
   end
