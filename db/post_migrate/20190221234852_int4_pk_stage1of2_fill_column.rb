@@ -14,8 +14,6 @@ class Int4PkStage1of2FillColumn < ActiveRecord::Migration[5.0]
   def up
     return unless Gitlab::Database.postgresql?
 
-    say('Scheduling `Int4toInt8Update` jobs')
-
     # [GitLab.com] events: ~290M rows, heap 19 GiB
     CONCURRENCY.times do
       BackgroundMigrationWorker.perform_in(
