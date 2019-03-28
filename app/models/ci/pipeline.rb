@@ -13,6 +13,7 @@ module Ci
     include EnumWithNil
     include HasRef
     include ShaAttribute
+    include FromUnion
 
     sha_attribute :source_sha
     sha_attribute :target_sha
@@ -81,8 +82,12 @@ module Ci
 
     state_machine :status, initial: :created do
       event :enqueue do
-        transition [:created, :skipped, :scheduled] => :pending
+        transition [:created, :preparing, :skipped, :scheduled] => :pending
         transition [:success, :failed, :canceled] => :running
+      end
+
+      event :prepare do
+        transition any - [:preparing] => :preparing
       end
 
       event :run do
@@ -117,7 +122,7 @@ module Ci
       # Do not add any operations to this state_machine
       # Create a separate worker for each new operation
 
-      before_transition [:created, :pending] => :running do |pipeline|
+      before_transition [:created, :preparing, :pending] => :running do |pipeline|
         pipeline.started_at = Time.now
       end
 
@@ -140,7 +145,7 @@ module Ci
         end
       end
 
-      after_transition [:created, :pending] => :running do |pipeline|
+      after_transition [:created, :preparing, :pending] => :running do |pipeline|
         pipeline.run_after_commit { PipelineMetricsWorker.perform_async(pipeline.id) }
       end
 
@@ -148,7 +153,7 @@ module Ci
         pipeline.run_after_commit { PipelineMetricsWorker.perform_async(pipeline.id) }
       end
 
-      after_transition [:created, :pending, :running] => :success do |pipeline|
+      after_transition [:created, :preparing, :pending, :running] => :success do |pipeline|
         pipeline.run_after_commit { PipelineSuccessWorker.perform_async(pipeline.id) }
       end
 
@@ -185,30 +190,28 @@ module Ci
     end
 
     scope :for_user, -> (user) { where(user: user) }
-
-    scope :for_merge_request, -> (merge_request, ref, sha) do
-      ##
-      # We have to filter out unrelated MR pipelines.
-      # When merge request is empty, it selects general pipelines, such as push sourced pipelines.
-      # When merge request is matched, it selects MR pipelines.
-      where(merge_request: [nil, merge_request], ref: ref, sha: sha)
-        .sort_by_merge_request_pipelines
-    end
+    scope :for_sha, -> (sha) { where(sha: sha) }
+    scope :for_source_sha, -> (source_sha) { where(source_sha: source_sha) }
+    scope :for_sha_or_source_sha, -> (sha) { for_sha(sha).or(for_source_sha(sha)) }
 
     scope :triggered_by_merge_request, -> (merge_request) do
       where(source: :merge_request_event, merge_request: merge_request)
     end
 
-    scope :detached_merge_request_pipelines, -> (merge_request) do
-      triggered_by_merge_request(merge_request).where(target_sha: nil)
+    scope :detached_merge_request_pipelines, -> (merge_request, sha) do
+      triggered_by_merge_request(merge_request).for_sha(sha)
     end
 
-    scope :merge_request_pipelines, -> (merge_request) do
-      triggered_by_merge_request(merge_request).where.not(target_sha: nil)
+    scope :merge_request_pipelines, -> (merge_request, source_sha) do
+      triggered_by_merge_request(merge_request).for_source_sha(source_sha)
     end
 
     scope :mergeable_merge_request_pipelines, -> (merge_request) do
       triggered_by_merge_request(merge_request).where(target_sha: merge_request.target_branch_sha)
+    end
+
+    scope :triggered_for_branch, -> (ref) do
+      where(source: branch_pipeline_sources).where(ref: ref, tag: false)
     end
 
     # Returns the pipelines in descending order (= newest first), optionally
@@ -298,8 +301,8 @@ module Ci
       sources.reject { |source| source == "external" }.values
     end
 
-    def self.latest_for_merge_request(merge_request, ref, sha)
-      for_merge_request(merge_request, ref, sha).first
+    def self.branch_pipeline_sources
+      @branch_pipeline_sources ||= sources.reject { |source| source == 'merge_request_event' }.values
     end
 
     def self.ci_sources_values
@@ -598,6 +601,7 @@ module Ci
       retry_optimistic_lock(self) do
         case latest_builds_status.to_s
         when 'created' then nil
+        when 'preparing' then prepare
         when 'pending' then enqueue
         when 'running' then run
         when 'success' then succeed
@@ -740,6 +744,10 @@ module Ci
 
     def mergeable_merge_request_pipeline?
       triggered_by_merge_request? && target_sha == merge_request.target_branch_sha
+    end
+
+    def matches_sha_or_source_sha?(sha)
+      self.sha == sha || self.source_sha == sha
     end
 
     private

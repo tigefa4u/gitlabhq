@@ -186,6 +186,37 @@ describe Ci::Build do
     end
   end
 
+  describe '#enqueue' do
+    let(:build) { create(:ci_build, :created) }
+
+    subject { build.enqueue }
+
+    before do
+      allow(build).to receive(:any_unmet_prerequisites?).and_return(has_prerequisites)
+      allow(Ci::PrepareBuildService).to receive(:perform_async)
+    end
+
+    context 'build has unmet prerequisites' do
+      let(:has_prerequisites) { true }
+
+      it 'transitions to preparing' do
+        subject
+
+        expect(build).to be_preparing
+      end
+    end
+
+    context 'build has no prerequisites' do
+      let(:has_prerequisites) { false }
+
+      it 'transitions to pending' do
+        subject
+
+        expect(build).to be_pending
+      end
+    end
+  end
+
   describe '#actionize' do
     context 'when build is a created' do
       before do
@@ -343,6 +374,18 @@ describe Ci::Build do
         subject
 
         expect(build).to be_pending
+      end
+
+      context 'build has unmet prerequisites' do
+        before do
+          allow(build).to receive(:prerequisites).and_return([double])
+        end
+
+        it 'transits to preparing' do
+          subject
+
+          expect(build).to be_preparing
+        end
       end
     end
   end
@@ -2118,11 +2161,11 @@ describe Ci::Build do
           { key: 'CI_PIPELINE_URL', value: project.web_url + "/pipelines/#{pipeline.id}", public: true, masked: false },
           { key: 'CI_JOB_ID', value: build.id.to_s, public: true, masked: false },
           { key: 'CI_JOB_URL', value: project.web_url + "/-/jobs/#{build.id}", public: true, masked: false },
-          { key: 'CI_JOB_TOKEN', value: 'my-token', public: false, masked: false },
+          { key: 'CI_JOB_TOKEN', value: 'my-token', public: false, masked: true },
           { key: 'CI_BUILD_ID', value: build.id.to_s, public: true, masked: false },
-          { key: 'CI_BUILD_TOKEN', value: 'my-token', public: false, masked: false },
+          { key: 'CI_BUILD_TOKEN', value: 'my-token', public: false, masked: true },
           { key: 'CI_REGISTRY_USER', value: 'gitlab-ci-token', public: true, masked: false },
-          { key: 'CI_REGISTRY_PASSWORD', value: 'my-token', public: false, masked: false },
+          { key: 'CI_REGISTRY_PASSWORD', value: 'my-token', public: false, masked: true },
           { key: 'CI_REPOSITORY_URL', value: build.repo_url, public: false, masked: false },
           { key: 'CI', value: 'true', public: true, masked: false },
           { key: 'GITLAB_CI', value: 'true', public: true, masked: false },
@@ -2652,7 +2695,7 @@ describe Ci::Build do
       let(:deploy_token_variables) do
         [
           { key: 'CI_DEPLOY_USER', value: deploy_token.username, public: true, masked: false },
-          { key: 'CI_DEPLOY_PASSWORD', value: deploy_token.token, public: false, masked: false }
+          { key: 'CI_DEPLOY_PASSWORD', value: deploy_token.token, public: false, masked: true }
         ]
       end
 
@@ -2772,7 +2815,7 @@ describe Ci::Build do
     end
 
     context 'when ref is merge request' do
-      let(:merge_request) { create(:merge_request, :with_merge_request_pipeline) }
+      let(:merge_request) { create(:merge_request, :with_detached_merge_request_pipeline) }
       let(:pipeline) { merge_request.merge_request_pipelines.first }
       let(:build) { create(:ci_build, ref: merge_request.source_branch, tag: false, pipeline: pipeline, project: project) }
 
@@ -2830,7 +2873,7 @@ describe Ci::Build do
     end
 
     context 'when ref is merge request' do
-      let(:merge_request) { create(:merge_request, :with_merge_request_pipeline) }
+      let(:merge_request) { create(:merge_request, :with_detached_merge_request_pipeline) }
       let(:pipeline) { merge_request.merge_request_pipelines.first }
       let(:build) { create(:ci_build, ref: merge_request.source_branch, tag: false, pipeline: pipeline, project: project) }
 
@@ -2873,6 +2916,36 @@ describe Ci::Build do
         expect(build.scoped_variables_hash).to include('MY_VAR': 'pipeline value')
         expect(build.scoped_variables_hash).not_to include('MY_VAR': 'myvar')
       end
+    end
+  end
+
+  describe '#any_unmet_prerequisites?' do
+    let(:build) { create(:ci_build, :created) }
+
+    subject { build.any_unmet_prerequisites? }
+
+    context 'build has prerequisites' do
+      before do
+        allow(build).to receive(:prerequisites).and_return([double])
+      end
+
+      it { is_expected.to be_truthy }
+
+      context 'and the ci_preparing_state feature is disabled' do
+        before do
+          stub_feature_flags(ci_preparing_state: false)
+        end
+
+        it { is_expected.to be_falsey }
+      end
+    end
+
+    context 'build does not have prerequisites' do
+      before do
+        allow(build).to receive(:prerequisites).and_return([])
+      end
+
+      it { is_expected.to be_falsey }
     end
   end
 
@@ -2925,6 +2998,20 @@ describe Ci::Build do
       it 'does not persist data in build metadata' do
         expect(build.metadata.read_attribute(:config_variables)).to be_nil
       end
+    end
+  end
+
+  describe 'state transition: any => [:preparing]' do
+    let(:build) { create(:ci_build, :created) }
+
+    before do
+      allow(build).to receive(:prerequisites).and_return([double])
+    end
+
+    it 'queues BuildPrepareWorker' do
+      expect(Ci::BuildPrepareWorker).to receive(:perform_async).with(build.id)
+
+      build.enqueue
     end
   end
 

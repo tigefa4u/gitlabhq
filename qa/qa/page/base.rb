@@ -158,6 +158,10 @@ module QA
         find('body').click
       end
 
+      def visit_link_in_element(name)
+        visit find_element(name)['href']
+      end
+
       def self.path
         raise NotImplementedError
       end

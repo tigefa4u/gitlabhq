@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190301081611) do
+ActiveRecord::Schema.define(version: 20190322132835) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -556,6 +556,7 @@ ActiveRecord::Schema.define(version: 20190301081611) do
     t.index ["locked"], name: "index_ci_runners_on_locked", using: :btree
     t.index ["runner_type"], name: "index_ci_runners_on_runner_type", using: :btree
     t.index ["token"], name: "index_ci_runners_on_token", using: :btree
+    t.index ["token_encrypted"], name: "index_ci_runners_on_token_encrypted", using: :btree
   end
 
   create_table "ci_stages", force: :cascade do |t|
@@ -707,6 +708,7 @@ ActiveRecord::Schema.define(version: 20190301081611) do
     t.string "cluster_ip"
     t.text "status_reason"
     t.string "external_ip"
+    t.string "external_hostname"
     t.index ["cluster_id"], name: "index_clusters_applications_ingress_on_cluster_id", unique: true, using: :btree
   end
 
@@ -732,6 +734,7 @@ ActiveRecord::Schema.define(version: 20190301081611) do
     t.string "hostname"
     t.text "status_reason"
     t.string "external_ip"
+    t.string "external_hostname"
     t.index ["cluster_id"], name: "index_clusters_applications_knative_on_cluster_id", unique: true, using: :btree
   end
 
@@ -1198,6 +1201,14 @@ ActiveRecord::Schema.define(version: 20190301081611) do
     t.index ["user_id"], name: "index_members_on_user_id", using: :btree
   end
 
+  create_table "merge_request_assignees", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "merge_request_id", null: false
+    t.index ["merge_request_id", "user_id"], name: "index_merge_request_assignees_on_merge_request_id_and_user_id", unique: true, using: :btree
+    t.index ["merge_request_id"], name: "index_merge_request_assignees_on_merge_request_id", using: :btree
+    t.index ["user_id"], name: "index_merge_request_assignees_on_user_id", using: :btree
+  end
+
   create_table "merge_request_diff_commits", id: false, force: :cascade do |t|
     t.datetime_with_timezone "authored_date"
     t.datetime_with_timezone "committed_date"
@@ -1374,6 +1385,7 @@ ActiveRecord::Schema.define(version: 20190301081611) do
     t.integer "cached_markdown_version"
     t.string "runners_token"
     t.string "runners_token_encrypted"
+    t.boolean "auto_devops_enabled"
     t.index ["created_at"], name: "index_namespaces_on_created_at", using: :btree
     t.index ["name", "parent_id"], name: "index_namespaces_on_name_and_parent_id", unique: true, using: :btree
     t.index ["name"], name: "index_namespaces_on_name_trigram", using: :gin, opclasses: {"name"=>"gin_trgm_ops"}
@@ -1383,6 +1395,7 @@ ActiveRecord::Schema.define(version: 20190301081611) do
     t.index ["path"], name: "index_namespaces_on_path_trigram", using: :gin, opclasses: {"path"=>"gin_trgm_ops"}
     t.index ["require_two_factor_authentication"], name: "index_namespaces_on_require_two_factor_authentication", using: :btree
     t.index ["runners_token"], name: "index_namespaces_on_runners_token", unique: true, using: :btree
+    t.index ["runners_token_encrypted"], name: "index_namespaces_on_runners_token_encrypted", unique: true, using: :btree
     t.index ["type"], name: "index_namespaces_on_type", using: :btree
   end
 
@@ -1752,6 +1765,7 @@ ActiveRecord::Schema.define(version: 20190301081611) do
     t.index ["repository_storage", "created_at"], name: "idx_project_repository_check_partial", where: "(last_repository_check_at IS NULL)", using: :btree
     t.index ["repository_storage"], name: "index_projects_on_repository_storage", using: :btree
     t.index ["runners_token"], name: "index_projects_on_runners_token", using: :btree
+    t.index ["runners_token_encrypted"], name: "index_projects_on_runners_token_encrypted", using: :btree
     t.index ["star_count"], name: "index_projects_on_star_count", using: :btree
     t.index ["visibility_level"], name: "index_projects_on_visibility_level", using: :btree
   end
@@ -2025,6 +2039,9 @@ ActiveRecord::Schema.define(version: 20190301081611) do
     t.string "commit_id"
     t.text "from_content", null: false
     t.text "to_content", null: false
+    t.integer "lines_above", default: 0, null: false
+    t.integer "lines_below", default: 0, null: false
+    t.boolean "outdated", default: false, null: false
     t.index ["note_id", "relative_order"], name: "index_suggestions_on_note_id_and_relative_order", unique: true, using: :btree
   end
 
@@ -2448,6 +2465,8 @@ ActiveRecord::Schema.define(version: 20190301081611) do
   add_foreign_key "lists", "boards", name: "fk_0d3f677137", on_delete: :cascade
   add_foreign_key "lists", "labels", name: "fk_7a5553d60f", on_delete: :cascade
   add_foreign_key "members", "users", name: "fk_2e88fb7ce9", on_delete: :cascade
+  add_foreign_key "merge_request_assignees", "merge_requests", on_delete: :cascade
+  add_foreign_key "merge_request_assignees", "users", on_delete: :cascade
   add_foreign_key "merge_request_diff_commits", "merge_request_diffs", on_delete: :cascade
   add_foreign_key "merge_request_diff_files", "merge_request_diffs", on_delete: :cascade
   add_foreign_key "merge_request_diffs", "merge_requests", name: "fk_8483f3258f", on_delete: :cascade

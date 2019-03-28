@@ -23,6 +23,7 @@
 - cronjob:prune_web_hook_logs
 
 - gcp_cluster:cluster_install_app
+- gcp_cluster:cluster_patch_app
 - gcp_cluster:cluster_upgrade_app
 - gcp_cluster:cluster_provision
 - gcp_cluster:cluster_wait_for_app_installation
@@ -70,6 +71,7 @@
 - pipeline_hooks:build_hooks
 - pipeline_hooks:pipeline_hooks
 - pipeline_processing:build_finished
+- pipeline_processing:ci_build_prepare
 - pipeline_processing:build_queue
 - pipeline_processing:build_success
 - pipeline_processing:pipeline_process

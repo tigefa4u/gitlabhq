@@ -187,6 +187,7 @@ class ProjectPolicy < BasePolicy
 
   rule { can?(:reporter_access) }.policy do
     enable :download_code
+    enable :read_statistics
     enable :download_wiki_code
     enable :fork_project
     enable :create_project_snippet
@@ -231,6 +232,7 @@ class ProjectPolicy < BasePolicy
     enable :admin_merge_request
     enable :admin_milestone
     enable :update_merge_request
+    enable :reopen_merge_request
     enable :create_commit_status
     enable :update_commit_status
     enable :create_build
@@ -278,6 +280,7 @@ class ProjectPolicy < BasePolicy
     enable :admin_cluster
     enable :create_environment_terminal
     enable :destroy_release
+    enable :destroy_artifacts
     enable :daily_statistics
   end
 
@@ -465,7 +468,7 @@ class ProjectPolicy < BasePolicy
     when ProjectFeature::DISABLED
       false
     when ProjectFeature::PRIVATE
-      guest? || admin?
+      admin? || team_access_level >= ProjectFeature.required_minimum_access_level(feature)
     else
       true
     end

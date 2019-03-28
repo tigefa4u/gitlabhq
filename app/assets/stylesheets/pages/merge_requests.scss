@@ -166,6 +166,7 @@
       float: left;
 
       .accept-merge-request {
+        &.ci-preparing,
         &.ci-pending,
         &.ci-running {
           @include btn-blue;
@@ -784,6 +785,7 @@
   }
 
   @include media-breakpoint-up(md) {
+    position: -webkit-sticky;
     position: sticky;
     top: $header-height + $mr-tabs-height;
     width: 100%;
@@ -805,11 +807,12 @@
 
 .merge-request-tabs-holder {
   top: $header-height;
-  z-index: 300;
+  z-index: 250;
   background-color: $white-light;
   border-bottom: 1px solid $border-color;
 
   @include media-breakpoint-up(sm) {
+    position: -webkit-sticky;
     position: sticky;
   }
 
@@ -1016,4 +1019,14 @@
 .source-branch-removal-status {
   padding-left: 50px;
   padding-bottom: $gl-padding;
+}
+
+.mr-compare {
+  .diff-file .file-title-flex-parent {
+    top: $header-height + 51px;
+
+    .with-performance-bar & {
+      top: $performance-bar-height + $header-height + 51px;
+    }
+  }
 }

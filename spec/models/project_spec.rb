@@ -136,15 +136,6 @@ describe Project do
       end
     end
 
-    describe '#boards' do
-      it 'raises an error when attempting to add more than one board to the project' do
-        subject.boards.build
-
-        expect { subject.boards.build }.to raise_error(Project::BoardLimitExceeded, 'Number of permitted boards exceeded')
-        expect(subject.boards.size).to eq 1
-      end
-    end
-
     describe 'ci_pipelines association' do
       it 'returns only pipelines from ci_sources' do
         expect(Ci::Pipeline).to receive(:ci_sources).and_call_original
@@ -2388,6 +2379,12 @@ describe Project do
       project.change_head(project.default_branch)
     end
 
+    it 'updates commit count' do
+      expect(ProjectCacheWorker).to receive(:perform_async).with(project.id, [], [:commit_count])
+
+      project.change_head(project.default_branch)
+    end
+
     it 'copies the gitattributes' do
       expect(project.repository).to receive(:copy_gitattributes).with(project.default_branch)
       project.change_head(project.default_branch)
@@ -2607,7 +2604,7 @@ describe Project do
       shared_examples 'same behavior between KubernetesService and Platform::Kubernetes' do
         it 'returns variables from this service' do
           expect(project.deployment_variables).to include(
-            { key: 'KUBE_TOKEN', value: project.deployment_platform.token, public: false }
+            { key: 'KUBE_TOKEN', value: project.deployment_platform.token, public: false, masked: true }
           )
         end
       end
@@ -2632,7 +2629,7 @@ describe Project do
 
         it 'should return token from kubernetes namespace' do
           expect(project.deployment_variables).to include(
-            { key: 'KUBE_TOKEN', value: kubernetes_namespace.service_account_token, public: false }
+            { key: 'KUBE_TOKEN', value: kubernetes_namespace.service_account_token, public: false, masked: true }
           )
         end
       end
@@ -2713,7 +2710,7 @@ describe Project do
   end
 
   describe '#any_lfs_file_locks?', :request_store do
-    set(:project) { create(:project) }
+    let!(:project) { create(:project) }
 
     it 'returns false when there are no LFS file locks' do
       expect(project.any_lfs_file_locks?).to be_falsey
@@ -3151,6 +3148,53 @@ describe Project do
         expect(projects).to eq([public_project])
       end
     end
+
+    context 'with requested visibility levels' do
+      set(:internal_project) { create(:project, :internal, :repository) }
+      set(:private_project_2) { create(:project, :private) }
+
+      context 'with admin user' do
+        set(:admin) { create(:admin) }
+
+        it 'returns all projects' do
+          projects = described_class.all.public_or_visible_to_user(admin, [])
+
+          expect(projects).to match_array([public_project, private_project, private_project_2, internal_project])
+        end
+
+        it 'returns all public and private projects' do
+          projects = described_class.all.public_or_visible_to_user(admin, [Gitlab::VisibilityLevel::PUBLIC, Gitlab::VisibilityLevel::PRIVATE])
+
+          expect(projects).to match_array([public_project, private_project, private_project_2])
+        end
+
+        it 'returns all private projects' do
+          projects = described_class.all.public_or_visible_to_user(admin, [Gitlab::VisibilityLevel::PRIVATE])
+
+          expect(projects).to match_array([private_project, private_project_2])
+        end
+      end
+
+      context 'with regular user' do
+        it 'returns authorized projects' do
+          projects = described_class.all.public_or_visible_to_user(user, [])
+
+          expect(projects).to match_array([public_project, private_project, internal_project])
+        end
+
+        it "returns user's public and private projects" do
+          projects = described_class.all.public_or_visible_to_user(user, [Gitlab::VisibilityLevel::PUBLIC, Gitlab::VisibilityLevel::PRIVATE])
+
+          expect(projects).to match_array([public_project, private_project])
+        end
+
+        it 'returns one private project' do
+          projects = described_class.all.public_or_visible_to_user(user, [Gitlab::VisibilityLevel::PRIVATE])
+
+          expect(projects).to eq([private_project])
+        end
+      end
+    end
   end
 
   describe '.with_feature_available_for_user' do
@@ -3431,7 +3475,7 @@ describe Project do
       end
 
       it 'schedules HashedStorage::ProjectMigrateWorker with delayed start when the project repo is in use' do
-        Gitlab::ReferenceCounter.new(project.gl_repository(is_wiki: false)).increase
+        Gitlab::ReferenceCounter.new(Gitlab::GlRepository::PROJECT.identifier_for_subject(project)).increase
 
         expect(HashedStorage::ProjectMigrateWorker).to receive(:perform_in)
 
@@ -3439,7 +3483,7 @@ describe Project do
       end
 
       it 'schedules HashedStorage::ProjectMigrateWorker with delayed start when the wiki repo is in use' do
-        Gitlab::ReferenceCounter.new(project.gl_repository(is_wiki: true)).increase
+        Gitlab::ReferenceCounter.new(Gitlab::GlRepository::WIKI.identifier_for_subject(project)).increase
 
         expect(HashedStorage::ProjectMigrateWorker).to receive(:perform_in)
 
@@ -3572,16 +3616,6 @@ describe Project do
     end
   end
 
-  describe '#gl_repository' do
-    let(:project) { create(:project) }
-
-    it 'delegates to Gitlab::GlRepository.gl_repository' do
-      expect(Gitlab::GlRepository).to receive(:gl_repository).with(project, true)
-
-      project.gl_repository(is_wiki: true)
-    end
-  end
-
   describe '#has_ci?' do
     set(:project) { create(:project) }
     let(:repository) { double }
@@ -3631,28 +3665,28 @@ describe Project do
 
     subject { project.auto_devops_enabled? }
 
+    context 'when explicitly enabled' do
+      before do
+        create(:project_auto_devops, project: project)
+      end
+
+      it { is_expected.to be_truthy }
+    end
+
+    context 'when explicitly disabled' do
+      before do
+        create(:project_auto_devops, project: project, enabled: false)
+      end
+
+      it { is_expected.to be_falsey }
+    end
+
     context 'when enabled in settings' do
       before do
         stub_application_setting(auto_devops_enabled: true)
       end
 
       it { is_expected.to be_truthy }
-
-      context 'when explicitly enabled' do
-        before do
-          create(:project_auto_devops, project: project)
-        end
-
-        it { is_expected.to be_truthy }
-      end
-
-      context 'when explicitly disabled' do
-        before do
-          create(:project_auto_devops, project: project, enabled: false)
-        end
-
-        it { is_expected.to be_falsey }
-      end
     end
 
     context 'when disabled in settings' do
@@ -3670,12 +3704,93 @@ describe Project do
         it { is_expected.to be_truthy }
       end
 
-      context 'when force_autodevops_on_by_default is enabled for the project' do
+      context 'when explicitly disabled' do
         before do
-          Feature.get(:force_autodevops_on_by_default).enable_percentage_of_actors(100)
+          create(:project_auto_devops, :disabled, project: project)
         end
 
-        it { is_expected.to be_truthy }
+        it { is_expected.to be_falsey }
+      end
+    end
+
+    context 'when force_autodevops_on_by_default is enabled for the project' do
+      it { is_expected.to be_truthy }
+    end
+
+    context 'with group parents' do
+      let(:instance_enabled) { true }
+
+      before do
+        stub_application_setting(auto_devops_enabled: instance_enabled)
+        project.update!(namespace: parent_group)
+      end
+
+      context 'when enabled on parent' do
+        let(:parent_group) { create(:group, :auto_devops_enabled) }
+
+        context 'when auto devops instance enabled' do
+          it { is_expected.to be_truthy }
+        end
+
+        context 'when auto devops instance disabled' do
+          let(:instance_disabled) { false }
+
+          it { is_expected.to be_truthy }
+        end
+      end
+
+      context 'when disabled on parent' do
+        let(:parent_group) { create(:group, :auto_devops_disabled) }
+
+        context 'when auto devops instance enabled' do
+          it { is_expected.to be_falsy }
+        end
+
+        context 'when auto devops instance disabled' do
+          let(:instance_disabled) { false }
+
+          it { is_expected.to be_falsy }
+        end
+      end
+
+      context 'when enabled on root parent', :nested_groups do
+        let(:parent_group) { create(:group, parent: create(:group, :auto_devops_enabled)) }
+
+        context 'when auto devops instance enabled' do
+          it { is_expected.to be_truthy }
+        end
+
+        context 'when auto devops instance disabled' do
+          let(:instance_disabled) { false }
+
+          it { is_expected.to be_truthy }
+        end
+
+        context 'when explicitly disabled on parent' do
+          let(:parent_group) { create(:group, :auto_devops_disabled, parent: create(:group, :auto_devops_enabled)) }
+
+          it { is_expected.to be_falsy }
+        end
+      end
+
+      context 'when disabled on root parent', :nested_groups do
+        let(:parent_group) { create(:group, parent: create(:group, :auto_devops_disabled)) }
+
+        context 'when auto devops instance enabled' do
+          it { is_expected.to be_falsy }
+        end
+
+        context 'when auto devops instance disabled' do
+          let(:instance_disabled) { false }
+
+          it { is_expected.to be_falsy }
+        end
+
+        context 'when explicitly disabled on parent' do
+          let(:parent_group) { create(:group, :auto_devops_disabled, parent: create(:group, :auto_devops_enabled)) }
+
+          it { is_expected.to be_falsy }
+        end
       end
     end
   end
@@ -3722,15 +3837,52 @@ describe Project do
         end
       end
     end
+
+    context 'when enabled on group' do
+      it 'has auto devops implicitly enabled' do
+        project.update(namespace: create(:group, :auto_devops_enabled))
+
+        expect(project).to have_auto_devops_implicitly_enabled
+      end
+    end
+
+    context 'when enabled on parent group' do
+      it 'has auto devops implicitly enabled' do
+        subgroup = create(:group, parent: create(:group, :auto_devops_enabled))
+        project.update(namespace: subgroup)
+
+        expect(project).to have_auto_devops_implicitly_enabled
+      end
+    end
   end
 
   describe '#has_auto_devops_implicitly_disabled?' do
+    set(:project) { create(:project) }
+
     before do
       allow(Feature).to receive(:enabled?).and_call_original
       Feature.get(:force_autodevops_on_by_default).enable_percentage_of_actors(0)
     end
 
-    set(:project) { create(:project) }
+    context 'when explicitly disabled' do
+      before do
+        create(:project_auto_devops, project: project, enabled: false)
+      end
+
+      it 'does not have auto devops implicitly disabled' do
+        expect(project).not_to have_auto_devops_implicitly_disabled
+      end
+    end
+
+    context 'when explicitly enabled' do
+      before do
+        create(:project_auto_devops, project: project, enabled: true)
+      end
+
+      it 'does not have auto devops implicitly disabled' do
+        expect(project).not_to have_auto_devops_implicitly_disabled
+      end
+    end
 
     context 'when enabled in settings' do
       before do
@@ -3753,6 +3905,8 @@ describe Project do
 
       context 'when force_autodevops_on_by_default is enabled for the project' do
         before do
+          create(:project_auto_devops, project: project, enabled: false)
+
           Feature.get(:force_autodevops_on_by_default).enable_percentage_of_actors(100)
         end
 
@@ -3761,23 +3915,20 @@ describe Project do
         end
       end
 
-      context 'when explicitly disabled' do
-        before do
-          create(:project_auto_devops, project: project, enabled: false)
-        end
+      context 'when disabled on group' do
+        it 'has auto devops implicitly disabled' do
+          project.update!(namespace: create(:group, :auto_devops_disabled))
 
-        it 'does not have auto devops implicitly disabled' do
-          expect(project).not_to have_auto_devops_implicitly_disabled
+          expect(project).to have_auto_devops_implicitly_disabled
         end
       end
 
-      context 'when explicitly enabled' do
-        before do
-          create(:project_auto_devops, project: project, enabled: true)
-        end
+      context 'when disabled on parent group' do
+        it 'has auto devops implicitly disabled' do
+          subgroup = create(:group, parent: create(:group, :auto_devops_disabled))
+          project.update!(namespace: subgroup)
 
-        it 'does not have auto devops implicitly disabled' do
-          expect(project).not_to have_auto_devops_implicitly_disabled
+          expect(project).to have_auto_devops_implicitly_disabled
         end
       end
     end
