@@ -10,7 +10,7 @@ module QA
       let(:page_load_threshold) { 5000 } # milliseconds
 
       def fetch_url(url_key)
-        urls = YAML.load(File.read('urls.yml'))
+        urls = YAML.safe_load(File.read('urls.yml'))
         urls[url_key]
       end
 
@@ -21,7 +21,7 @@ module QA
         samples_arr = []
         apdex_score = 0
         page_load_time = 0
-        mr_url = fetch_url(:large_mr)
+        mr_url = fetch_url("large_mr")
         visit(mr_url)
 
         Page::MergeRequest::Show.perform do |show_page|
