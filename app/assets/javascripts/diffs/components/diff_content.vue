@@ -87,7 +87,7 @@ export default {
 
 <template>
   <div class="diff-content">
-    <div class="diff-viewer qa-diff-viewer">
+    <div class="diff-viewer">
       <template v-if="isTextFile">
         <inline-diff-view
           v-if="isInlineView"
