@@ -290,6 +290,7 @@ gem 'rails-i18n', '~> 5.1'
 gem 'gettext_i18n_rails', '~> 1.8.0'
 gem 'gettext_i18n_rails_js', '~> 1.3'
 gem 'gettext', '~> 3.2.2', require: false, group: :development
+gem 'rubocop-i18n', '~> 2.0'
 
 gem 'batch-loader', '~> 1.4.0'
 

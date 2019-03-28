@@ -6,6 +6,7 @@ inherit_from: .rubocop_todo.yml
 require:
   - ./rubocop/rubocop
   - rubocop-rspec
+  - rubocop-i18n
 
 AllCops:
   TargetRubyVersion: 2.5
@@ -22,6 +23,17 @@ AllCops:
     - 'builds/**/*'
     - 'plugins/**/*'
   CacheRootDirectory: tmp
+
+GetText/DecorateString:
+  Enabled: true
+GetText/DecorateFunctionMessage:
+  Enabled: false
+GetText/DecorateStringFormattingUsingInterpolation:
+  Enabled: true
+GetText/DecorateStringFormattingUsingPercent:
+  Enabled: true
+RailsI18n/DecorateString:
+  Enabled: false
 
 # This cop checks whether some constant value isn't a
 # mutable literal (e.g. array or hash).
