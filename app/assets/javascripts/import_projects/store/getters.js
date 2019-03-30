@@ -18,3 +18,7 @@ export const isImportingAnyRepo = state => state.reposBeingImported.length > 0;
 export const hasProviderRepos = state => state.providerRepos.length > 0;
 
 export const hasImportedProjects = state => state.importedProjects.length > 0;
+
+export const hasNextPage = state => state.nextPage > state.currentPage;
+
+export const hasPrevPage = state => state.currentPage > 1;

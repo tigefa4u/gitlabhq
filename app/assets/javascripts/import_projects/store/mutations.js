@@ -2,18 +2,25 @@ import Vue from 'vue';
 import * as types from './mutation_types';
 
 export default {
+  [types.PREV_PAGE](state) {
+    state.currentPage -= 1;
+  },
+
+  [types.NEXT_PAGE](state) {
+    state.currentPage += 1;
+  },
+
   [types.SET_INITIAL_DATA](state, data) {
     Object.assign(state, data);
   },
 
-  [types.REQUEST_REPOS](state, options = {}) {
+  [types.REQUEST_REPOS](state) {
     state.isLoadingRepos = true;
-    state.currentPage = options.page || 1;
   },
 
   [types.RECEIVE_REPOS_SUCCESS](
     state,
-    { importedProjects, providerRepos, namespaces, totalItems },
+    { importedProjects, providerRepos, namespaces, nextPage },
   ) {
     state.isLoadingRepos = false;
 
@@ -21,7 +28,7 @@ export default {
     state.providerRepos = providerRepos;
     state.namespaces = namespaces;
 
-    state.totalItems = totalItems || importedProjects.length + providerRepos.length; // OR can be removed when X-total exists. Just here to demonstrate.
+    state.nextPage = nextPage || 0;
   },
 
   [types.RECEIVE_REPOS_ERROR](state) {

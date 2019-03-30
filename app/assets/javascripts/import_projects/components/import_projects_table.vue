@@ -1,6 +1,6 @@
 <script>
 import { mapActions, mapState, mapGetters } from 'vuex';
-import { GlLoadingIcon, GlPagination } from '@gitlab/ui';
+import { GlLoadingIcon, GlButton } from '@gitlab/ui';
 import LoadingButton from '~/vue_shared/components/loading_button.vue';
 import { __, sprintf } from '~/locale';
 import ImportedProjectTableRow from './imported_project_table_row.vue';
@@ -14,7 +14,7 @@ export default {
     ProviderRepoTableRow,
     LoadingButton,
     GlLoadingIcon,
-    GlPagination,
+    GlButton,
   },
   props: {
     providerTitle: {
@@ -24,8 +24,12 @@ export default {
   },
 
   computed: {
-    ...mapState(['importedProjects', 'providerRepos', 'isLoadingRepos', 'currentPage', 'totalItems', 'itemsPerPage']),
-    ...mapGetters(['isImportingAnyRepo', 'hasProviderRepos', 'hasImportedProjects']),
+    ...mapState([
+      'importedProjects',
+      'providerRepos',
+      'isLoadingRepos',
+    ]),
+    ...mapGetters(['isImportingAnyRepo', 'hasProviderRepos', 'hasImportedProjects', 'hasNextPage', 'hasPrevPage']),
 
     emptyStateText() {
       return sprintf(__('No %{providerTitle} repositories available to import'), {
@@ -48,11 +52,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['fetchRepos', 'fetchJobs', 'stopJobsPolling', 'clearJobsEtagPoll']),
-
-    changePage(page) {
-      this.fetchRepos({ page });
-    },
+    ...mapActions(['fetchRepos', 'fetchJobs', 'stopJobsPolling', 'clearJobsEtagPoll', 'prevPage', 'nextPage']),
 
     importAll() {
       eventHub.$emit('importAll');
@@ -99,7 +99,14 @@ export default {
         </tbody>
       </table>
 
-      <gl-pagination :change="changePage" :page="currentPage" :per-page="itemsPerPage" :total-items="totalItems" align="center" />
+      <div class="btn-group" role="group" aria-label="Page controls">
+        <gl-button :disabled="!hasPrevPage" @click="prevPage">
+          {{ __('Prev') }}
+        </gl-button>
+        <gl-button :disabled="!hasNextPage" @click="nextPage">
+          {{ __('Next') }}
+        </gl-button>
+      </div>
     </div>
     <div v-else class="text-center">
       <strong>{{ emptyStateText }}</strong>

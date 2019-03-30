@@ -18,14 +18,24 @@ export const restartJobsPolling = () => {
   if (eTagPoll) eTagPoll.restart();
 };
 
+export const prevPage = ({ commit, dispatch }) => {
+  commit(types.PREV_PAGE);
+  dispatch('fetchRepos');
+}
+export const nextPage = ({ commit, dispatch }) => {
+  debugger;
+  commit(types.NEXT_PAGE);
+  dispatch('fetchRepos');
+}
+
 export const setInitialData = ({ commit }, data) => commit(types.SET_INITIAL_DATA, data);
 
-export const requestRepos = ({ commit }, repos) => commit(types.REQUEST_REPOS, repos);
+export const requestRepos = ({ commit }) => commit(types.REQUEST_REPOS);
 export const receiveReposSuccess = ({ commit }, repos) =>
   commit(types.RECEIVE_REPOS_SUCCESS, repos);
 export const receiveReposError = ({ commit }) => commit(types.RECEIVE_REPOS_ERROR);
 export const fetchRepos = ({ state, dispatch }, options = {}) => {
-  dispatch('requestRepos', options);
+  dispatch('requestRepos');
 
   return axios
     .get(state.reposPath, {
@@ -37,7 +47,7 @@ export const fetchRepos = ({ state, dispatch }, options = {}) => {
     .then(({ data, headers }) =>
       dispatch('receiveReposSuccess', {
         ...convertObjectPropsToCamelCase(data, { deep: true }),
-        totalItems: headers['x-total'],
+        nextPage: headers['x-next-page'] || 2, // Remove OR when BE is ready
       }),
     )
     .then(() => dispatch('fetchJobs'))

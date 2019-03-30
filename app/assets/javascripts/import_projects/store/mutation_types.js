@@ -1,3 +1,6 @@
+export const PREV_PAGE = 'PREV_PAGE';
+export const NEXT_PAGE = 'NEXT_PAGE';
+
 export const SET_INITIAL_DATA = 'SET_INITIAL_DATA';
 
 export const REQUEST_REPOS = 'REQUEST_REPOS';
