@@ -54,13 +54,21 @@ module Gitlab
 
         def process_query(context, query)
           query = query.dup
+
           result =
             if query.key?(:query_range)
               query[:query_range] %= context
-              client_query_range(query[:query_range], start: context[:timeframe_start], stop: context[:timeframe_end])
+              timeframe = {
+                start: context[:timeframe_start],
+                stop: context[:timeframe_end]
+              }.compact
+
+              client_query_range(query[:query_range], timeframe)
             else
               query[:query] %= context
-              client_query(query[:query], time: context[:timeframe_end])
+              timeframe = { time: context[:timeframe_end] }.compact
+
+              client_query(query[:query], timeframe)
             end
 
           query[:result] = result&.map(&:deep_symbolize_keys)

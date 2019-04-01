@@ -8,9 +8,9 @@ describe Gitlab::Prometheus::Queries::AdditionalMetricsEnvironmentQuery do
   include_examples 'additional metrics query' do
     let(:query_params) { [environment.id] }
 
-    it 'queries using specific time' do
+    it 'does not specify start and end times' do
       expect(client).to receive(:query_range)
-        .with(anything, start: 8.hours.ago.to_f, stop: Time.now.to_f)
+        .with(anything, {})
       expect(query_result).not_to be_nil
     end
 
