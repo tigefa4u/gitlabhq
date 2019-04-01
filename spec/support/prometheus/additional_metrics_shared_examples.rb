@@ -166,4 +166,18 @@ RSpec.shared_examples 'additional metrics query' do
       end
     end
   end
+
+  context 'when a query contains values for interpolation' do
+    let(:expected_query) { "query_range_#{environment.slug}" }
+    let(:metrics) { [simple_metric(queries: [simple_query('%{ci_environment_slug}')])] }
+
+    before do
+      allow(metric_group_class).to receive(:common_metrics).and_return([simple_metric_group(metrics: metrics)])
+    end
+
+    it 'interpolates values from the query context' do
+      expect(client).to receive(:query_range).with(expected_query, any_args).and_return(query_range_result)
+      query_result
+    end
+  end
 end
