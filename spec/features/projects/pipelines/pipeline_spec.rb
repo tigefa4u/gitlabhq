@@ -476,8 +476,7 @@ describe 'Pipeline', :js do
     let!(:bridge) do
       create(:ci_bridge, pipeline: pipeline,
                          name: 'cross-build',
-                         user: user,
-                         downstream: downstream)
+                         user: user)
     end
 
     describe 'GET /:project/pipelines/:id' do

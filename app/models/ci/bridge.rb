@@ -15,6 +15,10 @@ module Ci
 
     delegate :merge_request_event?, to: :pipeline
 
+    def self.fabricate(attributes)
+      ::Ci::Bridge.new(attributes)
+    end
+
     def self.retry(bridge, current_user)
       raise NotImplementedError
     end

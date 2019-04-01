@@ -21,20 +21,20 @@ describe Gitlab::Ci::Pipeline::Seed::Build do
   end
 
   describe '#bridge?' do
-    context 'when job is a bridge' do
+    context 'when job is a downstream bridge' do
       let(:attributes) do
         { name: 'rspec', ref: 'master', options: { trigger: 'my/project' } }
       end
 
       it { is_expected.to be_bridge }
-    end
 
-    context 'when trigger definition is empty' do
-      let(:attributes) do
-        { name: 'rspec', ref: 'master', options: { trigger: '' } }
+      context 'when trigger definition is empty' do
+        let(:attributes) do
+          { name: 'rspec', ref: 'master', options: { trigger: '' } }
+        end
+
+        it { is_expected.not_to be_bridge }
       end
-
-      it { is_expected.not_to be_bridge }
     end
 
     context 'when job is not a bridge' do
@@ -50,7 +50,7 @@ describe Gitlab::Ci::Pipeline::Seed::Build do
       end
     end
 
-    context 'when job is a bridge' do
+    context 'when job is a downstream bridge' do
       let(:attributes) do
         { name: 'rspec', ref: 'master', options: { trigger: 'my/project' } }
       end

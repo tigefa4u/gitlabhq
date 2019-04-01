@@ -45,7 +45,7 @@ module Gitlab
           def to_resource
             strong_memoize(:resource) do
               if bridge?
-                ::Ci::Bridge.new(attributes)
+                ::Ci::Bridge.fabricate(attributes)
               else
                 ::Ci::Build.new(attributes)
               end
