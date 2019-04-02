@@ -176,9 +176,12 @@ export default {
         </div>
         <div v-else-if="isCollapsed" class="nothing-here-block diff-collapsed">
           {{ __('This diff is collapsed.') }}
-          <a class="click-to-expand js-click-to-expand qa-click-to-expand" href="#" @click.prevent="handleToggle">{{
-            __('Click to expand it.')
-          }}</a>
+          <a
+            class="click-to-expand js-click-to-expand qa-click-to-expand"
+            href="#"
+            @click.prevent="handleToggle"
+            >{{ __('Click to expand it.') }}</a
+          >
         </div>
         <diff-content
           v-else
