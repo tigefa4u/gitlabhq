@@ -4,7 +4,7 @@ require 'uri'
 require 'benchmark'
 
 module QA
-  context :performance do
+  context 'Performance Tests', :performance do
     describe 'merge request' do
       let(:response_threshold) { 270 } # milliseconds
       let(:page_load_threshold) { 5000 } # milliseconds
