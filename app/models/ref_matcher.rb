@@ -1,6 +1,14 @@
 # frozen_string_literal: true
 
 class RefMatcher
+  CONVERT_PATTERNS = {
+    '*' => '.*',
+    '[' => '[',
+    ']' => ']',
+    '^' => '^',
+    '-' => '-',
+  }.freeze
+
   def initialize(ref_name_or_pattern)
     @ref_name_or_pattern = ref_name_or_pattern
   end
@@ -20,7 +28,9 @@ class RefMatcher
 
   # Checks if this protected ref contains a wildcard
   def wildcard?
-    @ref_name_or_pattern && @ref_name_or_pattern.include?('*')
+    @ref_name_or_pattern && PATTERNS.any? do |key, _|
+      @ref_name_or_pattern.include?(key)
+    end
   end
 
   protected
@@ -32,15 +42,22 @@ class RefMatcher
   def wildcard_match?(ref_name)
     return false unless wildcard?
 
+    puts wildcard_regex
     wildcard_regex === ref_name
   end
 
   def wildcard_regex
     @wildcard_regex ||= begin
-      name = @ref_name_or_pattern.gsub('*', 'STAR_DONT_ESCAPE')
-      quoted_name = Regexp.quote(name)
-      regex_string = quoted_name.gsub('STAR_DONT_ESCAPE', '.*?')
+      quoted_name = Regexp.quote(@ref_name_or_pattern)
+      regex_string = unescape_patterns(quoted_name)
       /\A#{regex_string}\z/
     end
+  end
+
+  def unescape_patterns(text)
+    CONVERT_PATTERNS.each do |key, value|
+      text = text.gsub(Regexp.quote(key), value)
+    end
+    text
   end
 end
