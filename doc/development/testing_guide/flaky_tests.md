@@ -38,10 +38,7 @@ Quarantined tests are run on the CI in dedicated jobs that are allowed to fail:
 - `rspec-pg-quarantine` and `rspec-mysql-quarantine` (CE & EE)
 - `rspec-pg-quarantine-ee` and `rspec-mysql-quarantine-ee` (EE only)
 
-## Automatic retries and flaky tests detection
-
-On our CI, we use [rspec-retry] to automatically retry a failing example a few
-times (see [`spec/spec_helper.rb`] for the precise retries count).
+## Flaky tests detection
 
 We also use a home-made `RspecFlaky::Listener` listener which records flaky
 examples in a JSON report file on `master` (`retrieve-tests-metadata` and `update-tests-metadata` jobs), and warns when a new flaky example

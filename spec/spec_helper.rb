@@ -7,7 +7,6 @@ ENV["IN_MEMORY_APPLICATION_SETTINGS"] = 'true'
 require File.expand_path('../config/environment', __dir__)
 require 'rspec/rails'
 require 'shoulda/matchers'
-require 'rspec/retry'
 require 'rspec-parameterized'
 
 rspec_profiling_is_configured =
@@ -48,9 +47,6 @@ RSpec.configure do |config|
   config.use_transactional_fixtures = false
   config.use_instantiated_fixtures  = false
   config.fixture_path = Rails.root
-
-  config.verbose_retry = true
-  config.display_try_failure_messages = true
 
   config.infer_spec_type_from_file_location!
 
@@ -100,8 +96,6 @@ RSpec.configure do |config|
   config.include PolicyHelpers, type: :policy
 
   if ENV['CI']
-    # This includes the first try, i.e. tests will be run 4 times before failing.
-    config.default_retry_count = 4
     config.reporter.register_listener(
       RspecFlaky::Listener.new,
       :example_passed,
