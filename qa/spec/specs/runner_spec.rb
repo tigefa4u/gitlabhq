@@ -6,8 +6,8 @@ describe QA::Specs::Runner do
       allow(QA::Runtime::Browser).to receive(:configure!)
     end
 
-    it 'excludes the orchestrated tag by default' do
-      expect_rspec_runner_arguments(['--tag', '~orchestrated', *described_class::DEFAULT_TEST_PATH_ARGS])
+    it 'excludes the orchestrated tag and performance tag by default' do
+      expect_rspec_runner_arguments(['--tag', '~orchestrated', "--tag", "~performance", *described_class::DEFAULT_TEST_PATH_ARGS])
 
       subject.perform
     end
@@ -16,7 +16,7 @@ describe QA::Specs::Runner do
       subject { described_class.new.tap { |runner| runner.tty = true } }
 
       it 'sets the `--tty` flag' do
-        expect_rspec_runner_arguments(['--tty', '--tag', '~orchestrated', *described_class::DEFAULT_TEST_PATH_ARGS])
+        expect_rspec_runner_arguments(['--tty', '--tag', '~orchestrated', '--tag', '~performance', *described_class::DEFAULT_TEST_PATH_ARGS])
 
         subject.perform
       end
@@ -26,7 +26,7 @@ describe QA::Specs::Runner do
       subject { described_class.new.tap { |runner| runner.tags = %i[orchestrated github] } }
 
       it 'focuses on the given tags' do
-        expect_rspec_runner_arguments(['--tag', 'orchestrated', '--tag', 'github', *described_class::DEFAULT_TEST_PATH_ARGS])
+        expect_rspec_runner_arguments(['--tag', 'orchestrated', '--tag', 'github', '--tag', '~performance', *described_class::DEFAULT_TEST_PATH_ARGS])
 
         subject.perform
       end
@@ -36,7 +36,7 @@ describe QA::Specs::Runner do
       subject { described_class.new.tap { |runner| runner.options = %w[--tag smoke] } }
 
       it 'focuses on the given tag without excluded the orchestrated tag' do
-        expect_rspec_runner_arguments(['--tag', 'smoke', *described_class::DEFAULT_TEST_PATH_ARGS])
+        expect_rspec_runner_arguments(['--tag', '~performance', '--tag', 'smoke', *described_class::DEFAULT_TEST_PATH_ARGS])
 
         subject.perform
       end
@@ -46,7 +46,7 @@ describe QA::Specs::Runner do
       subject { described_class.new.tap { |runner| runner.options = %w[qa/specs/features/foo] } }
 
       it 'passes the given tests path and excludes the orchestrated tag' do
-        expect_rspec_runner_arguments(['--tag', '~orchestrated', 'qa/specs/features/foo'])
+        expect_rspec_runner_arguments(['--tag', '~orchestrated', '--tag', '~performance','qa/specs/features/foo'])
 
         subject.perform
       end
@@ -56,7 +56,7 @@ describe QA::Specs::Runner do
       subject { described_class.new.tap { |runner| runner.options = %w[-- qa/specs/features/foo] } }
 
       it 'passes the given tests path and excludes the orchestrated tag' do
-        expect_rspec_runner_arguments(['--tag', '~orchestrated', '--', 'qa/specs/features/foo'])
+        expect_rspec_runner_arguments(['--tag', '~orchestrated', '--tag', '~performance', '--', 'qa/specs/features/foo'])
 
         subject.perform
       end
@@ -70,7 +70,7 @@ describe QA::Specs::Runner do
       subject { described_class.new }
 
       it 'it includes default args and excludes the skip_signup_disabled tag' do
-        expect_rspec_runner_arguments(['--tag', '~orchestrated', '--tag', '~skip_signup_disabled', *described_class::DEFAULT_TEST_PATH_ARGS])
+        expect_rspec_runner_arguments(['--tag', '~orchestrated', '--tag', '~skip_signup_disabled', "--tag", "~performance", *described_class::DEFAULT_TEST_PATH_ARGS])
 
         subject.perform
       end
@@ -84,7 +84,7 @@ describe QA::Specs::Runner do
       subject { described_class.new }
 
       it 'it includes default args and excludes the requires_git_protocol_v2 tag' do
-        expect_rspec_runner_arguments(['--tag', '~orchestrated', '--tag', '~requires_git_protocol_v2', *described_class::DEFAULT_TEST_PATH_ARGS])
+        expect_rspec_runner_arguments(['--tag', '~orchestrated', "--tag", "~performance", '--tag', '~requires_git_protocol_v2', *described_class::DEFAULT_TEST_PATH_ARGS])
 
         subject.perform
       end
