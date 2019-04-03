@@ -3,7 +3,7 @@
 class ActiveHookFilter
   def initialize(hook)
     @hook = hook
-    @push_events_filter_matcher = RefMatcher.new(@hook.push_events_branch_filter)
+    @push_events_filter_matcher = Gitlab::RefMatcher.new(@hook.push_events_branch_filter)
   end
 
   def matches?(hooks_scope, data)

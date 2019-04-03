@@ -64,6 +64,6 @@ module ProtectedRef
   private
 
   def ref_matcher
-    @ref_matcher ||= RefMatcher.new(self.name)
+    @ref_matcher ||= Gitlab::RefMatcher.new(self.name)
   end
 end
