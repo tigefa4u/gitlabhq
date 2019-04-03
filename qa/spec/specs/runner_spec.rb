@@ -46,7 +46,7 @@ describe QA::Specs::Runner do
       subject { described_class.new.tap { |runner| runner.options = %w[qa/specs/features/foo] } }
 
       it 'passes the given tests path and excludes the orchestrated tag' do
-        expect_rspec_runner_arguments(['--tag', '~orchestrated', '--tag', '~performance','qa/specs/features/foo'])
+        expect_rspec_runner_arguments(['--tag', '~orchestrated', '--tag', '~performance', 'qa/specs/features/foo'])
 
         subject.perform
       end
