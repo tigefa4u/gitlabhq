@@ -4,9 +4,9 @@ module QA
   module Page
     module Performance
       # Time taken to complete an action in page
-      def response_time(callback)
+      def response_time
         response_time = Benchmark.realtime do
-          public_send(callback)
+          yield
         end
         ( response_time * 1000 )
       end

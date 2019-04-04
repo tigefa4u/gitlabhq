@@ -32,7 +32,7 @@ module QA
         end
 
         args.push(options)
-        args.push(DEFAULT_TEST_PATH_ARGS) unless options.any? { |opt| opt =~ %r{/features|performance/} }
+        args.push(DEFAULT_TEST_PATH_ARGS) unless options.any? { |opt| opt =~ %r{/features/} }
 
         Runtime::Browser.configure!
 

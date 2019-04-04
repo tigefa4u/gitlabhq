@@ -25,11 +25,13 @@ module QA
         visit(mr_url)
 
         Page::MergeRequest::Show.perform do |show_page|
-          show_page.go_to_diffs_tab
+          show_page.click_diffs_tab
           show_page.expand_diff
           5.times do |i|
             show_page.reply_to_discussion("Can you check this line of code?")
-            samples_arr.push(show_page.response_time(:comment))
+            samples_arr << show_page.response_time do
+              show_page.comment
+            end
           end
           apdex_score = show_page.apdex(samples_arr, response_threshold)
           page_load_time = show_page.page_load_time

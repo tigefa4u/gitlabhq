@@ -169,7 +169,10 @@ module QA
         end
 
         def reply_to_discussion(reply_text)
-          all_elements(:discussion_reply).last.click
+          wait(interval: 5) do
+            has_element? :discussion_reply
+          end
+          all_elements(:discussion_reply).first.click
           fill_element :reply_input, reply_text
         end
 
