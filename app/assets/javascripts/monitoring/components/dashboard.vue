@@ -143,7 +143,7 @@ export default {
   },
   methods: {
     getGraphAlerts(graphId) {
-      return this.alertData ? this.alertData[graphId] || {} : {};
+      return this.alertData ? this.alertData[graphId] || [] : [];
     },
     getGraphsData() {
       this.state = 'loading';
