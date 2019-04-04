@@ -11,6 +11,18 @@ module ApplicationWorker
     set_queue
   end
 
+  def perform(*args)
+    super *Serializers::Sidekiq.parse(*args)
+  end
+
+  def perform_in(time, *args)
+    super(time, *Serializers::Sidekiq.serialize(*args))
+  end
+
+  def perform_async(*args)
+    super *Serializers::Sidekiq.serialize(*args)
+  end
+
   class_methods do
     def inherited(subclass)
       subclass.set_queue
