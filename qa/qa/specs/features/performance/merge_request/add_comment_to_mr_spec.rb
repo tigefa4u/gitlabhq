@@ -9,9 +9,19 @@ module QA
       let(:response_threshold) { 270 } # milliseconds
       let(:page_load_threshold) { 5000 } # milliseconds
 
-      def fetch_url(url_key)
-        urls = YAML.safe_load(File.read('urls.yml'))
-        urls[url_key]
+      before(:all) do
+        unless ENV['HOST_URL'] && ENV['LARGE_ISSUE_URL'] && ENV['LARGE_MR_URL']
+          urls_file = ENV['URLS_FILE_PATH'] || 'urls.yml'
+
+          unless File.exist?(urls_file)
+            raise "\n#{urls_file} file is missing. Please provide correct URLS_FILE_PATH or all of HOST_URL, LARGE_ISSUE_URL and LARGE_MR_URL\n\n"
+          end
+
+          urls = YAML.safe_load(File.read(urls_file))
+          ENV['HOST_URL'] = urls["host"]
+          ENV['LARGE_ISSUE_URL'] = urls["large_issue"]
+          ENV['LARGE_MR_URL'] = urls["large_mr"]
+        end
       end
 
       it 'user adds comment to a large mr' do
@@ -21,8 +31,7 @@ module QA
         samples_arr = []
         apdex_score = 0
         page_load_time = 0
-        mr_url = fetch_url("large_mr")
-        visit(mr_url)
+        visit(ENV['LARGE_MR_URL'])
 
         Page::MergeRequest::Show.perform do |show_page|
           show_page.click_diffs_tab
