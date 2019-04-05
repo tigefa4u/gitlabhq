@@ -157,6 +157,15 @@ module QA
           click_element :diffs_tab
         end
 
+        def add_comment_to_diff(text)
+          wait(interval: 5) do
+            has_text?("No newline at end of file")
+          end
+          all_elements(:new_diff_line).first.hover
+          click_element :diff_comment
+          fill_element :reply_input, text
+        end
+
         def comment
           click_element :reply_comment_button
         end
@@ -169,18 +178,13 @@ module QA
         end
 
         def reply_to_discussion(reply_text)
-          wait(interval: 5) do
-            has_element? :discussion_reply
-          end
           all_elements(:discussion_reply).first.click
           fill_element :reply_input, reply_text
         end
 
         def expand_diff
-          wait(interval: 5) do
-            has_element? :click_to_expand
-          end
-          all_elements(:click_to_expand).first.click
+          sleep 3
+          all_elements(:click_to_expand).last.click
           wait(interval: 5) do
             has_text?("No newline at end of file")
           end

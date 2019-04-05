@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 describe QA::Specs::Runner do
+  include Helpers::StubENV
+
   context '#perform' do
     before do
       allow(QA::Runtime::Browser).to receive(:configure!)
@@ -8,6 +10,13 @@ describe QA::Specs::Runner do
 
     it 'excludes the orchestrated tag and performance tag by default' do
       expect_rspec_runner_arguments(['--tag', '~orchestrated', "--tag", "~performance", *described_class::DEFAULT_TEST_PATH_ARGS])
+
+      subject.perform
+    end
+
+    it 'includes the performance tag when ENV["PERFORMANCE"] is set' do
+      stub_env('PERFORMANCE', 'true')
+      expect_rspec_runner_arguments(['--tag', '~orchestrated', *described_class::DEFAULT_TEST_PATH_ARGS])
 
       subject.perform
     end

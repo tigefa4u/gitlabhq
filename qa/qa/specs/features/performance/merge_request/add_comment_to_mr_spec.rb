@@ -1,4 +1,10 @@
 # frozen_string_literal: true
+
+# The pre-requisite for this spec is to run the rake task : rake generate_perf_testdata
+# See `/qa/qa/tools/generate_perf_testdata.rb file` for the script that generates testdata.
+# This generates a 'urls.yml' file, which is used as an input in this spec.
+# Alternatively, the values can be fetched from the environment variables: URLS_FILE_PATH, HOST_URL, LARGE_ISSUE_URL, LARGE_MR_URL
+
 require 'yaml'
 require 'uri'
 require 'benchmark'
@@ -26,7 +32,7 @@ module QA
 
       it 'user adds comment to a large mr' do
         Runtime::Browser.visit(:gitlab, Page::Main::Login)
-        Page::Main::Login.act { sign_in_using_credentials }
+        Page::Main::Login.perform(&:sign_in_using_credentials)
 
         samples_arr = []
         apdex_score = 0
@@ -42,9 +48,14 @@ module QA
               show_page.comment
             end
           end
+          QA::Runtime::Logger.info "Samples Array: #{samples_arr}"
+          QA::Runtime::Logger.info "Response Threshold: #{response_threshold}"
           apdex_score = show_page.apdex(samples_arr, response_threshold)
           page_load_time = show_page.page_load_time
         end
+
+        QA::Runtime::Logger.info "Page Load Time: #{page_load_time}"
+        QA::Runtime::Logger.info "Apdex Score: #{apdex_score}"
 
         expect(page_load_time < page_load_threshold).to be true
         expect((apdex_score >= 0.5) && (apdex_score <= 1.0)).to be true
