@@ -29,6 +29,9 @@ GetText/DecorateString:
   Exclude:
     - 'spec/**/*'
     - 'qa/**/*'
+    - 'db/**/*'
+    - 'danger/**/*'
+    - 'rubocop/**/*'
 GetText/DecorateFunctionMessage:
   Enabled: false
 GetText/DecorateStringFormattingUsingInterpolation:
@@ -36,11 +39,17 @@ GetText/DecorateStringFormattingUsingInterpolation:
   Exclude:
     - 'spec/**/*'
     - 'qa/**/*'
+    - 'db/**/*'
+    - 'danger/**/*'
+    - 'rubocop/**/*'
 GetText/DecorateStringFormattingUsingPercent:
   Enabled: true
   Exclude:
     - 'spec/**/*'
     - 'qa/**/*'
+    - 'db/**/*'
+    - 'danger/**/*'
+    - 'rubocop/**/*'
 RailsI18n/DecorateString:
   Enabled: false
 
