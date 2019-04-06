@@ -28,6 +28,7 @@ GetText/DecorateString:
   Enabled: true
   Exclude:
     - 'spec/**/*'
+    - 'lib/tasks/**/*'
     - 'qa/**/*'
     - 'db/**/*'
     - 'danger/**/*'
@@ -38,6 +39,7 @@ GetText/DecorateStringFormattingUsingInterpolation:
   Enabled: true
   Exclude:
     - 'spec/**/*'
+    - 'lib/tasks/**/*'
     - 'qa/**/*'
     - 'db/**/*'
     - 'danger/**/*'
@@ -46,6 +48,7 @@ GetText/DecorateStringFormattingUsingPercent:
   Enabled: true
   Exclude:
     - 'spec/**/*'
+    - 'lib/tasks/**/*'
     - 'qa/**/*'
     - 'db/**/*'
     - 'danger/**/*'
