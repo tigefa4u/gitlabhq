@@ -19,6 +19,8 @@ import {
   MIN_TREE_WIDTH,
   MAX_TREE_WIDTH,
   TREE_HIDE_STATS_WIDTH,
+  MR_TREE_SHOW_KEY,
+  CENTERED_LIMITED_CONTAINER_CLASSES,
 } from '../constants';
 
 export default {
@@ -113,6 +115,9 @@ export default {
     hideFileStats() {
       return this.treeWidth <= TREE_HIDE_STATS_WIDTH;
     },
+    isLimitedContainer() {
+      return !this.showTreeList && !this.isParallelView;
+    },
   },
   watch: {
     diffViewType() {
@@ -147,6 +152,7 @@ export default {
     this.adjustView();
     eventHub.$once('fetchedNotesData', this.setDiscussions);
     eventHub.$once('fetchDiffData', this.fetchData);
+    this.CENTERED_LIMITED_CONTAINER_CLASSES = CENTERED_LIMITED_CONTAINER_CLASSES;
   },
   beforeDestroy() {
     eventHub.$off('fetchDiffData', this.fetchData);
@@ -162,10 +168,13 @@ export default {
       'setHighlightedRow',
       'cacheTreeListWidth',
       'scrollToFile',
+      'toggleShowTreeList',
     ]),
     fetchData() {
       this.fetchDiffFiles()
         .then(() => {
+          this.hideTreeListIfJustOneFile();
+
           requestIdleCallback(
             () => {
               this.setDiscussions();
@@ -198,8 +207,6 @@ export default {
     adjustView() {
       if (this.shouldShow) {
         this.$nextTick(() => {
-          window.mrTabs.resetViewContainer();
-          window.mrTabs.expandViewContainer(this.showTreeList);
           this.setEventListeners();
         });
       } else {
@@ -231,6 +238,13 @@ export default {
         this.scrollToFile(this.diffFiles[targetIndex].file_path);
       }
     },
+    hideTreeListIfJustOneFile() {
+      const storedTreeShow = localStorage.getItem(MR_TREE_SHOW_KEY);
+
+      if ((storedTreeShow === null && this.diffFiles.length <= 1) || storedTreeShow === 'false') {
+        this.toggleShowTreeList(false);
+      }
+    },
   },
   minTreeWidth: MIN_TREE_WIDTH,
   maxTreeWidth: MAX_TREE_WIDTH,
@@ -245,6 +259,7 @@ export default {
         :merge-request-diffs="mergeRequestDiffs"
         :merge-request-diff="mergeRequestDiff"
         :target-branch="targetBranch"
+        :is-limited-container="isLimitedContainer"
       />
 
       <hidden-files-warning
@@ -274,7 +289,12 @@ export default {
           />
           <tree-list :hide-file-stats="hideFileStats" />
         </div>
-        <div class="diff-files-holder">
+        <div
+          class="diff-files-holder"
+          :class="{
+            [CENTERED_LIMITED_CONTAINER_CLASSES]: isLimitedContainer,
+          }"
+        >
           <commit-widget v-if="commit" :commit="commit" />
           <template v-if="renderDiffFiles">
             <diff-file

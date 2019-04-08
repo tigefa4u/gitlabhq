@@ -177,7 +177,6 @@ class ProjectPolicy < BasePolicy
     enable :read_cycle_analytics
     enable :award_emoji
     enable :read_pages_content
-    enable :read_release
   end
 
   # These abilities are not allowed to admins that are not members of the project,
@@ -187,6 +186,7 @@ class ProjectPolicy < BasePolicy
 
   rule { can?(:reporter_access) }.policy do
     enable :download_code
+    enable :read_statistics
     enable :download_wiki_code
     enable :fork_project
     enable :create_project_snippet
@@ -203,6 +203,8 @@ class ProjectPolicy < BasePolicy
     enable :read_deployment
     enable :read_merge_request
     enable :read_sentry_issue
+    enable :read_release
+    enable :read_prometheus
   end
 
   # We define `:public_user_access` separately because there are cases in gitlab-ee
@@ -231,6 +233,7 @@ class ProjectPolicy < BasePolicy
     enable :admin_merge_request
     enable :admin_milestone
     enable :update_merge_request
+    enable :reopen_merge_request
     enable :create_commit_status
     enable :update_commit_status
     enable :create_build
@@ -278,6 +281,7 @@ class ProjectPolicy < BasePolicy
     enable :admin_cluster
     enable :create_environment_terminal
     enable :destroy_release
+    enable :destroy_artifacts
     enable :daily_statistics
   end
 
@@ -300,6 +304,8 @@ class ProjectPolicy < BasePolicy
 
   rule { issues_disabled }.policy do
     prevent(*create_read_update_admin_destroy(:issue))
+    prevent(*create_read_update_admin_destroy(:board))
+    prevent(*create_read_update_admin_destroy(:list))
   end
 
   rule { merge_requests_disabled | repository_disabled }.policy do
@@ -463,7 +469,7 @@ class ProjectPolicy < BasePolicy
     when ProjectFeature::DISABLED
       false
     when ProjectFeature::PRIVATE
-      guest? || admin?
+      admin? || team_access_level >= ProjectFeature.required_minimum_access_level(feature)
     else
       true
     end

@@ -62,7 +62,7 @@ module Gitlab
         end
 
         branch = response.branch
-        return nil unless branch
+        return unless branch
 
         target_commit = Gitlab::Git::Commit.decorate(@repository, branch.target_commit)
         Gitlab::Git::Branch.new(@repository, branch.name, target_commit.id, target_commit)
@@ -277,14 +277,14 @@ module Gitlab
         end
       end
 
+      # rubocop:disable Metrics/ParameterLists
       def user_commit_files(
         user, branch_name, commit_message, actions, author_email, author_name,
-        start_branch_name, start_repository)
-
+        start_branch_name, start_repository, force = false)
         req_enum = Enumerator.new do |y|
           header = user_commit_files_request_header(user, branch_name,
           commit_message, actions, author_email, author_name,
-          start_branch_name, start_repository)
+          start_branch_name, start_repository, force)
 
           y.yield Gitaly::UserCommitFilesRequest.new(header: header)
 
@@ -294,7 +294,7 @@ module Gitlab
               action: Gitaly::UserCommitFilesAction.new(header: action_header)
             )
 
-            reader = binary_stringio(action[:content])
+            reader = binary_io(action[:content])
 
             until reader.eof?
               chunk = reader.read(MAX_MSG_SIZE)
@@ -319,6 +319,7 @@ module Gitlab
 
         Gitlab::Git::OperationService::BranchUpdate.from_gitaly(response.branch_update)
       end
+      # rubocop:enable Metrics/ParameterLists
 
       def user_commit_patches(user, branch_name, patches)
         header = Gitaly::UserApplyPatchRequest::Header.new(
@@ -326,7 +327,7 @@ module Gitlab
           user: Gitlab::Git::User.from_gitlab(user).to_gitaly,
           target_branch: encode_binary(branch_name)
         )
-        reader = binary_stringio(patches)
+        reader = binary_io(patches)
 
         chunks = Enumerator.new do |chunk|
           chunk.yield Gitaly::UserApplyPatchRequest.new(header: header)
@@ -382,9 +383,10 @@ module Gitlab
         Gitlab::Git::OperationService::BranchUpdate.from_gitaly(response.branch_update)
       end
 
+      # rubocop:disable Metrics/ParameterLists
       def user_commit_files_request_header(
         user, branch_name, commit_message, actions, author_email, author_name,
-        start_branch_name, start_repository)
+        start_branch_name, start_repository, force)
 
         Gitaly::UserCommitFilesRequestHeader.new(
           repository: @gitaly_repo,
@@ -394,9 +396,11 @@ module Gitlab
           commit_author_name: encode_binary(author_name),
           commit_author_email: encode_binary(author_email),
           start_branch_name: encode_binary(start_branch_name),
-          start_repository: start_repository.gitaly_repository
+          start_repository: start_repository.gitaly_repository,
+          force: force
         )
       end
+      # rubocop:enable Metrics/ParameterLists
 
       def user_commit_files_action_header(action)
         Gitaly::UserCommitFilesActionHeader.new(

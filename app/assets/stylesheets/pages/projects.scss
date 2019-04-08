@@ -18,12 +18,9 @@
   }
 
   .input-group {
-    display: flex;
-
     .select2-container {
       display: unset;
       max-width: unset;
-      width: unset !important;
       flex-grow: 1;
     }
 
@@ -212,8 +209,7 @@
       }
     }
 
-    .access-request-link,
-    .home-panel-topic-list {
+    .access-request-link {
       padding-left: $gl-padding-8;
       border-left: 1px solid $gl-text-color-secondary;
     }
@@ -691,10 +687,6 @@
       }
     }
   }
-}
-
-.project-empty-note-panel {
-  border-bottom: 1px solid $border-color;
 }
 
 .project-stats,

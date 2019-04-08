@@ -1,5 +1,8 @@
 image: "dev.gitlab.org:5005/gitlab/gitlab-build-images:ruby-2.5.3-golang-1.11-git-2.18-chrome-71.0-node-10.x-yarn-1.12-postgresql-9.6-graphicsmagick-1.3.29"
 
+include:
+  - local: /lib/gitlab/ci/templates/Code-Quality.gitlab-ci.yml
+
 .dedicated-runner: &dedicated-runner
   retry: 1
   tags:
@@ -66,10 +69,16 @@ stages:
     paths:
       - knapsack/
       - rspec_flaky/
+      - rspec_profiling/
 
 .use-pg: &use-pg
   services:
     - postgres:9.6
+    - redis:alpine
+
+.use-pg-10: &use-pg-10
+  services:
+    - postgres:10.0
     - redis:alpine
 
 .use-mysql: &use-mysql
@@ -92,6 +101,15 @@ stages:
   except:
     - /(^docs[\/-].*|.*-docs$)/
     - /(^qa[\/-].*|.*-qa$)/
+
+.only-schedules-master: &only-schedules-master
+  only:
+    - schedules@gitlab-org/gitlab-ce
+    - schedules@gitlab-org/gitlab-ee
+    - master@gitlab-org/gitlab-ce
+    - master@gitlab-org/gitlab-ee
+    - master@gitlab/gitlabhq
+    - master@gitlab/gitlab-ee
 
 # Jobs that only need to pull cache
 .dedicated-no-docs-pull-cache-job: &dedicated-no-docs-pull-cache-job
@@ -159,6 +177,7 @@ stages:
       - coverage/
       - knapsack/
       - rspec_flaky/
+      - rspec_profiling/
       - tmp/capybara/
     reports:
       junit: junit_rspec.xml
@@ -166,6 +185,11 @@ stages:
 .rspec-metadata-pg: &rspec-metadata-pg
   <<: *rspec-metadata
   <<: *use-pg
+
+.rspec-metadata-pg-10: &rspec-metadata-pg-10
+  <<: *rspec-metadata
+  <<: *use-pg-10
+  image: "dev.gitlab.org:5005/gitlab/gitlab-build-images:ruby-2.5.3-golang-1.11-git-2.18-chrome-71.0-node-10.x-yarn-1.12-postgresql-10-graphicsmagick-1.3.29"
 
 .rspec-metadata-mysql: &rspec-metadata-mysql
   <<: *rspec-metadata
@@ -244,8 +268,8 @@ package-and-qa:
     - ./scripts/trigger-build omnibus
   when: manual
   only:
-    - //@gitlab-org/gitlab-ce
-    - //@gitlab-org/gitlab-ee
+    - /.+/@gitlab-org/gitlab-ce
+    - /.+/@gitlab-org/gitlab-ee
 
 # Review docs base
 .review-docs: &review-docs
@@ -315,7 +339,7 @@ cloud-native-image:
   variables:
     GIT_DEPTH: "1"
   cache: {}
-  when: always
+  when: manual
   script:
     - gem install gitlab --no-document
     - CNG_PROJECT_PATH="gitlab-org/build/CNG" BUILD_TRIGGER_TOKEN=$CI_JOB_TOKEN ./scripts/trigger-build cng
@@ -336,6 +360,7 @@ retrieve-tests-metadata:
     - wget -O $KNAPSACK_RSPEC_SUITE_REPORT_PATH http://${TESTS_METADATA_S3_BUCKET}.s3.amazonaws.com/$KNAPSACK_RSPEC_SUITE_REPORT_PATH || rm $KNAPSACK_RSPEC_SUITE_REPORT_PATH
     - '[[ -f $KNAPSACK_RSPEC_SUITE_REPORT_PATH ]] || echo "{}" > ${KNAPSACK_RSPEC_SUITE_REPORT_PATH}'
     - mkdir -p rspec_flaky/
+    - mkdir -p rspec_profiling/
     - wget -O $FLAKY_RSPEC_SUITE_REPORT_PATH http://${TESTS_METADATA_S3_BUCKET}.s3.amazonaws.com/$FLAKY_RSPEC_SUITE_REPORT_PATH || rm $FLAKY_RSPEC_SUITE_REPORT_PATH
     - '[[ -f $FLAKY_RSPEC_SUITE_REPORT_PATH ]] || echo "{}" > ${FLAKY_RSPEC_SUITE_REPORT_PATH}'
 
@@ -350,7 +375,7 @@ update-tests-metadata:
       - rspec_flaky/
     policy: push
   script:
-    - retry gem install fog-aws mime-types activesupport --no-document
+    - retry gem install fog-aws mime-types activesupport rspec_profiling postgres-copy --no-document
     - scripts/merge-reports ${KNAPSACK_RSPEC_SUITE_REPORT_PATH} knapsack/${CI_PROJECT_NAME}/rspec-pg_node_*.json
     - scripts/merge-reports ${FLAKY_RSPEC_SUITE_REPORT_PATH} rspec_flaky/all_*_*.json
     - FLAKY_RSPEC_GENERATE_REPORT=1 scripts/prune-old-flaky-specs ${FLAKY_RSPEC_SUITE_REPORT_PATH}
@@ -358,6 +383,7 @@ update-tests-metadata:
     - '[[ -z ${TESTS_METADATA_S3_BUCKET} ]] || scripts/sync-reports put $TESTS_METADATA_S3_BUCKET $FLAKY_RSPEC_SUITE_REPORT_PATH'
     - rm -f knapsack/${CI_PROJECT_NAME}/*_node_*.json
     - rm -f rspec_flaky/all_*.json rspec_flaky/new_*.json
+    - scripts/insert-rspec-profiling-data
 
 flaky-examples-check:
   <<: *dedicated-runner
@@ -444,6 +470,19 @@ setup-test-env:
       - master
       - /(^docs[\/-].*|.*-docs$)/
 
+.review-schedules-only: &review-schedules-only
+  only:
+    refs:
+      - schedules@gitlab-org/gitlab-ce
+      - schedules@gitlab-org/gitlab-ee
+    kubernetes: active
+    variables:
+      - $REVIEW_APP_CLEANUP
+  except:
+    refs:
+      - tags
+      - /(^docs[\/-].*|.*-docs$)/
+
 .review-base: &review-base
   <<: *dedicated-no-docs-no-db-pull-cache-job
   <<: *review-only
@@ -473,6 +512,9 @@ setup-test-env:
 
 build-qa-image:
   <<: *review-docker
+  variables:
+    <<: *review-docker-variables
+    GIT_DEPTH: "20"
   stage: prepare
   script:
     - time docker build --cache-from ${LATEST_QA_IMAGE} --tag ${QA_IMAGE} ./qa/
@@ -504,8 +546,14 @@ rspec-pg:
   <<: *rspec-metadata-pg
   parallel: 50
 
+rspec-pg-10:
+  <<: *rspec-metadata-pg-10
+  <<: *only-schedules-master
+  parallel: 50
+
 rspec-mysql:
   <<: *rspec-metadata-mysql
+  <<: *only-schedules-master
   parallel: 50
 
 .rspec-quarantine: &rspec-quarantine
@@ -664,13 +712,43 @@ gitlab:assets:compile:
       - public/assets/
   <<: *assets-compile-cache
   only:
-    - //@gitlab-org/gitlab-ce
-    - //@gitlab-org/gitlab-ee
-    - //@gitlab/gitlabhq
-    - //@gitlab/gitlab-ee
+    - /.+/@gitlab-org/gitlab-ce
+    - /.+/@gitlab-org/gitlab-ee
+    - /.+/@gitlab/gitlabhq
+    - /.+/@gitlab/gitlab-ee
   tags:
     - docker
     - gitlab-org
+
+gitlab:ui:visual:
+  tags:
+    - gitlab-org
+  before_script: []
+  allow_failure: true
+  dependencies:
+    - compile-assets
+  script:
+    # Remove node modules from GitLab that may conflict with gitlab-ui
+    - rm -r node_modules
+    - git clone https://gitlab.com/gitlab-org/gitlab-ui.git
+    - cp public/assets/application-*.css gitlab-ui/styles/application.css
+    - cd gitlab-ui
+    - yarn install
+    - CSS_URL=./application.css yarn test
+  only:
+    changes:
+      - app/assets/stylesheets/*.scss
+      - app/assets/stylesheets/**/*.scss
+      - app/assets/stylesheets/**/**/*.scss
+  except:
+    refs:
+      - /(^docs[\/-].*|.*-docs$)/
+      - master
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /\[skip visual\]/i
+  artifacts:
+    paths:
+      - tests/__image_snapshots__/
 
 karma:
   <<: *dedicated-no-docs-pull-cache-job
@@ -726,31 +804,14 @@ jest:
 
 code_quality:
   <<: *dedicated-no-docs-no-db-pull-cache-job
-  image: docker:stable
-  allow_failure: true
   # gitlab-org runners set `privileged: false` but we need to have it set to true
   # since we're using Docker in Docker
   tags: []
   before_script: []
-  services:
-    - docker:stable-dind
-  variables:
-    SETUP_DB: "false"
-    DOCKER_DRIVER: overlay2
   cache: {}
   dependencies: []
-  script:
-    # Extract "MAJOR.MINOR" from CI_SERVER_VERSION and generate "MAJOR-MINOR-stable" for Security Products
-    - export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
-    - docker run
-        --env SOURCE_CODE="$PWD"
-        --volume "$PWD":/code
-        --volume /var/run/docker.sock:/var/run/docker.sock
-        "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code
-  artifacts:
-    reports:
-      codequality: gl-code-quality-report.json
-    expire_in: 1 week
+  variables:
+    SETUP_DB: "false"
 
 sast:
   <<: *dedicated-no-docs-no-db-pull-cache-job
@@ -818,8 +879,6 @@ qa:selectors:
 .qa-frontend-node: &qa-frontend-node
   <<: *dedicated-no-docs-no-db-pull-cache-job
   stage: test
-  variables:
-    NODE_OPTIONS: --max_old_space_size=3584
   cache:
     key: "$CI_JOB_NAME"
     paths:
@@ -956,18 +1015,16 @@ no_ee_check:
   script:
     - scripts/no-ee-check
   only:
-    - //@gitlab-org/gitlab-ce
+    - /.+/@gitlab-org/gitlab-ce
 
 # GitLab Review apps
-review-build-cng:
-  <<: *review-only
+.review-build-cng-base: &review-build-cng-base
   image: ruby:2.5-alpine
   stage: test
   before_script: []
   dependencies: []
   cache: {}
   variables:
-    GIT_DEPTH: "1"
     API_TOKEN: "${GITLAB_BOT_MULTI_PROJECT_PIPELINE_POLLING_TOKEN}"
   script:
     - apk add --update openssl curl jq
@@ -976,12 +1033,18 @@ review-build-cng:
     - wait_for_job_to_be_done "gitlab:assets:compile"
     - BUILD_TRIGGER_TOKEN=$REVIEW_APPS_BUILD_TRIGGER_TOKEN ./scripts/trigger-build cng
 
-review-deploy:
+review-build-cng:
+  <<: *review-only
+  <<: *review-build-cng-base
+
+schedule:review-build-cng:
+  <<: *review-schedules-only
+  <<: *review-build-cng-base
+
+.review-deploy-base: &review-deploy-base
   <<: *review-base
-  retry: 2
   allow_failure: true
   variables:
-    GIT_DEPTH: "1"
     HOST_SUFFIX: "${CI_ENVIRONMENT_SLUG}"
     DOMAIN: "-${CI_ENVIRONMENT_SLUG}.${REVIEW_APPS_DOMAIN}"
     GITLAB_HELM_CHART_REF: "master"
@@ -998,13 +1061,17 @@ review-deploy:
     - source ./scripts/review_apps/review-apps.sh
   script:
     - wait_for_job_to_be_done "review-build-cng"
-    - check_kube_domain
-    - download_gitlab_chart
-    - ensure_namespace
-    - install_tiller
-    - install_external_dns
-    - time deploy
-    - add_license
+    - perform_review_app_deployment
+
+review-deploy:
+  <<: *review-deploy-base
+
+schedule:review-deploy:
+  <<: *review-deploy-base
+  <<: *review-schedules-only
+  script:
+    - wait_for_job_to_be_done "schedule:review-build-cng"
+    - perform_review_app_deployment
 
 .review-qa-base: &review-qa-base
   <<: *review-docker
@@ -1032,23 +1099,26 @@ review-deploy:
     - apk update && apk add curl jq
     - source ./scripts/review_apps/review-apps.sh
     - gem install gitlab-qa --no-document ${GITLAB_QA_VERSION:+ --version ${GITLAB_QA_VERSION}}
-    - wait_for_job_to_be_done "review-deploy"
 
 review-qa-smoke:
   <<: *review-qa-base
   script:
+    - wait_for_job_to_be_done "review-deploy"
     - gitlab-qa Test::Instance::Smoke "${QA_IMAGE}" "${CI_ENVIRONMENT_URL}"
 
 review-qa-all:
   <<: *review-qa-base
   script:
+    - wait_for_job_to_be_done "review-deploy"
     - gitlab-qa Test::Instance::Any "${QA_IMAGE}" "${CI_ENVIRONMENT_URL}"
   when: manual
 
-review-performance:
+
+.review-performance-base: &review-performance-base
   <<: *review-qa-base
   script:
-    - mkdir gitlab-exporter
+    - wait_for_job_to_be_done "review-deploy"
+    - mkdir -p gitlab-exporter
     - wget -O ./gitlab-exporter/index.js https://gitlab.com/gitlab-org/gl-performance/raw/master/index.js
     - mkdir sitespeed-results
     - docker run --shm-size=1g --rm -v "$(pwd)":/sitespeed.io sitespeedio/sitespeed.io:6.3.1 --plugins.add ./gitlab-exporter --outputFolder sitespeed-results "$CI_ENVIRONMENT_URL"
@@ -1058,6 +1128,9 @@ review-performance:
       - sitespeed-results/
     reports:
       performance: performance.json
+
+review-performance:
+  <<: *review-performance-base
 
 review-stop:
   <<: *review-base
@@ -1078,21 +1151,21 @@ review-stop:
 
 schedule:review-cleanup:
   <<: *review-base
+  <<: *review-schedules-only
   stage: build
   allow_failure: true
   variables:
     GIT_DEPTH: "1"
   environment:
     name: review/auto-cleanup
-  only:
-    refs:
-      - schedules@gitlab-org/gitlab-ce
-      - schedules@gitlab-org/gitlab-ee
-    kubernetes: active
-  except:
-    - tags
-    - /(^docs[\/-].*|.*-docs$)/
   before_script:
     - gem install gitlab --no-document
   script:
     - ruby -rrubygems scripts/review_apps/automated_cleanup.rb
+
+schedule:review-performance:
+  <<: *review-performance-base
+  <<: *review-schedules-only
+  script:
+    - wait_for_job_to_be_done "schedule:review-deploy"
+

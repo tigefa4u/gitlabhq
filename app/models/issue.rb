@@ -2,7 +2,7 @@
 
 require 'carrierwave/orm/activerecord'
 
-class Issue < ActiveRecord::Base
+class Issue < ApplicationRecord
   include AtomicInternalId
   include IidRoutes
   include Issuable
@@ -64,6 +64,7 @@ class Issue < ActiveRecord::Base
   scope :order_closest_future_date, -> { reorder('CASE WHEN issues.due_date >= CURRENT_DATE THEN 0 ELSE 1 END ASC, ABS(CURRENT_DATE - issues.due_date) ASC') }
 
   scope :preload_associations, -> { preload(:labels, project: :namespace) }
+  scope :with_api_entity_associations, -> { preload(:timelogs, :assignees, :author, :notes, :labels, project: [:route, { namespace: :route }] ) }
 
   scope :public_only, -> { where(confidential: false) }
   scope :confidential_only, -> { where(confidential: true) }
@@ -89,7 +90,7 @@ class Issue < ActiveRecord::Base
     state :closed
 
     before_transition any => :closed do |issue|
-      issue.closed_at = Time.zone.now
+      issue.closed_at = issue.system_note_timestamp
     end
 
     before_transition closed: :opened do |issue|

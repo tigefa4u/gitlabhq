@@ -2,7 +2,7 @@
 
 require 'carrierwave/orm/activerecord'
 
-class Project < ActiveRecord::Base
+class Project < ApplicationRecord
   include Gitlab::ConfigHelper
   include Gitlab::ShellAdapter
   include Gitlab::VisibilityLevel
@@ -38,7 +38,6 @@ class Project < ActiveRecord::Base
   BoardLimitExceeded = Class.new(StandardError)
 
   STATISTICS_ATTRIBUTE = 'repositories_count'.freeze
-  NUMBER_OF_PERMITTED_BOARDS = 1
   UNKNOWN_IMPORT_URL = 'http://unknown.git'.freeze
   # Hashed Storage versions handle rolling out new storage to project and dependents models:
   # nil: legacy
@@ -85,7 +84,7 @@ class Project < ActiveRecord::Base
   default_value_for :snippets_enabled, gitlab_config_features.snippets
   default_value_for :only_allow_merge_if_all_discussions_are_resolved, false
 
-  add_authentication_token_field :runners_token, encrypted: true, migrating: true
+  add_authentication_token_field :runners_token, encrypted: -> { Feature.enabled?(:projects_tokens_optional_encryption, default_enabled: true) ? :optional : :required }
 
   before_validation :mark_remote_mirrors_for_removal, if: -> { RemoteMirror.table_exists? }
 
@@ -137,7 +136,7 @@ class Project < ActiveRecord::Base
   alias_attribute :parent_id, :namespace_id
 
   has_one :last_event, -> {order 'events.created_at DESC'}, class_name: 'Event'
-  has_many :boards, before_add: :validate_board_limit
+  has_many :boards
 
   # Project services
   has_one :campfire_service
@@ -460,14 +459,41 @@ class Project < ActiveRecord::Base
 
   # Returns a collection of projects that is either public or visible to the
   # logged in user.
-  def self.public_or_visible_to_user(user = nil)
-    if user
-      where('EXISTS (?) OR projects.visibility_level IN (?)',
-            user.authorizations_for_projects,
-            Gitlab::VisibilityLevel.levels_for_user(user))
-    else
-      public_to_user
+  #
+  # requested_visiblity_levels: Normally all projects that are visible
+  # to the user (e.g. internal and public) are queried, but this
+  # parameter allows the caller to narrow the search space to optimize
+  # database queries. For instance, a caller may only want to see
+  # internal projects. Instead of querying for internal and public
+  # projects and throwing away public projects, this parameter allows
+  # the query to be targeted for only internal projects.
+  def self.public_or_visible_to_user(user = nil, requested_visibility_levels = [])
+    return public_to_user unless user
+
+    visible_levels = Gitlab::VisibilityLevel.levels_for_user(user)
+    include_private = true
+    requested_visibility_levels = Array(requested_visibility_levels)
+
+    if requested_visibility_levels.present?
+      visible_levels &= requested_visibility_levels
+      include_private = requested_visibility_levels.include?(Gitlab::VisibilityLevel::PRIVATE)
     end
+
+    public_or_internal_rel =
+      if visible_levels.present?
+        where('projects.visibility_level IN (?)', visible_levels)
+      else
+        Project.none
+      end
+
+    private_rel =
+      if include_private
+        where('EXISTS (?)', user.authorizations_for_projects)
+      else
+        Project.none
+      end
+
+    public_or_internal_rel.or(private_rel)
   end
 
   # project features may be "disabled", "internal", "enabled" or "public". If "internal",
@@ -631,12 +657,21 @@ class Project < ActiveRecord::Base
   end
 
   def has_auto_devops_implicitly_enabled?
-    auto_devops&.enabled.nil? &&
-      (Gitlab::CurrentSettings.auto_devops_enabled? || Feature.enabled?(:force_autodevops_on_by_default, self))
+    auto_devops_config = first_auto_devops_config
+
+    auto_devops_config[:scope] != :project && auto_devops_config[:status]
   end
 
   def has_auto_devops_implicitly_disabled?
-    auto_devops&.enabled.nil? && !(Gitlab::CurrentSettings.auto_devops_enabled? || Feature.enabled?(:force_autodevops_on_by_default, self))
+    auto_devops_config = first_auto_devops_config
+
+    auto_devops_config[:scope] != :project && !auto_devops_config[:status]
+  end
+
+  def first_auto_devops_config
+    return namespace.first_auto_devops_config if auto_devops&.enabled.nil?
+
+    { scope: :project, status: auto_devops&.enabled || Feature.enabled?(:force_autodevops_on_by_default, self) }
   end
 
   def daily_statistics_enabled?
@@ -1200,11 +1235,9 @@ class Project < ActiveRecord::Base
 
   def repo_exists?
     strong_memoize(:repo_exists) do
-      begin
-        repository.exists?
-      rescue
-        false
-      end
+      repository.exists?
+    rescue
+      false
     end
   end
 
@@ -1230,7 +1263,7 @@ class Project < ActiveRecord::Base
   end
 
   def fork_source
-    return nil unless forked?
+    return unless forked?
 
     forked_from_project || fork_network&.root_project
   end
@@ -1378,6 +1411,7 @@ class Project < ActiveRecord::Base
       repository.raw_repository.write_ref('HEAD', "refs/heads/#{branch}")
       repository.copy_gitattributes(branch)
       repository.after_change_head
+      ProjectCacheWorker.perform_async(self.id, [], [:commit_count])
       reload_default_branch
     else
       errors.add(:base, "Could not change HEAD: branch '#{branch}' does not exist")
@@ -1679,7 +1713,7 @@ class Project < ActiveRecord::Base
   end
 
   def export_path
-    return nil unless namespace.present? || hashed_storage?(:repository)
+    return unless namespace.present? || hashed_storage?(:repository)
 
     import_export_shared.archive_path
   end
@@ -1996,12 +2030,8 @@ class Project < ActiveRecord::Base
     @storage = nil if storage_version_changed?
   end
 
-  def gl_repository(is_wiki:)
-    Gitlab::GlRepository.gl_repository(self, is_wiki)
-  end
-
-  def reference_counter(wiki: false)
-    Gitlab::ReferenceCounter.new(gl_repository(is_wiki: wiki))
+  def reference_counter(type: Gitlab::GlRepository::PROJECT)
+    Gitlab::ReferenceCounter.new(type.identifier_for_subject(self))
   end
 
   def badges
@@ -2098,7 +2128,7 @@ class Project < ActiveRecord::Base
   end
 
   def leave_pool_repository
-    pool_repository&.unlink_repository(repository) && update_column(:pool_repository_id, nil)
+    pool_repository&.mark_obsolete_if_last(repository) && update_column(:pool_repository_id, nil)
   end
 
   def link_pool_repository
@@ -2145,7 +2175,7 @@ class Project < ActiveRecord::Base
   end
 
   def wiki_reference_count
-    reference_counter(wiki: true).value
+    reference_counter(type: Gitlab::GlRepository::WIKI).value
   end
 
   def check_repository_absence!
@@ -2183,17 +2213,6 @@ class Project < ActiveRecord::Base
 
   def pushes_since_gc_redis_shared_state_key
     "projects/#{id}/pushes_since_gc"
-  end
-
-  # Similar to the normal callbacks that hook into the life cycle of an
-  # Active Record object, you can also define callbacks that get triggered
-  # when you add an object to an association collection. If any of these
-  # callbacks throw an exception, the object will not be added to the
-  # collection. Before you add a new board to the boards collection if you
-  # already have 1, 2, or n it will fail, but it if you have 0 that is lower
-  # than the number of permitted boards per project it won't fail.
-  def validate_board_limit(board)
-    raise BoardLimitExceeded, 'Number of permitted boards exceeded' if boards.size >= NUMBER_OF_PERMITTED_BOARDS
   end
 
   def update_project_statistics

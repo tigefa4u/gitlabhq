@@ -3,11 +3,16 @@
 import $ from 'jquery';
 import GfmAutoComplete from '~/gfm_auto_complete';
 
-import 'vendor/jquery.caret';
-import 'vendor/jquery.atwho';
+import 'jquery.caret';
+import 'at.js';
 
 import { TEST_HOST } from 'helpers/test_constants';
-import labelsFixture from 'fixtures/autocomplete_sources/labels.json'; // eslint-disable-line import/no-unresolved
+import { setTestTimeout } from 'helpers/timeout';
+import { getJSONFixture } from 'helpers/fixtures';
+
+setTestTimeout(500);
+
+const labelsFixture = getJSONFixture('autocomplete_sources/labels.json');
 
 describe('GfmAutoComplete', () => {
   const gfmAutoCompleteCallbacks = GfmAutoComplete.prototype.getDefaultCallbacks.call({

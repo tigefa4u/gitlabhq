@@ -20,14 +20,14 @@ module Gitlab
     SECRET_LENGTH = 32
 
     class << self
-      def git_http_ok(repository, is_wiki, user, action, show_all_refs: false)
+      def git_http_ok(repository, repo_type, user, action, show_all_refs: false)
         raise "Unsupported action: #{action}" unless ALLOWED_GIT_HTTP_ACTIONS.include?(action.to_s)
 
         project = repository.project
 
         attrs = {
           GL_ID: Gitlab::GlId.gl_id(user),
-          GL_REPOSITORY: Gitlab::GlRepository.gl_repository(project, is_wiki),
+          GL_REPOSITORY: repo_type.identifier_for_subject(project),
           GL_USERNAME: user&.username,
           ShowAllRefs: show_all_refs,
           Repository: repository.gitaly_repository.to_h,
@@ -63,13 +63,26 @@ module Gitlab
         ]
       end
 
-      def send_git_archive(repository, ref:, format:, append_sha:)
+      def send_git_archive(repository, ref:, format:, append_sha:, path: nil)
         format ||= 'tar.gz'
         format = format.downcase
-        params = repository.archive_metadata(ref, Gitlab.config.gitlab.repository_downloads_path, format, append_sha: append_sha)
-        raise "Repository or ref not found" if params.empty?
+        metadata = repository.archive_metadata(ref, Gitlab.config.gitlab.repository_downloads_path, format, append_sha: append_sha, path: path)
 
-        params['GitalyServer'] = gitaly_server_hash(repository)
+        raise "Repository or ref not found" if metadata.empty?
+
+        params = {
+          'GitalyServer' => gitaly_server_hash(repository),
+          'ArchivePath' => metadata['ArchivePath'],
+          'GetArchiveRequest' => encode_binary(
+            Gitaly::GetArchiveRequest.new(
+              repository: repository.gitaly_repository,
+              commit_id: metadata['CommitId'],
+              prefix: metadata['ArchivePrefix'],
+              format: archive_format(format),
+              path: path.presence || ""
+            ).to_proto
+          )
+        }
 
         # If present DisableCache must be a Boolean. Otherwise workhorse ignores it.
         params['DisableCache'] = true if git_archive_cache_disabled?
@@ -149,16 +162,16 @@ module Gitlab
         ]
       end
 
-      def terminal_websocket(terminal)
+      def channel_websocket(channel)
         details = {
-          'Terminal' => {
-            'Subprotocols' => terminal[:subprotocols],
-            'Url' => terminal[:url],
-            'Header' => terminal[:headers],
-            'MaxSessionTime' => terminal[:max_session_time]
+          'Channel' => {
+            'Subprotocols' => channel[:subprotocols],
+            'Url' => channel[:url],
+            'Header' => channel[:headers],
+            'MaxSessionTime' => channel[:max_session_time]
           }
         }
-        details['Terminal']['CAPem'] = terminal[:ca_pem] if terminal.key?(:ca_pem)
+        details['Channel']['CAPem'] = channel[:ca_pem] if channel.key?(:ca_pem)
 
         details
       end
@@ -220,6 +233,10 @@ module Gitlab
         Base64.urlsafe_encode64(JSON.dump(hash))
       end
 
+      def encode_binary(binary)
+        Base64.urlsafe_encode64(binary)
+      end
+
       def gitaly_server_hash(repository)
         {
           address: Gitlab::GitalyClient.address(repository.project.repository_storage),
@@ -237,6 +254,19 @@ module Gitlab
 
       def git_archive_cache_disabled?
         ENV['WORKHORSE_ARCHIVE_CACHE_DISABLED'].present? || Feature.enabled?(:workhorse_archive_cache_disabled)
+      end
+
+      def archive_format(format)
+        case format
+        when "tar.bz2", "tbz", "tbz2", "tb2", "bz2"
+          Gitaly::GetArchiveRequest::Format::TAR_BZ2
+        when "tar"
+          Gitaly::GetArchiveRequest::Format::TAR
+        when "zip"
+          Gitaly::GetArchiveRequest::Format::ZIP
+        else
+          Gitaly::GetArchiveRequest::Format::TAR_GZ
+        end
       end
     end
   end

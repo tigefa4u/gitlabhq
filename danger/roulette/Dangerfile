@@ -31,13 +31,15 @@ MARKDOWN
 
 def spin(team, project, category)
   reviewers = team.select { |member| member.reviewer?(project, category) }
+  traintainers = team.select { |member| member.traintainer?(project, category) }
   maintainers = team.select { |member| member.maintainer?(project, category) }
 
   # TODO: filter out people who are currently not in the office
   # TODO: take CODEOWNERS into account?
 
-  reviewer = reviewers[rand(reviewers.size)]
-  maintainer = maintainers[rand(maintainers.size)]
+  # Make traintainers have triple the chance to be picked as a reviewer
+  reviewer = (reviewers + traintainers + traintainers).sample
+  maintainer = maintainers.sample
 
   "| #{helper.label_for_category(category)} | #{reviewer&.markdown_name} | #{maintainer&.markdown_name} |"
 end
@@ -58,7 +60,11 @@ changes = helper.changes_by_category
 changes.delete(:none)
 categories = changes.keys - [:unknown]
 
-unless changes.empty?
+# Single codebase MRs are reviewed using a slightly different process, so we
+# disable the review roulette for such MRs.
+# CSS Clean up MRs are reviewed using a slightly different process, so we
+# disable the review roulette for such MRs.
+if changes.any? && !gitlab.mr_labels.include?('single codebase') && !gitlab.mr_labels.include?('CSS cleanup')
   team =
     begin
       helper.project_team

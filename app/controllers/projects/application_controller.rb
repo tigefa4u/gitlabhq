@@ -17,7 +17,7 @@ class Projects::ApplicationController < ApplicationController
 
   def project
     return @project if @project
-    return nil unless params[:project_id] || params[:id]
+    return unless params[:project_id] || params[:id]
 
     path = File.join(params[:namespace_id], params[:project_id] || params[:id])
     auth_proc = ->(project) { !project.pending_delete? }
@@ -87,5 +87,11 @@ class Projects::ApplicationController < ApplicationController
 
   def check_issues_available!
     return render_404 unless @project.feature_available?(:issues, current_user)
+  end
+
+  def allow_gitaly_ref_name_caching
+    ::Gitlab::GitalyClient.allow_ref_name_caching do
+      yield
+    end
   end
 end

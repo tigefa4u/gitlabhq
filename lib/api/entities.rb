@@ -86,6 +86,10 @@ module API
       expose :admin?, as: :is_admin
     end
 
+    class UserDetailsWithAdmin < UserWithAdmin
+      expose :highest_role
+    end
+
     class UserStatus < Grape::Entity
       expose :emoji
       expose :message
@@ -156,7 +160,7 @@ module API
     class BasicProjectDetails < ProjectIdentity
       include ::API::ProjectsRelationBuilder
 
-      expose :default_branch
+      expose :default_branch, if: -> (project, options) { Ability.allowed?(options[:current_user], :download_code, project) }
       # Avoids an N+1 query: https://github.com/mbleigh/acts-as-taggable-on/issues/91#issuecomment-168273770
       expose :tag_list do |project|
         # project.tags.order(:name).pluck(:name) is the most suitable option
@@ -261,7 +265,7 @@ module API
       expose :open_issues_count, if: lambda { |project, options| project.feature_available?(:issues, options[:current_user]) }
       expose :runners_token, if: lambda { |_project, options| options[:user_can_admin_project] }
       expose :public_builds, as: :public_jobs
-      expose :ci_config_path
+      expose :ci_config_path, if: -> (project, options) { Ability.allowed?(options[:current_user], :download_code, project) }
       expose :shared_with_groups do |project, options|
         SharedGroup.represent(project.project_group_links, options)
       end
@@ -270,8 +274,9 @@ module API
       expose :only_allow_merge_if_all_discussions_are_resolved
       expose :printing_merge_request_link_enabled
       expose :merge_method
-
-      expose :statistics, using: 'API::Entities::ProjectStatistics', if: :statistics
+      expose :statistics, using: 'API::Entities::ProjectStatistics', if: -> (project, options) {
+        options[:statistics] && Ability.allowed?(options[:current_user], :read_statistics, project)
+      }
 
       # rubocop: disable CodeReuse/ActiveRecord
       def self.preload_relation(projects_relation, options = {})
@@ -685,6 +690,10 @@ module API
       # Deprecated
       expose :allow_collaboration, as: :allow_maintainer_to_push, if: -> (merge_request, _) { merge_request.for_fork? }
 
+      expose :reference do |merge_request, options|
+        merge_request.to_reference(options[:project])
+      end
+
       expose :web_url do |merge_request|
         Gitlab::UrlBuilder.build(merge_request)
       end
@@ -720,6 +729,8 @@ module API
       expose :pipeline, using: Entities::PipelineBasic, if: -> (_, options) { build_available?(options) } do |merge_request, _options|
         merge_request.metrics&.pipeline
       end
+
+      expose :head_pipeline, using: 'API::Entities::Pipeline'
 
       expose :diff_refs, using: Entities::DiffRefs
 
@@ -882,7 +893,8 @@ module API
       expose :target_type
 
       expose :target do |todo, options|
-        todo_target_class(todo.target_type).represent(todo.target, options)
+        todo_options = options.fetch(todo.target_type, {})
+        todo_target_class(todo.target_type).represent(todo.target, todo_options)
       end
 
       expose :target_url do |todo, options|
@@ -1261,6 +1273,9 @@ module API
       expose :created_at, :updated_at, :started_at, :finished_at, :committed_at
       expose :duration
       expose :coverage
+      expose :detailed_status, using: DetailedStatusEntity do |pipeline, options|
+        pipeline.detailed_status(options[:current_user])
+      end
     end
 
     class PipelineSchedule < Grape::Entity
@@ -1383,8 +1398,13 @@ module API
         expose :name, :script, :timeout, :when, :allow_failure
       end
 
+      class Port < Grape::Entity
+        expose :number, :protocol, :name
+      end
+
       class Image < Grape::Entity
         expose :name, :entrypoint
+        expose :ports, using: JobRequest::Port
       end
 
       class Service < Image
@@ -1552,8 +1572,6 @@ module API
 
     class Suggestion < Grape::Entity
       expose :id
-      expose :from_original_line
-      expose :to_original_line
       expose :from_line
       expose :to_line
       expose :appliable?, as: :appliable
@@ -1584,7 +1602,7 @@ module API
     end
 
     class Cluster < Grape::Entity
-      expose :id, :name, :created_at
+      expose :id, :name, :created_at, :domain
       expose :provider_type, :platform_type, :environment_scope, :cluster_type
       expose :user, using: Entities::UserBasic
       expose :platform_kubernetes, using: Entities::Platform::Kubernetes

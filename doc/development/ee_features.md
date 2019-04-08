@@ -19,6 +19,11 @@ CE specs should remain untouched as much as possible and extra specs
 should be added for EE. Licensed features can be stubbed using the
 spec helper `stub_licensed_features` in `EE::LicenseHelpers`.
 
+You can force Webpack to act as CE by either deleting the `ee/` directory or by
+setting the [`IS_GITLAB_EE` environment variable](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/config/helpers/is_ee_env.js)
+to something that evaluates as `false`. The same works for running tests
+(for example `IS_GITLAB_EE=0 yarn jest`).
+
 [ee-as-ce]: https://gitlab.com/gitlab-org/gitlab-ee/issues/2500
 
 ## Separation of EE code
@@ -161,7 +166,7 @@ still having access the class's implementation with `super`.
 
 There are a few gotchas with it:
 
-- you should always [`extend ::Gitlab::Utils::Override`] and use `override` to
+- you should always [`extend ::Gitlab::Utils::Override`](utilities.md#overridehttpsgitlabcomgitlab-orggitlab-ceblobmasterlibgitlabutilsoverriderb) and use `override` to
   guard the "overrider" method to ensure that if the method gets renamed in
   CE, the EE override won't be silently forgotten.
 - when the "overrider" would add a line in the middle of the CE
@@ -272,8 +277,6 @@ module EE
   end
 end
 ```
-
-[`extend ::Gitlab::Utils::Override`]: utilities.md#override
 
 ##### Overriding CE class methods
 
@@ -911,14 +914,15 @@ export default {
  - Since we [can't async load a mixin](https://github.com/vuejs/vue-loader/issues/418#issuecomment-254032223) we will use the [`ee_else_ce`](https://docs.gitlab.com/ee/development/ee_features.html#javascript-code-in-assetsjavascripts) alias we already have for webpack.
   - This means all the EE specific props, computed properties, methods, etc that are EE only should be in a mixin in the `ee/` folder and we need to create a CE counterpart of the mixin
 
-  ##### Example:
-  ```javascript
-  import mixin from 'ee_else_ce/path/mixin';
+##### Example:
+```javascript
+import mixin from 'ee_else_ce/path/mixin';
 
-  {
+{
     mixins: [mixin]
-  }
-  ```
+}
+```
+  
 - Computed Properties/methods and getters only used in the child import still need a counterpart in CE
 
 - For store modules, we will need a CE counterpart too.
@@ -944,7 +948,7 @@ export default {
 
 
 ```html
-  <ul v-if="renderIfEE">
+  <ul v-if="ifEE">
     <li>One wrapped</li>
     <li>element</li>
     <li>that is rendered</li>
@@ -963,7 +967,7 @@ For regular JS files, the approach is similar.
 
 ```javascript
 import { ifEE } from '~/lib/utils/common_utils'
-if (renderIfEE) {
+if (ifEE) {
   $('.js-import-git-toggle-button').on('click', () => {
     const $projectMirror = $('#project_mirror');
 
@@ -977,7 +981,7 @@ if (renderIfEE) {
 To separate EE-specific styles in SCSS files, if a component you're adding styles for
 is limited to only EE, it is better to have a separate SCSS file in appropriate directory
 within `app/assets/stylesheets`.
-See [backporting changes](#backporting-changes) for instructions on how to merge changes safely.
+See [backporting changes](#backporting-changes-from-ee-to-ce) for instructions on how to merge changes safely.
 
 In some cases, this is not entirely possible or creating dedicated SCSS file is an overkill,
 e.g. a text style of some component is different for EE. In such cases,

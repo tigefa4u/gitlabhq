@@ -75,8 +75,7 @@ export const decorateData = entity => {
     parentPath = '',
   } = entity;
 
-  return {
-    ...dataStructure(),
+  return Object.assign(dataStructure(), {
     id,
     projectId,
     branchId,
@@ -97,7 +96,7 @@ export const decorateData = entity => {
     file_lock,
     html,
     parentPath,
-  };
+  });
 };
 
 export const findEntry = (tree, type, name, prop = 'name') =>
@@ -171,3 +170,31 @@ export const filePathMatches = (filePath, path) => filePath.indexOf(`${path}/`) 
 
 export const getChangesCountForFiles = (files, path) =>
   files.filter(f => filePathMatches(f.path, path)).length;
+
+export const mergeTrees = (fromTree, toTree) => {
+  if (!fromTree || !fromTree.length) {
+    return toTree;
+  }
+
+  const recurseTree = (n, t) => {
+    if (!n) {
+      return t;
+    }
+    const existingTreeNode = t.find(el => el.path === n.path);
+
+    if (existingTreeNode && n.tree.length > 0) {
+      existingTreeNode.opened = true;
+      recurseTree(n.tree[0], existingTreeNode.tree);
+    } else if (!existingTreeNode) {
+      const sorted = sortTree(t.concat(n));
+      t.splice(0, t.length + 1, ...sorted);
+    }
+    return t;
+  };
+
+  for (let i = 0, l = fromTree.length; i < l; i += 1) {
+    recurseTree(fromTree[i], toTree);
+  }
+
+  return toTree;
+};

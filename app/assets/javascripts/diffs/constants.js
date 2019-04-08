@@ -42,3 +42,11 @@ export const INITIAL_TREE_WIDTH = 320;
 export const MIN_TREE_WIDTH = 240;
 export const MAX_TREE_WIDTH = 400;
 export const TREE_HIDE_STATS_WIDTH = 260;
+
+export const OLD_LINE_KEY = 'old_line';
+export const NEW_LINE_KEY = 'new_line';
+export const TYPE_KEY = 'type';
+export const LEFT_LINE_KEY = 'left';
+
+export const CENTERED_LIMITED_CONTAINER_CLASSES =
+  'container-limited limit-container-width mx-auto px-3';

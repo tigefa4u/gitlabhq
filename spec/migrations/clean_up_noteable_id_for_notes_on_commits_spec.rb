@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require Rails.root.join('db', 'migrate', '20190228092516_clean_up_noteable_id_for_notes_on_commits.rb')
+require Rails.root.join('db', 'post_migrate', '20190313092516_clean_up_noteable_id_for_notes_on_commits.rb')
 
 describe CleanUpNoteableIdForNotesOnCommits, :migration do
   let(:notes) { table(:notes) }

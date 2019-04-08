@@ -4,7 +4,7 @@
 - show_label_merge_requests_link = (defined?(@project) || defined?(@group)) && show_label_issuables_link?(label, :merge_requests, project: @project)
 
 .label-name
-  = render_colored_label(label, tooltip: false)
+  = render_label(label, tooltip: false)
 .label-description
   .append-right-default.prepend-left-default
     - if label.description.present?

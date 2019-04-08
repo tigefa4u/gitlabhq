@@ -11,7 +11,7 @@ module Gitlab
       include Gitlab::Git::WrapsGitalyErrors
       include Gitlab::EncodingHelper
       include Gitlab::Utils::StrongMemoize
-      include Gitlab::Git::RuggedImpl::Repository
+      prepend Gitlab::Git::RuggedImpl::Repository
 
       SEARCH_CONTEXT_LINES = 3
       REV_LIST_COMMIT_LIMIT = 2_000
@@ -231,12 +231,12 @@ module Gitlab
         end
       end
 
-      def archive_metadata(ref, storage_path, project_path, format = "tar.gz", append_sha:)
+      def archive_metadata(ref, storage_path, project_path, format = "tar.gz", append_sha:, path: nil)
         ref ||= root_ref
         commit = Gitlab::Git::Commit.find(self, ref)
         return {} if commit.nil?
 
-        prefix = archive_prefix(ref, commit.id, project_path, append_sha: append_sha)
+        prefix = archive_prefix(ref, commit.id, project_path, append_sha: append_sha, path: path)
 
         {
           'ArchivePrefix' => prefix,
@@ -248,13 +248,14 @@ module Gitlab
 
       # This is both the filename of the archive (missing the extension) and the
       # name of the top-level member of the archive under which all files go
-      def archive_prefix(ref, sha, project_path, append_sha:)
+      def archive_prefix(ref, sha, project_path, append_sha:, path:)
         append_sha = (ref != sha) if append_sha.nil?
 
         formatted_ref = ref.tr('/', '-')
 
         prefix_segments = [project_path, formatted_ref]
         prefix_segments << sha if append_sha
+        prefix_segments << path.tr('/', '-').gsub(%r{^/|/$}, '') if path
 
         prefix_segments.join('-')
       end
@@ -276,7 +277,7 @@ module Gitlab
       # senddata response.
       def archive_file_path(storage_path, sha, name, format = "tar.gz")
         # Build file path
-        return nil unless name
+        return unless name
 
         extension =
           case format
@@ -344,12 +345,12 @@ module Gitlab
         end
       end
 
-      def new_blobs(newrev)
+      def new_blobs(newrev, dynamic_timeout: nil)
         return [] if newrev.blank? || newrev == ::Gitlab::Git::BLANK_SHA
 
         strong_memoize("new_blobs_#{newrev}") do
           wrapped_gitaly_errors do
-            gitaly_ref_client.list_new_blobs(newrev, REV_LIST_COMMIT_LIMIT)
+            gitaly_ref_client.list_new_blobs(newrev, REV_LIST_COMMIT_LIMIT, dynamic_timeout: dynamic_timeout)
           end
         end
       end
@@ -853,17 +854,20 @@ module Gitlab
         true
       end
 
+      # rubocop:disable Metrics/ParameterLists
       def multi_action(
         user, branch_name:, message:, actions:,
         author_email: nil, author_name: nil,
-        start_branch_name: nil, start_repository: self)
+        start_branch_name: nil, start_repository: self,
+        force: false)
 
         wrapped_gitaly_errors do
           gitaly_operation_client.user_commit_files(user, branch_name,
               message, actions, author_email, author_name,
-              start_branch_name, start_repository)
+              start_branch_name, start_repository, force)
         end
       end
+      # rubocop:enable Metrics/ParameterLists
 
       def write_config(full_path:)
         return unless full_path.present?

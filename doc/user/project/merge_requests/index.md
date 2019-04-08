@@ -18,7 +18,7 @@ With GitLab merge requests, you can:
 - Live preview the changes when [Review Apps](../../../ci/review_apps/index.md) is configured for your project
 - Build, test, and deploy your code in a per-branch basis with built-in [GitLab CI/CD](../../../ci/README.md)
 - Prevent the merge request from being merged before it's ready with [WIP MRs](#work-in-progress-merge-requests)
-- View the deployment process through [Pipeline Graphs](../../../ci/pipelines.md#pipeline-graphs)
+- View the deployment process through [Pipeline Graphs](../../../ci/pipelines.md#visualizing-pipelines)
 - [Automatically close the issue(s)](../../project/issues/closing_issues.md#via-merge-request) that originated the implementation proposed in the merge request
 - Assign it to any registered user, and change the assignee how many times you need
 - Assign a [milestone](../../project/milestones/index.md) and track the development of a broader implementation
@@ -254,7 +254,7 @@ To prevent merge requests from accidentally being accepted before they're
 completely ready, GitLab blocks the "Accept" button for merge requests that
 have been marked as a **Work In Progress**.
 
-[Learn more about settings a merge request as "Work In Progress".](work_in_progress_merge_requests.md)
+[Learn more about setting a merge request as "Work In Progress".](work_in_progress_merge_requests.md)
 
 ## Merge request diff file navigation
 

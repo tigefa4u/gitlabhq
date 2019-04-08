@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 describe Clusters::Applications::Knative do
@@ -64,23 +66,28 @@ describe Clusters::Applications::Knative do
         expect(ClusterWaitForIngressIpAddressWorker).not_to have_received(:perform_in)
       end
     end
+
+    context 'when there is already an external_hostname' do
+      let(:application) { create(:clusters_applications_knative, :installed, external_hostname: 'localhost.localdomain') }
+
+      it 'does not schedule a ClusterWaitForIngressIpAddressWorker' do
+        expect(ClusterWaitForIngressIpAddressWorker).not_to have_received(:perform_in)
+      end
+    end
   end
 
-  describe '#install_command' do
-    subject { knative.install_command }
-
-    it 'should be an instance of Helm::InstallCommand' do
+  shared_examples 'a command' do
+    it 'is an instance of Helm::InstallCommand' do
       expect(subject).to be_an_instance_of(Gitlab::Kubernetes::Helm::InstallCommand)
     end
 
-    it 'should be initialized with knative arguments' do
+    it 'is initialized with knative arguments' do
       expect(subject.name).to eq('knative')
       expect(subject.chart).to eq('knative/knative')
-      expect(subject.version).to eq('0.2.2')
       expect(subject.files).to eq(knative.files)
     end
 
-    it 'should not install metrics for prometheus' do
+    it 'does not install metrics for prometheus' do
       expect(subject.postinstall).to be_nil
     end
 
@@ -90,12 +97,33 @@ describe Clusters::Applications::Knative do
 
       subject { knative.install_command }
 
-      it 'should install metrics' do
+      it 'installs metrics' do
         expect(subject.postinstall).not_to be_nil
         expect(subject.postinstall.length).to be(1)
         expect(subject.postinstall[0]).to eql("kubectl apply -f #{Clusters::Applications::Knative::METRICS_CONFIG}")
       end
     end
+  end
+
+  describe '#install_command' do
+    subject { knative.install_command }
+
+    it 'is initialized with latest version' do
+      expect(subject.version).to eq('0.3.0')
+    end
+
+    it_behaves_like 'a command'
+  end
+
+  describe '#update_command' do
+    let!(:current_installed_version) { knative.version = '0.1.0' }
+    subject { knative.update_command }
+
+    it 'is initialized with current version' do
+      expect(subject.version).to eq(current_installed_version)
+    end
+
+    it_behaves_like 'a command'
   end
 
   describe '#files' do
@@ -104,7 +132,7 @@ describe Clusters::Applications::Knative do
 
     subject { application.files }
 
-    it 'should include knative specific keys in the values.yaml file' do
+    it 'includes knative specific keys in the values.yaml file' do
       expect(values).to include('domain')
     end
   end
@@ -137,7 +165,7 @@ describe Clusters::Applications::Knative do
       synchronous_reactive_cache(knative)
     end
 
-    it 'should be able k8s core for pod details' do
+    it 'is able k8s core for pod details' do
       expect(knative.service_pod_details(namespace.namespace, cluster.cluster_project.project.name)).not_to be_nil
     end
   end
@@ -162,7 +190,7 @@ describe Clusters::Applications::Knative do
       stub_kubeclient_service_pods
     end
 
-    it 'should have an unintialized cache' do
+    it 'has an unintialized cache' do
       is_expected.to be_nil
     end
 
@@ -176,11 +204,11 @@ describe Clusters::Applications::Knative do
         synchronous_reactive_cache(knative)
       end
 
-      it 'should have cached services' do
+      it 'has cached services' do
         is_expected.not_to be_nil
       end
 
-      it 'should match our namespace' do
+      it 'matches our namespace' do
         expect(knative.services_for(ns: namespace)).not_to be_nil
       end
     end

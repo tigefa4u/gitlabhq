@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class Environment < ActiveRecord::Base
+class Environment < ApplicationRecord
   include Gitlab::Utils::StrongMemoize
   # Used to generate random suffixes for the slug
   LETTERS = 'a'..'z'
@@ -119,7 +119,7 @@ class Environment < ActiveRecord::Base
   def first_deployment_for(commit_sha)
     ref = project.repository.ref_name_for_sha(ref_path, commit_sha)
 
-    return nil unless ref
+    return unless ref
 
     deployment_iid = ref.split('/').last
     deployments.find_by(iid: deployment_iid)
@@ -130,7 +130,7 @@ class Environment < ActiveRecord::Base
   end
 
   def formatted_external_url
-    return nil unless external_url
+    return unless external_url
 
     external_url.gsub(%r{\A.*?://}, '')
   end
@@ -170,8 +170,10 @@ class Environment < ActiveRecord::Base
     prometheus_adapter.query(:environment, self) if has_metrics?
   end
 
-  def additional_metrics
-    prometheus_adapter.query(:additional_metrics_environment, self) if has_metrics?
+  def additional_metrics(*args)
+    return unless has_metrics?
+
+    prometheus_adapter.query(:additional_metrics_environment, self, *args.map(&:to_f))
   end
 
   # rubocop: disable CodeReuse/ServiceClass

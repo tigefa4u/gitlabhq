@@ -70,26 +70,28 @@ class IssuableBaseService < BaseService
   end
 
   def filter_labels
-    filter_labels_in_param(:add_label_ids)
-    filter_labels_in_param(:remove_label_ids)
-    filter_labels_in_param(:label_ids)
-    find_or_create_label_ids
+    params[:add_label_ids] = labels_service.filter_labels_ids_in_param(:add_label_ids) if params[:add_label_ids]
+    params[:remove_label_ids] = labels_service.filter_labels_ids_in_param(:remove_label_ids) if params[:remove_label_ids]
+
+    if params[:label_ids]
+      params[:label_ids] = labels_service.filter_labels_ids_in_param(:label_ids)
+    elsif params[:labels]
+      params[:label_ids] = labels_service.find_or_create_by_titles.map(&:id)
+    end
   end
 
-  # rubocop: disable CodeReuse/ActiveRecord
   def filter_labels_in_param(key)
     return if params[key].to_a.empty?
 
-    params[key] = available_labels.where(id: params[key]).pluck(:id)
+    params[key] = available_labels.id_in(params[key]).pluck_primary_key
   end
-  # rubocop: enable CodeReuse/ActiveRecord
 
   def find_or_create_label_ids
     labels = params.delete(:labels)
 
     return unless labels
 
-    params[:label_ids] = labels.split(",").map do |label_name|
+    params[:label_ids] = labels.map do |label_name|
       label = Labels::FindOrCreateService.new(
         current_user,
         parent,
@@ -101,12 +103,17 @@ class IssuableBaseService < BaseService
     end.compact
   end
 
-  def process_label_ids(attributes, existing_label_ids: nil)
+  def labels_service
+    @labels_service ||= ::Labels::AvailableLabelsService.new(current_user, parent, params)
+  end
+
+  def process_label_ids(attributes, existing_label_ids: nil, extra_label_ids: [])
     label_ids = attributes.delete(:label_ids)
     add_label_ids = attributes.delete(:add_label_ids)
     remove_label_ids = attributes.delete(:remove_label_ids)
 
     new_label_ids = existing_label_ids || label_ids || []
+    new_label_ids |= extra_label_ids
 
     if add_label_ids.blank? && remove_label_ids.blank?
       new_label_ids = label_ids if label_ids
@@ -115,11 +122,7 @@ class IssuableBaseService < BaseService
       new_label_ids -= remove_label_ids if remove_label_ids
     end
 
-    new_label_ids
-  end
-
-  def available_labels
-    @available_labels ||= LabelsFinder.new(current_user, project_id: @project.id, include_ancestor_groups: true).execute
+    new_label_ids.uniq
   end
 
   def handle_quick_actions_on_create(issuable)
@@ -145,7 +148,7 @@ class IssuableBaseService < BaseService
 
     params.delete(:state_event)
     params[:author] ||= current_user
-    params[:label_ids] = issuable.label_ids.to_a + process_label_ids(params)
+    params[:label_ids] = process_label_ids(params, extra_label_ids: issuable.label_ids.to_a)
 
     issuable.assign_attributes(params)
 
@@ -386,5 +389,11 @@ class IssuableBaseService < BaseService
 
   def parent
     project
+  end
+
+  # we need to check this because milestone from milestone_id param is displayed on "new" page
+  # where private project milestone could leak without this check
+  def ensure_milestone_available(issuable)
+    issuable.milestone_id = nil unless issuable.milestone_available?
   end
 end

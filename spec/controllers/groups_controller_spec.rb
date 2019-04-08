@@ -32,21 +32,46 @@ describe GroupsController do
     end
   end
 
+  shared_examples 'details view' do
+    it { is_expected.to render_template('groups/show') }
+
+    context 'as atom' do
+      let!(:event) { create(:event, project: project) }
+      let(:format) { :atom }
+
+      it { is_expected.to render_template('groups/show') }
+
+      it 'assigns events for all the projects in the group' do
+        subject
+        expect(assigns(:events)).to contain_exactly(event)
+      end
+    end
+  end
+
   describe 'GET #show' do
     before do
       sign_in(user)
       project
     end
 
-    context 'as atom' do
-      it 'assigns events for all the projects in the group' do
-        create(:event, project: project)
+    let(:format) { :html }
 
-        get :show, params: { id: group.to_param }, format: :atom
+    subject { get :show, params: { id: group.to_param }, format: format }
 
-        expect(assigns(:events)).not_to be_empty
-      end
+    it_behaves_like 'details view'
+  end
+
+  describe 'GET #details' do
+    before do
+      sign_in(user)
+      project
     end
+
+    let(:format) { :html }
+
+    subject { get :details, params: { id: group.to_param }, format: format }
+
+    it_behaves_like 'details view'
   end
 
   describe 'GET edit' do
@@ -324,6 +349,13 @@ describe GroupsController do
       expect(assigns(:group).errors).not_to be_empty
       expect(assigns(:group).path).not_to eq('new_path')
     end
+
+    it 'updates the project_creation_level successfully' do
+      post :update, params: { id: group.to_param, group: { project_creation_level: ::Gitlab::Access::MAINTAINER_PROJECT_ACCESS } }
+
+      expect(response).to have_gitlab_http_status(302)
+      expect(group.reload.project_creation_level).to eq(::Gitlab::Access::MAINTAINER_PROJECT_ACCESS)
+    end
   end
 
   describe '#ensure_canonical_path' do
@@ -541,11 +573,11 @@ describe GroupsController do
           }
       end
 
-      it 'should return a notice' do
+      it 'returns a notice' do
         expect(flash[:notice]).to eq("Group '#{group.name}' was successfully transferred.")
       end
 
-      it 'should redirect to the new path' do
+      it 'redirects to the new path' do
         expect(response).to redirect_to("/#{new_parent_group.path}/#{group.path}")
       end
     end
@@ -562,11 +594,11 @@ describe GroupsController do
           }
       end
 
-      it 'should return a notice' do
+      it 'returns a notice' do
         expect(flash[:notice]).to eq("Group '#{group.name}' was successfully transferred.")
       end
 
-      it 'should redirect to the new path' do
+      it 'redirects to the new path' do
         expect(response).to redirect_to("/#{group.path}")
       end
     end
@@ -586,12 +618,12 @@ describe GroupsController do
           }
       end
 
-      it 'should return an alert' do
+      it 'returns an alert' do
         expect(flash[:alert]).to eq "Transfer failed: namespace directory cannot be moved"
       end
 
-      it 'should redirect to the current path' do
-        expect(response).to render_template(:edit)
+      it 'redirects to the current path' do
+        expect(response).to redirect_to(edit_group_path(group))
       end
     end
 
@@ -608,7 +640,7 @@ describe GroupsController do
           }
       end
 
-      it 'should be denied' do
+      it 'is denied' do
         expect(response).to have_gitlab_http_status(404)
       end
     end

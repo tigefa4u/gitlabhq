@@ -2,7 +2,7 @@
 
 module Clusters
   module Applications
-    class Ingress < ActiveRecord::Base
+    class Ingress < ApplicationRecord
       VERSION = '1.1.2'.freeze
 
       self.table_name = 'clusters_applications_ingress'
@@ -48,6 +48,7 @@ module Clusters
       def schedule_status_update
         return unless installed?
         return if external_ip
+        return if external_hostname
 
         ClusterWaitForIngressIpAddressWorker.perform_async(name, id)
       end

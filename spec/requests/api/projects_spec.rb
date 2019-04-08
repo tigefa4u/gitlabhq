@@ -13,12 +13,18 @@ shared_examples 'languages and percentages JSON response' do
     )
   end
 
-  it 'returns expected language values' do
-    get api("/projects/#{project.id}/languages", user)
+  context "when the languages haven't been detected yet" do
+    it 'returns expected language values' do
+      get api("/projects/#{project.id}/languages", user)
 
-    expect(response).to have_gitlab_http_status(:ok)
-    expect(json_response).to eq(expected_languages)
-    expect(json_response.count).to be > 1
+      expect(response).to have_gitlab_http_status(:ok)
+      expect(json_response).to eq({})
+
+      get api("/projects/#{project.id}/languages", user)
+
+      expect(response).to have_gitlab_http_status(:ok)
+      expect(JSON.parse(response.body)).to eq(expected_languages)
+    end
   end
 
   context 'when the languages were detected before' do
@@ -136,6 +142,7 @@ describe API::Projects do
     end
 
     let!(:public_project) { create(:project, :public, name: 'public_project') }
+
     before do
       project
       project2
@@ -968,8 +975,16 @@ describe API::Projects do
 
   describe 'GET /projects/:id' do
     context 'when unauthenticated' do
-      it 'returns the public projects' do
-        public_project = create(:project, :public)
+      it 'does not return private projects' do
+        private_project = create(:project, :private)
+
+        get api("/projects/#{private_project.id}")
+
+        expect(response).to have_gitlab_http_status(404)
+      end
+
+      it 'returns public projects' do
+        public_project = create(:project, :repository, :public)
 
         get api("/projects/#{public_project.id}")
 
@@ -977,7 +992,33 @@ describe API::Projects do
         expect(json_response['id']).to eq(public_project.id)
         expect(json_response['description']).to eq(public_project.description)
         expect(json_response['default_branch']).to eq(public_project.default_branch)
+        expect(json_response['ci_config_path']).to eq(public_project.ci_config_path)
         expect(json_response.keys).not_to include('permissions')
+      end
+
+      context 'and the project has a private repository' do
+        let(:project) { create(:project, :repository, :public, :repository_private) }
+        let(:protected_attributes) { %w(default_branch ci_config_path) }
+
+        it 'hides protected attributes of private repositories if user is not a member' do
+          get api("/projects/#{project.id}", user)
+
+          expect(response).to have_gitlab_http_status(200)
+          protected_attributes.each do |attribute|
+            expect(json_response.keys).not_to include(attribute)
+          end
+        end
+
+        it 'exposes protected attributes of private repositories if user is a member' do
+          project.add_developer(user)
+
+          get api("/projects/#{project.id}", user)
+
+          expect(response).to have_gitlab_http_status(200)
+          protected_attributes.each do |attribute|
+            expect(json_response.keys).to include(attribute)
+          end
+        end
       end
     end
 
@@ -1128,6 +1169,36 @@ describe API::Projects do
 
         expect(response).to have_gitlab_http_status(200)
         expect(json_response).to include 'statistics'
+      end
+
+      context "and the project has a private repository" do
+        let(:project) { create(:project, :public, :repository, :repository_private) }
+
+        it "does not include statistics if user is not a member" do
+          get api("/projects/#{project.id}", user), params: { statistics: true }
+
+          expect(response).to have_gitlab_http_status(200)
+          expect(json_response).not_to include 'statistics'
+        end
+
+        it "includes statistics if user is a member" do
+          project.add_developer(user)
+
+          get api("/projects/#{project.id}", user), params: { statistics: true }
+
+          expect(response).to have_gitlab_http_status(200)
+          expect(json_response).to include 'statistics'
+        end
+
+        it "includes statistics also when repository is disabled" do
+          project.add_developer(user)
+          project.project_feature.update_attribute(:repository_access_level, ProjectFeature::DISABLED)
+
+          get api("/projects/#{project.id}", user), params: { statistics: true }
+
+          expect(response).to have_gitlab_http_status(200)
+          expect(json_response).to include 'statistics'
+        end
       end
 
       it "includes import_error if user can admin project" do
@@ -1510,6 +1581,9 @@ describe API::Projects do
 
   describe "POST /projects/:id/share" do
     let(:group) { create(:group) }
+    before do
+      group.add_developer(user)
+    end
 
     it "shares project with group" do
       expires_at = 10.days.from_now.to_date
@@ -1559,6 +1633,15 @@ describe API::Projects do
 
       expect(response).to have_gitlab_http_status(400)
       expect(json_response['error']).to eq 'group_access does not have a valid value'
+    end
+
+    it "returns a 409 error when link is not saved" do
+      allow(::Projects::GroupLinks::CreateService).to receive_message_chain(:new, :execute)
+        .and_return({ status: :error, http_status: 409, message: 'error' })
+
+      post api("/projects/#{project.id}/share", user), params: { group_id: group.id, group_access: Gitlab::Access::DEVELOPER }
+
+      expect(response).to have_gitlab_http_status(409)
     end
   end
 

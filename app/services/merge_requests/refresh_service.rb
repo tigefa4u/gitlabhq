@@ -20,6 +20,7 @@ module MergeRequests
       close_upon_missing_source_branch_ref
       post_merge_manually_merged
       reload_merge_requests
+      outdate_suggestions
       reset_merge_when_pipeline_succeeds
       mark_pending_todos_done
       cache_merge_requests_closing_issues
@@ -106,7 +107,7 @@ module MergeRequests
         end
 
         merge_request.mark_as_unchecked
-        create_merge_request_pipeline(merge_request, current_user)
+        create_pipeline_for(merge_request, current_user)
         UpdateHeadPipelineForMergeRequestWorker.perform_async(merge_request.id)
       end
 
@@ -123,6 +124,14 @@ module MergeRequests
     def branch_and_project_match?(merge_request)
       merge_request.source_project == @project &&
         merge_request.source_branch == @push.branch_name
+    end
+
+    def outdate_suggestions
+      outdate_service = Suggestions::OutdateService.new
+
+      merge_requests_for_source_branch.each do |merge_request|
+        outdate_service.execute(merge_request)
+      end
     end
 
     def reset_merge_when_pipeline_succeeds
