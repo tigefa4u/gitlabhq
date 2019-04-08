@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 describe Ci::Variable do
-  subject { build(:ci_variable) }
+  subject(:ci_variable) { build(:ci_variable) }
 
   describe 'validations' do
     it { is_expected.to include_module(HasVariable) }
@@ -31,6 +31,17 @@ describe Ci::Variable do
       it 'returns the variable' do
         is_expected.to contain_exactly(variable)
       end
+    end
+  end
+
+  describe "#variable_type" do
+    it "defaults to env_var" do
+      expect(ci_variable.variable_type).to eq("env_var")
+    end
+
+    it "supports variable type file" do
+      ci_variable = build(:ci_variable, variable_type: :file)
+      expect(ci_variable).to be_file
     end
   end
 end

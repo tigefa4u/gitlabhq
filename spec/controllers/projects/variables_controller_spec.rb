@@ -33,6 +33,18 @@ describe Projects::VariablesController do
         format: :json
     end
 
-    include_examples 'PATCH #update updates variables'
+    include_examples 'PATCH #update updates variables' do
+      context 'for variables of type file' do
+        let(:variables_attributes) do
+          [
+            new_variable_attributes.merge(variable_type: 'file')
+          ]
+        end
+
+        it 'creates new variable of type file' do
+          expect { subject }.to change { owner.variables.file.count }.by(1)
+        end
+      end
+    end
   end
 end
