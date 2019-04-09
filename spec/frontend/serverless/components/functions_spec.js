@@ -31,11 +31,11 @@ describe('functionsComponent', () => {
   });
 
   it('should render empty state when Knative is not installed', () => {
+    store.dispatch('receiveFunctionsSuccess', { knative_installed: false });
     component = shallowMount(functionsComponent, {
       localVue,
       store,
       propsData: {
-        installed: false,
         clustersPath: '',
         helpPath: '',
         statusPath: '',
@@ -52,7 +52,6 @@ describe('functionsComponent', () => {
       localVue,
       store,
       propsData: {
-        installed: true,
         clustersPath: '',
         helpPath: '',
         statusPath: '',
@@ -64,12 +63,11 @@ describe('functionsComponent', () => {
   });
 
   it('should render empty state when there is no function data', () => {
-    store.dispatch('receiveFunctionsNoDataSuccess');
+    store.dispatch('receiveFunctionsNoDataSuccess', { knative_installed: true });
     component = shallowMount(functionsComponent, {
       localVue,
       store,
       propsData: {
-        installed: true,
         clustersPath: '',
         helpPath: '',
         statusPath: '',
@@ -88,12 +86,31 @@ describe('functionsComponent', () => {
     );
   });
 
+  it('should render functions and a loader when functions are partially fetched', () => {
+    store.dispatch('receiveFunctionsPartial', {
+      ...mockServerlessFunctions,
+      knative_installed: 'checking',
+    });
+    component = shallowMount(functionsComponent, {
+      localVue,
+      store,
+      propsData: {
+        clustersPath: '',
+        helpPath: '',
+        statusPath: '',
+      },
+      sync: false,
+    });
+
+    expect(component.find('.js-functions-wrapper').exists()).toBe(true);
+    expect(component.find('.js-functions-loader').exists()).toBe(true);
+  });
+
   it('should render the functions list', () => {
     component = shallowMount(functionsComponent, {
       localVue,
       store,
       propsData: {
-        installed: true,
         clustersPath: 'clustersPath',
         helpPath: 'helpPath',
         statusPath,

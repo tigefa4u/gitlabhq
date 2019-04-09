@@ -35,6 +35,8 @@ describe Clusters::Cluster do
 
   it { is_expected.to respond_to :project }
 
+  it { expect(subject.knative_services_finder).to be_instance_of(Clusters::Cluster::KnativeServicesFinder) }
+
   describe '.enabled' do
     subject { described_class.enabled }
 
