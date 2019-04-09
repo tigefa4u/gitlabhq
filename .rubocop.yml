@@ -29,8 +29,8 @@ GetText/DecorateString:
   Exclude:
     - 'spec/**/*'
     - 'lib/tasks/**/*'
-    - 'lib/system_check'
-    - 'lib/gitlab/setup_helper'
+    - 'lib/system_check/**/*'
+    - 'lib/gitlab/setup_helper.rb'
     - 'lib/gitlab/ee_compat_check.rb'
     - 'lib/api/**/*'
     - 'app/graphql/**/*'
@@ -47,8 +47,8 @@ GetText/DecorateStringFormattingUsingInterpolation:
   Exclude:
     - 'spec/**/*'
     - 'lib/tasks/**/*'
-    - 'lib/system_check'
-    - 'lib/gitlab/setup_helper'
+    - 'lib/system_check/**/*'
+    - 'lib/gitlab/setup_helper.rb'
     - 'lib/gitlab/ee_compat_check.rb'
     - 'lib/api/**/*'
     - 'app/graphql/**/*'
@@ -63,8 +63,8 @@ GetText/DecorateStringFormattingUsingPercent:
   Exclude:
     - 'spec/**/*'
     - 'lib/tasks/**/*'
-    - 'lib/system_check'
-    - 'lib/gitlab/setup_helper'
+    - 'lib/system_check/**/*'
+    - 'lib/gitlab/setup_helper.rb'
     - 'lib/gitlab/ee_compat_check.rb'
     - 'lib/api/**/*'
     - 'app/graphql/**/*'
