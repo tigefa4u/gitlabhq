@@ -8,6 +8,7 @@ module Gitlab
           include ::Gitlab::Utils::StrongMemoize
 
           SKIP_PATTERN = /\[(ci[ _-]skip|skip[ _-]ci)\]/i
+          SKIP_PUSH_OPTION = 'ci.skip'
 
           def perform!
             if skipped?
@@ -34,8 +35,7 @@ module Gitlab
           end
 
           def push_option_skips_ci?
-            @command.push_options.present? &&
-              @command.push_options.deep_symbolize_keys.dig(:ci, :skip).present?
+            !!(@command.push_options&.include?(SKIP_PUSH_OPTION))
           end
         end
       end

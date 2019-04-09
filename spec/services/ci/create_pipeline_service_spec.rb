@@ -418,7 +418,8 @@ describe Ci::CreatePipelineService do
 
     context 'when push options contain ci.skip' do
       let(:push_options) do
-        { 'ci' => { 'skip' => true } }
+        ['ci.skip',
+         'another push option']
       end
 
       it 'creates a pipline in the skipped state' do

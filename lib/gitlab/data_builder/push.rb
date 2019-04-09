@@ -32,7 +32,10 @@ module Gitlab
             }
           ],
           total_commits_count: 1,
-          push_options: { ci: { skip: true } }
+          push_options: [
+            "ci.skip",
+            "custom option"
+          ]
         }.freeze
 
       # Produce a hash of post-receive data
@@ -54,11 +57,11 @@ module Gitlab
       #   },
       #   commits: Array,
       #   total_commits_count: Fixnum,
-      #   push_options: Hash
+      #   push_options: Array
       # }
       #
       # rubocop:disable Metrics/ParameterLists
-      def build(project, user, oldrev, newrev, ref, commits = [], message = nil, commits_count: nil, push_options: {})
+      def build(project, user, oldrev, newrev, ref, commits = [], message = nil, commits_count: nil, push_options: [])
         commits = Array(commits)
 
         # Total commits count
