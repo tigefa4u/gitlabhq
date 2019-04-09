@@ -29,10 +29,15 @@ GetText/DecorateString:
   Exclude:
     - 'spec/**/*'
     - 'lib/tasks/**/*'
+    - 'lib/system_check'
+    - 'lib/gitlab/setup_helper'
+    - 'lib/gitlab/ee_compat_check.rb'
     - 'qa/**/*'
     - 'db/**/*'
     - 'danger/**/*'
     - 'rubocop/**/*'
+    - 'scripts/**/*'
+    - 'config/**/*'
 GetText/DecorateFunctionMessage:
   Enabled: false
 GetText/DecorateStringFormattingUsingInterpolation:
@@ -40,19 +45,29 @@ GetText/DecorateStringFormattingUsingInterpolation:
   Exclude:
     - 'spec/**/*'
     - 'lib/tasks/**/*'
+    - 'lib/system_check'
+    - 'lib/gitlab/setup_helper'
+    - 'lib/gitlab/ee_compat_check.rb'
     - 'qa/**/*'
     - 'db/**/*'
     - 'danger/**/*'
     - 'rubocop/**/*'
+    - 'scripts/**/*'
+    - 'config/**/*'
 GetText/DecorateStringFormattingUsingPercent:
   Enabled: true
   Exclude:
     - 'spec/**/*'
     - 'lib/tasks/**/*'
+    - 'lib/system_check'
+    - 'lib/gitlab/setup_helper'
+    - 'lib/gitlab/ee_compat_check.rb'
     - 'qa/**/*'
     - 'db/**/*'
     - 'danger/**/*'
     - 'rubocop/**/*'
+    - 'scripts/**/*'
+    - 'config/**/*'
 RailsI18n/DecorateString:
   Enabled: false
 
