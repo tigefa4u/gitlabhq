@@ -10,6 +10,9 @@ Rails.application.configure do
   config.consider_all_requests_local       = true
   config.action_controller.perform_caching = false
 
+  # Enable serving of images, stylesheets, and JavaScripts from an asset server
+  config.action_controller.asset_host = ENV['GITLAB_CDN_HOST'] if ENV['GITLAB_CDN_HOST'].present?
+
   # Don't care if the mailer can't send
   config.action_mailer.raise_delivery_errors = false
 
