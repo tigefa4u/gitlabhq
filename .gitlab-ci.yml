@@ -10,6 +10,7 @@ include:
       - unknown_failure
       - api_failure
       - runner_system_failure
+      - job_execution_timeout
   tags:
     - gitlab-org
 
