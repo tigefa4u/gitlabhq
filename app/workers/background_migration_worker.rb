@@ -84,7 +84,7 @@ class BackgroundMigrationWorker
   def database_unhealthy_counter
     Gitlab::Metrics.counter(
       :background_migration_database_health_reschedules,
-      'The number of times a background migration is rescheduled because the database is unhealthy.'
+      'The number of times a background migration is rescheduled because the database is unhealthy.' # rubocop:disable GetText/DecorateString
     )
   end
 end
