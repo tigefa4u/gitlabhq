@@ -273,8 +273,9 @@ package-and-qa:
     - ./scripts/trigger-build omnibus
   when: manual
   only:
-    - /.+/@gitlab-org/gitlab-ce
-    - /.+/@gitlab-org/gitlab-ee
+    projects:
+    - gitlab-org/gitlab-ce
+    - gitlab-org/gitlab-ee
 
 # Review docs base
 .review-docs: &review-docs
@@ -300,8 +301,9 @@ review-docs-deploy-manual:
     - ./$SCRIPT_NAME deploy
   when: manual
   only:
-    - branches@gitlab-org/gitlab-ce
-    - branches@gitlab-org/gitlab-ee
+    projects:
+    - gitlab-org/gitlab-ce
+    - gitlab-org/gitlab-ee
   <<: *except-docs-and-qa
 
 # Always trigger a docs build in gitlab-docs only on docs-only branches.
@@ -313,8 +315,11 @@ review-docs-deploy:
     - gem install gitlab --no-document
     - ./$SCRIPT_NAME deploy
   only:
-    - /(^docs[\/-].*|.*-docs$)/@gitlab-org/gitlab-ce
-    - /(^docs[\/-].*|.*-docs$)/@gitlab-org/gitlab-ee
+    projects:
+    - gitlab-org/gitlab-ce
+    - gitlab-org/gitlab-ee
+    change:
+    - doc/*
   <<: *except-qa
 
 # Cleanup remote environment of gitlab-docs
@@ -329,8 +334,9 @@ review-docs-cleanup:
     - ./$SCRIPT_NAME cleanup
   when: manual
   only:
-    - branches@gitlab-org/gitlab-ce
-    - branches@gitlab-org/gitlab-ee
+    projects:
+    - gitlab-org/gitlab-ce
+    - gitlab-org/gitlab-ee
 
 ##
 # Trigger a docker image build in CNG (Cloud Native GitLab) repository
@@ -402,10 +408,9 @@ flaky-examples-check:
   stage: post-test
   allow_failure: true
   retry: 0
-  only:
-    - branches
   except:
     - master
+    - tags
     - /(^docs[\/-].*|.*-docs$)/
     - /(^qa[\/-].*|.*-qa$)/
   artifacts:
@@ -466,9 +471,9 @@ setup-test-env:
 # GitLab Review apps
 .review-only: &review-only
   only:
-    refs:
-      - branches@gitlab-org/gitlab-ce
-      - branches@gitlab-org/gitlab-ee
+    projects:
+      - merge_requests@gitlab-org/gitlab-ce
+      - merge_requests@gitlab-org/gitlab-ee
     kubernetes: active
   except:
     refs:
@@ -724,10 +729,11 @@ gitlab:assets:compile:
       - public/assets/
   <<: *assets-compile-cache
   only:
-    - /.+/@gitlab-org/gitlab-ce
-    - /.+/@gitlab-org/gitlab-ee
-    - /.+/@gitlab/gitlabhq
-    - /.+/@gitlab/gitlab-ee
+    projects:
+    - gitlab-org/gitlab-ce
+    - gitlab-org/gitlab-ee
+    - gitlab/gitlabhq
+    - gitlab/gitlab-ee
   tags:
     - docker
     - gitlab-org
@@ -1027,7 +1033,8 @@ no_ee_check:
   script:
     - scripts/no-ee-check
   only:
-    - /.+/@gitlab-org/gitlab-ce
+    projects:
+    - gitlab-org/gitlab-ce
 
 # GitLab Review apps
 .review-build-cng-base: &review-build-cng-base
