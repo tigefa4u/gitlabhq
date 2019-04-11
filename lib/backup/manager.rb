@@ -122,7 +122,7 @@ module Backup
           # print list of available backups
           progress.puts " " + available_timestamps.join("\n ")
           progress.puts 'Please specify which one you want to restore:'
-          progress.puts 'rake gitlab:backup:restore BACKUP=timestamp_of_backup'
+          progress.puts 'rake gitlab:backup:restore BACKUP=[timestamp_date_version]'
           exit 1
         end
 
