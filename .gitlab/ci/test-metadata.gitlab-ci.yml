@@ -25,9 +25,6 @@ retrieve-tests-metadata:
     - mkdir -p rspec_profiling/
     - wget -O $FLAKY_RSPEC_SUITE_REPORT_PATH http://${TESTS_METADATA_S3_BUCKET}.s3.amazonaws.com/$FLAKY_RSPEC_SUITE_REPORT_PATH || rm $FLAKY_RSPEC_SUITE_REPORT_PATH
     - '[[ -f $FLAKY_RSPEC_SUITE_REPORT_PATH ]] || echo "{}" > ${FLAKY_RSPEC_SUITE_REPORT_PATH}'
-  except:
-    - /(^docs[\/-].*|.*-docs$)/
-    - /(^qa[\/-].*|.*-qa$)/
 
 update-tests-metadata:
   <<: *tests-metadata-state
@@ -55,7 +52,7 @@ update-tests-metadata:
     - master@gitlab/gitlab-ee
 
 flaky-examples-check:
-  extends: .dedicated-runner
+  extends: .dedicated-runner-code-diff
   image: ruby:2.5-alpine
   services: []
   before_script: []
@@ -67,11 +64,8 @@ flaky-examples-check:
   allow_failure: true
   retry: 0
   only:
-    - branches
-  except:
-    - master
-    - /(^docs[\/-].*|.*-docs$)/
-    - /(^qa[\/-].*|.*-qa$)/
+    refs:
+      - merge-requests
   artifacts:
     expire_in: 30d
     paths:

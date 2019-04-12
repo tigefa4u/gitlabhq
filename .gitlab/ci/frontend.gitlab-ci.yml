@@ -15,7 +15,7 @@
 
 gitlab:assets:compile:
   <<: *assets-compile-cache
-  extends: .dedicated-no-docs-pull-cache-job
+  extends: .dedicated-runner-code-diff-pull
   image: dev.gitlab.org:5005/gitlab/gitlab-build-images:ruby-2.5.3-git-2.18-chrome-71.0-node-8.x-yarn-1.12-graphicsmagick-1.3.29-docker-18.06.1
   dependencies:
     - setup-test-env
@@ -45,16 +45,17 @@ gitlab:assets:compile:
       - webpack-report/
       - public/assets/
   only:
-    - /.+/@gitlab-org/gitlab-ce
-    - /.+/@gitlab-org/gitlab-ee
-    - /.+/@gitlab/gitlabhq
-    - /.+/@gitlab/gitlab-ee
+    variables:
+      - $CI_PROJECT_PATH == "gitlab-org/gitlab-ce"
+      - $CI_PROJECT_PATH == "gitlab-org/gitlab-ee"
+      - $CI_PROJECT_PATH == "gitlab/gitlabhq"
+      - $CI_PROJECT_PATH == "gitlab/gitlab-ee"
   tags:
     - docker
     - gitlab-org
 
 compile-assets:
-  extends: .dedicated-runner
+  extends: .dedicated-runner-code-diff
   <<: *use-pg
   <<: *assets-compile-cache
   stage: prepare
@@ -72,9 +73,6 @@ compile-assets:
     paths:
       - node_modules
       - public/assets
-  except:
-    refs:
-      - /(^docs[\/-].*|.*-docs$)/
 
 gitlab:ui:visual:
   extends: .dedicated-runner
@@ -91,14 +89,11 @@ gitlab:ui:visual:
     - yarn install
     - CSS_URL=./application.css yarn test
   only:
-    changes:
-      - app/assets/stylesheets/*.scss
-      - app/assets/stylesheets/**/*.scss
-      - app/assets/stylesheets/**/**/*.scss
-  except:
     refs:
-      - /(^docs[\/-].*|.*-docs$)/
-      - master
+      - merge-requests
+    changes:
+      - "**/*.scss"
+  except:
     variables:
       - $CI_COMMIT_MESSAGE =~ /\[skip visual\]/i
   artifacts:
@@ -106,7 +101,7 @@ gitlab:ui:visual:
       - tests/__image_snapshots__/
 
 karma:
-  extends: .dedicated-no-docs-pull-cache-job
+  extends: .dedicated-runner-code-diff-pull
   <<: *use-pg
   dependencies:
     - compile-assets
@@ -132,7 +127,7 @@ karma:
       junit: junit_karma.xml
 
 jest:
-  extends: .dedicated-no-docs-and-no-qa-pull-cache-job
+  extends: .dedicated-runner-code-diff-pull
   <<: *use-pg
   dependencies:
   - compile-assets
@@ -159,7 +154,7 @@ jest:
     policy: pull-push
 
 qa:internal:
-  extends: .dedicated-no-docs-no-db-pull-cache-job
+  extends: .dedicated-runner-code-diff-pull-no-db
   services: []
   script:
     - cd qa/
@@ -169,7 +164,7 @@ qa:internal:
     - setup-test-env
 
 qa:selectors:
-  extends: .dedicated-no-docs-no-db-pull-cache-job
+  extends: .dedicated-runner-code-diff-pull-no-db
   services: []
   script:
     - cd qa/
@@ -179,7 +174,7 @@ qa:selectors:
     - setup-test-env
 
 .qa-frontend-node: &qa-frontend-node
-  extends: .dedicated-no-docs-no-db-pull-cache-job
+  extends: .dedicated-runner-code-diff-pull-no-db
   stage: test
   cache:
     key: "$CI_JOB_NAME"
@@ -208,7 +203,7 @@ qa-frontend-node:latest:
   allow_failure: true
 
 lint:javascript:report:
-  extends: .dedicated-no-docs-no-db-pull-cache-job
+  extends: .dedicated-runner-code-diff-pull-no-db
   stage: post-test
   dependencies: []
   before_script: []
@@ -222,7 +217,7 @@ lint:javascript:report:
       - eslint-report.html
 
 jsdoc:
-  extends: .dedicated-no-docs-no-db-pull-cache-job
+  extends: .dedicated-runner-code-diff-pull-no-db
   stage: post-test
   dependencies:
     - compile-assets

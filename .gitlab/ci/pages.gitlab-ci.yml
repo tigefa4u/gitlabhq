@@ -1,6 +1,6 @@
 
 pages:
-  extends: .dedicated-no-docs-no-db-pull-cache-job
+  extends: .dedicated-runner-code-diff-pull-no-db
   before_script: []
   stage: pages
   dependencies:
@@ -23,5 +23,6 @@ pages:
     paths:
       - public
   only:
+    refs:
     - master@gitlab-org/gitlab-ce
     - master@gitlab-org/gitlab-ee

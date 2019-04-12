@@ -1,4 +1,16 @@
+.default-settings:
+  only:
+    refs:
+      - master
+      - /-stable/
+      - merge-requests
+      - tags@gitlab-org/gitlab-ce
+      - tags@gitlab-org/gitlab-ee
+      - tags@gitlab/gitlabhq
+      - tags@gitlab/gitlab-ee
+
 .dedicated-runner:
+  extends: .default-settings
   retry:
     max: 1 # This is confusing but this means "2 runs at max".
     when:
@@ -8,40 +20,68 @@
   tags:
     - gitlab-org
 
-.default-cache: &default-cache
-  key: "debian-stretch-ruby-2.5.3-node-10.x"
-  paths:
-    - vendor/ruby
-    - .yarn-cache/
-    - vendor/gitaly-ruby
-
-.dedicated-runner-default-cache:
+.dedicated-runner-with-cache:
   extends: .dedicated-runner
   cache:
-    <<: *default-cache
+    key: "debian-stretch-ruby-2.5.3-node-10.x"
+    paths:
+      - vendor/ruby
+      - .yarn-cache/
+      - vendor/gitaly-ruby
 
-# Jobs that only need to pull cache
-.dedicated-pull-cache-job:
-  extends: .dedicated-runner
+.dedicated-runner-code-diff:
+  extends: .dedicated-runner-with-cache
+  only:
+    changes:
+      - app/*
+      - bin/*
+      - config/*
+      - db/*
+      - ee/*
+      - fixtures/*
+      - lib/*
+      - public/*
+      - rubocop/*
+      - spec/*
+      - symbol/*
+      - vendor/*
+      - "*.{erb,haml,lock,js,json,rake,ru,png,rb,scss,svg,vue,yml}"
+      - "**/*.{erb,haml,lock,js,json,rake,ru,png,rb,scss,svg,vue,yml}"
+      - "*_VERSION"
+      - Gemfile
+      - Rakefile
+
+.dedicated-runner-qa-diff:
+  extends: .dedicated-runner-with-cache
+  only:
+    changes:
+      - app/*
+      - bin/*
+      - config/*
+      - db/*
+      - ee/*
+      - fixtures/*
+      - lib/*
+      - public/*
+      - rubocop/*
+      - spec/*
+      - symbol/*
+      - vendor/*
+      - "*.{erb,haml,lock,js,json,rake,ru,png,rb,scss,svg,vue,yml}"
+      - "**/*.{erb,haml,lock,js,json,rake,ru,png,rb,scss,svg,vue,yml}"
+      - "*_VERSION"
+      - qa/*
+      - Gemfile
+      - Rakefile
+
+.dedicated-runner-code-diff-pull:
+  extends: .dedicated-runner-code-diff
   cache:
-    <<: *default-cache
     policy: pull
   stage: test
 
-.dedicated-no-docs-pull-cache-job:
-  extends: .dedicated-pull-cache-job
-  except:
-    - /(^docs[\/-].*|.*-docs$)/
-
-.dedicated-no-docs-and-no-qa-pull-cache-job:
-  extends: .dedicated-pull-cache-job
-  except:
-    - /(^docs[\/-].*|.*-docs$)/
-    - /(^qa[\/-].*|.*-qa$)/
-
-# Jobs that do not need a DB
-.dedicated-no-docs-no-db-pull-cache-job:
-  extends: .dedicated-no-docs-pull-cache-job
+.dedicated-runner-code-diff-pull-no-db:
+  extends: .dedicated-runner-code-diff-pull
   variables:
     SETUP_DB: "false"
 

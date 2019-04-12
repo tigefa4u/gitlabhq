@@ -9,22 +9,6 @@
     url: http://$CI_ENVIRONMENT_SLUG.$DOCS_REVIEW_APPS_DOMAIN/$DOCS_GITLAB_REPO_SUFFIX
     on_stop: review-docs-cleanup
 
-# Trigger a manual docs build in gitlab-docs only on non docs-only branches.
-# Useful to preview the docs changes live.
-review-docs-deploy-manual:
-  <<: *review-docs
-  stage: build
-  script:
-    - gem install gitlab --no-document
-    - ./$SCRIPT_NAME deploy
-  when: manual
-  only:
-    - branches@gitlab-org/gitlab-ce
-    - branches@gitlab-org/gitlab-ee
-  except:
-    - /(^docs[\/-].*|.*-docs$)/
-    - /(^qa[\/-].*|.*-qa$)/
-
 # Always trigger a docs build in gitlab-docs only on docs-only branches.
 # Useful to preview the docs changes live.
 review-docs-deploy:
@@ -34,10 +18,12 @@ review-docs-deploy:
     - gem install gitlab --no-document
     - ./$SCRIPT_NAME deploy
   only:
-    - /(^docs[\/-].*|.*-docs$)/@gitlab-org/gitlab-ce
-    - /(^docs[\/-].*|.*-docs$)/@gitlab-org/gitlab-ee
-  except:
-    - /(^qa[\/-].*|.*-qa$)/
+    refs:
+      - merge-requests
+    changes:
+      - doc/*
+    variables:
+      - $DOCS_API_TOKEN
 
 # Cleanup remote environment of gitlab-docs
 review-docs-cleanup:
@@ -51,8 +37,12 @@ review-docs-cleanup:
     - ./$SCRIPT_NAME cleanup
   when: manual
   only:
-    - branches@gitlab-org/gitlab-ce
-    - branches@gitlab-org/gitlab-ee
+    refs:
+      - merge-requests
+    changes:
+      - doc/*
+    variables:
+      - $DOCS_API_TOKEN
 
 docs lint:
   extends: .dedicated-runner
@@ -72,5 +62,6 @@ docs lint:
     - bundle exec nanoc check internal_links
     # Check the internal anchor links
     - bundle exec nanoc check internal_anchors
-  except:
-    - /(^qa[\/-].*|.*-qa$)/
+  only:
+    changes:
+      - doc/*

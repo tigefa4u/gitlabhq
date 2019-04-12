@@ -1,29 +1,22 @@
 .review-only: &review-only
   only:
     refs:
-      - branches@gitlab-org/gitlab-ce
-      - branches@gitlab-org/gitlab-ee
+      - merge-requests@gitlab-org/gitlab-ce
+      - merge-requests@gitlab-org/gitlab-ee
     kubernetes: active
-  except:
-    refs:
-      - master
-      - /(^docs[\/-].*|.*-docs$)/
 
 .review-schedules-only: &review-schedules-only
   only:
     refs:
       - schedules@gitlab-org/gitlab-ce
       - schedules@gitlab-org/gitlab-ee
+    changes: [] # always
     kubernetes: active
     variables:
       - $REVIEW_APP_CLEANUP
-  except:
-    refs:
-      - tags
-      - /(^docs[\/-].*|.*-docs$)/
 
 .review-base: &review-base
-  extends: .dedicated-runner
+  extends: .dedicated-runner-code-diff
   <<: *review-only
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-charts-build-base
   stage: test
@@ -61,6 +54,7 @@ build-qa-image:
     - time docker push ${QA_IMAGE}
 
 .review-build-cng-base: &review-build-cng-base
+  extends: .dedicated-runner-code-diff
   image: ruby:2.5-alpine
   stage: test
   before_script: []
@@ -210,20 +204,16 @@ schedule:review-performance:
     - wait_for_job_to_be_done "schedule:review-deploy"
 
 danger-review:
-  extends: .dedicated-pull-cache-job
+  extends: .dedicated-runner-code-diff-pull
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:danger
   stage: test
   dependencies: []
   before_script: []
   only:
+    refs:
+      - merge-requests
     variables:
       - $DANGER_GITLAB_API_TOKEN
-  except:
-    refs:
-      - master
-    variables:
-      - $CI_COMMIT_REF_NAME =~ /^ce-to-ee-.*/
-      - $CI_COMMIT_REF_NAME =~ /.*-stable(-ee)?-prepare-.*/
   script:
     - git version
     - node --version
