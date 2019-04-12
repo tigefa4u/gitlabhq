@@ -93,6 +93,8 @@ gitlab:ui:visual:
       - merge-requests
     changes:
       - "**/*.scss"
+      - .gitlab/ci/*
+      - .gitlab-ci.yml
   except:
     variables:
       - $CI_COMMIT_MESSAGE =~ /\[skip visual\]/i

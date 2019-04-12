@@ -22,6 +22,8 @@ review-docs-deploy:
       - merge-requests
     changes:
       - doc/*
+      - .gitlab/ci/*
+      - .gitlab-ci.yml
     variables:
       - $DOCS_API_TOKEN
 
@@ -41,6 +43,8 @@ review-docs-cleanup:
       - merge-requests
     changes:
       - doc/*
+      - .gitlab/ci/*
+      - .gitlab-ci.yml
     variables:
       - $DOCS_API_TOKEN
 
@@ -65,3 +69,5 @@ docs lint:
   only:
     changes:
       - doc/*
+      - .gitlab/ci/*
+      - .gitlab-ci.yml

@@ -50,6 +50,8 @@
       - "*_VERSION"
       - Gemfile
       - Rakefile
+      - .gitlab/ci/*
+      - .gitlab-ci.yml
 
 .dedicated-runner-qa-diff:
   extends: .dedicated-runner-with-cache
@@ -70,6 +72,8 @@
       - "*.{erb,haml,lock,js,json,rake,ru,png,rb,scss,svg,vue,yml}"
       - "**/*.{erb,haml,lock,js,json,rake,ru,png,rb,scss,svg,vue,yml}"
       - "*_VERSION"
+      - .gitlab/ci/*
+      - .gitlab-ci.yml
       - qa/*
       - Gemfile
       - Rakefile
