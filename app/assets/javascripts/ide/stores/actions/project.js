@@ -68,7 +68,8 @@ export const createNewBranchFromDefault = ({ state, dispatch, getters }, branch)
       });
     });
 
-export const showBranchNotFoundError = ({ dispatch }, branchId) => {
+export const showBranchNotFoundError = ({ dispatch, state, commit }, branchId) => {
+  commit(types.TOGGLE_LOADING, { entry: state, forceValue: true });
   dispatch('setErrorMessage', {
     text: sprintf(
       __("Branch %{branchName} was not found in this project's repository."),
@@ -83,14 +84,13 @@ export const showBranchNotFoundError = ({ dispatch }, branchId) => {
   });
 };
 
-export const showEmptyState = ({ commit, state }, { err, projectId, branchId }) => {
-  if (err.response && err.response.status === 404) {
-    commit(types.CREATE_TREE, { treePath: `${projectId}/${branchId}` });
-    commit(types.TOGGLE_LOADING, {
-      entry: state.trees[`${projectId}/${branchId}`],
-      forceValue: false,
-    });
-  }
+export const showEmptyState = ({ commit, state, dispatch }, { projectId, branchId }) => {
+  dispatch('setCurrentBranchId', branchId);
+  commit(types.CREATE_TREE, { treePath: `${projectId}/${branchId}` });
+  commit(types.TOGGLE_LOADING, {
+    entry: state.trees[`${projectId}/${branchId}`],
+    forceValue: false,
+  });
 };
 
 export const openBranch = ({ dispatch, state }, { projectId, branchId, basePath }) => {
@@ -131,8 +131,7 @@ export const openBranch = ({ dispatch, state }, { projectId, branchId, basePath 
           () => new Error(`An error occurred whilst getting files for - ${projectId}/${branchId}`),
         );
     })
-    .catch(err => {
-      // If branch doesn't exist we show empty-state view
-      dispatch('showEmptyState', { err, projectId, branchId });
+    .catch(() => {
+      dispatch('showBranchNotFoundError', branchId);
     });
 };

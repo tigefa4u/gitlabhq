@@ -72,18 +72,22 @@ router.beforeEach((to, from, next) => {
         namespace: to.params.namespace,
         projectId: to.params.project,
       })
-      .then(() => {
+      .then(data => {
         const basePath = to.params.pathMatch || '';
         const projectId = `${to.params.namespace}/${to.params.project}`;
         const branchId = to.params.branchid;
         const mergeRequestId = to.params.mrid;
 
         if (branchId) {
-          store.dispatch('openBranch', {
-            projectId,
-            branchId,
-            basePath,
-          });
+          if (data.empty_repo) {
+            store.dispatch('showEmptyState', { projectId, branchId });
+          } else {
+            store.dispatch('openBranch', {
+              projectId,
+              branchId,
+              basePath,
+            });
+          }
         } else if (mergeRequestId) {
           store.dispatch('openMergeRequest', {
             projectId,
