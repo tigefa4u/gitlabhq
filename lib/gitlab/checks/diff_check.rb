@@ -6,8 +6,8 @@ module Gitlab
       include Gitlab::Utils::StrongMemoize
 
       LOG_MESSAGES = {
-        validate_file_paths: "Validating diffs' file paths...",
-        diff_content_check: "Validating diff contents..."
+        validate_file_paths: "Validating diffs' file paths...", # rubocop:disable GetText/DecorateString
+        diff_content_check: "Validating diff contents..." # rubocop:disable GetText/DecorateString
       }.freeze
 
       def validate!
