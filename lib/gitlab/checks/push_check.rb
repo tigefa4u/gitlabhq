@@ -4,7 +4,7 @@ module Gitlab
   module Checks
     class PushCheck < BaseChecker
       def validate!
-        logger.log_timed("Checking if you are allowed to push...") do
+        logger.log_timed("Checking if you are allowed to push...") do # rubocop:disable GetText/DecorateString
           unless can_push?
             raise GitAccess::UnauthorizedError, GitAccess::ERROR_MESSAGES[:push_code]
           end

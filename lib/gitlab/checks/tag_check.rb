@@ -3,17 +3,21 @@
 module Gitlab
   module Checks
     class TagCheck < BaseChecker
+      # rubocop:disable GetText/DecorateString
       ERROR_MESSAGES = {
         change_existing_tags: 'You are not allowed to change existing tags on this project.',
         update_protected_tag: 'Protected tags cannot be updated.',
         delete_protected_tag: 'Protected tags cannot be deleted.',
         create_protected_tag: 'You are not allowed to create this tag as it is protected.'
       }.freeze
+      # rubocop:enable GetText/DecorateString
 
+      # rubocop:disable GetText/DecorateString
       LOG_MESSAGES = {
         tag_checks: "Checking if you are allowed to change existing tags...",
         protected_tag_checks: "Checking if you are creating, updating or deleting a protected tag..."
       }.freeze
+      # rubocop:enable GetText/DecorateString
 
       def validate!
         return unless tag_name

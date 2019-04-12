@@ -3,8 +3,10 @@
 module Gitlab
   module Checks
     class LfsCheck < BaseChecker
+      # rubocop:disable GetText/DecorateString
       LOG_MESSAGE = "Scanning repository for blobs stored in LFS and verifying their files have been uploaded to GitLab...".freeze
       ERROR_MESSAGE = 'LFS objects are missing. Ensure LFS is properly set up or try a manual "git lfs push --all".'.freeze
+      # rubocop:enable GetText/DecorateString
 
       def validate!
         return unless Feature.enabled?(:lfs_check, default_enabled: true)
