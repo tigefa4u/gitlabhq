@@ -17,8 +17,10 @@ export default function setupNativeFormVariableList({ container, formField = 'va
     const $lastRow = $container.find('.js-row').last();
 
     const isTouched = variableList.checkIfRowTouched($lastRow);
+    console.log(isTouched);
     if (!isTouched) {
       $lastRow.find('input, textarea').attr('name', '');
+      $lastRow.find('select').attr('name', '');
     }
   });
 }

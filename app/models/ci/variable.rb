@@ -23,6 +23,13 @@ module Ci
 
     scope :unprotected, -> { where(protected: false) }
 
+    def self.variable_type_options
+      [
+        %w(Variable env_var),
+        %w(File file)
+      ]
+    end
+
     def to_runner_variable
       super.merge(file: file?)
     end

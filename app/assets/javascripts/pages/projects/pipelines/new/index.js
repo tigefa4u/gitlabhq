@@ -3,6 +3,7 @@ import NewBranchForm from '~/new_branch_form';
 import setupNativeFormVariableList from '~/ci_variable_list/native_form_variable_list';
 
 document.addEventListener('DOMContentLoaded', () => {
+  console.log("OHAI");
   new NewBranchForm($('.js-new-pipeline-form')); // eslint-disable-line no-new
 
   setupNativeFormVariableList({
