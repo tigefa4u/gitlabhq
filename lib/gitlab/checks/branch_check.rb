@@ -3,6 +3,7 @@
 module Gitlab
   module Checks
     class BranchCheck < BaseChecker
+      # rubocop:disable GetText/DecorateString
       ERROR_MESSAGES = {
         delete_default_branch: 'The default branch of a project cannot be deleted.',
         force_push_protected_branch: 'You are not allowed to force push code to a protected branch on this project.',
@@ -14,7 +15,9 @@ module Gitlab
         invalid_commit_create_protected_branch: 'You can only use an existing protected branch ref as the basis of a new protected branch.',
         non_web_create_protected_branch: 'You can only create protected branches using the web interface and API.'
       }.freeze
+      # rubocop:enable GetText/DecorateString
 
+      # rubocop:disable GetText/DecorateString
       LOG_MESSAGES = {
         delete_default_branch_check: "Checking if default branch is being deleted...",
         protected_branch_checks: "Checking if you are force pushing to a protected branch...",
@@ -22,6 +25,7 @@ module Gitlab
         protected_branch_creation_checks: "Checking if you are allowed to create a protected branch...",
         protected_branch_deletion_checks: "Checking if you are allowed to delete the protected branch..."
       }.freeze
+      # rubocop:enable GetText/DecorateString
 
       def validate!
         return unless branch_name
