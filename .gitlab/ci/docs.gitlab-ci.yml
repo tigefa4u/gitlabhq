@@ -21,7 +21,7 @@ review-docs-deploy:
     refs:
       - merge_requests
     changes:
-      - doc/*
+      - doc/**
       - .gitlab/ci/*
       - .gitlab-ci.yml
     variables:

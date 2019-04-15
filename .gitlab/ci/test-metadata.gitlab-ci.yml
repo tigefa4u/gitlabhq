@@ -1,5 +1,5 @@
 .tests-metadata-state: &tests-metadata-state
-  extends: .dedicated-runner
+  extends: .dedicated-runner-code-diff
   variables:
     TESTS_METADATA_S3_BUCKET: "gitlab-ce-cache"
   before_script:
@@ -17,6 +17,7 @@ retrieve-tests-metadata:
   cache:
     key: tests_metadata
     policy: pull
+    paths: []
   script:
     - mkdir -p knapsack/${CI_PROJECT_NAME}/
     - wget -O $KNAPSACK_RSPEC_SUITE_REPORT_PATH http://${TESTS_METADATA_S3_BUCKET}.s3.amazonaws.com/$KNAPSACK_RSPEC_SUITE_REPORT_PATH || rm $KNAPSACK_RSPEC_SUITE_REPORT_PATH
