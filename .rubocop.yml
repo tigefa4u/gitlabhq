@@ -28,6 +28,7 @@ GetText/DecorateString:
   Enabled: true
   Exclude:
     - 'spec/**/*'
+    - 'ee/spec/**/*'
     - 'lib/tasks/**/*'
     - 'lib/system_check/**/*'
     - 'lib/gitlab/setup_helper.rb'
@@ -41,12 +42,14 @@ GetText/DecorateString:
     - 'rubocop/**/*'
     - 'scripts/**/*'
     - 'config/**/*'
+    - 'ee/config/**/*'
 GetText/DecorateFunctionMessage:
   Enabled: false
 GetText/DecorateStringFormattingUsingInterpolation:
   Enabled: true
   Exclude:
     - 'spec/**/*'
+    - 'ee/spec/**/*'
     - 'lib/tasks/**/*'
     - 'lib/system_check/**/*'
     - 'lib/gitlab/setup_helper.rb'
@@ -60,10 +63,12 @@ GetText/DecorateStringFormattingUsingInterpolation:
     - 'rubocop/**/*'
     - 'scripts/**/*'
     - 'config/**/*'
+    - 'ee/config/**/*'
 GetText/DecorateStringFormattingUsingPercent:
   Enabled: true
   Exclude:
     - 'spec/**/*'
+    - 'ee/spec/**/*'
     - 'lib/tasks/**/*'
     - 'lib/system_check/**/*'
     - 'lib/gitlab/setup_helper.rb'
@@ -77,6 +82,7 @@ GetText/DecorateStringFormattingUsingPercent:
     - 'rubocop/**/*'
     - 'scripts/**/*'
     - 'config/**/*'
+    - 'ee/config/**/*'
 RailsI18n/DecorateString:
   Enabled: false
 
