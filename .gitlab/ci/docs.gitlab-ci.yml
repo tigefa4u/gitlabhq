@@ -21,7 +21,7 @@ review-docs-deploy:
     refs:
       - merge_requests
     changes:
-      - doc/**
+      - doc/**/*
       - .gitlab/ci/*
       - .gitlab-ci.yml
     variables:
@@ -42,7 +42,7 @@ review-docs-cleanup:
     refs:
       - merge_requests
     changes:
-      - doc/*
+      - doc/**/*
       - .gitlab/ci/*
       - .gitlab-ci.yml
     variables:
@@ -68,6 +68,6 @@ docs lint:
     - bundle exec nanoc check internal_anchors
   only:
     changes:
-      - doc/*
+      - doc/**/*
       - .gitlab/ci/*
       - .gitlab-ci.yml
