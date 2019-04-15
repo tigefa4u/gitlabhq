@@ -57,7 +57,7 @@ module Gitlab
             end
           end
         rescue Errno::EADDRNOTAVAIL, SocketError => ex
-          Gitlab::EnvironmentLogger.error('Cannot resolve InfluxDB address. GitLab Performance Monitoring will not work.')
+          Gitlab::EnvironmentLogger.error('Cannot resolve InfluxDB address. GitLab Performance Monitoring will not work.') # rubocop:disable GetText/DecorateString
           Gitlab::EnvironmentLogger.error(ex)
         end
 
