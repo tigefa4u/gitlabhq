@@ -65,7 +65,7 @@ flaky-examples-check:
   retry: 0
   only:
     refs:
-      - merge-requests
+      - merge_requests
   artifacts:
     expire_in: 30d
     paths:

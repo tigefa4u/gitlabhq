@@ -17,6 +17,6 @@ package-and-qa:
   when: manual
   only:
     refs:
-      - merge-requests
+      - merge_requests
     variables:
       - $GITLAB_BOT_MULTI_PROJECT_PIPELINE_POLLING_TOKEN

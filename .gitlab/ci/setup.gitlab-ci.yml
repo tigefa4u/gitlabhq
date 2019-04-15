@@ -36,5 +36,5 @@ no_ee_check:
     - scripts/no-ee-check
   only:
     refs:
-    - merge-requests
+    - merge_requests
 

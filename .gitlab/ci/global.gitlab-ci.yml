@@ -3,7 +3,7 @@
     refs:
       - master
       - /-stable/
-      - merge-requests
+      - merge_requests
       - tags@gitlab-org/gitlab-ce
       - tags@gitlab-org/gitlab-ee
       - tags@gitlab/gitlabhq

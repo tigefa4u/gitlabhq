@@ -90,7 +90,7 @@ gitlab:ui:visual:
     - CSS_URL=./application.css yarn test
   only:
     refs:
-      - merge-requests
+      - merge_requests
     changes:
       - "**/*.scss"
       - .gitlab/ci/*

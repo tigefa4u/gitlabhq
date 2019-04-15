@@ -1,8 +1,8 @@
 .review-only: &review-only
   only:
     refs:
-      - merge-requests@gitlab-org/gitlab-ce
-      - merge-requests@gitlab-org/gitlab-ee
+      - merge_requests@gitlab-org/gitlab-ce
+      - merge_requests@gitlab-org/gitlab-ee
     kubernetes: active
 
 .review-schedules-only: &review-schedules-only
@@ -211,7 +211,7 @@ danger-review:
   before_script: []
   only:
     refs:
-      - merge-requests
+      - merge_requests
     variables:
       - $DANGER_GITLAB_API_TOKEN
   script:

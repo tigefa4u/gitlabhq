@@ -190,7 +190,7 @@ downtime_check:
   <<: *rake-exec
   only:
     refs:
-      - merge-requests
+      - merge_requests
   dependencies:
     - setup-test-env
 

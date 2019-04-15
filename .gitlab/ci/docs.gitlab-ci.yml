@@ -19,7 +19,7 @@ review-docs-deploy:
     - ./$SCRIPT_NAME deploy
   only:
     refs:
-      - merge-requests
+      - merge_requests
     changes:
       - doc/*
       - .gitlab/ci/*
@@ -40,7 +40,7 @@ review-docs-cleanup:
   when: manual
   only:
     refs:
-      - merge-requests
+      - merge_requests
     changes:
       - doc/*
       - .gitlab/ci/*
