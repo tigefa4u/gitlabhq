@@ -6,6 +6,8 @@ require_relative '../../../rubocop/cop/destroy_all'
 describe RuboCop::Cop::DestroyAll do
   include CopHelper
 
+  # change me
+
   subject(:cop) { described_class.new }
 
   it 'flags the use of destroy_all with a send receiver' do
