@@ -321,6 +321,12 @@ msgstr ""
 msgid "8 hours"
 msgstr ""
 
+msgid ":%{key} must be a nonnegative Integer or symbol"
+msgstr ""
+
+msgid ":in and :within must be a Range"
+msgstr ""
+
 msgid "<code>\"johnsmith@example.com\": \"@johnsmith\"</code> will add \"By <a href=\"#\">@johnsmith</a>\" to all issues and comments originally created by johnsmith@example.com, and will set <a href=\"#\">@johnsmith</a> as the assignee on all issues originally assigned to johnsmith@example.com."
 msgstr ""
 
@@ -346,6 +352,9 @@ msgid "A 'Runner' is a process which runs a job. You can set up as many Runners 
 msgstr ""
 
 msgid "A .NET Core console application template, customizable for any .NET Core project"
+msgstr ""
+
+msgid "A CarrierWave::Uploader::Base object was expected"
 msgstr ""
 
 msgid "A GitBook site that uses Netlify for CI/CD instead of GitLab, but still with all the other great GitLab features."
@@ -394,6 +403,9 @@ msgid "A ready-to-go template for use with iOS Swift apps."
 msgstr ""
 
 msgid "A regular expression that will be used to find the test coverage output in the job trace. Leave blank to disable"
+msgstr ""
+
+msgid "A repository for this project does not exist yet."
 msgstr ""
 
 msgid "A user with write access to the source branch selected this option"
@@ -2699,6 +2711,9 @@ msgstr ""
 msgid "Could not create Wiki Repository at this time. Please try again later."
 msgstr ""
 
+msgid "Could not create project: %{project_errors_full_messages}"
+msgstr ""
+
 msgid "Could not delete chat nickname %{chat_name}."
 msgstr ""
 
@@ -3421,6 +3436,9 @@ msgstr ""
 msgid "Empty file"
 msgstr ""
 
+msgid "Empty string provided!"
+msgstr ""
+
 msgid "Enable"
 msgstr ""
 
@@ -3931,6 +3949,9 @@ msgstr ""
 msgid "Failed to check related branches."
 msgstr ""
 
+msgid "Failed to create label \"%{label}\" for project \"%{project_full_name}\""
+msgstr ""
+
 msgid "Failed to create repository via gitlab-shell"
 msgstr ""
 
@@ -4216,6 +4237,9 @@ msgid "Git"
 msgstr ""
 
 msgid "Git LFS is not enabled on this GitLab server, contact your admin."
+msgstr ""
+
+msgid "Git access over %{protocol} is not allowed"
 msgstr ""
 
 msgid "Git global setup"
@@ -4883,6 +4907,9 @@ msgstr ""
 msgid "Invalid pin code"
 msgstr ""
 
+msgid "Invalid regular expression!"
+msgstr ""
+
 msgid "Invalid repository path"
 msgstr ""
 
@@ -4932,6 +4959,9 @@ msgid "Issues with comments, merge requests with diffs and comments, labels, mil
 msgstr ""
 
 msgid "Issues, merge requests, pushes, and comments."
+msgstr ""
+
+msgid "It is not currently possible to search the DN and other fields at the same time."
 msgstr ""
 
 msgid "It must have a header row and at least two columns: the first column is the issue title and the second column is the issue description. The separator is automatically detected."
@@ -5118,6 +5148,12 @@ msgid "Kubernetes configured"
 msgstr ""
 
 msgid "Kubernetes service integration has been deprecated. %{deprecated_message_content} your Kubernetes clusters using the new <a href=\"%{url}\"/>Kubernetes Clusters</a> page"
+msgstr ""
+
+msgid "LDAP search raised exception %{exception_class}: %{exception_message}"
+msgstr ""
+
+msgid "LDAP search timed out after %{config_timeout} seconds"
 msgstr ""
 
 msgid "LFS"
@@ -5349,6 +5385,12 @@ msgstr ""
 msgid "Make issue confidential."
 msgstr ""
 
+msgid "Make sure a <remote> tag is present and is valid."
+msgstr ""
+
+msgid "Make sure every <project> tag has name and path attributes."
+msgstr ""
+
 msgid "Make sure you're logged into the account that owns the projects you'd like to import."
 msgstr ""
 
@@ -5469,6 +5511,9 @@ msgstr ""
 msgid "Members of <strong>%{project_name}</strong>"
 msgstr ""
 
+msgid "Merge (when the pipeline succeeds)"
+msgstr ""
+
 msgid "Merge Request"
 msgstr ""
 
@@ -5574,7 +5619,13 @@ msgstr ""
 msgid "Merged branches are being deleted. This can take some time depending on the number of branches. Please refresh the page to see changes."
 msgstr ""
 
+msgid "Merges this merge request when the pipeline succeeds."
+msgstr ""
+
 msgid "Messages"
+msgstr ""
+
+msgid "Method already defined!"
 msgstr ""
 
 msgid "Metrics"
@@ -5790,6 +5841,9 @@ msgstr ""
 msgid "Nav|Sign out and sign in with a different account"
 msgstr ""
 
+msgid "Negative string size provided!"
+msgstr ""
+
 msgid "Network"
 msgstr ""
 
@@ -5996,6 +6050,9 @@ msgstr ""
 msgid "No schedules"
 msgstr ""
 
+msgid "No session could be set up, is Mattermost configured with Single Sign On?"
+msgstr ""
+
 msgid "No, directly import the existing email addresses and usernames."
 msgstr ""
 
@@ -6126,6 +6183,9 @@ msgid "Nov"
 msgstr ""
 
 msgid "November"
+msgstr ""
+
+msgid "OAuth configuration for GitHub missing."
 msgstr ""
 
 msgid "Object does not exist on the server or you don't have permissions to access it"
@@ -6305,6 +6365,9 @@ msgid "Path, transfer, remove"
 msgstr ""
 
 msgid "Path:"
+msgstr ""
+
+msgid "Pattern is not string!"
 msgstr ""
 
 msgid "Pause"
@@ -7063,6 +7126,18 @@ msgstr ""
 msgid "ProjectPage|Project ID: %{project_id}"
 msgstr ""
 
+msgid "ProjectProtectionLevel|Fully protected: Developers cannot push new commits, but maintainers can. No-one can force push or delete the branch."
+msgstr ""
+
+msgid "ProjectProtectionLevel|Not protected: Both developers and maintainers can push new commits, force push, or delete the branch."
+msgstr ""
+
+msgid "ProjectProtectionLevel|Partially protected: Both developers and maintainers can push new commits, but cannot force push or delete the branch."
+msgstr ""
+
+msgid "ProjectProtectionLevel|Protected against pushes: Developers cannot push new commits, but are allowed to accept merge requests to the branch. Maintainers can push to the branch."
+msgstr ""
+
 msgid "ProjectSettings|Badges"
 msgstr ""
 
@@ -7219,6 +7294,9 @@ msgstr ""
 msgid "Public pipelines"
 msgstr ""
 
+msgid "Pulling over HTTP is not allowed."
+msgstr ""
+
 msgid "Push"
 msgstr ""
 
@@ -7235,6 +7313,9 @@ msgid "Push project from command line"
 msgstr ""
 
 msgid "Push to create a project"
+msgstr ""
+
+msgid "Pushing over HTTP is not allowed."
 msgstr ""
 
 msgid "PushoverService|%{user_name} deleted branch \"%{ref}\"."
@@ -7283,6 +7364,9 @@ msgid "README"
 msgstr ""
 
 msgid "Rake Tasks Help"
+msgstr ""
+
+msgid "Range unspecified. Specify the :within, :maximum, :minimum, or :is option."
 msgstr ""
 
 msgid "Read more"
@@ -7982,6 +8066,9 @@ msgstr ""
 msgid "Service Templates"
 msgstr ""
 
+msgid "Service Ticket not found."
+msgstr ""
+
 msgid "Service URL"
 msgstr ""
 
@@ -8013,6 +8100,9 @@ msgid "Set notification email for abuse reports."
 msgstr ""
 
 msgid "Set requirements for a user to sign-in. Enable mandatory two-factor authentication."
+msgstr ""
+
+msgid "Set target branch"
 msgstr ""
 
 msgid "Set the default expiration time for each job's artifacts. 0 for unlimited. The default unit is in seconds, but you can define an alternative. For example: <code>4 mins 2 sec</code>, <code>2h42min</code>."
@@ -8070,6 +8160,9 @@ msgid "SetStatusModal|Sorry, we weren't able to set your status. Please try agai
 msgstr ""
 
 msgid "SetStatusModal|What's your status?"
+msgstr ""
+
+msgid "Sets target branch to %{branch_name}."
 msgstr ""
 
 msgid "Sets the due date to %{due_date}."
@@ -8793,6 +8886,9 @@ msgstr ""
 msgid "The collection of events added to the data gathered for that stage."
 msgstr ""
 
+msgid "The command you're trying to execute is not allowed."
+msgstr ""
+
 msgid "The content of this page is not encoded in UTF-8. Edits can only be made via the Git repository."
 msgstr ""
 
@@ -8910,6 +9006,12 @@ msgstr ""
 msgid "The project was successfully imported."
 msgstr ""
 
+msgid "The project you were looking for could not be found."
+msgstr ""
+
+msgid "The remote data could not be fully imported."
+msgstr ""
+
 msgid "The remote mirror took to long to complete."
 msgstr ""
 
@@ -8920,6 +9022,9 @@ msgid "The repository for this project does not exist."
 msgstr ""
 
 msgid "The repository for this project is empty"
+msgstr ""
+
+msgid "The repository is temporarily read-only. Please try again later."
 msgstr ""
 
 msgid "The repository must be accessible over <code>http://</code>, <code>https://</code> or <code>git://</code>."
@@ -8962,6 +9067,9 @@ msgid "The update action will time out after %{number_of_minutes} minutes. For b
 msgstr ""
 
 msgid "The uploaded file is not a valid Google Takeout archive."
+msgstr ""
+
+msgid "The uploaded file is not a valid XML file."
 msgstr ""
 
 msgid "The usage ping is disabled, and cannot be configured through this form."
@@ -9063,6 +9171,9 @@ msgstr ""
 msgid "This action can lead to data loss. To prevent accidental actions we ask you to confirm your intention."
 msgstr ""
 
+msgid "This action cannot be performed by internal users"
+msgstr ""
+
 msgid "This application was created by %{link_to_owner}."
 msgstr ""
 
@@ -9088,6 +9199,9 @@ msgid "This commit was signed with an <strong>unverified</strong> signature."
 msgstr ""
 
 msgid "This container registry has been scheduled for deletion."
+msgstr ""
+
+msgid "This deploy key does not have write access to this project."
 msgstr ""
 
 msgid "This diff is collapsed."
@@ -9550,6 +9664,9 @@ msgstr ""
 msgid "Toggle navigation"
 msgstr ""
 
+msgid "Toggle the Work In Progress status"
+msgstr ""
+
 msgid "ToggleButton|Toggle Status: OFF"
 msgstr ""
 
@@ -9670,7 +9787,13 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
+msgid "Unable to calculate modified paths!"
+msgstr ""
+
 msgid "Unable to connect to server: %{error}"
+msgstr ""
+
+msgid "Unable to find project import data credentials for project ID: %{project_id}"
 msgstr ""
 
 msgid "Unable to load the diff. %{button_try_again}"
@@ -10335,6 +10458,9 @@ msgstr ""
 msgid "You"
 msgstr ""
 
+msgid "You (%{user_to_reference}) must accept the Terms of Service in order to perform this action. Please access GitLab from a web browser to accept these terms."
+msgstr ""
+
 msgid "You are an admin, which means granting access to <strong>%{client_name}</strong> will allow them to interact with GitLab as an admin as well. Proceed with caution."
 msgstr ""
 
@@ -10351,6 +10477,21 @@ msgid "You are going to remove the fork relationship to source project %{forked_
 msgstr ""
 
 msgid "You are going to transfer %{project_full_name} to another owner. Are you ABSOLUTELY sure?"
+msgstr ""
+
+msgid "You are not allowed to download code from this project."
+msgstr ""
+
+msgid "You are not allowed to download code."
+msgstr ""
+
+msgid "You are not allowed to push code to this project."
+msgstr ""
+
+msgid "You are not allowed to upload code for this project."
+msgstr ""
+
+msgid "You are not allowed to upload code."
 msgstr ""
 
 msgid "You are now impersonating %{username}"
@@ -10417,6 +10558,9 @@ msgid "You can set up jobs to only use Runners with specific tags. Separate tags
 msgstr ""
 
 msgid "You can test your .gitlab-ci.yml in %{linkStart}CI Lint%{linkEnd}."
+msgstr ""
+
+msgid "You can't push code to a read-only GitLab instance."
 msgstr ""
 
 msgid "You cannot impersonate a blocked user"
@@ -10566,6 +10710,9 @@ msgstr ""
 msgid "Your Projects' Activity"
 msgstr ""
 
+msgid "Your SSH key %{first_actor_error}."
+msgstr ""
+
 msgid "Your Todos"
 msgstr ""
 
@@ -10579,6 +10726,9 @@ msgid "Your U2F device was registered!"
 msgstr ""
 
 msgid "Your access request to the %{source_type} has been withdrawn."
+msgstr ""
+
+msgid "Your account has been blocked."
 msgstr ""
 
 msgid "Your account uses dedicated credentials for the \"%{group_name}\" group and can only be updated through SSO."

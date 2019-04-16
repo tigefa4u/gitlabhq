@@ -17,19 +17,19 @@ module Gitlab
     ANY = '_any'
 
     ERROR_MESSAGES = {
-      upload: 'You are not allowed to upload code for this project.',
-      download: 'You are not allowed to download code from this project.',
-      auth_upload: 'You are not allowed to upload code.',
-      auth_download: 'You are not allowed to download code.',
-      deploy_key_upload: 'This deploy key does not have write access to this project.',
-      no_repo: 'A repository for this project does not exist yet.',
-      project_not_found: 'The project you were looking for could not be found.',
-      command_not_allowed: "The command you're trying to execute is not allowed.",
-      upload_pack_disabled_over_http: 'Pulling over HTTP is not allowed.',
-      receive_pack_disabled_over_http: 'Pushing over HTTP is not allowed.',
-      read_only: 'The repository is temporarily read-only. Please try again later.',
-      cannot_push_to_read_only: "You can't push code to a read-only GitLab instance.",
-      push_code: 'You are not allowed to push code to this project.'
+      upload: _('You are not allowed to upload code for this project.'),
+      download: _('You are not allowed to download code from this project.'),
+      auth_upload: _('You are not allowed to upload code.'),
+      auth_download: _('You are not allowed to download code.'),
+      deploy_key_upload: _('This deploy key does not have write access to this project.'),
+      no_repo: _('A repository for this project does not exist yet.'),
+      project_not_found: _('The project you were looking for could not be found.'),
+      command_not_allowed: _('The command you\'re trying to execute is not allowed.'),
+      upload_pack_disabled_over_http: _('Pulling over HTTP is not allowed.'),
+      receive_pack_disabled_over_http: _('Pushing over HTTP is not allowed.'),
+      read_only: _('The repository is temporarily read-only. Please try again later.'),
+      cannot_push_to_read_only: _('You can\'t push code to a read-only GitLab instance.'),
+      push_code: _('You are not allowed to push code to this project.')
     }.freeze
 
     INTERNAL_TIMEOUT = 50.seconds.freeze
@@ -124,7 +124,7 @@ module Gitlab
       return unless actor.is_a?(Key)
 
       unless actor.valid?
-        raise UnauthorizedError, "Your SSH key #{actor.errors[:key].first}."
+        raise UnauthorizedError, _("Your SSH key %{first_actor_error}.") % { first_actor_error: actor.errors[:key].first }
       end
     end
 
@@ -132,7 +132,7 @@ module Gitlab
       return if request_from_ci_build?
 
       unless protocol_allowed?
-        raise UnauthorizedError, "Git access over #{protocol.upcase} is not allowed"
+        raise UnauthorizedError, _("Git access over %{protocol} is not allowed") % { protocol: protocol.upcase }
       end
     end
 
@@ -223,7 +223,7 @@ module Gitlab
       project = Projects::CreateService.new(user, project_params).execute
 
       unless project.saved?
-        raise ProjectCreationError, "Could not create project: #{project.errors.full_messages.join(', ')}"
+        raise ProjectCreationError, _("Could not create project: %{project_errors_full_messages}") % { project_errors_full_messages: project.errors.full_messages.join(', ') }
       end
 
       @project = project

@@ -34,7 +34,7 @@ module Gitlab
       def client
         unless config
           raise Projects::ImportService::Error,
-            'OAuth configuration for GitHub missing.'
+            _('OAuth configuration for GitHub missing.')
         end
 
         @client ||= ::OAuth2::Client.new(

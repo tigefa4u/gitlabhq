@@ -24,7 +24,7 @@ module Gitlab
 
         unless credentials
           raise Projects::ImportService::Error,
-                "Unable to find project import data credentials for project ID: #{@project.id}"
+                _("Unable to find project import data credentials for project ID: %{project_id}") % { project_id: @project.id }
         end
 
         opts = {}
@@ -81,7 +81,7 @@ module Gitlab
         return unless errors.any?
 
         project.import_state.update_column(:last_error, {
-          message: 'The remote data could not be fully imported.',
+          message: _('The remote data could not be fully imported.'),
           errors: errors
         }.to_json)
       end

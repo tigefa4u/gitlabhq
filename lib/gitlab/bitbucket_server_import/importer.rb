@@ -55,7 +55,7 @@ module Gitlab
         return unless errors.any?
 
         project.import_state.update_column(:last_error, {
-          message: 'The remote data could not be fully imported.',
+          message: _('The remote data could not be fully imported.'),
           errors: errors
         }.to_json)
       end

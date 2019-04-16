@@ -36,7 +36,7 @@ module Gitlab
         return unless errors.any?
 
         project.import_state.update_column(:last_error, {
-          message: 'The remote data could not be fully imported.',
+          message: _('The remote data could not be fully imported.'),
           errors: errors
         }.to_json)
       end
@@ -139,7 +139,7 @@ module Gitlab
           if label.valid?
             @labels[label_params[:title]] = label
           else
-            raise "Failed to create label \"#{label_params[:title]}\" for project \"#{project.full_name}\""
+            raise _("Failed to create label \"%{label}\" for project \"%{project_full_name}\"") % { label: label_params[:title], project_full_name: project.full_name }
           end
         end
       end

@@ -72,10 +72,10 @@ module Gitlab
 
       def protection_options
         {
-          "Not protected: Both developers and maintainers can push new commits, force push, or delete the branch." => PROTECTION_NONE,
-          "Protected against pushes: Developers cannot push new commits, but are allowed to accept merge requests to the branch. Maintainers can push to the branch." => PROTECTION_DEV_CAN_MERGE,
-          "Partially protected: Both developers and maintainers can push new commits, but cannot force push or delete the branch." => PROTECTION_DEV_CAN_PUSH,
-          "Fully protected: Developers cannot push new commits, but maintainers can. No-one can force push or delete the branch." => PROTECTION_FULL
+          _("ProjectProtectionLevel|Not protected: Both developers and maintainers can push new commits, force push, or delete the branch.") => PROTECTION_NONE,
+          _("ProjectProtectionLevel|Protected against pushes: Developers cannot push new commits, but are allowed to accept merge requests to the branch. Maintainers can push to the branch.") => PROTECTION_DEV_CAN_MERGE,
+          _("ProjectProtectionLevel|Partially protected: Both developers and maintainers can push new commits, but cannot force push or delete the branch.") => PROTECTION_DEV_CAN_PUSH,
+          _("ProjectProtectionLevel|Fully protected: Developers cannot push new commits, but maintainers can. No-one can force push or delete the branch.") => PROTECTION_FULL
         }
       end
 

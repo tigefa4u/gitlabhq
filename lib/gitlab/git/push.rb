@@ -44,7 +44,7 @@ module Gitlab
 
       def modified_paths
         unless branch_updated?
-          raise ArgumentError, 'Unable to calculate modified paths!'
+          raise ArgumentError, _('Unable to calculate modified paths!')
         end
 
         strong_memoize(:modified_paths) do

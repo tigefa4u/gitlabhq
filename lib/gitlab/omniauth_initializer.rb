@@ -58,7 +58,7 @@ module Gitlab
     def cas3_signout_handler
       lambda do |request|
         ticket = request.params[:session_index]
-        raise "Service Ticket not found." unless Gitlab::Auth::OAuth::Session.valid?(:cas3, ticket)
+        raise _("Service Ticket not found.") unless Gitlab::Auth::OAuth::Session.valid?(:cas3, ticket)
 
         Gitlab::Auth::OAuth::Session.destroy(:cas3, ticket)
         true

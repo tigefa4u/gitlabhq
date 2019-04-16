@@ -22,7 +22,7 @@ module Gitlab
         @parsed_xml = Nokogiri::XML(file) { |config| config.strict }
         @errors = []
       rescue Nokogiri::XML::SyntaxError
-        @errors = ['The uploaded file is not a valid XML file.']
+        @errors = [_('The uploaded file is not a valid XML file.')]
       end
 
       def projects
@@ -40,11 +40,11 @@ module Gitlab
         return false if @errors.any?
 
         unless validate_remote
-          @errors << 'Make sure a <remote> tag is present and is valid.'
+          @errors << _('Make sure a <remote> tag is present and is valid.')
         end
 
         unless validate_projects
-          @errors << 'Make sure every <project> tag has name and path attributes.'
+          @errors << _('Make sure every <project> tag has name and path attributes.')
         end
 
         @errors.empty?

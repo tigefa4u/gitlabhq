@@ -102,7 +102,7 @@ module Gitlab
           options[:size] = limit if limit
 
           if fields.include?('dn')
-            raise ArgumentError, 'It is not currently possible to search the DN and other fields at the same time.' if fields.size > 1
+            raise ArgumentError, _('It is not currently possible to search the DN and other fields at the same time.') if fields.size > 1
 
             options[:base] = value
             options[:scope] = Net::LDAP::SearchScope_BaseObject
@@ -127,9 +127,9 @@ module Gitlab
 
         def connection_error_message(exception)
           if exception.is_a?(Timeout::Error)
-            "LDAP search timed out after #{config.timeout} seconds"
+            _("LDAP search timed out after %{config_timeout} seconds") % { config_timeout: config.timeout }
           else
-            "LDAP search raised exception #{exception.class}: #{exception.message}"
+            _("LDAP search raised exception %{exception_class}: %{exception_message}") % { exception_class: exception.class, exception_message: exception.message }
           end
         end
 

@@ -3,7 +3,7 @@
 module Mattermost
   class NoSessionError < Mattermost::Error
     def message
-      'No session could be set up, is Mattermost configured with Single Sign On?'
+      _('No session could be set up, is Mattermost configured with Single Sign On?')
     end
   end
 

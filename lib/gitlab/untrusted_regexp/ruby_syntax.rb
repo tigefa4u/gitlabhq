@@ -27,10 +27,10 @@ module Gitlab
       end
 
       def self.fabricate!(pattern, fallback: false)
-        raise RegexpError, 'Pattern is not string!' unless pattern.is_a?(String)
+        raise RegexpError, _('Pattern is not string!') unless pattern.is_a?(String)
 
         matches = pattern.match(PATTERN)
-        raise RegexpError, 'Invalid regular expression!' if matches.nil?
+        raise RegexpError, _('Invalid regular expression!') if matches.nil?
 
         begin
           create_untrusted_regexp(matches[:regexp], matches[:flags])

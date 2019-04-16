@@ -9,7 +9,7 @@ class FileSizeValidator < ActiveModel::EachValidator
 
   def initialize(options)
     if range = (options.delete(:in) || options.delete(:within))
-      raise ArgumentError, ":in and :within must be a Range" unless range.is_a?(Range)
+      raise ArgumentError, _(":in and :within must be a Range") unless range.is_a?(Range)
 
       options[:minimum], options[:maximum] = range.begin, range.end
       options[:maximum] -= 1 if range.exclude_end?
@@ -22,21 +22,21 @@ class FileSizeValidator < ActiveModel::EachValidator
     keys = CHECKS.keys & options.keys
 
     if keys.empty?
-      raise ArgumentError, 'Range unspecified. Specify the :within, :maximum, :minimum, or :is option.'
+      raise ArgumentError, _('Range unspecified. Specify the :within, :maximum, :minimum, or :is option.')
     end
 
     keys.each do |key|
       value = options[key]
 
       unless (value.is_a?(Integer) && value >= 0) || value.is_a?(Symbol)
-        raise ArgumentError, ":#{key} must be a nonnegative Integer or symbol"
+        raise ArgumentError, _(":%{key} must be a nonnegative Integer or symbol") % { key: key }
       end
     end
   end
 
   # rubocop: disable CodeReuse/ActiveRecord
   def validate_each(record, attribute, value)
-    raise(ArgumentError, "A CarrierWave::Uploader::Base object was expected") unless value.is_a? CarrierWave::Uploader::Base
+    raise(ArgumentError, _("A CarrierWave::Uploader::Base object was expected")) unless value.is_a? CarrierWave::Uploader::Base
 
     value = (options[:tokenizer] || DEFAULT_TOKENIZER).call(value) if value.is_a?(String)
 
