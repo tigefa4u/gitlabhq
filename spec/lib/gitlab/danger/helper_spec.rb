@@ -253,6 +253,7 @@ describe Gitlab::Danger::Helper do
       'Procfile'       | :backend
       'Rakefile'       | :backend
       '.gitlab-ci.yml' | :backend
+      '.gitlab/ci/global.gitlab-ci.yml' | :backend
       'FOO_VERSION'    | :backend
 
       'ee/FOO_VERSION' | :unknown

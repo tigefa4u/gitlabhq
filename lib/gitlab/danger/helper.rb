@@ -136,7 +136,8 @@ module Gitlab
         %r{\A(ee/)?spec/(?!javascripts|frontend)[^/]+} => :backend,
         %r{\A(ee/)?vendor/(?!assets)[^/]+} => :backend,
         %r{\A(ee/)?vendor/(languages\.yml|licenses\.csv)\z} => :backend,
-        %r{\A(Dangerfile|Gemfile|Gemfile.lock|Procfile|Rakefile|\.gitlab-ci\.yml)\z} => :backend,
+        %r{\A(Dangerfile|Gemfile|Gemfile.lock|Procfile|Rakefile)\z} => :backend,
+        %r{\A(\.gitlab-ci\.yml|\.gitlab/ci/.+)\z} => :backend,
         %r{\A[A-Z_]+_VERSION\z} => :backend,
 
         %r{\A(ee/)?db/} => :database,
