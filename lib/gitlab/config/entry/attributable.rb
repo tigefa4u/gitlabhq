@@ -10,7 +10,7 @@ module Gitlab
           def attributes(*attributes)
             attributes.flatten.each do |attribute|
               if method_defined?(attribute)
-                raise ArgumentError, _('Method already defined!')
+                raise ArgumentError, 'Method already defined!'
               end
 
               define_method(attribute) do

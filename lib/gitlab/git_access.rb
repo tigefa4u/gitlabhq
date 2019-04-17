@@ -124,7 +124,7 @@ module Gitlab
       return unless actor.is_a?(Key)
 
       unless actor.valid?
-        raise UnauthorizedError, _("Your SSH key %{first_actor_error}.") % { first_actor_error: actor.errors[:key].first }
+        raise UnauthorizedError, "Your SSH key #{actor.errors[:key].first}."
       end
     end
 
@@ -132,7 +132,7 @@ module Gitlab
       return if request_from_ci_build?
 
       unless protocol_allowed?
-        raise UnauthorizedError, _("Git access over %{protocol} is not allowed") % { protocol: protocol.upcase }
+        raise UnauthorizedError, "Git access over #{protocol.upcase} is not allowed"
       end
     end
 
@@ -223,7 +223,7 @@ module Gitlab
       project = Projects::CreateService.new(user, project_params).execute
 
       unless project.saved?
-        raise ProjectCreationError, _("Could not create project: %{project_errors_full_messages}") % { project_errors_full_messages: project.errors.full_messages.join(', ') }
+        raise ProjectCreationError, "Could not create project: #{project.errors.full_messages.join(', ')}"
       end
 
       @project = project

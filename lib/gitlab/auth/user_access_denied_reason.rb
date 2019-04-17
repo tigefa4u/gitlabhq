@@ -12,8 +12,8 @@ module Gitlab
         when :internal
           _("This action cannot be performed by internal users")
         when :terms_not_accepted
-          _("You (%{user_to_reference}) must accept the Terms of Service in order to perform this action. "\
-          "Please access GitLab from a web browser to accept these terms.") % { user_to_reference: @user.to_reference }
+          _("You (%{username}) must accept the Terms of Service in order to perform this action. "\
+          "Please access GitLab from a web browser to accept these terms.") % { username: @user.to_reference }
         else
           _("Your account has been blocked.")
         end

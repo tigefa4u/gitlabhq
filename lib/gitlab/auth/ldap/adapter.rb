@@ -102,7 +102,7 @@ module Gitlab
           options[:size] = limit if limit
 
           if fields.include?('dn')
-            raise ArgumentError, _('It is not currently possible to search the DN and other fields at the same time.') if fields.size > 1
+            raise ArgumentError, 'It is not currently possible to search the DN and other fields at the same time.' if fields.size > 1
 
             options[:base] = value
             options[:scope] = Net::LDAP::SearchScope_BaseObject

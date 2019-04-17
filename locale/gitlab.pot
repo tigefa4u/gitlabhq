@@ -321,12 +321,6 @@ msgstr ""
 msgid "8 hours"
 msgstr ""
 
-msgid ":%{key} must be a nonnegative Integer or symbol"
-msgstr ""
-
-msgid ":in and :within must be a Range"
-msgstr ""
-
 msgid "<code>\"johnsmith@example.com\": \"@johnsmith\"</code> will add \"By <a href=\"#\">@johnsmith</a>\" to all issues and comments originally created by johnsmith@example.com, and will set <a href=\"#\">@johnsmith</a> as the assignee on all issues originally assigned to johnsmith@example.com."
 msgstr ""
 
@@ -352,9 +346,6 @@ msgid "A 'Runner' is a process which runs a job. You can set up as many Runners 
 msgstr ""
 
 msgid "A .NET Core console application template, customizable for any .NET Core project"
-msgstr ""
-
-msgid "A CarrierWave::Uploader::Base object was expected"
 msgstr ""
 
 msgid "A GitBook site that uses Netlify for CI/CD instead of GitLab, but still with all the other great GitLab features."
@@ -2711,9 +2702,6 @@ msgstr ""
 msgid "Could not create Wiki Repository at this time. Please try again later."
 msgstr ""
 
-msgid "Could not create project: %{project_errors_full_messages}"
-msgstr ""
-
 msgid "Could not delete chat nickname %{chat_name}."
 msgstr ""
 
@@ -3434,9 +3422,6 @@ msgid "Embed"
 msgstr ""
 
 msgid "Empty file"
-msgstr ""
-
-msgid "Empty string provided!"
 msgstr ""
 
 msgid "Enable"
@@ -4239,9 +4224,6 @@ msgstr ""
 msgid "Git LFS is not enabled on this GitLab server, contact your admin."
 msgstr ""
 
-msgid "Git access over %{protocol} is not allowed"
-msgstr ""
-
 msgid "Git global setup"
 msgstr ""
 
@@ -4961,9 +4943,6 @@ msgstr ""
 msgid "Issues, merge requests, pushes, and comments."
 msgstr ""
 
-msgid "It is not currently possible to search the DN and other fields at the same time."
-msgstr ""
-
 msgid "It must have a header row and at least two columns: the first column is the issue title and the second column is the issue description. The separator is automatically detected."
 msgstr ""
 
@@ -5625,9 +5604,6 @@ msgstr ""
 msgid "Messages"
 msgstr ""
 
-msgid "Method already defined!"
-msgstr ""
-
 msgid "Metrics"
 msgstr ""
 
@@ -5839,9 +5815,6 @@ msgid "Nav|Sign In / Register"
 msgstr ""
 
 msgid "Nav|Sign out and sign in with a different account"
-msgstr ""
-
-msgid "Negative string size provided!"
 msgstr ""
 
 msgid "Network"
@@ -6183,9 +6156,6 @@ msgid "Nov"
 msgstr ""
 
 msgid "November"
-msgstr ""
-
-msgid "OAuth configuration for GitHub missing."
 msgstr ""
 
 msgid "Object does not exist on the server or you don't have permissions to access it"
@@ -7364,9 +7334,6 @@ msgid "README"
 msgstr ""
 
 msgid "Rake Tasks Help"
-msgstr ""
-
-msgid "Range unspecified. Specify the :within, :maximum, :minimum, or :is option."
 msgstr ""
 
 msgid "Read more"
@@ -10458,7 +10425,7 @@ msgstr ""
 msgid "You"
 msgstr ""
 
-msgid "You (%{user_to_reference}) must accept the Terms of Service in order to perform this action. Please access GitLab from a web browser to accept these terms."
+msgid "You (%{username}) must accept the Terms of Service in order to perform this action. Please access GitLab from a web browser to accept these terms."
 msgstr ""
 
 msgid "You are an admin, which means granting access to <strong>%{client_name}</strong> will allow them to interact with GitLab as an admin as well. Proceed with caution."
@@ -10708,9 +10675,6 @@ msgid "Your Projects (default)"
 msgstr ""
 
 msgid "Your Projects' Activity"
-msgstr ""
-
-msgid "Your SSH key %{first_actor_error}."
 msgstr ""
 
 msgid "Your Todos"
