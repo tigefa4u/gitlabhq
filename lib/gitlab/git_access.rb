@@ -16,6 +16,7 @@ module Gitlab
     # changes are. This is also what gitlab-shell does.
     ANY = '_any'
 
+    # rubocop:disable GetText/DecorateString
     ERROR_MESSAGES = {
       upload: 'You are not allowed to upload code for this project.',
       download: 'You are not allowed to download code from this project.',
@@ -31,6 +32,7 @@ module Gitlab
       cannot_push_to_read_only: "You can't push code to a read-only GitLab instance.",
       push_code: 'You are not allowed to push code to this project.'
     }.freeze
+    # rubocop:enable GetText/DecorateString
 
     INTERNAL_TIMEOUT = 50.seconds.freeze
     LOG_HEADER = <<~MESSAGE
@@ -124,7 +126,7 @@ module Gitlab
       return unless actor.is_a?(Key)
 
       unless actor.valid?
-        raise UnauthorizedError, "Your SSH key #{actor.errors[:key].first}."
+        raise UnauthorizedError, "Your SSH key #{actor.errors[:key].first}." # rubocop:disable GetText/DecorateString
       end
     end
 
@@ -132,7 +134,7 @@ module Gitlab
       return if request_from_ci_build?
 
       unless protocol_allowed?
-        raise UnauthorizedError, "Git access over #{protocol.upcase} is not allowed"
+        raise UnauthorizedError, "Git access over #{protocol.upcase} is not allowed" # rubocop:disable GetText/DecorateString
       end
     end
 
@@ -223,7 +225,7 @@ module Gitlab
       project = Projects::CreateService.new(user, project_params).execute
 
       unless project.saved?
-        raise ProjectCreationError, "Could not create project: #{project.errors.full_messages.join(', ')}"
+        raise ProjectCreationError, "Could not create project: #{project.errors.full_messages.join(', ')}" # rubocop:disable GetText/DecorateString
       end
 
       @project = project
