@@ -1,0 +1,5 @@
+---
+title: Expose web_url attribute in Commits API
+merge_request: 27463
+author:
+type: added

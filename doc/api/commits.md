@@ -40,7 +40,8 @@ Example response:
     "message": "Replace sanitize with escape once",
     "parent_ids": [
       "6104942438c14ec7bd21c6cd5bd995272b3faff6"
-    ]
+    ],
+    "web_url": "https://gitlab.com/gitlab-org/gitlab-ce/commit/ed899a2f4b50b4370feeea94676502b42383c746"
   },
   {
     "id": "6104942438c14ec7bd21c6cd5bd995272b3faff6",
@@ -54,7 +55,8 @@ Example response:
     "message": "Sanitize for network graph",
     "parent_ids": [
       "ae1d9fb46aa2b07ee9836d49862ec4e2c46fbbba"
-    ]
+    ],
+    "web_url": "https://gitlab.com/gitlab-org/gitlab-ce/commit/6104942438c14ec7bd21c6cd5bd995272b3faff6"
   }
 ]
 ```
@@ -152,7 +154,8 @@ Example response:
     "deletions": 2,
     "total": 4
   },
-  "status": null
+  "status": null,
+  "web_url": "https://gitlab.com/gitlab-org/gitlab-ce/commit/ed899a2f4b50b4370feeea94676502b42383c746"
 }
 ```
 
@@ -231,7 +234,8 @@ Example response:
     "deletions": 10,
     "total": 25
   },
-  "status": "running"
+  "status": "running",
+  "web_url": "https://gitlab.com/gitlab-org/gitlab-ce/commit/6104942438c14ec7bd21c6cd5bd995272b3faff6"
 }
 ```
 
@@ -310,7 +314,8 @@ Example response:
   "message": "Feature added\n\nSigned-off-by: Dmitriy Zaporozhets <dmitriy.zaporozhets@gmail.com>\n",
   "parent_ids": [
     "a738f717824ff53aebad8b090c1b79a14f2bd9e8"
-  ]
+  ],
+  "web_url": "https://gitlab.com/gitlab-org/gitlab-ce/commit/8b090c1b79a14f2bd9e8a738f717824ff53aebad"
 }
 ```
 
