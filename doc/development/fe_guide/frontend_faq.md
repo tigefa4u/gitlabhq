@@ -25,3 +25,8 @@ document.body.dataset.page
 ```
 
 Find here the [source code setting the attribute](https://gitlab.com/gitlab-org/gitlab-ce/blob/cc5095edfce2b4d4083a4fb1cdc7c0a1898b9921/app/views/layouts/application.html.haml#L4).
+
+### I am getting an unrelated / strange failure in my merge request. How did that happen?
+
+Please check if there is already [an issue describing the problem](https://gitlab.com/groups/gitlab-org/-/issues?state=all&label_name[]=master%3Abroken) and otherwise refer to our [documentation about broken master](https://about.gitlab.com/handbook/engineering/workflow/#broken-master).
+If you are still unsure how to proceed, feel free to raise this in the `#development` or `#frontend` Slack channel.
