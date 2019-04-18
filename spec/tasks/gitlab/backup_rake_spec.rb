@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'rake'
 
-describe 'gitlab:app namespace rake task' do
+describe 'gitlab:app namespace rake task', :delete do
   let(:enable_registry) { true }
 
   def tars_glob

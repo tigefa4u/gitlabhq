@@ -242,6 +242,9 @@ RSpec.configure do |config|
     schema_migrate_up!
 
     Gitlab::CurrentSettings.clear_in_memory_application_settings!
+
+    # Migrating may add data to the DB so we force a cleanup here
+    DatabaseCleaner.clean_with(:deletion, cache_tables: false)
   end
 
   config.around(:each, :nested_groups) do |example|

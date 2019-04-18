@@ -19,14 +19,8 @@ DatabaseCleaner::ActiveRecord::Deletion.prepend(FakeInformationSchema)
 RSpec.configure do |config|
   include DbCleaner
 
-  # Ensure all sequences are reset at the start of the suite run
   config.before(:suite) do
     setup_database_cleaner
-    DatabaseCleaner.clean_with(:truncation)
-  end
-
-  config.append_after(:context) do
-    DatabaseCleaner.clean_with(:deletion, cache_tables: false)
   end
 
   config.around(:each, :delete) do |example|
