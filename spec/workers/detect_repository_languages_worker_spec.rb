@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 describe DetectRepositoryLanguagesWorker do
-  set(:project) { create(:project) }
+  let_it_be(:project) { create(:project) }
   let(:user) { project.owner }
 
   subject { described_class.new }

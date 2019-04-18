@@ -7,9 +7,8 @@ describe Projects::ClustersController do
   include GoogleApi::CloudPlatformHelpers
   include KubernetesHelpers
 
-  set(:project) { create(:project) }
-
-  let(:user) { create(:user) }
+  let_it_be(:project) { create(:project) }
+  let_it_be(:user) { create(:user) }
 
   before do
     project.add_maintainer(user)
@@ -23,9 +22,9 @@ describe Projects::ClustersController do
 
     describe 'functionality' do
       context 'when project has one or more clusters' do
-        let(:project) { create(:project) }
         let!(:enabled_cluster) { create(:cluster, :provided_by_gcp, projects: [project]) }
         let!(:disabled_cluster) { create(:cluster, :disabled, :provided_by_gcp, :production_environment, projects: [project]) }
+
         it 'lists available clusters' do
           go
 
@@ -52,8 +51,6 @@ describe Projects::ClustersController do
       end
 
       context 'when project does not have a cluster' do
-        let(:project) { create(:project) }
-
         it 'returns an empty state page' do
           go
 
@@ -65,7 +62,7 @@ describe Projects::ClustersController do
     end
 
     describe 'security' do
-      let(:cluster) { create(:cluster, :provided_by_gcp, projects: [project]) }
+      let_it_be(:cluster) { create(:cluster, :provided_by_gcp, projects: [project]) }
 
       it { expect { go }.to be_allowed_for(:admin) }
       it { expect { go }.to be_allowed_for(:owner).of(project) }
@@ -327,7 +324,7 @@ describe Projects::ClustersController do
   end
 
   describe 'GET cluster_status' do
-    let(:cluster) { create(:cluster, :providing_by_gcp, projects: [project]) }
+    let_it_be(:cluster) { create(:cluster, :providing_by_gcp, projects: [project]) }
 
     def go
       get :cluster_status,
@@ -367,7 +364,7 @@ describe Projects::ClustersController do
   end
 
   describe 'GET show' do
-    let(:cluster) { create(:cluster, :provided_by_gcp, projects: [project]) }
+    let_it_be(:cluster) { create(:cluster, :provided_by_gcp, projects: [project]) }
 
     def go
       get :show,
@@ -486,7 +483,7 @@ describe Projects::ClustersController do
     end
 
     describe 'security' do
-      set(:cluster) { create(:cluster, :provided_by_gcp, projects: [project]) }
+      let_it_be(:cluster) { create(:cluster, :provided_by_gcp, projects: [project]) }
 
       it { expect { go }.to be_allowed_for(:admin) }
       it { expect { go }.to be_allowed_for(:owner).of(project) }
@@ -555,7 +552,7 @@ describe Projects::ClustersController do
     end
 
     describe 'security' do
-      set(:cluster) { create(:cluster, :provided_by_gcp, :production_environment, projects: [project]) }
+      let_it_be(:cluster) { create(:cluster, :provided_by_gcp, :production_environment, projects: [project]) }
 
       it { expect { go }.to be_allowed_for(:admin) }
       it { expect { go }.to be_allowed_for(:owner).of(project) }

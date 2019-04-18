@@ -2,7 +2,7 @@
 require 'spec_helper'
 
 describe Gitlab::GlRepository::RepoType do
-  set(:project) { create(:project) }
+  let_it_be(:project) { create(:project) }
 
   shared_examples 'a repo type' do
     describe "#identifier_for_subject" do

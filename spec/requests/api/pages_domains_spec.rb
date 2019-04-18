@@ -1,13 +1,13 @@
 require 'rails_helper'
 
 describe API::PagesDomains do
-  set(:project) { create(:project, path: 'my.project', pages_https_only: false) }
-  set(:user) { create(:user) }
-  set(:admin) { create(:admin) }
+  let_it_be(:project) { create(:project, path: 'my.project', pages_https_only: false) }
+  let_it_be(:user) { create(:user) }
+  let_it_be(:admin) { create(:admin) }
 
-  set(:pages_domain) { create(:pages_domain, :without_key, :without_certificate, domain: 'www.domain.test', project: project) }
-  set(:pages_domain_secure) { create(:pages_domain, domain: 'ssl.domain.test', project: project) }
-  set(:pages_domain_expired) { create(:pages_domain, :with_expired_certificate, domain: 'expired.domain.test', project: project) }
+  let_it_be(:pages_domain) { create(:pages_domain, :without_key, :without_certificate, domain: 'www.domain.test', project: project) }
+  let_it_be(:pages_domain_secure) { create(:pages_domain, domain: 'ssl.domain.test', project: project) }
+  let_it_be(:pages_domain_expired) { create(:pages_domain, :with_expired_certificate, domain: 'expired.domain.test', project: project) }
 
   let(:pages_domain_params) { build(:pages_domain, :without_key, :without_certificate, domain: 'www.other-domain.test').slice(:domain) }
   let(:pages_domain_secure_params) { build(:pages_domain, domain: 'ssl.other-domain.test', project: project).slice(:domain, :certificate, :key) }

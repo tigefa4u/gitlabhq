@@ -15,10 +15,10 @@ describe SnippetsFinder do
   end
 
   describe '#execute' do
-    set(:user) { create(:user) }
-    set(:private_personal_snippet) { create(:personal_snippet, :private, author: user) }
-    set(:internal_personal_snippet) { create(:personal_snippet, :internal, author: user) }
-    set(:public_personal_snippet) { create(:personal_snippet, :public, author: user) }
+    let_it_be(:user) { create(:user) }
+    let_it_be(:private_personal_snippet) { create(:personal_snippet, :private, author: user) }
+    let_it_be(:internal_personal_snippet) { create(:personal_snippet, :internal, author: user) }
+    let_it_be(:public_personal_snippet) { create(:personal_snippet, :public, author: user) }
 
     context 'filter by scope' do
       it "returns all snippets for 'all' scope" do

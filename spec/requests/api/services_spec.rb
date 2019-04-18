@@ -1,11 +1,11 @@
 require "spec_helper"
 
 describe API::Services do
-  set(:user) { create(:user) }
-  set(:admin) { create(:admin) }
-  set(:user2) { create(:user) }
+  let_it_be(:user) { create(:user) }
+  let_it_be(:admin) { create(:admin) }
+  let_it_be(:user2) { create(:user) }
 
-  set(:project) do
+  let_it_be(:project, reload: true) do
     create(:project, creator_id: user.id, namespace: user.namespace)
   end
 

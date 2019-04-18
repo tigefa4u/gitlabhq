@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 describe UserFinder do
-  set(:user) { create(:user) }
+  let_it_be(:user) { create(:user) }
 
   describe '#find_by_id' do
     context 'when the user exists' do

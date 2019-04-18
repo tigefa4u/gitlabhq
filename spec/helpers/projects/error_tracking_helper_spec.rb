@@ -5,7 +5,7 @@ require 'spec_helper'
 describe Projects::ErrorTrackingHelper do
   include Gitlab::Routing.url_helpers
 
-  set(:project) { create(:project) }
+  let_it_be(:project, reload: true) { create(:project) }
 
   describe '#error_tracking_data' do
     let(:setting_path) { project_settings_operations_path(project) }

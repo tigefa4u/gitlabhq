@@ -3,11 +3,11 @@
 require 'spec_helper'
 
 describe Ci::BuildMetadata do
-  set(:user) { create(:user) }
-  set(:group) { create(:group, :access_requestable) }
-  set(:project) { create(:project, :repository, group: group, build_timeout: 2000) }
+  let_it_be(:user) { create(:user) }
+  let_it_be(:group) { create(:group, :access_requestable) }
+  let_it_be(:project) { create(:project, :repository, group: group, build_timeout: 2000) }
 
-  set(:pipeline) do
+  let_it_be(:pipeline) do
     create(:ci_pipeline, project: project,
                          sha: project.commit.id,
                          ref: project.default_branch,

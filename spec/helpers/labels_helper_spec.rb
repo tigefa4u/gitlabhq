@@ -35,7 +35,7 @@ describe LabelsHelper do
     end
 
     context 'with a group label' do
-      set(:group) { create(:group) }
+      let_it_be(:group) { create(:group) }
       let(:label) { create(:group_label, group: group, title: 'bug') }
 
       context 'when asking for an issue link' do
@@ -141,7 +141,7 @@ describe LabelsHelper do
   end
 
   describe 'create_label_title' do
-    set(:group) { create(:group) }
+    let_it_be(:group) { create(:group) }
 
     context 'with a group as subject' do
       it 'returns "Create group label"' do
@@ -150,7 +150,7 @@ describe LabelsHelper do
     end
 
     context 'with a project as subject' do
-      set(:project) { create(:project, namespace: group) }
+      let_it_be(:project) { create(:project, namespace: group) }
 
       it 'returns "Create project label"' do
         expect(create_label_title(project)).to eq 'Create project label'
@@ -165,7 +165,7 @@ describe LabelsHelper do
   end
 
   describe 'manage_labels_title' do
-    set(:group) { create(:group) }
+    let_it_be(:group) { create(:group) }
 
     context 'with a group as subject' do
       it 'returns "Manage group labels"' do
@@ -174,7 +174,7 @@ describe LabelsHelper do
     end
 
     context 'with a project as subject' do
-      set(:project) { create(:project, namespace: group) }
+      let_it_be(:project) { create(:project, namespace: group) }
 
       it 'returns "Manage project labels"' do
         expect(manage_labels_title(project)).to eq 'Manage project labels'
@@ -189,7 +189,7 @@ describe LabelsHelper do
   end
 
   describe 'view_labels_title' do
-    set(:group) { create(:group) }
+    let_it_be(:group) { create(:group) }
 
     context 'with a group as subject' do
       it 'returns "View group labels"' do
@@ -198,7 +198,7 @@ describe LabelsHelper do
     end
 
     context 'with a project as subject' do
-      set(:project) { create(:project, namespace: group) }
+      let_it_be(:project) { create(:project, namespace: group) }
 
       it 'returns "View project labels"' do
         expect(view_labels_title(project)).to eq 'View project labels'

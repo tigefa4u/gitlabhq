@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 describe API::Internal do
-  set(:user) { create(:user) }
+  let(:user) { create(:user) }
   let(:key) { create(:key, user: user) }
-  set(:project) { create(:project, :repository, :wiki_repo) }
+  let(:project) { create(:project, :repository, :wiki_repo) }
   let(:secret_token) { Gitlab::Shell.secret_token }
   let(:gl_repository) { "project-#{project.id}" }
   let(:reference_counter) { double('ReferenceCounter') }

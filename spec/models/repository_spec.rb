@@ -40,7 +40,7 @@ describe Repository do
   end
 
   describe '#branch_names_contains' do
-    set(:project) { create(:project, :repository) }
+    let_it_be(:project) { create(:project, :repository) }
     let(:repository) { project.repository }
 
     subject { repository.branch_names_contains(sample_commit.id) }
@@ -307,7 +307,7 @@ describe Repository do
   end
 
   describe '#new_commits' do
-    set(:project) { create(:project, :repository) }
+    let_it_be(:project) { create(:project, :repository) }
     let(:repository) { project.repository }
 
     subject { repository.new_commits(rev) }
@@ -335,7 +335,7 @@ describe Repository do
   end
 
   describe '#commits_by' do
-    set(:project) { create(:project, :repository) }
+    let_it_be(:project) { create(:project, :repository) }
     let(:oids) { TestEnv::BRANCH_SHA.values }
 
     subject { project.repository.commits_by(oids: oids) }
@@ -2310,7 +2310,7 @@ describe Repository do
   end
 
   describe 'commit cache' do
-    set(:project) { create(:project, :repository) }
+    let_it_be(:project) { create(:project, :repository) }
 
     it 'caches based on SHA' do
       # Gets the commit oid, and warms the cache
@@ -2459,7 +2459,7 @@ describe Repository do
   end
 
   describe '#merge_base' do
-    set(:project) { create(:project, :repository) }
+    let_it_be(:project) { create(:project, :repository) }
     subject(:repository) { project.repository }
 
     it 'only makes one gitaly call' do

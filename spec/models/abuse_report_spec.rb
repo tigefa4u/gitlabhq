@@ -3,8 +3,9 @@
 require 'rails_helper'
 
 describe AbuseReport do
-  set(:report) { create(:abuse_report) }
-  set(:user) { create(:admin) }
+  let(:report) { create(:abuse_report) }
+  let(:user) { create(:admin) }
+
   subject { report }
 
   it { expect(subject).to be_valid }

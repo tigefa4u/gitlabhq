@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Ci::BuildTraceChunk, :clean_gitlab_redis_shared_state do
   include ExclusiveLeaseHelpers
 
-  set(:build) { create(:ci_build, :running) }
+  let!(:build) { create(:ci_build, :running) }
   let(:chunk_index) { 0 }
   let(:data_store) { :redis }
   let(:raw_data) { nil }

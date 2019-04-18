@@ -186,7 +186,7 @@ describe Gitlab::HashedStorage::Migrator, :sidekiq, :redis do
   end
 
   describe 'migration_pending?' do
-    set(:project) { create(:project, :empty_repo) }
+    let(:project) { create(:project, :empty_repo) }
 
     it 'returns true when there are MigratorWorker jobs scheduled' do
       Sidekiq::Testing.disable! do
@@ -210,7 +210,7 @@ describe Gitlab::HashedStorage::Migrator, :sidekiq, :redis do
   end
 
   describe 'rollback_pending?' do
-    set(:project) { create(:project, :empty_repo) }
+    let(:project) { create(:project, :empty_repo) }
 
     it 'returns true when there are RollbackerWorker jobs scheduled' do
       Sidekiq::Testing.disable! do

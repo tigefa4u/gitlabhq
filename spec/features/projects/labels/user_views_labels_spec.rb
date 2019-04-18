@@ -3,8 +3,8 @@
 require "spec_helper"
 
 describe "User views labels" do
-  set(:project) { create(:project_empty_repo, :public) }
-  set(:user) { create(:user) }
+  let(:project) { create(:project_empty_repo, :public) }
+  let(:user) { create(:user) }
 
   let(:label_titles) { %w[bug enhancement feature] }
 

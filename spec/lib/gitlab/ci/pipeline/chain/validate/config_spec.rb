@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 describe Gitlab::Ci::Pipeline::Chain::Validate::Config do
-  set(:project) { create(:project, :repository) }
-  set(:user) { create(:user) }
+  let_it_be(:project) { create(:project, :repository) }
+  let_it_be(:user) { create(:user) }
 
   let(:command) do
     Gitlab::Ci::Pipeline::Chain::Command.new(

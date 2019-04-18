@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'Projects > Show > User sees last commit CI status' do
-  set(:project) { create(:project, :repository, :public) }
+  let(:project) { create(:project, :repository, :public) }
 
   it 'shows the project README', :js do
     project.enable_ci

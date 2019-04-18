@@ -448,7 +448,7 @@ describe Clusters::Cluster do
   end
 
   describe '#applications' do
-    set(:cluster) { create(:cluster) }
+    let_it_be(:cluster, reload: true) { create(:cluster) }
 
     subject { cluster.applications }
 

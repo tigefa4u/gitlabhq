@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 describe API::CircuitBreakers do
-  set(:user) { create(:user) }
-  set(:admin) { create(:admin) }
+  let_it_be(:user) { create(:user) }
+  let_it_be(:admin) { create(:admin) }
 
   describe 'GET circuit_breakers/repository_storage' do
     it 'returns a 401 for anonymous users' do

@@ -4,8 +4,8 @@ require 'spec_helper'
 
 describe Projects::ParticipantsService do
   describe '#groups' do
-    set(:user) { create(:user) }
-    set(:project) { create(:project, :public) }
+    let_it_be(:user) { create(:user) }
+    let_it_be(:project) { create(:project, :public) }
     let(:service) { described_class.new(project, user) }
 
     it 'avoids N+1 queries' do

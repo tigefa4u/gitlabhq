@@ -6,9 +6,9 @@ RSpec.shared_examples 'snippet visibility' do
     DatabaseCleaner.clean_with(:truncation)
   end
 
-  set(:author) { create(:user) }
-  set(:member) { create(:user) }
-  set(:external) { create(:user, :external) }
+  let_it_be(:author) { create(:user) }
+  let_it_be(:member) { create(:user) }
+  let_it_be(:external) { create(:user, :external) }
 
   context "For project snippets" do
     let!(:users) do

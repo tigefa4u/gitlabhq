@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Gitlab::Ci::Config do
-  set(:user) { create(:user) }
+  let_it_be(:user) { create(:user) }
 
   let(:config) do
     described_class.new(yml, project: nil, sha: nil, user: nil)

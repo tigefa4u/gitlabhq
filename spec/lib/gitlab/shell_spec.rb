@@ -2,13 +2,15 @@ require 'spec_helper'
 require 'stringio'
 
 describe Gitlab::Shell do
-  set(:project) { create(:project, :repository) }
+  let_it_be(:project) { create(:project, :repository) }
 
   let(:repository) { project.repository }
   let(:gitlab_shell) { described_class.new }
   let(:popen_vars) { { 'GIT_TERMINAL_PROMPT' => ENV['GIT_TERMINAL_PROMPT'] } }
   let(:timeout) { Gitlab.config.gitlab_shell.git_timeout }
   let(:gitlab_authorized_keys) { double }
+
+  let(:authorized_keys_file) { 'tmp/tests/authorized_keys' }
 
   before do
     allow(Project).to receive(:find).and_return(project)
@@ -73,6 +75,10 @@ describe Gitlab::Shell do
       end
 
       context 'authorized_keys_file set' do
+        before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+        end
+
         it 'calls Gitlab::AuthorizedKeys#add_key with id and key' do
           expect(Gitlab::AuthorizedKeys).to receive(:new).and_return(gitlab_authorized_keys)
 
@@ -103,6 +109,10 @@ describe Gitlab::Shell do
       end
 
       context 'authorized_keys_file set' do
+        before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+        end
+
         it 'does nothing' do
           expect(Gitlab::AuthorizedKeys).not_to receive(:new)
 
@@ -139,6 +149,10 @@ describe Gitlab::Shell do
       end
 
       context 'authorized_keys_file set' do
+        before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+        end
+
         it 'calls Gitlab::AuthorizedKeys#add_key with id and key' do
           expect(Gitlab::AuthorizedKeys).to receive(:new).and_return(gitlab_authorized_keys)
 
@@ -191,6 +205,10 @@ describe Gitlab::Shell do
       end
 
       context 'authorized_keys_file set' do
+        before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+        end
+
         it 'calls Gitlab::AuthorizedKeys#batch_add_keys with keys to be added' do
           expect(Gitlab::AuthorizedKeys).to receive(:new).and_return(gitlab_authorized_keys)
 
@@ -221,6 +239,10 @@ describe Gitlab::Shell do
       end
 
       context 'authorized_keys_file set' do
+        before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+        end
+
         it 'does nothing' do
           expect(Gitlab::AuthorizedKeys).not_to receive(:new)
 
@@ -257,6 +279,10 @@ describe Gitlab::Shell do
       end
 
       context 'authorized_keys_file set' do
+        before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+        end
+
         it 'calls Gitlab::AuthorizedKeys#batch_add_keys with keys to be added' do
           expect(Gitlab::AuthorizedKeys).to receive(:new).and_return(gitlab_authorized_keys)
 
@@ -293,7 +319,11 @@ describe Gitlab::Shell do
         end
       end
 
-      context 'authorized_keys_file not set' do
+      context 'authorized_keys_file is set' do
+        before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+        end
+
         it 'calls Gitlab::AuthorizedKeys#rm_key with the key to be removed' do
           expect(Gitlab::AuthorizedKeys).to receive(:new).and_return(gitlab_authorized_keys)
           expect(gitlab_authorized_keys).to receive(:rm_key).with('key-123')
@@ -321,6 +351,10 @@ describe Gitlab::Shell do
       end
 
       context 'authorized_keys_file set' do
+        before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+        end
+
         it 'does nothing' do
           expect(Gitlab::AuthorizedKeys).not_to receive(:new)
 
@@ -355,7 +389,11 @@ describe Gitlab::Shell do
         end
       end
 
-      context 'authorized_keys_file not set' do
+      context 'authorized_keys_file is set' do
+        before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+        end
+
         it 'calls Gitlab::AuthorizedKeys#rm_key with the key to be removed' do
           expect(Gitlab::AuthorizedKeys).to receive(:new).and_return(gitlab_authorized_keys)
           expect(gitlab_authorized_keys).to receive(:rm_key).with('key-123')
@@ -386,6 +424,10 @@ describe Gitlab::Shell do
       end
 
       context 'authorized_keys_file set' do
+        before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+        end
+
         it 'calls Gitlab::AuthorizedKeys#clear' do
           expect(Gitlab::AuthorizedKeys).to receive(:new).and_return(gitlab_authorized_keys)
           expect(gitlab_authorized_keys).to receive(:clear)
@@ -413,6 +455,10 @@ describe Gitlab::Shell do
       end
 
       context 'authorized_keys_file set' do
+        before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+        end
+
         it 'does nothing' do
           expect(Gitlab::AuthorizedKeys).not_to receive(:new)
 
@@ -444,6 +490,10 @@ describe Gitlab::Shell do
       end
 
       context 'authorized_keys_file set' do
+        before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+        end
+
         it 'calls Gitlab::AuthorizedKeys#clear' do
           expect(Gitlab::AuthorizedKeys).to receive(:new).and_return(gitlab_authorized_keys)
           expect(gitlab_authorized_keys).to receive(:clear)
@@ -476,6 +526,8 @@ describe Gitlab::Shell do
 
       context 'authorized_keys_file set' do
         before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+
           gitlab_shell.remove_all_keys
           gitlab_shell.add_key('key-1234', 'ssh-rsa ASDFASDF')
           gitlab_shell.add_key('key-9876', 'ssh-rsa ASDFASDF')
@@ -510,6 +562,8 @@ describe Gitlab::Shell do
 
       context 'authorized_keys_file set' do
         before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+
           gitlab_shell.remove_all_keys
           gitlab_shell.add_key('key-1234', 'ssh-rsa ASDFASDF')
           gitlab_shell.add_key('key-1234', 'ssh-rsa ASDFASDF')
@@ -541,6 +595,8 @@ describe Gitlab::Shell do
 
       context 'authorized_keys_file set' do
         before do
+          stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+
           gitlab_shell.remove_all_keys
           @key = create(:key)
           gitlab_shell.add_key(@key.shell_id, @key.key)
@@ -573,6 +629,8 @@ describe Gitlab::Shell do
 
         context 'authorized_keys_file set' do
           before do
+            stub_gitlab_shell_setting(authorized_keys_file: authorized_keys_file)
+
             gitlab_shell.remove_all_keys
             100.times { |i| create(:key) } # first batch is all in the DB
             gitlab_shell.add_key('key-1234', 'ssh-rsa ASDFASDF')

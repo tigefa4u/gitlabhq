@@ -5,8 +5,8 @@ require 'spec_helper'
 describe Projects::PipelinesController do
   include ApiHelpers
 
-  set(:user) { create(:user) }
-  let(:project) { create(:project, :public, :repository) }
+  let_it_be(:user) { create(:user) }
+  let_it_be(:project) { create(:project, :public, :repository) }
   let(:feature) { ProjectFeature::ENABLED }
 
   before do

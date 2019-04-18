@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 describe 'Projects > Show > User sees README' do
-  set(:user) { create(:user) }
+  let(:user) { create(:user) }
 
-  set(:project) { create(:project, :repository, :public) }
+  let(:project) { create(:project, :repository, :public) }
 
   it 'shows the project README', :js do
     visit project_path(project)

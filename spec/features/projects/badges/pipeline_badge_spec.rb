@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'Pipeline Badge' do
-  set(:project) { create(:project, :repository, :public) }
+  let_it_be(:project) { create(:project, :repository, :public) }
   let(:ref) { project.default_branch }
 
   # this can't be tested in the controller, as it bypasses the rails router

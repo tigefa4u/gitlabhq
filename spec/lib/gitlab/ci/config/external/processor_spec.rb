@@ -3,9 +3,9 @@
 require 'spec_helper'
 
 describe Gitlab::Ci::Config::External::Processor do
-  set(:project) { create(:project, :repository) }
-  set(:another_project) { create(:project, :repository) }
-  set(:user) { create(:user) }
+  let_it_be(:project) { create(:project, :repository) }
+  let_it_be(:another_project) { create(:project, :repository) }
+  let_it_be(:user) { create(:user) }
 
   let(:expandset) { Set.new }
   let(:sha) { '12345' }

@@ -3,8 +3,8 @@
 require 'spec_helper'
 
 describe Gitlab::Ci::Config::External::File::Local do
-  set(:project) { create(:project, :repository) }
-  set(:user) { create(:user) }
+  let_it_be(:project) { create(:project, :repository) }
+  let_it_be(:user) { create(:user) }
 
   let(:sha) { '12345' }
   let(:context) { described_class::Context.new(project, sha, user, Set.new) }

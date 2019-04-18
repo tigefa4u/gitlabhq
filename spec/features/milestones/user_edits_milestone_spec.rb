@@ -1,9 +1,9 @@
 require "rails_helper"
 
-describe "User edits milestone", :js do
-  set(:user) { create(:user) }
-  set(:project) { create(:project) }
-  set(:milestone) { create(:milestone, project: project, start_date: Date.today, due_date: 5.days.from_now) }
+describe "User edits milestone" do
+  let(:user) { create(:user) }
+  let(:project) { create(:project) }
+  let(:milestone) { create(:milestone, project: project, start_date: Date.today, due_date: 5.days.from_now) }
 
   before do
     project.add_developer(user)

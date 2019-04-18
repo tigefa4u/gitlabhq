@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Gitlab::Ci::Build::Policy::Changes do
-  set(:project) { create(:project) }
+  let_it_be(:project) { create(:project, :repository) }
 
   describe '#satisfied_by?' do
     describe 'paths matching' do
@@ -87,8 +87,6 @@ describe Gitlab::Ci::Build::Policy::Changes do
     end
 
     describe 'gitaly integration' do
-      set(:project) { create(:project, :repository) }
-
       let(:pipeline) do
         create(:ci_empty_pipeline, project: project,
                                    ref: 'master',

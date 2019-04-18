@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'Projects > Show > User sees Git instructions' do
-  set(:user) { create(:user) }
+  let_it_be(:user) { create(:user) }
 
   shared_examples_for 'redirects to the sign in page' do
     it 'redirects to the sign in page' do
@@ -47,7 +47,7 @@ describe 'Projects > Show > User sees Git instructions' do
 
   context 'when project is public' do
     context 'when project has no repo' do
-      set(:project) { create(:project, :public) }
+      let_it_be(:project) { create(:project, :public) }
 
       before do
         sign_in(project.owner)
@@ -58,7 +58,7 @@ describe 'Projects > Show > User sees Git instructions' do
     end
 
     context 'when project is empty' do
-      set(:project) { create(:project_empty_repo, :public) }
+      let_it_be(:project) { create(:project_empty_repo, :public) }
 
       context 'when not signed in' do
         before do
@@ -96,7 +96,7 @@ describe 'Projects > Show > User sees Git instructions' do
     end
 
     context 'when project is not empty' do
-      set(:project) { create(:project, :public, :repository) }
+      let_it_be(:project) { create(:project, :public, :repository) }
 
       before do
         visit(project_path(project))
@@ -139,7 +139,7 @@ describe 'Projects > Show > User sees Git instructions' do
   end
 
   context 'when project is internal' do
-    set(:project) { create(:project, :internal, :repository) }
+    let_it_be(:project) { create(:project, :internal, :repository) }
 
     context 'when not signed in' do
       before do
@@ -161,7 +161,7 @@ describe 'Projects > Show > User sees Git instructions' do
   end
 
   context 'when project is private' do
-    set(:project) { create(:project, :private) }
+    let_it_be(:project) { create(:project, :private) }
 
     before do
       visit(project_path(project))

@@ -154,7 +154,7 @@ describe NotificationService, :mailer do
 
   describe '#async' do
     let(:async) { notification.async }
-    set(:key) { create(:personal_key) }
+    let_it_be(:key) { create(:personal_key) }
 
     it 'returns an Async object with the correct parent' do
       expect(async).to be_a(described_class::Async)
@@ -1834,7 +1834,7 @@ describe NotificationService, :mailer do
 
   describe 'ProjectMember' do
     let(:project) { create(:project) }
-    set(:added_user) { create(:user) }
+    let_it_be(:added_user) { create(:user) }
 
     describe '#new_access_request' do
       context 'for a project in a user namespace' do
@@ -2137,14 +2137,14 @@ describe NotificationService, :mailer do
   end
 
   describe 'Pages domains' do
-    set(:project) { create(:project) }
-    set(:domain) { create(:pages_domain, project: project) }
-    set(:u_blocked) { create(:user, :blocked) }
-    set(:u_silence) { create_user_with_notification(:disabled, 'silent', project) }
-    set(:u_owner)   { project.owner }
-    set(:u_maintainer1) { create(:user) }
-    set(:u_maintainer2) { create(:user) }
-    set(:u_developer) { create(:user) }
+    let_it_be(:project) { create(:project) }
+    let_it_be(:domain, reload: true) { create(:pages_domain, project: project) }
+    let_it_be(:u_blocked) { create(:user, :blocked) }
+    let_it_be(:u_silence) { create_user_with_notification(:disabled, 'silent', project) }
+    let_it_be(:u_owner)   { project.owner }
+    let_it_be(:u_maintainer1) { create(:user) }
+    let_it_be(:u_maintainer2) { create(:user) }
+    let_it_be(:u_developer) { create(:user) }
 
     before do
       project.add_maintainer(u_blocked)

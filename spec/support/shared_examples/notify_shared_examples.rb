@@ -1,6 +1,6 @@
 shared_context 'gitlab email notification' do
-  set(:project) { create(:project, :repository, name: 'a-known-name') }
-  set(:recipient) { create(:user, email: 'recipient@example.com') }
+  let_it_be(:project) { create(:project, :repository, name: 'a-known-name') }
+  let_it_be(:recipient, reload: true) { create(:user, email: 'recipient@example.com') }
 
   let(:gitlab_sender_display_name) { Gitlab.config.gitlab.email_display_name }
   let(:gitlab_sender) { Gitlab.config.gitlab.email_from }

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe ::Gitlab::GlRepository do
   describe '.parse' do
-    set(:project) { create(:project, :repository) }
+    let_it_be(:project) { create(:project, :repository) }
 
     it 'parses a project gl_repository' do
       expect(described_class.parse("project-#{project.id}")).to eq([project, Gitlab::GlRepository::PROJECT])

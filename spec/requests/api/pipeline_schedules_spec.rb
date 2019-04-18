@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 describe API::PipelineSchedules do
-  set(:developer) { create(:user) }
-  set(:user) { create(:user) }
-  set(:project) { create(:project, :repository, public_builds: false) }
+  let_it_be(:developer) { create(:user) }
+  let_it_be(:user) { create(:user) }
+  let_it_be(:project) { create(:project, :repository, public_builds: false) }
 
   before do
     project.add_developer(developer)
@@ -322,7 +322,7 @@ describe API::PipelineSchedules do
   describe 'POST /projects/:id/pipeline_schedules/:pipeline_schedule_id/variables' do
     let(:params) { attributes_for(:ci_pipeline_schedule_variable) }
 
-    set(:pipeline_schedule) do
+    let_it_be(:pipeline_schedule) do
       create(:ci_pipeline_schedule, project: project, owner: developer)
     end
 
@@ -378,7 +378,7 @@ describe API::PipelineSchedules do
   end
 
   describe 'PUT /projects/:id/pipeline_schedules/:pipeline_schedule_id/variables/:key' do
-    set(:pipeline_schedule) do
+    let_it_be(:pipeline_schedule) do
       create(:ci_pipeline_schedule, project: project, owner: developer)
     end
 
@@ -417,7 +417,7 @@ describe API::PipelineSchedules do
   describe 'DELETE /projects/:id/pipeline_schedules/:pipeline_schedule_id/variables/:key' do
     let(:maintainer) { create(:user) }
 
-    set(:pipeline_schedule) do
+    let_it_be(:pipeline_schedule) do
       create(:ci_pipeline_schedule, project: project, owner: developer)
     end
 

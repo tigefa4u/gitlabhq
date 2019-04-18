@@ -1,8 +1,8 @@
 require "spec_helper"
 
 describe "User views branches" do
-  set(:project) { create(:project, :repository) }
-  set(:user) { project.owner }
+  let_it_be(:project) { create(:project, :repository) }
+  let(:user) { project.owner }
 
   before do
     sign_in(user)
@@ -21,7 +21,7 @@ describe "User views branches" do
   end
 
   context "protected branches" do
-    set(:protected_branch) { create(:protected_branch, project: project) }
+    let!(:protected_branch) { create(:protected_branch, project: project) }
 
     before do
       visit(project_protected_branches_path(project))

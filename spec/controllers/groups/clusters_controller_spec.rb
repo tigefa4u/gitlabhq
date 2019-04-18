@@ -6,9 +6,8 @@ describe Groups::ClustersController do
   include AccessMatchersForController
   include GoogleApi::CloudPlatformHelpers
 
-  set(:group) { create(:group) }
-
-  let(:user) { create(:user) }
+  let_it_be(:group) { create(:group) }
+  let_it_be(:user) { create(:user) }
 
   before do
     group.add_maintainer(user)
@@ -39,8 +38,6 @@ describe Groups::ClustersController do
 
       describe 'functionality' do
         context 'when group has one or more clusters' do
-          let(:group) { create(:group) }
-
           let!(:enabled_cluster) do
             create(:cluster, :provided_by_gcp, cluster_type: :group_type, groups: [group])
           end
@@ -75,8 +72,6 @@ describe Groups::ClustersController do
         end
 
         context 'when group does not have a cluster' do
-          let(:group) { create(:group) }
-
           it 'returns an empty state page' do
             go
 
@@ -89,7 +84,7 @@ describe Groups::ClustersController do
     end
 
     describe 'security' do
-      let(:cluster) { create(:cluster, :provided_by_gcp, cluster_type: :group_type, groups: [group]) }
+      let_it_be(:cluster) { create(:cluster, :provided_by_gcp, cluster_type: :group_type, groups: [group]) }
 
       it { expect { go }.to be_allowed_for(:admin) }
       it { expect { go }.to be_allowed_for(:owner).of(group) }
@@ -508,7 +503,7 @@ describe Groups::ClustersController do
     end
 
     describe 'security' do
-      set(:cluster) { create(:cluster, :provided_by_gcp, cluster_type: :group_type, groups: [group]) }
+      let_it_be(:cluster) { create(:cluster, :provided_by_gcp, cluster_type: :group_type, groups: [group]) }
 
       it { expect { go }.to be_allowed_for(:admin) }
       it { expect { go }.to be_allowed_for(:owner).of(group) }
@@ -576,7 +571,7 @@ describe Groups::ClustersController do
     end
 
     describe 'security' do
-      set(:cluster) { create(:cluster, :provided_by_gcp, :production_environment, cluster_type: :group_type, groups: [group]) }
+      let_it_be(:cluster) { create(:cluster, :provided_by_gcp, :production_environment, cluster_type: :group_type, groups: [group]) }
 
       it { expect { go }.to be_allowed_for(:admin) }
       it { expect { go }.to be_allowed_for(:owner).of(group) }

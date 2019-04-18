@@ -20,11 +20,11 @@ describe Gitlab::SlashCommands::IssueMove, service: true do
   end
 
   describe '#execute' do
-    set(:user) { create(:user) }
-    set(:issue) { create(:issue) }
-    set(:chat_name) { create(:chat_name, user: user) }
-    set(:project) { issue.project }
-    set(:other_project) { create(:project, namespace: project.namespace) }
+    let(:user) { create(:user) }
+    let(:issue) { create(:issue) }
+    let(:chat_name) { create(:chat_name, user: user) }
+    let(:project) { issue.project }
+    let(:other_project) { create(:project, namespace: project.namespace) }
 
     before do
       [project, other_project].each { |prj| prj.add_maintainer(user) }

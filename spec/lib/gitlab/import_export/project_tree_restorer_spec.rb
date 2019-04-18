@@ -31,6 +31,10 @@ describe Gitlab::ImportExport::ProjectTreeRestorer do
       end
     end
 
+    after(:context) do
+      DatabaseCleaner.clean_with(:deletion, cache_tables: false)
+    end
+
     context 'JSON' do
       it 'restores models based on JSON' do
         expect(@restored_project_json).to be_truthy

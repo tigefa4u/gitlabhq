@@ -153,7 +153,7 @@ shared_examples_for 'group and project boards' do |route_definition, ee = false|
     end
 
     context "when the user is parent owner" do
-      set(:owner) { create(:user) }
+      let_it_be(:owner) { create(:user) }
 
       before do
         if board_parent.try(:namespace)

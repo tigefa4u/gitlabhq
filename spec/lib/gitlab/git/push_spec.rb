@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Gitlab::Git::Push do
-  set(:project) { create(:project, :repository) }
+  let_it_be(:project) { create(:project, :repository) }
 
   let(:oldrev) { project.commit('HEAD~2').id }
   let(:newrev) { project.commit.id }

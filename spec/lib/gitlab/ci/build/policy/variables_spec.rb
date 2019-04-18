@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Gitlab::Ci::Build::Policy::Variables do
-  set(:project) { create(:project) }
+  let_it_be(:project, reload: true) { create(:project) }
 
   let(:pipeline) do
     build(:ci_empty_pipeline, project: project, ref: 'master', source: :push)

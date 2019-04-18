@@ -68,7 +68,7 @@ describe MergeRequests::MergeToRefService do
     end
   end
 
-  set(:user) { create(:user) }
+  let_it_be(:user) { create(:user) }
   let(:merge_request) { create(:merge_request, :simple) }
   let(:project) { merge_request.project }
 

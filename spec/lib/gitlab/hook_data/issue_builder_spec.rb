@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Gitlab::HookData::IssueBuilder do
-  set(:issue) { create(:issue) }
+  let_it_be(:issue) { create(:issue) }
   let(:builder) { described_class.new(issue) }
 
   describe '#build' do

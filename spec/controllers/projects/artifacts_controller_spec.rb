@@ -3,8 +3,8 @@
 require 'spec_helper'
 
 describe Projects::ArtifactsController do
-  let(:user) { project.owner }
-  set(:project) { create(:project, :repository, :public) }
+  let_it_be(:project) { create(:project, :repository, :public) }
+  let_it_be(:user) { project.owner }
 
   let(:pipeline) do
     create(:ci_pipeline,

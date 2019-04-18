@@ -3,8 +3,8 @@
 require 'spec_helper'
 
 describe Gitlab::Ci::Config::External::File::Template do
-  set(:project) { create(:project) }
-  set(:user) { create(:user) }
+  let_it_be(:project) { create(:project) }
+  let_it_be(:user) { create(:user) }
 
   let(:context) { described_class::Context.new(project, '12345', user, Set.new) }
   let(:template) { 'Auto-DevOps.gitlab-ci.yml' }

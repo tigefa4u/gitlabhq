@@ -1,8 +1,8 @@
 require "spec_helper"
 
 describe "User deletes branch", :js do
-  set(:user) { create(:user) }
-  set(:project) { create(:project, :repository) }
+  let(:user) { create(:user) }
+  let(:project) { create(:project, :repository) }
 
   before do
     project.add_developer(user)

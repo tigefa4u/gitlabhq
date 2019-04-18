@@ -5,7 +5,7 @@ require 'spec_helper'
 describe ErrorTracking::ProjectErrorTrackingSetting do
   include ReactiveCachingHelpers
 
-  set(:project) { create(:project) }
+  let(:project) { create(:project) }
 
   subject { create(:project_error_tracking_setting, project: project) }
 

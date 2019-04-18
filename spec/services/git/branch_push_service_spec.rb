@@ -5,8 +5,8 @@ require 'spec_helper'
 describe Git::BranchPushService, services: true do
   include RepoHelpers
 
-  set(:user)     { create(:user) }
-  set(:project)  { create(:project, :repository) }
+  let(:user)     { create(:user) }
+  let(:project)  { create(:project, :repository) }
   let(:blankrev) { Gitlab::Git::BLANK_SHA }
   let(:oldrev)   { sample_commit.parent_id }
   let(:newrev)   { sample_commit.id }

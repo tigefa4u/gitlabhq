@@ -5,7 +5,7 @@ require 'spec_helper'
 describe MailScheduler::NotificationServiceWorker do
   let(:worker) { described_class.new }
   let(:method) { 'new_key' }
-  set(:key) { create(:personal_key) }
+  let(:key) { create(:personal_key) }
 
   def serialize(*args)
     ActiveJob::Arguments.serialize(args)

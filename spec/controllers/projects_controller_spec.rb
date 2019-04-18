@@ -6,9 +6,9 @@ describe ProjectsController do
   include ExternalAuthorizationServiceHelpers
   include ProjectForksHelper
 
-  let(:project) { create(:project) }
-  let(:public_project) { create(:project, :public) }
-  let(:user) { create(:user) }
+  let_it_be(:project, reload: true) { create(:project) }
+  let_it_be(:public_project) { create(:project, :public) }
+  let_it_be(:user) { create(:user) }
   let(:jpg) { fixture_file_upload('spec/fixtures/rails_sample.jpg', 'image/jpg') }
   let(:txt) { fixture_file_upload('spec/fixtures/doc_sample.txt', 'text/plain') }
 
@@ -149,7 +149,7 @@ describe ProjectsController do
     end
 
     context 'when the storage is not available', :broken_storage do
-      set(:project) { create(:project, :broken_storage) }
+      let_it_be(:project) { create(:project, :broken_storage) }
 
       before do
         project.add_developer(user)

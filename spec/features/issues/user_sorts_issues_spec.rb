@@ -1,12 +1,12 @@
 require "spec_helper"
 
 describe "User sorts issues" do
-  set(:user) { create(:user) }
-  set(:group) { create(:group) }
-  set(:project) { create(:project_empty_repo, :public, group: group) }
-  set(:issue1) { create(:issue, project: project) }
-  set(:issue2) { create(:issue, project: project) }
-  set(:issue3) { create(:issue, project: project) }
+  let_it_be(:user) { create(:user) }
+  let_it_be(:group) { create(:group) }
+  let_it_be(:project) { create(:project_empty_repo, :public, group: group) }
+  let_it_be(:issue1) { create(:issue, project: project) }
+  let_it_be(:issue2) { create(:issue, project: project) }
+  let_it_be(:issue3) { create(:issue, project: project) }
 
   before do
     create_list(:award_emoji, 2, :upvote, awardable: issue1)

@@ -7,7 +7,7 @@ describe Gitlab::JsonCache do
   let(:namespace) { 'geo' }
   let(:key) { 'foo' }
   let(:expanded_key) { "#{namespace}:#{key}:#{Rails.version}" }
-  set(:broadcast_message) { create(:broadcast_message) }
+  let_it_be(:broadcast_message) { create(:broadcast_message) }
 
   subject(:cache) { described_class.new(namespace: namespace, backend: backend) }
 

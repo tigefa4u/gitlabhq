@@ -3,9 +3,9 @@
 require 'spec_helper'
 
 describe API::ResourceLabelEvents do
-  set(:user) { create(:user) }
-  set(:project) { create(:project, :public, :repository, namespace: user.namespace) }
-  set(:private_user) { create(:user) }
+  let_it_be(:user) { create(:user) }
+  let_it_be(:project, reload: true) { create(:project, :public, :repository, namespace: user.namespace) }
+  let_it_be(:private_user) { create(:user) }
 
   before do
     project.add_developer(user)

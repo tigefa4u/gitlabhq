@@ -1,9 +1,9 @@
 require "rails_helper"
 
 describe "User views milestones" do
-  set(:user) { create(:user) }
-  set(:project) { create(:project) }
-  set(:milestone) { create(:milestone, project: project) }
+  let_it_be(:user) { create(:user) }
+  let_it_be(:project) { create(:project) }
+  let_it_be(:milestone) { create(:milestone, project: project) }
 
   before do
     project.add_developer(user)
@@ -19,8 +19,8 @@ describe "User views milestones" do
   end
 
   context "with issues" do
-    set(:issue) { create(:issue, project: project, milestone: milestone) }
-    set(:closed_issue) { create(:closed_issue, project: project, milestone: milestone) }
+    let!(:issue) { create(:issue, project: project, milestone: milestone) }
+    let!(:closed_issue) { create(:closed_issue, project: project, milestone: milestone) }
 
     it "opens milestone" do
       click_link(milestone.title)

@@ -1,9 +1,9 @@
 require "spec_helper"
 
 describe "User downloads artifacts" do
-  set(:project) { create(:project, :public) }
-  set(:pipeline) { create(:ci_empty_pipeline, status: :success, project: project) }
-  set(:job) { create(:ci_build, :artifacts, :success, pipeline: pipeline) }
+  let_it_be(:project) { create(:project, :public) }
+  let_it_be(:pipeline) { create(:ci_empty_pipeline, status: :success, project: project) }
+  let_it_be(:job) { create(:ci_build, :artifacts, :success, pipeline: pipeline) }
 
   shared_examples "downloading" do
     it "downloads the zip" do

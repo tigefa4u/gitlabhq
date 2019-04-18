@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 describe 'read-only message' do
-  set(:user) { create(:user) }
+  let_it_be(:user) { create(:user) }
 
   before do
     sign_in(user)

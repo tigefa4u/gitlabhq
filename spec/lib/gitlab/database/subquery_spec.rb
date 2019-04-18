@@ -4,7 +4,7 @@ require 'spec_helper'
 
 RSpec.describe Gitlab::Database::Subquery do
   describe '.self_join' do
-    set(:project) { create(:project) }
+    let_it_be(:project) { create(:project) }
 
     it 'allows you to delete_all rows with WHERE and LIMIT' do
       events = create_list(:event, 8, project: project)

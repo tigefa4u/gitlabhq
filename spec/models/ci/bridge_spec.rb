@@ -3,8 +3,8 @@
 require 'spec_helper'
 
 describe Ci::Bridge do
-  set(:project) { create(:project) }
-  set(:pipeline) { create(:ci_pipeline, project: project) }
+  let_it_be(:project) { create(:project) }
+  let_it_be(:pipeline) { create(:ci_pipeline, project: project) }
 
   let(:bridge) do
     create(:ci_bridge, pipeline: pipeline)

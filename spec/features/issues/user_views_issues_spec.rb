@@ -1,10 +1,11 @@
 require "spec_helper"
 
 describe "User views issues" do
+  let_it_be(:user) { create(:user) }
+
   let!(:closed_issue) { create(:closed_issue, project: project) }
   let!(:open_issue1) { create(:issue, project: project) }
   let!(:open_issue2) { create(:issue, project: project) }
-  set(:user) { create(:user) }
 
   shared_examples "opens issue from list" do
     it "opens issue" do
@@ -91,7 +92,7 @@ describe "User views issues" do
   %w[internal public].each do |visibility|
     shared_examples "#{visibility} project" do
       context "when project is #{visibility}" do
-        let(:project) { create(:project_empty_repo, :"#{visibility}") }
+        let_it_be(:project) { create(:project_empty_repo, :"#{visibility}") }
 
         include_examples "open issues"
         include_examples "closed issues"

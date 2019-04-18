@@ -1,8 +1,8 @@
 require "rails_helper"
 
 describe "User creates milestone", :js do
-  set(:user) { create(:user) }
-  set(:project) { create(:project) }
+  let(:user) { create(:user) }
+  let(:project) { create(:project) }
 
   before do
     project.add_developer(user)

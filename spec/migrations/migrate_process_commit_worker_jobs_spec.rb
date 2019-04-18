@@ -4,8 +4,8 @@ require 'spec_helper'
 require Rails.root.join('db', 'migrate', '20161124141322_migrate_process_commit_worker_jobs.rb')
 
 describe MigrateProcessCommitWorkerJobs do
-  set(:project) { create(:project, :legacy_storage, :repository) } # rubocop:disable RSpec/FactoriesInMigrationSpecs
-  set(:user) { create(:user) } # rubocop:disable RSpec/FactoriesInMigrationSpecs
+  let_it_be(:project) { create(:project, :legacy_storage, :repository) } # rubocop:disable RSpec/FactoriesInMigrationSpecs
+  let_it_be(:user) { create(:user) } # rubocop:disable RSpec/FactoriesInMigrationSpecs
   let(:commit) do
     Gitlab::Git::Commit.last(project.repository.raw)
   end

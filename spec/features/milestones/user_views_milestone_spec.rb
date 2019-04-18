@@ -1,10 +1,10 @@
 require "rails_helper"
 
 describe "User views milestone" do
-  set(:user) { create(:user) }
-  set(:project) { create(:project) }
-  set(:milestone) { create(:milestone, project: project) }
-  set(:labels) { create_list(:label, 2, project: project) }
+  let(:user) { create(:user) }
+  let(:project) { create(:project) }
+  let(:milestone) { create(:milestone, project: project) }
+  let(:labels) { create_list(:label, 2, project: project) }
 
   before do
     project.add_developer(user)

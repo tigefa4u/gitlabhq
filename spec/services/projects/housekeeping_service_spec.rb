@@ -4,7 +4,7 @@ require 'spec_helper'
 
 describe Projects::HousekeepingService do
   subject { described_class.new(project) }
-  set(:project) { create(:project, :repository) }
+  let(:project) { create(:project, :repository) }
 
   before do
     project.reset_pushes_since_gc
