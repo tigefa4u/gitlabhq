@@ -143,7 +143,7 @@ jest:
     - date
     - bundle exec rake karma:fixtures
     - date
-    - yarn jest --ci --coverage
+    - yarn jest --ci --coverage --runInBand
   artifacts:
     name: coverage-frontend
     expire_in: 31d
