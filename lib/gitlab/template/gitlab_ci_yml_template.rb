@@ -17,7 +17,8 @@ module Gitlab
           {
             'General' => '',
             'Pages' => 'Pages',
-            'Auto deploy' => 'autodeploy'
+            'Auto deploy' => 'autodeploy',
+            'Jobs' => 'Jobs'
           }
         end
 
