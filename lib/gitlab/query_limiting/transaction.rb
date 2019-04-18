@@ -14,7 +14,7 @@ module Gitlab
       # The maximum number of SQL queries that can be executed in a request. For
       # the sake of keeping things simple we hardcode this value here, it's not
       # supposed to be changed very often anyway.
-      THRESHOLD = 100
+      THRESHOLD = 150
 
       # Error that is raised whenever exceeding the maximum number of queries.
       ThresholdExceededError = Class.new(StandardError)

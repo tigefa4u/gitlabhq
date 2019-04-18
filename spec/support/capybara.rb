@@ -17,6 +17,20 @@ JS_CONSOLE_FILTER = Regexp.union([
   "Download the Vue Devtools extension"
 ])
 
+# Patch have_text to set normalize_ws: true by default
+module MatcherWithNormalizeWs
+  def initialize(*args, &filter_block)
+    super
+
+    if @args.last.is_a?(Hash) && @args.last[:normalize_ws].nil?
+      @args.last[:normalize_ws] = true
+    else
+      @args.push(normalize_ws: true)
+    end
+  end
+end
+Capybara::RSpecMatchers::Matchers::HaveText.prepend(MatcherWithNormalizeWs)
+
 Capybara.register_driver :chrome do |app|
   capabilities = Selenium::WebDriver::Remote::Capabilities.chrome(
     # This enables access to logs with `page.driver.manage.get_log(:browser)`
@@ -48,6 +62,7 @@ Capybara.register_driver :chrome do |app|
   )
 end
 
+Capybara.server = :webrick
 Capybara.javascript_driver = :chrome
 Capybara.default_max_wait_time = timeout
 Capybara.ignore_hidden_elements = true

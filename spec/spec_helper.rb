@@ -45,7 +45,7 @@ Dir[Rails.root.join("spec/support/shared_examples/*.rb")].each { |f| require f }
 Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }
 
 RSpec.configure do |config|
-  config.use_transactional_fixtures = false
+  config.use_transactional_fixtures = true
   config.use_instantiated_fixtures  = false
   config.fixture_path = Rails.root
 
@@ -110,6 +110,7 @@ RSpec.configure do |config|
   end
 
   config.before(:suite) do
+    Sidekiq::Worker.skip_transaction_check = true
     Timecop.safe_mode = true
     TestEnv.init
   end
