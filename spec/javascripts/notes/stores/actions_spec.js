@@ -10,6 +10,8 @@ import createStore from '~/notes/stores';
 import mrWidgetEventHub from '~/vue_merge_request_widget/event_hub';
 import service from '~/notes/services/notes_service';
 import testAction from '../../helpers/vuex_action_helper';
+import axios from '~/lib/utils/axios_utils';
+import MockAdapter from 'axios-mock-adapter';
 import { resetStore } from '../helpers';
 import {
   discussionMock,
@@ -158,20 +160,14 @@ describe('Actions Notes Store', () => {
   });
 
   describe('async methods', () => {
-    const interceptor = (request, next) => {
-      next(
-        request.respondWith(JSON.stringify({}), {
-          status: 200,
-        }),
-      );
-    };
-
+    let mock;
     beforeEach(() => {
-      Vue.http.interceptors.push(interceptor);
+      mock = new MockAdapter(axios);
+      mock.onPut().reply(200);
     });
 
     afterEach(() => {
-      Vue.http.interceptors = _.without(Vue.http.interceptors, interceptor);
+      mock.restore();
     });
 
     describe('closeIssue', () => {
@@ -335,22 +331,16 @@ describe('Actions Notes Store', () => {
   });
 
   describe('deleteNote', () => {
-    const interceptor = (request, next) => {
-      next(
-        request.respondWith(JSON.stringify({}), {
-          status: 200,
-        }),
-      );
-    };
-
+    let mock;
     beforeEach(() => {
-      Vue.http.interceptors.push(interceptor);
+      mock = new MockAdapter(axios);
+      mock.onDelete().reply(200, {});
 
       $('body').attr('data-page', '');
     });
 
     afterEach(() => {
-      Vue.http.interceptors = _.without(Vue.http.interceptors, interceptor);
+      mock.restore();
 
       $('body').attr('data-page', '');
     });
@@ -417,20 +407,15 @@ describe('Actions Notes Store', () => {
         id: 1,
         valid: true,
       };
-      const interceptor = (request, next) => {
-        next(
-          request.respondWith(JSON.stringify(res), {
-            status: 200,
-          }),
-        );
-      };
 
+      let mock;
       beforeEach(() => {
-        Vue.http.interceptors.push(interceptor);
+        mock = new MockAdapter(axios);
+        mock.onPost().reply(200, res);
       });
 
       afterEach(() => {
-        Vue.http.interceptors = _.without(Vue.http.interceptors, interceptor);
+        mock.restore();
       });
 
       it('commits ADD_NEW_NOTE and dispatches updateMergeRequestWidget', done => {
@@ -464,20 +449,15 @@ describe('Actions Notes Store', () => {
       const res = {
         errors: ['error'],
       };
-      const interceptor = (request, next) => {
-        next(
-          request.respondWith(JSON.stringify(res), {
-            status: 200,
-          }),
-        );
-      };
 
+      let mock;
       beforeEach(() => {
-        Vue.http.interceptors.push(interceptor);
+        mock = new MockAdapter(axios);
+        mock.onPost().reply(200, res);
       });
 
       afterEach(() => {
-        Vue.http.interceptors = _.without(Vue.http.interceptors, interceptor);
+        mock.restore()
       });
 
       it('does not commit ADD_NEW_NOTE or dispatch updateMergeRequestWidget', done => {
@@ -497,20 +477,15 @@ describe('Actions Notes Store', () => {
     const res = {
       resolved: true,
     };
-    const interceptor = (request, next) => {
-      next(
-        request.respondWith(JSON.stringify(res), {
-          status: 200,
-        }),
-      );
-    };
 
+    let mock;
     beforeEach(() => {
-      Vue.http.interceptors.push(interceptor);
+        mock = new MockAdapter(axios);
+        mock.onDelete().reply(200, res);
     });
 
     afterEach(() => {
-      Vue.http.interceptors = _.without(Vue.http.interceptors, interceptor);
+      mock.restore();
     });
 
     describe('as note', () => {
@@ -685,20 +660,15 @@ describe('Actions Notes Store', () => {
   describe('replyToDiscussion', () => {
     let res = { discussion: { notes: [] } };
     const payload = { endpoint: TEST_HOST, data: {} };
-    const interceptor = (request, next) => {
-      next(
-        request.respondWith(JSON.stringify(res), {
-          status: 200,
-        }),
-      );
-    };
 
+    let mock;
     beforeEach(() => {
-      Vue.http.interceptors.push(interceptor);
+      mock = new MockAdapter(axios);
+      mock.onPost().reply(200, res);
     });
 
     afterEach(() => {
-      Vue.http.interceptors = _.without(Vue.http.interceptors, interceptor);
+      mock.restore();
     });
 
     it('updates discussion if response contains discussion', done => {
@@ -720,6 +690,8 @@ describe('Actions Notes Store', () => {
 
     it('adds a reply to a discussion', done => {
       res = {};
+
+      mock.onPost().reply(200, res);
 
       testAction(
         actions.replyToDiscussion,

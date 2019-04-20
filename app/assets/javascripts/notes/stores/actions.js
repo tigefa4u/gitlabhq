@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import $ from 'jquery';
 import axios from '~/lib/utils/axios_utils';
+import Api from '~/api';
 import Visibility from 'visibilityjs';
 import TaskList from '../../task_list';
 import Flash from '../../flash';
@@ -75,10 +76,9 @@ export const deleteNote = ({ commit, dispatch, state }, note) => {
 };
 
 export const updateNote = ({ commit, dispatch }, { endpoint, note }) =>
-  service
-    .updateNote(endpoint, note)
-    .then(res => res.json())
-    .then(res => {
+  axios
+    .put(endpoint, note)
+    .then(({res}) => {
       commit(types.UPDATE_NOTE, res);
       dispatch('startTaskList');
     });
@@ -106,39 +106,37 @@ export const updateOrCreateNotes = ({ commit, state, getters, dispatch }, notes)
 };
 
 export const replyToDiscussion = ({ commit, state, getters, dispatch }, { endpoint, data }) =>
-  service
-    .replyToDiscussion(endpoint, data)
-    .then(res => res.json())
-    .then(res => {
-      if (res.discussion) {
-        commit(types.UPDATE_DISCUSSION, res.discussion);
+  axios
+    .post(endpoint, data)
+    .then(({data}) => {
+      if (data.discussion) {
+        commit(types.UPDATE_DISCUSSION, data.discussion);
 
-        updateOrCreateNotes({ commit, state, getters, dispatch }, res.discussion.notes);
+        updateOrCreateNotes({ commit, state, getters, dispatch }, data.discussion.notes);
 
         dispatch('updateMergeRequestWidget');
         dispatch('startTaskList');
         dispatch('updateResolvableDiscussionsCounts');
       } else {
-        commit(types.ADD_NEW_REPLY_TO_DISCUSSION, res);
+        commit(types.ADD_NEW_REPLY_TO_DISCUSSION, data);
       }
 
-      return res;
+      return data;
     });
 
 export const createNewNote = ({ commit, dispatch }, { endpoint, data }) =>
-  service
-    .createNewNote(endpoint, data)
-    .then(res => res.json())
-    .then(res => {
-      if (!res.errors) {
-        commit(types.ADD_NEW_NOTE, res);
+  axios
+    .post(endpoint, data)
+    .then(({ data }) => {
+      if (!data.errors) {
+        commit(types.ADD_NEW_NOTE, data);
 
         dispatch('updateMergeRequestWidget');
         dispatch('startTaskList');
         dispatch('updateResolvableDiscussionsCounts');
       }
-      return res;
-    });
+      return data;
+    })
 
 export const removePlaceholderNotes = ({ commit }) => commit(types.REMOVE_PLACEHOLDER_NOTES);
 
@@ -160,25 +158,28 @@ export const resolveDiscussion = ({ state, dispatch, getters }, { discussionId }
 };
 
 export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, discussion }) =>
-  service
-    .toggleResolveNote(endpoint, isResolved)
-    .then(res => res.json())
-    .then(res => {
+  const { RESOLVE_NOTE_METHOD_NAME, UNRESOLVE_NOTE_METHOD_NAME } = constants;
+  const method = isResolved ? UNRESOLVE_NOTE_METHOD_NAME : RESOLVE_NOTE_METHOD_NAME;
+  axios({
+    method: method,
+    url: endpoint
+  })
+    .then(({ data }) => {
       const mutationType = discussion ? types.UPDATE_DISCUSSION : types.UPDATE_NOTE;
 
-      commit(mutationType, res);
+      commit(mutationType, data);
 
       dispatch('updateResolvableDiscussionsCounts');
 
       dispatch('updateMergeRequestWidget');
     });
 
+
 export const closeIssue = ({ commit, dispatch, state }) => {
   dispatch('toggleStateButtonLoading', true);
-  return service
-    .toggleIssueState(state.notesData.closePath)
-    .then(res => res.json())
-    .then(data => {
+  return axios
+    .put(state.notesData.closePath)
+    .then(({data}) => {
       commit(types.CLOSE_ISSUE);
       dispatch('emitStateChangedEvent', data);
       dispatch('toggleStateButtonLoading', false);
@@ -187,10 +188,9 @@ export const closeIssue = ({ commit, dispatch, state }) => {
 
 export const reopenIssue = ({ commit, dispatch, state }) => {
   dispatch('toggleStateButtonLoading', true);
-  return service
-    .toggleIssueState(state.notesData.reopenPath)
-    .then(res => res.json())
-    .then(data => {
+  return axios
+    .put(state.notesData.reopenPath)
+    .then(({data}) => {
       commit(types.REOPEN_ISSUE);
       dispatch('emitStateChangedEvent', data);
       dispatch('toggleStateButtonLoading', false);
@@ -383,9 +383,8 @@ export const toggleAward = ({ commit, getters }, { awardName, noteId }) => {
 export const toggleAwardRequest = ({ dispatch }, data) => {
   const { endpoint, awardName } = data;
 
-  return service
-    .toggleAward(endpoint, { name: awardName })
-    .then(res => res.json())
+  return axios
+    .post(endpoint, { name: awardName })
     .then(() => {
       dispatch('toggleAward', data);
     });
@@ -446,6 +445,7 @@ export const updateResolvableDiscussionsCounts = ({ commit }) =>
   commit(types.UPDATE_RESOLVABLE_DISCUSSIONS_COUNTS);
 
 export const submitSuggestion = (
+<<<<<<< HEAD
   { commit, dispatch },
   { discussionId, noteId, suggestionId, flashContainer },
 ) =>
@@ -453,6 +453,16 @@ export const submitSuggestion = (
     .applySuggestion(suggestionId)
     .then(() => commit(types.APPLY_SUGGESTION, { discussionId, noteId, suggestionId }))
     .then(() => dispatch('resolveDiscussion', { discussionId }).catch(() => {}))
+=======
+  { commit },
+  { discussionId, noteId, suggestionId, flashContainer, callback },
+) => {
+    Api.applySuggestion(id)
+    .then(() => {
+      commit(types.APPLY_SUGGESTION, { discussionId, noteId, suggestionId });
+      callback();
+    })
+>>>>>>> 8ad63bec479... deletes remaining references except for poll
     .catch(err => {
       const defaultMessage = __(
         'Something went wrong while applying the suggestion. Please try again.',
