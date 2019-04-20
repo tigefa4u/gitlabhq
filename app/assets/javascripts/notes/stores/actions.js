@@ -157,7 +157,7 @@ export const resolveDiscussion = ({ state, dispatch, getters }, { discussionId }
   });
 };
 
-export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, discussion }) =>
+export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, discussion }) => {
   const { RESOLVE_NOTE_METHOD_NAME, UNRESOLVE_NOTE_METHOD_NAME } = constants;
   const method = isResolved ? UNRESOLVE_NOTE_METHOD_NAME : RESOLVE_NOTE_METHOD_NAME;
   axios({
@@ -173,7 +173,7 @@ export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, 
 
       dispatch('updateMergeRequestWidget');
     });
-
+};
 
 export const closeIssue = ({ commit, dispatch, state }) => {
   dispatch('toggleStateButtonLoading', true);
