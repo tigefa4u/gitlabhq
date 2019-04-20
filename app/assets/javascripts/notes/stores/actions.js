@@ -45,14 +45,13 @@ export const setNotesFetchedState = ({ commit }, state) =>
 
 export const toggleDiscussion = ({ commit }, data) => commit(types.TOGGLE_DISCUSSION, data);
 
-export const fetchDiscussions = ({ commit, dispatch }, { path, filter }) =>
-  service
-    .fetchDiscussions(path, filter)
-    .then(res => res.json())
-    .then(discussions => {
-      commit(types.SET_INITIAL_DISCUSSIONS, discussions);
-      dispatch('updateResolvableDiscussonsCounts');
-    });
+export const fetchDiscussions = ({ commit, dispatch }, { path, filter }) => {
+  const config = filter !== undefined ? { params: { notes_filter: filter } } : null;
+  axios.get(path, config).then(({ data }) => {
+    commit(types.SET_INITIAL_DISCUSSIONS, data);
+    dispatch('updateResolvableDiscussionsCounts');
+  });
+};
 
 export const updateDiscussion = ({ commit, state }, discussion) => {
   commit(types.UPDATE_DISCUSSION, discussion);
@@ -60,19 +59,20 @@ export const updateDiscussion = ({ commit, state }, discussion) => {
   return utils.findNoteObjectById(state.discussions, discussion.id);
 };
 
-export const deleteNote = ({ commit, dispatch, state }, note) =>
-  service.deleteNote(note.path).then(() => {
+export const deleteNote = ({ commit, dispatch, state }, note) => {
+  axios.delete(note.path).then(() => {
     const discussion = state.discussions.find(({ id }) => id === note.discussion_id);
 
     commit(types.DELETE_NOTE, note);
 
     dispatch('updateMergeRequestWidget');
-    dispatch('updateResolvableDiscussonsCounts');
+    dispatch('updateResolvableDiscussionsCounts');
 
     if (isInMRPage()) {
       dispatch('diffs/removeDiscussionsFromDiff', discussion);
     }
   });
+};
 
 export const updateNote = ({ commit, dispatch }, { endpoint, note }) =>
   service
@@ -117,7 +117,7 @@ export const replyToDiscussion = ({ commit, state, getters, dispatch }, { endpoi
 
         dispatch('updateMergeRequestWidget');
         dispatch('startTaskList');
-        dispatch('updateResolvableDiscussonsCounts');
+        dispatch('updateResolvableDiscussionsCounts');
       } else {
         commit(types.ADD_NEW_REPLY_TO_DISCUSSION, res);
       }
@@ -135,7 +135,7 @@ export const createNewNote = ({ commit, dispatch }, { endpoint, data }) =>
 
         dispatch('updateMergeRequestWidget');
         dispatch('startTaskList');
-        dispatch('updateResolvableDiscussonsCounts');
+        dispatch('updateResolvableDiscussionsCounts');
       }
       return res;
     });
@@ -168,7 +168,7 @@ export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, 
 
       commit(mutationType, res);
 
-      dispatch('updateResolvableDiscussonsCounts');
+      dispatch('updateResolvableDiscussionsCounts');
 
       dispatch('updateMergeRequestWidget');
     });
@@ -442,7 +442,7 @@ export const startTaskList = ({ dispatch }) =>
       }),
   );
 
-export const updateResolvableDiscussonsCounts = ({ commit }) =>
+export const updateResolvableDiscussionsCounts = ({ commit }) =>
   commit(types.UPDATE_RESOLVABLE_DISCUSSIONS_COUNTS);
 
 export const submitSuggestion = (
