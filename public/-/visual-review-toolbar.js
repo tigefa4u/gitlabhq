@@ -114,6 +114,7 @@ function addCommentButtonEvent () {
   // get user agent data
   const { innerWidth,
           innerHeight,
+          location: { href },
           navigator: {
             platform, userAgent
           } } = window;
@@ -125,6 +126,7 @@ function addCommentButtonEvent () {
   const commentButton = document.getElementById('gitlab-comment-button');
 
   const details = {
+    href,
     platform,
     browser,
     userAgent,
@@ -133,7 +135,9 @@ function addCommentButtonEvent () {
     projectId,
     discussionId
   };
+
   commentButton.onclick = postComment.bind(null, details);
+
 }
 
 function authorizeUser () {
@@ -174,8 +178,10 @@ function authorizeUser () {
 
 function authSuccess (token, accessType) {
   const formWrapper = document.getElementById('gitlab-form-wrapper');
+  const loginButton = document.getElementById('gitlab-login');
   data.accessType = accessType;
   data.token = token;
+  loginButton.removeEventListener('click', authorizeUser);
   formWrapper.innerHTML = comment;
   addCommentButtonEvent();
 }
@@ -198,6 +204,7 @@ function confirmAndClear (discussionId) {
 }
 
 function postComment ({
+  href,
   platform,
   browser,
   userAgent,
@@ -213,7 +220,7 @@ function postComment ({
   const commentText = document.getElementById('gitlab-comment').value;
   const detailText = `
     \n\n -----
-    \n Posted from ${platform} | ${browser} | ${innerWidth} x ${innerHeight}.
+    \n Posted from ${href} | ${platform} | ${browser} | ${innerWidth} x ${innerHeight}.
     \n *User agent: ${userAgent}*
   `;
 
