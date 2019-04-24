@@ -238,6 +238,7 @@ production: &base
     access_control: false
     # The location where pages are stored (default: shared/pages).
     # path: shared/pages
+    # token: internal-api-token
 
     # The domain under which the pages are served:
     # http://group.example.com/project

@@ -1566,23 +1566,37 @@ class Project < ApplicationRecord
 
   def pages_group_url
     # The host in URL always needs to be downcased
-    Gitlab.config.pages.url.sub(%r{^https?://}) do |prefix|
-      "#{prefix}#{pages_subdomain}."
-    end.downcase
+    strong_memoize(:pages_group_url) do
+      Gitlab.config.pages.url.sub(%r{^https?://}) do |prefix|
+        "#{prefix}#{pages_subdomain}."
+      end.downcase
+    end
+  end
+
+  def pages_group_root?
+    strong_memoize(:pages_group_root?) do
+      pages_group_url == "#{Settings.pages.protocol}://#{pages_path}"
+    end
   end
 
   def pages_url
-    url = pages_group_url
-    url_path = full_path.partition('/').last
-
-    # If the project path is the same as host, we serve it as group page
-    return url if url == "#{Settings.pages.protocol}://#{url_path}"
-
-    "#{url}/#{url_path}"
+    if pages_group_root?
+      pages_group_url
+    else
+      "#{pages_group_url}/#{pages_path}"
+    end
   end
 
   def pages_subdomain
-    full_path.partition('/').first
+    strong_memoize(:pages_subdomain) do
+      full_path.partition('/').first
+    end
+  end
+
+  def pages_path
+    strong_memoize(:pages_path) do
+      full_path.partition('/').drop(1).join('/')
+    end
   end
 
   def pages_path

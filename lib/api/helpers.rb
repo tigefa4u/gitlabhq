@@ -212,13 +212,18 @@ module API
       authenticate! unless %w[GET HEAD].include?(route.request_method)
     end
 
-    def authenticate_by_gitlab_shell_token!
+    def secret_token_param
       input = params['secret_token']
       input ||= Base64.decode64(headers[GITLAB_SHARED_SECRET_HEADER]) if headers.key?(GITLAB_SHARED_SECRET_HEADER)
-
       input&.chomp!
+    end
 
-      unauthorized! unless Devise.secure_compare(secret_token, input)
+    def authenticate_by_gitlab_shell_token!
+      unauthorized! unless Devise.secure_compare(shell_secret_token, secret_token_param)
+    end
+
+    def authenticate_by_gitlab_pages_token!
+      unauthorized! unless Devise.secure_compare(Gitlab.pages.token, secret_token_param)
     end
 
     def authenticated_with_full_private_access!
@@ -501,7 +506,7 @@ module API
       @sudo_identifier ||= params[SUDO_PARAM] || env[SUDO_HEADER]
     end
 
-    def secret_token
+    def shell_secret_token
       Gitlab::Shell.secret_token
     end
 

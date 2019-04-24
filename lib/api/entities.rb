@@ -1628,5 +1628,44 @@ module API
     class ClusterProject < Cluster
       expose :project, using: Entities::BasicProjectDetails
     end
+
+    module Pages
+      class ProjectLookupPath < Grape::Entity
+        expose :pages_https_only?, as: :https_only
+        expose :id, as: :project_id
+        expose :private_pages?, as: :access_control
+
+        expose :prefix do |project, opts|
+          if project.pages_root?
+            '/'
+          else
+            project.full_path.delete_prefix(opts[:prefix]) + '/'
+          end
+        end
+
+        expose :path do |project|
+          "#{project.public_pages_path}/"
+        end
+      end
+
+      class Domain < Grape::Entity
+      end
+
+      class PagesDomain < Domain
+        expose :certificate
+        expose :key
+
+        expose :lookup_paths, using: Pages::ProjectLookupPath do |domain|
+          [domain.project]
+        end
+      end
+
+      class NamespaceDomain < Domain
+        expose :lookup_paths, using: Pages::ProjectLookupPath do |group|
+          group.all_projects.with_pages.select(&:pages_deployed?)
+            .sort_by(&:pages_url).reverse
+        end
+      end
+    end
   end
 end
