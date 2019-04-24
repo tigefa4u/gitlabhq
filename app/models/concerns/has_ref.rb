@@ -23,6 +23,14 @@ module HasRef
   #   * Maximum length is 63 bytes
   #   * First/Last Character is not a hyphen
   def ref_slug
-    Gitlab::Utils.slugify(ref.to_s)
+    Gitlab::Utils.slugify(generic_ref_name.to_s)
+  end
+
+  def generic_ref_name
+    if merge_request_ref?
+      merge_request.source_branch
+    else
+      ref
+    end
   end
 end

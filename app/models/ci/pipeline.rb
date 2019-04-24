@@ -797,7 +797,7 @@ module Ci
           # In order to do that, we have to update GitLab-Runner's source pulling
           # logic.
           # See https://gitlab.com/gitlab-org/gitlab-runner/merge_requests/1092
-          Gitlab::Git::BRANCH_REF_PREFIX + ref.to_s
+          Gitlab::Git::BRANCH_REF_PREFIX + generic_ref_name.to_s
         else
           super
         end

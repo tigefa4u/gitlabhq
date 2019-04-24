@@ -4,6 +4,7 @@ class Deployment < ApplicationRecord
   include AtomicInternalId
   include IidRoutes
   include AfterCommitQueue
+  include HasRef
 
   belongs_to :project, required: true
   belongs_to :environment, required: true
@@ -87,7 +88,7 @@ class Deployment < ApplicationRecord
   end
 
   def create_ref
-    project.repository.create_ref(ref, ref_path)
+    project.repository.create_ref(generic_ref_name, ref_path)
   end
 
   def invalidate_cache
