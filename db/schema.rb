@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190408163745) do
+ActiveRecord::Schema.define(version: 20190424180246) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -1087,11 +1087,15 @@ ActiveRecord::Schema.define(version: 20190408163745) do
     t.index ["milestone_id"], name: "index_issues_on_milestone_id", using: :btree
     t.index ["moved_to_id"], name: "index_issues_on_moved_to_id", where: "(moved_to_id IS NOT NULL)", using: :btree
     t.index ["project_id", "created_at", "id", "state"], name: "index_issues_on_project_id_and_created_at_and_id_and_state", using: :btree
+    t.index ["project_id", "created_at", "id", "state_id"], name: "idx_issues_on_project_id_created_at_id_and_state_id", using: :btree
     t.index ["project_id", "due_date", "id", "state"], name: "idx_issues_on_project_id_and_due_date_and_id_and_state_partial", where: "(due_date IS NOT NULL)", using: :btree
+    t.index ["project_id", "due_date", "id", "state_id"], name: "idx_issues_on_project_id_due_date_id_and_state_id", where: "(due_date IS NOT NULL)", using: :btree
     t.index ["project_id", "iid"], name: "index_issues_on_project_id_and_iid", unique: true, using: :btree
     t.index ["project_id", "updated_at", "id", "state"], name: "index_issues_on_project_id_and_updated_at_and_id_and_state", using: :btree
+    t.index ["project_id", "updated_at", "id", "state_id"], name: "idx_issues_on_project_id_and_updated_at_and_id_and_state_id", using: :btree
     t.index ["relative_position"], name: "index_issues_on_relative_position", using: :btree
     t.index ["state"], name: "index_issues_on_state", using: :btree
+    t.index ["state_id"], name: "idx_issues_on_state_id", using: :btree
     t.index ["title"], name: "index_issues_on_title_trigram", using: :gin, opclasses: {"title"=>"gin_trgm_ops"}
     t.index ["updated_at"], name: "index_issues_on_updated_at", using: :btree
     t.index ["updated_by_id"], name: "index_issues_on_updated_by_id", where: "(updated_by_id IS NOT NULL)", using: :btree
@@ -1334,14 +1338,17 @@ ActiveRecord::Schema.define(version: 20190408163745) do
     t.index ["created_at"], name: "index_merge_requests_on_created_at", using: :btree
     t.index ["description"], name: "index_merge_requests_on_description_trigram", using: :gin, opclasses: {"description"=>"gin_trgm_ops"}
     t.index ["head_pipeline_id"], name: "index_merge_requests_on_head_pipeline_id", using: :btree
+    t.index ["id", "merge_jid"], name: "idx_merge_requests_on_id_merge_jid_state_id_locked", where: "((merge_jid IS NOT NULL) AND (state_id = 4))", using: :btree
     t.index ["id", "merge_jid"], name: "index_merge_requests_on_id_and_merge_jid", where: "((merge_jid IS NOT NULL) AND ((state)::text = 'locked'::text))", using: :btree
     t.index ["latest_merge_request_diff_id"], name: "index_merge_requests_on_latest_merge_request_diff_id", using: :btree
     t.index ["merge_user_id"], name: "index_merge_requests_on_merge_user_id", where: "(merge_user_id IS NOT NULL)", using: :btree
     t.index ["milestone_id"], name: "index_merge_requests_on_milestone_id", using: :btree
     t.index ["source_branch"], name: "index_merge_requests_on_source_branch", using: :btree
+    t.index ["source_project_id", "source_branch"], name: "idx_merge_requests_on_source_project_and_branch_state_id_opened", where: "(state_id = 1)", using: :btree
     t.index ["source_project_id", "source_branch"], name: "index_merge_requests_on_source_project_and_branch_state_opened", where: "((state)::text = 'opened'::text)", using: :btree
     t.index ["source_project_id", "source_branch"], name: "index_merge_requests_on_source_project_id_and_source_branch", using: :btree
     t.index ["target_branch"], name: "index_merge_requests_on_target_branch", using: :btree
+    t.index ["target_project_id", "iid"], name: "idx_merge_requests_on_target_project_id_and_iid_state_id_opened", where: "(state_id = 1)", using: :btree
     t.index ["target_project_id", "iid"], name: "index_merge_requests_on_target_project_id_and_iid", unique: true, using: :btree
     t.index ["target_project_id", "iid"], name: "index_merge_requests_on_target_project_id_and_iid_opened", where: "((state)::text = 'opened'::text)", using: :btree
     t.index ["target_project_id", "merge_commit_sha", "id"], name: "index_merge_requests_on_tp_id_and_merge_commit_sha_and_id", using: :btree
