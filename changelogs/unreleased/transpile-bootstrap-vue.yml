@@ -1,0 +1,5 @@
+---
+title: Update gitlab-ui to fix IE11 bug
+merge_request: 27773
+author:
+type: fixed
