@@ -339,6 +339,9 @@ msgstr ""
 msgid "<code>\"johnsmith@example.com\": \"johnsmith@example.com\"</code> will add \"By <a href=\"#\">johnsmith@example.com</a>\" to all issues and comments originally created by johnsmith@example.com. By default, the email address or username is masked to ensure the user's privacy. Use this option if you want to show the full email address."
 msgstr ""
 
+msgid "<p>We encountered an error while adding the remaining categories</p>"
+msgstr ""
+
 msgid "<strong>%{changedFilesLength} unstaged</strong> and <strong>%{stagedFilesLength} staged</strong> changes"
 msgstr ""
 
@@ -2513,6 +2516,12 @@ msgstr ""
 msgid "CompareBranches|There isn't anything to compare."
 msgstr ""
 
+msgid "ConcatenateSentance| and "
+msgstr ""
+
+msgid "ConcatenateSentance|%{first} and %{last}"
+msgstr ""
+
 msgid "Confidential"
 msgstr ""
 
@@ -3703,6 +3712,9 @@ msgstr ""
 msgid "Error loading template."
 msgstr ""
 
+msgid "Error occurred in addRemainingEmojiMenuCategories: %{message}"
+msgstr ""
+
 msgid "Error occurred when toggling the notification subscription"
 msgstr ""
 
@@ -4101,6 +4113,9 @@ msgstr ""
 msgid "FirstPushedBy|pushed by"
 msgstr ""
 
+msgid "Flags"
+msgstr ""
+
 msgid "FlowdockService|Flowdock Git source token"
 msgstr ""
 
@@ -4126,6 +4141,9 @@ msgid "Follow the steps below to export your Google Code project data."
 msgstr ""
 
 msgid "Font Color"
+msgstr ""
+
+msgid "Food"
 msgstr ""
 
 msgid "Footer message"
@@ -4174,6 +4192,9 @@ msgid "Found errors in your %{gitlab_ci_yml}:"
 msgstr ""
 
 msgid "Found errors in your .gitlab-ci.yml:"
+msgstr ""
+
+msgid "Frequently used"
 msgstr ""
 
 msgid "From %{providerTitle}"
@@ -5811,6 +5832,9 @@ msgstr ""
 msgid "Naming, visibility"
 msgstr ""
 
+msgid "Nature"
+msgstr ""
+
 msgid "Nav|Help"
 msgstr ""
 
@@ -6161,6 +6185,9 @@ msgstr ""
 msgid "Object does not exist on the server or you don't have permissions to access it"
 msgstr ""
 
+msgid "Objects"
+msgstr ""
+
 msgid "Oct"
 msgstr ""
 
@@ -6338,6 +6365,9 @@ msgid "Paused Runners don't accept new jobs"
 msgstr ""
 
 msgid "Pending"
+msgstr ""
+
+msgid "People"
 msgstr ""
 
 msgid "People without permission will never get a notification and won't be able to comment."
@@ -7853,6 +7883,9 @@ msgstr ""
 msgid "Search branches and tags"
 msgstr ""
 
+msgid "Search emoji"
+msgstr ""
+
 msgid "Search files"
 msgstr ""
 
@@ -7881,6 +7914,9 @@ msgid "Search project"
 msgstr ""
 
 msgid "Search projects"
+msgstr ""
+
+msgid "Search results"
 msgstr ""
 
 msgid "Search users"
@@ -8669,6 +8705,9 @@ msgid "Support page URL"
 msgstr ""
 
 msgid "Switch branch/tag"
+msgstr ""
+
+msgid "Symbols"
 msgstr ""
 
 msgid "System Hooks"
@@ -9700,6 +9739,9 @@ msgstr ""
 msgid "TransferProject|Transfer failed, please contact an admin."
 msgstr ""
 
+msgid "Travel"
+msgstr ""
+
 msgid "Tree view"
 msgstr ""
 
@@ -10513,6 +10555,9 @@ msgid "You cannot impersonate an internal user"
 msgstr ""
 
 msgid "You cannot play this scheduled pipeline at the moment. Please wait a minute."
+msgstr ""
+
+msgid "You cannot vote on your own issue, MR and note"
 msgstr ""
 
 msgid "You cannot write to this read-only GitLab instance."

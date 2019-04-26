@@ -3,7 +3,7 @@
 import $ from 'jquery';
 import _ from 'underscore';
 import Cookies from 'js-cookie';
-import { __ } from './locale';
+import { sprintf, s__, __ } from './locale';
 import { updateTooltipTitle } from './lib/utils/common_utils';
 import { isInVueNoteablePage } from './lib/utils/dom_utils';
 import flash from './flash';
@@ -21,14 +21,14 @@ const requestAnimationFrame =
 const FROM_SENTENCE_REGEX = /(?:, and | and |, )/; // For separating lists produced by ruby's Array#toSentence
 
 const categoryLabelMap = {
-  activity: 'Activity',
-  people: 'People',
-  nature: 'Nature',
-  food: 'Food',
-  travel: 'Travel',
-  objects: 'Objects',
-  symbols: 'Symbols',
-  flags: 'Flags',
+  activity: __('Activity'),
+  people: __('People'),
+  nature: __('Nature'),
+  food: __('Food'),
+  travel: __('Travel'),
+  objects: __('Objects'),
+  symbols: __('Symbols'),
+  flags: __('Flags'),
 };
 
 const IS_VISIBLE = 'is-visible';
@@ -154,14 +154,15 @@ export class AwardsHandler {
     const frequentlyUsedEmojis = this.getFrequentlyUsedEmojis();
     let frequentlyUsedCatgegory = '';
     if (frequentlyUsedEmojis.length > 0) {
-      frequentlyUsedCatgegory = this.renderCategory('Frequently used', frequentlyUsedEmojis, {
+      frequentlyUsedCatgegory = this.renderCategory(__('Frequently used'), frequentlyUsedEmojis, {
         menuListClass: 'frequent-emojis',
       });
     }
 
+    const placeholder = __('Search emoji');
     const emojiMenuMarkup = `
       <div class="emoji-menu ${this.menuClass}">
-        <input type="text" name="emoji-menu-search" value="" class="js-emoji-menu-search emoji-search search-input form-control" placeholder="Search emoji" />
+        <input type="text" name="emoji-menu-search" value="" class="js-emoji-menu-search emoji-search search-input form-control" placeholder=${placeholder} />
 
         <div class="emoji-menu-content">
           ${frequentlyUsedCatgegory}
@@ -223,9 +224,13 @@ export class AwardsHandler {
       .catch(err => {
         emojiContentElement.insertAdjacentHTML(
           'beforeend',
-          '<p>We encountered an error while adding the remaining categories</p>',
+          __('<p>We encountered an error while adding the remaining categories</p>'),
         );
-        throw new Error(`Error occurred in addRemainingEmojiMenuCategories: ${err.message}`);
+        throw new Error(
+          sprintf(__('Error occurred in addRemainingEmojiMenuCategories: %{message}'), {
+            message: err.message,
+          }),
+        );
       });
   }
 
@@ -406,9 +411,12 @@ export class AwardsHandler {
   toSentence(list) {
     let sentence;
     if (list.length <= 2) {
-      sentence = list.join(' and ');
+      sentence = list.join(s__('ConcatenateSentance| and '));
     } else {
-      sentence = `${list.slice(0, -1).join(', ')}, and ${list[list.length - 1]}`;
+      sentence = sprintf(s__('ConcatenateSentance|%{first} and %{last}'), {
+        first: list.slice(0, -1).join(', '),
+        last: list[list.length - 1],
+      });
     }
 
     return sentence;
@@ -418,7 +426,7 @@ export class AwardsHandler {
     const awardBlock = $emojiButton;
     const originalTitle = this.getAwardTooltip(awardBlock);
     const authors = originalTitle.split(FROM_SENTENCE_REGEX);
-    authors.splice(authors.indexOf('You'), 1);
+    authors.splice(authors.indexOf(__('You')), 1);
     return awardBlock
       .closest('.js-emoji-btn')
       .removeData('title')
@@ -435,13 +443,14 @@ export class AwardsHandler {
     if (origTitle) {
       users = origTitle.trim().split(FROM_SENTENCE_REGEX);
     }
-    users.unshift('You');
+    users.unshift(__('You'));
     return awardBlock.attr('title', this.toSentence(users)).tooltip('_fixTitle');
   }
 
   createAwardButtonForVotesBlock(votesBlock, emojiName) {
+    const title = __('You');
     const buttonHtml = `
-      <button class="btn award-control js-emoji-btn has-tooltip active" title="You">
+      <button class="btn award-control js-emoji-btn has-tooltip active" title=${title}>
         ${this.emoji.glEmojiTag(emojiName)}
         <span class="award-control-text js-counter">1</span>
       </button>
@@ -493,7 +502,7 @@ export class AwardsHandler {
 
   userAuthored($emojiButton) {
     const oldTitle = this.getAwardTooltip($emojiButton);
-    const newTitle = 'You cannot vote on your own issue, MR and note';
+    const newTitle = __('You cannot vote on your own issue, MR and note');
     updateTooltipTitle($emojiButton, newTitle).tooltip('show');
     // Restore tooltip back to award list
     return setTimeout(() => {
@@ -559,7 +568,7 @@ export class AwardsHandler {
     $('ul.emoji-menu-search, h5.emoji-search-title').remove();
     if (term.length > 0) {
       // Generate a search result block
-      const h5 = $('<h5 class="emoji-search-title"/>').text('Search results');
+      const h5 = $('<h5 class="emoji-search-title"/>').text(__('Search results'));
       const foundEmojis = this.findMatchingEmojiElements(term).show();
       const ul = $('<ul>')
         .addClass('emoji-menu-list emoji-menu-search')
