@@ -1,0 +1,5 @@
+---
+title: Enable HTML tags to make Mermaid render dotted lines
+merge_request: 27770
+author:
+type: fixed
