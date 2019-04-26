@@ -663,10 +663,9 @@
   resolved "https://registry.yarnpkg.com/@gitlab/svgs/-/svgs-1.59.0.tgz#affcf9596d736836d37469bb4aea2226ac03e087"
   integrity sha512-dokGyyLRRsoBKO70KP1g+ZsDGyTK/RIHWDmvWI6Bx5AxQ3UqAzVXn2OIb3owjJAexyRG1uBmJrriiVVyHznQ4g==
 
-"@gitlab/ui@^3.5.0":
-  version "3.5.0"
-  resolved "https://registry.yarnpkg.com/@gitlab/ui/-/ui-3.5.0.tgz#31ecfc16e3f7663545f31ddf07e02bba96a6d138"
-  integrity sha512-eDD++hhGJuH59g2QcGshuou9/NLcLfse4Abm9KOIWIaYI3NPWW2KRGwLHPB6H0d5W0/X5pyWYQvXgF7JE2ZXbA==
+"@gitlab/ui@https://gitlab.com/gitlab-org/gitlab-ui/-/jobs/203435241/artifacts/raw/gitlab-ui.244-transpile-bootstrap-vue.tgz":
+  version "3.6.0"
+  resolved "https://gitlab.com/gitlab-org/gitlab-ui/-/jobs/203435241/artifacts/raw/gitlab-ui.244-transpile-bootstrap-vue.tgz#eb3b6e80a75a3a750ad7bad7d39744499532e786"
   dependencies:
     "@babel/standalone" "^7.0.0"
     bootstrap-vue "^2.0.0-rc.11"
