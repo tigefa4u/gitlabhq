@@ -2,6 +2,8 @@ require 'spec_helper'
 require 'mime/types'
 
 describe API::Commits do
+  include ProjectForksHelper
+
   let(:user) { create(:user) }
   let(:guest) { create(:user).tap { |u| project.add_guest(u) } }
   let(:project) { create(:project, :repository, creator: user, path: 'my.project') }
@@ -441,6 +443,30 @@ describe API::Commits do
         expect(json_response['title']).to eq(message)
       end
 
+      context 'when a guest only has read access' do
+        let(:project) { create(:project, :public, :repository) }
+
+        context 'but they have a fork of the project' do
+          let!(:forked_project) { fork_project(project, guest, namespace: guest.namespace, repository: true) }
+
+          it 'returns a 201' do
+            expect { post api(url, guest), params: valid_u_params }
+              .not_to change { Project.all.count }
+
+            expect(response).to have_gitlab_http_status(201)
+          end
+        end
+
+        context 'and they do not have a fork of the project' do
+          it 'forks the project and returns a 201' do
+            expect { post api(url, guest), params: valid_u_params }
+              .to change { Project.all.count }.by(1)
+
+            expect(response).to have_gitlab_http_status(201)
+          end
+        end
+      end
+
       it 'returns a 400 bad request if file does not exist' do
         post api(url, user), params: invalid_u_params
 
@@ -621,7 +647,7 @@ describe API::Commits do
       it 'denies pushing to another branch' do
         post api(url, user), params: push_params('other-branch')
 
-        expect(response).to have_gitlab_http_status(:forbidden)
+        expect(response).to have_gitlab_http_status(:bad_request)
       end
     end
   end

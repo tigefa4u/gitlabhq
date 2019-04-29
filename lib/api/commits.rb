@@ -18,6 +18,25 @@ module API
           forbidden!("You are not allowed to push into this branch")
         end
       end
+
+      def find_or_create_fork
+        if fork = user_owned_forks(user_project)
+          fork
+        else
+          ::Projects::ForkService.new(
+            user_project,
+            current_user,
+            namespace: current_user.namespace
+          ).execute
+        end
+      end
+
+      # rubocop: disable CodeReuse/ActiveRecord
+      def user_owned_forks(base_project)
+        current_user.projects.joins(:fork_network_member)
+            .detect { |p| p.forked_from? base_project }
+      end
+      # rubocop: enable CodeReuse/ActiveRecord
     end
 
     params do
@@ -102,13 +121,29 @@ module API
         optional :force, type: Boolean, default: false, desc: 'When `true` overwrites the target branch with a new commit based on the `start_branch`'
       end
       post ':id/repository/commits' do
-        authorize_push_to_branch!(params[:branch])
+        unless user_access.can_push_to_branch?(params[:branch])
+          unless forked_project = find_or_create_fork
+            forbidden!(
+              "You are not allowed to push to this branch, and we are unable \
+                to find or create a fork"
+            )
+          end
+        end
 
         attrs = declared_params
         attrs[:branch_name] = attrs.delete(:branch)
         attrs[:start_branch] ||= attrs[:branch_name]
 
-        result = ::Files::MultiService.new(user_project, current_user, attrs).execute
+        if forked_project
+          attrs[:start_project] = user_project
+          attrs[:branch_name] = "#{current_user.name.parameterize}/patch_#{Time.now.to_i}"
+        end
+
+        result = ::Files::MultiService.new(
+          forked_project ? forked_project : user_project,
+          current_user,
+          attrs
+        ).execute
 
         if result[:status] == :success
           commit_detail = user_project.repository.commit(result[:result])
