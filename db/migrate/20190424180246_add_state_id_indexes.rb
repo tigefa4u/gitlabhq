@@ -21,7 +21,7 @@ class AddStateIdIndexes < ActiveRecord::Migration[5.1]
       :issues,
       [:project_id, :due_date, :id, :state_id],
       name: "idx_issues_on_project_id_due_date_id_and_state_id",
-      where: "(due_date IS NOT NULL)",
+      where: "(due_date IS NOT NULL)"
     )
 
     add_concurrent_index(
