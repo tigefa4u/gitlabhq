@@ -118,6 +118,10 @@ class MergeRequest < ApplicationRecord
       end
     end
 
+    after_transition any => [:merged, :closed] do |merge_request|
+      merge_request.run_after_commit { MergeTrain.process_async(merge_request) }
+    end
+
     state :opened
     state :closed
     state :merged
