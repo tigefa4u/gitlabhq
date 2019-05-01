@@ -1211,7 +1211,7 @@ Get the last activity date for all users, sorted from oldest to newest.
 The activities that update the timestamp are:
 
   - Git HTTP/SSH activities (such as clone, push)
-  - User logging in into GitLab
+  - User logging into GitLab
   - User visiting pages related to Dashboards, Projects, Issues and Merge Requests ([introduced](https://gitlab.com/gitlab-org/gitlab-ce/issues/54947) in GitLab 11.8)
 
 By default, it shows the activity for all users in the last 6 months, but this can be
