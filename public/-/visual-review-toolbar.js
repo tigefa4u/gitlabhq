@@ -289,7 +289,7 @@ function addCommentButtonEvent () {
   const scriptName = 'ReviewAppToolbar';
   const projectId = document.querySelector(`script[data-name='${scriptName}']`).getAttribute('data-project');
   const discussionId = document.querySelector(`script[data-name='${scriptName}']`).getAttribute('data-discussion');
-  const mrHost = document.querySelector(`script[data-name='${scriptName}']`).getAttribute('data-host');
+  const mrUrl = document.querySelector(`script[data-name='${scriptName}']`).getAttribute('data-mr-url');
   const commentButton = document.getElementById('gitlab-comment-button');
 
   const details = {
@@ -301,7 +301,7 @@ function addCommentButtonEvent () {
     innerHeight,
     projectId,
     discussionId,
-    mrHost,
+    mrUrl,
   };
 
   commentButton.onclick = postComment.bind(null, details);
@@ -461,7 +461,7 @@ function postComment ({
   innerHeight,
   projectId,
   discussionId,
-  mrHost,
+  mrUrl,
 }) {
 
   // Clear any old errors
@@ -481,7 +481,7 @@ function postComment ({
   `
 
   const url = `
-    https://${mrHost}/api/v4/projects/${projectId}/issues/${discussionId}/discussions?body=
+    ${mrUrl}/api/v4/projects/${projectId}/issues/${discussionId}/discussions?body=
     ${encodeURIComponent(commentText)}${encodeURIComponent(detailText)}
   `;
 
