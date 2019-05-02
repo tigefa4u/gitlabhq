@@ -185,8 +185,8 @@ export default {
       // this.state = 'loading';
       Promise.all(this.servicePromises)
         .then(() => {
-          if (this.store.groups.length < 1) {
-            // this.state = 'noData';
+          if (this.groups.length < 1) {
+            this.state = 'noData';
             return;
           }
 
@@ -265,6 +265,7 @@ export default {
         </gl-dropdown>
       </div>
     </div>
+    -->
     <graph-group
       v-for="(groupData, index) in groups"
       :key="index"
@@ -308,8 +309,7 @@ export default {
           :graph-data="graphData"
         />
       </template>
-    </graph-group> TODO: Uncomment this once the action that requests all data is in place-->
-    <div><h1>Finished loading...</h1></div>
+    </graph-group>
   </div>
   <empty-state
     v-else
