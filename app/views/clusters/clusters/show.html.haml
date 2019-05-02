@@ -2,7 +2,7 @@
 - add_to_breadcrumbs _('Kubernetes Clusters'), clusterable.index_path
 - breadcrumb_title @cluster.name
 - page_title _('Kubernetes Cluster')
-- manage_prometheus_path = edit_project_service_path(@cluster.project, 'prometheus') if @project
+- manage_prometheus_path = edit_project_service_path(@project, 'prometheus') if @project
 
 - expanded = expanded_by_default?
 
