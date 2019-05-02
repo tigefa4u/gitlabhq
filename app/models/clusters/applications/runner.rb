@@ -13,7 +13,6 @@ module Clusters
       include ::Clusters::Concerns::ApplicationData
 
       belongs_to :runner, class_name: 'Ci::Runner', foreign_key: :runner_id
-      delegate :project, :group, to: :cluster
 
       default_value_for :version, VERSION
 
@@ -69,9 +68,9 @@ module Clusters
         }
 
         if cluster.group_type?
-          attributes[:groups] = [group]
+          attributes[:groups] = [cluster.first_group]
         elsif cluster.project_type?
-          attributes[:projects] = [project]
+          attributes[:projects] = [cluster.first_project]
         end
 
         attributes
