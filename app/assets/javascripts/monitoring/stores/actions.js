@@ -29,8 +29,15 @@ function backOffRequest(makeRequestCallback) {
 
 export const setMetricsEndpoint = ({ commit }, metricsEndpoint) => {
   commit(types.SET_METRICS_ENDPOINT, metricsEndpoint);
-}
+};
 
+export const setDeploymentsEndpoint = ({ commit }, deploymentsEndpoint) => {
+  commit(types.SET_DEPLOYMENTS_ENDPOINT, deploymentsEndpoint);
+};
+
+export const setEnvironmentsEndpoint = ({ commit }, environmentsEndpoint ) => {
+  commit(types.SET_ENVIRONMENTS_ENDPOINT, environmentsEndpoint);
+};
 
 export const requestMetricsData = () => ({ commit }) => commit(types.REQUEST_METRICS_DATA);
 export const receiveMetricsDataSuccess = ({ commit }, data) =>
@@ -39,17 +46,56 @@ export const receiveMetricsDataFailure = ({ commit }, error) =>
   commit(types.RECEIVE_METRICS_DATA_FAILURE, error);
 
 export const fetchMetricsData = ({ state, dispatch }, params) => {
+  dispatch('requestMetricsData');
+
   return backOffRequest(() => axios.get(state.metricsEndpoint, { params }))
     .then(resp => resp.data)
     .then(response => {
       if (!response || !response.data || !response.success) {
-        dispatch('receiveMetricsDataFailure', {}); // TODO: Do we send an error?
+        dispatch('receiveMetricsDataFailure', null);
         createFlash(s__('Metrics|Unexpected metrics data response from prometheus endpoint'));
       }
       dispatch('receiveMetricsDataSuccess', response.data);
     })
     .catch(error => {
-      dispatch('receiveMetricsDataFailure', error); // TODO: Do we send an error?
+      dispatch('receiveMetricsDataFailure', error);
+      createFlash(s__('Metrics|There was an error while retrieving metrics'));
+    });
+};
+
+export const fetchDeploymentsData = ({ state }) => {
+  if (!state.deploymentEndpoint) {
+    return Promise.resolve([]);
+  }
+  return backOffRequest(() => axios.get(state.deploymentEndpoint))
+    .then(resp => resp.data)
+    .then(response => {
+      if (!response || !response.deployments) {
+        createFlash(
+          s__('Metrics|Unexpected deployment data response from prometheus endpoint'),
+        );
+      }
+      return response.deployments;
+    })
+    .catch(() => {
+      createFlash(s__('Metrics|There was an error getting deployment information.'));
+    });
+};
+
+export const fetchEnvironmentsData = ({ state }) => {
+  return axios
+    .get(state.environmentsEndpoint)
+    .then(resp => resp.data)
+    .then(response => {
+      if (!response || !response.environments) {
+        createFlash(
+          s__('Metrics|There was an error fetching the environments data, please try again'),
+        );
+      }
+      return response.environments;
+    })
+    .catch(() => {
+      createFlash(s__('Metrics|There was an error getting environments information.'));
     });
 };
 
