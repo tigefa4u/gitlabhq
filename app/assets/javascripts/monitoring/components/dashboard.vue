@@ -135,14 +135,11 @@ export default {
   mounted() {
     this.servicePromises = [
       this.service
-        .getGraphsData()
-        .then(data => this.store.storeMetrics(data))
-        .catch(() => Flash(s__('Metrics|There was an error while retrieving metrics'))),
-      this.service
         .getDeploymentData()
         .then(data => this.store.storeDeploymentData(data))
         .catch(() => Flash(s__('Metrics|There was an error getting deployment information.'))),
     ];
+
     if (!this.hasMetrics) {
       this.state = 'gettingStarted';
     } else {
@@ -157,11 +154,14 @@ export default {
         );
       }
       // TODO: Use this instead of the monitoring_service methods
-      this.fetchMetricsData(getTimeDiff(this.timeWindows.eightHours))
-      .then((resp) => {
-        console.log('groups from vuex: ', this.groups);
-      }).catch((err) => {
-      });
+      this.servicePromises.push(
+        this.fetchMetricsData(getTimeDiff(this.timeWindows.eightHours))
+          .then((resp) => {
+            console.log('groups from vuex: ', this.groups);
+          }).catch((err) => {
+            Flash(s__('Metrics|There was an error getting metrics information.'));
+          }),
+      );
       this.getGraphsData();
       sidebarMutationObserver = new MutationObserver(this.onSidebarMutation);
       sidebarMutationObserver.observe(document.querySelector('.layout-page'), {
@@ -185,7 +185,7 @@ export default {
       this.state = 'loading';
       Promise.all(this.servicePromises)
         .then(() => {
-          if (this.store.groups.length < 1) {
+          if (this.groups.length < 1) {
             this.state = 'noData';
             return;
           }
@@ -266,7 +266,7 @@ export default {
       </div>
     </div>
     <graph-group
-      v-for="(groupData, index) in store.groups"
+      v-for="(groupData, index) in groups"
       :key="index"
       :name="groupData.group"
       :show-panels="showPanels"
