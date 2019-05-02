@@ -465,8 +465,27 @@ describe Clusters::Cluster, :use_clean_rails_memory_store_caching do
     end
   end
 
-  describe '#group' do
-    subject { cluster.group }
+  describe '#project' do
+    subject { cluster.project }
+
+    let(:cluster) { create(:cluster, :project) }
+    let(:project) { Clusters::Project.find_by_cluster_id(cluster.id).project }
+
+    it 'is equal to project' do
+      expect(subject).to eq(project)
+    end
+
+    context 'when group-level cluster' do
+      let(:cluster) { create(:cluster, :group) }
+
+      it 'raises an error' do
+        expect { subject }.to raise_error(/not allowed/)
+      end
+    end
+  end
+
+  describe '#first_group' do
+    subject { cluster.first_group }
 
     context 'when cluster belongs to a group' do
       let(:cluster) { create(:cluster, :group) }
@@ -479,6 +498,25 @@ describe Clusters::Cluster, :use_clean_rails_memory_store_caching do
       let(:cluster) { create(:cluster) }
 
       it { is_expected.to be_nil }
+    end
+  end
+
+  describe '#group' do
+    subject { cluster.group }
+
+    let(:cluster) { create(:cluster, :group) }
+    let(:group) { cluster.groups.first }
+
+    it 'is equal to group' do
+      expect(subject).to eq(group)
+    end
+
+    context 'project-level cluster' do
+      let(:cluster) { create(:cluster) }
+
+      it 'raises an error' do
+        expect { subject }.to raise_error(/not allowed/)
+      end
     end
   end
 

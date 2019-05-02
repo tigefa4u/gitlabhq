@@ -176,14 +176,28 @@ module Clusters
         projects.first
       end
     end
-    alias_method :project, :first_project
+
+    def project
+      unless project_type?
+        raise 'Cluster#project is not allowed for non-project level clusters'
+      end
+
+      first_project
+    end
 
     def first_group
       strong_memoize(:first_group) do
         groups.first
       end
     end
-    alias_method :group, :first_group
+
+    def group
+      unless group_type?
+        raise 'Cluster#group is not allowed from non-group level clusters'
+      end
+
+      first_group
+    end
 
     def instance
       Instance.new if instance_type?
