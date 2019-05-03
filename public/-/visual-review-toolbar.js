@@ -8,6 +8,19 @@ const buttonClearStyles = `
 
 const buttonBaseStyles = `
   cursor: pointer;
+  transition: background-color 100ms linear, border-color 100ms linear, color 100ms linear, box-shadow 100ms linear;
+`;
+
+const buttonSuccessActiveStyles = `
+  background-color: #168f48;
+  border-color: #12753a;
+  color: #fff;
+`;
+
+const buttonSuccessHoverStyles = `
+  color: #fff;
+  background-color: #137e3f;
+  border-color: #127339;
 `;
 
 const buttonSuccessStyles = `
@@ -15,17 +28,28 @@ const buttonSuccessStyles = `
   background-color: #1aaa55;
   border-color: #168f48;
   color: #fff;
-`
-
-const buttonWideStyles = `
-  ${buttonSuccessStyles}
-  width: 100%;
-`
+`;
 
 const buttonSecondaryStyles = `
   ${buttonBaseStyles}
   background: none #fff;
   margin: 0 .5rem;
+`;
+
+const buttonSecondaryActiveStyles = `
+  color: #2e2e2e;
+  background-color: #e1e1e1;
+  border-color: #dadada;
+`;
+
+const buttonSecondaryHoverStyles = `
+  background-color: #f0f0f0;
+  border-color: #e3e3e3;
+  color: #2e2e2e;
+`;
+
+const buttonWideStyles = `
+  width: 100%;
 `;
 
 const buttonWrapperStyles = `
@@ -39,7 +63,7 @@ const collapseStyles = `
   ${buttonBaseStyles}
   width: 2.4rem;
   height: 2.2rem;
-  margin-right: 1rem;
+  margin-left: 1rem;
   padding: .5rem;
 `;
 
@@ -98,6 +122,8 @@ const inputStyles = `
   border: 1px solid #dfdfdf;
   border-radius: 4px;
   padding: .1rem .2rem;
+  min-height: 2rem;
+  max-width: 17rem;
 `;
 
 const wrapperClosedStyles = `
@@ -111,7 +137,6 @@ const wrapperOpenStyles = `
 `;
 
 const wrapperStyles = `
-  transition: all 200ms;
   max-width: 22rem;
   max-height: 22rem;
   overflow: scroll;
@@ -119,6 +144,7 @@ const wrapperStyles = `
   bottom: 1rem;
   right: 1rem;
   display: flex;
+  flex-direction: row-reverse;
   padding: 1rem;
   background-color: #fff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell,
@@ -148,6 +174,22 @@ const gitlabStyles = `
 
   .gitlab-button-secondary {
     ${buttonSecondaryStyles}
+  }
+
+  .gitlab-button-secondary:hover {
+    ${buttonSecondaryHoverStyles}
+  }
+
+  .gitlab-button-secondary:active {
+    ${buttonSecondaryActiveStyles}
+  }
+
+  .gitlab-button-success:hover {
+    ${buttonSuccessHoverStyles}
+  }
+
+  .gitlab-button-success:active {
+    ${buttonSuccessActiveStyles}
   }
 
   .gitlab-button-success {
@@ -238,7 +280,7 @@ const compressIcon = `
 `;
 
 const collapseButton = `
-  <button id='gitlab-collapse' style='${buttonClearStyles}' class='gitlab-collapse-open'>${compressIcon}</button>
+  <button id='gitlab-collapse' style='${buttonClearStyles}' class='gitlab-collapse-open gitlab-button-secondary'>${compressIcon}</button>
 `;
 
 
@@ -259,7 +301,7 @@ const login = `
     <label for="remember_token" class='gitlab-checkbox-label'>Remember me</label>
   </div>
   <div class='gitlab-button-wrapper'>
-    <button class='gitlab-button-wide' style='${buttonClearStyles}' type='button' id='gitlab-login'> Submit </button>
+    <button class='gitlab-button-wide gitlab-button-success' style='${buttonClearStyles}' type='button' id='gitlab-login'> Submit </button>
   </div>
 `;
 
