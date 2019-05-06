@@ -523,15 +523,17 @@ function postComment ({
   `
 
   const url = `
-    ${mrUrl}/api/v4/projects/${projectId}/issues/${discussionId}/discussions?body=
-    ${encodeURIComponent(commentText)}${encodeURIComponent(detailText)}
-  `;
+    ${mrUrl}/api/v4/projects/${projectId}/issues/${discussionId}/discussions`;
+
+  const body = `${commentText}${detailText}`;
 
   fetch(url, {
      method: 'POST',
      headers: {
-      'PRIVATE-TOKEN': data.token
-    }
+      'PRIVATE-TOKEN': data.token,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ body }),
   })
   .then((response) => {
 
