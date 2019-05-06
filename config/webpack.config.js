@@ -102,15 +102,32 @@ if (IS_EE) {
   });
 }
 
-module.exports = {
+const baseConfig = {
   mode: IS_PRODUCTION ? 'production' : 'development',
 
   context: path.join(ROOT_PATH, 'app/assets/javascripts'),
 
+  output: {
+    path: path.join(ROOT_PATH, 'public/assets/webpack'),
+  },
+
+  plugins: [
+    // compression can require a lot of compute time and is disabled in CI
+    new CompressionPlugin(),
+  ].filter(Boolean),
+
+  devtool: NO_SOURCEMAPS ? false : devtool,
+};
+
+const mainConfig = {
+  ...baseConfig,
+
+  name: 'main',
+
   entry: generateEntries,
 
   output: {
-    path: path.join(ROOT_PATH, 'public/assets/webpack'),
+    ...baseConfig.output,
     publicPath: '/assets/webpack/',
     filename: IS_PRODUCTION ? '[name].[chunkhash:8].bundle.js' : '[name].bundle.js',
     chunkFilename: IS_PRODUCTION ? '[name].[chunkhash:8].chunk.js' : '[name].chunk.js',
@@ -236,6 +253,7 @@ module.exports = {
   },
 
   plugins: [
+    ...baseConfig.plugins,
     // manifest filename must match config.webpack.manifest_filename
     // webpack-rails only needs assetsByChunkName to function properly
     new StatsWriterPlugin({
@@ -268,7 +286,7 @@ module.exports = {
     }),
 
     new webpack.NormalModuleReplacementPlugin(/^ee_component\/(.*)\.vue/, function(resource) {
-      if (Object.keys(module.exports.resolve.alias).indexOf('ee') >= 0) {
+      if (Object.keys(module.exports[0].resolve.alias).indexOf('ee') >= 0) {
         resource.request = resource.request.replace(/^ee_component/, 'ee');
       } else {
         resource.request = path.join(
@@ -277,9 +295,6 @@ module.exports = {
         );
       }
     }),
-
-    // compression can require a lot of compute time and is disabled in CI
-    IS_PRODUCTION && !NO_COMPRESSION && new CompressionPlugin(),
 
     // WatchForChangesPlugin
     // TODO: publish this as a separate plugin
@@ -339,8 +354,37 @@ module.exports = {
     inline: DEV_SERVER_LIVERELOAD,
   },
 
-  devtool: NO_SOURCEMAPS ? false : devtool,
-
   // sqljs requires fs
   node: { fs: 'empty' },
 };
+
+const visualReviewToolbarConfig = {
+  ...baseConfig,
+
+  name: 'visual_review_toolbar',
+
+  entry: './visual_review_toolbar',
+
+  output: {
+    ...baseConfig.output,
+    filename: 'visual_review_toolbar.js',
+    library: 'VisualReviewToolbar',
+    libraryTarget: 'var',
+  },
+
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        loader: 'babel-loader',
+        options: {
+          cacheDirectory: path.join(CACHE_PATH, 'babel-loader'),
+        },
+      },
+    ],
+  },
+
+  plugins: [...baseConfig.plugins],
+};
+
+module.exports = [mainConfig, visualReviewToolbarConfig];

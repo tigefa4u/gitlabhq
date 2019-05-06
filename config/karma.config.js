@@ -3,7 +3,7 @@ const glob = require('glob');
 const chalk = require('chalk');
 const webpack = require('webpack');
 const argumentsParser = require('commander');
-const webpackConfig = require('./webpack.config.js');
+const webpackConfig = require('./webpack.config.js')[0];
 const IS_EE = require('./helpers/is_ee_env');
 
 const ROOT_PATH = path.resolve(__dirname, '..');
