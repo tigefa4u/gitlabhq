@@ -139,39 +139,6 @@ ul.content-list {
     .controls {
       float: right;
 
-      > .control-text {
-        margin-right: $gl-padding-top;
-        line-height: $list-text-height;
-
-        &:last-child {
-          margin-right: 0;
-        }
-      }
-
-      > .btn,
-      > .btn-group,
-      > .dropdown.inline {
-        margin-right: $gl-padding-top;
-        display: inline-block;
-        margin-top: 3px;
-        margin-bottom: 4px;
-
-        &.btn-ldap-override {
-          @include media-breakpoint-up(sm) {
-            margin-bottom: 0;
-          }
-        }
-
-        &.has-tooltip,
-        &:last-child {
-          margin-right: 0;
-
-          @include media-breakpoint-down(xs) {
-            margin: 0 auto;
-          }
-        }
-      }
-
       .no-comments {
         opacity: 0.5;
       }

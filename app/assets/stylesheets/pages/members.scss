@@ -9,10 +9,6 @@
   }
 }
 
-.member-sort-dropdown {
-  margin-left: $gl-padding-8;
-}
-
 .member {
   &.is-overriden {
     .btn-ldap-override {
@@ -50,14 +46,6 @@
     }
   }
 
-  .btn-remove {
-    width: 100%;
-
-    @include media-breakpoint-up(sm) {
-      width: auto;
-    }
-  }
-
   &.existing-title {
     @include media-breakpoint-up(sm) {
       float: left;
@@ -66,7 +54,7 @@
 }
 
 .member-form-control {
-  @include media-breakpoint-down(sm) {
+  @include media-breakpoint-down(lg) {
     width: $dropdown-member-form-control-width;
     margin-left: 0;
     padding-bottom: 5px;
@@ -199,9 +187,8 @@
   }
 
   .flex-project-members-form {
-    flex-wrap: nowrap;
-    white-space: nowrap;
-    margin-left: auto;
+    flex: 1;
+    justify-content: flex-end;
   }
 }
 
@@ -252,12 +239,16 @@
     align-self: flex-start;
   }
 
+  .member-controls {
+    .member-resend-btn {
+      line-height: inherit;
+    }
+  }
+
   @include media-breakpoint-down(xs) {
     display: block;
 
     .controls > .btn {
-      margin-left: 0;
-      margin-right: 0;
       display: block;
     }
 
