@@ -64,7 +64,7 @@
             %span{ class: ('d-block d-sm-none' unless force_mobile_view) }
               = _('Resend invite')
             - unless force_mobile_view
-              = icon('paper-plane', class: 'd-none d-sm-block')
+              = icon('paper-plane', class: 'control-btn d-none d-sm-block')
 
         - if user != current_user && member.can_update?
           = form_for member, remote: true, html: { class: 'js-edit-member-form form-group append-right-5 d-flex flex-column flex-md-row' } do |f|
@@ -119,6 +119,6 @@
               %span{ class: ('d-block d-sm-none' unless force_mobile_view) }
                 = _("Delete")
               - unless force_mobile_view
-                = icon('trash', class: 'd-none d-sm-block')
+                = icon('trash', class: 'control-btn d-none d-sm-block')
       - else
         %span.member-access-text= member.human_access
