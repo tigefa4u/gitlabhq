@@ -112,7 +112,7 @@ describe('Badges store mutations', () => {
     });
 
     it('resets the add form', () => {
-      store.commit(types.RECEIVE_NEW_BADGE, dummyBadge);
+      store.commit(types.RECEIVE_NEW_BADGE, { result: dummyBadge });
 
       expect(store.state.badgeInAddForm).toBe(null);
       expect(store.state.isSaving).toBe(false);
@@ -122,8 +122,7 @@ describe('Badges store mutations', () => {
     it('inserts group badge at correct position', () => {
       const badgeCount = store.state.badges.length;
       dummyBadge = { ...dummyBadge, kind: GROUP_BADGE };
-
-      store.commit(types.RECEIVE_NEW_BADGE, dummyBadge);
+      store.commit(types.RECEIVE_NEW_BADGE, { result: dummyBadge });
 
       expect(store.state.badges.length).toBe(badgeCount + 1);
       expect(store.state.badges.indexOf(dummyBadge)).toBe(1);
@@ -132,8 +131,7 @@ describe('Badges store mutations', () => {
     it('inserts project badge at correct position', () => {
       const badgeCount = store.state.badges.length;
       dummyBadge = { ...dummyBadge, kind: PROJECT_BADGE };
-
-      store.commit(types.RECEIVE_NEW_BADGE, dummyBadge);
+      store.commit(types.RECEIVE_NEW_BADGE, { result: dummyBadge });
 
       expect(store.state.badges.length).toBe(badgeCount + 1);
       expect(store.state.badges.indexOf(dummyBadge)).toBe(3);

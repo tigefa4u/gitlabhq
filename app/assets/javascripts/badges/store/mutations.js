@@ -11,7 +11,7 @@ const reorderBadges = badges =>
   });
 
 export default {
-  [types.RECEIVE_NEW_BADGE](state, newBadge) {
+  [types.RECEIVE_NEW_BADGE](state, { result: newBadge }) {
     Object.assign(state, {
       badgeInAddForm: null,
       badges: reorderBadges(state.badges.concat(newBadge)),

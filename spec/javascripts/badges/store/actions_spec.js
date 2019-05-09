@@ -29,54 +29,14 @@ describe('Badges store actions', () => {
     axiosMock.restore();
   });
 
-  describe('requestNewBadge', () => {
-    it('commits REQUEST_NEW_BADGE', done => {
-      testAction(
-        actions.requestNewBadge,
-        null,
-        state,
-        [{ type: mutationTypes.REQUEST_NEW_BADGE }],
-        [],
-        done,
-      );
-    });
-  });
-
-  describe('receiveNewBadge', () => {
-    it('commits RECEIVE_NEW_BADGE', done => {
-      const newBadge = createDummyBadge();
-      testAction(
-        actions.receiveNewBadge,
-        newBadge,
-        state,
-        [{ type: mutationTypes.RECEIVE_NEW_BADGE, payload: newBadge }],
-        [],
-        done,
-      );
-    });
-  });
-
-  describe('receiveNewBadgeError', () => {
-    it('commits RECEIVE_NEW_BADGE_ERROR', done => {
-      testAction(
-        actions.receiveNewBadgeError,
-        null,
-        state,
-        [{ type: mutationTypes.RECEIVE_NEW_BADGE_ERROR }],
-        [],
-        done,
-      );
-    });
-  });
-
   describe('addBadge', () => {
     let badgeInAddForm;
-    let dispatch;
+    let commit;
     let endpointMock;
 
     beforeEach(() => {
       endpointMock = axiosMock.onPost(dummyEndpointUrl);
-      dispatch = jasmine.createSpy('dispatch');
+      commit = jasmine.createSpy('commit');
       badgeInAddForm = createDummyBadge();
       state = {
         ...state,
@@ -84,7 +44,7 @@ describe('Badges store actions', () => {
       };
     });
 
-    it('dispatches requestNewBadge and receiveNewBadge for successful response', done => {
+    it('commits REQUEST_NEW_BADGE and RECEIVE_NEW_BADGE for successful response', done => {
       const dummyResponse = createDummyBadgeResponse();
 
       endpointMock.replyOnce(req => {
@@ -95,22 +55,25 @@ describe('Badges store actions', () => {
           }),
         );
 
-        expect(dispatch.calls.allArgs()).toEqual([['requestNewBadge']]);
-        dispatch.calls.reset();
+        expect(commit).toHaveBeenCalledTimes(1);
+        expect(commit).toHaveBeenCalledWith(mutationTypes.REQUEST_NEW_BADGE);
+        commit.calls.reset();
+
         return [200, dummyResponse];
       });
 
-      const dummyBadge = transformBackendBadge(dummyResponse);
       actions
-        .addBadge({ state, dispatch })
-        .then(() => {
-          expect(dispatch.calls.allArgs()).toEqual([['receiveNewBadge', dummyBadge]]);
+        .addBadge({ state, commit })
+        .then(result => {
+          expect(result).toEqual(transformBackendBadge(dummyResponse));
+          expect(commit).toHaveBeenCalledTimes(1);
+          expect(commit).toHaveBeenCalledWith(mutationTypes.RECEIVE_NEW_BADGE, { result });
         })
         .then(done)
         .catch(done.fail);
     });
 
-    it('dispatches requestNewBadge and receiveNewBadgeError for error response', done => {
+    it('commits REQUEST_NEW_BADGE and RECEIVE_NEW_BADGE_ERROR for error response', done => {
       endpointMock.replyOnce(req => {
         expect(req.data).toBe(
           JSON.stringify({
@@ -119,16 +82,20 @@ describe('Badges store actions', () => {
           }),
         );
 
-        expect(dispatch.calls.allArgs()).toEqual([['requestNewBadge']]);
-        dispatch.calls.reset();
+        expect(commit).toHaveBeenCalledTimes(1);
+        expect(commit).toHaveBeenCalledWith(mutationTypes.REQUEST_NEW_BADGE);
+        commit.calls.reset();
+
         return [500, ''];
       });
 
       actions
-        .addBadge({ state, dispatch })
+        .addBadge({ state, commit })
         .then(() => done.fail('Expected Ajax call to fail!'))
-        .catch(() => {
-          expect(dispatch.calls.allArgs()).toEqual([['receiveNewBadgeError']]);
+        .catch(error => {
+          expect(error.message).toBe('Request failed with status code 500');
+          expect(commit).toHaveBeenCalledTimes(1);
+          expect(commit).toHaveBeenCalledWith(mutationTypes.RECEIVE_NEW_BADGE_ERROR, { error });
         })
         .then(done)
         .catch(done.fail);

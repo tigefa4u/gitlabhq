@@ -1,4 +1,5 @@
 import axios from '~/lib/utils/axios_utils';
+import { createAsyncAction } from '~/lib/utils/vuex/async_action';
 import types from './mutation_types';
 
 export const transformBackendBadge = badge => ({
@@ -12,32 +13,22 @@ export const transformBackendBadge = badge => ({
 });
 
 export default {
-  requestNewBadge({ commit }) {
-    commit(types.REQUEST_NEW_BADGE);
-  },
-  receiveNewBadge({ commit }, newBadge) {
-    commit(types.RECEIVE_NEW_BADGE, newBadge);
-  },
-  receiveNewBadgeError({ commit }) {
-    commit(types.RECEIVE_NEW_BADGE_ERROR);
-  },
-  addBadge({ dispatch, state }) {
-    const newBadge = state.badgeInAddForm;
-    const endpoint = state.apiEndpointUrl;
-    dispatch('requestNewBadge');
-    return axios
-      .post(endpoint, {
-        image_url: newBadge.imageUrl,
-        link_url: newBadge.linkUrl,
-      })
-      .catch(error => {
-        dispatch('receiveNewBadgeError');
-        throw error;
-      })
-      .then(res => {
-        dispatch('receiveNewBadge', transformBackendBadge(res.data));
-      });
-  },
+  addBadge: createAsyncAction({
+    asyncRequest({ state }) {
+      const newBadge = state.badgeInAddForm;
+      const endpoint = state.apiEndpointUrl;
+      return axios
+        .post(endpoint, {
+          image_url: newBadge.imageUrl,
+          link_url: newBadge.linkUrl,
+        })
+        .then(res => transformBackendBadge(res.data));
+    },
+
+    requestMutation: types.REQUEST_NEW_BADGE,
+    receiveMutation: types.RECEIVE_NEW_BADGE,
+    receiveErrorMutation: types.RECEIVE_NEW_BADGE_ERROR,
+  }),
   requestDeleteBadge({ commit }, badgeId) {
     commit(types.REQUEST_DELETE_BADGE, badgeId);
   },
