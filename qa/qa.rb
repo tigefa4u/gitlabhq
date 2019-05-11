@@ -161,9 +161,12 @@ module QA
     module File
       autoload :Form, 'qa/page/file/form'
       autoload :Show, 'qa/page/file/show'
+      autoload :Edit, 'qa/page/file/edit'
 
       module Shared
         autoload :CommitMessage, 'qa/page/file/shared/commit_message'
+        autoload :CommitButton, 'qa/page/file/shared/commit_button'
+        autoload :Editor, 'qa/page/file/shared/editor'
       end
     end
 
