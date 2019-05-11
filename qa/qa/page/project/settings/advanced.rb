@@ -5,6 +5,8 @@ module QA
     module Project
       module Settings
         class Advanced < Page::Base
+          include Component::Select2
+
           view 'app/views/projects/edit.html.haml' do
             element :project_path_field
             element :change_path_button

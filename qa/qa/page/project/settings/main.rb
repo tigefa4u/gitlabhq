@@ -1,14 +1,18 @@
 # frozen_string_literal: true
-
 module QA
   module Page
     module Project
       module Settings
         class Main < Page::Base
           include Common
+          include Component::Select2
+          include Component::ConfirmModal
+          include SubMenus::Common
+          include SubMenus::Project
 
           view 'app/views/projects/edit.html.haml' do
             element :advanced_settings
+            element :transfer_button
           end
 
           view 'app/views/projects/settings/_general.html.haml' do
@@ -33,6 +37,17 @@ module QA
             expand_section(:advanced_settings) do
               Advanced.perform(&block)
             end
+          end
+
+          def select_transfer_option(namespace)
+            search_and_select(namespace)
+          end
+
+          def transfer_project!(project_name, namespace)
+            select_transfer_option(namespace)
+            click_element(:transfer_button)
+            add_confirmation_info(project_name)
+            submit_confirmation
           end
         end
       end

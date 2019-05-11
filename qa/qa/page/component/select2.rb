@@ -18,6 +18,14 @@ module QA
           find('.select2-input').set(item_text)
           select_item(item_text)
         end
+
+        def expand_select_list
+          find('span.select2-arrow').click
+        end
+
+        def selected_option
+          find('.select2-chosen').text
+        end
       end
     end
   end
