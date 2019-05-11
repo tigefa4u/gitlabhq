@@ -7,6 +7,8 @@ module QA
     class Project < Base
       include Events::Project
 
+      attr_accessor :initialize_with_readme
+
       attribute :name
       attribute :description
 
@@ -73,7 +75,7 @@ module QA
           name: name,
           description: description,
           visibility: 'public'
-        }
+        }.merge(options_post_body)
       end
 
       private
@@ -84,6 +86,14 @@ module QA
         api_resource[:repository_http_location] =
           Git::Location.new(api_resource[:http_url_to_repo])
         api_resource
+      end
+
+      def options_post_body
+        return {} unless initialize_with_readme
+
+        {
+          initialize_with_readme: initialize_with_readme
+        }
       end
     end
   end
