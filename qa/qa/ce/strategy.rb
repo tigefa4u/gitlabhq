@@ -11,7 +11,7 @@ module QA
 
       def perform_before_hooks
         puts " "
-        puts ">>>>>>>>>>>>>> ENV['CI']: #{ENV['CI']}"
+        puts ">>>>>>>>>>>>>> ENV['CI']: #{!!ENV['CI']}"
         puts " "
         # The login page could take some time to load the first time it is visited.
         # We visit the login page and wait for it to properly load only once before the tests.
