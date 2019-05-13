@@ -19,7 +19,6 @@ module QA
         end
 
         it 'user comments on an issue with an attachment' do
-
           puts " "
           puts ">>>>>>>>>>>>>> ENV['CI']: #{ENV['CI']}"
           puts " "
