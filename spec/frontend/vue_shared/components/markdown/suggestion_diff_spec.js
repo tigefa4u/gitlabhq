@@ -92,7 +92,7 @@ describe('Suggestion Diff component', () => {
   describe('applySuggestion', () => {
     it('emits apply event when applySuggestion is called', () => {
       const callback = () => {};
-      spyOn(vm, '$emit');
+      jest.spyOn(vm, '$emit').mockImplementation(() => {});
       vm.applySuggestion(callback);
 
       expect(vm.$emit).toHaveBeenCalledWith('apply', { suggestionId: vm.suggestion.id, callback });
