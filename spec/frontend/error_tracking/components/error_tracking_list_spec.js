@@ -1,7 +1,7 @@
 import { createLocalVue, shallowMount } from '@vue/test-utils';
 import Vuex from 'vuex';
 import ErrorTrackingList from '~/error_tracking/components/error_tracking_list.vue';
-import { GlButton, GlEmptyState, GlLoadingIcon, GlTable, GlLink } from '@gitlab/ui';
+import { GlButton, GlEmptyState, GlLoadingIcon, GlLink, GlTable } from '@gitlab/ui';
 
 const localVue = createLocalVue();
 localVue.use(Vuex);
@@ -23,6 +23,7 @@ describe('ErrorTrackingList', () => {
       },
       stubs: {
         'gl-link': GlLink,
+        'gl-table': GlTable,
       },
     });
   }
@@ -91,13 +92,13 @@ describe('ErrorTrackingList', () => {
     });
 
     it('shows a message prompting to refresh', () => {
-      const refreshLink = wrapper.vm.$refs.empty.querySelector('a');
+      const refreshLink = wrapper.find({ ref: 'empty' }).element.querySelector('b-link-stub');
 
       expect(refreshLink.textContent.trim()).toContain('Check again');
     });
 
     it('restarts polling', () => {
-      wrapper.find('.js-try-again').trigger('click');
+      wrapper.find('.js-try-again').vm.$emit('click');
 
       expect(actions.restartPolling).toHaveBeenCalled();
     });
