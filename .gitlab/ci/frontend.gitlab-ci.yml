@@ -63,6 +63,7 @@ compile-assets:
   <<: *assets-compile-cache
   stage: prepare
   script:
+    - echo ">>> CI env var: ${CI}"
     - node --version
     - yarn install --frozen-lockfile --cache-folder .yarn-cache
     - free -m
