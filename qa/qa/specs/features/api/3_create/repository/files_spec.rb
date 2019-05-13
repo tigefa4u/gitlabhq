@@ -3,7 +3,7 @@
 require 'securerandom'
 
 module QA
-  describe 'API basics' do
+  describe 'API basics', :quarantine do
     before(:context) do
       @api_client = Runtime::API::Client.new(:gitlab)
     end
