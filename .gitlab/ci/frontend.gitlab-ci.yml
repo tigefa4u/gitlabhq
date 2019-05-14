@@ -1,20 +1,11 @@
-.assets-compile-cache: &assets-compile-cache
-  cache:
-    key: "assets-compile:vendor_ruby:.yarn-cache:tmp_cache_assets_sprockets:v6"
-    paths:
-      - vendor/ruby/
-      - .yarn-cache/
-      - tmp/cache/assets/sprockets
-
 .use-pg: &use-pg
   services:
     - name: postgres:9.6.14
       command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off"]
     - name: redis:alpine
 
-.gitlab:assets:compile-metadata:
-  <<: *assets-compile-cache
-  extends: .dedicated-no-docs-pull-cache-job
+gitlab:assets:compile:
+  extends: .dedicated-no-docs-no-cache
   image: dev.gitlab.org:5005/gitlab/gitlab-build-images:ruby-2.6.3-git-2.22-chrome-73.0-node-12.x-yarn-1.16-graphicsmagick-1.3.33-docker-18.06.1
   dependencies:
     - setup-test-env
@@ -42,6 +33,10 @@
     - install_api_client_dependencies_with_apt
     - play_job "review-build-cng" || true  # this job might not exist so ignore the failure if it cannot be played
     - play_job "schedule:review-build-cng" || true  # this job might not exist so ignore the failure if it cannot be played
+  cache:
+    key: "assets-compile:tmp_cache_assets_sprockets"
+    paths:
+      - tmp/cache/assets/sprockets
   artifacts:
     name: webpack-report
     expire_in: 31d
@@ -57,68 +52,49 @@
     - docker
     - gitlab-org
 
-gitlab:assets:compile:
-  extends: .gitlab:assets:compile-metadata
-  cache:
-    policy: pull-push
-  only:
-    - master@gitlab-org/gitlab-ce
-    - master@gitlab-org/gitlab-ee
-
-gitlab:assets:compile pull-cache:
-  extends: .gitlab:assets:compile-metadata
-  cache:
-    policy: pull
-  except:
-    refs:
-      - master@gitlab-org/gitlab-ce
-      - master@gitlab-org/gitlab-ee
-      - /(^docs[\/-].+|.+-docs$)/
-
-.compile-assets-metadata:
-  extends: .dedicated-runner
+compile-assets:
+  extends:
+    - .dedicated-runner-default-cache
+    - .no-docs
   <<: *use-pg
-  <<: *assets-compile-cache
   stage: prepare
   script:
     - node --version
     - retry yarn install --frozen-lockfile --cache-folder .yarn-cache --prefer-offline
     - free -m
     - retry bundle exec rake gitlab:assets:compile
-    - scripts/clean-old-cached-assets
   variables:
     # we override the max_old_space_size to prevent OOM errors
     NODE_OPTIONS: --max_old_space_size=3584
   artifacts:
     expire_in: 7d
     paths:
-      - node_modules
-      - public/assets
+      - node_modules/
+      - public/assets/
 
-compile-assets:
-  extends: .compile-assets-metadata
-  cache:
-    policy: pull-push
+gitlab:ui:visual:
+  extends: .dedicated-no-docs-no-cache
+  before_script: []
+  allow_failure: true
+  dependencies:
+    - compile-assets
+  script:
+    # Remove node modules from GitLab that may conflict with gitlab-ui
+    - rm -r node_modules
+    - git clone https://gitlab.com/gitlab-org/gitlab-ui.git
+    - cp public/assets/application-*.css gitlab-ui/styles/application.css
+    - cd gitlab-ui
+    - yarn install
+    - CSS_URL=./application.css yarn test
   only:
     - master@gitlab-org/gitlab-ce
     - master@gitlab-org/gitlab-ee
 
-compile-assets pull-cache:
-  extends: .compile-assets-metadata
-  cache:
-    policy: pull
-  except:
-    refs:
-      - master@gitlab-org/gitlab-ce
-      - master@gitlab-org/gitlab-ee
-      - /(^docs[\/-].+|.+-docs$)/
-
 karma:
-  extends: .dedicated-no-docs-pull-cache-job
+  extends: .dedicated-no-docs-no-cache
   <<: *use-pg
   dependencies:
     - compile-assets
-    - compile-assets pull-cache
     - setup-test-env
   variables:
     # we override the max_old_space_size to prevent OOM errors
@@ -142,11 +118,10 @@ karma:
       junit: junit_karma.xml
 
 jest:
-  extends: .dedicated-no-docs-and-no-qa-pull-cache-job
+  extends: .dedicated-no-docs-no-qa-no-cache
   <<: *use-pg
   dependencies:
     - compile-assets
-    - compile-assets pull-cache
     - setup-test-env
   script:
     - scripts/gitaly-test-spawn
@@ -168,42 +143,39 @@ jest:
     key: jest
     paths:
       - tmp/jest/jest/
-    policy: pull-push
 
 qa:internal:
-  extends: .dedicated-no-docs-no-db-pull-cache-job
-  services: []
-  script:
-    - cd qa/
-    - bundle install
-    - bundle exec rspec
+  extends: .dedicated-no-docs-no-db-no-cache
+  before_script: []
   dependencies:
     - setup-test-env
+  script:
+    - mkdir -p qa/vendor && mv vendor/ruby qa/vendor/ruby
+    - cd qa/
+    - time bundle install --without=production --jobs=$(nproc) --path=vendor --retry=3 --quiet
+    - bundle exec rspec
 
 qa:selectors:
-  extends: .dedicated-no-docs-no-db-pull-cache-job
-  services: []
-  script:
-    - cd qa/
-    - bundle install
-    - bundle exec bin/qa Test::Sanity::Selectors
+  extends: .dedicated-no-docs-no-db-no-cache
+  before_script: []
   dependencies:
     - setup-test-env
+  script:
+    - mkdir -p qa/vendor && mv vendor/ruby qa/vendor/ruby
+    - cd qa/
+    - time bundle install --without=production --jobs=$(nproc) --path=vendor --retry=3 --quiet
+    - bundle exec bin/qa Test::Sanity::Selectors
 
 .qa-frontend-node: &qa-frontend-node
-  extends: .dedicated-no-docs-no-db-pull-cache-job
-  stage: test
+  extends: .dedicated-no-docs-no-db-no-cache
+  before_script: []
+  dependencies: []
   cache:
     key: "$CI_JOB_NAME"
     paths:
       - .yarn-cache/
-    policy: pull-push
-  dependencies: []
-  before_script: []
   script:
-    - date
     - yarn install --frozen-lockfile --cache-folder .yarn-cache --prefer-offline
-    - date
     - yarn run webpack-prod
 
 qa-frontend-node:8:
@@ -220,12 +192,12 @@ qa-frontend-node:latest:
   allow_failure: true
 
 lint:javascript:report:
-  extends: .dedicated-no-docs-no-db-pull-cache-job
+  extends: .dedicated-no-docs-no-db-no-cache
   stage: post-test
-  dependencies: []
   before_script: []
+  dependencies:
+    - compile-assets
   script:
-    - date
     - yarn run eslint-report || true  # ignore exit code
   artifacts:
     name: eslint-report
@@ -234,14 +206,12 @@ lint:javascript:report:
       - eslint-report.html
 
 jsdoc:
-  extends: .dedicated-no-docs-no-db-pull-cache-job
+  extends: .dedicated-no-docs-no-db-no-cache
   stage: post-test
+  before_script: []
   dependencies:
     - compile-assets
-    - compile-assets pull-cache
-  before_script: []
   script:
-    - date
     - yarn run jsdoc || true  # ignore exit code
   artifacts:
     name: jsdoc

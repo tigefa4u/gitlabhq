@@ -27,8 +27,8 @@
   extends: .dedicated-runner
   <<: *review-only
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-charts-build-base
-  cache: {}
   dependencies: []
+  cache: {}
   before_script:
     - source scripts/utils.sh
 
@@ -254,11 +254,16 @@ schedule:review-cleanup:
     - ruby -rrubygems scripts/review_apps/automated_cleanup.rb
 
 danger-review:
-  extends: .dedicated-pull-cache-job
+  extends: .dedicated-no-cache
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:danger
   stage: test
-  dependencies: []
-  before_script: []
+  dependencies:
+    - setup-test-env
+    - compile-assets
+  before_script:
+    - git version
+    - node --version
+    - yarn install --frozen-lockfile --cache-folder .yarn-cache --prefer-offline
   only:
     variables:
       - $DANGER_GITLAB_API_TOKEN
@@ -271,7 +276,4 @@ danger-review:
       - $CI_COMMIT_REF_NAME =~ /^ce-to-ee-.*/
       - $CI_COMMIT_REF_NAME =~ /.*-stable(-ee)?-prepare-.*/
   script:
-    - git version
-    - node --version
-    - yarn install --frozen-lockfile --cache-folder .yarn-cache --prefer-offline
     - danger --fail-on-errors=true

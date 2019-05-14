@@ -1,5 +1,5 @@
 pages:
-  extends: .dedicated-no-docs-no-db-pull-cache-job
+  extends: .dedicated-no-docs-no-db-no-cache
   before_script: []
   stage: pages
   dependencies:

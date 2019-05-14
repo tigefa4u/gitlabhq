@@ -12,7 +12,6 @@ variables:
   BUILD_ASSETS_IMAGE: "false"
 
 before_script:
-  - date
   - source scripts/utils.sh
   - source scripts/prepare_build.sh
   - date

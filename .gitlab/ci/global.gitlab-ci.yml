@@ -9,23 +9,22 @@
     - gitlab-org
 
 .default-cache: &default-cache
-  key: "debian-stretch-ruby-2.6.3-node-12.x"
-  paths:
-    - vendor/ruby
-    - .yarn-cache/
-    - vendor/gitaly-ruby
+  cache:
+    key: "debian-stretch-ruby-2.6.3-node-12.x"
+    paths:
+      - vendor/ruby/
+      - .yarn-cache/
+      - vendor/gitaly-ruby/
+      - tmp/cache/assets/sprockets
 
 .dedicated-runner-default-cache:
   extends: .dedicated-runner
-  cache:
-    <<: *default-cache
+  <<: *default-cache
 
-# Jobs that only need to pull cache
-.dedicated-pull-cache-job:
+# Jobs that do not need cache
+.dedicated-no-cache:
   extends: .dedicated-runner
-  cache:
-    <<: *default-cache
-    policy: pull
+  cache: {}
   stage: test
 
 .no-docs:
@@ -33,11 +32,23 @@
     refs:
       - /(^docs[\/-].+|.+-docs$)/
 
+# Jobs that shouldn't run for docs branches and do not need cache
+.dedicated-no-docs-no-cache:
+  extends:
+    - .dedicated-no-cache
+    - .no-docs
+
 .no-docs-and-no-qa:
   except:
     refs:
       - /(^docs[\/-].+|.+-docs$)/
       - /(^qa[\/-].*|.*-qa$)/
+
+# Jobs that shouldn't run for docs nor qa branches and do not need cache
+.dedicated-no-docs-no-qa-no-cache:
+  extends:
+    - .dedicated-no-cache
+    - .no-docs-and-no-qa
 
 .dedicated-no-docs-pull-cache-job:
   extends:
@@ -49,9 +60,9 @@
     - .dedicated-pull-cache-job
     - .no-docs-and-no-qa
 
-# Jobs that do not need a DB
-.dedicated-no-docs-no-db-pull-cache-job:
-  extends: .dedicated-no-docs-pull-cache-job
+# Jobs that shouldn't run for docs and do not need DB nor cache
+.dedicated-no-docs-no-db-no-cache:
+  extends: .dedicated-no-docs-no-cache
   variables:
     SETUP_DB: "false"
 

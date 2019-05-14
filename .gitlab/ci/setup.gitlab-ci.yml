@@ -1,7 +1,7 @@
 # Insurance in case a gem needed by one of our releases gets yanked from
 # rubygems.org in the future.
 cache gems:
-  extends: .dedicated-no-docs-no-db-pull-cache-job
+  extends: .dedicated-no-docs-no-db-no-cache
   script:
     - bundle package --all --all-platforms
   artifacts:
