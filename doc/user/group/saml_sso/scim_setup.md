@@ -16,6 +16,9 @@ The following identity providers are supported:
 
 ## Requirements
 
+NOTE: **Note:**
+The following requirements have been implemented on GitLab.com and do not require action from a gitlab.com user.
+
 - [Group SSO](index.md) needs to be configured. 
 - The `scim_group` feature flag must be enabled:
 
