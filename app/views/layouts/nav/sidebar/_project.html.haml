@@ -354,7 +354,7 @@
                   = _('Members')
             - if can_edit
               = nav_link(controller: [:integrations, :services, :hooks, :hook_logs]) do
-                = link_to project_settings_integrations_path(@project), title: _('Integrations') do
+                = link_to project_settings_integrations_path(@project), title: _('Integrations'), class: 'qa-integration-settings-link' do
                   %span
                     = _('Integrations')
               = nav_link(controller: :repository) do

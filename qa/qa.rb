@@ -207,6 +207,7 @@ module QA
         autoload :Runners, 'qa/page/project/settings/runners'
         autoload :MergeRequest, 'qa/page/project/settings/merge_request'
         autoload :Members, 'qa/page/project/settings/members'
+        autoload :Integrations, 'qa/page/project/settings/integrations'
         autoload :MirroringRepositories, 'qa/page/project/settings/mirroring_repositories'
       end
 
@@ -346,6 +347,7 @@ module QA
     autoload :KubernetesCluster, 'qa/service/kubernetes_cluster'
     autoload :Omnibus, 'qa/service/omnibus'
     autoload :Runner, 'qa/service/runner'
+    autoload :Webhook, 'qa/service/webhook'
   end
 
   ##
