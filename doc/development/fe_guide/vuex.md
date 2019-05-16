@@ -110,19 +110,39 @@ In this file, we will write the actions that will call the respective mutations:
 ```
 
 #### Actions Pattern: `request` and `receive` namespaces
-When a request is made we often want to show a loading state to the user.
 
-Instead of creating an action to toggle the loading state and dispatch it in the component,
-create:
+When a request is made we often want to show a loading state or error messages to the user when performing an asynchronous operation. 
+To make these easy to understand and consistent across different part of the application,
+we are adopting the [Async Action Creators](https://redux.js.org/advanced/async-actions#async-action-creators) pattern from Redux
+(see also the similar example in the [Vuex documentation](https://vuex.vuejs.org/guide/actions.html#dispatching-actions)).
+In Vuex this means to create:
 
-1. An action `requestSomething`, to toggle the loading state
-1. An action `receiveSomethingSuccess`, to handle the success callback
-1. An action `receiveSomethingError`, to handle the error callback
-1. An action `fetchSomething` to make the request.
-    1. In case your application does more than a `GET` request you can use these as examples:
-        - `POST`: `createSomething`
-        - `PUT`: `updateSomething`
-        - `DELETE`: `deleteSomething`
+1. A mutation `REQUEST_SOMETHING`, to toggle the loading state
+1. A mutation `RECEIVE_SOMETHING_SUCCESS`, to handle the success callback
+1. A mutation `RECEIVE_SOMETHING_ERROR`, to handle the error callback
+1. An action `fetchSomething` to make the request which uses the `asyncActionCreator` helper.
+
+```javascript
+import axios from '~/lib/utils/axios_utils';
+import { createAsyncAction } from '~/lib/utils/vuex/async_action';
+import * as types from './mutation_types';
+
+export const fetchSomething = createAsyncAction({
+  asyncRequest({ state }, someParameter) {
+    return axios.get(state.endpoint, { params: someParameter });
+  },
+
+  requestMutation: types.REQUEST_SOMETHING,
+  receiveMutation: types.RECEIVE_SOMETHING_SUCCESS,
+  receiveErrorMutation: RECEIVE_SOMETHING_ERROR,
+});
+```
+
+In case your application does something other than a `GET` request, please adjust the action name according to the following examples:
+
+- `POST`: `createSomething`
+- `PUT`: `updateSomething`
+- `DELETE`: `deleteSomething`
 
 The component MUST only dispatch the `fetchNamespace` action. Actions namespaced with `request` or `receive` should not be called from the component
 The `fetch` action will be responsible to dispatch `requestNamespace`, `receiveNamespaceSuccess` and `receiveNamespaceError`
