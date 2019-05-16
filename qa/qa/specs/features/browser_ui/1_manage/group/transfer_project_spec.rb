@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module QA
   context 'Manage' do
     describe 'Project transfer between groups' do
@@ -37,13 +39,13 @@ module QA
 
         Page::File::Show.perform(&:go_to_general_settings)
 
-        target_group_full_path = target_group.sandbox.path + ' / ' + target_group.path
+        Page::Project::Settings::Main.perform(&:expand_advanced_settings)
 
-        Page::Project::Settings::Main.perform do |settings|
-          settings.expand_advanced_settings(&:expand_select_list)
-          settings.transfer_project!(project.name, target_group_full_path)
-          settings.click_project
+        Page::Project::Settings::Advanced.perform do |advanced|
+          advanced.transfer_project!(project.name, target_group.full_path)
         end
+
+        Page::Project::Settings::Main.perform(&:click_project)
 
         Page::Project::Show.perform do |project|
           expect(project).to have_text(target_group.path)
