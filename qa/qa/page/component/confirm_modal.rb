@@ -15,7 +15,7 @@ module QA
         end
 
         def submit_confirmation
-          click_element :confirm_submit
+          click_element :confirm_button
         end
       end
     end
