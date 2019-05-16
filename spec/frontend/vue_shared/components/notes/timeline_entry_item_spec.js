@@ -1,8 +1,17 @@
-import { createComponentWrapper } from 'helpers/component_wrapper';
+import { createComponentFactory } from 'helpers/component_wrapper';
+import TimelineEntryItem from '~/vue_shared/components/notes/timeline_entry_item.vue';
 
 describe('TimelineEntryItem', () => {
+  let wrapper;
+
+  const createComponent = createComponentFactory(TimelineEntryItem, val => {
+    wrapper = val;
+  });
+
+  const findContent = () => wrapper.find('.timeline-entry-inner :first-child');
+
   it('renders correctly', () => {
-    const wrapper = createComponentWrapper();
+    createComponent();
 
     expect(wrapper.is('.timeline-entry')).toBe(true);
     expect(wrapper.contains('.timeline-entry-inner')).toBe(true);
@@ -10,14 +19,13 @@ describe('TimelineEntryItem', () => {
 
   it('accepts default slot', () => {
     const dummyContent = '<p>some content</p>';
-    const wrapper = createComponentWrapper({
+
+    createComponent({
       slots: {
         default: dummyContent,
       },
     });
 
-    const content = wrapper.find('.timeline-entry-inner :first-child');
-
-    expect(content.html()).toBe(dummyContent);
+    expect(findContent().html()).toBe(dummyContent);
   });
 });
