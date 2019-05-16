@@ -10,7 +10,7 @@ module QA
           end
 
           def commit_changes
-            click_element(:commit_btn)
+            click_element(:commit_button)
           end
         end
       end
