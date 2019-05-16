@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module QA
   module Page
     module Component
@@ -10,11 +12,11 @@ module QA
           end
         end
 
-        def add_confirmation_info(text)
+        def fill_confirmation_text(text)
           fill_element :confirm_input, text
         end
 
-        def submit_confirmation
+        def click_confirm_button
           click_element :confirm_button
         end
       end
