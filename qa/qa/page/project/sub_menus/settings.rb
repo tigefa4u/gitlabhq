@@ -42,7 +42,7 @@ module QA
           def go_to_general_settings
             hover_settings do
               within_submenu do
-                click_element :link_general_settings
+                click_element :general_settings_link
               end
             end
           end
