@@ -10,7 +10,7 @@ module QA
               view 'app/views/layouts/nav/sidebar/_project.html.haml' do
                 element :settings_item
                 element :link_members_settings
-                element :link_general_settings
+                element :general_settings_link
               end
             end
           end
