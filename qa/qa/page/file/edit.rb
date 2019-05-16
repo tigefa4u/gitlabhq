@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module QA
   module Page
     module File
@@ -5,7 +7,6 @@ module QA
         include Shared::CommitMessage
         include Shared::CommitButton
         include Shared::Editor
-        # view 'app/views/projects/blob/_editor.html.haml'
       end
     end
   end

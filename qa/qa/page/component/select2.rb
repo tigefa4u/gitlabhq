@@ -22,10 +22,6 @@ module QA
         def expand_select_list
           find('span.select2-arrow').click
         end
-
-        def selected_option
-          find('.select2-chosen').text
-        end
       end
     end
   end
