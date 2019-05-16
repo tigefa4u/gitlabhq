@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module QA
   module Page
     module File
@@ -5,7 +7,7 @@ module QA
         module Editor
           def self.included(base)
             base.view 'app/views/projects/blob/_editor.html.haml' do
-              element :editor, '#editor' # rubocop:disable QA/ElementWithPattern
+              element :editor
             end
           end
 
@@ -20,7 +22,9 @@ module QA
           private
 
           def text_area
-            find('#editor>textarea', visible: false)
+            within_element :editor do
+              find('textarea', visible: false)
+            end
           end
         end
       end
