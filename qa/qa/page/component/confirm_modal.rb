@@ -6,7 +6,7 @@ module QA
           base.view 'app/views/shared/_confirm_modal.html.haml' do
             element :confirm_modal
             element :confirm_input
-            element :confirm_submit
+            element :confirm_button
           end
         end
 
