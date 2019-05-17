@@ -117,10 +117,14 @@ module Clusters
     def self.ancestor_clusters_for_clusterable(clusterable, hierarchy_order: :asc)
       return [] if clusterable.is_a?(Instance)
 
-      hierarchy_groups = clusterable.ancestors_upto(hierarchy_order: hierarchy_order).eager_load(:clusters)
-      hierarchy_groups = hierarchy_groups.merge(current_scope) if current_scope
-
-      hierarchy_groups.flat_map(&:clusters) + Instance.new.clusters
+      clusters = []
+      if clusterable.group_clusters_enabled?
+        hierarchy_groups = clusterable.ancestors_upto(hierarchy_order: hierarchy_order).eager_load(:clusters)
+        hierarchy_groups = hierarchy_groups.merge(current_scope) if current_scope
+        clusters += hierarchy_groups.flat_map(&:clusters)
+      end
+      clusters += Instance.new.clusters
+      clusters
     end
 
     def status_name

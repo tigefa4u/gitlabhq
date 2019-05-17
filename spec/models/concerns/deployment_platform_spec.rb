@@ -127,6 +127,24 @@ describe DeploymentPlatform do
       end
     end
 
+    context 'when instance has configured kubernetes cluster' do
+      let!(:cluster) { create(:cluster, :provided_by_gcp, :instance) }
+
+      it 'returns the Kubernetes platform' do
+        is_expected.to eq(cluster.platform_kubernetes)
+      end
+
+      context 'feature flag disabled' do
+        before do
+          stub_feature_flags(instance_clusters: false)
+        end
+
+        it 'returns nil' do
+          is_expected.to be_nil
+        end
+      end
+    end
+
     context 'when user configured kubernetes integration from project services' do
       let!(:kubernetes_service) { create(:kubernetes_service, project: project) }
 
