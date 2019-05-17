@@ -33,7 +33,14 @@ module Gitlab
         end
 
         def self.process_start_time
+          stat_string = File.read('/proc/self/stat')
+          start_time = stat_string.scan(/\S*/).reject { |match| match.empty? }[21]
+          puts "!!!!" * 100
+          puts "start_time from stat: #{start_time}"
           start_time_in_jiffies = Sys::ProcTable.ps(pid: Process.pid).starttime
+
+          puts "!!!!" * 100
+          puts "start_time from sysproctable: #{start_time_in_jiffies}"
           return 0 unless start_time_in_jiffies
 
           start_time_in_jiffies / 100
