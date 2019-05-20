@@ -33,6 +33,8 @@ module Gitlab
             set_unicorn_connection_metrics('unix', addr, stats)
           end
 
+          puts "!!!" * 1000
+          puts "#{Unicorn::HttpServer.worker_processes}"
           metrics[:unicorn_workers].set({}, unicorn_workers_count)
         end
 
