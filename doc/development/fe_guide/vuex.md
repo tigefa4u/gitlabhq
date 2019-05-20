@@ -81,51 +81,62 @@ In this file, we will write the actions that will call the respective mutations:
   import axios from '~/lib/utils/axios_utils';
   import createFlash from '~/flash';
 
-  export const requestUsers = ({ commit }) => commit(types.REQUEST_USERS);
-  export const receiveUsersSuccess = ({ commit }, data) => commit(types.RECEIVE_USERS_SUCCESS, data);
-  export const receiveUsersError = ({ commit }, error) => commit(types.RECEIVE_USERS_ERROR, error);
-
-  export const fetchUsers = ({ state, dispatch }) => {
-    dispatch('requestUsers');
+  export const fetchUsers = ({ state, commit }) => {
+    commit(types.REQUEST_USERS);
 
     axios.get(state.endpoint)
-      .then(({ data }) => dispatch('receiveUsersSuccess', data))
+      .then(({ data }) => commit(types.RECEIVE_USERS_SUCCESS, data))
       .catch((error) => {
-        dispatch('receiveUsersError', error)
+        commit(types.RECEIVE_USERS_ERROR, error);
         createFlash('There was an error')
       });
-  }
+  };
 
-  export const requestAddUser = ({ commit }) => commit(types.REQUEST_ADD_USER);
-  export const receiveAddUserSuccess = ({ commit }, data) => commit(types.RECEIVE_ADD_USER_SUCCESS, data);
-  export const receiveAddUserError = ({ commit }, error) => commit(types.REQUEST_ADD_USER_ERROR, error);
-
-  export const addUser = ({ state, dispatch }, user) => {
-    dispatch('requestAddUser');
+  export const addUser = ({ state, commit }, user) => {
+    commit(types.REQUEST_ADD_USER);
 
     axios.post(state.endpoint, user)
-      .then(({ data }) => dispatch('receiveAddUserSuccess', data))
-      .catch((error) => dispatch('receiveAddUserError', error));
+      .then(({ data }) => commit(types.RECEIVE_ADD_USER_SUCCESS, data))
+      .catch((error) => commit(types.REQUEST_ADD_USER_ERROR, error));
   }
 ```
 
-#### Actions Pattern: `request` and `receive` namespaces
-When a request is made we often want to show a loading state to the user.
+#### Asynchronous Actions Pattern
 
-Instead of creating an action to toggle the loading state and dispatch it in the component,
-create:
+When a request is made we often want to show a loading state or error messages to the user when performing an asynchronous operation. 
+To make these easy to understand and consistent across different part of the application,
+we are adopting the [Async Action Creators](https://redux.js.org/advanced/async-actions#async-action-creators) pattern from Redux
+(see also the similar example in the [Vuex documentation](https://vuex.vuejs.org/guide/actions.html#dispatching-actions)).
 
-1. An action `requestSomething`, to toggle the loading state
-1. An action `receiveSomethingSuccess`, to handle the success callback
-1. An action `receiveSomethingError`, to handle the error callback
-1. An action `fetchSomething` to make the request.
-    1. In case your application does more than a `GET` request you can use these as examples:
-        - `POST`: `createSomething`
-        - `PUT`: `updateSomething`
-        - `DELETE`: `deleteSomething`
+This means to create:
 
-The component MUST only dispatch the `fetchNamespace` action. Actions namespaced with `request` or `receive` should not be called from the component
-The `fetch` action will be responsible to dispatch `requestNamespace`, `receiveNamespaceSuccess` and `receiveNamespaceError`
+1. A mutation `REQUEST_SOMETHING`, to toggle the loading state
+1. A mutation `RECEIVE_SOMETHING_SUCCESS`, to handle the success callback
+1. A mutation `RECEIVE_SOMETHING_ERROR`, to handle the error callback
+1. An action `fetchSomething` to make the request and commit the mutations:
+
+```javascript
+import axios from '~/lib/utils/axios_utils';
+import * as types from './mutation_types';
+
+export const fetchSomething = ({ state, commit }, someParameter) => {
+  commit(types.REQUEST_SOMETHING);
+
+  return axios.get(state.endpoint, { params: someParameter })
+    .then(({ data }) => {
+      commit(types.RECEIVE_SOMETHING_SUCCESS, data);
+    })
+    .catch(error => {
+      commit(types.RECEIVE_SOMETHING_ERROR, error);
+    });
+};
+```
+
+In case your application does something other than a `GET` request, please adjust the action name according to the following examples:
+
+- `POST`: `createSomething`
+- `PUT`: `updateSomething`
+- `DELETE`: `deleteSomething`
 
 By following this pattern we guarantee:
 
