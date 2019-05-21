@@ -122,6 +122,7 @@ RSpec.configure do |config|
   config.before do |example|
     # Enable all features by default for testing
     allow(Feature).to receive(:enabled?) { true }
+    allow(Feature).to receive(:enabled?).with('gitaly_catfile-cache').and_return(false)
 
     enabled = example.metadata[:enable_rugged].present?
 
