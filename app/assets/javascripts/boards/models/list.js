@@ -2,10 +2,10 @@
 /* global ListIssue */
 
 import { __ } from '~/locale';
-import ListLabel from '~/vue_shared/models/label';
-import ListAssignee from '~/vue_shared/models/assignee';
 import { isEE, urlParamsToObject } from '~/lib/utils/common_utils';
 import boardsStore from '../stores/boards_store';
+import ListAssignee from './assignee';
+import ListLabel from './label';
 import ListMilestone from './milestone';
 
 const PER_PAGE = 20;

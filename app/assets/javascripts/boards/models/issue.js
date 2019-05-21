@@ -4,8 +4,8 @@
 /* global ListAssignee */
 
 import Vue from 'vue';
-import '~/vue_shared/models/label';
 import { isEE, convertObjectPropsToCamelCase } from '~/lib/utils/common_utils';
+import './label';
 import IssueProject from './project';
 import boardsStore from '../stores/boards_store';
 

@@ -4,13 +4,13 @@ import Vue from 'vue';
 
 import Flash from '~/flash';
 import { __ } from '~/locale';
-import '~/vue_shared/models/label';
-import '~/vue_shared/models/assignee';
 
 import FilteredSearchBoards from './filtered_search_boards';
 import eventHub from './eventhub';
 import sidebarEventHub from '~/sidebar/event_hub';
+import './models/assignee';
 import './models/issue';
+import './models/label';
 import './models/list';
 import './models/milestone';
 import './models/project';
