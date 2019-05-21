@@ -2,7 +2,7 @@
 
 require 'yaml'
 
-NO_CHANGELOG_LABELS = %w[backstage ci-build Documentation feature\ flag meta QA test].freeze
+NO_CHANGELOG_LABELS = %w[backstage ci-build Documentation hide-changelog-warning meta QA test].freeze
 SEE_DOC = "See [the documentation](https://docs.gitlab.com/ce/development/changelog.html).".freeze
 CREATE_CHANGELOG_MESSAGE = <<~MSG.freeze
 You can create one with:
@@ -43,7 +43,7 @@ rescue StandardError => e
 end
 
 def presented_no_changelog_labels
-  NO_CHANGELOG_LABELS.map { |label| "~\"#{label}\"" }.join(", ")
+  NO_CHANGELOG_LABELS.map { |label| "~#{label}" }.join(', ')
 end
 
 changelog_needed = (gitlab.mr_labels & NO_CHANGELOG_LABELS).empty?
