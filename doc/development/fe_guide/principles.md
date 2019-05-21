@@ -8,7 +8,7 @@ Discuss your architecture design in an issue before writing code. This helps dec
 
 ## Be consistent
 
-There are multiple ways of writing code to accomplish the same results. We should be as consistent as possible in how we write code across our codebases. This will make it more easier us to maintain our code across GitLab.
+There are multiple ways of writing code to accomplish the same results. We should be as consistent as possible in how we write code across our codebases. This will make it easier us to maintain our code across GitLab.
 
 ## Improve code [iteratively](https://about.gitlab.com/handbook/values/#iteration)
 
