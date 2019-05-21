@@ -6,6 +6,7 @@ module QA
   module Service
     class Webhook
       include Service::Shellout
+      include QA::Support::Api
 
       attr_reader :port
 
@@ -22,6 +23,16 @@ module QA
         'bridge'
       else
         @network
+      end
+
+      def no_of_calls
+        no_of_calls_req = Runtime::API::Request.new(api_client, "calls/count", version: '')
+        response = get no_of_calls_req.url
+        parse_body(response)
+      end
+
+      def api_client
+        @api_client ||= Runtime::API::Client.new("http://#{hostname}:#{@port}")
       end
 
       def hostname
