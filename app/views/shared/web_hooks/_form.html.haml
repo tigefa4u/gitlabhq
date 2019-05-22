@@ -25,8 +25,8 @@
       %p.light.ml-1
         This URL will be triggered when a new tag is pushed to the repository
     %li
-      = form.check_box :note_events, class: 'form-check-input'
-      = form.label :note_events, class: 'list-label form-check-label ml-1 qa-note-events-checkbox' do
+      = form.check_box :note_events, class: 'form-check-input qa-note-events-checkbox'
+      = form.label :note_events, class: 'list-label form-check-label ml-1' do
         %strong Comments
       %p.light.ml-1
         This URL will be triggered when someone adds a comment
@@ -49,8 +49,8 @@
       %p.light.ml-1
         This URL will be triggered when a confidential issue is created/updated/merged
     %li
-      = form.check_box :merge_requests_events, class: 'form-check-input'
-      = form.label :merge_requests_events, class: 'list-label form-check-label ml-1 qa-merge-request-events-checkbox' do
+      = form.check_box :merge_requests_events, class: 'form-check-input qa-merge-request-events-checkbox'
+      = form.label :merge_requests_events, class: 'list-label form-check-label ml-1' do
         %strong Merge request events
       %p.light.ml-1
         This URL will be triggered when a merge request is created/updated/merged

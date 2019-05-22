@@ -34,14 +34,41 @@ module QA
           page.click_add_webhook_button
         end
 
-        expect(webhook_service.no_of_calls[:count]).to eq 0
+        expect(webhook_service.calls_count).to eq 0
 
         Resource::Issue.fabricate! do |issue|
           issue.project = project
           issue.title = "An issue title"
         end
 
-        expect(webhook_service.no_of_calls[:count]).to eq 1
+        Support::Waiter.wait(max: 10, interval: 1) do
+          webhook_service.calls_count == 1
+        end
+
+        expect(webhook_service.last_call_event_type).to eq "issue"
+
+        Page::Project::Issue::Show.perform do |show_page|
+          show_page.comment('This is a comment')
+        end
+
+        Support::Waiter.wait(max: 10, interval: 1) do
+          webhook_service.calls_count == 2
+        end
+
+        expect(webhook_service.last_call_event_type).to eq "note"
+
+        Resource::Repository::ProjectPush.fabricate! do |push|
+          push.project = project
+          push.file_name = 'README.md'
+          push.file_content = '# This is a test project'
+          push.commit_message = 'Add README.md'
+        end
+
+        Support::Waiter.wait(max: 10, interval: 1) do
+          webhook_service.calls_count == 3
+        end
+
+        expect(webhook_service.last_call_event_type).to eq "push"
       end
     end
   end

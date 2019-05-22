@@ -25,10 +25,16 @@ module QA
         @network
       end
 
-      def no_of_calls
-        no_of_calls_req = Runtime::API::Request.new(api_client, "calls/count", version: '')
-        response = get no_of_calls_req.url
-        parse_body(response)
+      def calls_count
+        request = Runtime::API::Request.new(api_client, "calls/count", version: '')
+        response = get request.url
+        parse_body(response)[:count]
+      end
+
+      def last_call_event_type
+        request = Runtime::API::Request.new(api_client, "calls/last", version: '')
+        response = get request.url
+        parse_body(response)[:payload][:object_kind]
       end
 
       def api_client
