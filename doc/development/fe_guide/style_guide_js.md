@@ -95,6 +95,7 @@ See [our current .eslintrc](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/
 #### Modules, Imports, and Exports
 
 1. Use ES module syntax to import modules
+
     ```javascript
       // bad
       const SomeClass = require('some_class');
@@ -168,6 +169,7 @@ See [our current .eslintrc](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/
    Do not use them anymore and feel free to remove them when refactoring legacy code.
 
 1. Avoid adding to the global namespace.
+
     ```javascript
       // bad
       window.MyClass = class { /* ... */ };
@@ -177,6 +179,7 @@ See [our current .eslintrc](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/
     ```
 
 1. Side effects are forbidden in any script which contains exports
+
     ```javascript
       // bad
       export default class MyClass { /* ... */ }
@@ -449,6 +452,7 @@ Please check this [rules][eslint-plugin-vue-rules] for more documentation.
 #### Props
 
 1. Props should be declared as an object
+
     ```javascript
       // bad
       props: ['foo']
