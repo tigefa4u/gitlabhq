@@ -31,6 +31,13 @@
     background-color: $btn-active-gray;
     box-shadow: $gl-btn-active-background;
   }
+
+  &:hover,
+  &:focus,
+  &:active {
+    border-width: 2px;
+    padding: ($gl-btn-vert-padding - 1px) ($gl-btn-horz-padding - 1px);
+  }
 }
 
 @mixin btn-middle {
@@ -158,12 +165,24 @@
     padding: $gl-vert-padding $gl-btn-padding;
     font-size: $gl-btn-small-font-size;
     line-height: $gl-btn-small-line-height;
+
+    &:hover,
+    &:focus,
+    &:active {
+      padding: ($gl-vert-padding - 1px) ($gl-btn-padding - 1px);
+    }
   }
 
   &.btn-xs {
     padding: $gl-padding-4 $gl-padding-8;
     font-size: $gl-btn-xs-font-size;
     line-height: $gl-btn-xs-line-height;
+
+    &:hover,
+    &:focus,
+    &:active {
+      padding: ($gl-padding-4 - 1px) ($gl-padding-8 - 1px);
+    }
   }
 
   &.btn-success,
@@ -296,6 +315,12 @@
 
 .btn-lg {
   padding: 12px 20px;
+
+  &:hover,
+  &:focus,
+  &:active {
+    padding: 11px 19px;
+  }
 }
 
 .btn-transparent {

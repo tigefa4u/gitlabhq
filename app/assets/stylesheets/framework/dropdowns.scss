@@ -123,6 +123,12 @@
     border-color: $dropdown-toggle-active-border-color;
     outline: 0;
   }
+
+  &:hover,
+  &:focus,
+  &:active {
+    padding: 5px 7px 5px 9px;
+  }
 }
 
 .dropdown-menu-toggle {
