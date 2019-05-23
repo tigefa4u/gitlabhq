@@ -80,7 +80,8 @@ describe Service do
       context 'when template is invalid' do
         it 'sets service template to inactive when template is invalid' do
           project = create(:project)
-          template = KubernetesService.new(template: true, active: true)
+          # ideally this would use `MockDeploymentService` but it has no validations
+          template = build(:prometheus_service, template: true, active: true, properties: {})
           template.save(validate: false)
 
           service = described_class.build_from_template(project.id, template)
@@ -307,10 +308,10 @@ describe Service do
   end
 
   describe '.find_by_template' do
-    let!(:kubernetes_service) { create(:kubernetes_service, template: true) }
+    let!(:mock_deployment_service) { create(:mock_deployment_service, template: true) }
 
     it 'returns service template' do
-      expect(KubernetesService.find_by_template).to eq(kubernetes_service)
+      expect(MockDeploymentService.find_by_template).to eq(mock_deployment_service)
     end
   end
 

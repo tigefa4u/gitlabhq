@@ -259,7 +259,6 @@ class Service < ApplicationRecord
       hipchat
       irker
       jira
-      kubernetes
       mattermost_slash_commands
       mattermost
       packagist

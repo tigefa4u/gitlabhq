@@ -16,16 +16,6 @@ FactoryBot.define do
     )
   end
 
-  factory :kubernetes_service do
-    project
-    type 'KubernetesService'
-    active true
-    properties({
-      api_url: 'https://kubernetes.example.com',
-      token: 'a' * 40
-    })
-  end
-
   factory :mock_deployment_service do
     project
     type 'MockDeploymentService'

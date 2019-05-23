@@ -4330,9 +4330,6 @@ msgstr ""
 msgid "February"
 msgstr ""
 
-msgid "Fields on this page are now uneditable, you can configure"
-msgstr ""
-
 msgid "File"
 msgid_plural "Files"
 msgstr[0] ""
@@ -5502,9 +5499,6 @@ msgid "Kubernetes configured"
 msgstr ""
 
 msgid "Kubernetes error: %{error_code}"
-msgstr ""
-
-msgid "Kubernetes service integration has been deprecated. %{deprecated_message_content} your Kubernetes clusters using the new <a href=\"%{url}\"/>Kubernetes Clusters</a> page"
 msgstr ""
 
 msgid "LFS"
@@ -11395,9 +11389,6 @@ msgid "Your Conversational Development Index gives an overview of how you are us
 msgstr ""
 
 msgid "Your Groups"
-msgstr ""
-
-msgid "Your Kubernetes cluster information on this page is still editable, but you are advised to disable and reconfigure"
 msgstr ""
 
 msgid "Your Projects (default)"
