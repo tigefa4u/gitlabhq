@@ -33,8 +33,8 @@ module QA::Page
       private
 
       def loaded?(wait: 60)
-        wait(reload: true, max: wait, interval: 5) do
-          has_element?(:build_trace, wait: 5)
+        wait(reload: true, max: wait, interval: 1) do
+          has_element?(:build_trace, wait: 1)
         end
       end
 
