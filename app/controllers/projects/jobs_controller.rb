@@ -42,9 +42,12 @@ class Projects::JobsController < Projects::ApplicationController
   # rubocop: disable CodeReuse/ActiveRecord
   def show
     @pipeline = @build.pipeline
+
     @builds = @pipeline.builds
       .order('id DESC')
       .present(current_user: current_user)
+
+    Rails.logger.debug(@builds.map { |b| [b.id, b.name, b.status] }.inspect)
 
     respond_to do |format|
       format.html
