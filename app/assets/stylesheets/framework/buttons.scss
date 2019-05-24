@@ -24,7 +24,7 @@
   border-radius: $border-radius-default;
   font-size: $gl-font-size;
   font-weight: $gl-font-weight-normal;
-  padding: $gl-btn-vert-padding $gl-btn-horz-padding;
+  padding: ($gl-vert-padding + 1px) $gl-btn-horz-padding;
 
   &:focus,
   &:active {
@@ -36,7 +36,7 @@
   &:focus,
   &:active {
     border-width: 2px;
-    padding: ($gl-btn-vert-padding - 1px) ($gl-btn-horz-padding - 1px);
+    padding: $gl-vert-padding ($gl-btn-horz-padding - 1px);
   }
 }
 
@@ -156,32 +156,25 @@
 
   color: $gl-text-color;
   white-space: nowrap;
+  line-height: $gl-btn-line-height;
 
   &:focus:active {
     outline: 0;
   }
 
-  &.btn-sm {
-    padding: $gl-vert-padding $gl-btn-padding;
-    font-size: $gl-btn-small-font-size;
-    line-height: $gl-btn-small-line-height;
-
-    &:hover,
-    &:focus,
-    &:active {
-      padding: ($gl-vert-padding - 1px) ($gl-btn-padding - 1px);
-    }
-  }
-
   &.btn-xs {
-    padding: $gl-padding-4 $gl-padding-8;
     font-size: $gl-btn-xs-font-size;
     line-height: $gl-btn-xs-line-height;
+  }
+
+  &.btn-sm,
+  &.btn-xs {
+    padding: 3px ($gl-vert-padding + 1px);
 
     &:hover,
     &:focus,
     &:active {
-      padding: ($gl-padding-4 - 1px) ($gl-padding-8 - 1px);
+      padding: 2px $gl-vert-padding;
     }
   }
 
@@ -258,7 +251,7 @@
 
   &.dropdown-toggle {
     .fa-caret-down {
-      margin-left: 3px;
+      margin: 0 3px;
     }
   }
 

@@ -64,7 +64,7 @@
 }
 
 .dropdown-toggle {
-  padding: 6px 8px 6px 10px;
+  padding: $gl-vert-padding $gl-padding-8;
   background-color: $white-light;
   color: $gl-text-color;
   font-size: 14px;
@@ -124,10 +124,10 @@
     outline: 0;
   }
 
-  &:hover,
-  &:focus,
-  &:active {
-    padding: 5px 7px 5px 9px;
+  &.btn:hover,
+  &.btn:focus,
+  &.btn:active {
+    padding: ($gl-vert-padding - 1px) ($gl-padding-8 - 1px);
   }
 }
 
@@ -160,6 +160,23 @@
     top: $gl-padding-8;
     right: $gl-padding-8;
     color: $gray-darkest;
+  }
+
+  &.btn:hover,
+  &.btn:focus,
+  &.btn:active {
+    padding-right: 24px;
+
+    .fa-chevron-down,
+    .fa-spinner {
+      top: 10px;
+      right: 7px;
+    }
+
+    .ic-chevron-down {
+      top: $gl-padding-8 - 1px;
+      right: $gl-padding-8 - 1px;
+    }
   }
 }
 
