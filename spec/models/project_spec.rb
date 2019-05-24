@@ -2612,14 +2612,6 @@ describe Project do
       end
     end
 
-    context 'when project uses mock deployment service' do
-      let(:project) { create(:mock_deployment_project) }
-
-      it 'returns an empty array' do
-        expect(project.deployment_variables).to eq []
-      end
-    end
-
     context 'when project has a deployment service' do
       context 'when user configured kubernetes from CI/CD > Clusters and KubernetesNamespace migration has not been executed' do
         let!(:cluster) { create(:cluster, :project, :provided_by_gcp) }
