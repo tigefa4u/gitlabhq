@@ -63,6 +63,8 @@ class Projects::JobsController < Projects::ApplicationController
   # rubocop: enable CodeReuse/ActiveRecord
 
   def trace
+    sleep 1 if build.name == 'production'
+
     build.trace.read do |stream|
       respond_to do |format|
         format.json do
