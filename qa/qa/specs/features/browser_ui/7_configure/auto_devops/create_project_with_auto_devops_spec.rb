@@ -30,6 +30,11 @@ module QA
 
           # Disable code_quality check in Auto DevOps pipeline as it takes
           # too long and times out the test
+          Resource::CiVariable.fabricate! do |resource|
+            resource.project = @project
+            resource.key = 'CODE_QUALITY_DISABLED'
+            resource.value = '1'
+          end
 
           # Set an application secret CI variable (prefixed with K8S_SECRET_)
           Resource::CiVariable.fabricate! do |resource|
