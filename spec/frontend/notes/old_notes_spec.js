@@ -28,9 +28,9 @@ window.gl = window.gl || {};
 gl.utils = gl.utils || {};
 gl.utils.disableButtonIfEmptyField = () => {};
 
-const deferredPromise = (time = 0) =>
+const deferredPromise = () =>
   new Promise(resolve => {
-    setImmediate(resolve, time);
+    setImmediate(resolve);
   });
 
 const htmlEscape = comment => {
@@ -416,7 +416,7 @@ describe('Old Notes (~/notes.js)', () => {
       notes.note_ids = [];
 
       jest.spyOn(Notes, 'isNewNote');
-      jest.spyOn(Notes, 'animateAppendNote').mockImplementation(() => {});
+      jest.spyOn(Notes, 'animateAppendNote').mockImplementation();
       Notes.isNewNote.mockReturnValue(true);
       notes.isParallelView.mockReturnValue(false);
       row.prevAll.mockReturnValue(row);
@@ -433,7 +433,7 @@ describe('Old Notes (~/notes.js)', () => {
 
         $form.closest
           .mockReturnValueOnce(row)
-          .mockReturnValueOnce($form);
+          .mockReturnValue($form);
         $form.find.mockReturnValue(discussionContainer);
         body.attr.mockReturnValue('');
       });
@@ -447,7 +447,7 @@ describe('Old Notes (~/notes.js)', () => {
         );
       });
 
-      xit('should append to row selected with line_code', () => {
+      it('should append to row selected with line_code', () => {
         $form.length = 0;
         note.discussion_line_code = 'line_code';
         note.diff_discussion_html = '<tr></tr>';
@@ -456,6 +456,8 @@ describe('Old Notes (~/notes.js)', () => {
         line.id = note.discussion_line_code;
         document.body.appendChild(line);
 
+        // Override mocks for this single test
+        $form.closest.mockReset();
         $form.closest.mockReturnValue($form);
 
         Notes.prototype.renderDiscussionNote.call(notes, note, $form);
@@ -654,9 +656,13 @@ describe('Old Notes (~/notes.js)', () => {
       });
     });
 
-    xit('should show flash error message when comment failed to be updated', done => {
+    // This is a bad test. The corresponding test in the Karma suite tests for
+    // elements and methods that don't actually exist, and gives a false
+    // positive pass.
+    /*
+    it('should show flash error message when comment failed to be updated', done => {
       mockNotesPost();
-      jest.spyOn(notes, 'addFlash');
+      jest.spyOn(notes, 'addFlash').mockName('addFlash');
 
       $('.js-comment-button').click();
 
@@ -669,8 +675,9 @@ describe('Old Notes (~/notes.js)', () => {
           mockNotesPostError();
 
           $noteEl.find('.js-comment-save-button').click();
+          notes.updateComment({preventDefault: () => {}});
         })
-        .then(deferredPromise)
+        .then(() => deferredPromise())
         .then(() => {
           const $updatedNoteEl = $notesContainer.find(`#note_${note.id}`);
 
@@ -688,6 +695,7 @@ describe('Old Notes (~/notes.js)', () => {
         })
         .catch(done.fail);
     }, 5000);
+    */
   });
 
   describe('postComment with Slash commands', () => {
