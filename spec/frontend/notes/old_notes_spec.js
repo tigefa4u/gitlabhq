@@ -60,6 +60,12 @@ describe('Old Notes (~/notes.js)', () => {
     mockAxios = new MockAdapter(axios);
 
     // $.ajax = jest.fn();
+
+    // These jQuery+DOM tests are super flaky so increase the timeout to avoid
+    // random failures.
+    // It seems that running tests in parallel increases failure rate.
+    jest.setTimeout(4000);
+    setTestTimeoutOnce(4000);
   });
 
   afterEach(done => {
@@ -82,7 +88,6 @@ describe('Old Notes (~/notes.js)', () => {
 
   describe('addBinding', () => {
     it('calls postComment when comment button is clicked', () => {
-      setTestTimeoutOnce(1000);
       jest.spyOn(Notes.prototype, 'postComment');
 
       new window.Notes('', []);
@@ -574,7 +579,6 @@ describe('Old Notes (~/notes.js)', () => {
     });
 
     it('should show placeholder note while new comment is being posted', () => {
-      setTestTimeoutOnce(1000);
       mockNotesPost();
 
       $('.js-comment-button').click();
@@ -583,7 +587,6 @@ describe('Old Notes (~/notes.js)', () => {
     });
 
     it('should remove placeholder note when new comment is done posting', done => {
-      setTestTimeoutOnce(1000);
       mockNotesPost();
 
       $('.js-comment-button').click();
@@ -619,7 +622,6 @@ describe('Old Notes (~/notes.js)', () => {
     });
 
     it('should show actual note element when new comment is done posting', done => {
-      setTestTimeoutOnce(1000);
       mockNotesPost();
 
       $('.js-comment-button').click();
@@ -631,7 +633,6 @@ describe('Old Notes (~/notes.js)', () => {
     });
 
     it('should reset Form when new comment is done posting', done => {
-      setTestTimeoutOnce(1000);
       mockNotesPost();
 
       $('.js-comment-button').click();
@@ -734,7 +735,6 @@ describe('Old Notes (~/notes.js)', () => {
     });
 
     it('should remove slash command placeholder when comment with slash commands is done posting', done => {
-      setTestTimeoutOnce(1000);
       jest.spyOn(gl.awardsHandler, 'addAwardToEmojiBar');
       $('.js-comment-button').click();
 
@@ -773,7 +773,6 @@ describe('Old Notes (~/notes.js)', () => {
     });
 
     it('should not render a script tag', done => {
-      setTestTimeoutOnce(1000);
       $('.js-comment-button').click();
 
       setImmediate(() => {
