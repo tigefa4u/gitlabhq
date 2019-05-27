@@ -1,7 +1,7 @@
 /* eslint-disable import/no-commonjs, no-new, global-require */
 
 import $ from 'jquery';
-import _ from "underscore";
+import _ from 'underscore';
 import MockAdapter from 'axios-mock-adapter';
 import axios from '~/lib/utils/axios_utils';
 import { createSpyObj } from 'helpers/jest_helpers';
@@ -28,10 +28,10 @@ window.gl = window.gl || {};
 gl.utils = gl.utils || {};
 gl.utils.disableButtonIfEmptyField = () => {};
 
-const deferredPromise = () =>
-  new Promise(resolve => {
-    setImmediate(resolve);
-  });
+// const deferredPromise = () =>
+//   new Promise(resolve => {
+//     setImmediate(resolve);
+//   });
 
 const htmlEscape = comment => {
   const escapedString = comment.replace(/["&'<>]/g, a => {
@@ -77,7 +77,7 @@ describe('Old Notes (~/notes.js)', () => {
       // Wait for any requests to resolve, otherwise we get failures about
       // unmocked requests.
       mockAxios.restore();
-      done()
+      done();
     });
   });
 
@@ -112,7 +112,7 @@ describe('Old Notes (~/notes.js)', () => {
       expect($('.js-task-list-field.original-task-list').val()).toBe('- [x] Task List Item');
     });
 
-    it('submits an ajax request on tasklist:changed', (done) => {
+    it('submits an ajax request on tasklist:changed', done => {
       jest.spyOn(axios, 'patch');
 
       const lineNumber = 8;
@@ -122,14 +122,14 @@ describe('Old Notes (~/notes.js)', () => {
 
       $('.js-task-list-container').trigger({
         type: 'tasklist:changed',
-        detail: {lineNumber, lineSource, index, checked},
+        detail: { lineNumber, lineSource, index, checked },
       });
 
       expect(axios.patch).toHaveBeenCalledWith(undefined, {
         note: {
           note: '',
           lock_version: undefined,
-          update_task: {index, checked, line_number: lineNumber, line_source: lineSource},
+          update_task: { index, checked, line_number: lineNumber, line_source: lineSource },
         },
       });
 
@@ -211,7 +211,7 @@ describe('Old Notes (~/notes.js)', () => {
       mockAxios.onPost(NOTES_POST_PATH).reply(200, noteEntity);
     });
 
-    it('updates note and resets edit form', (d) => {
+    it('updates note and resets edit form', d => {
       jest.spyOn(notes, 'revertNoteEditForm');
       jest.spyOn(notes, 'setupNewNote');
 
@@ -436,9 +436,7 @@ describe('Old Notes (~/notes.js)', () => {
         body = createSpyObj('body', ['attr']);
         discussionContainer = { length: 0 };
 
-        $form.closest
-          .mockReturnValueOnce(row)
-          .mockReturnValue($form);
+        $form.closest.mockReturnValueOnce(row).mockReturnValue($form);
         $form.find.mockReturnValue(discussionContainer);
         body.attr.mockReturnValue('');
       });
@@ -475,9 +473,7 @@ describe('Old Notes (~/notes.js)', () => {
       beforeEach(() => {
         discussionContainer = { length: 1 };
 
-        $form.closest
-          .mockReturnValueOnce(row)
-          .mockReturnValueOnce($form);
+        $form.closest.mockReturnValueOnce(row).mockReturnValueOnce($form);
         $form.find.mockReturnValue(discussionContainer);
 
         Notes.prototype.renderDiscussionNote.call(notes, note, $form);
@@ -548,7 +544,6 @@ describe('Old Notes (~/notes.js)', () => {
 
   describe('postComment & updateComment', () => {
     const sampleComment = 'foo';
-    const updatedComment = 'bar';
     const note = {
       id: 1234,
       html: `<li class="note note-row-1234 timeline-entry" id="note_1234">
@@ -800,7 +795,7 @@ describe('Old Notes (~/notes.js)', () => {
   describe('getFormData', () => {
     let $form;
     let sampleComment;
-    let notes
+    let notes;
 
     beforeEach(() => {
       notes = new Notes('', []);
@@ -948,8 +943,8 @@ describe('Old Notes (~/notes.js)', () => {
       expect($tempNote.attr('id')).toEqual(uniqueId);
       expect($tempNote.hasClass('being-posted')).toBeTruthy();
       expect($tempNote.hasClass('fade-in-half')).toBeTruthy();
-      $tempNote.find('.timeline-icon > a, .note-header-info > a').each(function() {
-        expect($(this).attr('href')).toEqual(`/${currentUsername}`);
+      $tempNote.find('.timeline-icon > a, .note-header-info > a').each((i, el) => {
+        expect(el.getAttribute('href')).toEqual(`/${currentUsername}`);
       });
 
       expect($tempNote.find('.timeline-icon .avatar').attr('src')).toEqual(currentUserAvatar);
