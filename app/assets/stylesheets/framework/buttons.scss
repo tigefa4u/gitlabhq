@@ -147,7 +147,7 @@
   height: $gl-padding;
   width: $gl-padding;
   top: 0;
-  vertical-align: text-top;
+  vertical-align: top;
 }
 
 .btn {
@@ -285,10 +285,7 @@
   }
 
   svg {
-    height: 15px;
-    width: 15px;
-    position: relative;
-    top: 2px;
+    @include btn-svg;
   }
 
   svg,
