@@ -32,6 +32,10 @@ class MemberPresenter < Gitlab::View::Presenter::Delegated
     request? && can_update?
   end
 
+  def can_override?
+    false
+  end
+
   private
 
   def admin_member_permission

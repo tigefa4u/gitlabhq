@@ -10,4 +10,4 @@
     %strong= membership_source.name
     %span.badge.badge-pill= requesters.size
   %ul.content-list.members-list
-    = render partial: 'shared/members/member', collection: requesters, as: :member, locals: { force_mobile_view: force_mobile_view }
+    = render_if_exists partial: 'shared/members/member', collection: requesters, as: :member, locals: { force_mobile_view: force_mobile_view }
