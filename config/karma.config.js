@@ -9,6 +9,9 @@ const IS_EE = require('./helpers/is_ee_env');
 const ROOT_PATH = path.resolve(__dirname, '..');
 const SPECS_PATH = /^(?:\.[\\\/])?(ee[\\\/])?spec[\\\/]javascripts[\\\/]/;
 
+const QUARANTINED_REGEX = /QUARANTINE\|/;
+const UNQUARANTINED_REGEX = /^((?!QUARANTINE\|).)*$/;
+
 function exitError(message) {
   console.error(chalk.red(`\nError: ${message}\n`));
   process.exit(1);
@@ -109,11 +112,14 @@ module.exports = function(config) {
 
   const fixturesPath = `${IS_EE ? 'ee/' : ''}spec/javascripts/fixtures`;
 
+  const grepRegex = process.env.QUARANTINE ? QUARANTINED_REGEX : UNQUARANTINED_REGEX;
+
   const karmaConfig = {
     basePath: ROOT_PATH,
     browsers: ['ChromeHeadlessCustom'],
     client: {
       color: !process.env.CI,
+      args: ['--grep', grepRegex.toString()],
     },
     customLaunchers: {
       ChromeHeadlessCustom: {

@@ -110,7 +110,7 @@ gitlab:ui:visual:
       - gitlab-ui/tests/__image_snapshots__/
     when: always
 
-karma:
+.karma: &karma
   extends: .dedicated-no-docs-pull-cache-job
   <<: *use-pg
   dependencies:
@@ -119,12 +119,6 @@ karma:
   variables:
     # we override the max_old_space_size to prevent OOM errors
     NODE_OPTIONS: --max_old_space_size=3584
-  script:
-    - export BABEL_ENV=coverage CHROME_LOG_FILE=chrome_debug.log
-    - date
-    - scripts/gitaly-test-spawn
-    - date
-    - bundle exec rake karma
   coverage: '/^Statements *: (\d+\.\d+%)/'
   artifacts:
     name: coverage-javascript
@@ -135,6 +129,24 @@ karma:
       - coverage-javascript/
     reports:
       junit: junit_karma.xml
+
+karma:
+  <<: *karma
+  script:
+    - export BABEL_ENV=coverage CHROME_LOG_FILE=chrome_debug.log
+    - date
+    - scripts/gitaly-test-spawn
+    - date
+    - bundle exec rake karma
+
+karma-quarantine:
+  <<: *karma
+  script:
+    - date
+    - scripts/gitaly-test-spawn
+    - date
+    - QUARANTINE=true bundle exec rake karma
+  allow_failure: true
 
 jest:
   extends: .dedicated-no-docs-and-no-qa-pull-cache-job

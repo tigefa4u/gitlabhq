@@ -186,7 +186,7 @@ describe('note_app', () => {
         expect(wrapper.find('.js-vue-issue-note-form').exists()).toBe(true);
       });
 
-      it('calls the service to update the note', done => {
+      it('QUARANTINE|calls the service to update the note', done => {
         wrapper.find('.js-vue-issue-note-form').value = 'this is a note';
         wrapper.find('.js-vue-issue-save').trigger('click');
 
@@ -221,7 +221,7 @@ describe('note_app', () => {
         expect(wrapper.find('.js-vue-issue-note-form').exists()).toBe(true);
       });
 
-      it('updates the note and resets the edit form', done => {
+      it('QUARANTINE|updates the note and resets the edit form', done => {
         wrapper.find('.js-vue-issue-note-form').value = 'this is a note';
         wrapper.find('.js-vue-issue-save').trigger('click');
 
@@ -311,6 +311,7 @@ describe('note_app', () => {
         },
       });
       const toggleAwardAction = jasmine.createSpy('toggleAward');
+      wrapper = mountComponent();
       wrapper.vm.$store.hotUpdate({
         actions: {
           toggleAward: toggleAwardAction,
