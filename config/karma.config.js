@@ -112,6 +112,7 @@ module.exports = function(config) {
   const karmaConfig = {
     basePath: ROOT_PATH,
     browsers: ['ChromeHeadlessCustom'],
+    concurrency: process.env.CI ? 2 : Infinity,
     client: {
       color: !process.env.CI,
     },
