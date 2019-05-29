@@ -166,12 +166,22 @@ describe('note_app', () => {
   describe('update note', () => {
     describe('individual note', () => {
       beforeEach(done => {
+        console.log(1);
         Vue.http.interceptors.push(mockData.individualNoteInterceptor);
+        console.log(2);
+        console.log(Vue.http.interceptors);
         spyOn(service, 'updateNote').and.callThrough();
+        console.log(3);
         wrapper = mountComponent();
+        console.log(4);
         setTimeout(() => {
+          console.log(5);
           wrapper.find('.js-note-edit').trigger('click');
-          Vue.nextTick(done);
+          console.log(6);
+          Vue.nextTick(() => {
+            console.log(7);
+            done();
+          });
         }, 0);
       });
 
@@ -182,8 +192,13 @@ describe('note_app', () => {
         );
       });
 
-      it('renders edit form', () => {
+      it('renders edit form', done => {
+        console.log(8);
         expect(wrapper.find('.js-vue-issue-note-form').exists()).toBe(true);
+        // Wait for the requests to finish before destroying
+        setTimeout(() => {
+          done();
+        });
       });
 
       it('calls the service to update the note', done => {
@@ -311,6 +326,7 @@ describe('note_app', () => {
         },
       });
       const toggleAwardAction = jasmine.createSpy('toggleAward');
+      wrapper = mountComponent();
       wrapper.vm.$store.hotUpdate({
         actions: {
           toggleAward: toggleAwardAction,
