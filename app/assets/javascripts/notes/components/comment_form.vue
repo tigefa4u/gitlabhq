@@ -347,6 +347,7 @@ Please check your network connection and try again.`;
               :markdown-docs-path="markdownDocsPath"
               :quick-actions-docs-path="quickActionsDocsPath"
               :add-spacing-classes="false"
+              :can-indent="true"
             >
               <textarea
                 id="note-body"
