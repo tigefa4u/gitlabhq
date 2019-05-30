@@ -245,6 +245,7 @@ export default {
         :line="line"
         :note="discussionNote"
         :can-suggest="canSuggest"
+        :can-indent="true"
         :add-spacing-classes="false"
         :help-page-path="helpPagePath"
       >

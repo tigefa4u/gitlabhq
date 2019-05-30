@@ -1,5 +1,6 @@
 <script>
 import { GlLink } from '@gitlab/ui';
+import { getPlatformLeaderKeyHTML } from "~/lib/utils/common_utils";
 
 export default {
   components: {
@@ -20,11 +21,19 @@ export default {
       required: false,
       default: true,
     },
+    canIndent: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
   },
   computed: {
     hasQuickActionsDocsPath() {
       return this.quickActionsDocsPath !== '';
     },
+    leaderKeyHTML() {
+      return getPlatformLeaderKeyHTML();
+    }
   },
 };
 </script>
@@ -34,13 +43,17 @@ export default {
     <div class="toolbar-text">
       <template v-if="!hasQuickActionsDocsPath && markdownDocsPath">
         <gl-link :href="markdownDocsPath" target="_blank" tabindex="-1"
-          >Markdown is supported</gl-link
+          >Markdown is supported.</gl-link
         >
       </template>
       <template v-if="hasQuickActionsDocsPath && markdownDocsPath">
         <gl-link :href="markdownDocsPath" target="_blank" tabindex="-1">Markdown</gl-link> and
         <gl-link :href="quickActionsDocsPath" target="_blank" tabindex="-1">quick actions</gl-link>
-        are supported
+        are supported.
+      </template>
+      <template v-if="canIndent">
+        <code><span v-html="leaderKeyHTML"></span>+[</code>
+        and <code><span v-html="leaderKeyHTML"></span>+]</code> to indent.
       </template>
     </div>
     <span v-if="canAttachFile" class="uploading-container">
