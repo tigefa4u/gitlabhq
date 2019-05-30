@@ -26,6 +26,15 @@ describe Service do
         expect(described_class.confidential_note_hooks.count).to eq 0
       end
     end
+
+    describe '.available' do
+      let!(:available_service) { create(:kubernetes_service) }
+      let!(:unavailable_service) { create(:service, type: 'UnavailableService') }
+
+      it 'includes only available services' do
+        expect(described_class.available).to contain_exactly(available_service)
+      end
+    end
   end
 
   describe "Test Button" do

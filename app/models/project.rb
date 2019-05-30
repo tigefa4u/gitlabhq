@@ -1101,7 +1101,7 @@ class Project < ApplicationRecord
   def find_or_initialize_service(name)
     return if disabled_services.include?(name)
 
-    service = find_service(services, name)
+    service = find_service(available_services, name)
     return service if service
 
     # We should check if template for the service exists
@@ -2271,6 +2271,14 @@ class Project < ApplicationRecord
   end
 
   def services_templates
-    @services_templates ||= Service.where(template: true)
+    strong_memoize(:services_templates) do
+      Service.available.templates
+    end
+  end
+
+  def available_services
+    strong_memoize(:available_services) do
+      services.available
+    end
   end
 end

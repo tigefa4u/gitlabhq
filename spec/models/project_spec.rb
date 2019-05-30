@@ -4543,11 +4543,21 @@ describe Project do
   end
 
   describe "#find_or_initialize_services" do
-    subject { build(:project) }
+    subject { create(:project) }
 
     it 'returns only enabled services' do
       allow(Service).to receive(:available_services_names).and_return(%w(prometheus pushover))
       allow(subject).to receive(:disabled_services).and_return(%w(prometheus))
+
+      services = subject.find_or_initialize_services
+
+      expect(services.count).to eq 1
+      expect(services).to include(PushoverService)
+    end
+
+    it 'returns only available services' do
+      allow(Service).to receive(:available_services_names).and_return(%w(pushover))
+      create(Service, type: 'UnavailableService', project: subject)
 
       services = subject.find_or_initialize_services
 

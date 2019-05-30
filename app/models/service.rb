@@ -53,6 +53,10 @@ class Service < ApplicationRecord
   scope :deployment_hooks, -> { where(deployment_events: true, active: true) }
   scope :external_issue_trackers, -> { issue_trackers.active.without_defaults }
   scope :deployment, -> { where(category: 'deployment') }
+  scope :templates, -> { where(template: true) }
+  scope :available, -> (names = available_services_names) {
+    where(type: names.map { |name| "#{name}_service".camelize })
+  }
 
   default_value_for :category, 'common'
 
@@ -66,10 +70,6 @@ class Service < ApplicationRecord
 
   def editable?
     true
-  end
-
-  def template?
-    template
   end
 
   def category
@@ -299,7 +299,7 @@ class Service < ApplicationRecord
   end
 
   def self.find_by_template
-    find_by(template: true)
+    templates.first
   end
 
   private
