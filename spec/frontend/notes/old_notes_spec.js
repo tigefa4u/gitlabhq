@@ -1,13 +1,14 @@
-/* eslint-disable import/no-commonjs, no-new, global-require */
+/* eslint-disable import/no-commonjs, no-new */
 
 import $ from 'jquery';
 import _ from 'underscore';
 import MockAdapter from 'axios-mock-adapter';
 import axios from '~/lib/utils/axios_utils';
-import { createSpyObj } from 'helpers/jest_helpers';
-
+import * as urlUtility from '~/lib/utils/url_utility';
 import '~/behaviors/markdown/render_gfm';
-import { setTestTimeoutOnce } from '../helpers/timeout';
+import { createSpyObj } from 'helpers/jest_helpers';
+import { setTestTimeoutOnce } from 'helpers/timeout';
+import { TEST_HOST } from 'helpers/test_constants';
 
 // These must be imported synchronously because they pull dependencies
 // from the DOM.
@@ -22,33 +23,11 @@ const NOTES_POST_PATH = /(.*)\/notes\?html=true$/;
 const fixture = 'snippets/show.html';
 let mockAxios;
 
-window.project_uploads_path = 'http://test.host/uploads';
+window.project_uploads_path = `${TEST_HOST}/uploads`;
 window.gon = window.gon || {};
 window.gl = window.gl || {};
 gl.utils = gl.utils || {};
 gl.utils.disableButtonIfEmptyField = () => {};
-
-// const deferredPromise = () =>
-//   new Promise(resolve => {
-//     setImmediate(resolve);
-//   });
-
-const htmlEscape = comment => {
-  const escapedString = comment.replace(/["&'<>]/g, a => {
-    const escapedToken = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#x27;',
-      '`': '&#x60;',
-    }[a];
-
-    return escapedToken;
-  });
-
-  return escapedString;
-};
 
 describe('Old Notes (~/notes.js)', () => {
   beforeEach(() => {
@@ -59,7 +38,9 @@ describe('Old Notes (~/notes.js)', () => {
     // overwrite it.
     mockAxios = new MockAdapter(axios);
 
-    // $.ajax = jest.fn();
+    $.ajax = () => {
+      throw new Error('$.ajax should not be called through!');
+    };
 
     // These jQuery+DOM tests are super flaky so increase the timeout to avoid
     // random failures.
@@ -112,7 +93,7 @@ describe('Old Notes (~/notes.js)', () => {
       expect($('.js-task-list-field.original-task-list').val()).toBe('- [x] Task List Item');
     });
 
-    it('submits an ajax request on tasklist:changed', done => {
+    it('submits an ajax request on tasklist:changed', () => {
       jest.spyOn(axios, 'patch');
 
       const lineNumber = 8;
@@ -132,8 +113,6 @@ describe('Old Notes (~/notes.js)', () => {
           update_task: { index, checked, line_number: lineNumber, line_source: lineSource },
         },
       });
-
-      done();
     });
   });
 
@@ -211,7 +190,7 @@ describe('Old Notes (~/notes.js)', () => {
       mockAxios.onPost(NOTES_POST_PATH).reply(200, noteEntity);
     });
 
-    it('updates note and resets edit form', d => {
+    it('updates note and resets edit form', () => {
       jest.spyOn(notes, 'revertNoteEditForm');
       jest.spyOn(notes, 'setupNewNote');
 
@@ -224,15 +203,10 @@ describe('Old Notes (~/notes.js)', () => {
 
       expect(notes.revertNoteEditForm).toHaveBeenCalledWith($targetNote);
       expect(notes.setupNewNote).toHaveBeenCalled();
-
-      // Allow async requests to resolve
-      setImmediate(d);
     });
   });
 
   describe('updateNoteTargetSelector', () => {
-    const urlUtility = require('~/lib/utils/url_utility');
-
     const hash = 'note_foo';
     let $note;
 
@@ -243,14 +217,20 @@ describe('Old Notes (~/notes.js)', () => {
     });
 
     afterEach(() => {
+      expect(typeof urlUtility.getLocationHash.mock).toBe('object');
+      urlUtility.getLocationHash.mockRestore();
+      expect(urlUtility.getLocationHash.mock).toBeUndefined();
       expect(urlUtility.getLocationHash()).toBeNull();
     });
+
+    // urlUtility is a dependency of the notes module. Its getLocatinHash() method should be called internally.
 
     it('sets target when hash matches', () => {
       jest.spyOn(urlUtility, 'getLocationHash').mockReturnValueOnce(hash);
 
       Notes.updateNoteTargetSelector($note);
 
+      expect(urlUtility.getLocationHash).toHaveBeenCalled();
       expect($note.filter).toHaveBeenCalledWith(`#${hash}`);
       expect($note.toggleClass).toHaveBeenCalledWith('target', true);
     });
@@ -260,6 +240,7 @@ describe('Old Notes (~/notes.js)', () => {
 
       Notes.updateNoteTargetSelector($note);
 
+      expect(urlUtility.getLocationHash).toHaveBeenCalled();
       expect($note.toggleClass).toHaveBeenCalledWith('target', false);
     });
 
@@ -268,6 +249,7 @@ describe('Old Notes (~/notes.js)', () => {
 
       Notes.updateNoteTargetSelector($note);
 
+      expect(urlUtility.getLocationHash).toHaveBeenCalled();
       expect($note.toggleClass).toHaveBeenCalledWith('target', false);
     });
   });
@@ -646,13 +628,14 @@ describe('Old Notes (~/notes.js)', () => {
 
       setImmediate(() => {
         expect(notes.addFlash).toHaveBeenCalled();
-        expect(notes.flashContainer.style.display).not.toBe('none');
         // JSDom doesn't support the :visible selector yet
+        expect(notes.flashContainer.style.display).not.toBe('none');
         done();
       });
     });
 
-    // This is a bad test. The corresponding test in the Karma suite tests for
+    // This is a bad test carried over from the Karma -> Jest migration.
+    // The corresponding test in the Karma suite tests for
     // elements and methods that don't actually exist, and gives a false
     // positive pass.
     /*
@@ -739,7 +722,7 @@ describe('Old Notes (~/notes.js)', () => {
         expect($notesContainer.find('.system-note.being-posted').length).toEqual(0); // Placeholder removed
         done();
       });
-    }, 1000);
+    });
   });
 
   describe('update comment with script tags', () => {
@@ -789,7 +772,7 @@ describe('Old Notes (~/notes.js)', () => {
 
         done();
       });
-    }, 2000);
+    });
   });
 
   describe('getFormData', () => {
@@ -814,7 +797,7 @@ describe('Old Notes (~/notes.js)', () => {
     });
 
     it('should return form metadata with sanitized formContent from form reference', () => {
-      jest.spyOn(_, 'escape').mockImplementation(htmlEscape);
+      jest.spyOn(_, 'escape');
 
       sampleComment = '<script>alert("Boom!");</script>';
       $form.find('textarea.js-note-text').val(sampleComment);
@@ -1012,7 +995,7 @@ describe('Old Notes (~/notes.js)', () => {
 
     beforeEach(() => {
       notes = new Notes('', []);
-      jest.spyOn(_, 'escape').mockImplementation(htmlEscape);
+      jest.spyOn(_, 'escape');
     });
 
     it('should return constructed placeholder element for system note based on form contents', () => {
