@@ -1,6 +1,5 @@
-/*
-jest_helpers.js
-
+/**
+@module
 This method provides convenience functions to help migrating from Karma/Jasmine
 to Jest.
  */
