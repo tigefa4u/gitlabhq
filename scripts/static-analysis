@@ -33,7 +33,8 @@ tasks = [
   %w[yarn run prettier-all],
   %w[bundle exec rubocop --parallel],
   %w[scripts/lint-conflicts.sh],
-  %w[scripts/lint-rugged]
+  %w[scripts/lint-rugged],
+  %w[scripts/frontend/lint-new-fe-karma-specs.sh]
 ]
 
 static_analysis = Gitlab::Popen::Runner.new
