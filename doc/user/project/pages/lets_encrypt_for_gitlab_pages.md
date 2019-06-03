@@ -151,8 +151,5 @@ valid certificates)**.
 ## Renewal
 
 Let's Encrypt certificates expire every 90 days and you'll have to
-renew them periodically. To renew all your certificates at once, run:
-
-```bash
-sudo certbot renew
-```
+renew them periodically.
+To renew certificate you need to repeat steps described above.
