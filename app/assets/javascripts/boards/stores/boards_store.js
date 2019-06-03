@@ -187,7 +187,7 @@ const boardsStore = {
     window.history.pushState(null, null, `?${this.filter.path}`);
   },
 
-  clearDetailIssue() {
+  clearIssueDetail() {
     this.detail.issue = {};
   },
 };

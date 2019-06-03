@@ -203,7 +203,7 @@ describe('Board card', () => {
       triggerEvent('mousedown');
       triggerEvent('mouseup');
 
-      expect(eventHub.$emit).toHaveBeenCalledWith('clearDetailIssue');
+      expect(eventHub.$emit).toHaveBeenCalledWith('clearIssueDetail');
     });
   });
 });

@@ -88,13 +88,13 @@ export default () => {
 
       eventHub.$on('updateTokens', this.updateTokens);
       eventHub.$on('newDetailIssue', this.updateDetailIssue);
-      eventHub.$on('clearDetailIssue', this.clearDetailIssue);
+      eventHub.$on('clearIssueDetail', this.clearIssueDetail);
       sidebarEventHub.$on('toggleSubscription', this.toggleSubscription);
     },
     beforeDestroy() {
       eventHub.$off('updateTokens', this.updateTokens);
       eventHub.$off('newDetailIssue', this.updateDetailIssue);
-      eventHub.$off('clearDetailIssue', this.clearDetailIssue);
+      eventHub.$off('clearIssueDetail', this.clearIssueDetail);
       sidebarEventHub.$off('toggleSubscription', this.toggleSubscription);
     },
     mounted() {
@@ -170,8 +170,8 @@ export default () => {
 
         boardsStore.detail.issue = newIssue;
       },
-      clearDetailIssue() {
-        boardsStore.clearDetailIssue();
+      clearIssueDetail() {
+        boardsStore.clearIssueDetail();
       },
       toggleSubscription(id) {
         const { issue } = boardsStore.detail;

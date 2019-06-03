@@ -63,7 +63,7 @@ export default {
         this.showDetail = false;
 
         if (boardsStore.detail.issue && boardsStore.detail.issue.id === this.issue.id) {
-          eventHub.$emit('clearDetailIssue');
+          eventHub.$emit('clearIssueDetail');
         } else {
           eventHub.$emit('newDetailIssue', this.issue);
           boardsStore.detail.list = this.list;

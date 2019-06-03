@@ -278,11 +278,11 @@ describe('Store', () => {
     });
   });
 
-  describe('clearDetailIssue', () => {
+  describe('clearIssueDetail', () => {
     it('resets issue details', () => {
       boardsStore.detail.issue = 'something';
 
-      boardsStore.clearDetailIssue();
+      boardsStore.clearIssueDetail();
 
       expect(boardsStore.detail.issue).toEqual({});
     });
