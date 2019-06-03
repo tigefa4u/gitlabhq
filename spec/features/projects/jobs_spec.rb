@@ -323,6 +323,8 @@ describe 'Jobs', :clean_gitlab_redis_shared_state do
       end
 
       it 'downloads the zip file when user clicks the download button' do
+        wait_for_requests
+
         requests = inspect_requests do
           click_link 'Download'
         end
