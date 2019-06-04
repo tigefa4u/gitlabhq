@@ -90,7 +90,13 @@
 
   .add-to-tree {
     vertical-align: top;
-    padding: 8px;
+    padding: ($gl-vert-padding + 1px);
+
+    &:hover,
+    &:active,
+    &:focus {
+      padding: $gl-vert-padding;
+    }
 
     svg {
       top: 0;

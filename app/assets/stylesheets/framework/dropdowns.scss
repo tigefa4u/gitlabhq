@@ -64,10 +64,11 @@
 }
 
 .dropdown-toggle {
-  padding: $gl-vert-padding $gl-padding-8;
+  padding: ($gl-vert-padding + 1px) ($gl-btn-padding + 1px);
   background-color: $white-light;
   color: $gl-text-color;
   font-size: 14px;
+  line-height: $gl-btn-line-height;
   text-align: left;
   border: 1px solid $border-color;
   border-radius: $border-radius-base;
@@ -127,7 +128,7 @@
   &.btn:hover,
   &.btn:focus,
   &.btn:active {
-    padding: ($gl-vert-padding - 1px) ($gl-padding-8 - 1px);
+    padding: $gl-vert-padding $gl-btn-padding;
   }
 }
 
@@ -151,7 +152,7 @@
   .fa-chevron-down,
   .fa-spinner {
     position: absolute;
-    top: 11px;
+    top: 10px;
     right: 8px;
   }
 

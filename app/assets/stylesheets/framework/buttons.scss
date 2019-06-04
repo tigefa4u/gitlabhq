@@ -24,7 +24,7 @@
   border-radius: $border-radius-default;
   font-size: $gl-font-size;
   font-weight: $gl-font-weight-normal;
-  padding: ($gl-vert-padding + 1px) $gl-btn-horz-padding;
+  padding: ($gl-vert-padding + 1px) ($gl-btn-padding + 1px);
 
   &:focus,
   &:active {
@@ -36,7 +36,7 @@
   &:focus,
   &:active {
     border-width: 2px;
-    padding: $gl-vert-padding ($gl-btn-horz-padding - 1px);
+    padding: $gl-vert-padding $gl-btn-padding;
   }
 }
 
@@ -333,6 +333,12 @@
 
   &.btn {
     padding: 6px 0;
+
+    &:hover,
+    &:active,
+    &:focus {
+      padding: 5px 0;
+    }
   }
 }
 
@@ -501,6 +507,7 @@
   &:active,
   &:focus {
     color: $gl-text-color-secondary;
+    border: 2px dashed $border-gray-normal-dashed;
     background-color: $white-normal;
   }
 }
