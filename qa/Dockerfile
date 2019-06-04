@@ -30,12 +30,12 @@ RUN wget -q https://download.docker.com/linux/static/stable/x86_64/docker-17.09.
 #
 RUN curl -sS -L https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
 RUN echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list
-RUN apt-get update -q && apt-get install -y google-chrome-stable && apt-get clean
+RUN apt-get update -q && apt-get install -y google-chrome-beta && apt-get clean
 
 ##
 # Install chromedriver to make it work with Selenium
 #
-RUN wget -q https://chromedriver.storage.googleapis.com/$(wget -q -O - https://chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip
+RUN wget -q https://chromedriver.storage.googleapis.com/$(wget -q -O - https://chromedriver.storage.googleapis.com/LATEST_RELEASE_75)/chromedriver_linux64.zip
 RUN unzip chromedriver_linux64.zip -d /usr/local/bin
 
 ##
