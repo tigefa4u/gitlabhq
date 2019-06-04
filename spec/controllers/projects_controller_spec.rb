@@ -315,6 +315,41 @@ describe ProjectsController do
       sign_in(admin)
     end
 
+    def update_project(**parameters)
+      put :update,
+          params: {
+            format: format,
+            namespace_id: project.namespace.path,
+            id: project.path,
+            project: parameters
+          }
+    end
+
+    it 'displays error messages' do
+      project.update(import_url: 'http://www.google.com')
+
+      expect { update_project import_url: 'bogus-url' }.not_to change { project.reload.import_url }
+
+      expect(controller).to set_flash[:alert]
+      expect(response).to have_gitlab_http_status(302)
+    end
+
+    it 'renders JSON error message' do
+      project.update(import_url: 'http://www.google.com')
+
+      expect do
+        put :update,
+            params: {
+              format: :js,
+              namespace_id: project.namespace.path,
+              id: project.path,
+              project: { import_url: 'bogus-url' }
+            }
+      end.not_to change { project.reload.import_url }
+
+      expect(response).to have_gitlab_http_status(422)
+    end
+
     shared_examples_for 'updating a project' do
       context 'when only renaming a project path' do
         it "sets the repository to the right path after a rename" do
@@ -391,15 +426,6 @@ describe ProjectsController do
               project: params
             }
         end.not_to change { project.namespace.reload }
-      end
-
-      def update_project(**parameters)
-        put :update,
-            params: {
-              namespace_id: project.namespace.path,
-              id: project.path,
-              project: parameters
-            }
       end
     end
 

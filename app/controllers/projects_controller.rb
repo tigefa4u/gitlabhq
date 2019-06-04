@@ -77,13 +77,19 @@ class ProjectsController < Projects::ApplicationController
         format.html do
           redirect_to(edit_project_path(@project, anchor: 'js-general-project-settings'))
         end
+
+        format.js
       else
-        flash.now[:alert] = result[:message]
+        flash[:alert] = result[:message]
 
-        format.html { render 'edit' }
+        format.html do
+          redirect_to(edit_project_path(@project, anchor: 'js-general-project-settings'))
+        end
+
+        format.js do
+          render status: :unprocessable_entity
+        end
       end
-
-      format.js
     end
   end
 
