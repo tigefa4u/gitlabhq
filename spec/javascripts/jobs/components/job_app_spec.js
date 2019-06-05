@@ -90,6 +90,7 @@ describe('Job App ', () => {
 
       describe('triggered job', () => {
         beforeEach(() => {
+          jasmine.clock().install();
           const aYearAgo = new Date();
           aYearAgo.setFullYear(aYearAgo.getFullYear() - 1);
 
@@ -97,6 +98,10 @@ describe('Job App ', () => {
             .onGet(props.endpoint)
             .replyOnce(200, Object.assign({}, job, { started: aYearAgo.toISOString() }));
           vm = mountComponentWithStore(Component, { props, store });
+        });
+
+        afterEach(() => {
+          jasmine.clock().uninstall();
         });
 
         it('should render provided job information', done => {
