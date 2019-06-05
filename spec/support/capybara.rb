@@ -54,6 +54,9 @@ Capybara.javascript_driver = :chrome
 Capybara.default_max_wait_time = timeout
 Capybara.ignore_hidden_elements = true
 
+# Disable screenshots to be automatically taken when a test fails.
+Capybara::Screenshot.autosave_on_failure = false
+
 # Keep only the screenshots generated from the last failing test suite
 Capybara::Screenshot.prune_strategy = :keep_last_run
 # From https://github.com/mattheworiordan/capybara-screenshot/issues/84#issuecomment-41219326
