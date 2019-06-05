@@ -32,6 +32,10 @@ describe('operation settings external dashboard component', () => {
     wrapper = shallow ? shallowMount(...config) : mount(...config);
   };
 
+  beforeEach(() => {
+    jest.spyOn(axios, 'patch').mockImplementation();
+  });
+
   afterEach(() => {
     if (wrapper.destroy) {
       wrapper.destroy();
