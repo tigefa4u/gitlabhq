@@ -1,46 +1,46 @@
-const NS_PER_SEC = 1e9;
-const NS_PER_MS = 1e6;
+import rusage from 'getrusage';
+
+const MS_PER_S = 1000;
 const IS_DEBUGGING = process.execArgv.join(' ').includes('--inspect-brk');
 
-let testTimeoutNS;
+let testTimeoutMS;
 
 export const setTestTimeout = newTimeoutMS => {
-  testTimeoutNS = newTimeoutMS * NS_PER_MS;
+  testTimeoutMS = newTimeoutMS;
   jest.setTimeout(newTimeoutMS);
 };
 
 // Allows slow tests to set their own timeout.
 // Useful for tests with jQuery, which is very slow in big DOMs.
-let temporaryTimeoutNS = null;
+let temporaryTimeoutMS = null;
 export const setTestTimeoutOnce = newTimeoutMS => {
-  temporaryTimeoutNS = newTimeoutMS * NS_PER_MS;
+  temporaryTimeoutMS = newTimeoutMS;
 };
 
 export const initializeTestTimeout = defaultTimeoutMS => {
   setTestTimeout(defaultTimeoutMS);
 
-  let testStartTime;
+  let testStartTimeS;
 
   // https://github.com/facebook/jest/issues/6947
   beforeEach(() => {
-    testStartTime = process.hrtime();
+    testStartTimeS = rusage.getcputime();
   });
 
   afterEach(() => {
-    let timeoutNS = testTimeoutNS;
-    if (Number.isFinite(temporaryTimeoutNS)) {
-      timeoutNS = temporaryTimeoutNS;
-      temporaryTimeoutNS = null;
+    let timeoutMS = testTimeoutMS;
+    if (Number.isFinite(temporaryTimeoutMS)) {
+      timeoutMS = temporaryTimeoutMS;
+      temporaryTimeoutMS = null;
     }
 
-    const [seconds, remainingNs] = process.hrtime(testStartTime);
-    const elapsedNS = seconds * NS_PER_SEC + remainingNs;
+    const elapsedMS = (rusage.getcputime() - testStartTimeS) * MS_PER_S;
 
     // Disable the timeout error when debugging. It is meaningless because
     // debugging always takes longer than the test timeout.
-    if (elapsedNS > timeoutNS && !IS_DEBUGGING) {
+    if (elapsedMS > timeoutMS && !IS_DEBUGGING) {
       throw new Error(
-        `Test took too long (${elapsedNS / NS_PER_MS}ms > ${timeoutNS / NS_PER_MS}ms)!`,
+        `Test took too long (${elapsedMS}ms > ${timeoutMS}ms)!`,
       );
     }
   });
