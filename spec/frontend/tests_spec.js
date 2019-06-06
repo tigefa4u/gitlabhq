@@ -1,8 +1,6 @@
 import $ from 'jquery';
 import axios from '~/lib/utils/axios_utils';
 
-jest.mock('~/lib/utils/axios_utils');
-
 describe('Jest tests', () => {
   describe('mock', () => {
     it('~/lib/utils/axios_utils', () =>

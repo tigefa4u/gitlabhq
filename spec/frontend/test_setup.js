@@ -8,8 +8,9 @@ process.on('unhandledRejection', global.promiseRejectionHandler);
 
 // Explicitly set mocks
 // Use require() because jest.setMock() expects CommonJS exports as a parameter
-jest.setMock('jquery', require('./__mocks__/node/jquery'));
-jest.setMock('~/lib/utils/axios_utils', require('./__mocks__/gitlab/axios_utils'));
+// Tip: jest.setMock(name, exportObj) is equivalent to jest.mock(name, () => exportObj)
+jest.setMock('jquery', require('./mocks/node/jquery'));
+jest.setMock('~/lib/utils/axios_utils', require('./mocks/gitlab/axios_utils'));
 
 afterEach(() =>
   // give Promises a bit more time so they fail the right test
