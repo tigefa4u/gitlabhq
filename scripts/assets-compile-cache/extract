@@ -1,0 +1,9 @@
+#!/bin/bash
+
+echo "Extracting cache files..."
+
+[ -f cache_archives/vendor-ruby.tar.gz ] && tar -xzf cache_archives/vendor-ruby.tar.gz
+[ -f cache_archives/yarn-cache.tar.gz ] && tar -xzf cache_archives/yarn-cache.tar.gz
+[ -f cache_archives/tmp-cache-assets-sprockets.tar.gz ] && tar -xzf cache_archives/tmp-cache-assets-sprockets.tar.gz
+
+echo "Done!"

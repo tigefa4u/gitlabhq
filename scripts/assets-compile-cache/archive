@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "Archiving cache files..."
+
+mkdir -p cache_archives
+[ -d vendor/ruby ] && tar -czf cache_archives/vendor-ruby.tar.gz vendor/ruby
+[ -d .yarn-cache ] && tar -czf cache_archives/yarn-cache.tar.gz .yarn-cache
+[ -d tmp/cache/assets/sprockets ] && tar -czf cache_archives/tmp-cache-assets-sprockets.tar.gz tmp/cache/assets/sprockets
+
+echo "Done!"
