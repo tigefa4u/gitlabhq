@@ -2,6 +2,8 @@
 
 const axios = jest.requireActual('~/lib/utils/axios_utils').default;
 
+axios.isMock = true;
+
 // Fail tests for unmocked requests
 axios.defaults.adapter = config => {
   const message =
