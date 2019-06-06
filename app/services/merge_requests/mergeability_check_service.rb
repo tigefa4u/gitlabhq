@@ -14,21 +14,25 @@ module MergeRequests
     # Updates the MR merge_status. Whenever it switches to a can_be_merged state,
     # the merge-ref is refreshed.
     #
+    # recheck - When given, it'll enforce a merge-ref refresh if it's outdated,
+    # even if the current merge_status is can_be_merged or cannot_be_merged.
+    # Given MergeRequests::RefreshService is called async, it might happen that the target
+    # branch gets updated, but the MergeRequest#merge_status lags behind. So in scenarios
+    # where we need the current state of the merge ref in repository, the `recheck`
+    # argument is required.
+    #
     # Returns a ServiceResponse indicating merge_status is/became can_be_merged
     # and the merge-ref is synced. Success in case of being/becoming mergeable,
     # error otherwise.
-    def execute
+    def execute(recheck: false)
       return ServiceResponse.error(message: 'Invalid argument') unless merge_request
       return ServiceResponse.error(message: 'Unsupported operation') if Gitlab::Database.read_only?
 
+      recheck! if recheck
       update_merge_status
 
       unless merge_request.can_be_merged?
         return ServiceResponse.error(message: 'Merge request is not mergeable')
-      end
-
-      unless payload.fetch(:merge_ref_head)
-        return ServiceResponse.error(message: 'Merge ref was not found')
       end
 
       ServiceResponse.success(payload: payload)
@@ -63,11 +67,29 @@ module MergeRequests
     def update_merge_status
       return unless merge_request.recheck_merge_status?
 
-      if can_git_merge?
-        merge_to_ref && merge_request.mark_as_mergeable
+      if can_git_merge? && merge_to_ref
+        merge_request.mark_as_mergeable
       else
         merge_request.mark_as_unmergeable
       end
+    end
+
+    def recheck!
+      if !merge_request.recheck_merge_status? && outdated_merge_ref?
+        merge_request.mark_as_unchecked
+      end
+    end
+
+    # Checks if the existing merge-ref is synced with the target branch.
+    #
+    # Returns true if the merge-ref does not exists or is out of sync.
+    def outdated_merge_ref?
+      ref_head = merge_request.merge_ref_head
+
+      return true unless ref_head
+      return true unless target_id = merge_request.target_branch_sha
+
+      ref_head.parent_id != target_id
     end
 
     def can_git_merge?

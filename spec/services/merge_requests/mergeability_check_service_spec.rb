@@ -166,21 +166,74 @@ describe MergeRequests::MergeabilityCheckService do
       end
     end
 
-    context 'when MR is mergeable but merge-ref does not exists' do
-      before do
-        merge_request.mark_as_mergeable!
+    context 'recheck enforced' do
+      subject { described_class.new(merge_request).execute(recheck: true) }
+
+      context 'when MR is mergeable but merge-ref does not exists' do
+        before do
+          merge_request.mark_as_mergeable!
+        end
+
+        it_behaves_like 'mergeable merge request'
       end
 
-      it 'keeps merge status as can_be_merged' do
-        expect { subject }.not_to change(merge_request, :merge_status).from('can_be_merged')
-      end
+      context 'when MR is mergeable but target-branch is out of sync with merge-ref' do
+        let(:fake_commit) { build(:commit) }
 
-      it 'returns ServiceResponse.error' do
-        result = subject
+        before do
+          MergeRequests::MergeToRefService.new(project, merge_request.author).execute(merge_request)
 
-        expect(result).to be_a(ServiceResponse)
-        expect(result.error?).to be(true)
-        expect(result.message).to eq('Merge ref was not found')
+          allow(merge_request).to receive(:target_branch_sha) { fake_commit.id }
+
+          merge_request.mark_as_mergeable!
+        end
+
+        context 'when successfully updates the merge-ref' do
+          it 'keeps merge status as can_be_merged' do
+            expect { subject }.not_to change(merge_request, :merge_status).from('can_be_merged')
+          end
+
+          it 'updates the merge ref' do
+            expect_next_instance_of(MergeRequests::MergeToRefService) do |merge_to_ref|
+              expect(merge_to_ref).to receive(:execute).and_call_original
+            end
+
+            subject
+          end
+
+          it 'returns ServiceResponse.success' do
+            result = subject
+
+            expect(result).to be_a(ServiceResponse)
+            expect(result).to be_success
+          end
+
+          it 'ServiceResponse has merge_ref_head payload' do
+            result = subject
+
+            expect(result.payload.keys).to contain_exactly(:merge_ref_head)
+            expect(result.payload[:merge_ref_head].keys)
+              .to contain_exactly(:commit_id, :target_id, :source_id)
+          end
+        end
+
+        context 'when fails to update the merge-ref' do
+          before do
+            expect_next_instance_of(MergeRequests::MergeToRefService) do |merge_to_ref|
+              expect(merge_to_ref).to receive(:execute).and_return(status: :failed)
+            end
+          end
+
+          it_behaves_like 'unmergeable merge request'
+
+          it 'returns ServiceResponse.error' do
+            result = subject
+
+            expect(result).to be_a(ServiceResponse)
+            expect(result.error?).to be(true)
+            expect(result.message).to eq('Merge request is not mergeable')
+          end
+        end
       end
     end
   end

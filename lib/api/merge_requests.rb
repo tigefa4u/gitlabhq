@@ -401,7 +401,7 @@ module API
       get ':id/merge_requests/:merge_request_iid/merge_ref' do
         merge_request = find_project_merge_request(params[:merge_request_iid])
 
-        result = ::MergeRequests::MergeabilityCheckService.new(merge_request).execute
+        result = ::MergeRequests::MergeabilityCheckService.new(merge_request).execute(recheck: true)
 
         if result.success?
           present :commit_id, result.payload.dig(:merge_ref_head, :commit_id)

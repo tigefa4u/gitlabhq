@@ -1564,13 +1564,28 @@ describe API::MergeRequests do
       expect(json_response['commit_id']).to eq(merge_request.merge_ref_head.sha)
     end
 
-    it "returns 400 if branch can't be merged" do
-      merge_request.update!(merge_status: 'cannot_be_merged')
+    context 'when merge-ref is not synced with merge status' do
+      before do
+        merge_request.update!(merge_status: 'cannot_be_merged')
+      end
 
-      get api(url, user)
+      it 'returns 200 if MR can be merged' do
+        get api(url, user)
 
-      expect(response).to have_gitlab_http_status(400)
-      expect(json_response['message']).to eq('Merge request is not mergeable')
+        expect(response).to have_gitlab_http_status(200)
+        expect(json_response['commit_id']).to eq(merge_request.merge_ref_head.sha)
+      end
+
+      it 'returns 400 if MR cannot be merged' do
+        expect_next_instance_of(MergeRequests::MergeToRefService) do |merge_request|
+          expect(merge_request).to receive(:execute) { { status: :failed } }
+        end
+
+        get api(url, user)
+
+        expect(response).to have_gitlab_http_status(400)
+        expect(json_response['message']).to eq('Merge request is not mergeable')
+      end
     end
 
     context 'when user has no access to the MR' do
