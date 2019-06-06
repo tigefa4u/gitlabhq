@@ -1,6 +1,6 @@
 /* global jest */
 
-const axios = jest.requireActual('../axios_utils').default;
+const axios = jest.requireActual('~/lib/utils/axios_utils').default;
 
 // Fail tests for unmocked requests
 axios.defaults.adapter = config => {

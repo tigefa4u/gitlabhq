@@ -6,6 +6,11 @@ import { loadHTMLFixture, setHTMLFixture } from './helpers/fixtures';
 
 process.on('unhandledRejection', global.promiseRejectionHandler);
 
+// Explicitly set mocks
+// Use require() because jest.setMock() expects CommonJS exports as a parameter
+jest.setMock('jquery', require('./__mocks__/node/jquery'));
+jest.setMock('~/lib/utils/axios_utils', require('./__mocks__/gitlab/axios_utils'));
+
 afterEach(() =>
   // give Promises a bit more time so they fail the right test
   new Promise(setImmediate).then(() => {
