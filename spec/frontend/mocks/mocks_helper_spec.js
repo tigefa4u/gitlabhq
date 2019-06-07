@@ -140,7 +140,6 @@ describe('mocks_helper.js', () => {
 
       jest.doMock('~/lib/utils/axios_utils');
       jest.resetModules();
-      // eslint-disable-next-line global-require
       const axios3 = require('~/lib/utils/axios_utils').default;
       expect(axios3).not.toBe(axios2);
       expect(axios3.isMock).toBe(true);

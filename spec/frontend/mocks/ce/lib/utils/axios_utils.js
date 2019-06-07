@@ -1,5 +1,3 @@
-/* global jest */
-
 const axios = jest.requireActual('~/lib/utils/axios_utils').default;
 
 axios.isMock = true;

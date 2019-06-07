@@ -12,7 +12,7 @@
  *
  * Jest kinda does automatic injection if you put mocks in a `__mocks__` directory beside the source file. This has a few drawbacks:
  *
- * - Mocks are spread throughout the codebase
+ * - Mocks are spread throughout the codebase.
  * - Jest's auto-injection behaviour inconsistent and doesn't behave exactly as documented.
  * - Sometimes you still have to call jest.mock(), sometimes you don't. This is confusing.
  */
@@ -22,7 +22,7 @@ import path from 'path';
 
 import readdir from 'readdir-enhanced';
 
-const MAX_DEPTH = 5;
+const MAX_DEPTH = 20;
 const prefixMap = [
   // E.g. the mock ce/foo/bar maps to require path ~/foo/bar
   { mocksRoot: 'ce', requirePrefix: '~' },

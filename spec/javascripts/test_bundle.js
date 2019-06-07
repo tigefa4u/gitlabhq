@@ -227,10 +227,7 @@ if (process.env.BABEL_ENV === 'coverage') {
     sourceFilesContexts.forEach(context => {
       context.keys().forEach(path => {
         // ignore if there is a matching spec file
-        if (
-          allTestFiles.indexOf(`${path.replace(/\.(js|vue)$/, '')}_spec`) > -1 ||
-          path.includes('__mocks__')
-        ) {
+        if (allTestFiles.indexOf(`${path.replace(/\.(js|vue)$/, '')}_spec`) > -1) {
           return;
         }
 
