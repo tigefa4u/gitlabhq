@@ -3,14 +3,11 @@ import * as jqueryMatchers from 'custom-jquery-matchers';
 import Translate from '~/vue_shared/translate';
 import { initializeTestTimeout } from './helpers/timeout';
 import { loadHTMLFixture, setHTMLFixture } from './helpers/fixtures';
+import { setupManualMocks } from './mocks/mocks_helper';
 
 process.on('unhandledRejection', global.promiseRejectionHandler);
 
-// Explicitly set mocks
-// Use require() because jest.setMock() expects CommonJS exports as a parameter
-// Tip: jest.setMock(name, exportObj) is equivalent to jest.mock(name, () => exportObj)
-jest.setMock('jquery', require('./mocks/node/jquery'));
-jest.setMock('~/lib/utils/axios_utils', require('./mocks/gitlab/axios_utils'));
+setupManualMocks();
 
 afterEach(() =>
   // give Promises a bit more time so they fail the right test
