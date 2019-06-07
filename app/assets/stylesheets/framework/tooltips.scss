@@ -1,14 +1,6 @@
-.tooltip {
-  .tooltip-arrow {
-    width: $tooltip-arrow-width;
-    height: $tooltip-arrow-height;
-  }
-}
-
 .tooltip-inner {
   font-size: $tooltip-font-size;
-  border-radius: $border-radius-default;
-  line-height: 16px;
-  font-weight: $gl-font-weight-normal;
-  padding: $tooltip-padding-y $tooltip-padding-x;
+  border-radius: $tooltip-border-radius;
+  line-height: $tooltip-line-height;
+  font-weight: $tooltip-font-weight;
 }

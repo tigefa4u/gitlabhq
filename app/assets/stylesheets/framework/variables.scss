@@ -327,11 +327,6 @@ $code-font-size: 90%;
 $code-line-height: 1.6;
 
 /*
- * Tooltips
- */
-$tooltip-font-size: 12px;
-
-/*
  * Padding
  */
 $gl-padding-4: 4px;
@@ -386,6 +381,14 @@ $gl-line-height-14: 14px;
 
 $issue-box-upcoming-bg: #8f8f8f;
 $pages-group-name-color: #4c4e54;
+
+/*
+ * Tooltips
+ */
+$tooltip-font-size: 12px;
+$tooltip-line-height: 16px;
+$tooltip-font-weight: $gl-font-weight-normal;
+$tooltip-border-radius: $border-radius-default;
 
 /*
 * Common component specific colors
