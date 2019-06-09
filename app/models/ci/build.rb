@@ -2,10 +2,10 @@
 
 module Ci
   class Build < CommitStatus
-    prepend ArtifactMigratable
     include Ci::Processable
     include Ci::Metadatable
     include Ci::Contextable
+    include Ci::PipelineDelegator
     include TokenAuthenticatable
     include AfterCommitQueue
     include ObjectStorage::BackgroundMove
@@ -19,6 +19,11 @@ module Ci
     BuildArchivedError = Class.new(StandardError)
 
     ignore_column :commands
+    ignore_column :artifacts_file
+    ignore_column :artifacts_metadata
+    ignore_column :artifacts_file_store
+    ignore_column :artifacts_metadata_store
+    ignore_column :artifacts_size
 
     belongs_to :project, inverse_of: :builds
     belongs_to :runner
@@ -26,7 +31,8 @@ module Ci
     belongs_to :erased_by, class_name: 'User'
 
     RUNNER_FEATURES = {
-      upload_multiple_artifacts: -> (build) { build.publishes_artifacts_reports? }
+      upload_multiple_artifacts: -> (build) { build.publishes_artifacts_reports? },
+      refspecs: -> (build) { build.merge_request_ref? }
     }.freeze
 
     has_one :deployment, as: :deployable, class_name: 'Deployment'
@@ -47,7 +53,6 @@ module Ci
     delegate :terminal_specification, to: :runner_session, allow_nil: true
     delegate :gitlab_deploy_token, to: :project
     delegate :trigger_short_token, to: :trigger_request, allow_nil: true
-    delegate :merge_request_event?, to: :pipeline
 
     ##
     # Since Gitlab 11.5, deployments records started being created right after
@@ -81,8 +86,7 @@ module Ci
     scope :unstarted, ->() { where(runner_id: nil) }
     scope :ignore_failures, ->() { where(allow_failure: false) }
     scope :with_artifacts_archive, ->() do
-      where('(artifacts_file IS NOT NULL AND artifacts_file <> ?) OR EXISTS (?)',
-        '', Ci::JobArtifact.select(1).where('ci_builds.id = ci_job_artifacts.job_id').archive)
+      where('EXISTS (?)', Ci::JobArtifact.select(1).where('ci_builds.id = ci_job_artifacts.job_id').archive)
     end
 
     scope :with_existing_job_artifacts, ->(query) do
@@ -97,15 +101,15 @@ module Ci
       where('NOT EXISTS (?)', Ci::JobArtifact.select(1).where('ci_builds.id = ci_job_artifacts.job_id').trace)
     end
 
-    scope :with_test_reports, ->() do
-      with_existing_job_artifacts(Ci::JobArtifact.test_reports)
+    scope :with_reports, ->(reports_scope) do
+      with_existing_job_artifacts(reports_scope)
         .eager_load_job_artifacts
     end
 
     scope :eager_load_job_artifacts, -> { includes(:job_artifacts) }
 
-    scope :with_artifacts_stored_locally, -> { with_artifacts_archive.where(artifacts_file_store: [nil, LegacyArtifactUploader::Store::LOCAL]) }
-    scope :with_archived_trace_stored_locally, -> { with_archived_trace.where(artifacts_file_store: [nil, LegacyArtifactUploader::Store::LOCAL]) }
+    scope :with_artifacts_stored_locally, -> { with_existing_job_artifacts(Ci::JobArtifact.archive.with_files_stored_locally) }
+    scope :with_archived_trace_stored_locally, -> { with_existing_job_artifacts(Ci::JobArtifact.trace.with_files_stored_locally) }
     scope :with_artifacts_not_expired, ->() { with_artifacts_archive.where('artifacts_expire_at IS NULL OR artifacts_expire_at > ?', Time.now) }
     scope :with_expired_artifacts, ->() { with_artifacts_archive.where('artifacts_expire_at < ?', Time.now) }
     scope :last_month, ->() { where('created_at > ?', Date.today - 1.month) }
@@ -133,23 +137,18 @@ module Ci
       where("EXISTS (?)", matcher)
     end
 
-    mount_uploader :legacy_artifacts_file, LegacyArtifactUploader, mount_on: :artifacts_file
-    mount_uploader :legacy_artifacts_metadata, LegacyArtifactUploader, mount_on: :artifacts_metadata
+    scope :queued_before, ->(time) { where(arel_table[:queued_at].lt(time)) }
 
     acts_as_taggable
 
     add_authentication_token_field :token, encrypted: :optional
 
-    before_save :update_artifacts_size, if: :artifacts_file_changed?
     before_save :ensure_token
     before_destroy { unscoped_project }
 
     after_create unless: :importing? do |build|
       run_after_commit { BuildHooksWorker.perform_async(build.id) }
     end
-
-    after_save :update_project_statistics_after_save, if: :artifacts_size_changed?
-    after_destroy :update_project_statistics_after_destroy, unless: :project_destroyed?
 
     class << self
       # This is needed for url_for to work,
@@ -172,6 +171,10 @@ module Ci
     end
 
     state_machine :status do
+      event :enqueue do
+        transition [:created, :skipped, :manual, :scheduled] => :preparing, if: :any_unmet_prerequisites?
+      end
+
       event :actionize do
         transition created: :manual
       end
@@ -185,8 +188,12 @@ module Ci
       end
 
       event :enqueue_scheduled do
+        transition scheduled: :preparing, if: ->(build) do
+          build.scheduled_at&.past? && build.any_unmet_prerequisites?
+        end
+
         transition scheduled: :pending, if: ->(build) do
-          build.scheduled_at && build.scheduled_at < Time.now
+          build.scheduled_at&.past? && !build.any_unmet_prerequisites?
         end
       end
 
@@ -201,6 +208,12 @@ module Ci
       after_transition created: :scheduled do |build|
         build.run_after_commit do
           Ci::BuildScheduleWorker.perform_at(build.scheduled_at, build.id)
+        end
+      end
+
+      after_transition any => [:preparing] do |build|
+        build.run_after_commit do
+          Ci::BuildPrepareWorker.perform_async(id)
         end
       end
 
@@ -353,6 +366,14 @@ module Ci
 
     def latest?
       !retried?
+    end
+
+    def any_unmet_prerequisites?
+      prerequisites.present?
+    end
+
+    def prerequisites
+      Gitlab::Ci::Build::Prerequisite::Factory.new(self).unmet
     end
 
     def expanded_environment_name
@@ -510,6 +531,26 @@ module Ci
       trace.exist?
     end
 
+    def artifacts_file
+      job_artifacts_archive&.file
+    end
+
+    def artifacts_size
+      job_artifacts_archive&.size
+    end
+
+    def artifacts_metadata
+      job_artifacts_metadata&.file
+    end
+
+    def artifacts?
+      !artifacts_expired? && artifacts_file&.exists?
+    end
+
+    def artifacts_metadata?
+      artifacts? && artifacts_metadata&.exists?
+    end
+
     def has_job_artifacts?
       job_artifacts.any?
     end
@@ -578,14 +619,12 @@ module Ci
     # and use that for `ExpireBuildInstanceArtifactsWorker`?
     def erase_erasable_artifacts!
       job_artifacts.erasable.destroy_all # rubocop: disable DestroyAll
-      erase_old_artifacts!
     end
 
     def erase(opts = {})
       return false unless erasable?
 
       job_artifacts.destroy_all # rubocop: disable DestroyAll
-      erase_old_artifacts!
       erase_trace!
       update_erased!(opts[:erased_by])
     end
@@ -623,10 +662,7 @@ module Ci
     end
 
     def artifacts_file_for_type(type)
-      file = job_artifacts.find_by(file_type: Ci::JobArtifact.file_types[type])&.file
-      # TODO: to be removed once legacy artifacts is removed
-      file ||= legacy_artifacts_file if type == :archive
-      file
+      job_artifacts.find_by(file_type: Ci::JobArtifact.file_types[type])&.file
     end
 
     def coverage_regex
@@ -733,6 +769,10 @@ module Ci
       end
     end
 
+    def report_artifacts
+      job_artifacts.with_reports
+    end
+
     # Virtual deployment status depending on the environment status.
     def deployment_status
       return unless starts_environment?
@@ -747,13 +787,6 @@ module Ci
     end
 
     private
-
-    def erase_old_artifacts!
-      # TODO: To be removed once we get rid of
-      remove_artifacts_file!
-      remove_artifacts_metadata!
-      save
-    end
 
     def successful_deployment_status
       if deployment&.last?
@@ -774,10 +807,6 @@ module Ci
     def job_artifacts_for_types(report_types)
       # Use select to leverage cached associations and avoid N+1 queries
       job_artifacts.select { |artifact| artifact.file_type.in?(report_types) }
-    end
-
-    def update_artifacts_size
-      self.artifacts_size = legacy_artifacts_file&.size
     end
 
     def erase_trace!
@@ -813,22 +842,6 @@ module Ci
       return {} unless pipeline.config_processor
 
       pipeline.config_processor.build_attributes(name)
-    end
-
-    def update_project_statistics_after_save
-      update_project_statistics(read_attribute(:artifacts_size).to_i - artifacts_size_was.to_i)
-    end
-
-    def update_project_statistics_after_destroy
-      update_project_statistics(-artifacts_size)
-    end
-
-    def update_project_statistics(difference)
-      ProjectStatistics.increment_statistic(project_id, :build_artifacts_size, difference)
-    end
-
-    def project_destroyed?
-      project.pending_delete?
     end
   end
 end

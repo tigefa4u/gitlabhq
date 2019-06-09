@@ -3,6 +3,12 @@
 [Gitaly](https://gitlab.com/gitlab-org/gitaly) is a high-level Git RPC service used by GitLab CE/EE,
 Workhorse and GitLab-Shell.
 
+## Beginner's guide
+
+Start by reading the gitaly repository's
+[Beginner's guide to Gitaly contributions](https://gitlab.com/gitlab-org/gitaly/blob/master/doc/beginners_guide.md).
+It describes how to setup gitaly, the various components of gitaly and what they do, and how to run its test suites.
+
 ## Developing new Git features
 
 To read or write Git data, a request has to be made to Gitaly. This means that
@@ -57,6 +63,8 @@ If your test-suite is failing with Gitaly issues, as a first step, try running:
 rm -rf tmp/tests/gitaly
 ```
 
+During rspec tests, the Gitaly instance will write logs to `gitlab/log/gitaly-test.log`.
+
 ## Legacy Rugged code
 
 While Gitaly can handle all Git access, many of GitLab customers still
@@ -74,6 +82,8 @@ most commonly-used RPCs can be enabled via feature flags:
 * `rugged_get_tree_entries`
 * `rugged_tree_entry`
 * `rugged_commit_is_ancestor`
+* `rugged_commit_tree_entry`
+* `rugged_list_commits_by_oid`
 
 A convenience Rake task can be used to enable or disable these flags
 all together. To enable:
@@ -186,8 +196,87 @@ GITALY_REPO_URL=https://gitlab+deploy-token-1000:token-here@gitlab.com/nick.thom
 
 To use a custom Gitaly repository in CI, for instance if you want your
 GitLab fork to always use your own Gitaly fork, set `GITALY_REPO_URL`
-as a [CI environment variable](../ci/variables/README.md#variables).
+as a [CI environment variable](../ci/variables/README.md#gitlab-cicd-environment-variables).
 
 ---
 
 [Return to Development documentation](README.md)
+
+## Wrapping RPCs in Feature Flags
+
+Here are the steps to gate a new feature in Gitaly behind a feature flag.
+
+### Gitaly
+
+1. Create a package scoped flag name:
+
+   ```go
+   var findAllTagsFeatureFlag = "go-find-all-tags"
+   ```
+
+1. Create a switch in the code using the `featureflag` package:
+
+   ```go
+   if featureflag.IsEnabled(ctx, findAllTagsFeatureFlag) {
+     // go implementation
+   } else {
+     // ruby implementation
+   }
+   ```
+
+1. Create prometheus metrics:
+
+   ```go
+   var	findAllTagsRequests = prometheus.NewCounterVec(
+   		prometheus.CounterOpts{
+   			Name: "gitaly_find_all_tags_requests_total",
+   			Help: "Counter of go vs ruby implementation of FindAllTags",
+   		},
+   		[]string{"implementation"},
+   	)
+   )
+
+   func init() {
+   	prometheus.Register(findAllTagsRequests)
+   }
+
+   if featureflag.IsEnabled(ctx, findAllTagsFeatureFlag) {
+   	findAllTagsRequests.WithLabelValues("go").Inc()
+     // go implementation
+   } else {
+   	findAllTagsRequests.WithLabelValues("ruby").Inc()
+     // ruby impelmentation
+   }
+   ```
+
+1. Set headers in tests:
+
+   ```go
+   import (
+     "google.golang.org/grpc/metadata"
+
+     "gitlab.com/gitlab-org/gitaly/internal/featureflag"
+   )
+
+   //...
+
+   md := metadata.New(map[string]string{featureflag.HeaderKey(findAllTagsFeatureFlag): "true"})
+   ctx = metadata.NewOutgoingContext(context.Background(), md)
+
+   c, err = client.FindAllTags(ctx, rpcRequest)
+   require.NoError(t, err)
+   ```
+
+### Gitlab-Rails
+
+1. Add feature flag to `lib/gitlab/gitaly_client.rb` (in gitlab-rails):
+
+   ```ruby
+   SERVER_FEATURE_FLAGS = %w[go-find-all-tags].freeze
+   ```
+
+1. Test in rails console by setting feature flag:
+
+   ```ruby
+   Feature.enable('gitaly_go-find-all-tags')
+   ```

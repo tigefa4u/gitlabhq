@@ -7,23 +7,9 @@ module API
 
     before { authenticate_non_get! }
 
+    helpers Helpers::GroupsHelpers
+
     helpers do
-      params :optional_params_ce do
-        optional :description, type: String, desc: 'The description of the group'
-        optional :visibility, type: String,
-                              values: Gitlab::VisibilityLevel.string_values,
-                              default: Gitlab::VisibilityLevel.string_level(
-                                Gitlab::CurrentSettings.current_application_settings.default_group_visibility),
-                              desc: 'The visibility of the group'
-        optional :lfs_enabled, type: Boolean, desc: 'Enable/disable LFS for the projects in this group'
-        optional :request_access_enabled, type: Boolean, desc: 'Allow users to request member access'
-        optional :share_with_group_lock, type: Boolean, desc: 'Prevent sharing a project with another group within this group'
-      end
-
-      params :optional_params do
-        use :optional_params_ce
-      end
-
       params :statistics_params do
         optional :statistics, type: Boolean, default: false, desc: 'Include project statistics'
       end
@@ -164,6 +150,7 @@ module API
         optional :name, type: String, desc: 'The name of the group'
         optional :path, type: String, desc: 'The path of the group'
         use :optional_params
+        use :optional_update_params_ee
       end
       put ':id' do
         group = find_group!(params[:id])

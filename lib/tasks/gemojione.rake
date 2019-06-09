@@ -30,28 +30,33 @@ namespace :gemojione do
     # We don't have `node_modules` available in built versions of GitLab
     FileUtils.cp_r(Rails.root.join('node_modules', 'emoji-unicode-version', 'emoji-unicode-version-map.json'), File.join(Rails.root, 'fixtures', 'emojis'))
 
+    dir = Gemojione.images_path
     resultant_emoji_map = {}
 
     Gitlab::Emoji.emojis.each do |name, emoji_hash|
       # Ignore aliases
       unless Gitlab::Emoji.emojis_aliases.key?(name)
+        fpath = File.join(dir, "#{emoji_hash['unicode']}.png")
+        hash_digest = Digest::SHA256.file(fpath).hexdigest
+
         category = emoji_hash['category']
         if name == 'gay_pride_flag'
           category = 'flags'
         end
 
         entry = {
-          c: category,
-          e: emoji_hash['moji'],
-          d: emoji_hash['description'],
-          u: Gitlab::Emoji.emoji_unicode_version(name)
+          category: category,
+          moji: emoji_hash['moji'],
+          description: emoji_hash['description'],
+          unicodeVersion: Gitlab::Emoji.emoji_unicode_version(name),
+          digest: hash_digest
         }
 
         resultant_emoji_map[name] = entry
       end
     end
 
-    out = File.join(Rails.root, 'public', '-', 'emojis', '1', 'emojis.json')
+    out = File.join(Rails.root, 'fixtures', 'emojis', 'digests.json')
     File.open(out, 'w') do |handle|
       handle.write(JSON.pretty_generate(resultant_emoji_map))
     end
@@ -204,7 +209,7 @@ namespace :gemojione do
     image.destroy!
   end
 
-  EMOJI_IMAGE_PATH_RE = /(.*?)(([0-9a-f]-?)+)\.png$/i
+  EMOJI_IMAGE_PATH_RE = /(.*?)(([0-9a-f]-?)+)\.png$/i.freeze
   def rename_to_named_emoji_image!(emoji_unicode_string_to_name_map, image_path)
     # Rename file from unicode to emoji name
     matches = EMOJI_IMAGE_PATH_RE.match(image_path)

@@ -68,6 +68,13 @@ describe API::Users do
         expect(json_response.size).to eq(0)
       end
 
+      it "does not return the highest role" do
+        get api("/users"), params: { username: user.username }
+
+        expect(response).to match_response_schema('public_api/v4/user/basics')
+        expect(json_response.first.keys).not_to include 'highest_role'
+      end
+
       context "when public level is restricted" do
         before do
           stub_application_setting(restricted_visibility_levels: [Gitlab::VisibilityLevel::PUBLIC])
@@ -269,6 +276,18 @@ describe API::Users do
         expect(response).to have_gitlab_http_status(400)
       end
     end
+
+    context "when authenticated and ldap is enabled" do
+      it "returns non-ldap user" do
+        create :omniauth_user, provider: "ldapserver1"
+
+        get api("/users", user), params: { skip_ldap: "true" }
+
+        expect(response).to have_gitlab_http_status(200)
+        expect(json_response).to be_an Array
+        expect(json_response.first["username"]).to eq user.username
+      end
+    end
   end
 
   describe "GET /users/:id" do
@@ -286,6 +305,13 @@ describe API::Users do
       expect(json_response.keys).not_to include 'is_admin'
     end
 
+    it "does not return the user's `highest_role`" do
+      get api("/users/#{user.id}", user)
+
+      expect(response).to match_response_schema('public_api/v4/user/basic')
+      expect(json_response.keys).not_to include 'highest_role'
+    end
+
     context 'when authenticated as admin' do
       it 'includes the `is_admin` field' do
         get api("/users/#{user.id}", admin)
@@ -299,6 +325,12 @@ describe API::Users do
 
         expect(response).to match_response_schema('public_api/v4/user/admin')
         expect(json_response.keys).to include 'created_at'
+      end
+      it 'includes the `highest_role` field' do
+        get api("/users/#{user.id}", admin)
+
+        expect(response).to match_response_schema('public_api/v4/user/admin')
+        expect(json_response['highest_role']).to be(0)
       end
     end
 

@@ -1,4 +1,6 @@
 # coding: utf-8
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Issues::UpdateService, :mailer do
@@ -590,6 +592,16 @@ describe Issues::UpdateService, :mailer do
 
         it 'removes the passed labels' do
           expect(result.label_ids).not_to include(label.id)
+        end
+      end
+
+      context 'when duplicate label titles are given' do
+        let(:params) do
+          { labels: [label3.title, label3.title] }
+        end
+
+        it 'assigns the label once' do
+          expect(result.labels).to contain_exactly(label3)
         end
       end
     end

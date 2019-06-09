@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class ProjectFeature < ActiveRecord::Base
+class ProjectFeature < ApplicationRecord
   # == Project features permissions
   #
   # Grants access level to project tools
@@ -71,6 +71,8 @@ class ProjectFeature < ActiveRecord::Base
   default_value_for :snippets_access_level,       value: ENABLED, allows_nil: false
   default_value_for :wiki_access_level,           value: ENABLED, allows_nil: false
   default_value_for :repository_access_level,     value: ENABLED, allows_nil: false
+
+  scope :for_project_id, -> (project) { where(project: project) }
 
   def feature_available?(feature, user)
     # This feature might not be behind a feature flag at all, so default to true

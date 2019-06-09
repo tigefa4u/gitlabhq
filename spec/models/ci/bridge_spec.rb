@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Ci::Bridge do
@@ -7,6 +9,8 @@ describe Ci::Bridge do
   let(:bridge) do
     create(:ci_bridge, pipeline: pipeline)
   end
+
+  it { is_expected.to include_module(Ci::PipelineDelegator) }
 
   describe '#tags' do
     it 'only has a bridge tag' do
@@ -31,7 +35,7 @@ describe Ci::Bridge do
         CI_PROJECT_ID CI_PROJECT_NAME CI_PROJECT_PATH
         CI_PROJECT_PATH_SLUG CI_PROJECT_NAMESPACE CI_PIPELINE_IID
         CI_CONFIG_PATH CI_PIPELINE_SOURCE CI_COMMIT_MESSAGE
-        CI_COMMIT_TITLE CI_COMMIT_DESCRIPTION
+        CI_COMMIT_TITLE CI_COMMIT_DESCRIPTION CI_COMMIT_REF_PROTECTED
       ]
 
       expect(bridge.scoped_variables_hash.keys).to include(*variables)

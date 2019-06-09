@@ -114,4 +114,5 @@ export default {
     },
   ],
   discussions: [],
+  renderingLines: false,
 };

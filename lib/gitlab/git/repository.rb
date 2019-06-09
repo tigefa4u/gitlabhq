@@ -34,34 +34,6 @@ module Gitlab
       TagExistsError = Class.new(StandardError)
       ChecksumError = Class.new(StandardError)
 
-      class << self
-        def create_hooks(repo_path, global_hooks_path)
-          local_hooks_path = File.join(repo_path, 'hooks')
-          real_local_hooks_path = :not_found
-
-          begin
-            real_local_hooks_path = File.realpath(local_hooks_path)
-          rescue Errno::ENOENT
-            # real_local_hooks_path == :not_found
-          end
-
-          # Do nothing if hooks already exist
-          unless real_local_hooks_path == File.realpath(global_hooks_path)
-            if File.exist?(local_hooks_path)
-              # Move the existing hooks somewhere safe
-              FileUtils.mv(
-                local_hooks_path,
-                "#{local_hooks_path}.old.#{Time.now.to_i}")
-            end
-
-            # Create the hooks symlink
-            FileUtils.ln_sf(global_hooks_path, local_hooks_path)
-          end
-
-          true
-        end
-      end
-
       # Directory name of repo
       attr_reader :name
 
@@ -116,6 +88,12 @@ module Gitlab
 
       def exists?
         gitaly_repository_client.exists?
+      end
+
+      def create_repository
+        wrapped_gitaly_errors do
+          gitaly_repository_client.create_repository
+        end
       end
 
       # Returns an Array of branch names
@@ -231,12 +209,12 @@ module Gitlab
         end
       end
 
-      def archive_metadata(ref, storage_path, project_path, format = "tar.gz", append_sha:)
+      def archive_metadata(ref, storage_path, project_path, format = "tar.gz", append_sha:, path: nil)
         ref ||= root_ref
         commit = Gitlab::Git::Commit.find(self, ref)
         return {} if commit.nil?
 
-        prefix = archive_prefix(ref, commit.id, project_path, append_sha: append_sha)
+        prefix = archive_prefix(ref, commit.id, project_path, append_sha: append_sha, path: path)
 
         {
           'ArchivePrefix' => prefix,
@@ -248,13 +226,14 @@ module Gitlab
 
       # This is both the filename of the archive (missing the extension) and the
       # name of the top-level member of the archive under which all files go
-      def archive_prefix(ref, sha, project_path, append_sha:)
+      def archive_prefix(ref, sha, project_path, append_sha:, path:)
         append_sha = (ref != sha) if append_sha.nil?
 
         formatted_ref = ref.tr('/', '-')
 
         prefix_segments = [project_path, formatted_ref]
         prefix_segments << sha if append_sha
+        prefix_segments << path.tr('/', '-').gsub(%r{^/|/$}, '') if path
 
         prefix_segments.join('-')
       end
@@ -301,6 +280,11 @@ module Gitlab
         size = gitaly_repository_client.repository_size
 
         (size.to_f / 1024).round(2)
+      end
+
+      # Return git object directory size in bytes
+      def object_directory_size
+        gitaly_repository_client.get_object_directory_size.to_f * 1024
       end
 
       # Build an array of commits.
@@ -465,7 +449,7 @@ module Gitlab
         @refs_hash = Hash.new { |h, k| h[k] = [] }
 
         (tags + branches).each do |ref|
-          next unless ref.target && ref.name
+          next unless ref.target && ref.name && ref.dereferenced_target&.id
 
           @refs_hash[ref.dereferenced_target.id] << ref.name
         end
@@ -493,7 +477,7 @@ module Gitlab
       end
 
       # Return total diverging commits count
-      def diverging_commit_count(from, to, max_count:)
+      def diverging_commit_count(from, to, max_count: 0)
         wrapped_gitaly_errors do
           gitaly_commit_client.diverging_commit_count(from, to, max_count: max_count)
         end
@@ -731,18 +715,29 @@ module Gitlab
       end
 
       def compare_source_branch(target_branch_name, source_repository, source_branch_name, straight:)
+        reachable_ref =
+          if source_repository == self
+            source_branch_name
+          else
+            # If a tmp ref was created before for a separate repo comparison (forks),
+            # we're able to short-circuit the tmp ref re-creation:
+            # 1. Take the SHA from the source repo
+            # 2. Read that in the current "target" repo
+            # 3. If that SHA is still known (readable), it means GC hasn't
+            # cleaned it up yet, so we can use it instead re-writing the tmp ref.
+            source_commit_id = source_repository.commit(source_branch_name)&.sha
+            commit(source_commit_id)&.sha if source_commit_id
+          end
+
+        return compare(target_branch_name, reachable_ref, straight: straight) if reachable_ref
+
         tmp_ref = "refs/tmp/#{SecureRandom.hex}"
 
         return unless fetch_source_branch!(source_repository, source_branch_name, tmp_ref)
 
-        Gitlab::Git::Compare.new(
-          self,
-          target_branch_name,
-          tmp_ref,
-          straight: straight
-        )
+        compare(target_branch_name, tmp_ref, straight: straight)
       ensure
-        delete_refs(tmp_ref)
+        delete_refs(tmp_ref) if tmp_ref
       end
 
       def write_ref(ref_path, ref, old_ref: nil)
@@ -816,13 +811,28 @@ module Gitlab
         gitaly_repository_client.create_from_snapshot(url, auth)
       end
 
-      def rebase(user, rebase_id, branch:, branch_sha:, remote_repository:, remote_branch:)
+      # DEPRECATED: https://gitlab.com/gitlab-org/gitaly/issues/1628
+      def rebase_deprecated(user, rebase_id, branch:, branch_sha:, remote_repository:, remote_branch:)
         wrapped_gitaly_errors do
           gitaly_operation_client.user_rebase(user, rebase_id,
                                             branch: branch,
                                             branch_sha: branch_sha,
                                             remote_repository: remote_repository,
                                             remote_branch: remote_branch)
+        end
+      end
+
+      def rebase(user, rebase_id, branch:, branch_sha:, remote_repository:, remote_branch:, &block)
+        wrapped_gitaly_errors do
+          gitaly_operation_client.rebase(
+            user,
+            rebase_id,
+            branch: branch,
+            branch_sha: branch_sha,
+            remote_repository: remote_repository,
+            remote_branch: remote_branch,
+            &block
+          )
         end
       end
 
@@ -886,6 +896,12 @@ module Gitlab
       def delete_config(*keys)
         wrapped_gitaly_errors do
           gitaly_repository_client.delete_config(keys)
+        end
+      end
+
+      def disconnect_alternates
+        wrapped_gitaly_errors do
+          gitaly_repository_client.disconnect_alternates
         end
       end
 
@@ -997,6 +1013,13 @@ module Gitlab
       end
 
       private
+
+      def compare(base_ref, head_ref, straight:)
+        Gitlab::Git::Compare.new(self,
+                                 base_ref,
+                                 head_ref,
+                                 straight: straight)
+      end
 
       def empty_diff_stats
         Gitlab::Git::DiffStatsCollection.new([])

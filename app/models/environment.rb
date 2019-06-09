@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-class Environment < ActiveRecord::Base
+class Environment < ApplicationRecord
   include Gitlab::Utils::StrongMemoize
   # Used to generate random suffixes for the slug
-  LETTERS = 'a'..'z'
-  NUMBERS = '0'..'9'
+  LETTERS = ('a'..'z').freeze
+  NUMBERS = ('0'..'9').freeze
   SUFFIX_CHARS = LETTERS.to_a + NUMBERS.to_a
 
   belongs_to :project, required: true
@@ -35,7 +35,7 @@ class Environment < ActiveRecord::Base
   validates :external_url,
             length: { maximum: 255 },
             allow_nil: true,
-            url: true
+            addressable_url: true
 
   delegate :stop_action, :manual_actions, to: :last_deployment, allow_nil: true
 
@@ -155,11 +155,11 @@ class Environment < ActiveRecord::Base
   end
 
   def has_terminals?
-    project.deployment_platform.present? && available? && last_deployment.present?
+    deployment_platform.present? && available? && last_deployment.present?
   end
 
   def terminals
-    project.deployment_platform.terminals(self) if has_terminals?
+    deployment_platform.terminals(self) if has_terminals?
   end
 
   def has_metrics?
@@ -170,8 +170,10 @@ class Environment < ActiveRecord::Base
     prometheus_adapter.query(:environment, self) if has_metrics?
   end
 
-  def additional_metrics
-    prometheus_adapter.query(:additional_metrics_environment, self) if has_metrics?
+  def additional_metrics(*args)
+    return unless has_metrics?
+
+    prometheus_adapter.query(:additional_metrics_environment, self, *args.map(&:to_f))
   end
 
   # rubocop: disable CodeReuse/ServiceClass

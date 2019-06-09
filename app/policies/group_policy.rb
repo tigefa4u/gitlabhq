@@ -35,6 +35,14 @@ class GroupPolicy < BasePolicy
   with_options scope: :subject, score: 0
   condition(:request_access_enabled) { @subject.request_access_enabled }
 
+  condition(:create_projects_disabled) do
+    @subject.project_creation_level == ::Gitlab::Access::NO_ONE_PROJECT_ACCESS
+  end
+
+  condition(:developer_maintainer_access) do
+    @subject.project_creation_level == ::Gitlab::Access::DEVELOPER_MAINTAINER_PROJECT_ACCESS
+  end
+
   rule { public_group }.policy do
     enable :read_group
     enable :read_list
@@ -115,9 +123,16 @@ class GroupPolicy < BasePolicy
 
   rule { ~can_have_multiple_clusters & has_clusters }.prevent :add_cluster
 
+  rule { developer & developer_maintainer_access }.enable :create_projects
+  rule { create_projects_disabled }.prevent :create_projects
+
   def access_level
     return GroupMember::NO_ACCESS if @user.nil?
 
-    @access_level ||= @subject.max_member_access_for_user(@user)
+    @access_level ||= lookup_access_level!
+  end
+
+  def lookup_access_level!
+    @subject.max_member_access_for_user(@user)
   end
 end

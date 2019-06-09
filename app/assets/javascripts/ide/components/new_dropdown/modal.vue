@@ -29,7 +29,7 @@ export default {
         return this.name || (entryPath ? `${entryPath}/` : '');
       },
       set(val) {
-        this.name = val;
+        this.name = val.trim();
       },
     },
     modalTitle() {
@@ -134,6 +134,7 @@ export default {
 <template>
   <gl-modal
     id="ide-new-entry"
+    class="qa-new-file-modal"
     :header-title-text="modalTitle"
     :footer-primary-button-text="buttonLabel"
     footer-primary-button-variant="success"

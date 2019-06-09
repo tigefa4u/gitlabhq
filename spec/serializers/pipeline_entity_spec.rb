@@ -48,8 +48,8 @@ describe PipelineEntity do
       it 'contains flags' do
         expect(subject).to include :flags
         expect(subject[:flags])
-          .to include :latest, :stuck, :auto_devops,
-                      :yaml_errors, :retryable, :cancelable, :merge_request
+          .to include :stuck, :auto_devops, :yaml_errors,
+                      :retryable, :cancelable, :merge_request
       end
     end
 
@@ -62,6 +62,12 @@ describe PipelineEntity do
 
       before do
         create(:ci_build, :failed, pipeline: pipeline)
+      end
+
+      it 'does not serialize stage builds' do
+        subject.with_indifferent_access.dig(:details, :stages, 0).tap do |stage|
+          expect(stage).not_to include(:groups, :latest_statuses, :retries)
+        end
       end
 
       context 'user has ability to retry pipeline' do
@@ -90,6 +96,12 @@ describe PipelineEntity do
 
       before do
         create(:ci_build, :pending, pipeline: pipeline)
+      end
+
+      it 'does not serialize stage builds' do
+        subject.with_indifferent_access.dig(:details, :stages, 0).tap do |stage|
+          expect(stage).not_to include(:groups, :latest_statuses, :retries)
+        end
       end
 
       context 'user has ability to cancel pipeline' do
@@ -137,10 +149,15 @@ describe PipelineEntity do
     context 'when pipeline is detached merge request pipeline' do
       let(:merge_request) { create(:merge_request, :with_detached_merge_request_pipeline) }
       let(:project) { merge_request.target_project }
-      let(:pipeline) { merge_request.merge_request_pipelines.first }
+      let(:pipeline) { merge_request.pipelines_for_merge_request.first }
 
       it 'makes detached flag true' do
         expect(subject[:flags][:detached_merge_request_pipeline]).to be_truthy
+      end
+
+      it 'does not expose source sha and target sha' do
+        expect(subject[:source_sha]).to be_nil
+        expect(subject[:target_sha]).to be_nil
       end
 
       context 'when user is a developer' do
@@ -159,13 +176,13 @@ describe PipelineEntity do
           expect(subject[:merge_request][:source_branch])
             .to eq(merge_request.source_branch)
 
-          expect(project_branch_path(project, merge_request.source_branch))
+          expect(project_commits_path(project, merge_request.source_branch))
             .to include(subject[:merge_request][:source_branch_path])
 
           expect(subject[:merge_request][:target_branch])
             .to eq(merge_request.target_branch)
 
-          expect(project_branch_path(project, merge_request.target_branch))
+          expect(project_commits_path(project, merge_request.target_branch))
             .to include(subject[:merge_request][:target_branch_path])
         end
       end
@@ -180,7 +197,7 @@ describe PipelineEntity do
     context 'when pipeline is merge request pipeline' do
       let(:merge_request) { create(:merge_request, :with_merge_request_pipeline, merge_sha: 'abc') }
       let(:project) { merge_request.target_project }
-      let(:pipeline) { merge_request.merge_request_pipelines.first }
+      let(:pipeline) { merge_request.pipelines_for_merge_request.first }
 
       it 'makes detached flag false' do
         expect(subject[:flags][:detached_merge_request_pipeline]).to be_falsy
@@ -188,6 +205,11 @@ describe PipelineEntity do
 
       it 'makes atached flag true' do
         expect(subject[:flags][:merge_request_pipeline]).to be_truthy
+      end
+
+      it 'exposes source sha and target sha' do
+        expect(subject[:source_sha]).to be_present
+        expect(subject[:target_sha]).to be_present
       end
     end
   end

@@ -150,9 +150,9 @@ describe Clusters::Applications::CreateService do
       where(:application, :association, :allowed, :pre_create_helm) do
         'helm'       | :application_helm       | true | false
         'ingress'    | :application_ingress    | true | true
-        'runner'     | :application_runner     | false | true
+        'runner'     | :application_runner     | true | true
+        'prometheus' | :application_prometheus | true | true
         'jupyter'    | :application_jupyter    | false | true
-        'prometheus' | :application_prometheus | false | true
       end
 
       with_them do

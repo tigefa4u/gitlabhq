@@ -47,6 +47,13 @@ module Gitlab
         response.size
       end
 
+      def get_object_directory_size
+        request = Gitaly::GetObjectDirectorySizeRequest.new(repository: @gitaly_repo)
+        response = GitalyClient.call(@storage, :repository_service, :get_object_directory_size, request, timeout: GitalyClient.medium_timeout)
+
+        response.size
+      end
+
       def apply_gitattributes(revision)
         request = Gitaly::ApplyGitattributesRequest.new(repository: @gitaly_repo, revision: encode_binary(revision))
         GitalyClient.call(@storage, :repository_service, :apply_gitattributes, request, timeout: GitalyClient.fast_timeout)
@@ -190,7 +197,7 @@ module Gitlab
 
       def fsck
         request = Gitaly::FsckRequest.new(repository: @gitaly_repo)
-        response = GitalyClient.call(@storage, :repository_service, :fsck, request)
+        response = GitalyClient.call(@storage, :repository_service, :fsck, request, timeout: GitalyClient.no_timeout)
 
         if response.error.empty?
           return "", 0
@@ -329,6 +336,14 @@ module Gitlab
         response = GitalyClient.call(@storage, :repository_service, :search_files_by_content, request)
 
         search_results_from_response(response)
+      end
+
+      def disconnect_alternates
+        request = Gitaly::DisconnectGitAlternatesRequest.new(
+          repository: @gitaly_repo
+        )
+
+        GitalyClient.call(@storage, :object_pool_service, :disconnect_git_alternates, request)
       end
 
       private

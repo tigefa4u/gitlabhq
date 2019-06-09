@@ -6,19 +6,12 @@ module API
   class Projects < Grape::API
     include PaginationParams
     include Helpers::CustomAttributes
-    include Helpers::ProjectsHelpers
+
+    helpers Helpers::ProjectsHelpers
 
     before { authenticate_non_get! }
 
     helpers do
-      params :optional_filter_params_ee do
-        # EE::API::Projects would override this helper
-      end
-
-      params :optional_update_params_ee do
-        # EE::API::Projects would override this helper
-      end
-
       # EE::API::Projects would override this method
       def apply_filters(projects)
         projects = projects.with_issues_available_for_user(current_user) if params[:with_issues_enabled]
@@ -33,34 +26,6 @@ module API
 
       def verify_update_project_attrs!(project, attrs)
       end
-    end
-
-    def self.update_params_at_least_one_of
-      [
-        :jobs_enabled,
-        :resolve_outdated_diff_discussions,
-        :ci_config_path,
-        :container_registry_enabled,
-        :default_branch,
-        :description,
-        :issues_enabled,
-        :lfs_enabled,
-        :merge_requests_enabled,
-        :merge_method,
-        :name,
-        :only_allow_merge_if_all_discussions_are_resolved,
-        :only_allow_merge_if_pipeline_succeeds,
-        :path,
-        :printing_merge_request_link_enabled,
-        :public_builds,
-        :request_access_enabled,
-        :shared_runners_enabled,
-        :snippets_enabled,
-        :tag_list,
-        :visibility,
-        :wiki_enabled,
-        :avatar
-      ]
     end
 
     helpers do
@@ -316,8 +281,9 @@ module API
         optional :path, type: String, desc: 'The path of the repository'
 
         use :optional_project_params
+        use :optional_update_params_ee
 
-        at_least_one_of(*::API::Projects.update_params_at_least_one_of)
+        at_least_one_of(*Helpers::ProjectsHelpers.update_params_at_least_one_of)
       end
       put ':id' do
         authorize_admin_project
@@ -370,7 +336,7 @@ module API
           not_modified!
         else
           current_user.toggle_star(user_project)
-          user_project.reload
+          user_project.reset
 
           present user_project, with: Entities::Project, current_user: current_user
         end
@@ -382,7 +348,7 @@ module API
       post ':id/unstar' do
         if current_user.starred?(user_project)
           current_user.toggle_star(user_project)
-          user_project.reload
+          user_project.reset
 
           present user_project, with: Entities::Project, current_user: current_user
         else
@@ -392,11 +358,9 @@ module API
 
       desc 'Get languages in project repository'
       get ':id/languages' do
-        if user_project.repository_languages.present?
-          user_project.repository_languages.map { |l| [l.name, l.share] }.to_h
-        else
-          user_project.repository.languages.map { |language| language.values_at(:label, :value) }.to_h
-        end
+        ::Projects::RepositoryLanguagesService
+          .new(user_project, current_user)
+          .execute.map { |lang| [lang.name, lang.share] }.to_h
       end
 
       desc 'Remove a project'
@@ -424,7 +388,7 @@ module API
         result = ::Projects::ForkService.new(fork_from_project, current_user).execute(user_project)
 
         if result
-          present user_project.reload, with: Entities::Project, current_user: current_user
+          present user_project.reset, with: Entities::Project, current_user: current_user
         else
           render_api_error!("Project already forked", 409) if user_project.forked?
         end

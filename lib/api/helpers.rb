@@ -67,10 +67,6 @@ module API
       initial_current_user != current_user
     end
 
-    def user_namespace
-      @user_namespace ||= find_namespace!(params[:id])
-    end
-
     def user_group
       @group ||= find_group!(params[:id])
     end
@@ -302,6 +298,12 @@ module API
     end
     # rubocop: enable CodeReuse/ActiveRecord
 
+    # rubocop: disable CodeReuse/ActiveRecord
+    def filter_by_title(items, title)
+      items.where(title: title)
+    end
+    # rubocop: enable CodeReuse/ActiveRecord
+
     def filter_by_search(items, text)
       items.search(text)
     end
@@ -443,7 +445,7 @@ module API
     end
 
     def present_carrierwave_file!(file, supports_direct_download: true)
-      return not_found! unless file.exists?
+      return not_found! unless file&.exists?
 
       if file.file_storage?
         present_disk_file!(file.path, file.filename)

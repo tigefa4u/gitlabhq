@@ -1,8 +1,9 @@
 import { shallowMount } from '@vue/test-utils';
-import { GlAreaChart } from '@gitlab/ui/dist/charts';
+import { GlAreaChart, GlChartSeriesLabel } from '@gitlab/ui/dist/charts';
 import { shallowWrapperContainsSlotText } from 'spec/helpers/vue_test_utils_helper';
 import Area from '~/monitoring/components/charts/area.vue';
-import MonitoringStore from '~/monitoring/stores/monitoring_store';
+import { createStore } from '~/monitoring/stores';
+import * as types from '~/monitoring/stores/mutation_types';
 import MonitoringMock, { deploymentData } from '../mock_data';
 
 describe('Area component', () => {
@@ -13,17 +14,18 @@ describe('Area component', () => {
   let spriteSpy;
 
   beforeEach(() => {
-    const store = new MonitoringStore();
-    store.storeMetrics(MonitoringMock.data);
-    store.storeDeploymentData(deploymentData);
+    const store = createStore();
 
-    [mockGraphData] = store.groups[0].metrics;
+    store.commit(`monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`, MonitoringMock.data);
+    store.commit(`monitoringDashboard/${types.RECEIVE_DEPLOYMENTS_DATA_SUCCESS}`, deploymentData);
+
+    [mockGraphData] = store.state.monitoringDashboard.groups[0].metrics;
 
     areaChart = shallowMount(Area, {
       propsData: {
         graphData: mockGraphData,
         containerWidth: 0,
-        deploymentData: store.deploymentData,
+        deploymentData: store.state.monitoringDashboard.deploymentData,
       },
       slots: {
         default: mockWidgets,
@@ -65,7 +67,7 @@ describe('Area component', () => {
         expect(props.data).toBe(areaChart.vm.chartData);
         expect(props.option).toBe(areaChart.vm.chartOptions);
         expect(props.formatTooltipText).toBe(areaChart.vm.formatTooltipText);
-        expect(props.thresholds).toBe(areaChart.props('alertData'));
+        expect(props.thresholds).toBe(areaChart.vm.thresholds);
       });
 
       it('recieves a tooltip title', () => {
@@ -105,12 +107,13 @@ describe('Area component', () => {
             seriesName: areaChart.vm.chartData[0].name,
             componentSubType: type,
             value: [mockDate, 5.55555],
+            seriesIndex: 0,
           },
         ],
         value: mockDate,
       });
 
-      describe('series is of line type', () => {
+      describe('when series is of line type', () => {
         beforeEach(() => {
           areaChart.vm.formatTooltipText(generateSeriesData('line'));
         });
@@ -120,18 +123,20 @@ describe('Area component', () => {
         });
 
         it('formats tooltip content', () => {
-          expect(areaChart.vm.tooltip.content).toEqual([{ name: 'Core Usage', value: '5.556' }]);
+          const name = 'Core Usage';
+          const value = '5.556';
+          const seriesLabel = areaChart.find(GlChartSeriesLabel);
+
+          expect(seriesLabel.vm.color).toBe('');
+          expect(shallowWrapperContainsSlotText(seriesLabel, 'default', name)).toBe(true);
+          expect(areaChart.vm.tooltip.content).toEqual([{ name, value, color: undefined }]);
           expect(
-            shallowWrapperContainsSlotText(
-              areaChart.find(GlAreaChart),
-              'tooltipContent',
-              'Core Usage 5.556',
-            ),
+            shallowWrapperContainsSlotText(areaChart.find(GlAreaChart), 'tooltipContent', value),
           ).toBe(true);
         });
       });
 
-      describe('series is of scatter type', () => {
+      describe('when series is of scatter type', () => {
         beforeEach(() => {
           areaChart.vm.formatTooltipText(generateSeriesData('scatter'));
         });
@@ -202,6 +207,10 @@ describe('Area component', () => {
           data.filter(([time, value]) => new Date(time).getTime() > 0 && typeof value === 'number')
             .length,
         ).toBe(data.length);
+      });
+
+      it('formats line width correctly', () => {
+        expect(chartData[0].lineStyle.width).toBe(2);
       });
     });
 

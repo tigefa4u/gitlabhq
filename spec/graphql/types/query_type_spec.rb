@@ -5,7 +5,17 @@ describe GitlabSchema.types['Query'] do
     expect(described_class.graphql_name).to eq('Query')
   end
 
-  it { is_expected.to have_graphql_fields(:project, :echo, :metadata) }
+  it { is_expected.to have_graphql_fields(:project, :namespace, :group, :echo, :metadata) }
+
+  describe 'namespace field' do
+    subject { described_class.fields['namespace'] }
+
+    it 'finds namespaces by full path' do
+      is_expected.to have_graphql_arguments(:full_path)
+      is_expected.to have_graphql_type(Types::NamespaceType)
+      is_expected.to have_graphql_resolver(Resolvers::NamespaceResolver)
+    end
+  end
 
   describe 'project field' do
     subject { described_class.fields['project'] }
@@ -14,10 +24,6 @@ describe GitlabSchema.types['Query'] do
       is_expected.to have_graphql_arguments(:full_path)
       is_expected.to have_graphql_type(Types::ProjectType)
       is_expected.to have_graphql_resolver(Resolvers::ProjectResolver)
-    end
-
-    it 'authorizes with read_project' do
-      is_expected.to require_graphql_authorizations(:read_project)
     end
   end
 

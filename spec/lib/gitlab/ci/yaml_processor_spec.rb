@@ -3,6 +3,8 @@ require 'spec_helper'
 module Gitlab
   module Ci
     describe YamlProcessor do
+      include StubRequests
+
       subject { described_class.new(config, user: nil) }
 
       describe '#build_attributes' do
@@ -615,11 +617,19 @@ module Gitlab
         subject { Gitlab::Ci::YamlProcessor.new(YAML.dump(config), opts) }
 
         context "when validating a ci config file with no project context" do
+          context "when a single string is provided" do
+            let(:include_content) { "/local.gitlab-ci.yml" }
+
+            it "returns a validation error" do
+              expect { subject }.to raise_error /does not have project/
+            end
+          end
+
           context "when an array is provided" do
             let(:include_content) { ["/local.gitlab-ci.yml"] }
 
-            it "does not return any error" do
-              expect { subject }.not_to raise_error
+            it "returns a validation error" do
+              expect { subject }.to raise_error(Gitlab::Ci::YamlProcessor::ValidationError, /does not have project/)
             end
           end
 
@@ -635,9 +645,16 @@ module Gitlab
             let(:include_content) do
               [
                 'https://gitlab.com/awesome-project/raw/master/.before-script-template.yml',
-                '/templates/.after-script-template.yml',
                 { template: 'Auto-DevOps.gitlab-ci.yml' }
               ]
+            end
+
+            before do
+              stub_full_request('https://gitlab.com/awesome-project/raw/master/.before-script-template.yml')
+                .to_return(
+                  status: 200,
+                  headers: { 'Content-Type' => 'application/json' },
+                  body: 'prepare: { script: ls -al }')
             end
 
             it "does not return any error" do
@@ -1233,7 +1250,7 @@ module Gitlab
           config = YAML.dump({ services: [10, "test"], rspec: { script: "test" } })
           expect do
             Gitlab::Ci::YamlProcessor.new(config)
-          end.to raise_error(Gitlab::Ci::YamlProcessor::ValidationError, "service config should be a hash or a string")
+          end.to raise_error(Gitlab::Ci::YamlProcessor::ValidationError, "services:service config should be a hash or a string")
         end
 
         it "returns errors if job services parameter is not an array" do
@@ -1247,7 +1264,7 @@ module Gitlab
           config = YAML.dump({ rspec: { script: "test", services: [10, "test"] } })
           expect do
             Gitlab::Ci::YamlProcessor.new(config)
-          end.to raise_error(Gitlab::Ci::YamlProcessor::ValidationError, "service config should be a hash or a string")
+          end.to raise_error(Gitlab::Ci::YamlProcessor::ValidationError, "jobs:rspec:services:service config should be a hash or a string")
         end
 
         it "returns error if job configuration is invalid" do
@@ -1453,7 +1470,7 @@ module Gitlab
 
           expect { Gitlab::Ci::YamlProcessor.new(config) }
             .to raise_error(Gitlab::Ci::YamlProcessor::ValidationError,
-                            'rspec: unknown key in `extends`')
+                            'rspec: unknown keys in `extends` (something)')
         end
       end
 

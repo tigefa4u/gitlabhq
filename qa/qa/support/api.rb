@@ -1,6 +1,11 @@
+# frozen_string_literal: true
+
 module QA
   module Support
     module Api
+      HTTP_STATUS_OK = 200
+      HTTP_STATUS_CREATED = 201
+
       def post(url, payload)
         RestClient::Request.execute(
           method: :post,

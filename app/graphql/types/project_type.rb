@@ -2,9 +2,11 @@
 
 module Types
   class ProjectType < BaseObject
-    expose_permissions Types::PermissionTypes::Project
-
     graphql_name 'Project'
+
+    authorize :read_project
+
+    expose_permissions Types::PermissionTypes::Project
 
     field :id, GraphQL::ID_TYPE, null: false
 
@@ -64,17 +66,24 @@ module Types
     field :only_allow_merge_if_all_discussions_are_resolved, GraphQL::BOOLEAN_TYPE, null: true
     field :printing_merge_request_link_enabled, GraphQL::BOOLEAN_TYPE, null: true
 
+    field :namespace, Types::NamespaceType, null: false
+    field :group, Types::GroupType, null: true
+
+    field :statistics, Types::ProjectStatisticsType,
+          null: false,
+          resolve: -> (obj, _args, _ctx) { Gitlab::Graphql::Loaders::BatchProjectStatisticsLoader.new(obj.id).find }
+
+    field :repository, Types::RepositoryType, null: false
+
     field :merge_requests,
           Types::MergeRequestType.connection_type,
           null: true,
-          resolver: Resolvers::MergeRequestsResolver,
-          authorize: :read_merge_request
+          resolver: Resolvers::MergeRequestsResolver
 
     field :merge_request,
           Types::MergeRequestType,
           null: true,
-          resolver: Resolvers::MergeRequestsResolver.single,
-          authorize: :read_merge_request
+          resolver: Resolvers::MergeRequestsResolver.single
 
     field :issues,
           Types::IssueType.connection_type,
@@ -88,7 +97,7 @@ module Types
 
     field :pipelines,
           Types::Ci::PipelineType.connection_type,
-          null: false,
+          null: true,
           resolver: Resolvers::ProjectPipelinesResolver
   end
 end

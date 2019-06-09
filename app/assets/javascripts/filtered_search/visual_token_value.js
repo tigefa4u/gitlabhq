@@ -5,6 +5,7 @@ import AjaxCache from '~/lib/utils/ajax_cache';
 import DropdownUtils from '~/filtered_search/dropdown_utils';
 import Flash from '~/flash';
 import UsersCache from '~/lib/utils/users_cache';
+import { __ } from '~/locale';
 
 export default class VisualTokenValue {
   constructor(tokenValue, tokenType) {
@@ -77,7 +78,7 @@ export default class VisualTokenValue {
           matchingLabel.text_color,
         );
       })
-      .catch(() => new Flash('An error occurred while fetching label colors.'));
+      .catch(() => new Flash(__('An error occurred while fetching label colors.')));
   }
 
   static setTokenStyle(tokenValueContainer, backgroundColor, textColor) {
@@ -102,24 +103,15 @@ export default class VisualTokenValue {
     return (
       import(/* webpackChunkName: 'emoji' */ '../emoji')
         .then(Emoji => {
-          Emoji.initEmojiMap()
-            .then(() => {
-              if (!Emoji.isEmojiNameValid(value)) {
-                return;
-              }
+          if (!Emoji.isEmojiNameValid(value)) {
+            return;
+          }
 
-              container.dataset.originalValue = value;
-              element.innerHTML = Emoji.glEmojiTag(value);
-            })
-            // ignore error and leave emoji name in the search bar
-            .catch(err => {
-              throw err;
-            });
+          container.dataset.originalValue = value;
+          element.innerHTML = Emoji.glEmojiTag(value);
         })
         // ignore error and leave emoji name in the search bar
-        .catch(importError => {
-          throw importError;
-        })
+        .catch(() => {})
     );
   }
 }

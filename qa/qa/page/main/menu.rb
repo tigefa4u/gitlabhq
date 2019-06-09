@@ -10,15 +10,15 @@ module QA
         end
 
         view 'app/views/layouts/header/_default.html.haml' do
-          element :navbar
-          element :user_avatar
+          element :navbar, required: true
+          element :user_avatar, required: true
           element :user_menu, '.dropdown-menu' # rubocop:disable QA/ElementWithPattern
         end
 
         view 'app/views/layouts/nav/_dashboard.html.haml' do
           element :admin_area_link
-          element :projects_dropdown
-          element :groups_dropdown
+          element :projects_dropdown, required: true
+          element :groups_dropdown, required: true
           element :snippets_link
         end
 
@@ -47,7 +47,7 @@ module QA
           end
         end
 
-        def go_to_admin_area
+        def click_admin_area
           within_top_menu { click_element :admin_area_link }
         end
 
@@ -57,7 +57,7 @@ module QA
           end
         end
 
-        def go_to_profile_settings
+        def click_settings_link
           retry_until(reload: false) do
             within_user_menu do
               click_link 'Settings'
@@ -67,7 +67,7 @@ module QA
           end
         end
 
-        def go_to_snippets
+        def click_snippets_link
           click_element :snippets_link
         end
 

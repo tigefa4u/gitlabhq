@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 describe Clusters::Applications::Jupyter do
@@ -7,6 +9,15 @@ describe Clusters::Applications::Jupyter do
   include_examples 'cluster application helm specs', :clusters_applications_jupyter
 
   it { is_expected.to belong_to(:oauth_application) }
+
+  describe '#can_uninstall?' do
+    let(:ingress) { create(:clusters_applications_ingress, :installed, external_hostname: 'localhost.localdomain') }
+    let(:jupyter) { create(:clusters_applications_jupyter, cluster: ingress.cluster) }
+
+    subject { jupyter.can_uninstall? }
+
+    it { is_expected.to be_falsey }
+  end
 
   describe '#set_initial_status' do
     before do
@@ -43,7 +54,7 @@ describe Clusters::Applications::Jupyter do
 
     it { is_expected.to be_an_instance_of(Gitlab::Kubernetes::Helm::InstallCommand) }
 
-    it 'should be initialized with 4 arguments' do
+    it 'is initialized with 4 arguments' do
       expect(subject.name).to eq('jupyter')
       expect(subject.chart).to eq('jupyter/jupyterhub')
       expect(subject.version).to eq('0.9-174bbd5')
@@ -63,7 +74,7 @@ describe Clusters::Applications::Jupyter do
     context 'application failed to install previously' do
       let(:jupyter) { create(:clusters_applications_jupyter, :errored, version: '0.0.1') }
 
-      it 'should be initialized with the locked version' do
+      it 'is initialized with the locked version' do
         expect(subject.version).to eq('0.9-174bbd5')
       end
     end
@@ -75,7 +86,7 @@ describe Clusters::Applications::Jupyter do
 
     subject { application.files }
 
-    it 'should include valid values' do
+    it 'includes valid values' do
       expect(values).to include('ingress')
       expect(values).to include('hub')
       expect(values).to include('rbac')
@@ -85,6 +96,8 @@ describe Clusters::Applications::Jupyter do
       expect(values).to match(/clientId: '?#{application.oauth_application.uid}/)
       expect(values).to match(/callbackUrl: '?#{application.callback_url}/)
       expect(values).to include("gitlabProjectIdWhitelist:\n    - #{application.cluster.project.id}")
+      expect(values).to include("c.GitLabOAuthenticator.scope = ['api read_repository write_repository']")
+      expect(values).to match(/GITLAB_HOST: '?#{Gitlab.config.gitlab.host}/)
     end
 
     context 'when cluster belongs to a project' do

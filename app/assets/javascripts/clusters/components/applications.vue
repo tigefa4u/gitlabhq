@@ -15,6 +15,7 @@ import prometheusLogo from 'images/cluster_app_logos/prometheus.png';
 import { s__, sprintf } from '../../locale';
 import applicationRow from './application_row.vue';
 import clipboardButton from '../../vue_shared/components/clipboard_button.vue';
+import KnativeDomainEditor from './knative_domain_editor.vue';
 import { CLUSTER_TYPE, APPLICATION_STATUS, INGRESS } from '../constants';
 import LoadingButton from '~/vue_shared/components/loading_button.vue';
 import eventHub from '~/clusters/event_hub';
@@ -25,6 +26,7 @@ export default {
     clipboardButton,
     LoadingButton,
     GlLoadingIcon,
+    KnativeDomainEditor,
   },
   props: {
     type: {
@@ -154,64 +156,21 @@ export default {
     knative() {
       return this.applications.knative;
     },
-    knativeInstalled() {
-      return (
-        this.knative.status === APPLICATION_STATUS.INSTALLED ||
-        this.knativeUpgrading ||
-        this.knativeUpgradeFailed ||
-        this.knative.status === APPLICATION_STATUS.UPDATED
-      );
-    },
-    knativeUpgrading() {
-      return (
-        this.knative.status === APPLICATION_STATUS.UPDATING ||
-        this.knative.status === APPLICATION_STATUS.SCHEDULED
-      );
-    },
-    knativeUpgradeFailed() {
-      return this.knative.status === APPLICATION_STATUS.UPDATE_ERRORED;
-    },
-    knativeExternalEndpoint() {
-      return this.knative.externalIp || this.knative.externalHostname;
-    },
-    knativeDescription() {
-      return sprintf(
-        _.escape(
-          s__(
-            `ClusterIntegration|Installing Knative may incur additional costs. Learn more about %{pricingLink}.`,
-          ),
-        ),
-        {
-          pricingLink: `<strong><a href="https://cloud.google.com/compute/pricing#lb"
-              target="_blank" rel="noopener noreferrer">
-              ${_.escape(s__('ClusterIntegration|pricing'))}</a></strong>`,
-        },
-        false,
-      );
-    },
-    canUpdateKnativeEndpoint() {
-      return this.knativeExternalEndpoint && !this.knativeUpgradeFailed && !this.knativeUpgrading;
-    },
-    knativeHostname: {
-      get() {
-        return this.knative.hostname;
-      },
-      set(hostname) {
-        eventHub.$emit('setKnativeHostname', {
-          id: 'knative',
-          hostname,
-        });
-      },
-    },
   },
   created() {
     this.helmInstallIllustration = helmInstallIllustration;
   },
   methods: {
-    saveKnativeDomain() {
+    saveKnativeDomain(hostname) {
       eventHub.$emit('saveKnativeDomain', {
         id: 'knative',
-        params: { hostname: this.knative.hostname },
+        params: { hostname },
+      });
+    },
+    setKnativeHostname(hostname) {
+      eventHub.$emit('setKnativeHostname', {
+        id: 'knative',
+        hostname,
       });
     },
   },
@@ -224,9 +183,9 @@ export default {
     <p class="append-bottom-0">
       {{
         s__(`ClusterIntegration|Choose which applications to install on your Kubernetes cluster.
-        Helm Tiller is required to install any of the following applications.`)
+      Helm Tiller is required to install any of the following applications.`)
       }}
-      <a :href="helpPath"> {{ __('More information') }} </a>
+      <a :href="helpPath">{{ __('More information') }}</a>
     </p>
 
     <div class="cluster-application-list prepend-top-10">
@@ -238,15 +197,20 @@ export default {
         :status-reason="applications.helm.statusReason"
         :request-status="applications.helm.requestStatus"
         :request-reason="applications.helm.requestReason"
+        :installed="applications.helm.installed"
+        :install-failed="applications.helm.installFailed"
+        :uninstallable="applications.helm.uninstallable"
+        :uninstall-successful="applications.helm.uninstallSuccessful"
+        :uninstall-failed="applications.helm.uninstallFailed"
         class="rounded-top"
         title-link="https://docs.helm.sh/"
       >
         <div slot="description">
           {{
             s__(`ClusterIntegration|Helm streamlines installing
-            and managing Kubernetes applications.
-            Tiller runs inside of your Kubernetes Cluster,
-            and manages releases of your charts.`)
+          and managing Kubernetes applications.
+          Tiller runs inside of your Kubernetes Cluster,
+          and manages releases of your charts.`)
           }}
         </div>
       </application-row>
@@ -254,7 +218,7 @@ export default {
         <div class="svg-container" v-html="helmInstallIllustration"></div>
         {{
           s__(`ClusterIntegration|You must first install Helm Tiller before
-          installing the applications below`)
+        installing the applications below`)
         }}
       </div>
       <application-row
@@ -265,6 +229,11 @@ export default {
         :status-reason="applications.ingress.statusReason"
         :request-status="applications.ingress.requestStatus"
         :request-reason="applications.ingress.requestReason"
+        :installed="applications.ingress.installed"
+        :install-failed="applications.ingress.installFailed"
+        :uninstallable="applications.ingress.uninstallable"
+        :uninstall-successful="applications.ingress.uninstallSuccessful"
+        :uninstall-failed="applications.ingress.uninstallFailed"
         :disabled="!helmInstalled"
         title-link="https://kubernetes.io/docs/concepts/services-networking/ingress/"
       >
@@ -272,16 +241,14 @@ export default {
           <p>
             {{
               s__(`ClusterIntegration|Ingress gives you a way to route
-              requests to services based on the request host or path,
-              centralizing a number of services into a single entrypoint.`)
+            requests to services based on the request host or path,
+            centralizing a number of services into a single entrypoint.`)
             }}
           </p>
 
           <template v-if="ingressInstalled">
             <div class="form-group">
-              <label for="ingress-endpoint">
-                {{ s__('ClusterIntegration|Ingress Endpoint') }}
-              </label>
+              <label for="ingress-endpoint">{{ s__('ClusterIntegration|Ingress Endpoint') }}</label>
               <div v-if="ingressExternalEndpoint" class="input-group">
                 <input
                   id="ingress-endpoint"
@@ -307,8 +274,8 @@ export default {
               <p class="form-text text-muted">
                 {{
                   s__(`ClusterIntegration|Point a wildcard DNS to this
-                  generated endpoint in order to access
-                  your application after it has been deployed.`)
+                generated endpoint in order to access
+                your application after it has been deployed.`)
                 }}
                 <a :href="ingressDnsHelpPath" target="_blank" rel="noopener noreferrer">
                   {{ __('More information') }}
@@ -319,10 +286,9 @@ export default {
             <p v-if="!ingressExternalEndpoint" class="settings-message js-no-endpoint-message">
               {{
                 s__(`ClusterIntegration|The endpoint is in
-                the process of being assigned. Please check your Kubernetes
-                cluster or Quotas on Google Kubernetes Engine if it takes a long time.`)
+              the process of being assigned. Please check your Kubernetes
+              cluster or Quotas on Google Kubernetes Engine if it takes a long time.`)
               }}
-
               <a :href="ingressDnsHelpPath" target="_blank" rel="noopener noreferrer">
                 {{ __('More information') }}
               </a>
@@ -341,7 +307,12 @@ export default {
         :status-reason="applications.cert_manager.statusReason"
         :request-status="applications.cert_manager.requestStatus"
         :request-reason="applications.cert_manager.requestReason"
+        :installed="applications.cert_manager.installed"
+        :install-failed="applications.cert_manager.installFailed"
         :install-application-request-params="{ email: applications.cert_manager.email }"
+        :uninstallable="applications.cert_manager.uninstallable"
+        :uninstall-successful="applications.cert_manager.uninstallSuccessful"
+        :uninstall-failed="applications.cert_manager.uninstallFailed"
         :disabled="!helmInstalled"
         title-link="https://cert-manager.readthedocs.io/en/latest/#"
       >
@@ -363,22 +334,20 @@ export default {
               <p class="form-text text-muted">
                 {{
                   s__(`ClusterIntegration|Issuers represent a certificate authority.
-                  You must provide an email address for your Issuer. `)
+                You must provide an email address for your Issuer. `)
                 }}
                 <a
                   href="http://docs.cert-manager.io/en/latest/reference/issuers.html?highlight=email"
                   target="_blank"
                   rel="noopener noreferrer"
+                  >{{ __('More information') }}</a
                 >
-                  {{ __('More information') }}
-                </a>
               </p>
             </div>
           </div>
         </template>
       </application-row>
       <application-row
-        v-if="isProjectCluster"
         id="prometheus"
         :logo-url="prometheusLogo"
         :title="applications.prometheus.title"
@@ -387,13 +356,17 @@ export default {
         :status-reason="applications.prometheus.statusReason"
         :request-status="applications.prometheus.requestStatus"
         :request-reason="applications.prometheus.requestReason"
+        :installed="applications.prometheus.installed"
+        :install-failed="applications.prometheus.installFailed"
+        :uninstallable="applications.prometheus.uninstallable"
+        :uninstall-successful="applications.prometheus.uninstallSuccessful"
+        :uninstall-failed="applications.prometheus.uninstallFailed"
         :disabled="!helmInstalled"
         title-link="https://prometheus.io/docs/introduction/overview/"
       >
         <div slot="description" v-html="prometheusDescription"></div>
       </application-row>
       <application-row
-        v-if="isProjectCluster"
         id="runner"
         :logo-url="gitlabLogo"
         :title="applications.runner.title"
@@ -403,16 +376,23 @@ export default {
         :request-reason="applications.runner.requestReason"
         :version="applications.runner.version"
         :chart-repo="applications.runner.chartRepo"
-        :upgrade-available="applications.runner.upgradeAvailable"
+        :update-available="applications.runner.updateAvailable"
+        :installed="applications.runner.installed"
+        :install-failed="applications.runner.installFailed"
+        :update-successful="applications.runner.updateSuccessful"
+        :update-failed="applications.runner.updateFailed"
+        :uninstallable="applications.runner.uninstallable"
+        :uninstall-successful="applications.runner.uninstallSuccessful"
+        :uninstall-failed="applications.runner.uninstallFailed"
         :disabled="!helmInstalled"
         title-link="https://docs.gitlab.com/runner/"
       >
         <div slot="description">
           {{
-            s__(`ClusterIntegration|GitLab Runner connects to this
-            project's repository and executes CI/CD jobs,
-            pushing results back and deploying,
-            applications to production.`)
+            s__(`ClusterIntegration|GitLab Runner connects to the
+          repository and executes CI/CD jobs,
+          pushing results back and deploying
+          applications to production.`)
           }}
         </div>
       </application-row>
@@ -425,6 +405,11 @@ export default {
         :status-reason="applications.jupyter.statusReason"
         :request-status="applications.jupyter.requestStatus"
         :request-reason="applications.jupyter.requestReason"
+        :installed="applications.jupyter.installed"
+        :install-failed="applications.jupyter.installFailed"
+        :uninstallable="applications.jupyter.uninstallable"
+        :uninstall-successful="applications.jupyter.uninstallSuccessful"
+        :uninstall-failed="applications.jupyter.uninstallFailed"
         :install-application-request-params="{ hostname: applications.jupyter.hostname }"
         :disabled="!helmInstalled"
         title-link="https://jupyterhub.readthedocs.io/en/stable/"
@@ -433,18 +418,16 @@ export default {
           <p>
             {{
               s__(`ClusterIntegration|JupyterHub, a multi-user Hub, spawns,
-              manages, and proxies multiple instances of the single-user
-              Jupyter notebook server. JupyterHub can be used to serve
-              notebooks to a class of students, a corporate data science group,
-              or a scientific research group.`)
+            manages, and proxies multiple instances of the single-user
+            Jupyter notebook server. JupyterHub can be used to serve
+            notebooks to a class of students, a corporate data science group,
+            or a scientific research group.`)
             }}
           </p>
 
           <template v-if="ingressExternalEndpoint">
             <div class="form-group">
-              <label for="jupyter-hostname">
-                {{ s__('ClusterIntegration|Jupyter Hostname') }}
-              </label>
+              <label for="jupyter-hostname">{{ s__('ClusterIntegration|Jupyter Hostname') }}</label>
 
               <div class="input-group">
                 <input
@@ -465,7 +448,7 @@ export default {
               <p v-if="ingressInstalled" class="form-text text-muted">
                 {{
                   s__(`ClusterIntegration|Replace this with your own hostname if you want.
-                  If you do so, point hostname to Ingress IP Address from above.`)
+                If you do so, point hostname to Ingress IP Address from above.`)
                 }}
                 <a :href="ingressDnsHelpPath" target="_blank" rel="noopener noreferrer">
                   {{ __('More information') }}
@@ -484,8 +467,15 @@ export default {
         :status-reason="applications.knative.statusReason"
         :request-status="applications.knative.requestStatus"
         :request-reason="applications.knative.requestReason"
+        :installed="applications.knative.installed"
+        :install-failed="applications.knative.installFailed"
         :install-application-request-params="{ hostname: applications.knative.hostname }"
+        :uninstallable="applications.knative.uninstallable"
+        :uninstall-successful="applications.knative.uninstallSuccessful"
+        :uninstall-failed="applications.knative.uninstallFailed"
+        :updateable="false"
         :disabled="!helmInstalled"
+        v-bind="applications.knative"
         title-link="https://github.com/knative/docs"
       >
         <div slot="description">
@@ -493,7 +483,7 @@ export default {
             <p v-if="!rbac" class="rbac-notice bs-callout bs-callout-info append-bottom-0">
               {{
                 s__(`ClusterIntegration|You must have an RBAC-enabled cluster
-                to install Knative.`)
+              to install Knative.`)
               }}
               <a :href="helpPath" target="_blank" rel="noopener noreferrer">
                 {{ __('More information') }}
@@ -504,93 +494,19 @@ export default {
           <p>
             {{
               s__(`ClusterIntegration|Knative extends Kubernetes to provide
-              a set of middleware components that are essential to build modern,
-              source-centric, and container-based applications that can run
-              anywhere: on premises, in the cloud, or even in a third-party data center.`)
+            a set of middleware components that are essential to build modern,
+            source-centric, and container-based applications that can run
+            anywhere: on premises, in the cloud, or even in a third-party data center.`)
             }}
           </p>
 
-          <div class="row">
-            <template v-if="knativeInstalled || (helmInstalled && rbac)">
-              <div
-                :class="{ 'col-md-6': knativeInstalled, 'col-12': helmInstalled && rbac }"
-                class="form-group col-sm-12 mb-0"
-              >
-                <label for="knative-domainname">
-                  <strong>
-                    {{ s__('ClusterIntegration|Knative Domain Name:') }}
-                  </strong>
-                </label>
-                <input
-                  id="knative-domainname"
-                  v-model="knativeHostname"
-                  type="text"
-                  class="form-control js-knative-domainname"
-                />
-              </div>
-            </template>
-            <template v-if="knativeInstalled">
-              <div class="form-group col-sm-12 col-md-6 pl-md-0 mb-0 mt-3 mt-md-0">
-                <label for="knative-endpoint">
-                  <strong>
-                    {{ s__('ClusterIntegration|Knative Endpoint:') }}
-                  </strong>
-                </label>
-                <div v-if="knativeExternalEndpoint" class="input-group">
-                  <input
-                    id="knative-endpoint"
-                    :value="knativeExternalEndpoint"
-                    type="text"
-                    class="form-control js-knative-endpoint"
-                    readonly
-                  />
-                  <span class="input-group-append">
-                    <clipboard-button
-                      :text="knativeExternalEndpoint"
-                      :title="s__('ClusterIntegration|Copy Knative Endpoint to clipboard')"
-                      class="input-group-text js-knative-endpoint-clipboard-btn"
-                    />
-                  </span>
-                </div>
-                <div v-else class="input-group">
-                  <input type="text" class="form-control js-endpoint" readonly />
-                  <gl-loading-icon
-                    class="position-absolute align-self-center ml-2 js-knative-ip-loading-icon"
-                  />
-                </div>
-              </div>
-
-              <p class="form-text text-muted col-12">
-                {{
-                  s__(
-                    `ClusterIntegration|To access your application after deployment, point a wildcard DNS to the Knative Endpoint.`,
-                  )
-                }}
-                <a :href="ingressDnsHelpPath" target="_blank" rel="noopener noreferrer">
-                  {{ __('More information') }}
-                </a>
-              </p>
-
-              <p
-                v-if="!knativeExternalEndpoint"
-                class="settings-message js-no-knative-endpoint-message mt-2 mr-3 mb-0 ml-3"
-              >
-                {{
-                  s__(`ClusterIntegration|The endpoint is in
-                  the process of being assigned. Please check your Kubernetes
-                  cluster or Quotas on Google Kubernetes Engine if it takes a long time.`)
-                }}
-              </p>
-
-              <button
-                v-if="canUpdateKnativeEndpoint"
-                class="btn btn-success js-knative-save-domain-button mt-3 ml-3"
-                @click="saveKnativeDomain"
-              >
-                {{ s__('ClusterIntegration|Save changes') }}
-              </button>
-            </template>
-          </div>
+          <knative-domain-editor
+            v-if="knative.installed || (helmInstalled && rbac)"
+            :knative="knative"
+            :ingress-dns-help-path="ingressDnsHelpPath"
+            @save="saveKnativeDomain"
+            @set="setKnativeHostname"
+          />
         </div>
       </application-row>
     </div>

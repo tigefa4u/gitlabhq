@@ -6,7 +6,7 @@ module API
 
     LOG_FILENAME = Rails.root.join("log", "api_json.log")
 
-    NO_SLASH_URL_PART_REGEX = %r{[^/]+}
+    NO_SLASH_URL_PART_REGEX = %r{[^/]+}.freeze
     NAMESPACE_OR_PROJECT_REQUIREMENTS = { id: NO_SLASH_URL_PART_REGEX }.freeze
     COMMIT_ENDPOINT_REQUIREMENTS = NAMESPACE_OR_PROJECT_REQUIREMENTS.merge(sha: NO_SLASH_URL_PART_REGEX).freeze
     USER_REQUIREMENTS = { user_id: NO_SLASH_URL_PART_REGEX }.freeze
@@ -98,7 +98,6 @@ module API
     mount ::API::Boards
     mount ::API::Branches
     mount ::API::BroadcastMessages
-    mount ::API::CircuitBreakers
     mount ::API::Commits
     mount ::API::CommitStatuses
     mount ::API::ContainerRegistry
@@ -134,6 +133,7 @@ module API
     mount ::API::Pipelines
     mount ::API::PipelineSchedules
     mount ::API::ProjectClusters
+    mount ::API::ProjectEvents
     mount ::API::ProjectExport
     mount ::API::ProjectImport
     mount ::API::ProjectHooks

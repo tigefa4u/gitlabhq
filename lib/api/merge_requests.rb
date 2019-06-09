@@ -20,6 +20,7 @@ module API
     def self.update_params_at_least_one_of
       %i[
         assignee_id
+        assignee_ids
         description
         labels
         milestone_id
@@ -111,6 +112,7 @@ module API
                          desc: 'Return merge requests for the given scope: `created_by_me`, `assigned_to_me` or `all`'
         optional :my_reaction_emoji, type: String, desc: 'Return issues reacted by the authenticated user by the given emoji'
         optional :source_branch, type: String, desc: 'Return merge requests with the given source branch'
+        optional :source_project_id, type: Integer, desc: 'Return merge requests with the given source project id'
         optional :target_branch, type: String, desc: 'Return merge requests with the given target branch'
         optional :search, type: String, desc: 'Search merge requests for text present in the title, description, or any combination of these'
         optional :in, type: String, desc: '`title`, `description`, or a string joining them with comma'
@@ -183,6 +185,7 @@ module API
         params :optional_params do
           optional :description, type: String, desc: 'The description of the merge request'
           optional :assignee_id, type: Integer, desc: 'The ID of a user to assign the merge request'
+          optional :assignee_ids, type: Array[Integer], desc: 'The array of user IDs to assign issue'
           optional :milestone_id, type: Integer, desc: 'The ID of a milestone to assign the merge request'
           optional :labels, type: Array[String], coerce_with: Validations::Types::LabelsList.coerce, desc: 'Comma-separated list of label names'
           optional :remove_source_branch, type: Boolean, desc: 'Remove source branch when merging'
@@ -230,6 +233,7 @@ module API
 
         mr_params = declared_params(include_missing: false)
         mr_params[:force_remove_source_branch] = mr_params.delete(:remove_source_branch)
+        mr_params = convert_parameters_from_legacy_format(mr_params)
 
         merge_request = ::MergeRequests::CreateService.new(user_project, current_user, mr_params).execute
 
@@ -332,7 +336,8 @@ module API
         merge_request = find_merge_request_with_access(params.delete(:merge_request_iid), :update_merge_request)
 
         mr_params = declared_params(include_missing: false)
-        mr_params[:force_remove_source_branch] = mr_params.delete(:remove_source_branch) if mr_params[:remove_source_branch].present?
+        mr_params[:force_remove_source_branch] = mr_params.delete(:remove_source_branch) if mr_params.has_key?(:remove_source_branch)
+        mr_params = convert_parameters_from_legacy_format(mr_params)
 
         merge_request = ::MergeRequests::UpdateService.new(user_project, current_user, mr_params).execute(merge_request)
 
@@ -381,9 +386,8 @@ module API
         )
 
         if merge_when_pipeline_succeeds && merge_request.head_pipeline && merge_request.head_pipeline.active?
-          ::MergeRequests::MergeWhenPipelineSucceedsService
-            .new(merge_request.target_project, current_user, merge_params)
-            .execute(merge_request)
+          AutoMergeService.new(merge_request.target_project, current_user, merge_params)
+            .execute(merge_request, AutoMergeService::STRATEGY_MERGE_WHEN_PIPELINE_SUCCEEDS)
         else
           ::MergeRequests::MergeService
             .new(merge_request.target_project, current_user, merge_params)
@@ -393,28 +397,16 @@ module API
         present merge_request, with: Entities::MergeRequest, current_user: current_user, project: user_project
       end
 
-      desc 'Merge a merge request to its default temporary merge ref path'
-      params do
-        optional :merge_commit_message, type: String, desc: 'Custom merge commit message'
-      end
-      put ':id/merge_requests/:merge_request_iid/merge_to_ref' do
+      desc 'Returns the up to date merge-ref HEAD commit'
+      get ':id/merge_requests/:merge_request_iid/merge_ref' do
         merge_request = find_project_merge_request(params[:merge_request_iid])
 
-        authorize! :admin_merge_request, user_project
+        result = ::MergeRequests::MergeabilityCheckService.new(merge_request).execute
 
-        merge_params = {
-          commit_message: params[:merge_commit_message]
-        }
-
-        result = ::MergeRequests::MergeToRefService
-          .new(merge_request.target_project, current_user, merge_params)
-          .execute(merge_request)
-
-        if result[:status] == :success
-          present result.slice(:commit_id), 200
+        if result.success?
+          present :commit_id, result.payload.dig(:merge_ref_head, :commit_id)
         else
-          http_status = result[:http_status] || 400
-          render_api_error!(result[:message], http_status)
+          render_api_error!(result.message, 400)
         end
       end
 
@@ -424,11 +416,9 @@ module API
       post ':id/merge_requests/:merge_request_iid/cancel_merge_when_pipeline_succeeds' do
         merge_request = find_project_merge_request(params[:merge_request_iid])
 
-        unauthorized! unless merge_request.can_cancel_merge_when_pipeline_succeeds?(current_user)
+        unauthorized! unless merge_request.can_cancel_auto_merge?(current_user)
 
-        ::MergeRequests::MergeWhenPipelineSucceedsService
-          .new(merge_request.target_project, current_user)
-          .cancel(merge_request)
+        AutoMergeService.new(merge_request.target_project, current_user).cancel(merge_request)
       end
 
       desc 'Rebase the merge request against its target branch' do

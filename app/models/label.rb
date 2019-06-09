@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class Label < ActiveRecord::Base
+class Label < ApplicationRecord
   include CacheMarkdownField
   include Referable
   include Subscribable
@@ -8,6 +8,7 @@ class Label < ActiveRecord::Base
   include OptionallySearch
   include Sortable
   include FromUnion
+  include Presentable
 
   cache_markdown_field :description, pipeline: :single_line
 
@@ -133,6 +134,10 @@ class Label < ActiveRecord::Base
     1
   end
 
+  def self.by_ids(ids)
+    where(id: ids)
+  end
+
   def open_issues_count(user = nil)
     issues_count(user, state: 'opened')
   end
@@ -227,6 +232,10 @@ class Label < ActiveRecord::Base
 
   def hook_attrs
     attributes
+  end
+
+  def present(attributes)
+    super(attributes.merge(presenter_class: ::LabelPresenter))
   end
 
   private

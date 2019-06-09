@@ -83,7 +83,7 @@ our newly created VPC.
 ### Internet Gateway
 
 Now still on the same dashboard head over to Internet Gateways and
-create a new one. After its created pres on the `Attach to VPC` button and
+create a new one. After its created press on the `Attach to VPC` button and
 select our VPC.
 
 ![Internet Gateway](img/ig.png)
@@ -390,5 +390,5 @@ some redundancy options but it might also imply Geographic replication.
 There is a lot of ground yet to cover so have a read through these other
 resources and feel free to open an issue to request additional material.
 
-- [GitLab High Availability](http://docs.gitlab.com/ce/administration/high_availability/README.html#sts=High%20Availability)
-- [GitLab Geo](https://docs.gitlab.com/ee/administration/geo/replication/index.html)
+- [GitLab High Availability](../../../administration/high_availability/README.md)
+- [GitLab Geo](../../../administration/geo/replication/index.md)

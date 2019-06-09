@@ -83,7 +83,7 @@ In this file, we will write the actions that will call the respective mutations:
 
   export const requestUsers = ({ commit }) => commit(types.REQUEST_USERS);
   export const receiveUsersSuccess = ({ commit }, data) => commit(types.RECEIVE_USERS_SUCCESS, data);
-  export const receiveUsersError = ({ commit }, error) => commit(types.REQUEST_USERS_ERROR, error);
+  export const receiveUsersError = ({ commit }, error) => commit(types.RECEIVE_USERS_ERROR, error);
 
   export const fetchUsers = ({ state, dispatch }) => {
     dispatch('requestUsers');
@@ -175,7 +175,7 @@ Remember that actions only describe that something happened, they don't describe
       state.users = data;
       state.isLoading = false;
     },
-    [types.REQUEST_USERS_ERROR](state, error) {
+    [types.RECEIVE_USERS_ERROR](state, error) {
       state.isLoading = false;
     },
     [types.REQUEST_ADD_USER](state, user) {
@@ -186,7 +186,7 @@ Remember that actions only describe that something happened, they don't describe
       state.users.push(user);
     },
     [types.REQUEST_ADD_USER_ERROR](state, error) {
-      state.isAddingUser = true;
+      state.isAddingUser = false;
       state.errorAddingUser = error;
     },
   };
@@ -231,7 +231,7 @@ The store should be included in the main component of your application:
 
 ```javascript
   // app.vue
-  import store from 'store'; // it will include the index.js file
+  import store from './store'; // it will include the index.js file
 
   export default {
     name: 'application',

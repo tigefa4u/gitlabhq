@@ -93,6 +93,14 @@ Parameters:
       "avatar_url": null,
       "web_url" : "https://gitlab.example.com/admin"
     },
+    "assignees": [{
+      "name": "Miss Monserrate Beier",
+      "username": "axel.block",
+      "id": 12,
+      "state": "active",
+      "avatar_url": "http://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
+      "web_url": "https://gitlab.example.com/axel.block"
+    }],
     "source_project_id": 2,
     "target_project_id": 3,
     "labels": [
@@ -130,7 +138,11 @@ Parameters:
       "human_time_estimate": null,
       "human_total_time_spent": null
     },
-    "squash": false
+    "squash": false,
+    "task_completion_status":{
+      "count":0,
+      "completed_count":0
+    }
   }
 ]
 ```
@@ -227,6 +239,14 @@ Parameters:
       "avatar_url": null,
       "web_url" : "https://gitlab.example.com/admin"
     },
+    "assignees": [{
+      "name": "Miss Monserrate Beier",
+      "username": "axel.block",
+      "id": 12,
+      "state": "active",
+      "avatar_url": "http://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
+      "web_url": "https://gitlab.example.com/axel.block"
+    }],
     "source_project_id": 2,
     "target_project_id": 3,
     "labels": [
@@ -264,7 +284,11 @@ Parameters:
       "human_time_estimate": null,
       "human_total_time_spent": null
     },
-    "squash": false
+    "squash": false,
+    "task_completion_status":{
+      "count":0,
+      "completed_count":0
+    }
   }
 ]
 ```
@@ -351,6 +375,14 @@ Parameters:
       "avatar_url": null,
       "web_url" : "https://gitlab.example.com/admin"
     },
+    "assignees": [{
+      "name": "Miss Monserrate Beier",
+      "username": "axel.block",
+      "id": 12,
+      "state": "active",
+      "avatar_url": "http://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
+      "web_url": "https://gitlab.example.com/axel.block"
+    }],
     "source_project_id": 2,
     "target_project_id": 3,
     "labels": [
@@ -386,7 +418,11 @@ Parameters:
       "human_time_estimate": null,
       "human_total_time_spent": null
     },
-    "squash": false
+    "squash": false,
+    "task_completion_status":{
+      "count":0,
+      "completed_count":0
+    }
   }
 ]
 ```
@@ -445,6 +481,14 @@ Parameters:
     "avatar_url": null,
     "web_url" : "https://gitlab.example.com/admin"
   },
+  "assignees": [{
+    "name": "Miss Monserrate Beier",
+    "username": "axel.block",
+    "id": 12,
+    "state": "active",
+    "avatar_url": "http://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
+    "web_url": "https://gitlab.example.com/axel.block"
+  }],
   "source_project_id": 2,
   "target_project_id": 3,
   "labels": [
@@ -513,7 +557,11 @@ Parameters:
     "start_sha": "c380d3acebd181f13629a25d2e2acca46ffe1e00"
   },
   "diverged_commits_count": 2,
-  "rebase_in_progress": false
+  "rebase_in_progress": false,
+  "task_completion_status":{
+    "count":0,
+    "completed_count":0
+  }
 }
 ```
 
@@ -547,7 +595,7 @@ Parameters:
     "state": "active",
     "avatar_url": "http://www.gravatar.com/avatar/10fc7f102be8de7657fb4d80898bbfe3?s=80&d=identicon",
     "web_url": "http://localhost/user2"
-  },
+  }
 ]
 ```
 
@@ -629,6 +677,14 @@ Parameters:
     "avatar_url": "http://www.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61?s=40&d=identicon",
     "web_url" : "https://gitlab.example.com/root"
   },
+  "assignees": [{
+    "name": "Miss Monserrate Beier",
+    "username": "axel.block",
+    "id": 12,
+    "state": "active",
+    "avatar_url": "http://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
+    "web_url": "https://gitlab.example.com/axel.block"
+  }],
   "source_project_id": 4,
   "target_project_id": 4,
   "labels": [ ],
@@ -662,7 +718,11 @@ Parameters:
     "total_time_spent": 0,
     "human_time_estimate": null,
     "human_total_time_spent": null
-  }
+  },
+  "task_completion_status":{
+    "count":0,
+    "completed_count":0
+  },
   "changes": [
     {
     "old_path": "VERSION",
@@ -718,6 +778,7 @@ POST /projects/:id/merge_requests
 | `target_branch`            | string  | yes      | The target branch                                                               |
 | `title`                    | string  | yes      | Title of MR                                                                     |
 | `assignee_id`              | integer | no       | Assignee user ID                                                                |
+| `assignee_ids`             | Array[integer] | no  | The ID of the user(s) to assign the MR to. Set to `0` or provide an empty value to unassign all assignees.  |
 | `description`              | string  | no       | Description of MR                                                               |
 | `target_project_id`        | integer | no       | The target project (numeric id)                                                 |
 | `labels`                   | string  | no       | Labels for MR as a comma-separated list                                         |
@@ -824,7 +885,11 @@ POST /projects/:id/merge_requests
     "head_sha": "2be7ddb704c7b6b83732fdd5b9f09d5a397b5f8f",
     "start_sha": "c380d3acebd181f13629a25d2e2acca46ffe1e00"
   },
-  "diverged_commits_count": 2
+  "diverged_commits_count": 2,
+  "task_completion_status":{
+    "count":0,
+    "completed_count":0
+  }
 }
 ```
 
@@ -843,6 +908,7 @@ PUT /projects/:id/merge_requests/:merge_request_iid
 | `target_branch`            | string  | no       | The target branch                                                               |
 | `title`                    | string  | no       | Title of MR                                                                     |
 | `assignee_id`              | integer | no       | The ID of the user to assign the merge request to. Set to `0` or provide an empty value to unassign all assignees.  |
+| `assignee_ids`             | Array[integer] | no  | The ID of the user(s) to assign the MR to. Set to `0` or provide an empty value to unassign all assignees.  |
 | `milestone_id`             | integer | no       | The global ID of a milestone to assign the merge request to. Set to `0` or provide an empty value to unassign a milestone.|
 | `labels`                   | string  | no       | Comma-separated label names for a merge request. Set to an empty string to unassign all labels.                    |
 | `description`              | string  | no       | Description of MR                                                               |
@@ -885,6 +951,14 @@ Must include at least one non-required attribute from above.
     "avatar_url": null,
     "web_url" : "https://gitlab.example.com/admin"
   },
+  "assignees": [{
+    "name": "Miss Monserrate Beier",
+    "username": "axel.block",
+    "id": 12,
+    "state": "active",
+    "avatar_url": "http://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
+    "web_url": "https://gitlab.example.com/axel.block"
+  }],
   "source_project_id": 2,
   "target_project_id": 3,
   "labels": [
@@ -952,7 +1026,11 @@ Must include at least one non-required attribute from above.
     "head_sha": "2be7ddb704c7b6b83732fdd5b9f09d5a397b5f8f",
     "start_sha": "c380d3acebd181f13629a25d2e2acca46ffe1e00"
   },
-  "diverged_commits_count": 2
+  "diverged_commits_count": 2,
+  "task_completion_status":{
+    "count":0,
+    "completed_count":0
+  }
 }
 ```
 
@@ -1030,6 +1108,14 @@ Parameters:
     "avatar_url": null,
     "web_url" : "https://gitlab.example.com/admin"
   },
+  "assignees": [{
+    "name": "Miss Monserrate Beier",
+    "username": "axel.block",
+    "id": 12,
+    "state": "active",
+    "avatar_url": "http://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
+    "web_url": "https://gitlab.example.com/axel.block"
+  }],
   "source_project_id": 2,
   "target_project_id": 3,
   "labels": [
@@ -1097,37 +1183,37 @@ Parameters:
     "head_sha": "2be7ddb704c7b6b83732fdd5b9f09d5a397b5f8f",
     "start_sha": "c380d3acebd181f13629a25d2e2acca46ffe1e00"
   },
-  "diverged_commits_count": 2
+  "diverged_commits_count": 2,
+  "task_completion_status":{
+    "count":0,
+    "completed_count":0
+  }
 }
 ```
 
-## Merge to default merge ref path
+## Returns the up to date merge-ref HEAD commit
 
-Merge the changes between the merge request source and target branches into `refs/merge-requests/:iid/merge` 
-ref, of the target project repository. This ref will have the state the target branch would have if
+Merge the changes between the merge request source and target branches into `refs/merge-requests/:iid/merge`
+ref, of the target project repository, if possible. This ref will have the state the target branch would have if
 a regular merge action was taken.
 
-This is not a regular merge action given it doesn't change the merge request state in any manner.
+This is not a regular merge action given it doesn't change the merge request target branch state in any manner.
 
-This ref (`refs/merge-requests/:iid/merge`) is **always** overwritten when submitting
-requests to this API, so none of its state is kept or used in the process.
+This ref (`refs/merge-requests/:iid/merge`) isn't necessarily overwritten when submitting
+requests to this API, though it'll make sure the ref has the latest possible state.
 
-If the merge request has conflicts, is empty or already merged,
-you'll get a `400` and a descriptive error message. If you don't have permissions to do so, 
-you'll get a `403`.
+If the merge request has conflicts, is empty or already merged, you'll get a `400` and a descriptive error message.
 
-It returns the HEAD commit of `refs/merge-requests/:iid/merge` in the response body in
-case of `200`.
+It returns the HEAD commit of `refs/merge-requests/:iid/merge` in the response body in case of `200`.
 
 ```
-PUT /projects/:id/merge_requests/:merge_request_iid/merge_to_ref
+GET /projects/:id/merge_requests/:merge_request_iid/merge_ref
 ```
 
 Parameters:
 
 - `id` (required) - The ID or [URL-encoded path of the project](README.md#namespaced-path-encoding) owned by the authenticated user
 - `merge_request_iid` (required)            - Internal ID of MR
-- `merge_commit_message` (optional)         - Custom merge commit message
 
 ```json
 {
@@ -1180,6 +1266,14 @@ Parameters:
     "avatar_url": null,
     "web_url" : "https://gitlab.example.com/admin"
   },
+  "assignees": [{
+    "name": "Miss Monserrate Beier",
+    "username": "axel.block",
+    "id": 12,
+    "state": "active",
+    "avatar_url": "http://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
+    "web_url": "https://gitlab.example.com/axel.block"
+  }],
   "source_project_id": 2,
   "target_project_id": 3,
   "labels": [
@@ -1247,7 +1341,11 @@ Parameters:
     "head_sha": "2be7ddb704c7b6b83732fdd5b9f09d5a397b5f8f",
     "start_sha": "c380d3acebd181f13629a25d2e2acca46ffe1e00"
   },
-  "diverged_commits_count": 2
+  "diverged_commits_count": 2,
+  "task_completion_status":{
+    "count":0,
+    "completed_count":0
+  }
 }
 ```
 
@@ -1283,7 +1381,7 @@ If the rebase operation is ongoing, the response will include the following:
 
 ```json
 {
-  "rebase_in_progress": true
+  "rebase_in_progress": true,
   "merge_error": null
 }
 ```
@@ -1294,7 +1392,7 @@ the following:
 ```json
 {
   "rebase_in_progress": false,
-  "merge_error": null,
+  "merge_error": null
 }
 ```
 
@@ -1303,7 +1401,7 @@ If the rebase operation fails, the response will include the following:
 ```json
 {
   "rebase_in_progress": false,
-  "merge_error": "Rebase failed. Please rebase locally",
+  "merge_error": "Rebase failed. Please rebase locally"
 }
 ```
 
@@ -1436,6 +1534,14 @@ Example response:
     "avatar_url": null,
     "web_url" : "https://gitlab.example.com/admin"
   },
+  "assignees": [{
+    "name": "Miss Monserrate Beier",
+    "username": "axel.block",
+    "id": 12,
+    "state": "active",
+    "avatar_url": "http://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
+    "web_url": "https://gitlab.example.com/axel.block"
+  }],
   "source_project_id": 2,
   "target_project_id": 3,
   "labels": [
@@ -1502,7 +1608,11 @@ Example response:
     "head_sha": "2be7ddb704c7b6b83732fdd5b9f09d5a397b5f8f",
     "start_sha": "c380d3acebd181f13629a25d2e2acca46ffe1e00"
   },
-  "diverged_commits_count": 2
+  "diverged_commits_count": 2,
+  "task_completion_status":{
+    "count":0,
+    "completed_count":0
+  }
 }
 ```
 
@@ -1557,6 +1667,14 @@ Example response:
     "avatar_url": null,
     "web_url" : "https://gitlab.example.com/admin"
   },
+  "assignees": [{
+    "name": "Miss Monserrate Beier",
+    "username": "axel.block",
+    "id": 12,
+    "state": "active",
+    "avatar_url": "http://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
+    "web_url": "https://gitlab.example.com/axel.block"
+  }],
   "source_project_id": 2,
   "target_project_id": 3,
   "labels": [
@@ -1623,7 +1741,11 @@ Example response:
     "head_sha": "2be7ddb704c7b6b83732fdd5b9f09d5a397b5f8f",
     "start_sha": "c380d3acebd181f13629a25d2e2acca46ffe1e00"
   },
-  "diverged_commits_count": 2
+  "diverged_commits_count": 2,
+  "task_completion_status":{
+    "count":0,
+    "completed_count":0
+  }
 }
 ```
 
@@ -1698,6 +1820,14 @@ Example response:
       "avatar_url": "http://www.gravatar.com/avatar/733005fcd7e6df12d2d8580171ccb966?s=80&d=identicon",
       "web_url": "https://gitlab.example.com/barrett.krajcik"
     },
+    "assignees": [{
+      "name": "Miss Monserrate Beier",
+      "username": "axel.block",
+      "id": 12,
+      "state": "active",
+      "avatar_url": "http://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
+      "web_url": "https://gitlab.example.com/axel.block"
+    }],
     "source_project_id": 3,
     "target_project_id": 3,
     "labels": [],

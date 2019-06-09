@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Notes::QuickActionsService do
@@ -185,6 +187,7 @@ describe Notes::QuickActionsService do
       end
 
       before do
+        stub_licensed_features(multiple_issue_assignees: false)
         project.add_maintainer(maintainer)
         project.add_maintainer(assignee)
       end

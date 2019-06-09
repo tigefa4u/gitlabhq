@@ -77,38 +77,28 @@ describe Gitlab::Checks::BranchCheck do
         let(:oldrev) { '0000000000000000000000000000000000000000' }
         let(:ref) { 'refs/heads/feature' }
 
-        context 'protected branch creation feature is disabled' do
+        context 'user can push to branch' do
           before do
-            stub_feature_flags(protected_branch_creation: false)
+            allow(user_access)
+              .to receive(:can_push_to_branch?)
+              .with('feature')
+              .and_return(true)
           end
 
-          context 'user is not allowed to push to protected branch' do
-            before do
-              allow(user_access)
-                .to receive(:can_push_to_branch?)
-                .and_return(false)
-            end
-
-            it 'raises an error' do
-              expect { subject.validate! }.to raise_error(Gitlab::GitAccess::UnauthorizedError, 'You are not allowed to push code to protected branches on this project.')
-            end
-          end
-
-          context 'user is allowed to push to protected branch' do
-            before do
-              allow(user_access)
-                .to receive(:can_push_to_branch?)
-                .and_return(true)
-            end
-
-            it 'does not raise an error' do
-              expect { subject.validate! }.not_to raise_error
-            end
+          it 'does not raise an error' do
+            expect { subject.validate! }.not_to raise_error
           end
         end
 
-        context 'protected branch creation feature is enabled' do
-          context 'user is not allowed to create protected branches' do
+        context 'user cannot push to branch' do
+          before do
+            allow(user_access)
+              .to receive(:can_push_to_branch?)
+              .with('feature')
+              .and_return(false)
+          end
+
+          context 'user cannot merge to branch' do
             before do
               allow(user_access)
                 .to receive(:can_merge_to_branch?)
@@ -121,7 +111,7 @@ describe Gitlab::Checks::BranchCheck do
             end
           end
 
-          context 'user is allowed to create protected branches' do
+          context 'user can merge to branch' do
             before do
               allow(user_access)
                 .to receive(:can_merge_to_branch?)

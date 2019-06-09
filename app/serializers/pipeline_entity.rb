@@ -4,6 +4,7 @@ class PipelineEntity < Grape::Entity
   include RequestAwareEntity
 
   expose :id
+  expose :iid
   expose :user, using: UserEntity
   expose :active?, as: :active
 
@@ -20,7 +21,6 @@ class PipelineEntity < Grape::Entity
   end
 
   expose :flags do
-    expose :latest?, as: :latest
     expose :stuck?, as: :stuck
     expose :auto_devops_source?, as: :auto_devops
     expose :merge_request_event?, as: :merge_request
@@ -34,6 +34,7 @@ class PipelineEntity < Grape::Entity
 
   expose :details do
     expose :detailed_status, as: :status, with: DetailedStatusEntity
+    expose :ordered_stages, as: :stages, using: StageEntity
     expose :duration
     expose :finished_at
   end
@@ -59,6 +60,8 @@ class PipelineEntity < Grape::Entity
   end
 
   expose :commit, using: CommitEntity
+  expose :source_sha, if: -> (pipeline, _) { pipeline.merge_request_pipeline? }
+  expose :target_sha, if: -> (pipeline, _) { pipeline.merge_request_pipeline? }
   expose :yaml_errors, if: -> (pipeline, _) { pipeline.has_yaml_errors? }
 
   expose :failure_reason, if: -> (pipeline, _) { pipeline.failure_reason? } do |pipeline|

@@ -19,7 +19,7 @@ describe Notify do
     create(:merge_request, source_project: project,
                            target_project: project,
                            author: current_user,
-                           assignee: assignee,
+                           assignees: [assignee],
                            description: 'Awesome description')
   end
 
@@ -30,8 +30,25 @@ describe Notify do
                    description: 'My awesome description!')
   end
 
+  describe 'with HTML-encoded entities' do
+    before do
+      described_class.test_email('test@test.com', 'Subject', 'Some body with &mdash;').deliver
+    end
+
+    subject { ActionMailer::Base.deliveries.last }
+
+    it 'retains 7bit encoding' do
+      expect(subject.body.ascii_only?).to eq(true)
+      expect(subject.body.encoding).to eq('7bit')
+    end
+  end
+
   context 'for a project' do
     shared_examples 'an assignee email' do
+      let(:test_recipient) { assignee }
+
+      it_behaves_like 'an email sent to a user'
+
       it 'is sent to the assignee as the author' do
         sender = subject.header[:from].addrs.first
 
@@ -262,7 +279,7 @@ describe Notify do
 
     context 'for merge requests' do
       describe 'that are new' do
-        subject { described_class.new_merge_request_email(merge_request.assignee_id, merge_request.id) }
+        subject { described_class.new_merge_request_email(merge_request.assignee_ids.first, merge_request.id) }
 
         it_behaves_like 'an assignee email'
         it_behaves_like 'an email starting a new thread with reply-by-email enabled' do
@@ -287,7 +304,7 @@ describe Notify do
         end
 
         context 'when sent with a reason' do
-          subject { described_class.new_merge_request_email(merge_request.assignee_id, merge_request.id, NotificationReason::ASSIGNED) }
+          subject { described_class.new_merge_request_email(merge_request.assignee_ids.first, merge_request.id, NotificationReason::ASSIGNED) }
 
           it_behaves_like 'appearance header and footer enabled'
           it_behaves_like 'appearance header and footer not enabled'
@@ -311,7 +328,7 @@ describe Notify do
 
       describe 'that are reassigned' do
         let(:previous_assignee) { create(:user, name: 'Previous Assignee') }
-        subject { described_class.reassigned_merge_request_email(recipient.id, merge_request.id, previous_assignee.id, current_user.id) }
+        subject { described_class.reassigned_merge_request_email(recipient.id, merge_request.id, [previous_assignee.id], current_user.id) }
 
         it_behaves_like 'a multiple recipients email'
         it_behaves_like 'an answer to an existing thread with reply-by-email enabled' do
@@ -338,7 +355,7 @@ describe Notify do
         end
 
         context 'when sent with a reason' do
-          subject { described_class.reassigned_merge_request_email(recipient.id, merge_request.id, previous_assignee.id, current_user.id, NotificationReason::ASSIGNED) }
+          subject { described_class.reassigned_merge_request_email(recipient.id, merge_request.id, [previous_assignee.id], current_user.id, NotificationReason::ASSIGNED) }
 
           it_behaves_like 'appearance header and footer enabled'
           it_behaves_like 'appearance header and footer not enabled'
@@ -351,11 +368,11 @@ describe Notify do
             text = EmailsHelper.instance_method(:notification_reason_text).bind(self).call(NotificationReason::ASSIGNED)
             is_expected.to have_body_text(text)
 
-            new_subject = described_class.reassigned_merge_request_email(recipient.id, merge_request.id, previous_assignee.id, current_user.id, NotificationReason::MENTIONED)
+            new_subject = described_class.reassigned_merge_request_email(recipient.id, merge_request.id, [previous_assignee.id], current_user.id, NotificationReason::MENTIONED)
             text = EmailsHelper.instance_method(:notification_reason_text).bind(self).call(NotificationReason::MENTIONED)
             expect(new_subject).to have_body_text(text)
 
-            new_subject = described_class.reassigned_merge_request_email(recipient.id, merge_request.id, previous_assignee.id, current_user.id, nil)
+            new_subject = described_class.reassigned_merge_request_email(recipient.id, merge_request.id, [previous_assignee.id], current_user.id, nil)
             text = EmailsHelper.instance_method(:notification_reason_text).bind(self).call(nil)
             expect(new_subject).to have_body_text(text)
           end
@@ -363,7 +380,7 @@ describe Notify do
       end
 
       describe 'that are new with a description' do
-        subject { described_class.new_merge_request_email(merge_request.assignee_id, merge_request.id) }
+        subject { described_class.new_merge_request_email(merge_request.assignee_ids.first, merge_request.id) }
 
         it_behaves_like 'it should show Gmail Actions View Merge request link'
         it_behaves_like "an unsubscribeable thread"
@@ -463,7 +480,7 @@ describe Notify do
                  source_project: project,
                  target_project: project,
                  author: current_user,
-                 assignee: assignee,
+                 assignees: [assignee],
                  description: 'Awesome description')
         end
 
@@ -605,8 +622,10 @@ describe Notify do
     end
 
     describe 'project was moved' do
+      let(:test_recipient) { user }
       subject { described_class.project_was_moved_email(project.id, user.id, "gitlab/gitlab") }
 
+      it_behaves_like 'an email sent to a user'
       it_behaves_like 'an email sent from GitLab'
       it_behaves_like 'it should not have Gmail Actions links'
       it_behaves_like "a user cannot unsubscribe through footer link"
@@ -688,6 +707,8 @@ describe Notify do
         is_expected.to have_body_text project.full_name
         is_expected.to have_body_text project.web_url
         is_expected.to have_body_text project_member.human_access
+        is_expected.to have_body_text 'leave the project'
+        is_expected.to have_body_text project_url(project, leave: 1)
       end
     end
 
@@ -758,7 +779,7 @@ describe Notify do
         invitee
       end
 
-      subject { described_class.member_invite_declined_email('project', project.id, project_member.invite_email, maintainer.id) }
+      subject { described_class.member_invite_declined_email('Project', project.id, project_member.invite_email, maintainer.id) }
 
       it_behaves_like 'an email sent from GitLab'
       it_behaves_like 'it should not have Gmail Actions links'
@@ -1068,8 +1089,6 @@ describe Notify do
   end
 
   context 'for a group' do
-    set(:group) { create(:group) }
-
     describe 'group access requested' do
       let(:group) { create(:group, :public, :access_requestable) }
       let(:group_member) do
@@ -1131,6 +1150,8 @@ describe Notify do
         is_expected.to have_body_text group.name
         is_expected.to have_body_text group.web_url
         is_expected.to have_body_text group_member.human_access
+        is_expected.to have_body_text 'leave the group'
+        is_expected.to have_body_text group_url(group, leave: 1)
       end
     end
 

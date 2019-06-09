@@ -22,7 +22,7 @@ export default {
     },
     selectedValue: {
       type: Number,
-      default: null,
+      default: DISCUSSION_FILTERS_DEFAULT_VALUE,
       required: false,
     },
   },
@@ -105,12 +105,12 @@ export default {
 <template>
   <div
     v-if="displayFilters"
-    class="discussion-filter-container js-discussion-filter-container d-inline-block align-bottom"
+    class="discussion-filter-container js-discussion-filter-container d-inline-block align-bottom full-width-mobile"
   >
     <button
       id="discussion-filter-dropdown"
       ref="dropdownToggle"
-      class="btn btn-default qa-discussion-filter"
+      class="btn btn-sm qa-discussion-filter"
       data-toggle="dropdown"
       aria-expanded="false"
     >

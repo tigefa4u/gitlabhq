@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Ci::CreatePipelineService do
@@ -23,7 +25,8 @@ describe Ci::CreatePipelineService do
       merge_request: nil,
       push_options: nil,
       source_sha: nil,
-      target_sha: nil)
+      target_sha: nil,
+      save_on_errors: true)
       params = { ref: ref,
                  before: '00000000',
                  after: after,
@@ -34,7 +37,7 @@ describe Ci::CreatePipelineService do
                  target_sha: target_sha }
 
       described_class.new(project, user, params).execute(
-        source, trigger_request: trigger_request, merge_request: merge_request)
+        source, save_on_errors: save_on_errors, trigger_request: trigger_request, merge_request: merge_request)
     end
     # rubocop:enable Metrics/ParameterLists
 
@@ -55,6 +58,7 @@ describe Ci::CreatePipelineService do
         expect(pipeline).to eq(project.ci_pipelines.last)
         expect(pipeline).to have_attributes(user: user)
         expect(pipeline).to have_attributes(status: 'pending')
+        expect(pipeline.iid).not_to be_nil
         expect(pipeline.repository_source?).to be true
         expect(pipeline.builds.first).to be_kind_of(Ci::Build)
       end
@@ -306,6 +310,56 @@ describe Ci::CreatePipelineService do
 
         it_behaves_like 'a failed pipeline'
       end
+
+      context 'when config has ports' do
+        context 'in the main image' do
+          let(:ci_yaml) do
+            <<-EOS
+              image:
+                name: ruby:2.2
+                ports:
+                  - 80
+            EOS
+          end
+
+          it_behaves_like 'a failed pipeline'
+        end
+
+        context 'in the job image' do
+          let(:ci_yaml) do
+            <<-EOS
+              image: ruby:2.2
+
+              test:
+                script: rspec
+                image:
+                  name: ruby:2.2
+                  ports:
+                    - 80
+            EOS
+          end
+
+          it_behaves_like 'a failed pipeline'
+        end
+
+        context 'in the service' do
+          let(:ci_yaml) do
+            <<-EOS
+              image: ruby:2.2
+
+              test:
+                script: rspec
+                image: ruby:2.2
+                services:
+                  - name: test
+                    ports:
+                      - 80
+            EOS
+          end
+
+          it_behaves_like 'a failed pipeline'
+        end
+      end
     end
 
     context 'when commit contains a [ci skip] directive' do
@@ -368,8 +422,7 @@ describe Ci::CreatePipelineService do
 
     context 'when push options contain ci.skip' do
       let(:push_options) do
-        ['ci.skip',
-         'another push option']
+        { 'ci' => { 'skip' => true } }
       end
 
       it 'creates a pipline in the skipped state' do
@@ -394,6 +447,43 @@ describe Ci::CreatePipelineService do
         expect(result).not_to be_persisted
         expect(Ci::Build.all).to be_empty
         expect(Ci::Pipeline.count).to eq(0)
+      end
+
+      describe '#iid' do
+        let(:internal_id) do
+          InternalId.find_by(project_id: project.id, usage: :ci_pipelines)
+        end
+
+        before do
+          expect_any_instance_of(Ci::Pipeline).to receive(:ensure_project_iid!)
+            .and_call_original
+        end
+
+        context 'when ci_pipeline_rewind_iid is enabled' do
+          before do
+            stub_feature_flags(ci_pipeline_rewind_iid: true)
+          end
+
+          it 'rewinds iid' do
+            result = execute_service
+
+            expect(result).not_to be_persisted
+            expect(internal_id.last_value).to eq(0)
+          end
+        end
+
+        context 'when ci_pipeline_rewind_iid is disabled' do
+          before do
+            stub_feature_flags(ci_pipeline_rewind_iid: false)
+          end
+
+          it 'does not rewind iid' do
+            result = execute_service
+
+            expect(result).not_to be_persisted
+            expect(internal_id.last_value).to eq(1)
+          end
+        end
       end
     end
 
@@ -683,7 +773,7 @@ describe Ci::CreatePipelineService do
       end
     end
 
-    describe 'Merge request pipelines' do
+    describe 'Pipelines for merge requests' do
       let(:pipeline) do
         execute_service(source: source,
                         merge_request: merge_request,
@@ -727,12 +817,14 @@ describe Ci::CreatePipelineService do
             let(:merge_request) do
               create(:merge_request,
                 source_project: project,
-                source_branch: Gitlab::Git.ref_name(ref_name),
+                source_branch: 'feature',
                 target_project: project,
                 target_branch: 'master')
             end
 
-            it 'creates a merge request pipeline' do
+            let(:ref_name) { merge_request.ref_path }
+
+            it 'creates a detached merge request pipeline' do
               expect(pipeline).to be_persisted
               expect(pipeline).to be_merge_request_event
               expect(pipeline.merge_request).to eq(merge_request)
@@ -745,6 +837,13 @@ describe Ci::CreatePipelineService do
 
             it 'does not persist target sha for detached merge request pipeline' do
               expect(pipeline.target_sha).to be_nil
+            end
+
+            it 'schedules update for the head pipeline of the merge request' do
+              expect(UpdateHeadPipelineForMergeRequestWorker)
+                .to receive(:perform_async).with(merge_request.id)
+
+              pipeline
             end
 
             context 'when target sha is specified' do
@@ -768,15 +867,16 @@ describe Ci::CreatePipelineService do
               let(:merge_request) do
                 create(:merge_request,
                   source_project: project,
-                  source_branch: Gitlab::Git.ref_name(ref_name),
+                  source_branch: 'feature',
                   target_project: target_project,
                   target_branch: 'master')
               end
 
+              let(:ref_name) { 'refs/heads/feature' }
               let!(:project) { fork_project(target_project, nil, repository: true) }
               let!(:target_project) { create(:project, :repository) }
 
-              it 'creates a merge request pipeline in the forked project' do
+              it 'creates a legacy detached merge request pipeline in the forked project' do
                 expect(pipeline).to be_persisted
                 expect(project.ci_pipelines).to eq([pipeline])
                 expect(target_project.ci_pipelines).to be_empty
@@ -794,7 +894,7 @@ describe Ci::CreatePipelineService do
                 }
               end
 
-              it 'does not create a merge request pipeline' do
+              it 'does not create a detached merge request pipeline' do
                 expect(pipeline).not_to be_persisted
                 expect(pipeline.errors[:base]).to eq(["No stages / jobs for this pipeline."])
               end
@@ -804,7 +904,7 @@ describe Ci::CreatePipelineService do
           context 'when merge request is not specified' do
             let(:merge_request) { nil }
 
-            it 'does not create a merge request pipeline' do
+            it 'does not create a detached merge request pipeline' do
               expect(pipeline).not_to be_persisted
               expect(pipeline.errors[:merge_request]).to eq(["can't be blank"])
             end
@@ -838,7 +938,7 @@ describe Ci::CreatePipelineService do
                 target_branch: 'master')
             end
 
-            it 'does not create a merge request pipeline' do
+            it 'does not create a detached merge request pipeline' do
               expect(pipeline).not_to be_persisted
 
               expect(pipeline.errors[:base])
@@ -849,7 +949,7 @@ describe Ci::CreatePipelineService do
           context 'when merge request is not specified' do
             let(:merge_request) { nil }
 
-            it 'does not create a merge request pipeline' do
+            it 'does not create a detached merge request pipeline' do
               expect(pipeline).not_to be_persisted
 
               expect(pipeline.errors[:base])
@@ -873,12 +973,12 @@ describe Ci::CreatePipelineService do
             let(:merge_request) do
               create(:merge_request,
                 source_project: project,
-                source_branch: ref_name,
+                source_branch: Gitlab::Git.ref_name(ref_name),
                 target_project: project,
                 target_branch: 'master')
             end
 
-            it 'does not create a merge request pipeline' do
+            it 'does not create a detached merge request pipeline' do
               expect(pipeline).not_to be_persisted
 
               expect(pipeline.errors[:base])
@@ -904,12 +1004,12 @@ describe Ci::CreatePipelineService do
             let(:merge_request) do
               create(:merge_request,
                 source_project: project,
-                source_branch: ref_name,
+                source_branch: Gitlab::Git.ref_name(ref_name),
                 target_project: project,
                 target_branch: 'master')
             end
 
-            it 'does not create a merge request pipeline' do
+            it 'does not create a detached merge request pipeline' do
               expect(pipeline).not_to be_persisted
 
               expect(pipeline.errors[:base])
@@ -933,12 +1033,12 @@ describe Ci::CreatePipelineService do
             let(:merge_request) do
               create(:merge_request,
                 source_project: project,
-                source_branch: ref_name,
+                source_branch: Gitlab::Git.ref_name(ref_name),
                 target_project: project,
                 target_branch: 'master')
             end
 
-            it 'does not create a merge request pipeline' do
+            it 'does not create a detached merge request pipeline' do
               expect(pipeline).not_to be_persisted
 
               expect(pipeline.errors[:base])

@@ -2,7 +2,7 @@
 
 module Clusters
   module Applications
-    class Ingress < ActiveRecord::Base
+    class Ingress < ApplicationRecord
       VERSION = '1.1.2'.freeze
 
       self.table_name = 'clusters_applications_ingress'
@@ -33,6 +33,13 @@ module Clusters
 
       def chart
         'stable/nginx-ingress'
+      end
+
+      # We will implement this in future MRs.
+      # Basically we need to check all dependent applications are not installed
+      # first.
+      def allowed_to_uninstall?
+        false
       end
 
       def install_command

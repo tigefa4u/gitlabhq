@@ -1,10 +1,6 @@
 ---
-last_updated: 2019-03-05
-author: Marcia Ramos
-author_gitlab: marcia
-level: beginner
-article_type: user guide
-date: 2017-02-22
+last_updated: 2019-06-04
+type: reference, howto
 ---
 
 # Projects for GitLab Pages and URL structure
@@ -13,11 +9,11 @@ date: 2017-02-22
 
 To get started with GitLab Pages, you need:
 
-1. A project
-1. A configuration file (`.gitlab-ci.yml`) to deploy your site
+1. A project, thus a repository to hold your website's codebase.
+1. A configuration file (`.gitlab-ci.yml`) to deploy your site.
 1. A specific `job` called `pages` in the configuration file
-   that will make GitLab aware that you are deploying a GitLab Pages website
-1. A `public` directory with the content of the website
+   that will make GitLab aware that you are deploying a GitLab Pages website.
+1. A `public` directory with the static content of the website.
 
 Optional Features:
 
@@ -88,14 +84,15 @@ website from your project's **Settings > Pages**.
 
 You can also take some **optional** further steps:
 
-- _Remove the fork relationship._ The fork relashionship is necessary to contribute back to the project you originally forked from. If you don't have any intentions to do so, you can remove it. To do so, navigate to your project's **Settings**, expand **Advanced settings**, and scroll down to **Remove fork relationship**:
+- _Remove the fork relationship._ The fork relationship is necessary to contribute back to the project you originally forked from. If you don't have any intentions to do so, you can remove it. To do so, navigate to your project's **Settings**, expand **Advanced settings**, and scroll down to **Remove fork relationship**:
 
     ![remove fork relationship](img/remove_fork_relationship.png)
 
 - _Make it a user or group website._ To turn a **project website** forked
 from the Pages group into a **user/group** website, you'll need to:
-    - Rename it to `namespace.gitlab.io`: navigate to project's **Settings** >
-    expand **Advanced settings** > and scroll down to **Rename repository**.
+    - Rename it to `namespace.gitlab.io`: go to your project's
+    **Settings > General** and expand **Advanced**. Scroll down to
+    **Rename repository** and change the path to `namespace.gitlab.io`.
     - Adjust your SSG's [base URL](#urls-and-baseurls) from `"project-name"` to
     `""`. This setting will be at a different place for each SSG, as each of them
     have their own structure and file tree. Most likely, it will be in the SSG's
@@ -104,8 +101,8 @@ from the Pages group into a **user/group** website, you'll need to:
 ### Create a project from scratch
 
 1. From your **Project**'s **[Dashboard](https://gitlab.com/dashboard/projects)**,
-   click **New project**, and name it considering the
-   [practical examples](getting_started_part_one.md#practical-examples).
+   click **New project**, and name it according to the
+   [Pages domain names](getting_started_part_one.md#gitlab-pages-domain-names).
 1. Clone it to your local computer, add your website
    files to your project, add, commit and push to GitLab.
 1. From the your **Project**'s page, click **Set up CI/CD**:
@@ -139,7 +136,7 @@ where you'll find its default URL.
   repository to you local computer and moving your site files into it,
   you can run `git init` in your local website directory, add the
   remote URL: `git remote add origin git@gitlab.com:namespace/project-name.git`,
-  then add, commit, and push.
+  then add, commit, and push to GitLab.
 
 ## URLs and Baseurls
 
@@ -172,4 +169,4 @@ baseurl: ""
 ## Custom Domains
 
 GitLab Pages supports custom domains and subdomains, served under HTTP or HTTPS.
-Please check the [next part](getting_started_part_three.md) of this series for an overview.
+See [GitLab Pages custom domains and SSL/TLS Certificates](getting_started_part_three.md) for more information.

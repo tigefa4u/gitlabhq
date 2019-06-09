@@ -1,29 +1,33 @@
+---
+type: reference
+---
+
 # Creating and using CI/CD pipelines
 
 > Introduced in GitLab 8.8.
 
 ## Introduction
 
-Pipelines are the top-level component of continuous integration, deployment, and delivery.
+Pipelines are the top-level component of continuous integration, delivery, and deployment.
 
 Pipelines comprise:
 
 - Jobs that define what to run. For example, code compilation or test runs.
-- Stages that define when and how to run. For example, that test run after code compilation.
+- Stages that define when and how to run. For example, that tests run only after code compilation.
 
-Jobs in a stage are executed by [Runners](runners/README.md) in parallel, if there are enough concurrent [Runners](runners/README.md).
+Multiple jobs in the same stage are executed by [Runners](runners/README.md) in parallel, if there are enough concurrent [Runners](runners/README.md).
 
-If the jobs in a stage:
+If all the jobs in a stage:
 
 - Succeed, the pipeline moves on to the next stage.
-- Fail, the next stage is not (usually) executed.
+- Fail, the next stage is not (usually) executed and the pipeline ends early.
 
 NOTE: **Note:**
-If you have a [mirrored repository where GitLab pulls from](https://docs.gitlab.com/ee/workflow/repository_mirroring.html#pulling-from-a-remote-repository-starter),
+If you have a [mirrored repository that GitLab pulls from](../workflow/repository_mirroring.md#pulling-from-a-remote-repository-starter),
 you may need to enable pipeline triggering in your project's
 **Settings > Repository > Pull from a remote repository > Trigger pipelines for mirror updates**.
 
-### Simple example
+### Simple pipeline example
 
 As an example, imagine a pipeline consisting of four stages, executed in the following order:
 
@@ -38,26 +42,26 @@ As an example, imagine a pipeline consisting of four stages, executed in the fol
 
 Pipelines can be complex structures with many sequential and parallel jobs.
 
-To make it easier to understand the flow of a pipeline, GitLab has pipeline graphs for viewing pipeline
+To make it easier to understand the flow of a pipeline, GitLab has pipeline graphs for viewing pipelines
 and their statuses.
 
-Pipeline graphs can be displayed in two different ways, depending on what page you
-access the graph.
+Pipeline graphs can be displayed in two different ways, depending on the page you
+access the graph from.
 
 NOTE: **Note:**
-GitLab capitalizes the stages' names when shown in the [pipeline graphs](#pipeline-graphs).
+GitLab capitalizes the stages' names when shown in the pipeline graphs (below).
 
 ### Regular pipeline graphs
 
-Regular pipeline graphs that show the names of the jobs of each stage. Regular pipeline graphs can
-be found when you are on a [single pipeline page](#seeing-pipeline-status). For example:
+Regular pipeline graphs show the names of the jobs of each stage. Regular pipeline graphs can
+be found when you are on a [single pipeline page](#accessing-pipelines). For example:
 
 ![Pipelines example](img/pipelines.png)
 
 ### Pipeline mini graphs
 
-Pipeline mini graphs takes less space and can give you a
-quick glance if all jobs pass or something failed. The pipeline mini graph can
+Pipeline mini graphs take less space and can tell you at a
+quick glance if all jobs passed or something failed. The pipeline mini graph can
 be found when you navigate to:
 
 - The pipelines index page.
@@ -101,7 +105,7 @@ For example:
 ### How pipeline duration is calculated
 
 Total running time for a given pipeline excludes retries and pending
-(queue) time.
+(queued) time.
 
 Each job is represented as a `Period`, which consists of:
 
@@ -120,7 +124,7 @@ In the example:
 - B begins at 2 and ends at 4.
 - C begins at 6 and ends at 7.
 
-Visually it can be viewed as:
+Visually, it can be viewed as:
 
 ```text
 0  1  2  3  4  5  6  7
@@ -144,7 +148,7 @@ In particular:
 - Jobs are the [basic configuration](yaml/README.html#introduction) component.
 - Stages are defined using the [`stages`](yaml/README.html#stages) keyword.
 
-For all available configuration options, see [GitLab CI/CD Pipeline Configuration Reference](yaml/README.md).
+For all available configuration options, see the [GitLab CI/CD Pipeline Configuration Reference](yaml/README.md).
 
 ### Settings and schedules
 
@@ -214,17 +218,17 @@ GitLab supports configuring pipelines that run only for merge requests. For more
 
 Pipeline status and test coverage report badges are available and configurable for each project.
 
-For information on adding pipeline badges to project, see [Pipeline badges](../user/project/pipelines/settings.md#pipeline-badges).
+For information on adding pipeline badges to projects, see [Pipeline badges](../user/project/pipelines/settings.md#pipeline-badges).
 
 ## Multi-project pipelines **[PREMIUM]**
 
 Pipelines for different projects can be combined and visualized together.
 
-For more information, see [Multi-project pipelines](https://docs.gitlab.com/ee/ci/multi_project_pipelines.html).
+For more information, see [Multi-project pipelines](multi_project_pipelines.md).
 
 ## Working with pipelines
 
-Generally, pipelines are executed automatically and require no intervention once created.
+In general, pipelines are executed automatically and require no intervention once created.
 
 However, there are instances where you'll need to interact with pipelines. These are documented below.
 
@@ -277,7 +281,7 @@ can quickly check the reason it failed:
 - In the pipeline widgets, in the merge requests and commit pages.
 - In the job views, in the global and detailed views of a job.
 
-In any case, if you hover over the failed job you can see the reason it failed.
+In each place, if you hover over the failed job you can see the reason it failed.
 
 ![Pipeline detail](img/job_failure_reason.png)
 
@@ -294,8 +298,8 @@ allow you to require manual interaction before moving forward in the pipeline.
 You can do this straight from the pipeline graph. Just click on the play button
 to execute that particular job.
 
-For example, your entire pipeline could run automatically, but require manual action to
-[deploy to production](environments.md#manually-deploying-to-environments). Below, the `production`
+For example, your pipeline start automatically, but require manual action to
+[deploy to production](environments.md#configuring-manual-deployments). In the example below, the `production`
 stage has a job with a manual action.
 
 ![Pipelines example](img/pipelines.png)
@@ -309,11 +313,11 @@ delay a job's execution for a certain period.
 
 This is especially useful for timed incremental rollout where new code is rolled out gradually.
 
-For example, if you start rolling out new code and users:
+For example, if you start rolling out new code and:
 
-- Do not experience trouble, GitLab can automatically complete the deployment from 0% to 100%.
-- Experience trouble with the new code, you can stop the timed incremental rollout by canceling the pipeline
-  and [rolling](environments.md#rolling-back-changes) back to last stable version.
+- Users do not experience trouble, GitLab can automatically complete the deployment from 0% to 100%.
+- Users experience trouble with the new code, you can stop the timed incremental rollout by canceling the pipeline
+  and [rolling](environments.md#retrying-and-rolling-back) back to the last stable version.
 
 ![Pipelines example](img/pipeline_incremental_rollout.png)
 
@@ -327,6 +331,19 @@ GitLab provides API endpoints to:
   - [Triggering pipelines through the API](triggers/README.md).
   - [Pipeline triggers API](../api/pipeline_triggers.md).
 
+### Start multiple manual actions in a stage
+
+> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/27188) in GitLab 11.11.
+
+Multiple manual actions in a single stage can be started at the same time using the "Play all manual" button.
+Once the user clicks this button, each individual manual action will be triggered and refreshed
+to an updated status.
+
+This functionality is only available:
+
+- For users with at least Developer access.
+- If the the stage contains [manual actions](#manual-actions-from-pipeline-graphs).
+
 ## Security on protected branches
 
 A strict security model is enforced when pipelines are executed on
@@ -336,14 +353,14 @@ The following actions are allowed on protected branches only if the user is
 [allowed to merge or push](../user/project/protected_branches.md#using-the-allowed-to-merge-and-allowed-to-push-settings)
 on that specific branch:
 
-- Run manual pipelines (using [Web UI](#manually-executing-pipelines) or pipelines API).
+- Run manual pipelines (using the [Web UI](#manually-executing-pipelines) or pipelines API).
 - Run scheduled pipelines.
 - Run pipelines using triggers.
 - Trigger manual actions on existing pipelines.
-- Retry/cancel existing jobs (using Web UI or pipelines API).
+- Retry or cancel existing jobs (using the Web UI or pipelines API).
 
 **Variables** marked as **protected** are accessible only to jobs that
-run on protected branches, avoiding untrusted users to get unintended access to
+run on protected branches, preventing untrusted users getting unintended access to
 sensitive information like deployment credentials and tokens.
 
 **Runners** marked as **protected** can run jobs only on protected

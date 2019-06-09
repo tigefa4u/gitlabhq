@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 describe Projects::BlobController do
@@ -10,6 +12,8 @@ describe Projects::BlobController do
 
     context 'with file path' do
       before do
+        expect(::Gitlab::GitalyClient).to receive(:allow_ref_name_caching).and_call_original
+
         get(:show,
             params: {
               namespace_id: project.namespace,
@@ -285,7 +289,7 @@ describe Projects::BlobController do
           merge_request.update!(source_project: other_project, target_project: other_project)
         end
 
-        it "it redirect to blob" do
+        it "redirects to blob" do
           put :update, params: mr_params
 
           expect(response).to redirect_to(blob_after_edit_path)

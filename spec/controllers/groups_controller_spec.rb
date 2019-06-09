@@ -1,6 +1,10 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe GroupsController do
+  include ExternalAuthorizationServiceHelpers
+
   let(:user) { create(:user) }
   let(:admin) { create(:admin) }
   let(:group) { create(:group, :public) }
@@ -137,6 +141,28 @@ describe GroupsController do
   end
 
   describe 'POST #create' do
+    it 'allows creating a group' do
+      sign_in(user)
+
+      expect do
+        post :create, params: { group: { name: 'new_group', path: "new_group" } }
+      end.to change { Group.count }.by(1)
+
+      expect(response).to have_gitlab_http_status(302)
+    end
+
+    context 'authorization' do
+      it 'allows an admin to create a group' do
+        sign_in(create(:admin))
+
+        expect do
+          post :create, params: { group: { name: 'new_group', path: "new_group" } }
+        end.to change { Group.count }.by(1)
+
+        expect(response).to have_gitlab_http_status(302)
+      end
+    end
+
     context 'when creating subgroups', :nested_groups do
       [true, false].each do |can_create_group_status|
         context "and can_create_group is #{can_create_group_status}" do
@@ -348,6 +374,13 @@ describe GroupsController do
 
       expect(assigns(:group).errors).not_to be_empty
       expect(assigns(:group).path).not_to eq('new_path')
+    end
+
+    it 'updates the project_creation_level successfully' do
+      post :update, params: { id: group.to_param, group: { project_creation_level: ::Gitlab::Access::MAINTAINER_PROJECT_ACCESS } }
+
+      expect(response).to have_gitlab_http_status(302)
+      expect(group.reload.project_creation_level).to eq(::Gitlab::Access::MAINTAINER_PROJECT_ACCESS)
     end
   end
 
@@ -566,11 +599,11 @@ describe GroupsController do
           }
       end
 
-      it 'should return a notice' do
+      it 'returns a notice' do
         expect(flash[:notice]).to eq("Group '#{group.name}' was successfully transferred.")
       end
 
-      it 'should redirect to the new path' do
+      it 'redirects to the new path' do
         expect(response).to redirect_to("/#{new_parent_group.path}/#{group.path}")
       end
     end
@@ -587,11 +620,11 @@ describe GroupsController do
           }
       end
 
-      it 'should return a notice' do
+      it 'returns a notice' do
         expect(flash[:notice]).to eq("Group '#{group.name}' was successfully transferred.")
       end
 
-      it 'should redirect to the new path' do
+      it 'redirects to the new path' do
         expect(response).to redirect_to("/#{group.path}")
       end
     end
@@ -611,12 +644,12 @@ describe GroupsController do
           }
       end
 
-      it 'should return an alert' do
+      it 'returns an alert' do
         expect(flash[:alert]).to eq "Transfer failed: namespace directory cannot be moved"
       end
 
-      it 'should redirect to the current path' do
-        expect(response).to render_template(:edit)
+      it 'redirects to the current path' do
+        expect(response).to redirect_to(edit_group_path(group))
       end
     end
 
@@ -633,7 +666,7 @@ describe GroupsController do
           }
       end
 
-      it 'should be denied' do
+      it 'is denied' do
         expect(response).to have_gitlab_http_status(404)
       end
     end
@@ -656,6 +689,100 @@ describe GroupsController do
       before do
         default_params.merge!(id: group)
       end
+    end
+  end
+
+  describe 'external authorization' do
+    before do
+      group.add_owner(user)
+      sign_in(user)
+    end
+
+    context 'with external authorization service enabled' do
+      before do
+        enable_external_authorization_service_check
+      end
+
+      describe 'GET #show' do
+        it 'is successful' do
+          get :show, params: { id: group.to_param }
+
+          expect(response).to have_gitlab_http_status(200)
+        end
+
+        it 'does not allow other formats' do
+          get :show, params: { id: group.to_param }, format: :atom
+
+          expect(response).to have_gitlab_http_status(403)
+        end
+      end
+
+      describe 'GET #edit' do
+        it 'is successful' do
+          get :edit, params: { id: group.to_param }
+
+          expect(response).to have_gitlab_http_status(200)
+        end
+      end
+
+      describe 'GET #new' do
+        it 'is successful' do
+          get :new
+
+          expect(response).to have_gitlab_http_status(200)
+        end
+      end
+
+      describe 'GET #index' do
+        it 'is successful' do
+          get :index
+
+          # Redirects to the dashboard
+          expect(response).to have_gitlab_http_status(302)
+        end
+      end
+
+      describe 'POST #create' do
+        it 'creates a group' do
+          expect do
+            post :create, params: { group: { name: 'a name', path: 'a-name' } }
+          end.to change { Group.count }.by(1)
+        end
+      end
+
+      describe 'PUT #update' do
+        it 'updates a group' do
+          expect do
+            put :update, params: { id: group.to_param, group: { name: 'world' } }
+          end.to change { group.reload.name }
+        end
+      end
+
+      describe 'DELETE #destroy' do
+        it 'deletes the group' do
+          delete :destroy, params: { id: group.to_param }
+
+          expect(response).to have_gitlab_http_status(302)
+        end
+      end
+    end
+
+    describe 'GET #activity' do
+      subject { get :activity, params: { id: group.to_param } }
+
+      it_behaves_like 'disabled when using an external authorization service'
+    end
+
+    describe 'GET #issues' do
+      subject { get :issues, params: { id: group.to_param } }
+
+      it_behaves_like 'disabled when using an external authorization service'
+    end
+
+    describe 'GET #merge_requests' do
+      subject { get :merge_requests, params: { id: group.to_param } }
+
+      it_behaves_like 'disabled when using an external authorization service'
     end
   end
 end

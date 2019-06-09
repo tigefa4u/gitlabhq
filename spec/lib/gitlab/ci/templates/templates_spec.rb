@@ -3,40 +3,32 @@
 require 'spec_helper'
 
 describe "CI YML Templates" do
-  ABSTRACT_TEMPLATES = %w[Serverless].freeze
+  using RSpec::Parameterized::TableSyntax
 
-  def self.concrete_templates
-    Gitlab::Template::GitlabCiYmlTemplate.all.reject do |template|
-      ABSTRACT_TEMPLATES.include?(template.name)
-    end
+  subject { Gitlab::Ci::YamlProcessor.new(content) }
+
+  where(:template_name) do
+    Gitlab::Template::GitlabCiYmlTemplate.all.map(&:full_name)
   end
 
-  def self.abstract_templates
-    Gitlab::Template::GitlabCiYmlTemplate.all.select do |template|
-      ABSTRACT_TEMPLATES.include?(template.name)
+  with_them do
+    let(:content) do
+      <<~EOS
+        include:
+          - template: #{template_name}
+
+        concrete_build_implemented_by_a_user:
+          stage: test
+          script: do something
+      EOS
     end
-  end
 
-  describe 'concrete templates with CI/CD jobs' do
-    concrete_templates.each do |template|
-      it "#{template.name} template should be valid" do
-        expect { Gitlab::Ci::YamlProcessor.new(template.content) }
-          .not_to raise_error
-      end
+    it 'is valid' do
+      expect { subject }.not_to raise_error
     end
-  end
 
-  describe 'abstract templates without concrete jobs defined' do
-    abstract_templates.each do |template|
-      it "#{template.name} template should be valid after being implemented" do
-        content = template.content + <<~EOS
-          concrete_build_implemented_by_a_user:
-            stage: build
-            script: do something
-        EOS
-
-        expect { Gitlab::Ci::YamlProcessor.new(content) }.not_to raise_error
-      end
+    it 'require default stages to be included' do
+      expect(subject.stages).to include(*Gitlab::Ci::Config::Entry::Stages.default)
     end
   end
 end

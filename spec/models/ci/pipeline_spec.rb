@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Ci::Pipeline, :mailer do
@@ -320,45 +322,111 @@ describe Ci::Pipeline, :mailer do
     end
   end
 
-  describe '.mergeable_merge_request_pipelines' do
-    subject { described_class.mergeable_merge_request_pipelines(merge_request) }
+  describe '#merge_request_ref?' do
+    subject { pipeline.merge_request_ref? }
 
-    let!(:pipeline) do
-      create(:ci_pipeline, source: :merge_request_event, merge_request: merge_request, target_sha: target_sha)
+    it 'calls MergeRequest#merge_request_ref?' do
+      expect(MergeRequest).to receive(:merge_request_ref?).with(pipeline.ref)
+
+      subject
+    end
+  end
+
+  describe '#legacy_detached_merge_request_pipeline?' do
+    subject { pipeline.legacy_detached_merge_request_pipeline? }
+
+    set(:merge_request) { create(:merge_request) }
+    let(:ref) { 'feature' }
+    let(:target_sha) { nil }
+
+    let(:pipeline) do
+      build(:ci_pipeline, source: :merge_request_event, merge_request: merge_request, ref: ref, target_sha: target_sha)
     end
 
-    let(:merge_request) { create(:merge_request) }
-    let(:target_sha) { merge_request.target_branch_sha }
+    it { is_expected.to be_truthy }
 
-    it 'returns mergeable merge pipelines' do
-      is_expected.to eq([pipeline])
+    context 'when pipeline ref is a merge request ref' do
+      let(:ref) { 'refs/merge-requests/1/head' }
+
+      it { is_expected.to be_falsy }
     end
 
-    context 'when target sha does not point the head of the target branch' do
-      let(:target_sha) { merge_request.diff_head_sha }
+    context 'when target sha is set' do
+      let(:target_sha) { 'target-sha' }
 
-      it 'returns empty array' do
-        is_expected.to be_empty
+      it { is_expected.to be_falsy }
+    end
+  end
+
+  describe '#matches_sha_or_source_sha?' do
+    subject { pipeline.matches_sha_or_source_sha?(sample_sha) }
+
+    let(:sample_sha) { Digest::SHA1.hexdigest(SecureRandom.hex) }
+
+    context 'when sha matches' do
+      let(:pipeline) { build(:ci_pipeline, sha: sample_sha) }
+
+      it { is_expected.to be_truthy }
+    end
+
+    context 'when source_sha matches' do
+      let(:pipeline) { build(:ci_pipeline, source_sha: sample_sha) }
+
+      it { is_expected.to be_truthy }
+    end
+
+    context 'when both sha and source_sha do not matche' do
+      let(:pipeline) { build(:ci_pipeline, sha: 'test', source_sha: 'test') }
+
+      it { is_expected.to be_falsy }
+    end
+  end
+
+  describe '#source_ref' do
+    subject { pipeline.source_ref }
+
+    let(:pipeline) { create(:ci_pipeline, ref: 'feature') }
+
+    it 'returns source ref' do
+      is_expected.to eq('feature')
+    end
+
+    context 'when the pipeline is a detached merge request pipeline' do
+      let(:merge_request) { create(:merge_request) }
+
+      let(:pipeline) do
+        create(:ci_pipeline, source: :merge_request_event, merge_request: merge_request, ref: merge_request.ref_path)
+      end
+
+      it 'returns source ref' do
+        is_expected.to eq(merge_request.source_branch)
       end
     end
   end
 
-  describe '#mergeable_merge_request_pipeline?' do
-    subject { pipeline.mergeable_merge_request_pipeline? }
+  describe '#source_ref_slug' do
+    subject { pipeline.source_ref_slug }
 
-    let!(:pipeline) do
-      create(:ci_pipeline, source: :merge_request_event, merge_request: merge_request, target_sha: target_sha)
+    let(:pipeline) { create(:ci_pipeline, ref: 'feature') }
+
+    it 'slugifies with the source ref' do
+      expect(Gitlab::Utils).to receive(:slugify).with('feature')
+
+      subject
     end
 
-    let(:merge_request) { create(:merge_request) }
-    let(:target_sha) { merge_request.target_branch_sha }
+    context 'when the pipeline is a detached merge request pipeline' do
+      let(:merge_request) { create(:merge_request) }
 
-    it { is_expected.to be_truthy }
+      let(:pipeline) do
+        create(:ci_pipeline, source: :merge_request_event, merge_request: merge_request, ref: merge_request.ref_path)
+      end
 
-    context 'when target sha does not point the head of the target branch' do
-      let(:target_sha) { merge_request.diff_head_sha }
+      it 'slugifies with the source ref of the merge request' do
+        expect(Gitlab::Utils).to receive(:slugify).with(merge_request.source_branch)
 
-      it { is_expected.to be_falsy }
+        subject
+      end
     end
   end
 
@@ -398,9 +466,29 @@ describe Ci::Pipeline, :mailer do
           target_branch: 'master')
       end
 
-      let(:pipeline) { merge_request.merge_request_pipelines.first }
+      let(:pipeline) { merge_request.pipelines_for_merge_request.first }
 
       it 'does not return the pipeline' do
+        is_expected.to be_empty
+      end
+    end
+  end
+
+  describe '.with_reports' do
+    subject { described_class.with_reports(Ci::JobArtifact.test_reports) }
+
+    context 'when pipeline has a test report' do
+      let!(:pipeline_with_report) { create(:ci_pipeline, :with_test_reports) }
+
+      it 'selects the pipeline' do
+        is_expected.to eq([pipeline_with_report])
+      end
+    end
+
+    context 'when pipeline does not have metrics reports' do
+      let!(:pipeline_without_report) { create(:ci_empty_pipeline) }
+
+      it 'does not select the pipeline' do
         is_expected.to be_empty
       end
     end
@@ -650,7 +738,8 @@ describe Ci::Pipeline, :mailer do
                             CI_PIPELINE_SOURCE
                             CI_COMMIT_MESSAGE
                             CI_COMMIT_TITLE
-                            CI_COMMIT_DESCRIPTION]
+                            CI_COMMIT_DESCRIPTION
+                            CI_COMMIT_REF_PROTECTED]
     end
 
     context 'when source is merge request' do
@@ -664,12 +753,12 @@ describe Ci::Pipeline, :mailer do
                source_branch: 'feature',
                target_project: project,
                target_branch: 'master',
-               assignee: assignee,
+               assignees: assignees,
                milestone: milestone,
                labels: labels)
       end
 
-      let(:assignee) { create(:user) }
+      let(:assignees) { create_list(:user, 2) }
       let(:milestone) { create(:milestone, project: project) }
       let(:labels) { create_list(:label, 2) }
 
@@ -690,7 +779,7 @@ describe Ci::Pipeline, :mailer do
             'CI_MERGE_REQUEST_SOURCE_BRANCH_NAME' => merge_request.source_branch.to_s,
             'CI_MERGE_REQUEST_SOURCE_BRANCH_SHA' => pipeline.source_sha.to_s,
             'CI_MERGE_REQUEST_TITLE' => merge_request.title,
-            'CI_MERGE_REQUEST_ASSIGNEES' => assignee.username,
+            'CI_MERGE_REQUEST_ASSIGNEES' => merge_request.assignee_username_list,
             'CI_MERGE_REQUEST_MILESTONE' => milestone.title,
             'CI_MERGE_REQUEST_LABELS' => labels.map(&:title).join(','))
       end
@@ -710,7 +799,7 @@ describe Ci::Pipeline, :mailer do
       end
 
       context 'without assignee' do
-        let(:assignee) { nil }
+        let(:assignees) { [] }
 
         it 'does not expose assignee variable' do
           expect(subject.to_hash.keys).not_to include('CI_MERGE_REQUEST_ASSIGNEES')
@@ -1201,16 +1290,28 @@ describe Ci::Pipeline, :mailer do
     end
 
     describe '#started_at' do
-      it 'updates on transitioning to running' do
-        build.run
+      let(:pipeline) { create(:ci_empty_pipeline, status: from_status) }
 
-        expect(pipeline.reload.started_at).not_to be_nil
+      %i[created preparing pending].each do |status|
+        context "from #{status}" do
+          let(:from_status) { status }
+
+          it 'updates on transitioning to running' do
+            pipeline.run
+
+            expect(pipeline.started_at).not_to be_nil
+          end
+        end
       end
 
-      it 'does not update on transitioning to success' do
-        build.success
+      context 'from created' do
+        let(:from_status) { :created }
 
-        expect(pipeline.reload.started_at).to be_nil
+        it 'does not update on transitioning to success' do
+          pipeline.succeed
+
+          expect(pipeline.started_at).to be_nil
+        end
       end
     end
 
@@ -1229,23 +1330,45 @@ describe Ci::Pipeline, :mailer do
     end
 
     describe 'merge request metrics' do
-      let(:project) { create(:project, :repository) }
-      let(:pipeline) { FactoryBot.create(:ci_empty_pipeline, status: 'created', project: project, ref: 'master', sha: project.repository.commit('master').id) }
-      let!(:merge_request) { create(:merge_request, source_project: project, source_branch: pipeline.ref) }
+      let(:pipeline) { create(:ci_empty_pipeline, status: from_status) }
 
       before do
         expect(PipelineMetricsWorker).to receive(:perform_async).with(pipeline.id)
       end
 
       context 'when transitioning to running' do
-        it 'schedules metrics workers' do
-          pipeline.run
+        %i[created preparing pending].each do |status|
+          context "from #{status}" do
+            let(:from_status) { status }
+
+            it 'schedules metrics workers' do
+              pipeline.run
+            end
+          end
         end
       end
 
       context 'when transitioning to success' do
+        let(:from_status) { 'created' }
+
         it 'schedules metrics workers' do
           pipeline.succeed
+        end
+      end
+    end
+
+    describe 'merge on success' do
+      let(:pipeline) { create(:ci_empty_pipeline, status: from_status) }
+
+      %i[created preparing pending running].each do |status|
+        context "from #{status}" do
+          let(:from_status) { status }
+
+          it 'schedules pipeline success worker' do
+            expect(PipelineSuccessWorker).to receive(:perform_async).with(pipeline.id)
+
+            pipeline.succeed
+          end
         end
       end
     end
@@ -1255,6 +1378,40 @@ describe Ci::Pipeline, :mailer do
         expect(ExpirePipelineCacheWorker).to receive(:perform_async).with(pipeline.id)
 
         pipeline.cancel
+      end
+    end
+
+    describe 'auto merge' do
+      let(:merge_request) { create(:merge_request, :merge_when_pipeline_succeeds) }
+
+      let(:pipeline) do
+        create(:ci_pipeline, :running, project: merge_request.source_project,
+                                       ref: merge_request.source_branch,
+                                       sha: merge_request.diff_head_sha)
+      end
+
+      before do
+        merge_request.update_head_pipeline
+      end
+
+      %w[succeed! drop! cancel! skip!].each do |action|
+        context "when the pipeline recieved #{action} event" do
+          it 'performs AutoMergeProcessWorker' do
+            expect(AutoMergeProcessWorker).to receive(:perform_async).with(merge_request.id)
+
+            pipeline.public_send(action)
+          end
+        end
+      end
+
+      context 'when auto merge is not enabled in the merge request' do
+        let(:merge_request) { create(:merge_request) }
+
+        it 'performs AutoMergeProcessWorker' do
+          expect(AutoMergeProcessWorker).not_to receive(:perform_async)
+
+          pipeline.succeed!
+        end
       end
     end
 
@@ -1398,6 +1555,14 @@ describe Ci::Pipeline, :mailer do
     describe '#latest?' do
       context 'with latest sha' do
         it 'returns true' do
+          expect(pipeline).to be_latest
+        end
+      end
+
+      context 'with a branch name as the ref' do
+        it 'looks up commit with the full ref name' do
+          expect(pipeline.project).to receive(:commit).with('refs/heads/master').and_call_original
+
           expect(pipeline).to be_latest
         end
       end
@@ -1767,6 +1932,18 @@ describe Ci::Pipeline, :mailer do
     end
 
     subject { pipeline.reload.status }
+
+    context 'on prepare' do
+      before do
+        # Prevent skipping directly to 'pending'
+        allow(build).to receive(:prerequisites).and_return([double])
+        allow(Ci::BuildPrepareWorker).to receive(:perform_async)
+
+        build.enqueue
+      end
+
+      it { is_expected.to eq('preparing') }
+    end
 
     context 'on queuing' do
       before do
@@ -2631,18 +2808,19 @@ describe Ci::Pipeline, :mailer do
   end
 
   describe '#latest_builds_with_artifacts' do
-    let!(:pipeline) { create(:ci_pipeline, :success) }
-
-    let!(:build) do
-      create(:ci_build, :success, :artifacts, pipeline: pipeline)
-    end
+    let!(:fresh_build) { create(:ci_build, :success, :artifacts, pipeline: pipeline) }
+    let!(:stale_build) { create(:ci_build, :success, :expired, :artifacts, pipeline: pipeline) }
 
     it 'returns an Array' do
       expect(pipeline.latest_builds_with_artifacts).to be_an_instance_of(Array)
     end
 
-    it 'returns the latest builds' do
-      expect(pipeline.latest_builds_with_artifacts).to eq([build])
+    it 'returns the latest builds with non-expired artifacts' do
+      expect(pipeline.latest_builds_with_artifacts).to contain_exactly(fresh_build)
+    end
+
+    it 'does not return builds with expired artifacts' do
+      expect(pipeline.latest_builds_with_artifacts).not_to include(stale_build)
     end
 
     it 'memoizes the returned relation' do
@@ -2654,8 +2832,8 @@ describe Ci::Pipeline, :mailer do
     end
   end
 
-  describe '#has_test_reports?' do
-    subject { pipeline.has_test_reports? }
+  describe '#has_reports?' do
+    subject { pipeline.has_reports?(Ci::JobArtifact.test_reports) }
 
     context 'when pipeline has builds with test reports' do
       before do
@@ -2795,6 +2973,38 @@ describe Ci::Pipeline, :mailer do
 
       it "returns false" do
         expect(subject).to be_falsey
+      end
+    end
+  end
+
+  describe '#find_stage_by_name' do
+    let(:pipeline) { create(:ci_pipeline) }
+    let(:stage_name) { 'test' }
+
+    let(:stage) do
+      create(:ci_stage_entity,
+             pipeline: pipeline,
+             project: pipeline.project,
+             name: 'test')
+    end
+
+    before do
+      create_list(:ci_build, 2, pipeline: pipeline, stage: stage.name)
+    end
+
+    subject { pipeline.find_stage_by_name!(stage_name) }
+
+    context 'when stage exists' do
+      it { is_expected.to eq(stage) }
+    end
+
+    context 'when stage does not exist' do
+      let(:stage_name) { 'build' }
+
+      it 'raises an ActiveRecord exception' do
+        expect do
+          subject
+        end.to raise_exception(ActiveRecord::RecordNotFound)
       end
     end
   end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper.rb'
 
 describe Issues::BuildService do
@@ -58,8 +60,10 @@ describe Issues::BuildService do
                     "> That has a quote\n"\
                     ">>>\n"
         note_result = "    > This is a string\n"\
+                      "    > \n"\
                       "    > > with a blockquote\n"\
-                      "    > > > That has a quote\n"
+                      "    > > > That has a quote\n"\
+                      "    > \n"
         discussion = create(:diff_note_on_merge_request, note: note_text).to_discussion
         expect(service.item_for_discussion(discussion)).to include(note_result)
       end

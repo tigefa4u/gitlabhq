@@ -26,7 +26,7 @@ Reviewers and maintainers should pay attention to:
 
 - `defer` functions: ensure the presence when needed, and after `err` check.
 - Inject dependencies as parameters.
-- Void structs when marshalling to JSON (generates `null` instead of `[]`).
+- Void structs when marshaling to JSON (generates `null` instead of `[]`).
 
 ### Security
 
@@ -40,7 +40,7 @@ of possible security breaches in our code:
 - SQL injections
 
 Remember to run
-[SAST](https://docs.gitlab.com/ee/user/project/merge_requests/sast.html)
+[SAST](../../user/application_security/sast/index.md)
 **[ULTIMATE]** on your project (or at least the [gosec
 analyzer](https://gitlab.com/gitlab-org/security-products/analyzers/gosec)),
 and to follow our [Security
@@ -93,10 +93,10 @@ become available, you will be able to share job templates like this
 
 Dependencies should be kept to the minimum. The introduction of a new
 dependency should be argued in the merge request, as per our [Approval
-Guidelines](../code_review.html#approval-guidelines). Both [License
-Management](https://docs.gitlab.com/ee/user/project/merge_requests/license_management.html)
+Guidelines](../code_review.md#approval-guidelines). Both [License
+Management](../../user/project/merge_requests/license_management.md)
 **[ULTIMATE]** and [Dependency
-Scanning](https://docs.gitlab.com/ee/user/project/merge_requests/dependency_scanning.html)
+Scanning](../../user/application_security/dependency_scanning/index.md)
 **[ULTIMATE]** should be activated on all projects to ensure new dependencies
 security status and license compatibility.
 
@@ -185,7 +185,7 @@ There are a few guidelines one should follow when using the
 
 - When printing an error use
   [WithError](https://godoc.org/github.com/sirupsen/logrus#WithError). For
-  exmaple, `logrus.WithError(err).Error("Failed to do something")`.
+  example, `logrus.WithError(err).Error("Failed to do something")`.
 - Since we use [structured logging](#structured-json-logging) we can log
   fields in the context of that code path, such as the URI of the request using
   [`WithField`](https://godoc.org/github.com/sirupsen/logrus#WithField) or

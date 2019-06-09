@@ -1,9 +1,11 @@
 <script>
 /* eslint-disable vue/require-default-prop */
+import { GlTooltipDirective, GlLink } from '@gitlab/ui';
 import { sprintf, __ } from '~/locale';
 import PipelineStage from '~/pipelines/components/stage.vue';
 import CiIcon from '~/vue_shared/components/ci_icon.vue';
 import Icon from '~/vue_shared/components/icon.vue';
+import PipelineLink from '~/vue_shared/components/ci_pipeline_link.vue';
 import TooltipOnTruncate from '~/vue_shared/components/tooltip_on_truncate.vue';
 import mrWidgetPipelineMixin from 'ee_else_ce/vue_merge_request_widget/mixins/mr_widget_pipeline';
 
@@ -14,8 +16,13 @@ export default {
     CiIcon,
     Icon,
     TooltipOnTruncate,
+    GlLink,
+    PipelineLink,
     LinkedPipelinesMiniList: () =>
       import('ee_component/vue_shared/components/linked_pipelines_mini_list.vue'),
+  },
+  directives: {
+    GlTooltip: GlTooltipDirective,
   },
   mixins: [mrWidgetPipelineMixin],
   props: {
@@ -78,13 +85,19 @@ export default {
         false,
       );
     },
+    isTriggeredByMergeRequest() {
+      return Boolean(this.pipeline.merge_request);
+    },
+    isMergeRequestPipeline() {
+      return Boolean(this.pipeline.flags && this.pipeline.flags.merge_request_pipeline);
+    },
   },
 };
 </script>
 
 <template>
-  <div v-if="hasPipeline || hasCIError" class="ci-widget media">
-    <template v-if="hasCIError">
+  <div class="ci-widget media js-ci-widget">
+    <template v-if="!hasPipeline || hasCIError">
       <div
         class="add-border ci-status-icon ci-status-icon-failed ci-error js-ci-error append-right-default"
       >
@@ -99,21 +112,61 @@ export default {
       <div class="ci-widget-container d-flex">
         <div class="ci-widget-content">
           <div class="media-body">
-            <div class="font-weight-bold">
-              Pipeline
-              <a :href="pipeline.path" class="pipeline-id font-weight-normal pipeline-number"
-                >#{{ pipeline.id }}</a
-              >
+            <div class="font-weight-bold js-pipeline-info-container">
+              {{ s__('Pipeline|Pipeline') }}
+              <pipeline-link
+                :href="pipeline.path"
+                :pipeline-id="pipeline.id"
+                :pipeline-iid="pipeline.iid"
+                class="pipeline-id pipeline-iid font-weight-normal"
+              />
               {{ pipeline.details.status.label }}
               <template v-if="hasCommitInfo">
-                for
-                <a
+                {{ s__('Pipeline|for') }}
+                <gl-link
                   :href="pipeline.commit.commit_path"
                   class="commit-sha js-commit-link font-weight-normal"
-                  >{{ pipeline.commit.short_id }}</a
+                  >{{ pipeline.commit.short_id }}</gl-link
                 >
-                on
+                {{ s__('Pipeline|on') }}
+                <template v-if="isTriggeredByMergeRequest">
+                  <gl-link
+                    v-gl-tooltip
+                    :href="pipeline.merge_request.path"
+                    :title="pipeline.merge_request.title"
+                    class="font-weight-normal"
+                    >!{{ pipeline.merge_request.iid }}</gl-link
+                  >
+                  {{ s__('Pipeline|with') }}
+                  <tooltip-on-truncate
+                    :title="pipeline.merge_request.source_branch"
+                    truncate-target="child"
+                    class="label-branch label-truncate"
+                  >
+                    <gl-link
+                      :href="pipeline.merge_request.source_branch_path"
+                      class="font-weight-normal"
+                      >{{ pipeline.merge_request.source_branch }}</gl-link
+                    >
+                  </tooltip-on-truncate>
+
+                  <template v-if="isMergeRequestPipeline">
+                    {{ s__('Pipeline|into') }}
+                    <tooltip-on-truncate
+                      :title="pipeline.merge_request.target_branch"
+                      truncate-target="child"
+                      class="label-branch label-truncate"
+                    >
+                      <gl-link
+                        :href="pipeline.merge_request.target_branch_path"
+                        class="font-weight-normal"
+                        >{{ pipeline.merge_request.target_branch }}</gl-link
+                      >
+                    </tooltip-on-truncate>
+                  </template>
+                </template>
                 <tooltip-on-truncate
+                  v-else
                   :title="sourceBranch"
                   truncate-target="child"
                   class="label-branch label-truncate"
@@ -121,7 +174,9 @@ export default {
                 />
               </template>
             </div>
-            <div v-if="pipeline.coverage" class="coverage">Coverage {{ pipeline.coverage }}%</div>
+            <div v-if="pipeline.coverage" class="coverage">
+              {{ s__('Pipeline|Coverage') }} {{ pipeline.coverage }}%
+            </div>
           </div>
         </div>
         <div>

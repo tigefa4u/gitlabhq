@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Projects::BoardsController do
@@ -96,6 +98,10 @@ describe Projects::BoardsController do
 
         expect(response).to have_gitlab_http_status(404)
       end
+    end
+
+    it_behaves_like 'unauthorized when external service denies access' do
+      subject { list_boards }
     end
 
     def list_boards(format: :html)
