@@ -193,6 +193,13 @@ describe Gitlab::BackgroundMigration::MigrateLegacyUploads, :migration, schema: 
         described_class.new.perform(start_id, end_id)
       end
 
+      it 'ensures the job is idempotent and does not add duplicate text' do
+        described_class.new.perform(start_id, end_id)
+
+        expect(note1.reload.note.scan(%r(/uploads/)).count).to eq(1)
+        expect(legacy_diff_note.reload.note.scan(/failed to migrate/).count).to eq(1)
+      end
+
       it 'does not remove legacy diff note file' do
         expect(File.exist?(legacy_upload_diff_note.absolute_path)).to be_truthy
       end
@@ -229,6 +236,15 @@ describe Gitlab::BackgroundMigration::MigrateLegacyUploads, :migration, schema: 
     before do
       stub_uploads_object_storage(FileUploader)
       create_remote_files
+    end
+
+    it 'updates notes even if noteable is invalid' do
+      note1.noteable_id = nil
+      note1.save(validate: false)
+
+      described_class.new.perform(start_id, end_id)
+
+      expect(note1.reload.note).to include("/uploads/")
     end
 
     it_behaves_like 'migrates files correctly'

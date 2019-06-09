@@ -84,9 +84,10 @@ module Gitlab
 
         def add_upload_link_to_note_text
           new_text = "#{note.note} \n #{@uploader.markdown_link}"
-          note.update!(
-            note: new_text
-          )
+          # Bypass validations because old data may have invalid
+          # noteable values. If we fail hard here, we may kill the
+          # entire background migration, which affects a range of notes.
+          note.update_attribute(:note, new_text)
         end
 
         def legacy_file_uploader
@@ -102,15 +103,24 @@ module Gitlab
         end
 
         def handle_legacy_note_upload
-          note.note += "\n \n Attachment ##{upload.id} with URL \"#{note.attachment.url}\" failed to migrate \
-               for model class #{note.class}. See #{help_doc_link}."
-          note.save
+          unless note.note.include?(failed_migration_header)
+            note.note += failed_migration_text
+            note.save
+          end
 
           say "MigrateLegacyUploads: LegacyDiffNote ##{note.id} found, can't move the file: #{upload.inspect} for upload ##{upload.id}. See #{help_doc_link}."
         end
 
         def say(message)
           Rails.logger.info(message)
+        end
+
+        def failed_migration_text
+          "\n \n #{failed_migration_header} for model class #{note.class}. See #{help_doc_link}."
+        end
+
+        def failed_migration_header
+          "Attachment ##{upload.id} with URL \"#{note.attachment.url}\" failed to migrate"
         end
 
         def help_doc_link
