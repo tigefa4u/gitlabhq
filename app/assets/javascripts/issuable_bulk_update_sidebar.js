@@ -1,11 +1,10 @@
-/* eslint-disable class-methods-use-this, no-new */
-
 import $ from 'jquery';
 import IssuableBulkUpdateActions from './issuable_bulk_update_actions';
 import MilestoneSelect from './milestone_select';
 import issueStatusSelect from './issue_status_select';
 import subscriptionSelect from './subscription_select';
 import LabelsSelect from './labels_select';
+import issuesListStore from '~/issues/stores';
 
 const HIDDEN_CLASS = 'hidden';
 const DISABLED_CONTENT_CLASS = 'disabled-content';
@@ -14,6 +13,7 @@ const SIDEBAR_COLLAPSED_CLASS = 'right-sidebar-collapsed issuable-bulk-update-si
 
 export default class IssuableBulkUpdateSidebar {
   constructor() {
+    this.issuableBulkUpdateActions = IssuableBulkUpdateActions;
     this.initDomElements();
     this.bindEvents();
     this.initDropdowns();
@@ -44,14 +44,14 @@ export default class IssuableBulkUpdateSidebar {
   }
 
   initDropdowns() {
-    new LabelsSelect();
-    new MilestoneSelect();
-    issueStatusSelect();
-    subscriptionSelect();
+    this.labelSelect = new LabelsSelect();
+    this.labelSelect = new MilestoneSelect();
+    this.issueStatusSelect = issueStatusSelect();
+    this.subscriptionSelect = subscriptionSelect();
   }
 
   setupBulkUpdateActions() {
-    IssuableBulkUpdateActions.setOriginalDropdownData();
+    this.issuableBulkUpdateActions.setOriginalDropdownData();
   }
 
   updateFormState() {
@@ -60,7 +60,7 @@ export default class IssuableBulkUpdateSidebar {
     this.toggleSubmitButtonDisabled(noCheckedIssues);
     this.updateSelectedIssuableIds();
 
-    IssuableBulkUpdateActions.setOriginalDropdownData();
+    this.issuableBulkUpdateActions.setOriginalDropdownData();
   }
 
   prepForSubmit() {
@@ -107,7 +107,12 @@ export default class IssuableBulkUpdateSidebar {
 
   toggleCheckboxDisplay(show) {
     this.$checkAllContainer.toggleClass(HIDDEN_CLASS, !show);
-    this.$issueChecks.toggleClass(HIDDEN_CLASS, !show);
+
+    if (gon.features && gon.features.issuesVueComponent) {
+      issuesListStore.dispatch('issuesList/setBulkUpdateState', show);
+    } else {
+      this.$issueChecks.toggleClass(HIDDEN_CLASS, !show);
+    }
   }
 
   toggleOtherFiltersDisabled(disable) {

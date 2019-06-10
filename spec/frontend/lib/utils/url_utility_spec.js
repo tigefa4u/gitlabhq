@@ -1,11 +1,5 @@
 import * as urlUtils from '~/lib/utils/url_utility';
-
-const setWindowLocation = value => {
-  Object.defineProperty(window, 'location', {
-    writable: true,
-    value,
-  });
-};
+import { setWindowLocation } from '../../helpers/url_util_helper';
 
 describe('URL utility', () => {
   describe('webIDEUrl', () => {
