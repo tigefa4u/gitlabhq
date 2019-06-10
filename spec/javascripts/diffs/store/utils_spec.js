@@ -29,10 +29,10 @@ describe('DiffsStoreUtils', () => {
 
     it('puts old lines on the left', () => {
       const lineOne = {
-        type: OLD_LINE_TYPE,
+        removed: true,
       };
       const lineTwo = {
-        type: OLD_NO_NEW_LINE_TYPE,
+        removed: true,
       };
       const highlightedDiffLines = [lineOne, lineTwo];
 
@@ -50,10 +50,10 @@ describe('DiffsStoreUtils', () => {
 
     it('puts new lines on the left', () => {
       const lineOne = {
-        type: NEW_LINE_TYPE,
+        added: true,
       };
       const lineTwo = {
-        type: NEW_NO_NEW_LINE_TYPE,
+        removed: true,
       };
       const highlightedDiffLines = [lineOne, lineTwo];
 
@@ -63,15 +63,15 @@ describe('DiffsStoreUtils', () => {
           right: lineOne,
         },
         {
-          left: null,
-          right: lineTwo,
+          left: lineTwo,
+          right: null,
         },
       ]);
     });
 
     it('puts matching lines on both sides', () => {
       const line = {
-        type: MATCH_LINE_TYPE,
+        unchanged: true,
       };
       const highlightedDiffLines = [line];
 
@@ -85,13 +85,13 @@ describe('DiffsStoreUtils', () => {
 
     it('correctly aligns old and new lines', () => {
       const oldLineOne = {
-        type: OLD_LINE_TYPE,
+        removed: true,
       };
       const oldLineTwo = {
-        type: OLD_NO_NEW_LINE_TYPE,
+        removed: true,
       };
       const newLine = {
-        type: NEW_LINE_TYPE,
+        added: true,
       };
       const highlightedDiffLines = [oldLineOne, oldLineTwo, newLine];
 
