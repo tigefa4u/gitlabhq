@@ -399,7 +399,7 @@ module SortingHelper
   end
 
   def sort_title_relative_position
-    s_('SortOptions|Manual')
+    s_('SortOptions|Manual Ordering')
   end
 
   # Values.
