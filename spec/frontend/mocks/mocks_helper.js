@@ -1,20 +1,9 @@
 /**
  * @module
  *
- * This module enables the automatic injection of manual mocks into Jest test suites. Mocks are placed in the `spec/frontend/mocks` directory, mirroring the directory structure of the source modules, and they are automatically registered with Jest. In tests, it suffices to `import` a mocked module and the mock will automatically be injected.
+ * This module enables the automatic injection of manual mocks into Jest test suites. Mocks are placed in the `spec/frontend/mocks` directory, and are automatically registered with Jest. In tests, it suffices to `import` a mocked module and the mock will automatically be injected.
  *
- * - Place mocks for NPM packages, like `jquery`, into `mocks/node/`.
- * - Place mocks for GitLab CE scripts into `mocks/ce/`.
- * - Support for EE-specific mocks is on the way.
- * - Support for virtual mocks is on the way.
- *
- * Mocks must export the same fields as the mocked module. So, if you're mocking a CommonJS package, use `module.exports` instead of the ES6 `export`.
- *
- * Jest kinda does automatic injection if you put mocks in a `__mocks__` directory beside the source file. This has a few drawbacks:
- *
- * - Mocks are spread throughout the codebase.
- * - Jest's auto-injection behaviour inconsistent and doesn't behave exactly as documented.
- * - Sometimes you still have to call jest.mock(), sometimes you don't. This is confusing.
+ * @see https://docs.gitlab.com/ce/development/testing_guide/frontend_testing.html for the full documentation.
  */
 
 import fs from 'fs';
