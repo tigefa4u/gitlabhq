@@ -1,4 +1,4 @@
-require 'fast_spec_helper'
+require 'spec_helper'
 require_dependency 're2'
 
 describe Gitlab::Ci::Pipeline::Expression::Lexeme::Matches do
@@ -65,6 +65,27 @@ describe Gitlab::Ci::Pipeline::Expression::Lexeme::Matches do
       let(:right_value) { Gitlab::UntrustedRegexp.new('pattern') }
 
       it { is_expected.to eq(nil) }
+    end
+
+    context 'with an internal match group' do
+      let(:left_value)  { 'v11.11.3-rc1' }
+      let(:right_value) { Gitlab::UntrustedRegexp.new('^v\d+\.\d+\.\d+(-rc\d+)?$') }
+
+      it { is_expected.to eq(0) }
+    end
+
+    context 'with an all-compassing match group' do
+      let(:left_value)  { 'v11.11.3-rc1' }
+      let(:right_value) { Gitlab::UntrustedRegexp.new('(^v\d+\.\d+\.\d+-rc\d+?$)') }
+
+      it { is_expected.to eq(0) }
+    end
+
+    context 'with a nested match group' do
+      let(:left_value)  { 'v11.11.3-rc1' }
+      let(:right_value) { Gitlab::UntrustedRegexp.new('(^v\d+\.\d+\.\d+(-rc\d+)?$)') }
+
+      it { is_expected.to eq(0) }
     end
 
     context 'when left is a multiline string and matches right' do

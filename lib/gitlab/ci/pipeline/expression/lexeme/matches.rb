@@ -12,8 +12,6 @@ module Gitlab
               text = @left.evaluate(variables)
               regexp = @right.evaluate(variables)
 
-              regexp.scan(text.to_s).any?
-
               if ci_variables_complex_expressions?
                 # return offset of first match, or nil if no matches
                 if match = regexp.scan(text.to_s).first

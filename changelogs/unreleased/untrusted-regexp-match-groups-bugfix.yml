@@ -1,0 +1,5 @@
+---
+title: consistently wrap UntrustedRegexp patterns in () for RE2
+merge_request: 29575
+author:
+type: fixed

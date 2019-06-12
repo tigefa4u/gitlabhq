@@ -10,6 +10,9 @@ describe Gitlab::Ci::Pipeline::Expression::Statement do
 
   let(:variables) do
     {
+      'CI_COMMIT_TAG'      => 'v11.11.3',
+      'CI_COMMIT_REF_NAME' => '11-11-stable',
+      'GITLAB_VERSION'     => 'v11.11.3-ee',
       'PRESENT_VARIABLE'   => 'my variable',
       'PATH_VARIABLE'      => 'a/path/variable/value',
       'FULL_PATH_VARIABLE' => '/a/full/path/variable/value',
@@ -66,6 +69,12 @@ describe Gitlab::Ci::Pipeline::Expression::Statement do
       "$EMPTY_VARIABLE !~ /var.*/"                                  | true
       "$UNDEFINED_VARIABLE !~ /var.*/"                              | true
       "$PRESENT_VARIABLE !~ /VAR.*/i"                               | false
+
+      '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc\d+)?$/'       | 0
+      '$CI_COMMIT_REF_NAME =~ /^\d+-\d+-stable$/'           | 0
+      '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc\d+)?-ee$/'    | nil
+      '$CI_COMMIT_REF_NAME =~ /^\d+-\d+-stable-ee$/'        | nil
+      '$GITLAB_VERSION =~ /^v\d+\.\d+\.\d+(-rc\d+)?-ee$/'   | 0
 
       '$PRESENT_VARIABLE && "string"'          | 'string'
       '$PRESENT_VARIABLE && $PRESENT_VARIABLE' | 'my variable'
