@@ -10,6 +10,7 @@ import { getPlatformLeaderKeyHTML } from './lib/utils/common_utils';
 
 export default class GLForm {
   constructor(form, enableGFM = {}) {
+    this.setupIndentShortcuts = this.setupIndentShortcuts.bind(this);
     this.setupUndoShortcuts = this.setupUndoShortcuts.bind(this);
     this.setState = this.setState.bind(this);
 
@@ -175,6 +176,10 @@ export default class GLForm {
   //   }
   // }
 
+  setupIndentShortcuts() {
+
+  }
+
   setupUndoShortcuts() {
 
   }
@@ -192,6 +197,7 @@ export default class GLForm {
     });
     // this.textarea.on('keydown', e => this.handleKeyShortcuts(e.originalEvent));
     this.mousetrap = new Mousetrap(this.element[0]);
+    this.setupIndentShortcuts();
     this.setupUndoShortcuts();
   }
 }
