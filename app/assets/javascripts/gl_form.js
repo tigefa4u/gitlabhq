@@ -10,7 +10,7 @@ import { getPlatformLeaderKeyHTML } from './lib/utils/common_utils';
 
 export default class GLForm {
   constructor(form, enableGFM = {}) {
-    this.handleKeyShortcuts = this.handleKeyShortcuts.bind(this);
+    this.setupUndoShortcuts = this.setupUndoShortcuts.bind(this);
     this.setState = this.setState.bind(this);
 
     this.form = form;
@@ -106,11 +106,11 @@ export default class GLForm {
     if (this.mousetrap) this.mousetrap.unbind();
   }
 
-  // setState(state) {
-  //   const selection = [this.textarea[0].selectionStart, this.textarea[0].selectionEnd];
-  //   this.textarea.val(state);
-  //   this.textarea[0].setSelectionRange(selection[0], selection[1]);
-  // }
+  setState(state) {
+    const selection = [this.textarea[0].selectionStart, this.textarea[0].selectionEnd];
+    this.textarea.val(state);
+    this.textarea[0].setSelectionRange(selection[0], selection[1]);
+  }
 
   // handleUndo(event) {
   //   /*
@@ -174,11 +174,10 @@ export default class GLForm {
   //     this.indentHelper.backspace(event);
   //   }
   // }
-  //
-  // handleKeyShortcuts(event) {
-  //   this.handleIndent(event);
-  //   this.handleUndo(event);
-  // }
+
+  setupUndoShortcuts() {
+
+  }
 
   addEventListeners() {
     this.textarea.on('focus', function focusTextArea() {
@@ -193,5 +192,6 @@ export default class GLForm {
     });
     // this.textarea.on('keydown', e => this.handleKeyShortcuts(e.originalEvent));
     this.mousetrap = new Mousetrap(this.element[0]);
+    this.setupUndoShortcuts();
   }
 }
