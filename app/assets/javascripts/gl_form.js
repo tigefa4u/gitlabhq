@@ -3,9 +3,9 @@ import autosize from 'autosize';
 import GfmAutoComplete, { defaultAutocompleteConfig } from 'ee_else_ce/gfm_auto_complete';
 import dropzoneInput from './dropzone_input';
 import { addMarkdownListeners, removeMarkdownListeners } from './lib/utils/text_markdown';
-import IndentHelper from './helpers/indent_helper';
-import { getPlatformLeaderKeyHTML, keystroke } from './lib/utils/common_utils';
-import UndoStack from './lib/utils/undo_stack';
+// import IndentHelper from './helpers/indent_helper';
+import { getPlatformLeaderKeyHTML } from './lib/utils/common_utils';
+// import UndoStack from './lib/utils/undo_stack';
 
 export default class GLForm {
   constructor(form, enableGFM = {}) {
@@ -23,8 +23,8 @@ export default class GLForm {
       }
     });
 
-    this.undoStack = new UndoStack();
-    this.indentHelper = new IndentHelper(this.textarea[0]);
+    // this.undoStack = new UndoStack();
+    // this.indentHelper = new IndentHelper(this.textarea[0]);
 
     // This shows the indent help text in the Wiki editor, since it's still a
     // HAML component
@@ -100,83 +100,83 @@ export default class GLForm {
   clearEventListeners() {
     this.textarea.off('focus');
     this.textarea.off('blur');
-    this.textarea.off('keydown');
+    // this.textarea.off('keydown');
     removeMarkdownListeners(this.form);
   }
 
-  setState(state) {
-    const selection = [this.textarea[0].selectionStart, this.textarea[0].selectionEnd];
-    this.textarea.val(state);
-    this.textarea[0].setSelectionRange(selection[0], selection[1]);
-  }
+  // setState(state) {
+  //   const selection = [this.textarea[0].selectionStart, this.textarea[0].selectionEnd];
+  //   this.textarea.val(state);
+  //   this.textarea[0].setSelectionRange(selection[0], selection[1]);
+  // }
 
-  handleUndo(event) {
-    /*
-      Custom undo/redo stack.
-      We need this because the toolbar buttons and indentation helpers mess with
-      the browser's native undo/redo capability.
-     */
-
-    const content = this.textarea.val();
-    const { selectionStart, selectionEnd } = this.textarea[0];
-    const stack = this.undoStack;
-
-    if (stack.isEmpty()) {
-      // ==== Save initial state in undo history ====
-      stack.save(content);
-    }
-
-    if (keystroke(event, 'Leader+Z')) {
-      // ==== Undo ====
-      event.preventDefault();
-      stack.save(content);
-      if (stack.canUndo()) {
-        this.setState(stack.undo());
-      }
-    } else if (keystroke(event, 'Leader+Shift+Z') || keystroke(event, 'Leader+Y')) {
-      // ==== Redo ====
-      event.preventDefault();
-      if (stack.canRedo()) {
-        this.setState(stack.redo());
-      }
-    } else if (keystroke(event, 'Space') || keystroke(event, 'Enter')) {
-      // ==== Save after finishing a word ====
-      stack.save(content);
-    } else if (selectionStart !== selectionEnd) {
-      // ==== Save if killing a large selection ====
-      stack.save(content);
-    } else if (content === '') {
-      // ==== Save if deleting everything ====
-      stack.save('');
-    } else {
-      // ==== Save after 1 second of inactivity ====
-      stack.scheduleSave(content);
-    }
-  }
-
-  handleIndent(event) {
-    if (keystroke(event, 'Leader+[')) {
-      // ==== Unindent selected lines ====
-      event.preventDefault();
-      this.indentHelper.unindent();
-    } else if (keystroke(event, 'Leader+]')) {
-      // ==== Indent selected lines ====
-      event.preventDefault();
-      this.indentHelper.indent();
-    } else if (keystroke(event, 'Enter')) {
-      // ==== Auto-indent new lines ====
-      event.preventDefault();
-      this.indentHelper.newline();
-    } else if (keystroke(event, 'Backspace')) {
-      // ==== Auto-delete indents at the beginning of the line ====
-      this.indentHelper.backspace(event);
-    }
-  }
-
-  handleKeyShortcuts(event) {
-    this.handleIndent(event);
-    this.handleUndo(event);
-  }
+  // handleUndo(event) {
+  //   /*
+  //     Custom undo/redo stack.
+  //     We need this because the toolbar buttons and indentation helpers mess with
+  //     the browser's native undo/redo capability.
+  //    */
+  //
+  //   const content = this.textarea.val();
+  //   const { selectionStart, selectionEnd } = this.textarea[0];
+  //   const stack = this.undoStack;
+  //
+  //   if (stack.isEmpty()) {
+  //     // ==== Save initial state in undo history ====
+  //     stack.save(content);
+  //   }
+  //
+  //   if (keystroke(event, 'Leader+Z')) {
+  //     // ==== Undo ====
+  //     event.preventDefault();
+  //     stack.save(content);
+  //     if (stack.canUndo()) {
+  //       this.setState(stack.undo());
+  //     }
+  //   } else if (keystroke(event, 'Leader+Shift+Z') || keystroke(event, 'Leader+Y')) {
+  //     // ==== Redo ====
+  //     event.preventDefault();
+  //     if (stack.canRedo()) {
+  //       this.setState(stack.redo());
+  //     }
+  //   } else if (keystroke(event, 'Space') || keystroke(event, 'Enter')) {
+  //     // ==== Save after finishing a word ====
+  //     stack.save(content);
+  //   } else if (selectionStart !== selectionEnd) {
+  //     // ==== Save if killing a large selection ====
+  //     stack.save(content);
+  //   } else if (content === '') {
+  //     // ==== Save if deleting everything ====
+  //     stack.save('');
+  //   } else {
+  //     // ==== Save after 1 second of inactivity ====
+  //     stack.scheduleSave(content);
+  //   }
+  // }
+  //
+  // handleIndent(event) {
+  //   if (keystroke(event, 'Leader+[')) {
+  //     // ==== Unindent selected lines ====
+  //     event.preventDefault();
+  //     this.indentHelper.unindent();
+  //   } else if (keystroke(event, 'Leader+]')) {
+  //     // ==== Indent selected lines ====
+  //     event.preventDefault();
+  //     this.indentHelper.indent();
+  //   } else if (keystroke(event, 'Enter')) {
+  //     // ==== Auto-indent new lines ====
+  //     event.preventDefault();
+  //     this.indentHelper.newline();
+  //   } else if (keystroke(event, 'Backspace')) {
+  //     // ==== Auto-delete indents at the beginning of the line ====
+  //     this.indentHelper.backspace(event);
+  //   }
+  // }
+  //
+  // handleKeyShortcuts(event) {
+  //   this.handleIndent(event);
+  //   this.handleUndo(event);
+  // }
 
   addEventListeners() {
     this.textarea.on('focus', function focusTextArea() {
@@ -189,6 +189,6 @@ export default class GLForm {
         .closest('.md-area')
         .removeClass('is-focused');
     });
-    this.textarea.on('keydown', e => this.handleKeyShortcuts(e.originalEvent));
+    // this.textarea.on('keydown', e => this.handleKeyShortcuts(e.originalEvent));
   }
 }
