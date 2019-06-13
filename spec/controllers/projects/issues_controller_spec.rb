@@ -320,7 +320,7 @@ describe Projects::IssuesController do
     end
   end
 
-  describe 'POST #reorder' do
+  describe 'PUT #reorder' do
     let(:issue1) { create(:issue, project: project) }
     let(:issue2) { create(:issue, project: project) }
     let(:issue3) { create(:issue, project: project) }
@@ -377,7 +377,7 @@ describe Projects::IssuesController do
     end
 
     def reorder_issue(issue, move_after_id: nil, move_before_id: nil)
-      post :reorder,
+      put :reorder,
            params: {
                namespace_id: project.namespace.to_param,
                project_id: project,
