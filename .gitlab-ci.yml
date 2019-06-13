@@ -25,8 +25,8 @@ stages:
   - build
   - prepare
   - merge
-  - test
   - review
+  - test
   - qa
   - post-test
   - pages
