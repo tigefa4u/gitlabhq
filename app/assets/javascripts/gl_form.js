@@ -185,6 +185,10 @@ export default class GLForm {
       event.preventDefault();
       this.indentHelper.indent();
     });
+    this.mousetrap.bind('enter', event => {
+      event.preventDefault();
+      this.indentHelper.newline();
+    });
   }
 
   setupUndoShortcuts() {
