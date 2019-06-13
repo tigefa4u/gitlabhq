@@ -189,6 +189,9 @@ export default class GLForm {
       event.preventDefault();
       this.indentHelper.newline();
     });
+    this.mousetrap.bind('backspace', () => {
+      this.indentHelper.backspace();
+    });
   }
 
   setupUndoShortcuts() {
