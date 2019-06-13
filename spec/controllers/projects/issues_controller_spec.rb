@@ -321,6 +321,7 @@ describe Projects::IssuesController do
   end
 
   describe 'PUT #reorder' do
+    let(:group)  { create(:group, projects: [project]) }
     let(:issue1) { create(:issue, project: project) }
     let(:issue2) { create(:issue, project: project) }
     let(:issue3) { create(:issue, project: project) }
@@ -340,7 +341,7 @@ describe Projects::IssuesController do
             issue.move_to_end && issue.save!
           end
 
-          reorder_issue issue1, move_after_id: issue2.id, move_before_id: issue3.id
+          reorder_issue issue1, move_after_id: issue2.id, move_before_id: issue3.id, group_full_path: group.full_path
 
           [issue1, issue2, issue3].each { |issue| issue.reload }
 
@@ -361,6 +362,14 @@ describe Projects::IssuesController do
 
           expect(response).to have_gitlab_http_status(404)
         end
+
+        it 'returns a unprocessable entity 422 response for invalid move ids' do
+          another_group = create(:group)
+
+          reorder_issue issue1, move_after_id: issue2.id, move_before_id: issue3.id, group_full_path: another_group.full_path
+
+          expect(response).to have_gitlab_http_status(422)
+        end
       end
     end
 
@@ -376,14 +385,15 @@ describe Projects::IssuesController do
       end
     end
 
-    def reorder_issue(issue, move_after_id: nil, move_before_id: nil)
+    def reorder_issue(issue, move_after_id: nil, move_before_id: nil, group_full_path: nil)
       put :reorder,
            params: {
                namespace_id: project.namespace.to_param,
                project_id: project,
                id: issue.iid,
                move_after_id: move_after_id,
-               move_before_id: move_before_id
+               move_before_id: move_before_id,
+               group_full_path: group_full_path
            },
            format: :json
     end

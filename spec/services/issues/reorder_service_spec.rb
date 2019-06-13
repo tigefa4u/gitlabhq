@@ -28,12 +28,12 @@ describe Issues::ReorderService do
       if use_group
         context 'when ordering in a group issue list' do
           it 'sends the board_group_id parameter' do
-            params = { move_after_id: issue2.id, move_before_id: issue3.id }
+            params = { move_after_id: issue2.id, move_before_id: issue3.id, group_full_path: group.full_path }
 
             match_params = { move_between_ids: [issue2.id, issue3.id], board_group_id: group.id }
             expect(Issues::UpdateService).to receive(:new).with(project, user, match_params).and_return(double(execute: build(:issue)))
 
-            described_class.new(project, user, params).execute(issue1, group)
+            described_class.new(project, user, params).execute(issue1)
           end
 
           it 'sorts issues' do
@@ -44,7 +44,7 @@ describe Issues::ReorderService do
               issue.move_to_end && issue.save!
             end
 
-            params = { move_after_id: issue2.id, move_before_id: issue3.id }
+            params = { move_after_id: issue2.id, move_before_id: issue3.id, group_full_path: group.full_path }
 
             described_class.new(project, user, params).execute(issue4)
 

@@ -2,8 +2,9 @@
 
 module Issues
   class ReorderService < Issues::BaseService
-    def execute(issue, group = nil)
+    def execute(issue)
       return false unless can?(current_user, :update_issue, issue)
+      return false if group && !can?(current_user, :read_group, group)
 
       attrs = issue_params(group)
       return false if attrs.empty?
@@ -12,6 +13,12 @@ module Issues
     end
 
     private
+
+    def group
+      return unless params[:group_full_path]
+
+      @group ||= Group.find_by_full_path(params[:group_full_path])
+    end
 
     def update(issue, attrs)
       ::Issues::UpdateService.new(project, current_user, attrs).execute(issue)
