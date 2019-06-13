@@ -177,10 +177,13 @@ export default class GLForm {
   // }
 
   setupIndentShortcuts() {
-    console.log("foo");
     this.mousetrap.bind('mod+[', event => {
       event.preventDefault();
       this.indentHelper.unindent();
+    });
+    this.mousetrap.bind('mod+]', event => {
+      event.preventDefault();
+      this.indentHelper.indent();
     });
   }
 
