@@ -207,6 +207,26 @@ HELM_CMD=$(cat << EOF
   helm upgrade --install \
     --wait \
     --timeout 600 \
+    --set global.service.annotations."app\.gitlab\.com/app"="$CI_PROJECT_PATH_SLUG" \
+    --set global.service.annotations."app\.gitlab\.com/env"="$CI_ENVIRONMENT_SLUG" \
+    --set gitlab.gitaly.annotations."app\.gitlab\.com/app"="$CI_PROJECT_PATH_SLUG" \
+    --set gitlab.gitaly.annotations."app\.gitlab\.com/env"="$CI_ENVIRONMENT_SLUG" \
+    --set gitlab.gitlab-monitor.annotations."app\.gitlab\.com/app"="$CI_PROJECT_PATH_SLUG" \
+    --set gitlab.gitlab-monitor.annotations."app\.gitlab\.com/env"="$CI_ENVIRONMENT_SLUG" \
+    --set gitlab.gitlab-runner.annotations."app\.gitlab\.com/app"="$CI_PROJECT_PATH_SLUG" \
+    --set gitlab.gitlab-runner.annotations."app\.gitlab\.com/env"="$CI_ENVIRONMENT_SLUG" \
+    --set gitlab.sidekiq.annotations."app\.gitlab\.com/app"="$CI_PROJECT_PATH_SLUG" \
+    --set gitlab.sidekiq.annotations."app\.gitlab\.com/env"="$CI_ENVIRONMENT_SLUG" \
+    --set gitlab.unicorn.annotations."app\.gitlab\.com/app"="$CI_PROJECT_PATH_SLUG" \
+    --set gitlab.unicorn.annotations."app\.gitlab\.com/env"="$CI_ENVIRONMENT_SLUG" \
+    --set minio.annotations."app\.gitlab\.com/app"="$CI_PROJECT_PATH_SLUG" \
+    --set minio.annotations."app\.gitlab\.com/env"="$CI_ENVIRONMENT_SLUG" \
+    --set nginx-ingress.annotations."app\.gitlab\.com/app"="$CI_PROJECT_PATH_SLUG" \
+    --set nginx-ingress.annotations."app\.gitlab\.com/env"="$CI_ENVIRONMENT_SLUG" \
+    --set redis.annotations."app\.gitlab\.com/app"="$CI_PROJECT_PATH_SLUG" \
+    --set redis.annotations."app\.gitlab\.com/env"="$CI_ENVIRONMENT_SLUG" \
+    --set registry.annotations."app\.gitlab\.com/app"="$CI_PROJECT_PATH_SLUG" \
+    --set registry.annotations."app\.gitlab\.com/env"="$CI_ENVIRONMENT_SLUG" \
     --set global.appConfig.enableUsagePing=false \
     --set releaseOverride="$CI_ENVIRONMENT_SLUG" \
     --set global.hosts.hostSuffix="$HOST_SUFFIX" \
@@ -215,7 +235,7 @@ HELM_CMD=$(cat << EOF
     --set prometheus.install=false \
     --set global.ingress.configureCertmanager=false \
     --set global.ingress.tls.secretName=tls-cert \
-    --set global.ingress.annotations."external-dns\.alpha\.kubernetes\.io/ttl"="10"
+    --set global.ingress.annotations."external-dns\.alpha\.kubernetes\.io/ttl"="10" \
     --set nginx-ingress.controller.service.enableHttp=false \
     --set nginx-ingress.defaultBackend.resources.requests.memory=7Mi \
     --set nginx-ingress.controller.resources.requests.memory=440M \
