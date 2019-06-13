@@ -4,7 +4,7 @@ import Mousetrap from 'mousetrap';
 import GfmAutoComplete, { defaultAutocompleteConfig } from 'ee_else_ce/gfm_auto_complete';
 import dropzoneInput from './dropzone_input';
 import { addMarkdownListeners, removeMarkdownListeners } from './lib/utils/text_markdown';
-// import IndentHelper from './helpers/indent_helper';
+import IndentHelper from './helpers/indent_helper';
 import { getPlatformLeaderKeyHTML } from './lib/utils/common_utils';
 // import UndoStack from './lib/utils/undo_stack';
 
@@ -26,7 +26,7 @@ export default class GLForm {
     });
 
     // this.undoStack = new UndoStack();
-    // this.indentHelper = new IndentHelper(this.textarea[0]);
+    this.indentHelper = new IndentHelper(this.textarea[0]);
 
     // This shows the indent help text in the Wiki editor, since it's still a
     // HAML component
@@ -177,7 +177,11 @@ export default class GLForm {
   // }
 
   setupIndentShortcuts() {
-
+    console.log("foo");
+    this.mousetrap.bind('mod+[', event => {
+      event.preventDefault();
+      this.indentHelper.unindent();
+    });
   }
 
   setupUndoShortcuts() {
@@ -196,7 +200,7 @@ export default class GLForm {
         .removeClass('is-focused');
     });
     // this.textarea.on('keydown', e => this.handleKeyShortcuts(e.originalEvent));
-    this.mousetrap = new Mousetrap(this.element[0]);
+    this.mousetrap = new Mousetrap(this.textarea[0]);
     this.setupIndentShortcuts();
     this.setupUndoShortcuts();
   }
