@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import autosize from 'autosize';
+import Mousetrap from 'mousetrap';
 import GfmAutoComplete, { defaultAutocompleteConfig } from 'ee_else_ce/gfm_auto_complete';
 import dropzoneInput from './dropzone_input';
 import { addMarkdownListeners, removeMarkdownListeners } from './lib/utils/text_markdown';
@@ -102,6 +103,7 @@ export default class GLForm {
     this.textarea.off('blur');
     // this.textarea.off('keydown');
     removeMarkdownListeners(this.form);
+    if (this.mousetrap) this.mousetrap.unbind();
   }
 
   // setState(state) {
@@ -190,5 +192,6 @@ export default class GLForm {
         .removeClass('is-focused');
     });
     // this.textarea.on('keydown', e => this.handleKeyShortcuts(e.originalEvent));
+    this.mousetrap = new Mousetrap(this.element[0]);
   }
 }
