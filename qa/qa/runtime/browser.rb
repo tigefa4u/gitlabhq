@@ -43,6 +43,8 @@ module QA
           end
         end
 
+        Capybara.server_port = 9887 + ENV['TEST_ENV_NUMBER'].to_i
+
         return if Capybara.drivers.include?(:chrome)
 
         Capybara.register_driver QA::Runtime::Env.browser do |app|

@@ -1,3 +1,4 @@
 tmp/
+.rspec_parallel
 .ruby-version
 urls.yml

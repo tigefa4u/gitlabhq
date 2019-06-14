@@ -56,13 +56,25 @@ describe QA::Specs::Runner do
 
         subject.perform
       end
+
+      context 'when executing tests in parallel' do
+        before do
+          allow(QA::Runtime::Scenario).to receive(:attributes).and_return(parallel: true)
+        end
+
+        it 'passes the given tests path to parallel_tests with a path separator and excludes the orchestrated tag' do
+          expect_cli_arguments(['--tag', '~orchestrated', '--', 'qa/specs/features/foo'])
+
+          subject.perform
+        end
+      end
     end
 
-    context 'when "-- qa/specs/features/foo" is set as options' do
-      subject { described_class.new.tap { |runner| runner.options = %w[-- qa/specs/features/foo] } }
+    context 'when "--tag smoke" and "qa/specs/features/foo" are set as options' do
+      subject { described_class.new.tap { |runner| runner.options = %w[--tag smoke qa/specs/features/foo] } }
 
-      it 'passes the given tests path and excludes the orchestrated tag' do
-        expect_rspec_runner_arguments(['--tag', '~orchestrated', '--', 'qa/specs/features/foo'])
+      it 'focuses on the given tag and includes the path without excluding the orchestrated tag' do
+        expect_rspec_runner_arguments(['--tag', 'smoke', 'qa/specs/features/foo'])
 
         subject.perform
       end
@@ -124,6 +136,18 @@ describe QA::Specs::Runner do
       end
     end
 
+    context 'when executing tests in parallel' do
+      before do
+        allow(QA::Runtime::Scenario).to receive(:attributes).and_return(parallel: true)
+      end
+
+      it 'passes default args to parallel_tests' do
+        expect_cli_arguments(['--tag', '~orchestrated', *described_class::DEFAULT_TEST_PATH_ARGS])
+
+        subject.perform
+      end
+    end
+
     def excluded_feature_tags_except(tag)
       QA::Runtime::Env.supported_features.except(tag).map do |tag, _|
         ['--tag', "~requires_#{tag}"]
@@ -133,6 +157,14 @@ describe QA::Specs::Runner do
     def expect_rspec_runner_arguments(arguments)
       expect(RSpec::Core::Runner).to receive(:run)
         .with(arguments, $stderr, $stdout)
+        .and_return(0)
+    end
+
+    def expect_cli_arguments(arguments)
+      env = { 'QA_RUNTIME_SCENARIO_ATTRIBUTES' => '{"parallel":true}' }
+      cmd = "bundle exec parallel_test -t rspec -- #{arguments.join(' ')}"
+      expect(Open3).to receive(:popen2e)
+        .with(env, cmd)
         .and_return(0)
     end
   end

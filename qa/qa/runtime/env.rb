@@ -201,6 +201,10 @@ module QA
         enabled?(ENV[SUPPORTED_FEATURES[feature]], default: true)
       end
 
+      def runtime_scenario_attributes
+        ENV['QA_RUNTIME_SCENARIO_ATTRIBUTES']
+      end
+
       private
 
       def remote_grid_credentials

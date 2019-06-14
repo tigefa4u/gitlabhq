@@ -8,6 +8,8 @@ if ENV['CI'] && QA::Runtime::Env.knapsack? && !ENV['NO_KNAPSACK']
   Knapsack::Adapters::RSpecAdapter.bind
 end
 
+QA::Runtime::Scenario.from_env(QA::Runtime::Env.runtime_scenario_attributes) if QA::Runtime::Env.runtime_scenario_attributes
+
 %w[helpers shared_examples].each do |d|
   Dir[::File.join(__dir__, d, '**', '*.rb')].each { |f| require f }
 end

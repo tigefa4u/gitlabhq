@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
+require 'knapsack'
+require 'open3'
 require 'rspec/core'
 require 'rspec/expectations'
-require 'knapsack'
 
 module QA
   module Specs
@@ -17,7 +18,10 @@ module QA
         @options = []
       end
 
-      def perform
+      # TODO refactor so that the cops are not disabled
+      def perform # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity
+        Runtime::Browser.configure!
+
         args = []
         args.push('--tty') if tty
 
@@ -30,12 +34,10 @@ module QA
         args.push(%w[--tag ~skip_signup_disabled]) if QA::Runtime::Env.signup_disabled?
 
         QA::Runtime::Env.supported_features.each_key do |key|
-          args.push(["--tag", "~requires_#{key}"]) unless QA::Runtime::Env.can_test? key
+          args.push(%W[--tag ~requires_#{key}]) unless QA::Runtime::Env.can_test? key
         end
 
         args.push(options)
-
-        Runtime::Browser.configure!
 
         if Runtime::Env.knapsack?
           allocator = Knapsack::AllocatorBuilder.new(Knapsack::Adapters::RSpecAdapter).allocator
@@ -53,8 +55,24 @@ module QA
           args.push(DEFAULT_TEST_PATH_ARGS) unless options.any? { |opt| opt =~ %r{/features/} }
         end
 
-        RSpec::Core::Runner.run(args.flatten, $stderr, $stdout).tap do |status|
-          abort if status.nonzero?
+        if Runtime::Scenario.attributes[:parallel]
+          args.flatten!
+
+          unless args.include?('--')
+            index = args.index { |opt| opt =~ %r{/features/} }
+
+            args.insert(index, '--') if index
+          end
+
+          env = { 'QA_RUNTIME_SCENARIO_ATTRIBUTES' => Runtime::Scenario.attributes.to_json }
+          cmd = "bundle exec parallel_test -t rspec -- #{args.flatten.join(' ')}"
+          ::Open3.popen2e(env, cmd) do |_, out, _|
+            out.each { |line| puts line }
+          end
+        else
+          RSpec::Core::Runner.run(args.flatten, $stderr, $stdout).tap do |status|
+            abort if status.nonzero?
+          end
         end
       end
     end
