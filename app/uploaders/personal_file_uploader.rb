@@ -21,6 +21,7 @@ class PersonalFileUploader < FileUploader
   end
 
   def object_store
+    return Store::REMOTE if self.class.object_store_enabled?
     return Store::LOCAL unless model
 
     super

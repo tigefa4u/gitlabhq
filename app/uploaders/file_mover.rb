@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class FileMover
+  include Gitlab::Utils::StrongMemoize
+
   attr_reader :secret, :file_name, :model, :update_field
 
   def initialize(file_path, model, update_field = :description)
@@ -11,7 +13,11 @@ class FileMover
   end
 
   def execute
+    temp_file_uploader.retrieve_from_store!(file_name)
+
     return unless valid?
+
+    uploader.retrieve_from_store!(file_name)
 
     move
 
@@ -24,14 +30,22 @@ class FileMover
   private
 
   def valid?
-    Pathname.new(temp_file_path).realpath.to_path.start_with?(
-      (Pathname(temp_file_uploader.root) + temp_file_uploader.base_dir).to_path
-    )
+    if temp_file_uploader.file_storage?
+      Pathname.new(temp_file_path).realpath.to_path.start_with?(
+        (Pathname(temp_file_uploader.root) + temp_file_uploader.base_dir).to_path
+      )
+    else
+      temp_file_uploader.exists?
+    end
   end
 
   def move
-    FileUtils.mkdir_p(File.dirname(file_path))
-    FileUtils.move(temp_file_path, file_path)
+    if temp_file_uploader.file_storage?
+      FileUtils.mkdir_p(File.dirname(file_path))
+      FileUtils.move(temp_file_path, file_path)
+    else
+      uploader.copy_file(temp_file_uploader.file)
+    end
   end
 
   def update_markdown
@@ -44,19 +58,11 @@ class FileMover
   end
 
   def temp_file_path
-    return @temp_file_path if @temp_file_path
-
-    temp_file_uploader.retrieve_from_store!(file_name)
-
-    @temp_file_path = temp_file_uploader.file.path
+    strong_memoize(:temp_file_path) { temp_file_uploader.file.path }
   end
 
   def file_path
-    return @file_path if @file_path
-
-    uploader.retrieve_from_store!(file_name)
-
-    @file_path = uploader.file.path
+    strong_memoize(:file_path) { uploader.file.path }
   end
 
   def uploader
