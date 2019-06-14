@@ -7,11 +7,12 @@ import {
 } from '~/boards/mixins/sortable_default_options';
 import axios from '~/lib/utils/axios_utils';
 
-function updateIssue(url, { move_before_id, move_after_id }) {
+function updateIssue(url, { move_before_id, move_after_id, groupFullPath }) {
   return axios
     .put(`${url}/reorder`, {
       move_before_id,
       move_after_id,
+      group_full_path: groupFullPath,
     })
     .catch(() => {
       createFlash(s__("ManualOrdering|Couldn't save the order of the issues"));
@@ -20,9 +21,12 @@ function updateIssue(url, { move_before_id, move_after_id }) {
 
 export default function initManualOrdering() {
   const issueList = document.querySelector('.manual-ordering');
+
   if (!issueList || !(gon.features && gon.features.manualSorting)) {
     return;
   }
+
+  const { groupFullPath } = issueList.dataset;
 
   const options = getBoardSortableDefaultOptions({
     scroll: true,
@@ -46,7 +50,7 @@ export default function initManualOrdering() {
       const beforeId = prev && prev.dataset.id;
       const afterId = next && next.dataset.id;
 
-      updateIssue(url, { move_after_id: afterId, move_before_id: beforeId });
+      updateIssue(url, { move_after_id: afterId, move_before_id: beforeId, groupFullPath });
     },
   });
 
