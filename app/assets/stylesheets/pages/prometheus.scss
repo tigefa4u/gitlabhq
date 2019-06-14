@@ -29,6 +29,15 @@
   padding: $gl-padding / 2;
 }
 
+.prometheus-graph-embed {
+  border-width: 1px;
+  border-style: solid;
+  border-color: $border-color;
+  border-radius: $border-radius-default;
+  width: 100%;
+  padding: 1rem;
+}
+
 .prometheus-graph-header {
   display: flex;
   align-items: center;
