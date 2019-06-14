@@ -35,9 +35,11 @@ module QA
       end
 
       def fabricate_via_api!
-        resource_web_url(api_get)
-      rescue ResourceNotFoundError
-        super
+        QA::Support::Retrier.retry_on_exception do
+          resource_web_url(api_get)
+        rescue ResourceNotFoundError
+          super
+        end
       end
 
       def api_get_path
