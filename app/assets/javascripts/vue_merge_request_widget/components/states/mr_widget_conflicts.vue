@@ -74,7 +74,7 @@ export default {
     <div class="media-body space-children">
       <span v-if="mr.shouldBeRebased" class="bold">
         {{
-          s__(`mrWidget|Fast-forward merge is not possible.
+          s__(`mrWidget|Fast-forward merge is not possible, and conflicts cannot be resolved automatically.
 To merge this request, first rebase locally.`)
         }}
       </span>

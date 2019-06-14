@@ -13717,7 +13717,7 @@ msgstr ""
 msgid "mrWidget|Failed to load deployment statistics"
 msgstr ""
 
-msgid "mrWidget|Fast-forward merge is not possible. To merge this request, first rebase locally."
+msgid "mrWidget|Fast-forward merge is not possible, and conflicts cannot be resolved automatically. To merge this request, first rebase locally."
 msgstr ""
 
 msgid "mrWidget|Fork merge requests do not create merge request pipelines which validate a post merge result"

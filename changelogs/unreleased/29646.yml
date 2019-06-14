@@ -1,0 +1,5 @@
+---
+title: "Improve rebase message to clarify why rebase button is not offered"
+merge_request: 29646
+author: Ben Bodenmiller
+type: changed

@@ -174,7 +174,7 @@ describe('MRWidgetConflicts', () => {
       });
 
       expect(removeBreakLine(vm.text()).trim()).toContain(
-        'Fast-forward merge is not possible. To merge this request, first rebase locally.',
+        'Fast-forward merge is not possible, and conflicts cannot be resolved automatically. To merge this request, first rebase locally.',
       );
     });
   });
