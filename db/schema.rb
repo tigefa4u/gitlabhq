@@ -195,6 +195,7 @@ ActiveRecord::Schema.define(version: 20190611161641) do
     t.text "encrypted_lets_encrypt_private_key_iv"
     t.boolean "dns_rebinding_protection_enabled", default: true, null: false
     t.boolean "default_project_deletion_protection", default: false, null: false
+    t.boolean "lock_memberships_to_ldap", default: false, null: false
     t.index ["usage_stats_set_by_user_id"], name: "index_application_settings_on_usage_stats_set_by_user_id", using: :btree
   end
 
@@ -1050,6 +1051,12 @@ ActiveRecord::Schema.define(version: 20190611161641) do
     t.index ["usage", "project_id"], name: "index_internal_ids_on_usage_and_project_id", unique: true, where: "(project_id IS NOT NULL)", using: :btree
   end
 
+  create_table "ip_restrictions", force: :cascade do |t|
+    t.integer "group_id", null: false
+    t.string "range", null: false
+    t.index ["group_id"], name: "index_ip_restrictions_on_group_id", using: :btree
+  end
+
   create_table "issue_assignees", id: false, force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "issue_id", null: false
@@ -1065,6 +1072,19 @@ ActiveRecord::Schema.define(version: 20190611161641) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["issue_id"], name: "index_issue_metrics", using: :btree
+  end
+
+  create_table "issue_tracker_data", force: :cascade do |t|
+    t.integer "service_id", null: false
+    t.datetime_with_timezone "created_at", null: false
+    t.datetime_with_timezone "updated_at", null: false
+    t.string "encrypted_project_url"
+    t.string "encrypted_project_url_iv"
+    t.string "encrypted_issues_url"
+    t.string "encrypted_issues_url_iv"
+    t.string "encrypted_new_issue_url"
+    t.string "encrypted_new_issue_url_iv"
+    t.index ["service_id"], name: "index_issue_tracker_data_on_service_id", using: :btree
   end
 
   create_table "issues", id: :serial, force: :cascade do |t|
@@ -1108,6 +1128,22 @@ ActiveRecord::Schema.define(version: 20190611161641) do
     t.index ["title"], name: "index_issues_on_title_trigram", using: :gin, opclasses: {"title"=>"gin_trgm_ops"}
     t.index ["updated_at"], name: "index_issues_on_updated_at", using: :btree
     t.index ["updated_by_id"], name: "index_issues_on_updated_by_id", where: "(updated_by_id IS NOT NULL)", using: :btree
+  end
+
+  create_table "jira_tracker_data", force: :cascade do |t|
+    t.integer "service_id", null: false
+    t.datetime_with_timezone "created_at", null: false
+    t.datetime_with_timezone "updated_at", null: false
+    t.string "encrypted_url"
+    t.string "encrypted_url_iv"
+    t.string "encrypted_api_url"
+    t.string "encrypted_api_url_iv"
+    t.string "encrypted_username"
+    t.string "encrypted_username_iv"
+    t.string "encrypted_password"
+    t.string "encrypted_password_iv"
+    t.string "jira_issue_transition_id"
+    t.index ["service_id"], name: "index_jira_tracker_data_on_service_id", using: :btree
   end
 
   create_table "keys", id: :serial, force: :cascade do |t|
@@ -1189,6 +1225,8 @@ ActiveRecord::Schema.define(version: 20190611161641) do
     t.integer "project_id", null: false
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer "repository_type", limit: 2
+    t.index ["lfs_object_id"], name: "index_lfs_objects_projects_on_lfs_object_id", using: :btree
     t.index ["project_id"], name: "index_lfs_objects_projects_on_project_id", using: :btree
   end
 
@@ -2389,6 +2427,7 @@ ActiveRecord::Schema.define(version: 20190611161641) do
     t.index ["incoming_email_token"], name: "index_users_on_incoming_email_token", using: :btree
     t.index ["name"], name: "index_users_on_name", using: :btree
     t.index ["name"], name: "index_users_on_name_trigram", using: :gin, opclasses: {"name"=>"gin_trgm_ops"}
+    t.index ["public_email"], name: "index_users_on_public_email", where: "((public_email)::text <> ''::text)", using: :btree
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true, using: :btree
     t.index ["state"], name: "index_users_on_state", using: :btree
     t.index ["username"], name: "index_users_on_username", using: :btree
@@ -2533,15 +2572,18 @@ ActiveRecord::Schema.define(version: 20190611161641) do
   add_foreign_key "import_export_uploads", "projects", on_delete: :cascade
   add_foreign_key "internal_ids", "namespaces", name: "fk_162941d509", on_delete: :cascade
   add_foreign_key "internal_ids", "projects", on_delete: :cascade
+  add_foreign_key "ip_restrictions", "namespaces", column: "group_id", on_delete: :cascade
   add_foreign_key "issue_assignees", "issues", name: "fk_b7d881734a", on_delete: :cascade
   add_foreign_key "issue_assignees", "users", name: "fk_5e0c8d9154", on_delete: :cascade
   add_foreign_key "issue_metrics", "issues", on_delete: :cascade
+  add_foreign_key "issue_tracker_data", "services", on_delete: :cascade
   add_foreign_key "issues", "issues", column: "moved_to_id", name: "fk_a194299be1", on_delete: :nullify
   add_foreign_key "issues", "milestones", name: "fk_96b1dd429c", on_delete: :nullify
   add_foreign_key "issues", "projects", name: "fk_899c8f3231", on_delete: :cascade
   add_foreign_key "issues", "users", column: "author_id", name: "fk_05f1e72feb", on_delete: :nullify
   add_foreign_key "issues", "users", column: "closed_by_id", name: "fk_c63cbf6c25", on_delete: :nullify
   add_foreign_key "issues", "users", column: "updated_by_id", name: "fk_ffed080f01", on_delete: :nullify
+  add_foreign_key "jira_tracker_data", "services", on_delete: :cascade
   add_foreign_key "label_links", "labels", name: "fk_d97dd08678", on_delete: :cascade
   add_foreign_key "label_priorities", "labels", on_delete: :cascade
   add_foreign_key "label_priorities", "projects", on_delete: :cascade

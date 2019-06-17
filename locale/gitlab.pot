@@ -2828,9 +2828,6 @@ msgstr ""
 msgid "Container registry images"
 msgstr ""
 
-msgid "ContainerRegistry|Created"
-msgstr ""
-
 msgid "ContainerRegistry|First log in to GitLab&rsquo;s Container Registry using your GitLab username and password. If you have %{link_2fa} you need to use a %{link_token}:"
 msgstr ""
 
@@ -2838,6 +2835,9 @@ msgid "ContainerRegistry|GitLab supports up to 3 levels of image names. The foll
 msgstr ""
 
 msgid "ContainerRegistry|How to use the Container Registry"
+msgstr ""
+
+msgid "ContainerRegistry|Last Updated"
 msgstr ""
 
 msgid "ContainerRegistry|Learn more about"
@@ -4500,12 +4500,6 @@ msgstr ""
 msgid "First day of the week"
 msgstr ""
 
-msgid "FirstPushedBy|First"
-msgstr ""
-
-msgid "FirstPushedBy|pushed by"
-msgstr ""
-
 msgid "FlowdockService|Flowdock Git source token"
 msgstr ""
 
@@ -4759,6 +4753,9 @@ msgid "Google Takeout"
 msgstr ""
 
 msgid "Google authentication is not %{link_to_documentation}. Ask your GitLab administrator if you want to use this service."
+msgstr ""
+
+msgid "Got it"
 msgstr ""
 
 msgid "Got it!"
@@ -5594,6 +5591,9 @@ msgstr ""
 msgid "Job|with"
 msgstr ""
 
+msgid "Join Zoom meeting"
+msgstr ""
+
 msgid "Jul"
 msgstr ""
 
@@ -6153,6 +6153,9 @@ msgstr ""
 msgid "MergeRequest| %{paragraphStart}changed the description %{descriptionChangedTimes} times %{timeDifferenceMinutes}%{paragraphEnd}"
 msgstr ""
 
+msgid "MergeRequest|Error dismissing suggestion popover. Please try again."
+msgstr ""
+
 msgid "MergeRequest|Error loading full diff. Please try again."
 msgstr ""
 
@@ -6507,6 +6510,9 @@ msgid "New tag"
 msgstr ""
 
 msgid "New users set to external"
+msgstr ""
+
+msgid "New! Suggest changes directly"
 msgstr ""
 
 msgid "New..."
@@ -6916,6 +6922,18 @@ msgstr ""
 msgid "Pages getting started guide"
 msgstr ""
 
+msgid "Pagination|Go to first page"
+msgstr ""
+
+msgid "Pagination|Go to last page"
+msgstr ""
+
+msgid "Pagination|Go to next page"
+msgstr ""
+
+msgid "Pagination|Go to previous page"
+msgstr ""
+
 msgid "Pagination|Last »"
 msgstr ""
 
@@ -7022,9 +7040,6 @@ msgid "Pin code"
 msgstr ""
 
 msgid "Pipeline"
-msgstr ""
-
-msgid "Pipeline ID (IID)"
 msgstr ""
 
 msgid "Pipeline Schedule"
@@ -8290,9 +8305,6 @@ msgid "Register with two-factor app"
 msgstr ""
 
 msgid "Registry"
-msgstr ""
-
-msgid "Related Commits"
 msgstr ""
 
 msgid "Related Deployed Jobs"
@@ -9641,6 +9653,9 @@ msgid "Successfully unblocked"
 msgstr ""
 
 msgid "Successfully unlocked"
+msgstr ""
+
+msgid "Suggest code changes which are immediately applied. Try it out!"
 msgstr ""
 
 msgid "Suggested change"
