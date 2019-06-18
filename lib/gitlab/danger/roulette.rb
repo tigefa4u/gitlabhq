@@ -1,29 +1,24 @@
 # frozen_string_literal: true
 
-require 'net/http'
-require 'json'
 require 'cgi'
 
-require_relative 'teammate'
+require_dependency 'gitlab/get_json'
+require_dependency 'gitlab/danger/teammate'
 
+# To use this module, you need to implement a `roulette_data :: Array<Hash>` method, which
+# returns the data needed to play reviewer roulette.
+#
+# For an example of this, see: `danger/plugins/roulette.rb`
 module Gitlab
   module Danger
     module Roulette
-      ROULETTE_DATA_URL = 'https://about.gitlab.com/roulette.json'
-      HTTPError = Class.new(RuntimeError)
-
+      include ::Gitlab::GetJSON
       # Looks up the current list of GitLab team members and parses it into a
       # useful form
       #
       # @return [Array<Teammate>]
       def team
-        @team ||=
-          begin
-            data = http_get_json(ROULETTE_DATA_URL)
-            data.map { |hash| ::Gitlab::Danger::Teammate.new(hash) }
-          rescue JSON::ParserError
-            raise "Failed to parse JSON response from #{ROULETTE_DATA_URL}"
-          end
+        @team ||= roulette_data.map { |hash| ::Gitlab::Danger::Teammate.new(hash) }
       end
 
       # Like +team+, but only returns teammates in the current project, based on
@@ -64,18 +59,8 @@ module Gitlab
         api_endpoint = "https://gitlab.com/api/v4/users/#{username}/status"
         response = http_get_json(api_endpoint)
         response["message"]&.match?(/OOO/i)
-      rescue HTTPError, JSON::ParserError
+      rescue Gitlab::GetJSON::Error
         false # this is no worse than not checking for OOO
-      end
-
-      def http_get_json(url)
-        rsp = Net::HTTP.get_response(URI.parse(url))
-
-        unless rsp.is_a?(Net::HTTPSuccess)
-          raise HTTPError, "Failed to read #{url}: #{rsp.code} #{rsp.message}"
-        end
-
-        JSON.parse(rsp.body)
       end
     end
   end

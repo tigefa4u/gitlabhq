@@ -6,93 +6,75 @@ require 'webmock/rspec'
 require 'gitlab/danger/roulette'
 
 describe Gitlab::Danger::Roulette do
-  let(:teammate_json) do
-    <<~JSON
+  class MockRoulette
+    include Gitlab::Danger::Roulette
+  end
+
+  let(:teammate_data) do
     [
       {
-        "username": "in-gitlab-ce",
-        "name": "CE maintainer",
-        "projects":{ "gitlab-ce": "maintainer backend" }
+        "username" => "in-gitlab-ce",
+        "name" => "CE maintainer",
+        "projects" => { "gitlab-ce" => "maintainer backend" }
       },
       {
-        "username": "in-gitlab-ee",
-        "name": "EE reviewer",
-        "projects":{ "gitlab-ee": "reviewer frontend" }
+        "username" => "in-gitlab-ee",
+        "name" => "EE reviewer",
+        "projects" => { "gitlab-ee" => "reviewer frontend" }
       }
     ]
-    JSON
+  end
+
+  before do
+    allow(roulette).to receive(:roulette_data) { teammate_data }
   end
 
   let(:ce_teammate_matcher) do
-    satisfy do |teammate|
-      teammate.username == 'in-gitlab-ce' &&
-        teammate.name == 'CE maintainer' &&
-        teammate.projects == { 'gitlab-ce' => 'maintainer backend' }
-    end
+    have_attributes(
+      username: 'in-gitlab-ce',
+      name: 'CE maintainer',
+      projects: { 'gitlab-ce' => 'maintainer backend' })
   end
 
   let(:ee_teammate_matcher) do
-    satisfy do |teammate|
-      teammate.username == 'in-gitlab-ee' &&
-        teammate.name == 'EE reviewer' &&
-        teammate.projects == { 'gitlab-ee' => 'reviewer frontend' }
-    end
+    have_attributes(
+      username: 'in-gitlab-ee',
+      name: 'EE reviewer',
+      projects: { 'gitlab-ee' => 'reviewer frontend' })
   end
 
-  subject(:roulette) { Object.new.extend(described_class) }
+  subject(:roulette) { MockRoulette.new }
 
+  # We don't need to test that `http_get_json` does what it says it does - it
+  # is not our code after all. Since we are propagating errors, we just need to
+  # make sure we don't swallow them.
   describe '#team' do
     subject(:team) { roulette.team }
 
-    context 'HTTP failure' do
-      before do
-        WebMock
-          .stub_request(:get, described_class::ROULETTE_DATA_URL)
-          .to_return(status: 404)
+    context 'on error' do
+      let(:teammate_data) do
+        raise "BOOM!"
       end
 
-      it 'raises a pretty error' do
-        expect { team }.to raise_error(/Failed to read/)
-      end
-    end
-
-    context 'JSON failure' do
-      before do
-        WebMock
-          .stub_request(:get, described_class::ROULETTE_DATA_URL)
-          .to_return(body: 'INVALID JSON')
-      end
-
-      it 'raises a pretty error' do
-        expect { team }.to raise_error(/Failed to parse/)
+      it 'propagates the error' do
+        expect { team }.to raise_error(/BOOM/)
       end
     end
 
     context 'success' do
-      before do
-        WebMock
-          .stub_request(:get, described_class::ROULETTE_DATA_URL)
-          .to_return(body: teammate_json)
-      end
-
       it 'returns an array of teammates' do
         is_expected.to contain_exactly(ce_teammate_matcher, ee_teammate_matcher)
       end
 
       it 'memoizes the result' do
-        expect(team.object_id).to eq(roulette.team.object_id)
+        expect(roulette).to receive(:roulette_data).at_most(:once)
+        expect(team).to eq(roulette.team)
       end
     end
   end
 
   describe '#project_team' do
     subject { roulette.project_team('gitlab-ce') }
-
-    before do
-      WebMock
-        .stub_request(:get, described_class::ROULETTE_DATA_URL)
-        .to_return(body: teammate_json)
-    end
 
     it 'filters team by project_name' do
       is_expected.to contain_exactly(ce_teammate_matcher)
@@ -117,21 +99,28 @@ describe Gitlab::Danger::Roulette do
 
     it 'returns a random person' do
       persons = [person1, person2]
+      names = persons.map(&:username)
+      expect(subject).to receive(:out_of_office?)
+        .exactly(:once)
+        .and_call_original
 
-      selected = subject.spin_for_person(persons, random: Random.new)
-
-      expect(selected.username).to be_in(persons.map(&:username))
+      expect(spin(persons)).to have_attributes(username: be_in(names))
     end
 
     it 'excludes OOO persons' do
-      expect(subject.spin_for_person([ooo], random: Random.new)).to be_nil
+      expect(spin([ooo])).to be_nil
     end
 
     it 'excludes mr.author' do
-      expect(subject.spin_for_person([author], random: Random.new)).to be_nil
+      expect(subject).not_to receive(:out_of_office?)
+      expect(spin([author])).to be_nil
     end
 
     private
+
+    def spin(people)
+      subject.spin_for_person(people, random: Random.new)
+    end
 
     def stub_person_message(person, message)
       body = { message: message }.to_json
