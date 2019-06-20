@@ -63,7 +63,7 @@ module QA
           end
 
           env = { 'QA_RUNTIME_SCENARIO_ATTRIBUTES' => Runtime::Scenario.attributes.to_json }
-          cmd = "bundle exec parallel_test -t rspec -- #{args.flatten.join(' ')}"
+          cmd = "bundle exec parallel_test -t rspec --combine-stderr --serialize-stdout -- #{args.flatten.join(' ')}"
           ::Open3.popen2e(env, cmd) do |_, out, _|
             out.each { |line| puts line }
           end
