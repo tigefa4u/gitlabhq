@@ -64,8 +64,10 @@ module QA
 
           env = { 'QA_RUNTIME_SCENARIO_ATTRIBUTES' => Runtime::Scenario.attributes.to_json }
           cmd = "bundle exec parallel_test -t rspec --combine-stderr --serialize-stdout -- #{args.flatten.join(' ')}"
-          ::Open3.popen2e(env, cmd) do |_, out, _|
+          ::Open3.popen2e(env, cmd) do |_, out, wait|
             out.each { |line| puts line }
+
+            exit wait.value.exitstatus
           end
         else
           RSpec::Core::Runner.run(args.flatten, $stderr, $stdout).tap do |status|
