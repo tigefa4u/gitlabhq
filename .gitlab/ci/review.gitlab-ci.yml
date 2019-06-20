@@ -159,12 +159,22 @@ review-stop:
     - echo "${QA_IMAGE}"
     - source scripts/utils.sh
     - install_api_client_dependencies_with_apk
-    - gem install gitlab-qa --no-document ${GITLAB_QA_VERSION:+ --version ${GITLAB_QA_VERSION}}
+    - apk add --update git
+    - git clone https://gitlab.com/gitlab-org/gitlab-qa.git
+    - cd gitlab-qa
+    - gem build gitlab-qa
+    - gem install gitlab-qa
 
 review-qa-smoke:
   <<: *review-qa-base
   script:
     - gitlab-qa Test::Instance::Smoke "${QA_IMAGE}" "${CI_ENVIRONMENT_URL}"
+
+review-qa-smoke-parallel:
+  <<: *review-qa-base
+  allow_failure: true
+  script:
+    - gitlab-qa Test::Instance::Smoke "${QA_IMAGE}" "${CI_ENVIRONMENT_URL}" --parallel
 
 review-qa-all:
   <<: *review-qa-base
@@ -175,6 +185,23 @@ review-qa-all:
     - export KNAPSACK_REPORT_PATH=knapsack/${CI_PROJECT_NAME}/review-qa-all_master_report.json
     - export KNAPSACK_TEST_FILE_PATTERN=qa/specs/features/**/*_spec.rb
     - gitlab-qa Test::Instance::Any "${QA_IMAGE}" "${CI_ENVIRONMENT_URL}"
+
+review-qa-all-parallel:
+  <<: *review-qa-base
+  allow_failure: true
+  when: manual
+  script:
+    - gitlab-qa Test::Instance::Any "${QA_IMAGE}" "${CI_ENVIRONMENT_URL}" --parallel
+
+review-qa-all-knapsack-parallel:
+  <<: *review-qa-base
+  allow_failure: true
+  when: manual
+  parallel: 5
+  script:
+    - export KNAPSACK_REPORT_PATH=knapsack/${CI_PROJECT_NAME}/review-qa-all_master_report.json
+    - export KNAPSACK_TEST_FILE_PATTERN=qa/specs/features/**/*_spec.rb
+    - gitlab-qa Test::Instance::Any "${QA_IMAGE}" "${CI_ENVIRONMENT_URL}" --parallel
 
 .review-performance-base: &review-performance-base
   <<: *review-qa-base
