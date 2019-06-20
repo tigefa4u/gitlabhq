@@ -20,8 +20,6 @@ module QA
 
       # TODO refactor so that the cops are not disabled
       def perform # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity
-        Runtime::Browser.configure!
-
         args = []
         args.push('--tty') if tty
 
