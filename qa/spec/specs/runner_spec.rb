@@ -162,7 +162,7 @@ describe QA::Specs::Runner do
 
     def expect_cli_arguments(arguments)
       env = { 'QA_RUNTIME_SCENARIO_ATTRIBUTES' => '{"parallel":true}' }
-      cmd = "bundle exec parallel_test -t rspec -- #{arguments.join(' ')}"
+      cmd = "bundle exec parallel_test -t rspec --combine-stderr --serialize-stdout -- #{arguments.join(' ')}"
       expect(Open3).to receive(:popen2e)
         .with(env, cmd)
         .and_return(0)
