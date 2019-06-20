@@ -1,3 +1,6 @@
+get  'unsubscribes/:email', to: 'unsubscribes#show', as: :unsubscribe
+post 'unsubscribes/:email', to: 'unsubscribes#create'
+
 # Allows individual providers to be directed to a chosen controller
 # Call from inside devise_scope
 def override_omniauth(provider, controller, path_prefix = '/users/auth')
@@ -25,6 +28,15 @@ devise_for :users, controllers: { omniauth_callbacks: :omniauth_callbacks,
 devise_scope :user do
   get '/users/auth/:provider/omniauth_error' => 'omniauth_callbacks#omniauth_error', as: :omniauth_error
   get '/users/almost_there' => 'confirmations#almost_there'
+
+  get '/users/auth/kerberos_spnego/negotiate' => 'omniauth_kerberos_spnego#negotiate'
+end
+
+scope '-/users', module: :users do
+  resources :terms, only: [:index] do
+    post :accept, on: :member
+    post :decline, on: :member
+  end
 end
 
 scope '-/users', module: :users do
