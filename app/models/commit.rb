@@ -229,7 +229,7 @@ class Commit
   end
 
   def lazy_author
-    BatchLoader.for(author_email.downcase).batch do |emails, loader|
+    BatchLoader.for(author_email.downcase).batch(replace_methods: false) do |emails, loader|
       users = User.by_any_email(emails).includes(:emails)
 
       emails.each do |email|

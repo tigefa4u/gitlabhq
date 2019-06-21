@@ -105,7 +105,7 @@ module Ci
     end
 
     def number_of_warnings
-      BatchLoader.for(id).batch(default_value: 0) do |stage_ids, loader|
+      BatchLoader.for(id).batch(default_value: 0, replace_methods: false) do |stage_ids, loader|
         ::Ci::Build.where(stage_id: stage_ids)
           .latest
           .failed_but_allowed
