@@ -62,7 +62,11 @@ module QA
             args.insert(index, '--') if index
           end
 
-          env = { 'QA_RUNTIME_SCENARIO_ATTRIBUTES' => Runtime::Scenario.attributes.to_json }
+          env = {}
+          Runtime::Env::ENV_VARIABLES.each_key do |key|
+            env[key] = ENV[key] if ENV[key]
+          end
+          env['QA_RUNTIME_SCENARIO_ATTRIBUTES'] = Runtime::Scenario.attributes.to_json
           cmd = "bundle exec parallel_test -t rspec --combine-stderr --serialize-stdout -- #{args.flatten.join(' ')}"
           ::Open3.popen2e(env, cmd) do |_, out, wait|
             out.each { |line| puts line }

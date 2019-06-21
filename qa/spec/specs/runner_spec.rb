@@ -3,6 +3,8 @@
 require 'active_support/core_ext/hash'
 
 describe QA::Specs::Runner do
+  include Helpers::StubENV
+
   shared_examples 'excludes orchestrated' do
     it 'excludes the orchestrated tag and includes default args' do
       expect_rspec_runner_arguments(['--tag', '~orchestrated', *described_class::DEFAULT_TEST_PATH_ARGS])
@@ -146,6 +148,23 @@ describe QA::Specs::Runner do
 
         subject.perform
       end
+
+      it 'passes supported environment variables' do
+        # Test only env vars starting with GITLAB because some of the others
+        # affect how the runner behaves, and we're not concerned with those
+        # behaviors in this test
+        gitlab_env_vars = QA::Runtime::Env::ENV_VARIABLES.reject { |v| !v.start_with?('GITLAB') }
+
+        gitlab_env_vars.each do |k, v|
+          stub_env(k, v)
+        end
+
+        gitlab_env_vars['QA_RUNTIME_SCENARIO_ATTRIBUTES'] = '{"parallel":true}'
+
+        expect_cli_arguments(['--tag', '~orchestrated', *described_class::DEFAULT_TEST_PATH_ARGS], gitlab_env_vars)
+
+        subject.perform
+      end
     end
 
     def excluded_feature_tags_except(tag)
@@ -160,11 +179,10 @@ describe QA::Specs::Runner do
         .and_return(0)
     end
 
-    def expect_cli_arguments(arguments)
-      env = { 'QA_RUNTIME_SCENARIO_ATTRIBUTES' => '{"parallel":true}' }
+    def expect_cli_arguments(arguments, env = { 'QA_RUNTIME_SCENARIO_ATTRIBUTES' => '{"parallel":true}' })
       cmd = "bundle exec parallel_test -t rspec --combine-stderr --serialize-stdout -- #{arguments.join(' ')}"
       expect(Open3).to receive(:popen2e)
-        .with(env, cmd)
+        .with(hash_including(env), cmd)
         .and_return(0)
     end
   end
