@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Gitlab::Ci::Ansi2html do
   subject { described_class }
 
-  it "prints non-ansi as-is" do
+  it "wraps text with span tags" do
     expect(convert_html("Hello")).to eq('<span class="">Hello</span>')
   end
 
@@ -141,11 +141,11 @@ describe Gitlab::Ci::Ansi2html do
   end
 
   it "replaces newlines with line break tags" do
-    expect(convert_html("\n")).to eq('<span class=""><br/><span class=""></span></span>')
+    expect(convert_html("\n")).to eq('<span class=""><br/></span>')
   end
 
   it "groups carriage returns with newlines" do
-    expect(convert_html("\r\n")).to eq('<span class=""><br/><span class=""></span></span>')
+    expect(convert_html("\r\n")).to eq('<span class=""><br/></span>')
   end
 
   describe "incremental update" do
@@ -193,7 +193,7 @@ describe Gitlab::Ci::Ansi2html do
       let(:pre_text) { "Hello\r" }
       let(:pre_html) { "<span class=\"\">Hello\r</span>" }
       let(:text) { "\nWorld" }
-      let(:html) { "<span class=\"\"><br/><span class=\"\">World</span></span>" }
+      let(:html) { "<span class=\"\"><br/></span><span class=\"\">World</span>" }
 
       it_behaves_like 'stateable converter'
     end
@@ -229,13 +229,12 @@ describe Gitlab::Ci::Ansi2html do
     shared_examples 'a legit section' do
       let(:text) { "#{section_start}Some text#{section_end}" }
 
-      it 'prints light red' do
-        text = "#{section_start}\e[91mHello\e[0m\n#{section_end}"
-        header = %{<span class="term-fg-l-red section js-section-header section-header js-s-#{class_name(section_name)}">Hello</span>}
-        line_break = %{<span class="section js-section-header section-header js-s-#{class_name(section_name)}"><br/></span>}
-        line = %{<span class="section line s_#{class_name(section_name)}"></span>}
-        empty_line = %{<span class="section js-s-#{class_name(section_name)}"></span>}
-        html = "#{section_start_html}#{header}#{line_break}#{line}#{empty_line}#{section_end_html}"
+      it 'prints light red header line and resets color for body line' do
+        text = "#{section_start}\e[91mThe Header\e[0m\nthe line#{section_end}"
+        header = %{<span class="term-fg-l-red section js-section-header section-header js-s-#{class_name(section_name)}">The Header</span>}
+        line_break = %{<span class="section js-s-#{class_name(section_name)}"><br/></span>}
+        line = %{<span class="section js-s-#{class_name(section_name)}">the line</span>}
+        html = "#{section_start_html}#{header}#{line_break}#{line}#{section_end_html}"
 
         expect(convert_html(text)).to eq(html)
       end
