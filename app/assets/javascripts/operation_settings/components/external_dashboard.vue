@@ -52,6 +52,10 @@ export default {
           :label="s__('ExternalMetrics|Full dashboard URL')"
           :description="s__('ExternalMetrics|Enter the URL of the dashboard you want to link to')"
         >
+          <!-- 
+            TODO: eslint disable this false positive https://gitlab.com/ekigbo/eslint-plugin-vue-i18n/issues/13     
+            // placeholder with a url is a false positive: https://gitlab.com/gitlab-org/frontend/eslint-plugin-i18n/issues/26#possible-false-positives 
+          -->
           <gl-form-input
             v-model="userDashboardUrl"
             placeholder="https://my-org.gitlab.io/my-dashboards"
