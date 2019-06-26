@@ -19,7 +19,7 @@ module QA
       end
 
       # TODO refactor so that the cops are not disabled
-      def perform # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity
+      def perform # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
         args = []
         args.push('--tty') if tty
 
@@ -67,6 +67,8 @@ module QA
             env[key] = ENV[key] if ENV[key]
           end
           env['QA_RUNTIME_SCENARIO_ATTRIBUTES'] = Runtime::Scenario.attributes.to_json
+          env['GITLAB_QA_ACCESS_TOKEN'] = Runtime::API::Client.new(:gitlab).personal_access_token unless env['GITLAB_QA_ACCESS_TOKEN']
+
           cmd = "bundle exec parallel_test -t rspec --combine-stderr --serialize-stdout -- #{args.flatten.join(' ')}"
           ::Open3.popen2e(env, cmd) do |_, out, wait|
             out.each { |line| puts line }

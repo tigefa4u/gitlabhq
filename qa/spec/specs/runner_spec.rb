@@ -62,6 +62,7 @@ describe QA::Specs::Runner do
       context 'when executing tests in parallel' do
         before do
           allow(QA::Runtime::Scenario).to receive(:attributes).and_return(parallel: true)
+          stub_env('GITLAB_QA_ACCESS_TOKEN', 'skip_token_creation')
         end
 
         it 'passes the given tests path to parallel_tests with a path separator and excludes the orchestrated tag' do
@@ -141,6 +142,7 @@ describe QA::Specs::Runner do
     context 'when executing tests in parallel' do
       before do
         allow(QA::Runtime::Scenario).to receive(:attributes).and_return(parallel: true)
+        stub_env('GITLAB_QA_ACCESS_TOKEN', 'skip_token_creation')
       end
 
       it 'passes default args to parallel_tests' do
