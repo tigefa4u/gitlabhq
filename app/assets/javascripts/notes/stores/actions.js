@@ -48,7 +48,7 @@ export const toggleDiscussion = ({ commit }, data) => commit(types.TOGGLE_DISCUS
 
 export const fetchDiscussions = ({ commit, dispatch }, { path, filter }) => {
   const config = filter !== undefined ? { params: { notes_filter: filter } } : null;
-  axios.get(path, config).then(({ data }) => {
+  return axios.get(path, config).then(({ data }) => {
     commit(types.SET_INITIAL_DISCUSSIONS, data);
     dispatch('updateResolvableDiscussionsCounts');
   });
@@ -60,7 +60,7 @@ export const updateDiscussion = ({ commit, state }, discussion) => {
   return utils.findNoteObjectById(state.discussions, discussion.id);
 };
 
-export const deleteNote = ({ commit, dispatch, state }, note) => {
+export const deleteNote = ({ commit, dispatch, state }, note) =>
   axios.delete(note.path).then(() => {
     const discussion = state.discussions.find(({ id }) => id === note.discussion_id);
 
@@ -73,7 +73,6 @@ export const deleteNote = ({ commit, dispatch, state }, note) => {
       dispatch('diffs/removeDiscussionsFromDiff', discussion);
     }
   });
-};
 
 export const updateNote = ({ commit, dispatch }, { endpoint, note }) =>
   axios.put(endpoint, note).then(({ res }) => {
@@ -154,8 +153,8 @@ export const resolveDiscussion = ({ state, dispatch, getters }, { discussionId }
 export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, discussion }) => {
   const { RESOLVE_NOTE_METHOD_NAME, UNRESOLVE_NOTE_METHOD_NAME } = constants;
   const method = isResolved ? UNRESOLVE_NOTE_METHOD_NAME : RESOLVE_NOTE_METHOD_NAME;
-  axios({
-    method: method,
+  return axios({
+    method,
     url: endpoint,
   }).then(({ data }) => {
     const mutationType = discussion ? types.UPDATE_DISCUSSION : types.UPDATE_NOTE;
