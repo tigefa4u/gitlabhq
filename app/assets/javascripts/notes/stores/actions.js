@@ -76,12 +76,10 @@ export const deleteNote = ({ commit, dispatch, state }, note) => {
 };
 
 export const updateNote = ({ commit, dispatch }, { endpoint, note }) =>
-  axios
-    .put(endpoint, note)
-    .then(({res}) => {
-      commit(types.UPDATE_NOTE, res);
-      dispatch('startTaskList');
-    });
+  axios.put(endpoint, note).then(({ res }) => {
+    commit(types.UPDATE_NOTE, res);
+    dispatch('startTaskList');
+  });
 
 export const updateOrCreateNotes = ({ commit, state, getters, dispatch }, notes) => {
   const { notesById } = getters;
@@ -106,37 +104,33 @@ export const updateOrCreateNotes = ({ commit, state, getters, dispatch }, notes)
 };
 
 export const replyToDiscussion = ({ commit, state, getters, dispatch }, { endpoint, data }) =>
-  axios
-    .post(endpoint, data)
-    .then(({data}) => {
-      if (data.discussion) {
-        commit(types.UPDATE_DISCUSSION, data.discussion);
+  axios.post(endpoint, data).then(({ data }) => {
+    if (data.discussion) {
+      commit(types.UPDATE_DISCUSSION, data.discussion);
 
-        updateOrCreateNotes({ commit, state, getters, dispatch }, data.discussion.notes);
+      updateOrCreateNotes({ commit, state, getters, dispatch }, data.discussion.notes);
 
-        dispatch('updateMergeRequestWidget');
-        dispatch('startTaskList');
-        dispatch('updateResolvableDiscussionsCounts');
-      } else {
-        commit(types.ADD_NEW_REPLY_TO_DISCUSSION, data);
-      }
+      dispatch('updateMergeRequestWidget');
+      dispatch('startTaskList');
+      dispatch('updateResolvableDiscussionsCounts');
+    } else {
+      commit(types.ADD_NEW_REPLY_TO_DISCUSSION, data);
+    }
 
-      return data;
-    });
+    return data;
+  });
 
 export const createNewNote = ({ commit, dispatch }, { endpoint, data }) =>
-  axios
-    .post(endpoint, data)
-    .then(({ data }) => {
-      if (!data.errors) {
-        commit(types.ADD_NEW_NOTE, data);
+  axios.post(endpoint, data).then(({ data }) => {
+    if (!data.errors) {
+      commit(types.ADD_NEW_NOTE, data);
 
-        dispatch('updateMergeRequestWidget');
-        dispatch('startTaskList');
-        dispatch('updateResolvableDiscussionsCounts');
-      }
-      return data;
-    })
+      dispatch('updateMergeRequestWidget');
+      dispatch('startTaskList');
+      dispatch('updateResolvableDiscussionsCounts');
+    }
+    return data;
+  });
 
 export const removePlaceholderNotes = ({ commit }) => commit(types.REMOVE_PLACEHOLDER_NOTES);
 
@@ -162,39 +156,34 @@ export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, 
   const method = isResolved ? UNRESOLVE_NOTE_METHOD_NAME : RESOLVE_NOTE_METHOD_NAME;
   axios({
     method: method,
-    url: endpoint
-  })
-    .then(({ data }) => {
-      const mutationType = discussion ? types.UPDATE_DISCUSSION : types.UPDATE_NOTE;
+    url: endpoint,
+  }).then(({ data }) => {
+    const mutationType = discussion ? types.UPDATE_DISCUSSION : types.UPDATE_NOTE;
 
-      commit(mutationType, data);
+    commit(mutationType, data);
 
-      dispatch('updateResolvableDiscussionsCounts');
+    dispatch('updateResolvableDiscussionsCounts');
 
-      dispatch('updateMergeRequestWidget');
-    });
+    dispatch('updateMergeRequestWidget');
+  });
 };
 
 export const closeIssue = ({ commit, dispatch, state }) => {
   dispatch('toggleStateButtonLoading', true);
-  return axios
-    .put(state.notesData.closePath)
-    .then(({data}) => {
-      commit(types.CLOSE_ISSUE);
-      dispatch('emitStateChangedEvent', data);
-      dispatch('toggleStateButtonLoading', false);
-    });
+  return axios.put(state.notesData.closePath).then(({ data }) => {
+    commit(types.CLOSE_ISSUE);
+    dispatch('emitStateChangedEvent', data);
+    dispatch('toggleStateButtonLoading', false);
+  });
 };
 
 export const reopenIssue = ({ commit, dispatch, state }) => {
   dispatch('toggleStateButtonLoading', true);
-  return axios
-    .put(state.notesData.reopenPath)
-    .then(({data}) => {
-      commit(types.REOPEN_ISSUE);
-      dispatch('emitStateChangedEvent', data);
-      dispatch('toggleStateButtonLoading', false);
-    });
+  return axios.put(state.notesData.reopenPath).then(({ data }) => {
+    commit(types.REOPEN_ISSUE);
+    dispatch('emitStateChangedEvent', data);
+    dispatch('toggleStateButtonLoading', false);
+  });
 };
 
 export const toggleStateButtonLoading = ({ commit }, value) =>
@@ -383,11 +372,9 @@ export const toggleAward = ({ commit, getters }, { awardName, noteId }) => {
 export const toggleAwardRequest = ({ dispatch }, data) => {
   const { endpoint, awardName } = data;
 
-  return axios
-    .post(endpoint, { name: awardName })
-    .then(() => {
-      dispatch('toggleAward', data);
-    });
+  return axios.post(endpoint, { name: awardName }).then(() => {
+    dispatch('toggleAward', data);
+  });
 };
 
 export const scrollToNoteIfNeeded = (context, el) => {
@@ -448,7 +435,7 @@ export const submitSuggestion = (
   { commit, dispatch },
   { discussionId, noteId, suggestionId, flashContainer },
 ) =>
-    Api.applySuggestion(suggestionId)
+  Api.applySuggestion(suggestionId)
     .then(() => commit(types.APPLY_SUGGESTION, { discussionId, noteId, suggestionId }))
     .then(() => dispatch('resolveDiscussion', { discussionId }).catch(() => {}))
     .catch(err => {
