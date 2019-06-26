@@ -445,24 +445,12 @@ export const updateResolvableDiscussionsCounts = ({ commit }) =>
   commit(types.UPDATE_RESOLVABLE_DISCUSSIONS_COUNTS);
 
 export const submitSuggestion = (
-<<<<<<< HEAD
   { commit, dispatch },
   { discussionId, noteId, suggestionId, flashContainer },
 ) =>
-  service
-    .applySuggestion(suggestionId)
+    Api.applySuggestion(suggestionId)
     .then(() => commit(types.APPLY_SUGGESTION, { discussionId, noteId, suggestionId }))
     .then(() => dispatch('resolveDiscussion', { discussionId }).catch(() => {}))
-=======
-  { commit },
-  { discussionId, noteId, suggestionId, flashContainer, callback },
-) => {
-    Api.applySuggestion(id)
-    .then(() => {
-      commit(types.APPLY_SUGGESTION, { discussionId, noteId, suggestionId });
-      callback();
-    })
->>>>>>> 8ad63bec479... deletes remaining references except for poll
     .catch(err => {
       const defaultMessage = __(
         'Something went wrong while applying the suggestion. Please try again.',
