@@ -2,7 +2,6 @@ import $ from 'helpers/jquery';
 import Vue from 'vue';
 import { mount, createLocalVue } from '@vue/test-utils';
 import NotesApp from '~/notes/components/notes_app.vue';
-import service from '~/notes/services/notes_service';
 import createStore from '~/notes/stores';
 import '~/behaviors/markdown/render_gfm';
 import { setTestTimeout } from 'helpers/timeout';

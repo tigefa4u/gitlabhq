@@ -8,7 +8,6 @@ import * as mutationTypes from '~/notes/stores/mutation_types';
 import * as notesConstants from '~/notes/constants';
 import createStore from '~/notes/stores';
 import mrWidgetEventHub from '~/vue_merge_request_widget/event_hub';
-import service from '~/notes/services/notes_service';
 import testAction from '../../helpers/vuex_action_helper';
 import axios from '~/lib/utils/axios_utils';
 import MockAdapter from 'axios-mock-adapter';
