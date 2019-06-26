@@ -102,8 +102,11 @@ export const updateOrCreateNotes = ({ commit, state, getters, dispatch }, notes)
   });
 };
 
-export const replyToDiscussion = ({ commit, state, getters, dispatch }, { endpoint, data }) =>
-  axios.post(endpoint, data).then(({ data }) => {
+export const replyToDiscussion = (
+  { commit, state, getters, dispatch },
+  { endpoint, data: reply },
+) =>
+  axios.post(endpoint, reply).then(({ data }) => {
     if (data.discussion) {
       commit(types.UPDATE_DISCUSSION, data.discussion);
 
@@ -119,8 +122,8 @@ export const replyToDiscussion = ({ commit, state, getters, dispatch }, { endpoi
     return data;
   });
 
-export const createNewNote = ({ commit, dispatch }, { endpoint, data }) =>
-  axios.post(endpoint, data).then(({ data }) => {
+export const createNewNote = ({ commit, dispatch }, { endpoint, data: newNote }) =>
+  axios.post(endpoint, newNote).then(({ data }) => {
     if (!data.errors) {
       commit(types.ADD_NEW_NOTE, data);
 
