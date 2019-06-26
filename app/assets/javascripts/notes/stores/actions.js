@@ -75,8 +75,8 @@ export const deleteNote = ({ commit, dispatch, state }, note) =>
   });
 
 export const updateNote = ({ commit, dispatch }, { endpoint, note }) =>
-  axios.put(endpoint, note).then(({ res }) => {
-    commit(types.UPDATE_NOTE, res);
+  axios.put(endpoint, note).then(({ data }) => {
+    commit(types.UPDATE_NOTE, data);
     dispatch('startTaskList');
   });
 
