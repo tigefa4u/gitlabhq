@@ -18,26 +18,6 @@ class WikiPage
     ActiveModel::Name.new(self, nil, 'wiki')
   end
 
-  # Sorts and groups pages by directory.
-  #
-  # pages - an array of WikiPage objects.
-  #
-  # Returns an array of WikiPage and WikiDirectory objects. The entries are
-  # sorted by alphabetical order (directories and pages inside each directory).
-  # Pages at the root level come before everything.
-  def self.group_by_directory(pages = [])
-    grouped = []
-    dirs = Hash.new do |h, dir_name|
-      WikiDirectory.new(dir_name, []).tap { |dir| grouped << (h[dir_name] = dir) }
-    end
-
-    pages.each_with_object(grouped) do |page, top_level|
-      group = page.directory.present? ? dirs[page.directory] : grouped_pages
-
-      group << page
-    end
-  end
-
   def self.unhyphenize(name)
     name.gsub(/-+/, ' ')
   end

@@ -25,7 +25,7 @@ class Projects::WikisController < Projects::ApplicationController
       @project_wiki.list_pages(sort: params[:sort], direction: params[:direction])
     ).page(params[:page])
 
-    @wiki_entries = WikiPage.group_by_directory(@wiki_pages)
+    @wiki_entries = WikiDirectory.group_by_directory(@wiki_pages)
   end
 
   # `#show` handles a number of scenarios:
@@ -140,7 +140,7 @@ class Projects::WikisController < Projects::ApplicationController
     @sidebar_page = @project_wiki.find_sidebar(params[:version_id])
 
     unless @sidebar_page # Fallback to default sidebar
-      @sidebar_wiki_entries = WikiPage.group_by_directory(@project_wiki.list_pages(limit: 15))
+      @sidebar_wiki_entries = WikiDirectory.group_by_directory(@project_wiki.list_pages(limit: 15))
     end
   rescue ProjectWiki::CouldNotCreateWikiError
     flash[:notice] = _("Could not create Wiki Repository at this time. Please try again later.")
