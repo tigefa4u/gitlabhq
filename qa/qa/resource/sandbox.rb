@@ -35,9 +35,15 @@ module QA
       end
 
       def fabricate_via_api!
-        resource_web_url(api_get)
-      rescue ResourceNotFoundError
-        super
+        # When the tests are run in parallel 2 might try to create the same
+        # sandbox group at once. One will succeed and the other will raise an
+        # exception because the group already exists. This will allow the failed
+        # test to retry and GET the group that now exists.
+        QA::Support::Retrier.retry_on_exception do
+          resource_web_url(api_get)
+        rescue ResourceNotFoundError
+          super
+        end
       end
 
       def api_get_path
