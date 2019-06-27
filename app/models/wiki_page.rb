@@ -25,19 +25,16 @@ class WikiPage
   # Returns an array of WikiPage and WikiDirectory objects. The entries are
   # sorted by alphabetical order (directories and pages inside each directory).
   # Pages at the root level come before everything.
-  def self.group_by_directory(pages)
-    return [] if pages.blank?
+  def self.group_by_directory(pages = [])
+    grouped = []
+    dirs = Hash.new do |h, dir_name|
+      WikiDirectory.new(dir_name, []).tap { |dir| grouped << (h[dir_name] = dir) }
+    end
 
-    pages.each_with_object([]) do |page, grouped_pages|
-      next grouped_pages << page unless page.directory.present?
+    pages.each_with_object(grouped) do |page, top_level|
+      group = page.directory.present? ? dirs[page.directory] : grouped_pages
 
-      directory = grouped_pages.find do |obj|
-        obj.is_a?(WikiDirectory) && obj.slug == page.directory
-      end
-
-      next directory.pages << page if directory
-
-      grouped_pages << WikiDirectory.new(page.directory, [page])
+      group << page
     end
   end
 
