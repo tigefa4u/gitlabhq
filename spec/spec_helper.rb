@@ -218,7 +218,7 @@ RSpec.configure do |config|
     ActionController::Base.cache_store = caching_store
   end
 
-  config.around(:each) do |example|
+  config.around do |example|
     ActiveRecord::Base.cache do
       example.run
     end

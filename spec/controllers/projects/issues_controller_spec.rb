@@ -1290,12 +1290,14 @@ describe Projects::IssuesController do
           get :discussions, params: { namespace_id: project.namespace, project_id: project, id: issue.iid }
 
           RequestStore.clear!
+          ActiveRecord::Base.connection.clear_query_cache
 
           control_count = ActiveRecord::QueryRecorder.new do
             get :discussions, params: { namespace_id: project.namespace, project_id: project, id: issue.iid }
           end.count
 
           RequestStore.clear!
+          ActiveRecord::Base.connection.clear_query_cache
 
           create_list(:discussion_note_on_issue, 2, :system, noteable: issue, project: issue.project, note: cross_reference)
 
