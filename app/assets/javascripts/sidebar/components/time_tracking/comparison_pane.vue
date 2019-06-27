@@ -28,11 +28,16 @@ export default {
       type: String,
       required: true,
     },
+    limitToHours: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   computed: {
     parsedTimeRemaining() {
       const diffSeconds = this.timeEstimate - this.timeSpent;
-      return parseSeconds(diffSeconds);
+      return parseSeconds(diffSeconds, { limitToHours: this.limitToHours });
     },
     timeRemainingHumanReadable() {
       return stringifyTime(this.parsedTimeRemaining);
@@ -65,9 +70,6 @@ export default {
       :title="timeRemainingTooltip"
       :class="timeRemainingStatusClass"
       class="compare-meter"
-      data-toggle="tooltip"
-      data-placement="top"
-      role="timeRemainingDisplay"
     >
       <gl-progress-bar :value="timeRemainingPercent" :variant="progressBarVariant" />
       <div class="compare-display-container">

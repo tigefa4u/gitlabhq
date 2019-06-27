@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190619175843) do
+ActiveRecord::Schema.define(version: 20190625184066) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -93,8 +93,6 @@ ActiveRecord::Schema.define(version: 20190619175843) do
     t.boolean "akismet_enabled", default: false
     t.string "akismet_api_key"
     t.integer "metrics_sample_interval", default: 15
-    t.boolean "sentry_enabled", default: false
-    t.string "sentry_dsn"
     t.boolean "email_author_in_body", default: false
     t.integer "default_group_visibility"
     t.boolean "repository_checks_enabled", default: false
@@ -135,8 +133,6 @@ ActiveRecord::Schema.define(version: 20190619175843) do
     t.string "uuid"
     t.decimal "polling_interval_multiplier", default: "1.0", null: false
     t.integer "cached_markdown_version"
-    t.boolean "clientside_sentry_enabled", default: false, null: false
-    t.string "clientside_sentry_dsn"
     t.boolean "prometheus_metrics_enabled", default: true, null: false
     t.boolean "help_page_hide_commercial_content", default: false
     t.string "help_page_support_url"
@@ -229,6 +225,7 @@ ActiveRecord::Schema.define(version: 20190619175843) do
     t.integer "custom_project_templates_group_id"
     t.boolean "elasticsearch_limit_indexing", default: false, null: false
     t.string "geo_node_allowed_ips", default: "0.0.0.0/0, ::/0"
+    t.boolean "time_tracking_limit_to_hours", default: false, null: false
     t.index ["custom_project_templates_group_id"], name: "index_application_settings_on_custom_project_templates_group_id", using: :btree
     t.index ["file_template_project_id"], name: "index_application_settings_on_file_template_project_id", using: :btree
     t.index ["usage_stats_set_by_user_id"], name: "index_application_settings_on_usage_stats_set_by_user_id", using: :btree
@@ -2054,6 +2051,21 @@ ActiveRecord::Schema.define(version: 20190619175843) do
     t.index ["title"], name: "index_milestones_on_title_trigram", using: :gin, opclasses: {"title"=>"gin_trgm_ops"}
   end
 
+  create_table "namespace_aggregation_schedules", primary_key: "namespace_id", id: :integer, default: nil, force: :cascade do |t|
+    t.index ["namespace_id"], name: "index_namespace_aggregation_schedules_on_namespace_id", unique: true, using: :btree
+  end
+
+  create_table "namespace_root_storage_statistics", primary_key: "namespace_id", id: :integer, default: nil, force: :cascade do |t|
+    t.datetime_with_timezone "updated_at", null: false
+    t.bigint "repository_size", default: 0, null: false
+    t.bigint "lfs_objects_size", default: 0, null: false
+    t.bigint "wiki_size", default: 0, null: false
+    t.bigint "build_artifacts_size", default: 0, null: false
+    t.bigint "storage_size", default: 0, null: false
+    t.bigint "packages_size", default: 0, null: false
+    t.index ["namespace_id"], name: "index_namespace_root_storage_statistics_on_namespace_id", unique: true, using: :btree
+  end
+
   create_table "namespace_statistics", id: :serial, force: :cascade do |t|
     t.integer "namespace_id", null: false
     t.integer "shared_runners_seconds", default: 0, null: false
@@ -2334,6 +2346,7 @@ ActiveRecord::Schema.define(version: 20190619175843) do
     t.datetime_with_timezone "certificate_valid_not_before"
     t.datetime_with_timezone "certificate_valid_not_after"
     t.integer "certificate_source", limit: 2, default: 0, null: false
+    t.index ["certificate_source", "certificate_valid_not_after"], name: "index_pages_domains_need_auto_ssl_renewal", where: "(auto_ssl_enabled = true)", using: :btree
     t.index ["domain"], name: "index_pages_domains_on_domain", unique: true, using: :btree
     t.index ["project_id", "enabled_until"], name: "index_pages_domains_on_project_id_and_enabled_until", using: :btree
     t.index ["project_id"], name: "index_pages_domains_on_project_id", using: :btree
@@ -2501,9 +2514,9 @@ ActiveRecord::Schema.define(version: 20190619175843) do
     t.index ["project_id"], name: "index_project_import_data_on_project_id", using: :btree
   end
 
-  create_table "project_incident_management_settings", primary_key: "project_id", id: :integer, default: nil, force: :cascade do |t|
-    t.boolean "create_issue", default: false, null: false
-    t.boolean "send_email", default: true, null: false
+  create_table "project_incident_management_settings", primary_key: "project_id", id: :serial, force: :cascade do |t|
+    t.boolean "create_issue", default: true, null: false
+    t.boolean "send_email", default: false, null: false
     t.text "issue_template_key"
   end
 
@@ -3755,6 +3768,8 @@ ActiveRecord::Schema.define(version: 20190619175843) do
   add_foreign_key "merge_trains", "users", on_delete: :cascade
   add_foreign_key "milestones", "namespaces", column: "group_id", name: "fk_95650a40d4", on_delete: :cascade
   add_foreign_key "milestones", "projects", name: "fk_9bd0a0c791", on_delete: :cascade
+  add_foreign_key "namespace_aggregation_schedules", "namespaces", on_delete: :cascade
+  add_foreign_key "namespace_root_storage_statistics", "namespaces", on_delete: :cascade
   add_foreign_key "namespace_statistics", "namespaces", on_delete: :cascade
   add_foreign_key "namespaces", "namespaces", column: "custom_project_templates_group_id", name: "fk_e7a0b20a6b", on_delete: :nullify
   add_foreign_key "namespaces", "plans", name: "fk_fdd12e5b80", on_delete: :nullify
