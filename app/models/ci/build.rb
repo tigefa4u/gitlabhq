@@ -397,7 +397,7 @@ module Ci
     end
 
     def environment_action
-      self.options.fetch(:environment, {}).fetch(:action, 'start') if self.options
+      self.options&.fetch(:environment, {})&.fetch(:action, 'start')
     end
 
     def has_deployment?

@@ -57,7 +57,7 @@ module QA
       end
 
       def qa_cookies
-        ENV['QA_COOKIES'] && ENV['QA_COOKIES'].split(';')
+        ENV['QA_COOKIES']&.split(';')
       end
 
       def signup_disabled?

@@ -101,7 +101,7 @@ module QA
       # replace with (..., page = self.class)
       def click_element(name, page = nil)
         find_element(name).click
-        page.validate_elements_present! if page
+        page&.validate_elements_present!
       end
 
       def fill_element(name, content)

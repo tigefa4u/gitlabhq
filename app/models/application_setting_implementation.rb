@@ -250,7 +250,7 @@ module ApplicationSettingImplementation
   end
 
   def archive_builds_older_than
-    archive_builds_in_seconds.seconds.ago if archive_builds_in_seconds
+    archive_builds_in_seconds&.seconds&.ago
   end
 
   private

@@ -31,7 +31,7 @@ class Projects::BuildArtifactsController < Projects::ApplicationController
   private
 
   def validate_artifacts!
-    render_404 unless job && job.artifacts?
+    render_404 unless job&.artifacts?
   end
 
   def extract_ref_name_and_path

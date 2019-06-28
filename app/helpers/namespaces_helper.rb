@@ -14,7 +14,7 @@ module NamespacesHelper
       extra_group = Group.find(extra_group) if Namespace.find(extra_group).kind == 'group'
     end
 
-    if extra_group && extra_group.is_a?(Group)
+    if extra_group&.is_a?(Group)
       extra_group = dedup_extra_group(extra_group)
 
       if Ability.allowed?(current_user, :read_group, extra_group)

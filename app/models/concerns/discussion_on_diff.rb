@@ -79,8 +79,7 @@ module DiscussionOnDiff
 
   def fetch_preloaded_diff_file
     fetch_preloaded_diff =
-      context_noteable &&
-      context_noteable.preloads_discussion_diff_highlighting? &&
+      context_noteable&.preloads_discussion_diff_highlighting? &&
       note_diff_file
 
     context_noteable.discussions_diffs.find_by_id(note_diff_file.id) if fetch_preloaded_diff

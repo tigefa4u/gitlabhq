@@ -84,7 +84,7 @@ module Banzai
           @children = []
 
           @parent = find_parent(previous_header)
-          @parent.children.push(self) if @parent
+          @parent&.children&.push(self)
         end
 
         def level

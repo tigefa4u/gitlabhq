@@ -51,7 +51,7 @@ module SendsBlob
   def send_lfs_object(blob)
     lfs_object = find_lfs_object(blob)
 
-    if lfs_object && lfs_object.project_allowed_access?(project)
+    if lfs_object&.project_allowed_access?(project)
       send_upload(lfs_object.file, attachment: blob.name)
     else
       render_404
@@ -60,7 +60,7 @@ module SendsBlob
 
   def find_lfs_object(blob)
     lfs_object = LfsObject.find_by_oid(blob.lfs_oid)
-    if lfs_object && lfs_object.file.exists?
+    if lfs_object&.file&.exists?
       lfs_object
     else
       nil

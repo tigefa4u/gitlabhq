@@ -6,7 +6,7 @@ shared_examples 'issuable quick actions' do
     # issuable state needs to be changed before
     # the quick action is executed.
     def call_before_action
-      before_action.call if before_action
+      before_action&.call
     end
 
     def skip_access_check

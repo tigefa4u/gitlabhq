@@ -50,8 +50,7 @@ class PostReceive
           Git::BranchPushService
         end
 
-      if service_klass
-        service_klass.new(
+      service_klass&.new(
           post_received.project,
           user,
           oldrev: oldrev,
@@ -59,8 +58,7 @@ class PostReceive
           ref: ref,
           push_options: post_received.push_options,
           create_pipelines: index < PIPELINE_PROCESS_LIMIT || Feature.enabled?(:git_push_create_all_pipelines, post_received.project)
-        ).execute
-      end
+        )&.execute
 
       changes << Gitlab::DataBuilder::Repository.single_change(oldrev, newrev, ref)
       refs << ref

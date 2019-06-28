@@ -12,6 +12,6 @@ class Admin::ImpersonationsController < Admin::ApplicationController
   private
 
   def authenticate_impersonator!
-    render_404 unless impersonator && impersonator.admin? && !impersonator.blocked?
+    render_404 unless impersonator&.admin? && !impersonator.blocked?
   end
 end

@@ -65,7 +65,7 @@ module Projects
       message = "Unable to save #{e.record.type}: #{e.record.errors.full_messages.join(", ")} "
       fail(error: message)
     rescue => e
-      @project.errors.add(:base, e.message) if @project
+      @project&.errors&.add(:base, e.message)
       fail(error: e.message)
     end
 
@@ -153,7 +153,7 @@ module Projects
       log_message << " Project ID: #{@project.id}" if @project&.id
       Rails.logger.error(log_message)
 
-      if @project && @project.persisted? && @project.import_state
+      if @project&.persisted? && @project.import_state
         @project.import_state.mark_as_failed(message)
       end
 

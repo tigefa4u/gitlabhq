@@ -59,11 +59,11 @@ module Gitlab
         end
 
         def preinstall_command
-          preinstall.join("\n") if preinstall
+          preinstall&.join("\n")
         end
 
         def postinstall_command
-          postinstall.join("\n") if postinstall
+          postinstall&.join("\n")
         end
 
         def install_flag

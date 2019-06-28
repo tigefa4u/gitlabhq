@@ -88,7 +88,7 @@ module QA
       end
 
       def self.do_fabricate!(resource:, prepare_block:, parents: [])
-        prepare_block.call(resource) if prepare_block
+        prepare_block&.call(resource)
 
         resource_web_url = yield
         resource.web_url = resource_web_url

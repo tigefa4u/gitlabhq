@@ -88,9 +88,7 @@ module Gitlab
           out = out.join
 
           # If outbuf is passed, we put the output into the buffer. This supports IO.copy_stream functionality
-          if outbuf
-            outbuf.replace(out)
-          end
+          outbuf&.replace(out)
 
           out
         end

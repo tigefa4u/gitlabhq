@@ -169,7 +169,7 @@ module Backup
     end
 
     def skipped?(item)
-      settings[:skipped] && settings[:skipped].include?(item) || disabled_features.include?(item)
+      settings[:skipped]&.include?(item) || disabled_features.include?(item)
     end
 
     private

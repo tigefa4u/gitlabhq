@@ -55,7 +55,7 @@ class EnvironmentEntity < Grape::Entity
   end
 
   def cluster_platform_kubernetes?
-    deployment_platform && deployment_platform.is_a?(Clusters::Platforms::Kubernetes)
+    deployment_platform&.is_a?(Clusters::Platforms::Kubernetes)
   end
 
   def deployment_platform

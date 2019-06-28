@@ -36,7 +36,8 @@ Style/MutableConstant:
 
 # TODO: Move this to gitlab-styles
 Style/SafeNavigation:
-  Enabled: false
+  Enabled: true
+#  ConvertTry: true
 
 # Frozen String Literal
 Style/FrozenStringLiteralComment:

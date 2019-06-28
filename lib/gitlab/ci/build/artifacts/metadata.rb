@@ -98,7 +98,7 @@ module Gitlab
 
           def read_uint32(gz)
             binary = gz.read(4)
-            binary.unpack1('L>') if binary
+            binary&.unpack1('L>')
           end
 
           def read_string(gz)

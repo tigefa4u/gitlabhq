@@ -14,7 +14,7 @@
 #
 class BranchFilterValidator < ActiveModel::EachValidator
   def validate_each(record, attribute, value)
-    value.squish! unless value.nil?
+    value&.squish!
 
     if value.present?
       value_without_wildcards = value.tr('*', 'x')

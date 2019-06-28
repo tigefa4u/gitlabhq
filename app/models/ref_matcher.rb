@@ -20,7 +20,7 @@ class RefMatcher
 
   # Checks if this protected ref contains a wildcard
   def wildcard?
-    @ref_name_or_pattern && @ref_name_or_pattern.include?('*')
+    @ref_name_or_pattern&.include?('*')
   end
 
   protected

@@ -34,7 +34,7 @@ module Gitlab
       private
 
       def fb_session
-        @import_data_credentials ||= project.import_data.credentials[:fb_session] if project.import_data && project.import_data.credentials
+        @import_data_credentials ||= project.import_data.credentials[:fb_session] if project.import_data&.credentials
       end
 
       def user_map

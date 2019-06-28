@@ -41,7 +41,7 @@ module Gitlab
       # rubocop: disable CodeReuse/ActiveRecord
       def find_correct_path(upload_path)
         upload = Upload.find_by(uploader: 'FileUploader', path: upload_path)
-        return unless upload && upload.local? && upload.model
+        return unless upload&.local? && upload.model
 
         upload.absolute_path
       rescue => e

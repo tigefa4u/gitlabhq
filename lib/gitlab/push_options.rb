@@ -64,7 +64,7 @@ module Gitlab
 
     def valid_option?(namespace, key)
       keys = VALID_OPTIONS.dig(namespace, :keys)
-      keys && keys.include?(key.to_sym)
+      keys&.include?(key.to_sym)
     end
   end
 end

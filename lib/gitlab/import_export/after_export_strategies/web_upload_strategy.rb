@@ -39,7 +39,7 @@ module Gitlab
         def send_file
           Gitlab::HTTP.public_send(http_method.downcase, url, send_file_options) # rubocop:disable GitlabSecurity/PublicSend
         ensure
-          export_file.close if export_file
+          export_file&.close
         end
 
         def export_file

@@ -68,7 +68,7 @@ module Gitlab
         end
 
         def do_master_restart
-          @master_restart_hooks && @master_restart_hooks.each do |block|
+          @master_restart_hooks&.each do |block|
             block.call
           end
         end

@@ -21,7 +21,7 @@ module RecordsUploads
     # rubocop: disable CodeReuse/ActiveRecord
     def record_upload(_tempfile = nil)
       return unless model
-      return unless file && file.exists?
+      return unless file&.exists?
 
       # MySQL InnoDB may encounter a deadlock if a deletion and an
       # insert is in the same transaction due to its next-key locking
@@ -36,7 +36,7 @@ module RecordsUploads
 
     def readd_upload
       uploads.where(path: upload_path).delete_all
-      upload.delete if upload
+      upload&.delete
 
       self.upload = build_upload.tap(&:save!)
     end
@@ -73,7 +73,7 @@ module RecordsUploads
     # Called `before :remove`
     # rubocop: disable CodeReuse/ActiveRecord
     def destroy_upload(*args)
-      return unless file && file.exists?
+      return unless file&.exists?
 
       self.upload = nil
       uploads.where(path: upload_path).delete_all

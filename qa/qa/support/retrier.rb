@@ -15,7 +15,7 @@ module QA
           yield
         rescue StandardError, RSpec::Expectations::ExpectationNotMetError
           sleep sleep_interval
-          reload_page.refresh if reload_page
+          reload_page&.refresh
           attempts += 1
 
           retry if attempts < max_attempts

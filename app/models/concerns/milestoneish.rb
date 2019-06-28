@@ -66,7 +66,7 @@ module Milestoneish
   end
 
   def upcoming?
-    start_date && start_date.future?
+    start_date&.future?
   end
 
   def expires_at
@@ -80,7 +80,7 @@ module Milestoneish
   end
 
   def expired?
-    due_date && due_date.past?
+    due_date&.past?
   end
 
   def group_milestone?
