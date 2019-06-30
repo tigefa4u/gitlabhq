@@ -6,8 +6,14 @@
 - breadcrumb_title _("Issue Boards")
 - page_title("#{board.name}", _("Boards"))
 
-- content_for :page_specific_javascripts do
+%button{ type: 'button',
+          class: "btn btn-success btn-patricks-test-367346" }
+  = "Move multiple Test"
+%button{ type: 'button',
+          class: "btn btn-success btn-patricks-test-367347" }
+  = "Move one issue"
 
+- content_for :page_specific_javascripts do
   -# haml-lint:disable InlineJavaScript
   %script#js-board-template{ type: "text/x-template" }= render "shared/boards/components/board"
   %script#js-board-modal-filter{ type: "text/x-template" }= render "shared/issuable/search_bar", type: :boards_modal, show_sorting_dropdown: false
