@@ -73,6 +73,8 @@ Rails.application.routes.draw do
     resources :metrics, only: [:index]
     mount Peek::Railtie => '/peek', as: 'peek_routes'
 
+    put 'boards/:board_id/issues/move_multiple' => 'boards/issues#move_multiple_issues', format: :json
+
     # Boards resources shared between group and projects
     resources :boards, only: [] do
       resources :lists, module: :boards, only: [:index, :create, :update, :destroy] do
