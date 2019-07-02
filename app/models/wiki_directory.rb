@@ -1,11 +1,28 @@
 # frozen_string_literal: true
 
 class WikiDirectory
+  include StaticModel
   include ActiveModel::Validations
 
   attr_accessor :slug, :pages
 
   validates :slug, presence: true
+
+  # StaticModel overrides and configuration:
+
+  def self.primary_key
+    'slug'
+  end
+
+  def id
+    "#{slug}@#{last_version&.sha}"
+  end
+
+  def self.model_name
+    ActiveModel::Name.new(self, nil, 'wiki_dir')
+  end
+
+  alias_method :to_param, :slug
 
   # Sorts and groups pages by directory.
   #

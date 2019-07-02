@@ -13245,6 +13245,9 @@ msgstr ""
 msgid "Wiki|Edit Page"
 msgstr ""
 
+msgid "Wiki|Hide folder contents"
+msgstr ""
+
 msgid "Wiki|More Pages"
 msgstr ""
 
@@ -13263,10 +13266,13 @@ msgstr ""
 msgid "Wiki|Pages"
 msgstr ""
 
-msgid "Wiki|Title"
+msgid "Wiki|Show files separately"
 msgstr ""
 
-msgid "Wiki|Wiki Pages"
+msgid "Wiki|Show folder contents"
+msgstr ""
+
+msgid "Wiki|Title"
 msgstr ""
 
 msgid "Will deploy to"

@@ -1,8 +1,10 @@
 - @content_class = "limit-container-width" unless fluid_layout
 - breadcrumb_title @page.human_title
-- wiki_breadcrumb_dropdown_links(@page.slug)
 - page_title @page.human_title, _("Wiki")
 - add_to_breadcrumbs _("Wiki"), project_wiki_path(@project, :home)
+- add_to_breadcrumbs s_("Wiki|Pages"), project_wikis_pages_path(@project)
+- if @page_dir.present?
+  - add_to_breadcrumbs _(@page_dir.slug), project_wiki_dir_path(@project, @page_dir)
 
 .wiki-page-header.top-area.has-sidebar-toggle.flex-column.flex-lg-row
   %button.btn.btn-default.sidebar-toggle.js-sidebar-wiki-toggle{ role: "button", type: "button" }

@@ -1,8 +1,15 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'set'
 
 RSpec.describe WikiDirectory do
+  # The smallest number of seconds we must sleep for in order to get git
+  # commits to record deterministically ordered timestamps (tested with
+  # fractional values, but no dice).
+  # This is not a good approach, but timecop does not work across RPC boundaries
+  MIN_POSSIBLE_SLEEP = 1
+
   let(:project) { create(:project, :wiki_repo) }
   let(:user) { project.owner }
   let(:wiki) { ProjectWiki.new(project, user) }
@@ -122,7 +129,23 @@ RSpec.describe WikiDirectory do
   end
 
   describe 'attributes' do
+    def page_path(index)
+      "dir-path/page-#{index}"
+    end
+
+    let(:page_paths) { (1..3).map { |n| page_path(n) } }
+
+    let(:pages) do
+      page_paths.map { |p| wiki.find_page(p) }
+    end
+
     subject { described_class.new('dir-path', pages) }
+
+    context 'there are no pages' do
+      let(:pages) { [] }
+
+      it { is_expected.to have_attributes(page_count: 0, last_version: be_nil) }
+    end
 
     context 'there is one page' do
       before do
@@ -134,37 +157,61 @@ RSpec.describe WikiDirectory do
       it { is_expected.to have_attributes(page_count: 1, last_version: the_page.last_version) }
     end
 
-    context 'there are a few pages' do
+    context 'there are a few pages, each with a single version' do
       before do
         Timecop.scale(10000) do
-          (1..3).each do |n|
-            create_page("dir-path/page-#{n}", "This is page #{n}")
+          page_paths.each_with_index do |path, n|
+            create_page(path, "this is page #{n}")
+            sleep_for_rpc!
           end
         end
       end
 
-      let(:pages) do
-        (1..3).map { |n| wiki.find_page("dir-path/page-#{n}") }
+      let(:expected_last_version) { pages.last.last_version }
+
+      it { is_expected.to have_attributes(page_count: 3, last_version: expected_last_version) }
+    end
+
+    context 'there are a few pages, each with a few versions' do
+      before do
+        Timecop.scale(10000) do
+          page_paths.each_with_index do |path, n|
+            create_page(path, "This is page #{n}")
+            sleep_for_rpc!
+            (2..3).each do |v|
+              update_page(path, "Now at version #{v}")
+              sleep_for_rpc!
+            end
+          end
+        end
       end
 
       it { is_expected.to have_attributes(page_count: 3, last_version: pages.last.last_version) }
-    end
-
-    context 'there are no pages' do
-      let(:pages) { [] }
-
-      it { is_expected.to have_attributes(page_count: 0, last_version: be_nil) }
     end
   end
 
   private
 
+  # Sleep for the smallest possible time that will allow our commits to have
+  # deterministically ordered timestamps.
+  def sleep_for_rpc!
+    sleep(MIN_POSSIBLE_SLEEP)
+  end
+
   def create_page(name, content)
     wiki.wiki.write_page(name, :markdown, content, commit_details)
   end
 
+  def update_page(name, content)
+    wiki.wiki.update_page(name, name, :markdown, content, update_commit_details)
+  end
+
   def commit_details
     Gitlab::Git::Wiki::CommitDetails.new(user.id, user.username, user.name, user.email, "test commit")
+  end
+
+  def update_commit_details
+    Gitlab::Git::Wiki::CommitDetails.new(user.id, user.username, user.name, user.email, "test update")
   end
 
   def slugs(thing)

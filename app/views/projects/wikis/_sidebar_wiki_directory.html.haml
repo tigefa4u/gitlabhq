@@ -1,0 +1,6 @@
+%li
+  %span.text-secondary-300= sprite_icon('chevron-right', size: 16)
+
+  = link_to wiki_dir.slug, project_wiki_dir_path(@project, wiki_dir)
+  %ul= render wiki_dir.pages, context: context
+

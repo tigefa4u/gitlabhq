@@ -117,12 +117,29 @@ class ProjectWiki
   #         the page.
   #
   # Returns an initialized WikiPage instance or nil
-  def find_page(title, version = nil)
+  def find_page(title, version = nil, sort = nil)
     page_title, page_dir = page_title_and_dir(title)
 
     if page = wiki.page(title: page_title, version: version, dir: page_dir)
       WikiPage.new(self, page, true)
     end
+  end
+
+  # Finds directory within the repository based on a slug
+  #
+  # dir_name - The directory prefix.
+  #
+  # Returns an initialized WikiDirectory instance or nil
+  def find_dir(dir_name, sort = nil, direction = DIRECTION_ASC)
+    descending = direction == DIRECTION_DESC
+    # WikiListPagesRequest currently does not support server-side
+    # filtering. Ideally this logic should be moved to the gitaly
+    # side.
+    pages = wiki
+      .list_pages(sort: sort, direction_desc: descending)
+      .map { |page| WikiPage.new(self, page, true) }
+      .select { |wp| wp.directory == dir_name }
+    WikiDirectory.new(dir_name, pages) if pages.present?
   end
 
   def find_sidebar(version = nil)

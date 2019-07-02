@@ -1,3 +1,4 @@
 %li{ class: active_when(params[:id] == wiki_page.slug) }
+  %span.text-secondary-300= sprite_icon('book', size: 16)
   = link_to project_wiki_path(@project, wiki_page) do
     = wiki_page.human_title

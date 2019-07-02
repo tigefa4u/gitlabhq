@@ -15,7 +15,7 @@ class WikiPage
   end
 
   def self.model_name
-    ActiveModel::Name.new(self, nil, 'wiki')
+    ActiveModel::Name.new(self, nil, 'wiki_page')
   end
 
   def self.unhyphenize(name)
