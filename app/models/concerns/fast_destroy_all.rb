@@ -44,11 +44,14 @@ module FastDestroyAll
     #
     # This method can replace `destroy` and `destroy_all` without having `after_destroy` hook
     def fast_destroy_all
-      params = begin_fast_destroy
+      items_ids = ids
+      return if items_ids.empty?
 
-      delete_all
+      items = self.limit(nil).where(primary_key => items_ids)
 
-      finalize_fast_destroy(params)
+      params = items.begin_fast_destroy
+      items.delete_all
+      items.finalize_fast_destroy(params)
     end
 
     ##
@@ -84,6 +87,11 @@ module FastDestroyAll
     end
 
     def perform_fast_destroy(subject)
+      items_ids = subject.ids
+      return if items_ids.empty?
+
+      subject = subject.limit(nil).where(self.class.primary_key => items_ids)
+
       params = subject.begin_fast_destroy
 
       run_after_commit do

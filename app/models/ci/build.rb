@@ -13,6 +13,7 @@ module Ci
     include Importable
     include IgnorableColumn
     include Gitlab::Utils::StrongMemoize
+    include FastDestroyAll::Helpers
     include Deployable
     include HasRef
 
@@ -40,7 +41,7 @@ module Ci
     has_many :trace_chunks, class_name: 'Ci::BuildTraceChunk', foreign_key: :build_id
     has_many :needs, class_name: 'Ci::BuildNeed', foreign_key: :build_id, inverse_of: :build
 
-    has_many :job_artifacts, class_name: 'Ci::JobArtifact', foreign_key: :job_id, dependent: :destroy, inverse_of: :job # rubocop:disable Cop/ActiveRecordDependent
+    has_many :job_artifacts, class_name: 'Ci::JobArtifact', foreign_key: :job_id, inverse_of: :job
     has_many :job_variables, class_name: 'Ci::JobVariable', foreign_key: :job_id
 
     Ci::JobArtifact.file_types.each do |key, value|
@@ -151,6 +152,8 @@ module Ci
 
     before_save :ensure_token
     before_destroy { unscoped_project }
+
+    use_fast_destroy :job_artifacts
 
     after_create unless: :importing? do |build|
       run_after_commit { BuildHooksWorker.perform_async(build.id) }
@@ -633,13 +636,13 @@ module Ci
 
     # and use that for `ExpireBuildInstanceArtifactsWorker`?
     def erase_erasable_artifacts!
-      job_artifacts.erasable.destroy_all # rubocop: disable DestroyAll
+      job_artifacts.erasable.fast_destroy_all
     end
 
     def erase(opts = {})
       return false unless erasable?
 
-      job_artifacts.destroy_all # rubocop: disable DestroyAll
+      job_artifacts.fast_destroy_all
       erase_trace!
       update_erased!(opts[:erased_by])
     end

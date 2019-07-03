@@ -101,7 +101,7 @@ module Gitlab
       def erase!
         ##
         # Erase the archived trace
-        trace_artifact&.destroy!
+        job.job_artifacts.trace.fast_destroy_all
 
         ##
         # Erase the live trace

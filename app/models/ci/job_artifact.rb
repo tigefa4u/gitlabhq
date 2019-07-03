@@ -5,6 +5,7 @@ module Ci
     include AfterCommitQueue
     include ObjectStorage::BackgroundMove
     include UpdateProjectStatistics
+    include FastDestroyAll
     extend Gitlab::Ci::Model
 
     NotSupportedAdapterError = Class.new(StandardError)
@@ -85,6 +86,7 @@ module Ci
       where(file_type: types)
     end
 
+    # This is a very expensive query, .limit is a way to scope it down as much as possible
     scope :expired, -> (limit) { where('expire_at < ?', Time.now).limit(limit) }
 
     scope :scoped_project, -> { where('ci_job_artifacts.project_id = projects.id') }
@@ -143,8 +145,23 @@ module Ci
       self.update_column(:file_store, file.object_store)
     end
 
-    def self.artifacts_size_for(project)
-      self.where(project: project).sum(:size)
+    class << self
+      def artifacts_size_for(project)
+        where(project: project).sum(:size)
+      end
+
+      def begin_fast_destroy
+        preload(:project).to_a.group_by(&:project).transform_values { |artifacts| artifacts.map(&:file) }
+      end
+
+      def finalize_fast_destroy(params)
+        params.each do |project, artifact_files|
+          delta = artifact_files.sum(&:size)
+          artifact_files.each(&:remove!)
+
+          update_project_statistics!(project, :build_artifacts_size, -delta)
+        end
+      end
     end
 
     def local_store?

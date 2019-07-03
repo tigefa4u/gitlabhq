@@ -88,7 +88,7 @@ shared_examples_for 'UpdateProjectStatistics' do
         .to receive(:increment_statistic)
         .and_call_original
 
-      expect { subject.destroy! }
+      expect { subject.job.destroy! }
         .to change { reload_stat }
         .by(delta)
     end
@@ -97,7 +97,7 @@ shared_examples_for 'UpdateProjectStatistics' do
       expect(Namespaces::ScheduleAggregationWorker)
         .to receive(:perform_async).once
 
-      subject.destroy!
+      subject.job.destroy!
     end
 
     context 'when it is destroyed from the project level' do

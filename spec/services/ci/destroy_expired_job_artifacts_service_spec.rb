@@ -35,13 +35,13 @@ describe Ci::DestroyExpiredJobArtifactsService, :clean_gitlab_redis_shared_state
       before do
         stub_const('Ci::DestroyExpiredJobArtifactsService::LOOP_LIMIT', 10)
 
-        allow_any_instance_of(Ci::JobArtifact)
-          .to receive(:destroy!)
-          .and_raise(ActiveRecord::RecordNotDestroyed)
+        allow_any_instance_of(JobArtifactUploader)
+          .to receive(:remove!)
+          .and_raise(StandardError)
       end
 
       it 'raises an exception and stop destroying' do
-        expect { subject }.to raise_error(ActiveRecord::RecordNotDestroyed)
+        expect { subject }.to raise_error(StandardError)
       end
     end
 
