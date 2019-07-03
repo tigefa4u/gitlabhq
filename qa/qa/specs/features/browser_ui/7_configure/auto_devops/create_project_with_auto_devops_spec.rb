@@ -23,14 +23,14 @@ module QA
         it 'runs auto devops' do
           login
 
-          @project = Resource::Project.fabricate! do |p|
+          @project = Resource::Project.fabricate_via_api! do |p|
             p.name = Runtime::Env.auto_devops_project_name || 'project-with-autodevops'
             p.description = 'Project with Auto DevOps'
           end
 
           # Disable code_quality check in Auto DevOps pipeline as it takes
           # too long and times out the test
-          Resource::CiVariable.fabricate! do |resource|
+          Resource::CiVariable.fabricate_via_api! do |resource|
             resource.project = @project
             resource.key = 'CODE_QUALITY_DISABLED'
             resource.value = '1'
@@ -38,7 +38,7 @@ module QA
           end
 
           # Set an application secret CI variable (prefixed with K8S_SECRET_)
-          Resource::CiVariable.fabricate! do |resource|
+          Resource::CiVariable.fabricate_via_api! do |resource|
             resource.project = @project
             resource.key = 'K8S_SECRET_OPTIONAL_MESSAGE'
             resource.value = 'you_can_see_this_variable'
@@ -46,7 +46,7 @@ module QA
           end
 
           # Connect K8s cluster
-          Resource::KubernetesCluster.fabricate! do |cluster|
+          Resource::KubernetesCluster.fabricate_via_browser_ui! do |cluster|
             cluster.project = @project
             cluster.cluster = @cluster
             cluster.install_helm_tiller = true

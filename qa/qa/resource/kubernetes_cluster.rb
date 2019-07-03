@@ -42,13 +42,20 @@ module QA
             page.install!(:helm)
             page.await_installed(:helm)
 
-            page.install!(:ingress) if @install_ingress
-            page.install!(:prometheus) if @install_prometheus
-            page.install!(:runner) if @install_runner
+            if @install_ingress
+              page.install!(:ingress) if @install_ingress
+              page.await_installed(:ingress) if @install_ingress
+            end
 
-            page.await_installed(:ingress) if @install_ingress
-            page.await_uninstallable(:prometheus) if @install_prometheus
-            page.await_installed(:runner) if @install_runner
+            if @install_prometheus
+              page.install!(:prometheus)
+              page.await_uninstallable(:prometheus) if @install_prometheus
+            end
+
+            if @install_runner
+              page.install!(:runner)
+              page.await_installed(:runner)
+            end
 
             if @install_ingress
               populate(:ingress_ip)
