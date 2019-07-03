@@ -126,19 +126,16 @@ export const replyToDiscussion = ({ commit, state, getters, dispatch }, { endpoi
     });
 
 export const createNewNote = ({ commit, dispatch }, { endpoint, data }) =>
-  service
-    .createNewNote(endpoint, data)
-    .then(res => res.json())
-    .then(res => {
-      if (!res.errors) {
-        commit(types.ADD_NEW_NOTE, res);
+  axios.post(endpoint, data).then(({ data: res }) => {
+    if (!res.errors) {
+      commit(types.ADD_NEW_NOTE, res);
 
-        dispatch('updateMergeRequestWidget');
-        dispatch('startTaskList');
-        dispatch('updateResolvableDiscussionsCounts');
-      }
-      return res;
-    });
+      dispatch('updateMergeRequestWidget');
+      dispatch('startTaskList');
+      dispatch('updateResolvableDiscussionsCounts');
+    }
+    return res;
+  });
 
 export const removePlaceholderNotes = ({ commit }) => commit(types.REMOVE_PLACEHOLDER_NOTES);
 

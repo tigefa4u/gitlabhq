@@ -18,6 +18,8 @@ import {
   noteableDataMock,
   individualNote,
 } from '../mock_data';
+import AxiosMockAdapter from 'axios-mock-adapter';
+import axios from '~/lib/utils/axios_utils';
 
 const TEST_ERROR_MESSAGE = 'Test error message';
 
@@ -412,31 +414,28 @@ describe('Actions Notes Store', () => {
   });
 
   describe('createNewNote', () => {
+    const endpoint = TEST_HOST;
+    let axiosMock;
+
     describe('success', () => {
       const res = {
         id: 1,
         valid: true,
       };
-      const interceptor = (request, next) => {
-        next(
-          request.respondWith(JSON.stringify(res), {
-            status: 200,
-          }),
-        );
-      };
 
       beforeEach(() => {
-        Vue.http.interceptors.push(interceptor);
+        axiosMock = new AxiosMockAdapter(axios);
+        axiosMock.onPost(endpoint).replyOnce(200, res);
       });
 
       afterEach(() => {
-        Vue.http.interceptors = _.without(Vue.http.interceptors, interceptor);
+        axiosMock.restore();
       });
 
       it('commits ADD_NEW_NOTE and dispatches updateMergeRequestWidget', done => {
         testAction(
           actions.createNewNote,
-          { endpoint: `${gl.TEST_HOST}`, data: {} },
+          { endpoint, data: {} },
           store.state,
           [
             {
