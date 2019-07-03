@@ -692,7 +692,7 @@ describe('Actions Notes Store', () => {
 
     beforeEach(() => {
       axiosMock = new AxiosMockAdapter(axios);
-      axiosMock.onPost(endpoint).replyOnce(300, res);
+      axiosMock.onPost(endpoint).replyOnce(200, res);
     });
 
     afterEach(() => {
