@@ -18,6 +18,8 @@ import {
   noteableDataMock,
   individualNote,
 } from '../mock_data';
+import AxiosMockAdapter from 'axios-mock-adapter';
+import axios from '~/lib/utils/axios_utils';
 
 const TEST_ERROR_MESSAGE = 'Test error message';
 
@@ -683,22 +685,18 @@ describe('Actions Notes Store', () => {
   });
 
   describe('replyToDiscussion', () => {
+    let axiosMock;
     let res = { discussion: { notes: [] } };
-    const payload = { endpoint: TEST_HOST, data: {} };
-    const interceptor = (request, next) => {
-      next(
-        request.respondWith(JSON.stringify(res), {
-          status: 200,
-        }),
-      );
-    };
+    const endpoint = TEST_HOST;
+    const payload = { endpoint, data: {} };
 
     beforeEach(() => {
-      Vue.http.interceptors.push(interceptor);
+      axiosMock = new AxiosMockAdapter(axios);
+      axiosMock.onPost(endpoint).replyOnce(300, res);
     });
 
     afterEach(() => {
-      Vue.http.interceptors = _.without(Vue.http.interceptors, interceptor);
+      axiosMock.restore();
     });
 
     it('updates discussion if response contains disussion', done => {

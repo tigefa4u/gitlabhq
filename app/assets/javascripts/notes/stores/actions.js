@@ -106,24 +106,21 @@ export const updateOrCreateNotes = ({ commit, state, getters, dispatch }, notes)
 };
 
 export const replyToDiscussion = ({ commit, state, getters, dispatch }, { endpoint, data }) =>
-  service
-    .replyToDiscussion(endpoint, data)
-    .then(res => res.json())
-    .then(res => {
-      if (res.discussion) {
-        commit(types.UPDATE_DISCUSSION, res.discussion);
+  axios.post(endpoint, data).then(({ data: res }) => {
+    if (res.discussion) {
+      commit(types.UPDATE_DISCUSSION, res.discussion);
 
-        updateOrCreateNotes({ commit, state, getters, dispatch }, res.discussion.notes);
+      updateOrCreateNotes({ commit, state, getters, dispatch }, res.discussion.notes);
 
-        dispatch('updateMergeRequestWidget');
-        dispatch('startTaskList');
-        dispatch('updateResolvableDiscussionsCounts');
-      } else {
-        commit(types.ADD_NEW_REPLY_TO_DISCUSSION, res);
-      }
+      dispatch('updateMergeRequestWidget');
+      dispatch('startTaskList');
+      dispatch('updateResolvableDiscussionsCounts');
+    } else {
+      commit(types.ADD_NEW_REPLY_TO_DISCUSSION, res);
+    }
 
-      return res;
-    });
+    return res;
+  });
 
 export const createNewNote = ({ commit, dispatch }, { endpoint, data }) =>
   service
