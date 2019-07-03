@@ -46,10 +46,9 @@ export const setNotesFetchedState = ({ commit }, state) =>
 export const toggleDiscussion = ({ commit }, data) => commit(types.TOGGLE_DISCUSSION, data);
 
 export const fetchDiscussions = ({ commit, dispatch }, { path, filter }) =>
-  service
-    .fetchDiscussions(path, filter)
-    .then(res => res.json())
-    .then(discussions => {
+  axios
+    .get(path, filter !== undefined ? { params: { notes_filter: filter } } : null)
+    .then(({ data: discussions }) => {
       commit(types.SET_INITIAL_DISCUSSIONS, discussions);
       dispatch('updateResolvableDiscussionsCounts');
     });
