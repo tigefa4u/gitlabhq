@@ -1,4 +1,4 @@
-- @content_class = "limit-container-width" unless fluid_layout
+- @content_class = 'wiki-page' + (fluid_layout ? '' : ' limit-container-width')
 - breadcrumb_title @page.human_title
 - page_title @page.human_title, _("Wiki")
 - add_to_breadcrumbs _("Wiki"), project_wiki_path(@project, :home)

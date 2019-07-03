@@ -9,11 +9,10 @@ module PreviewMarkdown
 
     markdown_params =
       case controller_name
-      when 'wikis'    then { pipeline: :wiki, project_wiki: @project_wiki, page_slug: params[:id] }
       when 'snippets' then { skip_project_check: true }
       when 'groups'   then { group: group }
       when 'projects' then projects_filter_params
-      else {}
+      else self.respond_to?(:preview_markdown_params) ? preview_markdown_params : {}
       end
 
     render json: {

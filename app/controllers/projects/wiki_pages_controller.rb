@@ -5,25 +5,25 @@ class Projects::WikiPagesController < Projects::ApplicationController
   include SendsBlob
   include PreviewMarkdown
   include Gitlab::Utils::StrongMemoize
-
-  attr_accessor :project_wiki, :sidebar_page, :sidebar_wiki_entries
+  include RedirectWhen
 
   # Share the templates from the wikis controller.
   def self.local_prefixes
     [controller_path, 'projects/wikis']
   end
 
-  before_action :authorize_read_wiki!
   before_action :authorize_create_wiki!, only: [:edit, :create, :update]
   before_action :authorize_admin_wiki!, only: :destroy
-
-  before_action :load_project_wiki
 
   before_action :load_page, only: [:show, :edit, :update, :history, :destroy]
   before_action :valid_encoding?,
     if: -> { %w[show edit update].include?(action_name) && load_page }
   before_action only: [:edit, :update], unless: :valid_encoding? do
     redirect_to(project_wiki_path(@project, @page))
+  end
+
+  redirect_when(:created, :updated) do
+    [project_wiki_path(@project, @page), { notice: _('Wiki was successfully updated.') }]
   end
 
   def new
@@ -49,6 +49,10 @@ class Projects::WikiPagesController < Projects::ApplicationController
     end
   end
 
+  # Empty action
+  def edit
+  end
+
   def update
     @page = WikiPages::UpdateService
       .new(@project, current_user, wiki_params)
@@ -62,11 +66,6 @@ class Projects::WikiPagesController < Projects::ApplicationController
     render 'edit'
   end
 
-  def updated!
-    redirect_to(project_wiki_path(@project, @page),
-                notice: _('Wiki was successfully updated.'))
-  end
-
   def create
     @page = WikiPages::CreateService
       .new(@project, current_user, wiki_params)
@@ -76,17 +75,10 @@ class Projects::WikiPagesController < Projects::ApplicationController
 
     render action: "edit"
   rescue Gitlab::Git::Wiki::OperationError => e
-    @page = build_page(wiki_params)
+    @page = project_wiki.build_page(wiki_params)
     @error = e
 
     render 'edit'
-  end
-
-  def created!
-    redirect_to(
-      project_wiki_path(@project, @page),
-      notice: _('Wiki was successfully updated.')
-    )
   end
 
   def history
@@ -113,6 +105,11 @@ class Projects::WikiPagesController < Projects::ApplicationController
     render 'edit'
   end
 
+  # Callback for PreviewMarkdown
+  def preview_markdown_params
+    { pipeline: :wiki, project_wiki: project_wiki, page_slug: params[:id] }
+  end
+
   private
 
   def show_page
@@ -137,22 +134,13 @@ class Projects::WikiPagesController < Projects::ApplicationController
     # Assign a title to the WikiPage unless `id` is a randomly generated slug from #new
     title = params[:id] unless params[:random_title].present?
 
-    @page = build_page(title: title)
+    @page = project_wiki.build_page(title: title)
 
     render 'edit'
   end
 
-  def edit
-  end
-
   def wiki_params
     params.require(:wiki_page).permit(:title, :content, :format, :message, :last_commit_sha)
-  end
-
-  def build_page(args)
-    WikiPage.new(@project_wiki).tap do |page|
-      page.update_attributes(args) # rubocop:disable Rails/ActiveRecordAliases
-    end
   end
 
   def load_page

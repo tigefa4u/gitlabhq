@@ -1,6 +1,6 @@
 %li
-  %span.text-secondary-500= sprite_icon('book', size: 16)
-  = link_to wiki_page_title(wiki_page, @nesting), project_wiki_path(@project, wiki_page)
+  %span.text-secondary-500.svg-icon.svg-baseline= sprite_icon('book', size: 16)
+  = wiki_pages_wiki_page_link(wiki_page, @nesting, @project)
   .float-right
     %span.badge.badge-pill.wiki-page-format= _(wiki_page.format)
     - if wiki_page.last_version

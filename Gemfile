@@ -450,3 +450,6 @@ gem 'grape_logging', '~> 1.7'
 
 # Countries list
 gem 'countries', '~> 3.0'
+
+# Controller parameter rules:
+gem 'allowable', '~> 1.1.0'

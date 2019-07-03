@@ -13206,7 +13206,13 @@ msgstr ""
 msgid "WikiMarkdownTip|To link to a (new) page, simply type %{link_example}"
 msgstr ""
 
+msgid "WikiNewPagePlaceholder|how-to-setup"
+msgstr ""
+
 msgid "WikiNewPageTip|Tip: You can specify the full path for the new file. We will automatically create any missing directories."
+msgstr ""
+
+msgid "WikiNewPageTitle|New Wiki Page"
 msgstr ""
 
 msgid "WikiPageConfirmDelete|Are you sure you want to delete this page?"
@@ -13230,7 +13236,13 @@ msgstr ""
 msgid "WikiPageEdit|Update %{pageTitle}"
 msgstr ""
 
+msgid "WikiPage|Page slug"
+msgstr ""
+
 msgid "WikiPage|Write your content or drag files here…"
+msgstr ""
+
+msgid "Wiki|Contents"
 msgstr ""
 
 msgid "Wiki|Create New Page"

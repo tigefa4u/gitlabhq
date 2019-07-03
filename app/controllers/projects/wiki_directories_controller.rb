@@ -10,8 +10,6 @@ class Projects::WikiDirectoriesController < Projects::ApplicationController
     [controller_path, 'projects/wikis']
   end
 
-  attr_accessor :project_wiki, :sidebar_page, :sidebar_wiki_entries
-
   def show_dir
     @show_children = true # or false, it doesn't matter, since we only support one-level
     if @wiki_dir
@@ -28,7 +26,7 @@ class Projects::WikiDirectoriesController < Projects::ApplicationController
   private
 
   def load_dir
-    @wiki_dir ||= @project_wiki.find_dir(*dir_params)
+    @wiki_dir ||= project_wiki.find_dir(*dir_params)
   end
 
   def dir_params

@@ -157,12 +157,13 @@ describe 'project routing' do
     end
 
     it 'to #history' do
-      expect(get('/gitlab/gitlabhq/wikis/1/history')).to route_to('projects/wikis#history', namespace_id: 'gitlab', project_id: 'gitlabhq', id: '1')
+      expect(get('/gitlab/gitlabhq/wikis/page/1/history')).to route_to('projects/wiki_pages#history', namespace_id: 'gitlab', project_id: 'gitlabhq', id: '1')
     end
 
     it_behaves_like 'RESTful project resources' do
       let(:actions)    { [:create, :edit, :show, :destroy] }
-      let(:controller) { 'wikis' }
+      let(:controller) { 'wiki_pages' }
+      let(:controller_path) { 'wikis/page' }
     end
   end
 

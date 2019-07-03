@@ -23,6 +23,7 @@ class WikiDirectory
   end
 
   alias_method :to_param, :slug
+  alias_method :title, :slug
 
   # Sorts and groups pages by directory.
   #

@@ -43,6 +43,16 @@ class WikiPage
     Gitlab::HookData::WikiPageBuilder.new(self).build
   end
 
+  # Create a new WikiPage
+  #
+  # == Parameters:
+  # wiki::
+  #   A `ProjectWiki` model object
+  # page::
+  #   A `Gitlab::Git::WikiPage` business object, to which this class provides a facade
+  # persisted::
+  #   Is this page fully saved on disk?
+  #
   def initialize(wiki, page = nil, persisted = false)
     @wiki       = wiki
     @page       = page

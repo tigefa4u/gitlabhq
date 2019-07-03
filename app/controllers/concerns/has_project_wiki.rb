@@ -1,11 +1,16 @@
 # frozen_string_literal: true
 
+# Controllers that include this concern must provide:
+#  * project
+#  * current_user
 module HasProjectWiki
   extend ActiveSupport::Concern
 
   included do
     before_action :authorize_read_wiki!
     before_action :load_project_wiki
+
+    attr_accessor :project_wiki, :sidebar_page, :sidebar_wiki_entries
   end
 
   def load_project_wiki
@@ -22,7 +27,6 @@ module HasProjectWiki
   rescue ProjectWiki::CouldNotCreateWikiError
     flash[:notice] = _("Could not create Wiki Repository at this time. Please try again later.")
     redirect_to project_path(project)
-    false
   end
 
   def load_wiki

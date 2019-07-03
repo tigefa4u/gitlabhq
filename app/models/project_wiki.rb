@@ -17,6 +17,13 @@ class ProjectWiki
   CREATED_AT_ORDER = 'created_at'
   DIRECTION_DESC = 'desc'
   DIRECTION_ASC = 'asc'
+  SORT_ORDERS = [TITLE_ORDER, CREATED_AT_ORDER].freeze
+  SORT_DIRECTIONS = [DIRECTION_ASC, DIRECTION_DESC].freeze
+
+  NESTING_FLAT = 'flat'
+  NESTING_TREE = 'tree'
+  NESTING_CLOSED = 'hidden'
+  NESTINGS = [NESTING_TREE, NESTING_CLOSED, NESTING_FLAT].freeze
 
   # Returns a string describing what went wrong after
   # an operation fails.
@@ -58,7 +65,11 @@ class ProjectWiki
   end
 
   def wiki_base_path
-    [Gitlab.config.gitlab.relative_url_root, '/', @project.full_path, '/wikis'].join('')
+    [Gitlab.config.gitlab.relative_url_root, @project.full_path, 'wikis'].join('/')
+  end
+
+  def wiki_page_path
+    wiki_base_path + '/page'
   end
 
   # Returns the Gitlab::Git::Wiki object.
@@ -110,6 +121,13 @@ class ProjectWiki
     end
   end
 
+  def sort_params_config
+    {
+      defaults: { sort: TITLE_ORDER, direction: DIRECTION_ASC },
+      allowed: { sort: SORT_ORDERS, direction: SORT_DIRECTIONS }
+    }
+  end
+
   # Finds a page within the repository based on a tile
   # or slug.
   #
@@ -117,7 +135,7 @@ class ProjectWiki
   #         the page.
   #
   # Returns an initialized WikiPage instance or nil
-  def find_page(title, version = nil, sort = nil)
+  def find_page(title, version = nil)
     page_title, page_dir = page_title_and_dir(title)
 
     if page = wiki.page(title: page_title, version: version, dir: page_dir)
@@ -159,6 +177,12 @@ class ProjectWiki
   rescue Gitlab::Git::Wiki::DuplicatePageError => e
     @error_message = "Duplicate page: #{e.message}"
     false
+  end
+
+  def build_page(attrs)
+    WikiPage.new(self).tap do |page|
+      page.update_attributes(attrs) # rubocop:disable Rails/ActiveRecordAliases
+    end
   end
 
   def update_page(page, content:, title: nil, format: :markdown, message: nil)

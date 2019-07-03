@@ -3,11 +3,13 @@
 require 'spec_helper'
 
 describe Projects::WikiPagesController do
-  let(:project) { create(:project, :public, :repository) }
+  set(:project) { create(:project, :public, :repository) }
   let(:user) { project.owner }
   let(:project_wiki) { ProjectWiki.new(project, user) }
   let(:wiki) { project_wiki.wiki }
   let(:wiki_title) { 'page-title-test' }
+  let(:parent_ids) { { namespace_id: project.namespace.path, project_id: project.name } }
+  let(:redirect_destination) { Rails.application.routes.recognize_path(response.redirect_url) }
 
   before do
     create_page(wiki_title, 'hello world')
@@ -19,17 +21,26 @@ describe Projects::WikiPagesController do
     destroy_page(wiki_title)
   end
 
+  def helper
+    Helper.instance
+  end
+
+  class Helper
+    include Singleton
+    include ActionView::Helpers::UrlHelper
+  end
+
   describe 'GET #new' do
-    subject { get :new, params: { namespace_id: project.namespace, project_id: project } }
+    subject { get :new, params: parent_ids }
 
     it 'redirects to #show and appends a `random_title` param' do
       subject
 
       expect(response).to have_http_status(302)
-      expect(Rails.application.routes.recognize_path(response.redirect_url)).to include(
-        controller: 'projects/wikis',
-        action: 'show'
-      )
+
+      expect(redirect_destination)
+        .to include(parent_ids.merge(controller: 'projects/wiki_pages', action: 'show'))
+
       expect(response.redirect_url).to match(/\?random_title=true\Z/)
     end
   end
@@ -37,6 +48,7 @@ describe Projects::WikiPagesController do
   describe 'GET #show' do
     render_views
     let(:requested_wiki_page) { wiki_title }
+    let(:random_title) { nil }
 
     subject do
       get :show, params: {
@@ -45,6 +57,21 @@ describe Projects::WikiPagesController do
         id: requested_wiki_page,
         random_title: random_title
       }
+    end
+
+    context 'when the wiki repo cannot be created' do
+      before do
+        allow(controller).to receive(:load_wiki) { raise ProjectWiki::CouldNotCreateWikiError }
+      end
+
+      it 'redirects to the project path' do
+        headers = { 'Location' => a_string_ending_with(Gitlab::Routing.url_helpers.project_path(project)) }
+
+        subject
+
+        expect(response).to be_redirect
+        expect(response.header.to_hash).to include(headers)
+      end
     end
 
     context 'when the page exists' do
@@ -85,15 +112,29 @@ describe Projects::WikiPagesController do
           subject
         end
 
-        it 'builds a new wiki page with the id as the title' do
-          expect(assigns(:page).title).to eq(requested_wiki_page)
-        end
+        describe 'assigned title' do
+          shared_examples :wiki_page_with_correct_title do
+            it 'assigns the correct title' do
+              subject
 
-        context 'when a random_title param is present' do
-          let(:random_title) { true }
+              expect(assigns(:page)).to have_attributes(title: assigned_title)
+            end
+          end
 
-          it 'builds a new wiki page with no title' do
-            expect(assigns(:page).title).to be_empty
+          context 'random_title is absent' do
+            let(:random_title) { nil }
+
+            it_behaves_like :wiki_page_with_correct_title do
+              let(:assigned_title) { WikiPage.unhyphenize(requested_wiki_page) }
+            end
+          end
+
+          context 'random_title is present' do
+            let(:random_title) { true }
+
+            it_behaves_like :wiki_page_with_correct_title do
+              let(:assigned_title) { be_empty }
+            end
           end
         end
       end
@@ -145,10 +186,97 @@ describe Projects::WikiPagesController do
   end
 
   describe 'POST #preview_markdown' do
-    it 'renders json in a correct format' do
-      post :preview_markdown, params: { namespace_id: project.namespace, project_id: project, id: 'page/path', text: '*Markdown* text' }
+    let(:page_id) { 'page/path' }
+    let(:markdown_text) { '*Markdown* text' }
+    let(:wiki_page) { create(:wiki_page, wiki: project_wiki, attrs: { title: wiki_title }) }
+    let(:processed_md) { json_response.fetch('body') }
 
-      expect(JSON.parse(response.body).keys).to match_array(%w(body references))
+    let(:preview_params) do
+      { namespace_id: project.namespace, project_id: project, id: wiki_page.slug, text: markdown_text }
+    end
+
+    before do
+      post :preview_markdown, params: preview_params
+    end
+
+    it 'renders json in a correct format' do
+      expect(response).to have_http_status(:ok)
+      expect(json_response).to include('body' => String, 'references' => Hash)
+    end
+
+    describe 'double brackets within backticks' do
+      let(:markdown_text) do
+        <<-HEREDOC
+          `[[do_not_linkify]]`
+          ```
+          [[also_do_not_linkify]]
+          ```
+        HEREDOC
+      end
+
+      it "does not linkify double brackets inside code blocks as expected" do
+        expect(processed_md).to include('[[do_not_linkify]]', '[[also_do_not_linkify]]')
+      end
+    end
+
+    describe 'link re-writing' do
+      let(:links) do
+        [
+          { text: 'regular link',    path: 'regular' },
+          { text: 'relative link 1', path: '../relative' },
+          { text: 'relative link 2', path: './relative' },
+          { text: 'relative link 3', path: './e/f/relative' },
+          { text: 'spaced link',     path: 'title with spaces' }
+        ]
+      end
+
+      shared_examples :wiki_link_rewriter do
+        let(:markdown_text) { links.map { |text:, path:| "[#{text}](#{path})" }.join("\n") }
+        let(:expected_links) do
+          links.zip(paths).map do |(link, path)|
+            helper.link_to(link[:text], "#{project_wiki.wiki_page_path}/#{path}")
+          end
+        end
+
+        it 'processes the links correctly' do
+          expect(processed_md).to include(*expected_links)
+        end
+      end
+
+      context 'the current page has spaces in its title' do
+        let(:wiki_title) { 'page a/page b/page c/page d' }
+        it_behaves_like :wiki_link_rewriter do
+          let(:paths) do
+            ['regular',
+             'page-a/page-b/relative',
+             'page-a/page-b/page-c/relative',
+             'page-a/page-b/page-c/e/f/relative',
+             'title%20with%20spaces']
+          end
+        end
+      end
+
+      context 'the current page has an unproblematic title' do
+        let(:wiki_title) { 'a/b/c/d' }
+        it_behaves_like :wiki_link_rewriter do
+          let(:paths) do
+            ['regular', 'a/b/relative', 'a/b/c/relative', 'a/b/c/e/f/relative', 'title%20with%20spaces']
+          end
+        end
+      end
+
+      context "when there are hyphens in the page name" do
+        let(:wiki_title) { 'page-a/page-b/page-c/page-d' }
+        it_behaves_like :wiki_link_rewriter do
+          let(:paths) do
+            ['regular',
+             'page-a/page-b/relative',
+             'page-a/page-b/page-c/relative',
+             'page-a/page-b/page-c/e/f/relative',
+             'title%20with%20spaces']
+          end
+        end
+      end
     end
   end
 
