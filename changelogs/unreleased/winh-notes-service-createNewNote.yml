@@ -1,0 +1,5 @@
+---
+title: Remove createNewNote from notes service
+merge_request: 30299
+author: Frank van Rest
+type: other
