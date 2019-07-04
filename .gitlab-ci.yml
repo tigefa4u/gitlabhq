@@ -33,6 +33,7 @@ stages:
 
 include:
   - local: .gitlab/ci/global.gitlab-ci.yml
+  - local: .gitlab/ci/foss-sync.gitlab-ci.yml
   - local: .gitlab/ci/cng.gitlab-ci.yml
   - local: .gitlab/ci/docs.gitlab-ci.yml
   - local: .gitlab/ci/frontend.gitlab-ci.yml

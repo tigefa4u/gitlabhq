@@ -1,0 +1,9 @@
+codebase:
+  extends: .dedicated-runner
+  stage: prepare
+  before_script: []
+  script:
+    - scripts/foss-sync.sh
+  only:
+# TODO, replace with master@gitlab-org/gitlab-ee
+    - master@marin/gitlab-ee
