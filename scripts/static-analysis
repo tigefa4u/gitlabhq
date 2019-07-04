@@ -31,7 +31,7 @@ tasks = [
   %w[yarn run eslint],
   %w[yarn run stylelint],
   %w[yarn run prettier-all],
-  %w[bundle exec rubocop --parallel],
+  %w[bundle exec rubocop --parallel --auto-gen-config --auto-gen-exclude-limit 999999],
   %w[scripts/lint-conflicts.sh],
   %w[scripts/lint-rugged]
 ]
