@@ -365,7 +365,7 @@ discuss whether it is interesting to include this in GitLab.
 
 ## Issue tracker guidelines
 
-**[Search the issue tracker][ce-tracker]** for similar entries before
+**(Search the issue tracker][ce-tracker)** for similar entries before
 submitting your own, there's a good chance somebody else had the same issue or
 feature proposal. Show your support with an award emoji and/or join the
 discussion.

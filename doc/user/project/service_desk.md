@@ -1,4 +1,4 @@
-# Service Desk **[PREMIUM]**
+# Service Desk **(PREMIUM)**
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ee/issues/149) in [GitLab Premium 9.1](https://about.gitlab.com/2017/04/22/gitlab-9-1-released/#service-desk-eep).
 
@@ -69,7 +69,7 @@ you can skip the step 1 below; you only need to enable it per project.
      **Warning**: this email address can be used by anyone to create an issue on
      this project, whether or not they have access to your GitLab instance.
      We recommend **putting this behind an alias** so that it can be changed if
-     needed, and **[enabling Akismet](../../integration/akismet.md)** on your GitLab instance to add spam
+     needed, and **(enabling Akismet](../../integration/akismet.md)** on your GitLab instance to add spam
      checking to this service.  Unblocked email spam would result in many spam
      issues being created, and may disrupt your GitLab service.
 

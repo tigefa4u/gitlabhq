@@ -70,7 +70,7 @@ Issues contain a variety of content and metadata, enabling a large range of flex
 
 ## Viewing and managing issues
 
-While you can view and manage the full detail of an issue at its URL, you can also work with multiple issues at a time using the Issues List, Issue Boards, Epics **[ULTIMATE]**, and issue references.
+While you can view and manage the full detail of an issue at its URL, you can also work with multiple issues at a time using the Issues List, Issue Boards, Epics **(ULTIMATE)**, and issue references.
 
 ### Issue page
 
@@ -94,19 +94,19 @@ For sorting by issue priority, see [Label Priority](../labels.md#label-priority)
 
 ![Issue board](img/issue_board.png)
 
-Issue boards are Kanban boards with columns that display issues based on their labels or their assignees**[PREMIUM]**. They offer the flexibility to manage issues using highly customizable workflows.
+Issue boards are Kanban boards with columns that display issues based on their labels or their assignees**(PREMIUM)**. They offer the flexibility to manage issues using highly customizable workflows.
 
 You can reorder issues within a column, or drag an issue card to another column; its associated label or assignee will change to match that of the new column. The entire board can also be filtered to only include issues from a certain milestone or an overarching label.
 
 For more information, see the [Issue Boards](../issue_board.md) page.
 
-### Epics **[ULTIMATE]**
+### Epics **(ULTIMATE)**
 
 Epics let you manage your portfolio of projects more efficiently and with less effort by tracking groups of issues that share a theme, across projects and milestones.
 
 For more information, see the [Epics](../../group/epics/index.md) page.
 
-### Related issues **[STARTER]**
+### Related issues **(STARTER)**
 
 You can mark two issues as related, so that when viewing each one, the other is always listed in its Related Issues section. This can help display important context, such as past work, dependencies, or duplicates.
 
@@ -131,7 +131,7 @@ For more information, see [Crosslinking issues](crosslinking_issues.md).
 
 - [Bulk edit issues](../bulk_editing.md) - From the Issues List, select multiple issues in order to change their status, assignee, milestone, or labels in bulk.
 - [Import issues](csv_import.md)
-- [Export issues](csv_export.md) **[STARTER]**
+- [Export issues](csv_export.md) **(STARTER)**
 - [Issues API](../../../api/issues.md)
 - Configure an [external issue tracker](../../../integration/external-issue-tracker.md) such as Jira, Redmine,
   or Bugzilla.

@@ -65,13 +65,13 @@ from teams other than your own.
    1. If your merge request includes frontend changes [^1], it must be
       **approved by a [frontend maintainer](https://about.gitlab.com/handbook/engineering/projects/#gitlab-ce_maintainers_frontend)**.
    1. If your merge request includes UX changes [^1], it must be
-      **approved by a [UX team member][team]**.
+      **approved by a [UX team member][team)**.
    1. If your merge request includes adding a new JavaScript library [^1], it must be
-      **approved by a [frontend lead][team]**.
+      **approved by a [frontend lead][team)**.
    1. If your merge request includes adding a new UI/UX paradigm [^1], it must be
-      **approved by a [UX lead][team]**.
+      **approved by a [UX lead][team)**.
    1. If your merge request includes a new dependency or a filesystem change, it must be
-      **approved by a [Distribution team member][team]**. See how to work with the [Distribution team](https://about.gitlab.com/handbook/engineering/dev-backend/distribution/) for more details.
+      **approved by a [Distribution team member][team)**. See how to work with the [Distribution team](https://about.gitlab.com/handbook/engineering/dev-backend/distribution/) for more details.
 
 #### Security requirements
 

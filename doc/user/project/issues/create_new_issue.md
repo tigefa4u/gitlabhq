@@ -65,7 +65,7 @@ In GitLab 11.7, we updated the format of the generated email address.
 However the older format is still supported, allowing existing aliases
 or contacts to continue working._
 
-## New issue via Service Desk **[PREMIUM]**
+## New issue via Service Desk **(PREMIUM)**
 
 Enable [Service Desk](../service_desk.md) to your project and offer email support.
 By doing so, when your customer sends a new email, a new issue can be created in

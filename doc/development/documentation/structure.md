@@ -47,7 +47,7 @@ which, if empty, can be left in place to encourage future use.-->
 description: "Short document description." # Up to ~200 chars long. They will be displayed in Google Search snippets. It may help to write the page intro first, and then reuse it here.
 ---
 
-# Feature Name or Use Case Name **[TIER]** (1)
+# Feature Name or Use Case Name **(TIER)** (1)
 <!--If writing about a use case, drop the tier, and start with a verb, e.g. 'Configuring', 'Implementing', + the goal/scenario-->
 
 <!--For pages on newly introduced features, add the following line. If only some aspects of the feature have been introduced, specify what parts of the feature.-->

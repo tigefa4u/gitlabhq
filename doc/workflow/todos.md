@@ -26,7 +26,7 @@ will still be shown in the body of the _To do_ tab.
 A Todo appears in your Todos dashboard when:
 
 - an issue or merge request is assigned to you
-- you are `@mentioned` in the description or in a comment of an issue, merge request, or epic **[ULTIMATE]**
+- you are `@mentioned` in the description or in a comment of an issue, merge request, or epic **(ULTIMATE)**
 - you are `@mentioned` in a comment on a commit,
 - a job in the CI pipeline running for your merge request failed, but this
   job is not allowed to fail.
@@ -65,13 +65,13 @@ for filtering; otherwise, they appear as normal.
 ### Manually creating a Todo
 
 You can also add an issue, merge request or epic to your Todos dashboard by clicking
-the "Add todo" button in the sidebar of the issue, merge request, or epic **[ULTIMATE]**.
+the "Add todo" button in the sidebar of the issue, merge request, or epic **(ULTIMATE)**.
 
 ![Adding a Todo from the issuable sidebar](img/todos_add_todo_sidebar.png)
 
 ## Marking a Todo as done
 
-Any action to the corresponding issue, merge request or epic **[ULTIMATE]** will mark your Todo as
+Any action to the corresponding issue, merge request or epic **(ULTIMATE)** will mark your Todo as
 **Done**. Actions that dismiss Todos include:
 
 - changing the assignee
@@ -115,7 +115,7 @@ There are four kinds of filters you can use on your Todos dashboard.
 | Project | Filter by project |
 | Group   | Filter by group |
 | Author  | Filter by the author that triggered the Todo |
-| Type    | Filter by issue, merge request, or epic **[ULTIMATE]** |
+| Type    | Filter by issue, merge request, or epic **(ULTIMATE)** |
 | Action  | Filter by the action that triggered the Todo |
 
 You can also filter by more than one of these at the same time. The possible Actions are `Any Action`, `Assigned`, `Mentioned`, `Added`, `Pipelines`, and `Directly Addressed`, [as described above](#what-triggers-a-todo).

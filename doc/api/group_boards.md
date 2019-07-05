@@ -237,7 +237,7 @@ Example response:
   }
 ```
 
-## Create a Group Issue Board **[PREMIUM]**
+## Create a Group Issue Board **(PREMIUM)**
 
 Creates a Group Issue Board.
 
@@ -301,7 +301,7 @@ Example response:
   }
 ```
 
-## Update a Group Issue Board **[PREMIUM]**
+## Update a Group Issue Board **(PREMIUM)**
 
 > [Introduced][ee-5954] in GitLab 11.1.
 
@@ -370,7 +370,7 @@ Example response:
   }
 ```
 
-## Delete a Group Issue Board **[PREMIUM]**
+## Delete a Group Issue Board **(PREMIUM)**
 
 Deletes a Group Issue Board.
 

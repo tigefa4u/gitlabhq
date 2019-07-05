@@ -161,7 +161,7 @@ Currently the following [runtimes](https://gitlab.com/gitlab-org/serverless/runt
 - node.js
 - Dockerfile
 
-You can find and import all the files referenced in this doc in the **[functions example project](https://gitlab.com/knative-examples/functions)**.
+You can find and import all the files referenced in this doc in the **(functions example project](https://gitlab.com/knative-examples/functions)**.
 
 Follow these steps to deploy a function using the Node.js runtime to your Knative instance (you can skip these steps if you've cloned the example project):
 

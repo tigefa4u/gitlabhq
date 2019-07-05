@@ -100,7 +100,7 @@ You can also take some **optional** further steps:
 
 ### Create a project from scratch
 
-1. From your **Project**'s **[Dashboard](https://gitlab.com/dashboard/projects)**,
+1. From your **Project**'s **(Dashboard](https://gitlab.com/dashboard/projects)**,
    click **New project**, and name it according to the
    [Pages domain names](getting_started_part_one.md#gitlab-pages-domain-names).
 1. Clone it to your local computer, add your website
