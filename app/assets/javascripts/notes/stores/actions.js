@@ -175,26 +175,20 @@ export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, 
 
 export const closeIssue = ({ commit, dispatch, state }) => {
   dispatch('toggleStateButtonLoading', true);
-  return service
-    .toggleIssueState(state.notesData.closePath)
-    .then(res => res.json())
-    .then(data => {
-      commit(types.CLOSE_ISSUE);
-      dispatch('emitStateChangedEvent', data);
-      dispatch('toggleStateButtonLoading', false);
-    });
+  return axios.put(state.notesData.closePath).then(({ data }) => {
+    commit(types.CLOSE_ISSUE);
+    dispatch('emitStateChangedEvent', data);
+    dispatch('toggleStateButtonLoading', false);
+  });
 };
 
 export const reopenIssue = ({ commit, dispatch, state }) => {
   dispatch('toggleStateButtonLoading', true);
-  return service
-    .toggleIssueState(state.notesData.reopenPath)
-    .then(res => res.json())
-    .then(data => {
-      commit(types.REOPEN_ISSUE);
-      dispatch('emitStateChangedEvent', data);
-      dispatch('toggleStateButtonLoading', false);
-    });
+  return axios.put(state.notesData.reopenPath).then(({ data }) => {
+    commit(types.REOPEN_ISSUE);
+    dispatch('emitStateChangedEvent', data);
+    dispatch('toggleStateButtonLoading', false);
+  });
 };
 
 export const toggleStateButtonLoading = ({ commit }, value) =>
