@@ -28,17 +28,6 @@ export default {
 
     return Vue.http[method](endpoint);
   },
-  poll(data = {}) {
-    const endpoint = data.notesData.notesPath;
-    const { lastFetchedAt } = data;
-    const options = {
-      headers: {
-        'X-Last-Fetched-At': lastFetchedAt ? `${lastFetchedAt}` : undefined,
-      },
-    };
-
-    return Vue.http.get(endpoint, options);
-  },
   toggleAward(endpoint, data) {
     return Vue.http.post(endpoint, data, { emulateJSON: true });
   },

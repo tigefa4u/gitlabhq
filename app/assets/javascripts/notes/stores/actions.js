@@ -17,6 +17,29 @@ import { __ } from '~/locale';
 
 let eTagPoll;
 
+/*
+
+This workaround is necessary to use the Poll class.
+
+It probably indicates that it's not meant to be used with our current architecture.
+
+ */
+
+const pollResource = {
+  poll(data = {}) {
+    const endpoint = data.notesData.notesPath;
+    const { lastFetchedAt } = data;
+
+    const options = {
+      headers: {
+        'X-Last-Fetched-At': lastFetchedAt ? `${lastFetchedAt}` : undefined,
+      },
+    };
+
+    return axios.get(endpoint, options);
+  },
+};
+
 export const expandDiscussion = ({ commit, dispatch }, data) => {
   if (data.discussionId) {
     dispatch('diffs/renderFileForDiscussionId', data.discussionId, { root: true });
@@ -332,7 +355,7 @@ const pollSuccessCallBack = (resp, commit, state, getters, dispatch) => {
 
 export const poll = ({ commit, state, getters, dispatch }) => {
   eTagPoll = new Poll({
-    resource: service,
+    resource: pollResource,
     method: 'poll',
     data: state,
     successCallback: resp =>
@@ -343,7 +366,7 @@ export const poll = ({ commit, state, getters, dispatch }) => {
   if (!Visibility.hidden()) {
     eTagPoll.makeRequest();
   } else {
-    service.poll(state);
+    pollResource.poll(state);
   }
 
   Visibility.change(() => {
@@ -369,7 +392,7 @@ export const fetchData = ({ commit, state, getters }) => {
     lastFetchedAt: state.lastFetchedAt,
   };
 
-  service
+  pollResource
     .poll(requestData)
     .then(resp => resp.json)
     .then(data => pollSuccessCallBack(data, commit, state, getters))
