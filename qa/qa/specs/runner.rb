@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'knapsack'
-require 'open3'
 require 'rspec/core'
 require 'rspec/expectations'
 
@@ -18,63 +17,52 @@ module QA
         @options = []
       end
 
-      # TODO refactor so that the cops are not disabled
-      def perform # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
-        args = []
-        args.push('--tty') if tty
+      def paths_from_knapsack
+        allocator = Knapsack::AllocatorBuilder.new(Knapsack::Adapters::RSpecAdapter).allocator
+
+        QA::Runtime::Logger.info ''
+        QA::Runtime::Logger.info 'Report specs:'
+        QA::Runtime::Logger.info allocator.report_node_tests.join(', ')
+        QA::Runtime::Logger.info ''
+        QA::Runtime::Logger.info 'Leftover specs:'
+        QA::Runtime::Logger.info allocator.leftover_node_tests.join(', ')
+        QA::Runtime::Logger.info ''
+
+        ['--', allocator.node_tests]
+      end
+
+      def rspec_tags
+        tags_for_rspec = []
 
         if tags.any?
-          tags.each { |tag| args.push(['--tag', tag.to_s]) }
+          tags.each { |tag| tags_for_rspec.push(['--tag', tag.to_s]) }
         else
-          args.push(%w[--tag ~orchestrated]) unless (%w[-t --tag] & options).any?
+          tags_for_rspec.push(%w[--tag ~orchestrated]) unless (%w[-t --tag] & options).any?
         end
 
-        args.push(%w[--tag ~skip_signup_disabled]) if QA::Runtime::Env.signup_disabled?
+        tags_for_rspec.push(%w[--tag ~skip_signup_disabled]) if QA::Runtime::Env.signup_disabled?
 
         QA::Runtime::Env.supported_features.each_key do |key|
-          args.push(%W[--tag ~requires_#{key}]) unless QA::Runtime::Env.can_test? key
+          tags_for_rspec.push(%W[--tag ~requires_#{key}]) unless QA::Runtime::Env.can_test? key
         end
 
+        tags_for_rspec
+      end
+
+      def perform
+        args = []
+        args.push('--tty') if tty
+        args.push(rspec_tags)
         args.push(options)
 
         if Runtime::Env.knapsack?
-          allocator = Knapsack::AllocatorBuilder.new(Knapsack::Adapters::RSpecAdapter).allocator
-
-          QA::Runtime::Logger.info ''
-          QA::Runtime::Logger.info 'Report specs:'
-          QA::Runtime::Logger.info allocator.report_node_tests.join(', ')
-          QA::Runtime::Logger.info ''
-          QA::Runtime::Logger.info 'Leftover specs:'
-          QA::Runtime::Logger.info allocator.leftover_node_tests.join(', ')
-          QA::Runtime::Logger.info ''
-
-          args.push(['--', allocator.node_tests])
+          args.push(paths_from_knapsack)
         else
           args.push(DEFAULT_TEST_PATH_ARGS) unless options.any? { |opt| opt =~ %r{/features/} }
         end
 
         if Runtime::Scenario.attributes[:parallel]
-          args.flatten!
-
-          unless args.include?('--')
-            index = args.index { |opt| opt =~ %r{/features/} }
-
-            args.insert(index, '--') if index
-          end
-
-          env = {}
-          Runtime::Env::ENV_VARIABLES.each_key do |key|
-            env[key] = ENV[key] if ENV[key]
-          end
-          env['QA_RUNTIME_SCENARIO_ATTRIBUTES'] = Runtime::Scenario.attributes.to_json
-          env['GITLAB_QA_ACCESS_TOKEN'] = Runtime::API::Client.new(:gitlab).personal_access_token unless env['GITLAB_QA_ACCESS_TOKEN']
-
-          cmd = "bundle exec parallel_test -t rspec --combine-stderr --serialize-stdout -- #{args.flatten.join(' ')}"
-          ::Open3.popen2e(env, cmd) do |_, out, wait|
-            out.each { |line| puts line }
-
-            exit wait.value.exitstatus
-          end
+          ParallelRunner.run(args.flatten)
         else
           RSpec::Core::Runner.run(args.flatten, $stderr, $stdout).tap do |status|
             abort if status.nonzero?
