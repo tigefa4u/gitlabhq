@@ -17,7 +17,21 @@ module Gitlab
         end
 
         def favicon
-          'favicon_status_running'
+          if subject.respond_to?(:progress)
+            progress = subject.progress
+
+            if progress < 25.0
+              'favicon_status_running_25'
+            elsif progress < 50.0
+              'favicon_status_running_50'
+            elsif progress < 75.0
+              'favicon_status_running_75'
+            elsif progress < 100.0
+              'favicon_status_running_100'
+            end
+          else
+            'favicon_status_running'
+          end
         end
       end
     end

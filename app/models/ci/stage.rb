@@ -124,5 +124,9 @@ module Ci
     def manual_playable?
       blocked? || skipped?
     end
+
+    def progress
+      (1.0 - builds.alive_ratio) * 100.0
+    end
   end
 end

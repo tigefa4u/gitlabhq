@@ -786,6 +786,14 @@ module Ci
       :creating
     end
 
+    def self.alive_ratio
+      sql = <<~SQL
+        SELECT (#{alive.select('COUNT(*)').to_sql})::float / (#{select('COUNT(*)').to_sql});
+      SQL
+
+      ActiveRecord::Base.connection.execute(sql).first.values.first
+    end
+
     private
 
     def successful_deployment_status

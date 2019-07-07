@@ -794,6 +794,10 @@ module Ci
       errors ? errors.full_messages.to_sentence : ""
     end
 
+    def progress
+      (1.0 - builds.alive_ratio) * 100.0
+    end
+
     private
 
     def ci_yaml_from_repo
