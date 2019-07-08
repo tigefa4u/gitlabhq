@@ -82,6 +82,6 @@ testUtilsConfig.logModifiedComponents = false;
 
 beforeEach(() => {
   const { execSync } = require('child_process');
-  console.log('free -m', execSync('free -m'));
+  console.log('free -m', execSync('free -m').toString());
 });
 
