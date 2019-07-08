@@ -172,7 +172,6 @@ karma:
 #      junit: junit_karma.xml
 
 jest:
-  extends: .dedicated-no-docs-pull-cache-job
   <<: *use-pg
   stage: prepare
   before_script: []
