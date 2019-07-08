@@ -184,6 +184,7 @@ jest:
     - bundle exec rake karma:fixtures
     - date
     - yarn jest --ci --coverage
+    - echo 'Does this get printed?'
   artifacts:
     name: coverage-frontend
     expire_in: 31d
