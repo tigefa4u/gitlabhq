@@ -26,7 +26,7 @@ describe('Embed', () => {
 
   beforeEach(() => {
     actions = {
-      setDashboardEnabled: () => {},
+      setFeatureFlags: () => {},
       setShowErrorBanner: () => {},
       setEndpoints: () => {},
       fetchMetricsData: () => {},

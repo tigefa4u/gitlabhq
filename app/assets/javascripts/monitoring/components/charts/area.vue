@@ -37,7 +37,8 @@ export default {
     },
     projectPath: {
       type: String,
-      required: true,
+      required: false,
+      default: '',
     },
     showBorder: {
       type: Boolean,

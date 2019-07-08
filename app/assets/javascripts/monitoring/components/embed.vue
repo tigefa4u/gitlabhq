@@ -8,8 +8,6 @@ import { getTimeDiff } from '../utils';
 const sidebarAnimationDuration = 150;
 let sidebarMutationObserver;
 
-// This component will only be injected when both the environment_metrics_use_prometheus_endpoint
-// and environment_metrics_show_multiple_dashboards feature flags are enabled.
 export default {
   components: {
     GraphGroup,
@@ -40,24 +38,24 @@ export default {
     },
   },
   mounted() {
-    this.setDashboardEnabled(true);
+    // Set initial data
+    this.setFeatureFlags({
+      prometheusEndpointEnabled: true,
+    });
+    this.setEndpoints({
+      dashboardEndpoint: this.link,
+    });
     this.setShowErrorBanner(false);
     this.$nextTick(() => {
-      // TODO: Move earlier in the lifecycle.
-      this.setEndpoints({
-        dashboardEndpoint: this.link,
-      });
-      // TODO: Cancel requests when navigating away from page / clicking edit.
-      // TODO: Handle case where permissions isn't granted.
-      // TODO: Handle case where project or dashboard doesn't exist.
-      // TODO: Hide error when link is invalid.
-      this.fetchMetricsData(this.params);
       sidebarMutationObserver = new MutationObserver(this.onSidebarMutation);
       sidebarMutationObserver.observe(document.querySelector('.layout-page'), {
         attributes: true,
         childList: false,
         subtree: false,
       });
+      // TODO: Test with recent deployments.
+      // TODO: Cancel requests when navigating away from page / clicking edit.
+      this.fetchMetricsData(this.params);
     });
   },
   beforeDestroy() {
@@ -69,7 +67,7 @@ export default {
     ...mapActions('monitoringDashboard', [
       'fetchMetricsData',
       'setEndpoints',
-      'setDashboardEnabled',
+      'setFeatureFlags',
       'setShowErrorBanner',
     ]),
     chartsWithData(charts) {
@@ -94,6 +92,7 @@ export default {
         :graph-data="graphData"
         :container-width="elWidth"
         group-id="monitor-area-chart"
+        :project-path="null"
         :show-border="true"
       />
     </div>

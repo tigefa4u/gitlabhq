@@ -15,7 +15,6 @@ $.fn.renderGFM = function renderGFM() {
   syntaxHighlight(this.find('.js-syntax-highlight'));
   renderMath(this.find('.js-render-math'));
   renderMermaid(this.find('.js-render-mermaid'));
-  // TODO: Convert to use get().
   renderMetrics(this.find('.js-render-metrics'));
   highlightCurrentUser(this.find('.gfm-project_member').get());
   initUserPopovers(this.find('.gfm-project_member').get());
