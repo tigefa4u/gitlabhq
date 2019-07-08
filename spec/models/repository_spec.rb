@@ -844,6 +844,19 @@ describe Repository do
     end
   end
 
+  describe '#get_raw_changes' do
+    context `with non-UTF8 bytes in paths` do
+      let(:old_rev) { 'd0888d297eadcd7a345427915c309413b1231e65' }
+      let(:new_rev) { '19950f03c765f7ac8723a73a0599764095f52fc0' }
+      let(:changes) { repository.raw_changes_between(old_rev, new_rev) }
+
+      it 'returns the changes' do
+        expect { changes }.not_to raise_error
+        expect(changes.first.new_path.bytes).to eq("hello\x80world".bytes)
+      end
+    end
+  end
+
   describe '#create_ref' do
     it 'redirects the call to write_ref' do
       ref, ref_path = '1', '2'
@@ -1407,12 +1420,13 @@ describe Repository do
                              source_project: project)
     end
 
-    it 'writes merge of source and target to MR merge_ref_path' do
+    it 'writes merge of source SHA and first parent ref to MR merge_ref_path' do
       merge_commit_id = repository.merge_to_ref(user,
                                                 merge_request.diff_head_sha,
                                                 merge_request,
                                                 merge_request.merge_ref_path,
-                                                'Custom message')
+                                                'Custom message',
+                                                merge_request.target_branch_ref)
 
       merge_commit = repository.commit(merge_commit_id)
 
@@ -2281,48 +2295,6 @@ describe Repository do
     context 'when searching for the root ref' do
       it 'returns the same count as #commit_count' do
         expect(repository.commit_count_for_ref(repository.root_ref)).to eq(repository.commit_count)
-      end
-    end
-  end
-
-  describe '#diverging_commit_counts' do
-    let(:diverged_branch) { repository.find_branch('fix') }
-    let(:root_ref_sha) { repository.raw_repository.commit(repository.root_ref).id }
-    let(:diverged_branch_sha) { diverged_branch.dereferenced_target.sha }
-
-    it 'returns the commit counts behind and ahead of default branch' do
-      result = repository.diverging_commit_counts(diverged_branch)
-
-      expect(result).to eq(behind: 29, ahead: 2)
-    end
-
-    context 'when gitaly_count_diverging_commits_no_max is enabled' do
-      before do
-        stub_feature_flags(gitaly_count_diverging_commits_no_max: true)
-      end
-
-      it 'calls diverging_commit_count without max count' do
-        expect(repository.raw_repository)
-          .to receive(:diverging_commit_count)
-          .with(root_ref_sha, diverged_branch_sha)
-          .and_return([29, 2])
-
-        repository.diverging_commit_counts(diverged_branch)
-      end
-    end
-
-    context 'when gitaly_count_diverging_commits_no_max is disabled' do
-      before do
-        stub_feature_flags(gitaly_count_diverging_commits_no_max: false)
-      end
-
-      it 'calls diverging_commit_count with max count' do
-        expect(repository.raw_repository)
-          .to receive(:diverging_commit_count)
-          .with(root_ref_sha, diverged_branch_sha, max_count: Repository::MAX_DIVERGING_COUNT)
-          .and_return([29, 2])
-
-        repository.diverging_commit_counts(diverged_branch)
       end
     end
   end

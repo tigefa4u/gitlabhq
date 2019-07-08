@@ -182,7 +182,7 @@ class ProjectsController < Projects::ApplicationController
   end
 
   def housekeeping
-    ::Projects::HousekeepingService.new(@project).execute
+    ::Projects::HousekeepingService.new(@project, :gc).execute
 
     redirect_to(
       project_path(@project),
@@ -298,7 +298,7 @@ class ProjectsController < Projects::ApplicationController
       elsif @project.feature_available?(:issues, current_user)
         @issues = issuables_collection.page(params[:page])
         @collection_type = 'Issue'
-        @issuable_meta_data = issuable_meta_data(@issues, @collection_type)
+        @issuable_meta_data = issuable_meta_data(@issues, @collection_type, current_user)
       end
 
       render :show

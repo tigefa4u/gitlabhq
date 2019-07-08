@@ -201,7 +201,7 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   end
 
   def rebase
-    RebaseWorker.perform_async(@merge_request.id, current_user.id)
+    @merge_request.rebase_async(current_user.id)
 
     head :ok
   end
@@ -233,12 +233,6 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   def auto_merge_requested?
     # Support params[:merge_when_pipeline_succeeds] during the transition period
     params[:auto_merge_strategy].present? || params[:merge_when_pipeline_succeeds].present?
-  end
-
-  def close_merge_request_if_no_source_project
-    if !@merge_request.source_project && @merge_request.open?
-      @merge_request.close
-    end
   end
 
   private

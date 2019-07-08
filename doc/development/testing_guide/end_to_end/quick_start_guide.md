@@ -242,7 +242,7 @@ module QA
 
         issue = Resource::Issue.fabricate_via_api! do |issue|
           issue.title = 'Issue to test the scoped labels'
-          issue.labels = @initial_label
+          issue.labels = [@initial_label]
         end
 
         [@new_label_same_scope, @new_label_different_scope].each do |label|
@@ -365,6 +365,14 @@ Add the following `attribute :id` and `attribute :labels` right above the [`attr
 
 > We add the attributes above the existing attribute to keep them alphabetically organized.
 
+Then, let's initialize an instance variable for labels to allow an empty array as default value when such information is not passed during the resource fabrication, since this optional. [Between the attributes and the `fabricate!` method](https://gitlab.com/gitlab-org/gitlab-ee/blob/1a1f1408728f19b2aa15887cd20bddab7e70c8bd/qa/qa/resource/issue.rb#L18), add the following:
+
+```ruby
+def initialize
+  @labels = []
+end
+```
+
 Next, add the following code right below the [`fabricate!`](https://gitlab.com/gitlab-org/gitlab-ee/blob/d3584e80b4236acdf393d815d604801573af72cc/qa/qa/resource/issue.rb#L27) method.
 
 ```ruby
@@ -378,7 +386,7 @@ end
 
 def api_post_body
   {
-    labels: [labels],
+    labels: labels,
     title: title
   }
 end
@@ -386,15 +394,15 @@ end
 
 By defining the `api_get_path` method, we allow the [`ApiFabricator`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/qa/qa/resource/api_fabricator.rb) module to know which path to use to get a single issue.
 
-> This `GET` path can be found in the [public API documentation](https://docs.gitlab.com/ee/api/issues.html#single-issue).
+> This `GET` path can be found in the [public API documentation](../../../api/issues.md#single-issue).
 
 By defining the `api_post_path` method, we allow the [`ApiFabricator`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/qa/qa/resource/api_fabricator.rb) module to know which path to use to create a new issue in a specific project.
 
-> This `POST` path can be found in the [public API documentation](https://docs.gitlab.com/ee/api/issues.html#new-issue).
+> This `POST` path can be found in the [public API documentation](../../../api/issues.md#new-issue).
 
 By defining the `api_post_body` method, we allow the [`ApiFabricator.api_post`](https://gitlab.com/gitlab-org/gitlab-ee/blob/a9177ca1812bac57e2b2fa4560e1d5dd8ffac38b/qa/qa/resource/api_fabricator.rb#L68) method to know which data to send when making the `POST` request.
 
-> Notice that we pass both `labels` and `title` attributes in the `api_post_body`, where `labels` receives an array of labels, and [`title` is required](https://docs.gitlab.com/ee/api/issues.html#new-issue). Also, notice that we keep them alphabetically organized.
+> Notice that we pass both `labels` and `title` attributes in the `api_post_body`, where `labels` receives an array of labels, and [`title` is required](../../../api/issues.md#new-issue). Also, notice that we keep them alphabetically organized.
 
 **Label resource**
 
@@ -433,7 +441,7 @@ By defining the `api_post_path` method, we allow for the [`ApiFabricator `](http
 
 By defining the `api_post_body` method, we we allow for the [`ApiFabricator.api_post`](https://gitlab.com/gitlab-org/gitlab-ee/blob/a9177ca1812bac57e2b2fa4560e1d5dd8ffac38b/qa/qa/resource/api_fabricator.rb#L68) method to know which data to send when making the `POST` request.
 
-> Notice that we pass both `color` and `name` attributes in the `api_post_body` since [those are required](https://docs.gitlab.com/ee/api/labels.html#create-a-new-label). Also, notice that we keep them alphabetically organized.
+> Notice that we pass both `color` and `name` attributes in the `api_post_body` since [those are required](../../../api/labels.md#create-a-new-label). Also, notice that we keep them alphabetically organized.
 
 ### 8. Page Objects
 

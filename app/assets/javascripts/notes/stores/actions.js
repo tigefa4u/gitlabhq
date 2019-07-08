@@ -14,6 +14,7 @@ import sidebarTimeTrackingEventHub from '../../sidebar/event_hub';
 import { isInViewport, scrollToElement, isInMRPage } from '../../lib/utils/common_utils';
 import mrWidgetEventHub from '../../vue_merge_request_widget/event_hub';
 import { __ } from '~/locale';
+import Api from '~/api';
 
 let eTagPoll;
 
@@ -51,7 +52,7 @@ export const fetchDiscussions = ({ commit, dispatch }, { path, filter }) =>
     .then(res => res.json())
     .then(discussions => {
       commit(types.SET_INITIAL_DISCUSSIONS, discussions);
-      dispatch('updateResolvableDiscussonsCounts');
+      dispatch('updateResolvableDiscussionsCounts');
     });
 
 export const updateDiscussion = ({ commit, state }, discussion) => {
@@ -67,7 +68,7 @@ export const deleteNote = ({ commit, dispatch, state }, note) =>
     commit(types.DELETE_NOTE, note);
 
     dispatch('updateMergeRequestWidget');
-    dispatch('updateResolvableDiscussonsCounts');
+    dispatch('updateResolvableDiscussionsCounts');
 
     if (isInMRPage()) {
       dispatch('diffs/removeDiscussionsFromDiff', discussion);
@@ -117,7 +118,7 @@ export const replyToDiscussion = ({ commit, state, getters, dispatch }, { endpoi
 
         dispatch('updateMergeRequestWidget');
         dispatch('startTaskList');
-        dispatch('updateResolvableDiscussonsCounts');
+        dispatch('updateResolvableDiscussionsCounts');
       } else {
         commit(types.ADD_NEW_REPLY_TO_DISCUSSION, res);
       }
@@ -135,7 +136,7 @@ export const createNewNote = ({ commit, dispatch }, { endpoint, data }) =>
 
         dispatch('updateMergeRequestWidget');
         dispatch('startTaskList');
-        dispatch('updateResolvableDiscussonsCounts');
+        dispatch('updateResolvableDiscussionsCounts');
       }
       return res;
     });
@@ -168,7 +169,7 @@ export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, 
 
       commit(mutationType, res);
 
-      dispatch('updateResolvableDiscussonsCounts');
+      dispatch('updateResolvableDiscussionsCounts');
 
       dispatch('updateMergeRequestWidget');
     });
@@ -442,15 +443,14 @@ export const startTaskList = ({ dispatch }) =>
       }),
   );
 
-export const updateResolvableDiscussonsCounts = ({ commit }) =>
+export const updateResolvableDiscussionsCounts = ({ commit }) =>
   commit(types.UPDATE_RESOLVABLE_DISCUSSIONS_COUNTS);
 
 export const submitSuggestion = (
   { commit, dispatch },
   { discussionId, noteId, suggestionId, flashContainer },
 ) =>
-  service
-    .applySuggestion(suggestionId)
+  Api.applySuggestion(suggestionId)
     .then(() => commit(types.APPLY_SUGGESTION, { discussionId, noteId, suggestionId }))
     .then(() => dispatch('resolveDiscussion', { discussionId }).catch(() => {}))
     .catch(err => {

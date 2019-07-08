@@ -167,7 +167,7 @@ cd pcre2-10.33
 chmod +x configure
 ./configure --prefix=/usr --enable-jit
 make
-make install
+sudo make install
 
 # Download and compile from source
 cd /tmp
@@ -560,7 +560,7 @@ NOTE: **Note:**
 If you want to use HTTPS, see [Using HTTPS](#using-https) for the additional steps.
 
 NOTE: **Note:**
-Make sure your hostname can be resolved on the machine itself by either a proper DNS record or an additional line in `/etc/hosts` ("127.0.0.1  hostname"). This might be necessary, for example, if you set up GitLab behind a reverse proxy. If the hostname cannot be resolved, the final installation check will fail with "Check GitLab API access: FAILED. code: 401" and pushing commits will be rejected with "[remote rejected] master -> master (hook declined)".
+Make sure your hostname can be resolved on the machine itself by either a proper DNS record or an additional line in `/etc/hosts` ("127.0.0.1  hostname"). This might be necessary, for example, if you set up GitLab behind a reverse proxy. If the hostname cannot be resolved, the final installation check will fail with `Check GitLab API access: FAILED. code: 401` and pushing commits will be rejected with `[remote rejected] master -> master (hook declined)`.
 
 NOTE: **Note:**
 GitLab Shell application startup time can be greatly reduced by disabling RubyGems. This can be done in several ways:
@@ -634,8 +634,8 @@ Gitaly must be running for the next section.
 gitlab_path=/home/git/gitlab
 gitaly_path=/home/git/gitaly
 
-sudo -u git -H $gitlab_path/bin/daemon_with_pidfile $gitlab_path/tmp/pids/gitaly.pid \
-  $gitaly_path/gitaly $gitaly_path/config.toml >> $gitlab_path/log/gitaly.log 2>&1 &
+sudo -u git -H sh -c "$gitlab_path/bin/daemon_with_pidfile $gitlab_path/tmp/pids/gitaly.pid \
+  $gitaly_path/gitaly $gitaly_path/config.toml >> $gitlab_path/log/gitaly.log 2>&1 &"
 ```
 
 ### Initialize Database and Activate Advanced Features

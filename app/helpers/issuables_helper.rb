@@ -280,7 +280,7 @@ module IssuablesHelper
       initialTaskStatus: issuable.task_status
     }
 
-    data[:hasClosingMergeRequest] = issuable.merge_requests_count != 0 if issuable.is_a?(Issue)
+    data[:hasClosingMergeRequest] = issuable.merge_requests_count(current_user) != 0 if issuable.is_a?(Issue)
 
     if parent.is_a?(Group)
       data[:groupPath] = parent.path
@@ -390,8 +390,8 @@ module IssuablesHelper
 
   def issuable_todo_button_data(issuable, is_collapsed)
     {
-      todo_text: _('Add todo'),
-      mark_text: _('Mark todo as done'),
+      todo_text: _('Add a To Do'),
+      mark_text: _('Mark as done'),
       todo_icon: sprite_icon('todo-add'),
       mark_icon: sprite_icon('todo-done', css_class: 'todo-undone'),
       issuable_id: issuable[:id],

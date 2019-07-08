@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190625184066) do
+ActiveRecord::Schema.define(version: 20190703130053) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -193,6 +193,7 @@ ActiveRecord::Schema.define(version: 20190625184066) do
     t.string "required_instance_ci_template"
     t.boolean "dns_rebinding_protection_enabled", default: true, null: false
     t.boolean "default_project_deletion_protection", default: false, null: false
+    t.boolean "grafana_enabled", default: false, null: false
     t.boolean "lock_memberships_to_ldap", default: false, null: false
     t.text "help_text"
     t.boolean "elasticsearch_indexing", default: false, null: false
@@ -226,6 +227,7 @@ ActiveRecord::Schema.define(version: 20190625184066) do
     t.boolean "elasticsearch_limit_indexing", default: false, null: false
     t.string "geo_node_allowed_ips", default: "0.0.0.0/0, ::/0"
     t.boolean "time_tracking_limit_to_hours", default: false, null: false
+    t.string "grafana_url", default: "/-/grafana", null: false
     t.index ["custom_project_templates_group_id"], name: "index_application_settings_on_custom_project_templates_group_id", using: :btree
     t.index ["file_template_project_id"], name: "index_application_settings_on_file_template_project_id", using: :btree
     t.index ["usage_stats_set_by_user_id"], name: "index_application_settings_on_usage_stats_set_by_user_id", using: :btree
@@ -1047,6 +1049,7 @@ ActiveRecord::Schema.define(version: 20190625184066) do
     t.datetime_with_timezone "created_at", null: false
     t.string "name", null: false
     t.string "token", null: false
+    t.string "username"
     t.index ["token", "expires_at", "id"], name: "index_deploy_tokens_on_token_and_expires_at_and_id", where: "(revoked IS FALSE)", using: :btree
     t.index ["token"], name: "index_deploy_tokens_on_token", unique: true, using: :btree
   end
@@ -1066,6 +1069,8 @@ ActiveRecord::Schema.define(version: 20190625184066) do
     t.string "on_stop"
     t.integer "status", limit: 2, null: false
     t.datetime_with_timezone "finished_at"
+    t.integer "cluster_id"
+    t.index ["cluster_id"], name: "index_deployments_on_cluster_id", using: :btree
     t.index ["created_at"], name: "index_deployments_on_created_at", using: :btree
     t.index ["deployable_type", "deployable_id"], name: "index_deployments_on_deployable_type_and_deployable_id", using: :btree
     t.index ["environment_id", "id"], name: "index_deployments_on_environment_id_and_id", using: :btree
@@ -1984,6 +1989,7 @@ ActiveRecord::Schema.define(version: 20190625184066) do
     t.boolean "allow_maintainer_to_push"
     t.integer "state_id", limit: 2
     t.integer "approvals_before_merge"
+    t.string "rebase_jid"
     t.index ["assignee_id"], name: "index_merge_requests_on_assignee_id", using: :btree
     t.index ["author_id"], name: "index_merge_requests_on_author_id", using: :btree
     t.index ["created_at"], name: "index_merge_requests_on_created_at", using: :btree
@@ -2110,6 +2116,7 @@ ActiveRecord::Schema.define(version: 20190625184066) do
     t.integer "extra_shared_runners_minutes_limit"
     t.string "ldap_sync_status", default: "ready", null: false
     t.boolean "membership_lock", default: false
+    t.integer "last_ci_minutes_usage_notification_level"
     t.index ["created_at"], name: "index_namespaces_on_created_at", using: :btree
     t.index ["custom_project_templates_group_id", "type"], name: "index_namespaces_on_custom_project_templates_group_id_and_type", where: "(custom_project_templates_group_id IS NOT NULL)", using: :btree
     t.index ["file_template_project_id"], name: "index_namespaces_on_file_template_project_id", using: :btree
@@ -2261,6 +2268,7 @@ ActiveRecord::Schema.define(version: 20190625184066) do
     t.datetime_with_timezone "updated_at", null: false
     t.boolean "active", null: false
     t.string "environment_scope", default: "*", null: false
+    t.jsonb "strategies", default: [{"name"=>"default", "parameters"=>{}}], null: false
     t.index ["feature_flag_id", "environment_scope"], name: "index_feature_flag_scopes_on_flag_id_and_environment_scope", unique: true, using: :btree
   end
 
@@ -2410,6 +2418,15 @@ ActiveRecord::Schema.define(version: 20190625184066) do
   create_table "project_alerting_settings", primary_key: "project_id", id: :integer, default: nil, force: :cascade do |t|
     t.string "encrypted_token", null: false
     t.string "encrypted_token_iv", null: false
+  end
+
+  create_table "project_aliases", force: :cascade do |t|
+    t.integer "project_id", null: false
+    t.string "name", null: false
+    t.datetime_with_timezone "created_at", null: false
+    t.datetime_with_timezone "updated_at", null: false
+    t.index ["name"], name: "index_project_aliases_on_name", unique: true, using: :btree
+    t.index ["project_id"], name: "index_project_aliases_on_project_id", using: :btree
   end
 
   create_table "project_authorizations", id: false, force: :cascade do |t|
@@ -2889,6 +2906,7 @@ ActiveRecord::Schema.define(version: 20190625184066) do
     t.integer "author_id"
     t.string "name"
     t.string "sha"
+    t.datetime_with_timezone "released_at", null: false
     t.index ["author_id"], name: "index_releases_on_author_id", using: :btree
     t.index ["project_id", "tag"], name: "index_releases_on_project_id_and_tag", using: :btree
     t.index ["project_id"], name: "index_releases_on_project_id", using: :btree
@@ -3017,6 +3035,7 @@ ActiveRecord::Schema.define(version: 20190625184066) do
     t.boolean "job_events", default: false, null: false
     t.boolean "confidential_note_events", default: true
     t.boolean "deployment_events", default: false, null: false
+    t.string "description", limit: 500
     t.index ["project_id"], name: "index_services_on_project_id", using: :btree
     t.index ["template"], name: "index_services_on_template", using: :btree
     t.index ["type"], name: "index_services_on_type", using: :btree
@@ -3650,6 +3669,7 @@ ActiveRecord::Schema.define(version: 20190625184066) do
   add_foreign_key "dependency_proxy_blobs", "namespaces", column: "group_id", name: "fk_db58bbc5d7", on_delete: :cascade
   add_foreign_key "dependency_proxy_group_settings", "namespaces", column: "group_id", name: "fk_616ddd680a", on_delete: :cascade
   add_foreign_key "deploy_keys_projects", "projects", name: "fk_58a901ca7e", on_delete: :cascade
+  add_foreign_key "deployments", "clusters", name: "fk_289bba3222", on_delete: :nullify
   add_foreign_key "deployments", "projects", name: "fk_b9a3851b82", on_delete: :cascade
   add_foreign_key "design_management_designs", "issues", on_delete: :cascade
   add_foreign_key "design_management_designs", "projects", on_delete: :cascade
@@ -3793,6 +3813,7 @@ ActiveRecord::Schema.define(version: 20190625184066) do
   add_foreign_key "pool_repositories", "projects", column: "source_project_id", on_delete: :nullify
   add_foreign_key "pool_repositories", "shards", on_delete: :restrict
   add_foreign_key "project_alerting_settings", "projects", on_delete: :cascade
+  add_foreign_key "project_aliases", "projects", on_delete: :cascade
   add_foreign_key "project_authorizations", "projects", on_delete: :cascade
   add_foreign_key "project_authorizations", "users", on_delete: :cascade
   add_foreign_key "project_auto_devops", "projects", on_delete: :cascade

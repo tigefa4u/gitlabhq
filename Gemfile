@@ -11,7 +11,7 @@ gem 'responders', '~> 2.0'
 gem 'sprockets', '~> 3.7.0'
 
 # Default values for AR models
-gem 'gitlab-default_value_for', '~> 3.1.1', require: 'default_value_for'
+gem 'default_value_for', '~> 3.2.0'
 
 # Supported DBs
 gem 'mysql2', '~> 0.4.10', group: :mysql
@@ -132,7 +132,7 @@ gem 'wikicloth', '0.8.1'
 gem 'asciidoctor', '~> 2.0.10'
 gem 'asciidoctor-include-ext', '~> 0.3.1', require: false
 gem 'asciidoctor-plantuml', '0.0.9'
-gem 'rouge', '~> 3.1'
+gem 'rouge', '~> 3.5'
 gem 'truncato', '~> 0.7.11'
 gem 'bootstrap_form', '~> 4.2.0'
 gem 'nokogiri', '~> 1.10.3'
@@ -211,7 +211,7 @@ gem 'discordrb-webhooks-blackst0ne', '~> 3.3', require: false
 # HipChat integration
 gem 'hipchat', '~> 1.5.0'
 
-# JIRA integration
+# Jira integration
 gem 'jira-ruby', '~> 1.4'
 
 # Flowdock integration
@@ -309,7 +309,7 @@ group :metrics do
   gem 'influxdb', '~> 0.2', require: false
 
   # Prometheus
-  gem 'prometheus-client-mmap', '~> 0.9.4'
+  gem 'prometheus-client-mmap', '~> 0.9.6'
   gem 'raindrops', '~> 0.18'
 end
 
@@ -429,7 +429,7 @@ group :ed25519 do
 end
 
 # Gitaly GRPC client
-gem 'gitaly-proto', '~> 1.32.0', require: 'gitaly'
+gem 'gitaly-proto', '~> 1.36.0', require: 'gitaly'
 
 gem 'grpc', '~> 1.19.0'
 

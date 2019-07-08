@@ -12,6 +12,11 @@ class Projects::ApplicationController < ApplicationController
 
   helper_method :repository, :can_collaborate_with_project?, :user_access
 
+  rescue_from Gitlab::Template::Finders::RepoTemplateFinder::FileNotFoundError do |exception|
+    log_exception(exception)
+    render_404
+  end
+
   private
 
   def project
@@ -86,11 +91,5 @@ class Projects::ApplicationController < ApplicationController
 
   def check_issues_available!
     return render_404 unless @project.feature_available?(:issues, current_user)
-  end
-
-  def allow_gitaly_ref_name_caching
-    ::Gitlab::GitalyClient.allow_ref_name_caching do
-      yield
-    end
   end
 end
