@@ -18,7 +18,19 @@ afterEach(() =>
   // give Promises a bit more time so they fail the right test
   new Promise(setImmediate).then(() => {
     // wait for pending setTimeout()s
-    jest.runAllTimers();
+    for (let i = 0; i < 3; i += 1) {
+      jest.runOnlyPendingTimers();
+      jest.runAllTicks();
+      jest.runAllImmediates();
+    }
+
+    const numPendingTimers = jest.getTimerCount();
+    if (numPendingTimers > 0) {
+      jest.clearAllTimers();
+      throw new Error(`There are ${numPendingTimers} pending timers left. Make sure to run or clear them.
+      
+see also https://jestjs.io/docs/en/timer-mocks`);
+    }
   }),
 );
 
