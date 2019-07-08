@@ -172,32 +172,12 @@ karma:
 #      junit: junit_karma.xml
 
 jest:
-  extends: .dedicated-no-docs-and-no-qa-pull-cache-job
-  <<: *use-pg
-  dependencies:
-    - compile-assets
-    - compile-assets pull-cache
-    - setup-test-env
+  stage: prepare
+  image: "node:12"
+  before_script: []
   script:
-    - scripts/gitaly-test-spawn
-    - date
-    - bundle exec rake karma:fixtures
-    - date
+    - yarn install
     - yarn jest --ci --coverage spec/frontend/boards/stores/state_spec.js
-  artifacts:
-    name: coverage-frontend
-    expire_in: 31d
-    when: always
-    paths:
-      - coverage-frontend/
-      - junit_jest.xml
-#    reports:
-#      junit: junit_jest.xml
-  cache:
-    key: jest
-    paths:
-      - tmp/jest/jest/
-    policy: pull-push
 
 qa:internal:
   extends: .dedicated-no-docs-no-db-pull-cache-job
