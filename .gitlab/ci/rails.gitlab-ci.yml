@@ -137,49 +137,12 @@ setup-test-env:
       - config/secrets.yml
       - vendor/gitaly-ruby
 
-rspec unit pg:
-  <<: *rspec-metadata-pg
-  parallel: 20
-
-rspec integration pg:
-  <<: *rspec-metadata-pg
-  parallel: 6
-
-rspec system pg:
-  <<: *rspec-metadata-pg
-  parallel: 24
-
-rspec unit pg-10:
-  <<: *rspec-metadata-pg-10
-  <<: *only-schedules-master
-  parallel: 20
-
-rspec integration pg-10:
-  <<: *rspec-metadata-pg-10
-  <<: *only-schedules-master
-  parallel: 6
-
-rspec system pg-10:
-  <<: *rspec-metadata-pg-10
-  <<: *only-schedules-master
-  parallel: 24
-
-rspec-fast-spec-helper:
-  <<: *rspec-metadata-pg
-  script:
-    - bundle exec rspec spec/fast_spec_helper.rb
-
 .rspec-quarantine: &rspec-quarantine
   <<: *only-schedules-master
   script:
     - export CACHE_CLASSES=true
     - scripts/gitaly-test-spawn
     - bin/rspec --color --format documentation --tag quarantine -- spec/
-
-rspec quarantine pg:
-  <<: *rspec-metadata-pg
-  <<: *rspec-quarantine
-  allow_failure: true
 
 static-analysis:
   extends: .dedicated-no-docs-no-db-pull-cache-job
