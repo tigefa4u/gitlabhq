@@ -705,15 +705,14 @@
   resolved "https://registry.yarnpkg.com/@gitlab/svgs/-/svgs-1.66.0.tgz#3c02da455421ea241f32e915671842435df027ff"
   integrity sha512-nxOoQPnofMs3BjRr3SVzQcclM0G6QFrLM8L4nnUCN+8Gxq2u8ukfSU5FCrkivXz+FP9Qo/FYilWV7CY8kDkt6A==
 
-"@gitlab/ui@^5.3.2":
-  version "5.3.2"
-  resolved "https://registry.yarnpkg.com/@gitlab/ui/-/ui-5.3.2.tgz#8ee906cf0586834de0077e165f25764c0bf8a9e9"
-  integrity sha512-VgxlDXqG2q+u72Km+/Ljdvjh0DzvljvsztiXTxnOO+Eb+/I26JBWfdboqFr3E02JzT8W4s4rRinhRttLWfcM/A==
+"@gitlab/ui@https://gitlab.com/gitlab-org/gitlab-ui/-/jobs/246974926/artifacts/raw/gitlab-ui.leipert-tree-shaking.tgz":
+  version "5.4.0"
+  resolved "https://gitlab.com/gitlab-org/gitlab-ui/-/jobs/246974926/artifacts/raw/gitlab-ui.leipert-tree-shaking.tgz#e8573d1bd16a4148edc20983915e7b3f98af336b"
   dependencies:
     "@babel/standalone" "^7.0.0"
     "@gitlab/vue-toasted" "^1.2.1"
     bootstrap "4.3.1"
-    bootstrap-vue "^2.0.0-rc.24"
+    bootstrap-vue "2.0.0-rc.24"
     copy-to-clipboard "^3.0.8"
     core-js "^2.6.9"
     echarts "^4.2.0-rc.2"
@@ -723,6 +722,7 @@
     url-search-params-polyfill "^5.0.0"
     vue "^2.6.10"
     vue-loader "^15.4.2"
+    vue-runtime-helpers "^1.0.1"
 
 "@gitlab/vue-toasted@^1.2.1":
   version "1.2.1"
@@ -1921,7 +1921,7 @@ bonjour@^3.5.0:
     multicast-dns "^6.0.1"
     multicast-dns-service-types "^1.1.0"
 
-bootstrap-vue@^2.0.0-rc.24:
+bootstrap-vue@2.0.0-rc.24:
   version "2.0.0-rc.24"
   resolved "https://registry.yarnpkg.com/bootstrap-vue/-/bootstrap-vue-2.0.0-rc.24.tgz#8ea5bbcd19e0f9b4f87ed4d9ba72abaa35231f32"
   integrity sha512-8rA/I9tOvpNVIuMKD3rdlrUqgVdPEw4vPI0X8OeFJcG2hHvCHeZDF7FmWqxSeehIrUHGDV17HlTGSuP/v1Sp5g==
@@ -11300,6 +11300,11 @@ vue-router@^3.0.2:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/vue-router/-/vue-router-3.0.2.tgz#dedc67afe6c4e2bc25682c8b1c2a8c0d7c7e56be"
   integrity sha512-opKtsxjp9eOcFWdp6xLQPLmRGgfM932Tl56U9chYTnoWqKxQ8M20N7AkdEbM5beUh6wICoFGYugAX9vQjyJLFg==
+
+vue-runtime-helpers@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/vue-runtime-helpers/-/vue-runtime-helpers-1.0.1.tgz#9a7f527d43fdecf83638188fb0e5bae699c2b5bb"
+  integrity sha512-yodqdAWt/QrUkb51jN2DS4dtF4vQWg5YejYdBAcHIOi6kBoGLRVEDz5NYGdh5IhzLrElgi+eKX1DQJmj3bCuJw==
 
 vue-style-loader@^4.1.0:
   version "4.1.0"
