@@ -173,11 +173,25 @@ karma:
 
 jest:
   <<: *use-pg
-  stage: prepare
-  before_script: []
+  dependencies:
+    - compile-assets
+    - compile-assets pull-cache
+    - setup-test-env
   script:
-    - yarn install
-    - yarn jest --ci --coverage spec/frontend/boards/stores/state_spec.js
+    - scripts/gitaly-test-spawn
+    - date
+    - bundle exec rake karma:fixtures
+    - date
+    - yarn jest --ci --coverage
+  artifacts:
+    name: coverage-frontend
+    expire_in: 31d
+    when: always
+    paths:
+      - coverage-frontend/
+      - junit_jest.xml
+#    reports:
+#      junit: junit_jest.xml
 
 qa:internal:
   extends: .dedicated-no-docs-no-db-pull-cache-job
