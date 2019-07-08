@@ -79,3 +79,9 @@ Object.entries(jqueryMatchers).forEach(([matcherName, matcherFactory]) => {
 
 // Tech debt issue TBD
 testUtilsConfig.logModifiedComponents = false;
+
+beforeEach(() => {
+  const { execSync } = require('child_process');
+  console.log('free -m', execSync('free -m'));
+});
+
