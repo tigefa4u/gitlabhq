@@ -83,6 +83,6 @@ testUtilsConfig.logModifiedComponents = false;
 beforeEach(() => {
   const { execSync } = require('child_process');
   console.log('free -m', execSync('free -m').toString());
-  console.log('top memory consumers', execSync("sh -c 'ps aux | sort -nk +4 | tail - '"));
+  console.log('top memory consumers', execSync("sh -c 'ps aux | sort -nk +4 | tail - '").toString());
 });
 
