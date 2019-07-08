@@ -48,11 +48,11 @@ describe QA::Specs::ParallelRunner do
 
     subject.run([])
   end
-end
 
-def expect_cli_arguments(arguments, env = { 'QA_RUNTIME_SCENARIO_ATTRIBUTES' => '{"parallel":true}' })
-  cmd = "bundle exec parallel_test -t rspec --combine-stderr --serialize-stdout -- #{arguments.join(' ')}"
-  expect(Open3).to receive(:popen2e)
-    .with(hash_including(env), cmd)
-    .and_return(0)
+  def expect_cli_arguments(arguments, env = { 'QA_RUNTIME_SCENARIO_ATTRIBUTES' => '{"parallel":true}' })
+    cmd = "bundle exec parallel_test -t rspec --combine-stderr --serialize-stdout -- #{arguments.join(' ')}"
+    expect(Open3).to receive(:popen2e)
+      .with(hash_including(env), cmd)
+      .and_return(0)
+  end
 end

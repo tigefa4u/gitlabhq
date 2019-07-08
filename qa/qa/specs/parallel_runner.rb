@@ -9,7 +9,7 @@ module QA
 
       def run(args)
         unless args.include?('--')
-          index = args.index { |opt| opt =~ %r{/features/} }
+          index = args.index { |opt| opt.include?('features') }
 
           args.insert(index, '--') if index
         end
