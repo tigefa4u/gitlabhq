@@ -6306,16 +6306,10 @@ msgstr ""
 msgid "Mark to do as done"
 msgstr ""
 
-msgid "Markdown"
-msgstr ""
-
 msgid "Markdown Help"
 msgstr ""
 
 msgid "Markdown enabled"
-msgstr ""
-
-msgid "Markdown is supported"
 msgstr ""
 
 msgid "Marks this issue as a duplicate of %{duplicate_reference}."
@@ -13110,9 +13104,6 @@ msgid "project"
 msgstr ""
 
 msgid "project avatar"
-msgstr ""
-
-msgid "quick actions"
 msgstr ""
 
 msgid "register"
