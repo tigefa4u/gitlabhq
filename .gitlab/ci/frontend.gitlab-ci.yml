@@ -173,7 +173,6 @@ karma:
 
 jest:
   stage: prepare
-  image: "node:12"
   before_script: []
   script:
     - yarn install
