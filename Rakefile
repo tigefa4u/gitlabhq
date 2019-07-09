@@ -10,3 +10,4 @@ require relative_url_conf if File.exist?("#{relative_url_conf}.rb")
 Gitlab::Application.load_tasks
 
 Knapsack.load_tasks if defined?(Knapsack)
+asd
