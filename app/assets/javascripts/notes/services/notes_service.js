@@ -15,9 +15,6 @@ export default {
   replyToDiscussion(endpoint, data) {
     return Vue.http.post(endpoint, data, { emulateJSON: true });
   },
-  updateNote(endpoint, data) {
-    return Vue.http.put(endpoint, data, { emulateJSON: true });
-  },
   createNewNote(endpoint, data) {
     return Vue.http.post(endpoint, data, { emulateJSON: true });
   },
