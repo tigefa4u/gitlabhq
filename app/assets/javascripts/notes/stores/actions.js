@@ -160,19 +160,20 @@ export const resolveDiscussion = ({ state, dispatch, getters }, { discussionId }
   });
 };
 
-export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, discussion }) =>
-  service
-    .toggleResolveNote(endpoint, isResolved)
-    .then(res => res.json())
-    .then(res => {
-      const mutationType = discussion ? types.UPDATE_DISCUSSION : types.UPDATE_NOTE;
+export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, discussion }) => {
+  const { RESOLVE_NOTE_METHOD_NAME, UNRESOLVE_NOTE_METHOD_NAME } = constants;
+  const method = isResolved ? UNRESOLVE_NOTE_METHOD_NAME : RESOLVE_NOTE_METHOD_NAME;
 
-      commit(mutationType, res);
+  return axios[method](endpoint).then(({ data: res }) => {
+    const mutationType = discussion ? types.UPDATE_DISCUSSION : types.UPDATE_NOTE;
 
-      dispatch('updateResolvableDiscussionsCounts');
+    commit(mutationType, res);
 
-      dispatch('updateMergeRequestWidget');
-    });
+    dispatch('updateResolvableDiscussionsCounts');
+
+    dispatch('updateMergeRequestWidget');
+  });
+};
 
 export const closeIssue = ({ commit, dispatch, state }) => {
   dispatch('toggleStateButtonLoading', true);
