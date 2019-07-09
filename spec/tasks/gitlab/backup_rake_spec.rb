@@ -239,7 +239,7 @@ describe 'gitlab:app namespace rake task' do
 
     context 'multiple repository storages' do
       let(:test_second_storage) do
-        Gitlab::GitalyClient::StorageSettings.new(@default_storage_hash.merge('path' => 'tmp/tests/custom_storage'))
+        Gitlab::GitalyClient::StorageSettings.new('default', @default_storage_hash.merge('path' => 'tmp/tests/custom_storage'))
       end
       let(:storages) do
         {

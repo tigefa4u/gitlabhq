@@ -15,7 +15,7 @@ module Gitlab
 
           override :tree_entry
           def tree_entry(repository, sha, path, limit)
-            if use_rugged?(repository, :rugged_tree_entry)
+            if use_rugged?(repository.storage, :rugged_tree_entry)
               rugged_tree_entry(repository, sha, path, limit)
             else
               super

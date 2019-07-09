@@ -5,7 +5,7 @@ describe '6_validations' do
   describe 'validate_storages_config' do
     context 'with correct settings' do
       before do
-        mock_storages('foo' => Gitlab::GitalyClient::StorageSettings.new('path' => 'tmp/tests/paths/a/b/c'), 'bar' => Gitlab::GitalyClient::StorageSettings.new('path' => 'tmp/tests/paths/a/b/d'))
+        mock_storages('foo' => Gitlab::GitalyClient::StorageSettings.new('foo', 'path' => 'tmp/tests/paths/a/b/c'), 'bar' => Gitlab::GitalyClient::StorageSettings.new('foo', 'path' => 'tmp/tests/paths/a/b/d'))
       end
 
       it 'passes through' do
@@ -15,7 +15,7 @@ describe '6_validations' do
 
     context 'with invalid storage names' do
       before do
-        mock_storages('name with spaces' => Gitlab::GitalyClient::StorageSettings.new('path' => 'tmp/tests/paths/a/b/c'))
+        mock_storages('name with spaces' => Gitlab::GitalyClient::StorageSettings.new('foo', 'path' => 'tmp/tests/paths/a/b/c'))
       end
 
       it 'throws an error' do

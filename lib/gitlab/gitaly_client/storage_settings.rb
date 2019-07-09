@@ -25,16 +25,18 @@ module Gitlab
 
       DISK_ACCESS_DENIED_FLAG = :deny_disk_access
       ALLOW_KEY = :allow_disk_access
+      GITALY_METADATA_FILENAME = '.gitaly-metadata'
 
       # If your code needs this method then your code needs to be fixed.
       def self.allow_disk_access
         temporarily_allow(ALLOW_KEY) { yield }
       end
 
-      def self.disk_access_denied?
-        return false if rugged_enabled?
+      def disk_access_denied?
+        return false if self.class.rugged_enabled?
+        return false if can_use_disk?
 
-        !temporarily_allowed?(ALLOW_KEY) && Feature::Gitaly.enabled?(DISK_ACCESS_DENIED_FLAG)
+        !self.class.temporarily_allowed?(ALLOW_KEY) && Feature::Gitaly.enabled?(DISK_ACCESS_DENIED_FLAG)
       rescue
         false # Err on the side of caution, don't break gitlab for people
       end
@@ -45,7 +47,7 @@ module Gitlab
         end
       end
 
-      def initialize(storage)
+      def initialize(name, storage)
         raise InvalidConfigurationError, "expected a Hash, got a #{storage.class.name}" unless storage.is_a?(Hash)
         raise InvalidConfigurationError, INVALID_STORAGE_MESSAGE unless storage.has_key?('path')
 
@@ -54,6 +56,7 @@ module Gitlab
 
         storage['path'] = Deprecated
         @hash = storage
+        @name = name
       end
 
       def gitaly_address
@@ -61,17 +64,43 @@ module Gitlab
       end
 
       def legacy_disk_path
-        if self.class.disk_access_denied?
+        if disk_access_denied?
           raise DirectPathAccessError, "git disk access denied via the gitaly_#{DISK_ACCESS_DENIED_FLAG} feature"
         end
 
         @legacy_disk_path
       end
 
+      def can_use_disk?
+        return @can_use_disk unless @can_use_disk.nil?
+
+        gitaly_filesystem_id = filesystem_id
+
+        @can_use_disk = gitaly_filesystem_id.present? && filesystem_id == filesystem_id_from_disk
+      end
+
       private
 
       def method_missing(msg, *args, &block)
         @hash.public_send(msg, *args, &block) # rubocop:disable GitlabSecurity/PublicSend
+      end
+
+      def filesystem_id
+        response = Gitlab::GitalyClient::ServerService.new(@name).info
+        storage_status = response.storage_statuses.find { |status| status.storage_name == @name }
+        storage_status.filesystem_id
+      end
+
+      def filesystem_id_from_disk
+        metadata_file = File.read(storage_metadata_file_path)
+        metadata_hash = JSON.parse(metadata_file)
+        metadata_hash['gitaly_filesystem_id']
+      rescue Errno::ENOENT, JSON::ParserError
+        nil
+      end
+
+      def storage_metadata_file_path
+        File.join(@legacy_disk_path, GITALY_METADATA_FILENAME)
       end
     end
   end

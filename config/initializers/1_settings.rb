@@ -531,7 +531,7 @@ unless Settings.repositories.storages['default']
 end
 
 Settings.repositories.storages.each do |key, storage|
-  Settings.repositories.storages[key] = Gitlab::GitalyClient::StorageSettings.new(storage)
+  Settings.repositories.storages[key] = Gitlab::GitalyClient::StorageSettings.new(key, storage)
 end
 
 #

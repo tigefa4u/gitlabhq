@@ -10,7 +10,7 @@ describe 'gitlab:cleanup rake tasks' do
     let(:storage) { storages.keys.first }
     let(:storages) do
       {
-        'default' => Gitlab::GitalyClient::StorageSettings.new(@default_storage_hash.merge('path' => 'tmp/tests/default_storage'))
+        'default' => Gitlab::GitalyClient::StorageSettings.new('default', @default_storage_hash.merge('path' => 'tmp/tests/default_storage'))
       }
     end
 

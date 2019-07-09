@@ -118,6 +118,12 @@ RSpec.configure do |config|
     TestEnv.init
   end
 
+  config.before(:all) do
+    Gitlab.config.repositories.storages.each do |key, storage|
+      storage.instance_variable_set(:@can_use_disk, false)
+    end
+  end
+
   config.after(:all) do
     TestEnv.clean_test_path
   end

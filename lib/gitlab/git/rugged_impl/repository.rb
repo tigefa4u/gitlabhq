@@ -47,7 +47,7 @@ module Gitlab
 
         override :ancestor?
         def ancestor?(from, to)
-          if use_rugged?(self, :rugged_commit_is_ancestor)
+          if use_rugged?(self.storage, :rugged_commit_is_ancestor)
             rugged_is_ancestor?(from, to)
           else
             super

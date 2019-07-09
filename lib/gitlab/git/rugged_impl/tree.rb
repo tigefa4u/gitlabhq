@@ -15,7 +15,7 @@ module Gitlab
 
           override :tree_entries
           def tree_entries(repository, sha, path, recursive)
-            if use_rugged?(repository, :rugged_tree_entries)
+            if use_rugged?(repository.storage, :rugged_tree_entries)
               tree_entries_with_flat_path_from_rugged(repository, sha, path, recursive)
             else
               super

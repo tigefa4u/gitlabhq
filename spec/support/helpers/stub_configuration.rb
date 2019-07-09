@@ -75,7 +75,7 @@ module StubConfiguration
         storage_hash['path'] = TestEnv.repos_path
       end
 
-      messages[storage_name] = Gitlab::GitalyClient::StorageSettings.new(storage_hash.to_h)
+      messages[storage_name] = Gitlab::GitalyClient::StorageSettings.new(storage_name, storage_hash.to_h)
     end
 
     allow(Gitlab.config.repositories).to receive(:storages).and_return(Settingslogic.new(messages))

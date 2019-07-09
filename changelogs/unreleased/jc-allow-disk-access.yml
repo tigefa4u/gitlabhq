@@ -1,0 +1,5 @@
+---
+title: Allow rugged auto detect code to bypass disk access check
+merge_request: 30530
+author:
+type: other
