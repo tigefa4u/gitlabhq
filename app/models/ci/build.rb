@@ -573,6 +573,10 @@ module Ci
       update_column(:trace, nil)
     end
 
+    def metrics_file
+      job_artifacts_metrics&.file
+    end
+
     def needs_touch?
       Time.now - updated_at > 15.minutes.to_i
     end

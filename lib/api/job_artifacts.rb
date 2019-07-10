@@ -70,6 +70,21 @@ module API
         present_carrierwave_file!(build.artifacts_file)
       end
 
+      desc 'Download the artifact metrics from a job' do
+        detail 'This feature was introduced in GitLab 8.5'
+      end
+      params do
+        requires :job_id, type: Integer, desc: 'The ID of a job'
+      end
+      route_setting :authentication, job_token_allowed: true
+      get ':id/jobs/:job_id/metrics' do
+        authorize_download_artifacts!
+
+        build = find_build!(params[:job_id])
+
+        present_carrierwave_file!(build.metrics_file)
+      end
+
       desc 'Download a specific file from artifacts archive' do
         detail 'This feature was introduced in GitLab 10.0'
       end
