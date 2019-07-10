@@ -6,6 +6,10 @@ class PipelineProcessWorker
 
   queue_namespace :pipeline_processing
 
+  def self.sidekiq_status_enabled?
+    false
+  end
+
   # rubocop: disable CodeReuse/ActiveRecord
   def perform(pipeline_id)
     Ci::Pipeline.find_by(id: pipeline_id)

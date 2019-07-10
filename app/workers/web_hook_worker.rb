@@ -5,6 +5,10 @@ class WebHookWorker
 
   sidekiq_options retry: 4, dead: false
 
+  def self.sidekiq_status_enabled?
+    false
+  end
+
   def perform(hook_id, data, hook_name)
     hook = WebHook.find(hook_id)
     data = data.with_indifferent_access

@@ -5,6 +5,10 @@
 class UpdateProjectStatisticsWorker
   include ApplicationWorker
 
+  def self.sidekiq_status_enabled?
+    false
+  end
+
   # project_id - The ID of the project for which to flush the cache.
   # statistics - An Array containing columns from ProjectStatistics to
   #              refresh, if empty all columns will be refreshed

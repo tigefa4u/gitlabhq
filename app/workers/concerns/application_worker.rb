@@ -64,5 +64,9 @@ module ApplicationWorker
 
       Sidekiq::Client.push_bulk('class' => self, 'args' => args_list, 'at' => schedule)
     end
+
+    def sidekiq_status_enabled?
+      true
+    end
   end
 end

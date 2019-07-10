@@ -6,6 +6,10 @@ class BuildQueueWorker
 
   queue_namespace :pipeline_processing
 
+  def self.sidekiq_status_enabled?
+    false
+  end
+
   # rubocop: disable CodeReuse/ActiveRecord
   def perform(build_id)
     Ci::Build.find_by(id: build_id).try do |build|
