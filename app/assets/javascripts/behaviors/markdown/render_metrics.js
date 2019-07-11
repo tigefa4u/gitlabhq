@@ -9,14 +9,14 @@ export default function renderMetrics(elements) {
   }
 
   elements.forEach(element => {
-    const link = element.dataset.dashboardUrl;
+    const { dashboardUrl } = element.dataset;
     const MetricsComponent = Vue.extend(Metrics);
 
     const renderedComponent = new MetricsComponent({
       el: element,
       store: createStore(),
       propsData: {
-        link,
+        dashboardUrl,
       },
     });
 

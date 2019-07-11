@@ -14,7 +14,7 @@ export default {
     MonitorAreaChart,
   },
   props: {
-    link: {
+    dashboardUrl: {
       type: String,
       required: true,
     },
@@ -42,7 +42,7 @@ export default {
       prometheusEndpointEnabled: true,
     });
     this.setEndpoints({
-      dashboardEndpoint: this.link,
+      dashboardEndpoint: this.dashboardUrl,
     });
     this.setShowErrorBanner(false);
     this.$nextTick(() => {

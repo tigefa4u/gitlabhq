@@ -18,7 +18,7 @@ describe('Embed', () => {
       localVue,
       store,
       propsData: {
-        link: TEST_HOST,
+        dashboardUrl: TEST_HOST,
       },
     });
   }
