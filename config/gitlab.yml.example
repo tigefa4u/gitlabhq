@@ -952,6 +952,13 @@ production: &base
     #  address: localhost
     #  port: 3807
 
+    # Web exporter is webserver built in to Unicorn/Puma to expose Prometheus metrics
+    # It runs alongside the `/metrics` endpoints to ease the publish of metrics
+    web_exporter:
+    #  enabled: true
+    #  address: localhost
+    #  port: 3808
+
   #
   # 5. Extra customization
   # ==========================

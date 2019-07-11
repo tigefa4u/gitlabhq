@@ -643,14 +643,14 @@ Settings.monitoring['ip_whitelist'] ||= ['127.0.0.1/8']
 Settings.monitoring['unicorn_sampler_interval'] ||= 10
 Settings.monitoring['puma_sampler_interval'] ||= 5
 Settings.monitoring['ruby_sampler_interval'] ||= 60
-Settings.monitoring['web_exporter'] ||= Settingslogic.new({})
-Settings.monitoring.web_exporter['enabled'] ||= true
-Settings.monitoring.web_exporter['address'] ||= '0.0.0.0'
-Settings.monitoring.web_exporter['port'] ||= 3808
 Settings.monitoring['sidekiq_exporter'] ||= Settingslogic.new({})
 Settings.monitoring.sidekiq_exporter['enabled'] ||= false
 Settings.monitoring.sidekiq_exporter['address'] ||= 'localhost'
 Settings.monitoring.sidekiq_exporter['port'] ||= 3807
+Settings.monitoring['web_exporter'] ||= Settingslogic.new({})
+Settings.monitoring.web_exporter['enabled'] ||= false
+Settings.monitoring.web_exporter['address'] ||= 'localhost'
+Settings.monitoring.web_exporter['port'] ||= 3808
 
 #
 # Testing settings

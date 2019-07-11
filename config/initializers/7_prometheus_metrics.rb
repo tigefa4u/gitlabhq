@@ -67,11 +67,15 @@ end
 Gitlab::Cluster::LifecycleEvents.on_master_start do
   cleanup_prometheus_multiproc_dir
 
-  Gitlab::Metrics::WebMetricsExporter.instance.start
+  if defined?(::Unicorn) || defined?(::Puma)
+    Gitlab::Metrics::WebMetricsExporter.instance.start
+  end
 end
 
 Gitlab::Cluster::LifecycleEvents.on_master_restart do
   cleanup_prometheus_multiproc_dir
 
-  Gitlab::Metrics::WebMetricsExporter.instance.start
+  if defined?(::Unicorn) || defined?(::Puma)
+    Gitlab::Metrics::WebMetricsExporter.instance.start
+  end
 end

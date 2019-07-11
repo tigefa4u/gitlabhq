@@ -55,6 +55,7 @@ module Gitlab
     private
 
     def start_working
+      puts "FAILURE: #{self.class}"
       raise NotImplementedError
     end
 

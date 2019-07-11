@@ -1,19 +1,25 @@
 require 'spec_helper'
 
-describe Gitlab::Metrics::SidekiqMetricsExporter do
+describe Gitlab::Metrics::MetricsExporter do
   let(:exporter) { described_class.new }
   let(:server) { double('server') }
+  let(:log_filename) { File.join(Rails.root, 'log', 'sidekiq_exporter.log') }
+  let(:settings) { double('settings') }
 
   before do
     allow(::WEBrick::HTTPServer).to receive(:new).and_return(server)
     allow(server).to receive(:mount)
     allow(server).to receive(:start)
     allow(server).to receive(:shutdown)
+    allow_any_instance_of(described_class).to receive(:log_filename).and_return(log_filename)
+    allow_any_instance_of(described_class).to receive(:settings).and_return(settings)
   end
 
   describe 'when exporter is enabled' do
     before do
-      allow(Settings.monitoring.sidekiq_exporter).to receive(:enabled).and_return(true)
+      allow(settings).to receive(:enabled).and_return(true)
+      allow(settings).to receive(:port).and_return(3707)
+      allow(settings).to receive(:address).and_return('localhost')
     end
 
     describe 'when exporter is stopped' do
@@ -29,8 +35,8 @@ describe Gitlab::Metrics::SidekiqMetricsExporter do
           let(:address) { 'sidekiq_exporter_address' }
 
           before do
-            allow(Settings.monitoring.sidekiq_exporter).to receive(:port).and_return(port)
-            allow(Settings.monitoring.sidekiq_exporter).to receive(:address).and_return(address)
+            allow(settings).to receive(:port).and_return(port)
+            allow(settings).to receive(:address).and_return(address)
           end
 
           it 'starts server with port and address from settings' do
@@ -80,7 +86,7 @@ describe Gitlab::Metrics::SidekiqMetricsExporter do
 
   describe 'when exporter is disabled' do
     before do
-      allow(Settings.monitoring.sidekiq_exporter).to receive(:enabled).and_return(false)
+      allow(settings).to receive(:enabled).and_return(false)
     end
 
     describe '#start' do
