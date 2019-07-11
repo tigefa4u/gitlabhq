@@ -2,7 +2,7 @@ import Vue from 'vue';
 import Metrics from '~/monitoring/components/embed.vue';
 import { createStore } from '~/monitoring/stores';
 
-// TODO: Handle copy-pasting.
+// TODO: Handle copy-pasting - https://gitlab.com/gitlab-org/gitlab-ce/issues/64369.
 export default function renderMetrics(elements) {
   if (elements.length < 1) {
     return;

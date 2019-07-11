@@ -38,7 +38,6 @@ export default {
     },
   },
   mounted() {
-    // Set initial data
     this.setFeatureFlags({
       prometheusEndpointEnabled: true,
     });
@@ -53,8 +52,6 @@ export default {
         childList: false,
         subtree: false,
       });
-      // TODO: Test with recent deployments.
-      // TODO: Cancel requests when navigating away from page / clicking edit.
       this.fetchMetricsData(this.params);
     });
   },

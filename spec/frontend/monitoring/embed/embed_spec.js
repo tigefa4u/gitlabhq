@@ -2,8 +2,7 @@ import { createLocalVue, shallowMount } from '@vue/test-utils';
 import Vuex from 'vuex';
 import Embed from '~/monitoring/components/embed.vue';
 import MonitorAreaChart from '~/monitoring/components/charts/area.vue';
-// TODO: Figure out why this won't work with absolute imports
-import { TEST_HOST } from '../../helpers/test_constants';
+import { TEST_HOST } from 'helpers/test_constants';
 import { groups, initialState, metricsData, metricsWithData } from './mock_data';
 
 const localVue = createLocalVue();

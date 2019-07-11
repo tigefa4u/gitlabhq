@@ -241,7 +241,6 @@ export default {
 
 <template>
   <div class="col-12 col-lg-6" :class="showBorder ? 'p-2' : ''">
-    <!-- TODO: Test on the metrics dashboard and cluster health charts -->
     <div class="prometheus-graph" :class="showBorder ? 'prometheus-graph-embed' : ''">
       <div class="prometheus-graph-header">
         <h5 ref="graphTitle" class="prometheus-graph-title">{{ graphData.title }}</h5>
