@@ -8,7 +8,7 @@ export default function renderMetrics(elements) {
     return;
   }
 
-  elements.each((index, element) => {
+  elements.forEach(element => {
     const link = element.dataset.dashboardUrl;
     const MetricsComponent = Vue.extend(Metrics);
 
