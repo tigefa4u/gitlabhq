@@ -21,6 +21,8 @@ class Feature
   class << self
     delegate :group, to: :flipper
 
+    PERSISTED_NAMES_CACHE_KEY = 'flipper:persisted_names'
+
     def all
       flipper.features.to_a
     end
@@ -34,10 +36,15 @@ class Feature
         begin
           # We saw on GitLab.com, this database request was called 2300
           # times/s. Let's cache it for a minute to avoid that load.
-          Gitlab::ThreadMemoryCache.cache_backend.fetch('flipper:persisted_names', expires_in: 1.minute) do
+          l1_cache_backend.fetch(PERSISTED_NAMES_CACHE_KEY, expires_in: 1.minute) do
             FlipperFeature.feature_names
           end
         end
+    end
+
+    def expire_persisted_names
+      l1_cache_backend.delete(PERSISTED_NAMES_CACHE_KEY)
+      Gitlab::SafeRequestStore[:flipper_persisted_names] = nil
     end
 
     def persisted?(feature)
@@ -65,11 +72,15 @@ class Feature
     end
 
     def enable(key, thing = true)
-      get(key).enable(thing)
+      get(key).enable(thing).tap do
+        expire_persisted_names
+      end
     end
 
     def disable(key, thing = false)
-      get(key).disable(thing)
+      get(key).disable(thing).tap do
+        expire_persisted_names
+      end
     end
 
     def enable_group(key, group)
