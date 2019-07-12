@@ -1,0 +1,5 @@
+---
+title: Fix Alignment of Resolved Threads Counter
+merge_request: 30742
+author:
+type: fixed

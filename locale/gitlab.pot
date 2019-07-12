@@ -5888,6 +5888,9 @@ msgstr ""
 msgid "Jump to first unresolved discussion"
 msgstr ""
 
+msgid "Jump to first unresolved thread"
+msgstr ""
+
 msgid "Jump to next unresolved discussion"
 msgstr ""
 

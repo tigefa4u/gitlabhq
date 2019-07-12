@@ -23,6 +23,9 @@ export default {
     isLoggedIn() {
       return this.getUserData.id;
     },
+    hasAnyButtons() {
+      return this.hasNextButton || (this.resolveAllDiscussionsIssuePath && !this.allResolved);
+    },
     hasNextButton() {
       return this.isLoggedIn && !this.allResolved;
     },
@@ -50,7 +53,7 @@ export default {
 
 <template>
   <div v-if="resolvableDiscussionsCount > 0" class="line-resolve-all-container full-width-mobile">
-    <div class="full-width-mobile d-flex d-sm-block">
+    <div class="full-width-mobile d-flex">
       <div :class="{ 'has-next-btn': hasNextButton }" class="line-resolve-all">
         <span
           :class="{ 'is-active': allResolved }"
@@ -64,24 +67,20 @@ export default {
           {{ n__('thread resolved', 'threads resolved', resolvableDiscussionsCount) }}
         </span>
       </div>
-      <div
-        v-if="resolveAllDiscussionsIssuePath && !allResolved"
-        class="btn-group btn-group-sm"
-        role="group"
-      >
+      <div v-if="hasAnyButtons" class="btn-group btn-group-sm" role="group">
         <a
+          v-if="resolveAllDiscussionsIssuePath && !allResolved"
           v-gl-tooltip
           :href="resolveAllDiscussionsIssuePath"
-          :title="s__('Resolve all threads in new issue')"
+          :title="__('Resolve all threads in new issue')"
           class="new-issue-for-discussion btn btn-default discussion-create-issue-btn"
         >
           <icon name="issue-new" />
         </a>
-      </div>
-      <div v-if="isLoggedIn && !allResolved" class="btn-group btn-group-sm" role="group">
         <button
+          v-if="hasNextButton"
           v-gl-tooltip
-          title="Jump to first unresolved thread"
+          :title="__('Jump to first unresolved thread')"
           class="btn btn-default discussion-next-btn"
           @click="jumpToFirstUnresolvedDiscussion"
         >

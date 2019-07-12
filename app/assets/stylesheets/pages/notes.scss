@@ -825,17 +825,13 @@ $note-form-margin-left: 72px;
     white-space: nowrap;
   }
 
-  .btn-group {
-    margin-left: -4px;
-  }
-
   .discussion-next-btn {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
   }
 
   .btn {
-    line-height: $gl-line-height;
+    line-height: 1.5;
 
     svg {
       fill: $gray-darkest;
