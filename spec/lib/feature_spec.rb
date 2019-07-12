@@ -52,6 +52,17 @@ describe Feature do
     end
   end
 
+  describe '.expire_persisted_names' do
+    it 'expires names after a new name is persisted' do
+      expect(described_class.persisted_names).to be_empty
+      expect(described_class).to receive(:expire_persisted_names).and_call_original
+
+      described_class.enable(:test_key)
+
+      expect(described_class.persisted_names).to eq(['test_key'])
+    end
+  end
+
   describe '.persisted?' do
     context 'when the feature is persisted' do
       it 'returns true when feature name is a string' do
@@ -133,12 +144,16 @@ describe Feature do
     end
 
     it 'returns false for existing disabled feature in the database' do
+      expect(described_class).to receive(:expire_persisted_names).and_call_original
+
       described_class.disable(:disabled_feature_flag)
 
       expect(described_class.enabled?(:disabled_feature_flag)).to be_falsey
     end
 
     it 'returns true for existing enabled feature in the database' do
+      expect(described_class).to receive(:expire_persisted_names).and_call_original
+
       described_class.enable(:enabled_feature_flag)
 
       expect(described_class.enabled?(:enabled_feature_flag)).to be_truthy
