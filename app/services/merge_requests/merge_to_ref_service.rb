@@ -20,12 +20,13 @@ module MergeRequests
 
       commit_id = commit
 
-      raise_error('Conflicts detected during merge') unless commit_id
+      unless commit_id && ref_head = project.commit(commit_id)
+        raise_error('Conflicts detected during merge')
+      end
 
-      commit = project.commit(commit_id)
-      target_id, source_id = commit.parent_ids
+      target_id, source_id = ref_head.parent_ids
 
-      success(commit_id: commit.id,
+      success(commit_id: ref_head.id,
               target_id: target_id,
               source_id: source_id)
     rescue MergeError, ArgumentError => error

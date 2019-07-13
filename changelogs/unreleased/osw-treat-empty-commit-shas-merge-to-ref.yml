@@ -1,0 +1,5 @@
+---
+title: Treat empty or invalid commit SHAs at UserMergeToRef RPC
+merge_request: 30707
+author:
+type: fixed

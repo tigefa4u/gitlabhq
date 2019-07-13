@@ -841,8 +841,9 @@ class Repository
 
   def merge_to_ref(user, source_sha, merge_request, target_ref, message, first_parent_ref)
     branch = merge_request.target_branch
+    newrev = raw.merge_to_ref(user, source_sha, branch, target_ref, message, first_parent_ref)
 
-    raw.merge_to_ref(user, source_sha, branch, target_ref, message, first_parent_ref)
+    newrev.presence
   end
 
   def delete_refs(*ref_names)

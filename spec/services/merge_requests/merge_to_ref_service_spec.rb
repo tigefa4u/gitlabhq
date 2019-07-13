@@ -152,18 +152,30 @@ describe MergeRequests::MergeToRefService do
         it_behaves_like 'successfully evaluates pre-condition checks'
       end
 
-      context 'when MR is not mergeable to ref' do
+      context 'when MR is not mergeable to ref (conflicts)' do
         let(:merge_method) { :merge }
+        let(:error_message) { 'Conflicts detected during merge' }
 
-        it 'returns error' do
-          allow(project).to receive_message_chain(:repository, :merge_to_ref) { nil }
+        context 'when returned commit ID is nil' do
+          it 'returns error' do
+            allow(project.repository).to receive(:merge_to_ref) { nil }
 
-          error_message = 'Conflicts detected during merge'
+            result = service.execute(merge_request)
 
-          result = service.execute(merge_request)
+            expect(result[:status]).to eq(:error)
+            expect(result[:message]).to eq(error_message)
+          end
+        end
 
-          expect(result[:status]).to eq(:error)
-          expect(result[:message]).to eq(error_message)
+        context 'when returned commit ID is cannot be found at repo' do
+          it 'returns error' do
+            allow(project.repository).to receive(:merge_to_ref) { 'invalid-ref' }
+
+            result = service.execute(merge_request)
+
+            expect(result[:status]).to eq(:error)
+            expect(result[:message]).to eq(error_message)
+          end
         end
       end
     end

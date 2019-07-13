@@ -1435,6 +1435,21 @@ describe Repository do
       expect(merge_commit.author_email).to eq(user.commit_email)
       expect(repository.blob_at(merge_commit.id, 'files/ruby/feature.rb')).to be_present
     end
+
+    context 'when empty new rev' do
+      it 'returns nil' do
+        expect(repository.raw_repository).to receive(:merge_to_ref) { '' }
+
+        merge_commit_id = repository.merge_to_ref(user,
+                                                  merge_request.diff_head_sha,
+                                                  merge_request,
+                                                  merge_request.merge_ref_path,
+                                                  'Custom message',
+                                                  merge_request.target_branch_ref)
+
+        expect(merge_commit_id).to be_nil
+      end
+    end
   end
 
   describe '#ff_merge' do
