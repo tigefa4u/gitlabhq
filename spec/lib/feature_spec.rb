@@ -167,6 +167,7 @@ describe Feature do
       described_class.enable(:enabled_feature_flag)
       flipper_key = "flipper/v1/feature/enabled_feature_flag"
 
+      expect(described_class.l1_cache_backend).to receive(:fetch).with('flipper:persisted_names', expires_in: 1.minute).and_call_original
       expect(described_class.l2_cache_backend)
         .to receive(:fetch)
         .once
@@ -184,11 +185,33 @@ describe Feature do
       end
     end
 
+    context 'with actor', :request_store do
+      let(:flag) { :actor_flag }
+      let(:actor) { create(:project) }
+
+      it 'persisted feature prioritizes gate state over default_enabled' do
+        described_class.enable(flag, actor)
+
+        expect(described_class.enabled?(flag, actor, default_enabled: true)).to be_truthy
+        expect(described_class.enabled?(flag, actor, default_enabled: false)).to be_truthy
+        expect(described_class.enabled?(flag, default_enabled: true)).to be_truthy
+        expect(described_class.enabled?(flag, default_enabled: false)).to be_falsey
+      end
+
+      it 'unpersisted feature respects default_enabled' do
+        expect(described_class.enabled?(flag, actor, default_enabled: true)).to be_truthy
+        expect(described_class.enabled?(flag, actor, default_enabled: false)).to be_falsey
+        expect(described_class.enabled?(flag, default_enabled: true)).to be_truthy
+        expect(described_class.enabled?(flag, default_enabled: false)).to be_falsey
+      end
+    end
+
     context 'cached feature flag', :request_store do
       let(:flag) { :some_feature_flag }
 
       before do
         described_class.flipper.memoize = false
+        described_class.enable(flag)
         described_class.enabled?(flag)
       end
 
@@ -206,7 +229,7 @@ describe Feature do
             expect(described_class.l1_cache_backend).to receive(:fetch).once.and_call_original
             expect(described_class.l2_cache_backend).to receive(:fetch).once.and_call_original
             expect(described_class.enabled?(flag)).to be_truthy
-          end.not_to exceed_query_limit(0)
+          end.not_to exceed_query_limit(1) # One query for persisted_names
         end
       end
 

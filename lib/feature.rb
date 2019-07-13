@@ -44,6 +44,7 @@ class Feature
 
     def expire_persisted_names
       l1_cache_backend.delete(PERSISTED_NAMES_CACHE_KEY)
+      Gitlab::SafeRequestStore[:flipper_persisted_names] = nil
     end
 
     def persisted?(feature)
@@ -58,11 +59,28 @@ class Feature
     def enabled?(key, thing = nil, default_enabled: false)
       feature = Feature.get(key)
 
-      # If we're not default enabling the flag or the feature has been set, always evaluate.
-      # `persisted?` can potentially generate DB queries and also checks for inclusion
-      # in an array of feature names (177 at last count), possibly reducing performance by half.
-      # So we only perform the `persisted` check if `default_enabled: true`
-      !default_enabled || Feature.persisted?(feature) ? feature.enabled?(thing) : true
+      return default_enabled unless Feature.persisted?(feature)
+
+      # If this feature were enabled for any actor at some point, then
+      # a gate will exist, and we should check with Flipper whether
+      # the feature is enabled. Otherwise, we should rely on the
+      # default_enabled flag.
+      #
+      # Consider this example:
+      #
+      # Feature.enable(feature, project) # This opens the gate for a project
+      #
+      # Feature.enabled?(feature, project, default_enabled: true) # => true
+      # Feature.enabled?(feature, default_enabled: true) # => false
+      #
+      # The last call doesn't have an associated actor, but it does have
+      # the default_enabled flag on. Flipper will assume the feature is off,
+      # but we need to check the default_enabled value to be sure.
+      if thing
+        feature.enabled?(thing)
+      else
+        default_enabled || feature.enabled?(thing)
+      end
     end
 
     def disabled?(key, thing = nil, default_enabled: false)
@@ -71,15 +89,15 @@ class Feature
     end
 
     def enable(key, thing = true)
-      expire_persisted_names
-
-      get(key).enable(thing)
+      get(key).enable(thing).tap do
+        expire_persisted_names
+      end
     end
 
     def disable(key, thing = false)
-      expire_persisted_names
-
-      get(key).disable(thing)
+      get(key).disable(thing).tap do
+        expire_persisted_names
+      end
     end
 
     def enable_group(key, group)
