@@ -5,6 +5,18 @@ easy to maintain, and performant for the end-user.
 
 ## Rules
 
+With the approval of [RFC #2](https://gitlab.com/gitlab-org/frontend/rfcs/issues/2) and [RFC #4](https://gitlab.com/gitlab-org/frontend/rfcs/issues/4), our SCSS architecture and approach has been updated.
+
+### Silent Classes and Component Classes
+
+Our SCSS approach is a mixture of utility and component classes, both driven by shared silent classes underneath. (See [RFC #4](https://gitlab.com/gitlab-org/frontend/rfcs/issues/4) for detailed examples.)
+
+Within CE, the rules are utility first as covered below. It is recommended to use silent classes if you need to add a new utility class, but if you aren't sure what to do, you can use a utility class that already exists in  `common.scss` or `utilities.scss`.
+
+How do you know something is a good candidate for a utility class? It's a single property, the collection of classes are a set of one-offs within a larger layout — particularly around spacing or color — or you want to apply the properties conditionally within a Vue component.
+
+On the other hand, if you have a set of compound properties that should _always_ be used together, especially if there are both HAML and Vue implementations of the component, it might be right for a component class. Consider whether it might even be right for a Gitlab UI component.
+
 ### Utility Classes
 
 As part of the effort for [cleaning up our CSS and moving our components into GitLab-UI](https://gitlab.com/groups/gitlab-org/-/epics/950)
