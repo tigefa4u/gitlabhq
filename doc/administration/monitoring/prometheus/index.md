@@ -136,7 +136,7 @@ To use an external Prometheus server:
    scrape_configs:
    - job_name: 'gitlab_exporters'
      static_configs:
-     - targets: ['1.1.1.1:9168', '1.1.1.1:9236', '1.1.1.1:9236', '1.1.1.1:9100', '1.1.1.1:9121', '1.1.1.1:9187']
+     - targets: ['1.1.1.1:9168', '1.1.1.1:9236', '1.1.1.1:9100', '1.1.1.1:9121', '1.1.1.1:9187']
 
    - job_name: 'gitlab_metrics'
      metrics_path: /-/metrics
