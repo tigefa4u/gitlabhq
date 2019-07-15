@@ -1,3 +1,4 @@
 tmp/
 .ruby-version
 urls.yml
+.rakeTasks
