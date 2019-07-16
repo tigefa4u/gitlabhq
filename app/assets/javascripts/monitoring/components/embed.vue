@@ -30,10 +30,7 @@ export default {
   computed: {
     ...mapState('monitoringDashboard', ['groups', 'metricsWithData']),
     groupsWithData() {
-      const groupsWithData = this.groups.filter(
-        group => this.chartsWithData(group.metrics).length > 0,
-      );
-      return groupsWithData;
+      return this.groups.filter(group => this.chartsWithData(group.metrics).length);
     },
   },
   mounted() {
