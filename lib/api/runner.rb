@@ -262,7 +262,7 @@ module API
         require_gitlab_workhorse!
 
         job = authenticate_job!
-        # TODO forbidden!('Job is not running!') unless job.running?
+        forbidden!('Job is not running!') unless job.running?
 
         artifacts = UploadedFile.from_params(params, :file, JobArtifactUploader.workhorse_local_upload_path)
         metadata = UploadedFile.from_params(params, :metadata, JobArtifactUploader.workhorse_local_upload_path)
