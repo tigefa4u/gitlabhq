@@ -573,8 +573,8 @@ module Ci
       update_column(:trace, nil)
     end
 
-    def metrics_file
-      job_artifacts_metrics&.file
+    def monitor_file
+      job_artifacts_monitor&.file
     end
 
     def needs_touch?

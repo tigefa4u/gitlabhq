@@ -15,6 +15,7 @@ module Ci
       archive: nil,
       metadata: nil,
       trace: nil,
+      monitor: nil,
       junit: 'junit.xml',
       codequality: 'gl-code-quality-report.json',
       sast: 'gl-sast-report.json',
@@ -29,7 +30,8 @@ module Ci
     INTERNAL_TYPES = {
       archive: :zip,
       metadata: :gzip,
-      trace: :raw
+      trace: :raw,
+      monitor: :raw
     }.freeze
 
     REPORT_TYPES = {
@@ -101,7 +103,8 @@ module Ci
       codequality: 9, ## EE-specific
       license_management: 10, ## EE-specific
       performance: 11, ## EE-specific
-      metrics: 12 ## EE-specific
+      metrics: 12, ## EE-specific
+      monitor: 13
     }
 
     enum file_format: {
