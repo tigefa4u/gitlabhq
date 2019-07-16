@@ -2,10 +2,9 @@
 import { mapActions, mapState } from 'vuex';
 import GraphGroup from './graph_group.vue';
 import MonitorAreaChart from './charts/area.vue';
-import { timeWindowsKeyNames, timeWindows } from '../constants';
+import { sidebarAnimationDuration, timeWindowsKeyNames, timeWindows } from '../constants';
 import { getTimeDiff } from '../utils';
 
-const sidebarAnimationDuration = 150;
 let sidebarMutationObserver;
 
 export default {
