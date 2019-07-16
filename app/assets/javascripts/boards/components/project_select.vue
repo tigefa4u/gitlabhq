@@ -85,7 +85,7 @@ export default {
     <label class="label-bold prepend-top-10">{{ __('Project') }}</label>
     <div ref="projectsDropdown" class="dropdown dropdown-projects">
       <button
-        class="dropdown-menu-toggle wide"
+        class="btn btn-default dropdown-menu-toggle wide"
         type="button"
         data-toggle="dropdown"
         aria-expanded="false"

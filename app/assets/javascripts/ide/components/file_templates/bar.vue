@@ -65,7 +65,12 @@ export default {
       @click="selectTemplate"
     />
     <transition name="fade">
-      <button v-show="updateSuccess" type="button" class="btn btn-default" @click="undo">
+      <button
+        v-show="updateSuccess"
+        type="button"
+        class="js-undo-btn btn btn-default"
+        @click="undo"
+      >
         {{ __('Undo') }}
       </button>
     </transition>

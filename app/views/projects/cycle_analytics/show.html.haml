@@ -19,7 +19,7 @@
               %p.text {{ item.title }}
             .col-sm-3.col-12.column
               .dropdown.inline.js-ca-dropdown
-                %button.dropdown-menu-toggle{ "data-toggle" => "dropdown", :type => "button" }
+                %button.btn.btn-default.dropdown-menu-toggle{ "data-toggle" => "dropdown", :type => "button" }
                   %span.dropdown-label {{ n__('Last %d day', 'Last %d days', 30) }}
                   %i.fa.fa-chevron-down
                 %ul.dropdown-menu.dropdown-menu-right

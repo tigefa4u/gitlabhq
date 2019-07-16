@@ -27,7 +27,12 @@ export default {
 </script>
 <template>
   <div class="dropdown inline">
-    <button class="dropdown-menu-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
+    <button
+      class="btn btn-default dropdown-menu-toggle"
+      type="button"
+      data-toggle="dropdown"
+      aria-expanded="false"
+    >
       <span :style="{ backgroundColor: selected.label.color }" class="dropdown-label-box"> </span>
       {{ selected.title }} <icon name="chevron-down" />
     </button>

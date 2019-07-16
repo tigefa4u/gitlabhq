@@ -31,7 +31,7 @@
       .js-gcp-project-id-dropdown-entry-point{ data: { docsUrl: 'https://console.cloud.google.com/home/dashboard' } }
         = provider_gcp_field.hidden_field :gcp_project_id
         .dropdown
-          %button.dropdown-menu-toggle.dropdown-menu-full-width{ type: 'button', disabled: true }
+          %button.btn.btn-default.dropdown-menu-toggle.dropdown-menu-full-width{ type: 'button', disabled: true }
             %span.dropdown-toggle-text
               = _('Select project')
             = icon('chevron-down')
@@ -42,7 +42,7 @@
       .js-gcp-zone-dropdown-entry-point
         = provider_gcp_field.hidden_field :zone
         .dropdown
-          %button.dropdown-menu-toggle.dropdown-menu-full-width{ type: 'button', disabled: true }
+          %button.btn.btn-default.dropdown-menu-toggle.dropdown-menu-full-width{ type: 'button', disabled: true }
             %span.dropdown-toggle-text
               = _('Select project to choose zone')
             = icon('chevron-down')
@@ -58,7 +58,7 @@
       .js-gcp-machine-type-dropdown-entry-point
         = provider_gcp_field.hidden_field :machine_type
         .dropdown
-          %button.dropdown-menu-toggle.dropdown-menu-full-width{ type: 'button', disabled: true }
+          %button.btn.btn-default.dropdown-menu-toggle.dropdown-menu-full-width{ type: 'button', disabled: true }
             %span.dropdown-toggle-text
               = _('Select project and zone to choose machine type')
             = icon('chevron-down')

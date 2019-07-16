@@ -64,7 +64,12 @@ export default {
 <template>
   <div class="pikaday-container">
     <div class="dropdown open">
-      <button type="button" class="dropdown-menu-toggle" data-toggle="dropdown" @click="toggled">
+      <button
+        type="button"
+        class="btn btn-default dropdown-menu-toggle"
+        data-toggle="dropdown"
+        @click="toggled"
+      >
         <span class="dropdown-toggle-text"> {{ label }} </span>
         <i class="fa fa-chevron-down" aria-hidden="true"> </i>
       </button>

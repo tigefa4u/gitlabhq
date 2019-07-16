@@ -92,7 +92,7 @@ describe('IDE file templates bar component', () => {
   it('calls undoFileTemplate when clicking undo button', () => {
     spyOn(vm, 'undoFileTemplate').and.stub();
 
-    vm.$el.querySelector('.btn-default').click();
+    vm.$el.querySelector('.js-undo-btn').click();
 
     expect(vm.undoFileTemplate).toHaveBeenCalled();
   });

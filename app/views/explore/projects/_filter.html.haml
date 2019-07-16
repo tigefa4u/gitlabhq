@@ -3,7 +3,7 @@
 
 - if current_user
   .dropdown.js-project-filter-dropdown-wrap{ class: ('d-flex flex-grow-1 flex-shrink-1' if feature_project_list_filter_bar) }
-    %button.dropdown-menu-toggle{ href: '#', "data-toggle" => "dropdown", 'data-display' => 'static' }
+    %button.btn.btn-default.dropdown-menu-toggle{ href: '#', "data-toggle" => "dropdown", 'data-display' => 'static' }
       - unless has_label
         = icon('globe', class: 'mt-1')
         %span.light.ml-3= _("Visibility:")

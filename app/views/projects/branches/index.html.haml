@@ -23,7 +23,7 @@
 
       - unless @mode == 'overview'
         .dropdown.inline>
-          %button.dropdown-menu-toggle{ type: 'button', 'data-toggle' => 'dropdown' }
+          %button.btn.btn-default.dropdown-menu-toggle{ type: 'button', 'data-toggle' => 'dropdown' }
             %span.light
               = branches_sort_options_hash[@sort]
             = icon('chevron-down')

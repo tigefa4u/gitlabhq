@@ -50,7 +50,7 @@ export default {
       :data-namespace-path="projectNamespace"
       :data-project-path="projectPath"
       :data-data="issuableTemplatesJson"
-      class="dropdown-menu-toggle js-issuable-selector"
+      class="btn btn-default dropdown-menu-toggle js-issuable-selector"
       type="button"
       data-field-name="issuable_template"
       data-selected="null"

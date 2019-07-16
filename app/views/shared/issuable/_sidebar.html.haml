@@ -83,7 +83,7 @@
             .selectbox.hide-collapsed
               = f.hidden_field :due_date, value: issuable_sidebar[:due_date].try(:strftime, 'yy-mm-dd')
               .dropdown
-                %button.dropdown-menu-toggle.js-due-date-select{ type: 'button', data: { toggle: 'dropdown', field_name: "#{issuable_type}[due_date]", ability_name: issuable_type, issue_update: issuable_sidebar[:issuable_json_path], display: 'static' } }
+                %button.btn.btn-default.dropdown-menu-toggle.js-due-date-select{ type: 'button', data: { toggle: 'dropdown', field_name: "#{issuable_type}[due_date]", ability_name: issuable_type, issue_update: issuable_sidebar[:issuable_json_path], display: 'static' } }
                   %span.dropdown-toggle-text
                     = _('Due date')
                   = icon('chevron-down', 'aria-hidden': 'true')
@@ -114,7 +114,7 @@
           - selected_labels.each do |label|
             = hidden_field_tag "#{issuable_type}[label_names][]", label[:id], id: nil
           .dropdown
-            %button.dropdown-menu-toggle.js-label-select.js-multiselect.js-label-sidebar-dropdown{ type: "button", data: sidebar_label_dropdown_data(issuable_type, issuable_sidebar) }
+            %button.btn.btn-default.dropdown-menu-toggle.js-label-select.js-multiselect.js-label-sidebar-dropdown{ type: "button", data: sidebar_label_dropdown_data(issuable_type, issuable_sidebar) }
               %span.dropdown-toggle-text{ class: ("is-default" if selected_labels.empty?) }
                 = multi_label_name(selected_labels, "Labels")
               = icon('chevron-down', 'aria-hidden': 'true')

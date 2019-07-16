@@ -74,7 +74,7 @@ export default {
     :data-scoped-labels="enableScopedLabels"
     :data-scoped-labels-documentation-link="scopedLabelsDocumentationLink"
     type="button"
-    class="dropdown-menu-toggle wide js-label-select js-multiselect js-context-config-modal"
+    class="btn btn-default dropdown-menu-toggle wide js-label-select js-multiselect js-context-config-modal"
     data-toggle="dropdown"
   >
     <span class="dropdown-toggle-text"> {{ dropdownToggleText }} </span>

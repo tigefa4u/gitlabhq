@@ -20,7 +20,7 @@
         ":data-username" => "assignee.username" }
       .dropdown
         - dropdown_options = assignees_dropdown_options('issue')
-        %button.dropdown-menu-toggle.js-user-search.js-author-search.js-multiselect.js-save-user-data.js-issue-board-sidebar{ type: 'button', ref: 'assigneeDropdown', data: board_sidebar_user_data,
+        %button.btn.btn-default.dropdown-menu-toggle.js-user-search.js-author-search.js-multiselect.js-save-user-data.js-issue-board-sidebar{ type: 'button', ref: 'assigneeDropdown', data: board_sidebar_user_data,
           ":data-issuable-id" => "issue.iid" }
           = dropdown_options[:title]
           = icon("chevron-down")

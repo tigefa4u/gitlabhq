@@ -9,7 +9,7 @@
         spellcheck: false, data: { 'filter-selector' => 'span.namespace-name' }
 
     .dropdown
-      %button.dropdown-menu-toggle{ type: 'button', 'data-toggle' => 'dropdown' }
+      %button.btn.btn-default.dropdown-menu-toggle{ type: 'button', 'data-toggle' => 'dropdown' }
         %span.light= _("sort:")
         - if @sort.present?
           = sort_options_hash[@sort]

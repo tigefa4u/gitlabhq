@@ -29,7 +29,7 @@ export default {
 <template>
   <button
     :disabled="isDisabled || isLoading"
-    class="dropdown-menu-toggle dropdown-menu-full-width"
+    class="btn btn-default dropdown-menu-toggle dropdown-menu-full-width btn"
     type="button"
     data-toggle="dropdown"
     aria-expanded="false"

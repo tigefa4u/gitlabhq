@@ -20,7 +20,7 @@
     = form_tag project_group_link_path(@project, group_link), method: :put, remote: true, class: 'js-edit-member-form form-group d-sm-flex' do
       = hidden_field_tag "group_link[group_access]", group_link.group_access
       .member-form-control.dropdown.mr-sm-2.d-sm-inline-block
-        %button.dropdown-menu-toggle.js-member-permissions-dropdown{ type: "button",
+        %button.btn.btn-default.dropdown-menu-toggle.js-member-permissions-dropdown{ type: "button",
           disabled: !can_admin_member,
           data: { toggle: "dropdown", field_name: "group_link[group_access]" } }
           %span.dropdown-toggle-text
