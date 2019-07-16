@@ -346,6 +346,29 @@ module Gitlab
         GitalyClient.call(@storage, :object_pool_service, :disconnect_git_alternates, request)
       end
 
+      def clone_from_pool(object_pool, remote)
+        request = Gitaly::CloneFromPoolRequest.new(
+          repository: @gitaly_repo,
+          pool: object_pool.gitaly_object_pool,
+          remote: remote
+        )
+
+        GitalyClient.call(@storage, :repository_service,
+                                     :clone_from_pool, request)
+      end
+
+      def clone_from_pool_internal(source_repository, object_pool)
+        request = Gitaly::CloneFromPoolInternalRequest.new(
+          source_repository: source_repository.gitaly_repository,
+          repository: @gitaly_repo,
+          pool: object_pool.gitaly_object_pool
+        )
+
+        GitalyClient.call(@storage, :repository_service,
+                                     :clone_from_pool_internal, request,
+                                     remote_storage: source_repository.storage)
+      end
+
       private
 
       def search_results_from_response(gitaly_response)
