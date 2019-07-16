@@ -63,6 +63,7 @@ description: 'Learn how to contribute to GitLab.'
 - [Routing](routing.md)
 - [Repository mirroring](repository_mirroring.md)
 - [Git LFS](lfs.md)
+- [Interacting components to reason about](interacting_components.md)
 
 ## Performance guides
 
