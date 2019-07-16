@@ -1,7 +1,7 @@
 # Interacting components at GitLab
 
 It's not uncommon that a single code change can reflect and interact with multiple parts of GitLab
-codebase, making it possible to break an unrelated feature.
+codebase, making it possible to break an existing feature.
 
 This section goal is to briefly list interacting pieces to reason about
 when making _backend_ changes that might involve multiple features or [components].
