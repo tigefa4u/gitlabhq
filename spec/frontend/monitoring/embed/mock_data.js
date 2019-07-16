@@ -85,5 +85,3 @@ export const initialState = {
   metricsWithData: [],
   useDashboardEndpoint: true,
 };
-
-export default {};
