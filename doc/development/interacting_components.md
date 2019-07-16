@@ -22,7 +22,6 @@ See also:
 
 - [File Storage in GitLab](file_storage.md)
 
-
 [GDK]: https://gitlab.com/gitlab-org/gitlab-development-kit
 [object storage]: https://docs.gitlab.com/charts/advanced/external-object-storage/
 [Minio]: https://github.com/minio/minio
