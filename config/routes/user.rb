@@ -34,6 +34,8 @@ devise_scope :user do
   Gitlab.ee do
     get '/users/auth/kerberos_spnego/negotiate' => 'omniauth_kerberos_spnego#negotiate'
   end
+
+  get '/users/qa_sign_in' => 'qa_sessions#create' #if ENV['QA'].present?
 end
 
 scope '-/users', module: :users do
