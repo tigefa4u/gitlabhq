@@ -10,6 +10,24 @@ for a complete Kramdown reference.
 
 NOTE: **Note:** We encourage you to view this document as [rendered by GitLab itself](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/doc/user/markdown.md).
 
+## Editing Markdown
+GitLab's Markdown editor, which is used to create and edit issues, merge requests, or wiki pages (among other things), has several features that help you write Markdown better and faster.
+
+### Previewing Your Work
+Clicking on *Preview* in the top-left of the editor shows you exactly what your content would look like to others once published. Use this feature to preview media, double-check the layout, and proofread your work.
+
+### The Toolbar
+The toolbar at the top of the editor provides useful buttons for formatting text and inserting elements such as links, lists, tasks, and tables. Keep these functions handy in case you forget Markdown's syntax.
+
+### Zen Mode
+Clicking the *Go full screen* button in the top-right of the editor enters a distraction-free, full-screen mode where you can focus exclusively on your Markdown.
+
+### Indenting
+Most rich text editors allow you to indent code using <kbd>Tab</kbd> and <kbd>Shift Tab</kbd> In the GitLab Markdown editor, these shortcuts move focus to the next and previous input field, respectively (just like any other form). Instead, you can indent and unindent Markdown using <kbd>Control ]</kbd> and <kbd>Control [</kbd>, respectively (<kbd>&#8984; ]</kbd> and <kbd>&#8984; [</kbd> on Mac). If you have multiple lines selected, you can indent all lines at once, just like in an IDE.
+
+### Pasting Images
+You can quickly add an image by copying the image and pasting it into the Markdown editor. This will automatically upload the image to GitLab and insert a link to it in the Markdown. This feature is tremendously useful when sharing screenshots &mdash; just print-screen, paste, and you're good to go!
+
 ## GitLab Flavored Markdown (GFM)
 
 GitLab uses "GitLab Flavored Markdown" (GFM). It extends the [CommonMark specification](https://spec.commonmark.org/current/)
