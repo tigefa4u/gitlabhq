@@ -301,6 +301,30 @@ See [our current .eslintrc](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/
       </button>
     ```
 
+#### Prefer `undefined` over `null`
+
+1. When you have the option of using either `null` or `undefined`, choose `undefined`:
+
+    ```javascript
+    // bad
+    props: {
+      selected: {
+        type: Object,
+        required: false,
+        default: null,
+      },
+    },
+
+    // good
+    props: {
+      selected: {
+        type: Object,
+        required: false,
+        default: undefined,
+      },
+    },
+    ```
+
 ### Vue.js
 
 #### `eslint-vue-plugin`
