@@ -34,13 +34,7 @@ export default {
     },
   },
   mounted() {
-    this.setFeatureFlags({
-      prometheusEndpointEnabled: true,
-    });
-    this.setEndpoints({
-      dashboardEndpoint: this.dashboardUrl,
-    });
-    this.setShowErrorBanner(false);
+    this.setInitialState();
     this.$nextTick(() => {
       sidebarMutationObserver = new MutationObserver(this.onSidebarMutation);
       sidebarMutationObserver.observe(document.querySelector('.layout-page'), {
@@ -72,6 +66,15 @@ export default {
       setTimeout(() => {
         this.elWidth = this.$el.clientWidth;
       }, sidebarAnimationDuration);
+    },
+    setInitialState() {
+      this.setFeatureFlags({
+        prometheusEndpointEnabled: true,
+      });
+      this.setEndpoints({
+        dashboardEndpoint: this.dashboardUrl,
+      });
+      this.setShowErrorBanner(false);
     },
   },
 };
