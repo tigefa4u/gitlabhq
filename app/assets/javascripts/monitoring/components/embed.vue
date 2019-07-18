@@ -29,9 +29,9 @@ export default {
   computed: {
     ...mapState('monitoringDashboard', ['groups', 'metricsWithData']),
     groupData() {
-      const groups = this.groups.filter(group => this.chartsWithData(group.metrics).length);
-      if (groups.length) {
-        return groups[0];
+      const groupsWithData = this.groups.filter(group => this.chartsWithData(group.metrics).length);
+      if (groupsWithData.length) {
+        return groupsWithData[0];
       }
       return null;
     },
