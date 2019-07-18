@@ -65,10 +65,6 @@ How to use GraphQL
 
 How we use SVG for our Icons and Illustrations.
 
-## [Components](components.md)
-
-How we use UI components.
-
 ## [Event Tracking](event_tracking.md)
 
 How we use Snowplow to track custom events.
