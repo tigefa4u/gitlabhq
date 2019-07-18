@@ -369,8 +369,8 @@ export default {
     </div>
     <div v-if="!showEmptyState">
       <graph-group
-        v-for="(groupData, index) in groupsWithData"
-        :key="index"
+        v-for="groupData in groupsWithData"
+        :key="`${groupData.group}.${groupData.priority}`"
         :name="groupData.group"
         :show-panels="showPanels"
       >
