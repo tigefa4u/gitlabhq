@@ -240,7 +240,7 @@ export default {
 </script>
 
 <template>
-  <div class="col-12 col-lg-6" :class="{ 'p-2': showBorder }">
+  <div class="col-12 col-lg-6" :class="[showBorder ? 'p-2' : 'p-0']">
     <div class="prometheus-graph" :class="{ 'prometheus-graph-embed w-100 p-3': showBorder }">
       <div class="prometheus-graph-header">
         <h5 ref="graphTitle" class="prometheus-graph-title">{{ graphData.title }}</h5>
