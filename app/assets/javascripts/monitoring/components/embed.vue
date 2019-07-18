@@ -28,20 +28,22 @@ export default {
   },
   computed: {
     ...mapState('monitoringDashboard', ['groups', 'metricsWithData']),
-    groupsWithData() {
-      return this.groups.filter(group => this.chartsWithData(group.metrics).length);
+    groupData() {
+      const groups = this.groups.filter(group => this.chartsWithData(group.metrics).length);
+      if (groups.length) {
+        return groups[0];
+      }
+      return null;
     },
   },
   mounted() {
     this.setInitialState();
-    this.$nextTick(() => {
-      sidebarMutationObserver = new MutationObserver(this.onSidebarMutation);
-      sidebarMutationObserver.observe(document.querySelector('.layout-page'), {
-        attributes: true,
-        childList: false,
-        subtree: false,
-      });
-      this.fetchMetricsData(this.params);
+    this.fetchMetricsData(this.params);
+    sidebarMutationObserver = new MutationObserver(this.onSidebarMutation);
+    sidebarMutationObserver.observe(document.querySelector('.layout-page'), {
+      attributes: true,
+      childList: false,
+      subtree: false,
     });
   },
   beforeDestroy() {
@@ -80,7 +82,7 @@ export default {
 </script>
 <template>
   <div class="metrics-embed">
-    <div v-for="(groupData, index) in groupsWithData" :key="index" class="row w-100 m-n2 pb-4">
+    <div v-if="groupData" class="row w-100 m-n2 pb-4">
       <monitor-area-chart
         v-for="(graphData, graphIndex) in chartsWithData(groupData.metrics)"
         :key="graphIndex"
