@@ -12,14 +12,13 @@ export default function renderMetrics(elements) {
     const { dashboardUrl } = element.dataset;
     const MetricsComponent = Vue.extend(Metrics);
 
-    const renderedComponent = new MetricsComponent({
+    // eslint-disable-next-line no-new
+    new MetricsComponent({
       el: element,
       store: createStore(),
       propsData: {
         dashboardUrl,
       },
     });
-
-    renderedComponent.$mount();
   });
 }
