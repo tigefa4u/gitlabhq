@@ -662,29 +662,15 @@ class Project < ApplicationRecord
   alias_method :lfs_enabled, :lfs_enabled?
 
   def auto_devops_enabled?
-    if auto_devops&.enabled.nil?
-      has_auto_devops_implicitly_enabled?
-    else
-      auto_devops.enabled?
-    end
+    Projects::AutoDevops::ConfigService.new(self).auto_devops_enabled?
   end
 
   def has_auto_devops_implicitly_enabled?
-    auto_devops_config = first_auto_devops_config
-
-    auto_devops_config[:scope] != :project && auto_devops_config[:status]
+    Projects::AutoDevops::ConfigService.new(self).has_auto_devops_implicitly_enabled?
   end
 
   def has_auto_devops_implicitly_disabled?
-    auto_devops_config = first_auto_devops_config
-
-    auto_devops_config[:scope] != :project && !auto_devops_config[:status]
-  end
-
-  def first_auto_devops_config
-    return namespace.first_auto_devops_config if auto_devops&.enabled.nil?
-
-    { scope: :project, status: auto_devops&.enabled || Feature.enabled?(:force_autodevops_on_by_default, self) }
+    Projects::AutoDevops::ConfigService.new(self).has_auto_devops_implicitly_disabled?
   end
 
   def daily_statistics_enabled?
@@ -1776,7 +1762,7 @@ class Project < ApplicationRecord
   end
 
   def has_ci?
-    repository.gitlab_ci_yml || auto_devops_enabled?
+    repository.gitlab_ci_yml || Projects::AutoDevops::ConfigService.new(self).auto_devops_enabled? # TODO
   end
 
   def predefined_variables
@@ -1863,7 +1849,7 @@ class Project < ApplicationRecord
   end
 
   def auto_devops_variables
-    return [] unless auto_devops_enabled?
+    return [] unless Projects::AutoDevops::ConfigService.new(self).auto_devops_enabled? # TODO
 
     (auto_devops || build_auto_devops)&.predefined_variables
   end
