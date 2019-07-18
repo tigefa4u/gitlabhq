@@ -5,24 +5,25 @@ import { TEST_HOST } from 'helpers/test_constants';
 const originalExtend = Vue.extend;
 
 describe('Render metrics for Gitlab Flavoured Markdown', () => {
-  const mockMount = jest.fn();
-  const mockMetrics = function Metrics() {
-    this.$mount = mockMount;
+  const container = {
+    Metrics() {},
   };
 
+  let spyExtend;
+
   beforeEach(() => {
-    Vue.extend = () => mockMetrics;
+    Vue.extend = () => container.Metrics;
+    spyExtend = jest.spyOn(Vue, 'extend');
   });
 
   afterEach(() => {
     Vue.extend = originalExtend;
-    mockMount.mockReset();
   });
 
   it('does nothing when no elements are found', () => {
     renderMetrics([]);
 
-    expect(mockMount).not.toHaveBeenCalled();
+    expect(spyExtend).not.toHaveBeenCalled();
   });
 
   it('renders a vue component when elements are found', () => {
@@ -31,6 +32,6 @@ describe('Render metrics for Gitlab Flavoured Markdown', () => {
 
     renderMetrics([element]);
 
-    expect(mockMount).toHaveBeenCalled();
+    expect(spyExtend).toHaveBeenCalled();
   });
 });
