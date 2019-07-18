@@ -241,7 +241,7 @@ export default {
 
 <template>
   <div class="col-12 col-lg-6" :class="{ 'p-2': showBorder }">
-    <div class="prometheus-graph" :class="showBorder ? 'prometheus-graph-embed w-100 p-3' : ''">
+    <div class="prometheus-graph" :class="{ 'prometheus-graph-embed w-100 p-3': showBorder }">
       <div class="prometheus-graph-header">
         <h5 ref="graphTitle" class="prometheus-graph-title">{{ graphData.title }}</h5>
         <div ref="graphWidgets" class="prometheus-graph-widgets"><slot></slot></div>
