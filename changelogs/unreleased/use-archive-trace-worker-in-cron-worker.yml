@@ -1,0 +1,6 @@
+---
+title: Fix ArchiveTracesCronWorker respawning in a short interval by sidekiq memory
+  killer
+merge_request: 30940
+author:
+type: fixed
