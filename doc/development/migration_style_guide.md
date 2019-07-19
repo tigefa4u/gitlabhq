@@ -1,17 +1,17 @@
 # Migration Style Guide
 
 When writing migrations for GitLab, you have to take into account that
-these will be ran by hundreds of thousands of organizations of all sizes, some with
+these will be run by hundreds of thousands of organizations of all sizes, some with
 many years of data in their database.
 
 In addition, having to take a server offline for an upgrade small or big is a
-big burden for most organizations. For this reason it is important that your
-migrations are written carefully, can be applied online and adhere to the style
+big burden for most organizations. For this reason, it is important that your
+migrations are written carefully, can be applied online, and adhere to the style
 guide below.
 
 Migrations are **not** allowed to require GitLab installations to be taken
 offline unless _absolutely necessary_. Downtime assumptions should be based on
-the behaviour of a migration when performed using PostgreSQL, as various
+the behavior of migration when performed using PostgreSQL, as various
 operations in MySQL may require downtime without there being alternatives.
 
 When downtime is necessary the migration has to be approved by:
@@ -87,7 +87,27 @@ be possible to downgrade in case of a vulnerability or bugs.
 In your migration, add a comment describing how the reversibility of the
 migration was tested.
 
-## Multi Threading
+## Atomicity
+
+When it is possible, your changes must be grouped into a single migration,
+or to as few migrations as possible. For example, if you create an empty table
+and need to build an index for it, it is recommended to have a single migration,
+*without* `disable_ddl_transaction!`. Of course, in this case, you have to use
+`add_index` (without `concurrently`), a blocking operation – it will not block
+anything because the target table is not yet used.
+
+Such an approach allows having fewer migration steps, which are atomic ("all or
+nothing").
+
+## No DDL and DML in a single transaction
+
+However, a single-transaction migration (that one without
+`disable_ddl_transaction!`) involving schema changes must not include any
+processing of significant (more than 1000 rows) data processing. If you need to
+insert, update, or delete something, you must not do it inside a transaction
+with DDL.
+
+## Multi-Threading
 
 Sometimes a migration might need to use multiple Ruby threads to speed up a
 migration. For this to work your migration needs to include the module
@@ -124,16 +144,17 @@ pool.  This ensures each thread has its own connection object, and won't time
 out when trying to obtain one.
 
 **NOTE:** PostgreSQL has a maximum amount of connections that it allows. This
-limit can vary from installation to installation. As a result it's recommended
-you do not use more than 32 threads in a single migration. Usually 4-8 threads
+limit can vary from installation to installation. As a result, it's recommended
+you do not use more than 32 threads in a single migration. Usually, 4-8 threads
 should be more than enough.
 
 ## Removing indexes
 
-When removing an index make sure to use the method `remove_concurrent_index` instead
+If the table is not empty when removing an index make sure to use the method
+`remove_concurrent_index` instead
 of the regular `remove_index` method. The `remove_concurrent_index` method
 automatically drops concurrent indexes when using PostgreSQL, removing the
-need for downtime. To use this method you must disable single-transaction mode
+need for downtime. To use this method, you must disable single-transaction mode
 by calling the method `disable_ddl_transaction!` in the body of your migration
 class like so:
 
@@ -151,17 +172,22 @@ end
 Note that it is not necessary to check if the index exists prior to
 removing it.
 
+For an empty table (such as a fresh one), it is recommended to use
+`remove_index` in a single-transaction migration, combining it with other
+operations that don't require `disable_ddl_transaction!`.
+
 ## Adding indexes
 
-If you need to add a unique index please keep in mind there is the possibility
+If you need to add a unique index, please keep in mind there is the possibility
 of existing duplicates being present in the database. This means that should
 always _first_ add a migration that removes any duplicates, before adding the
 unique index.
 
-When adding an index make sure to use the method `add_concurrent_index` instead
+When adding an index to a non-empty table make sure to use the method
+`add_concurrent_index` instead
 of the regular `add_index` method. The `add_concurrent_index` method
 automatically creates concurrent indexes when using PostgreSQL, removing the
-need for downtime. To use this method you must disable transactions by calling
+need for downtime. To use this method, you must disable transactions by calling
 the method `disable_ddl_transaction!` in the body of your migration class like
 so:
 
@@ -181,16 +207,20 @@ class MyMigration < ActiveRecord::Migration[4.2]
 end
 ```
 
+For an empty table (such as a fresh one), it is recommended to use
+`add_index` in a single-transaction migration, combining it with other
+operations that don't require `disable_ddl_transaction!`.
+
 ## Adding foreign-key constraints
 
-When adding a foreign-key constraint to either an existing or new
-column remember to also add a index on the column.
+When adding a foreign-key constraint to either an existing or a new column also
+remember to add an index on the column.
 
 This is **required** for all foreign-keys, e.g., to support efficient cascading
 deleting: when a lot of rows in a table get deleted, the referenced records need
 to be deleted too. The database has to look for corresponding records in the
 referenced table. Without an index, this will result in a sequential scan on the
-table which can take a long time.
+table, which can take a long time.
 
 Here's an example where we add a new column with a foreign key
 constraint. Note it includes `index: true` to create an index for it.
@@ -204,13 +234,17 @@ class Migration < ActiveRecord::Migration[4.2]
 end
 ```
 
-When adding a foreign-key constraint to an existing column, we
-have to employ `add_concurrent_foreign_key` and `add_concurrent_index`
+When adding a foreign-key constraint to an existing column in a non-empty table
+we have to employ `add_concurrent_foreign_key` and `add_concurrent_index`
 instead of `add_reference`.
+
+For an empty table (such as a fresh one), it is recommended to use
+`add_reference` in a single-transaction migration, combining it with other
+operations that don't require `disable_ddl_transaction!`.
 
 ## Adding Columns With Default Values
 
-When adding columns with default values you must use the method
+When adding columns with default values to non-empty tables, you must use
 `add_column_with_default`. This method ensures the table is updated without
 requiring downtime. This method is not reversible so you must manually define
 the `up` and `down` methods in your migration class.
@@ -234,10 +268,14 @@ end
 ```
 
 Keep in mind that this operation can easily take 10-15 minutes to complete on
-larger installations (e.g. GitLab.com). As a result you should only add default
-values if absolutely necessary. There is a RuboCop cop that will fail if this
-method is used on some tables that are very large on GitLab.com, which would
-cause other issues.
+larger installations (e.g., GitLab.com). As a result, you should only add
+default values if absolutely necessary. There is a RuboCop cop that will fail if
+this method is used on some tables that are very large on GitLab.com, which
+would cause other issues.
+
+For an empty table (such as a fresh one), it is recommended to use
+`add_column` + `change_column_default` in a single-transaction migration,
+combining it with other operations that don't require `disable_ddl_transaction!`.
 
 ## Updating an existing column
 
@@ -255,7 +293,7 @@ update_column_in_batches(:projects, :foo, 10) do |table, query|
 end
 ```
 
-To perform a computed update, the value can be wrapped in `Arel.sql`, so Arel
+If a computed update is needed, the value can be wrapped in `Arel.sql`, so Arel
 treats it as an SQL literal. The below example is the same as the one above, but
 the value is set to the product of the `bar` and `baz` columns:
 
@@ -277,7 +315,7 @@ staging environment - or asking someone else to do so for you - beforehand.
 
 By default, an integer column can hold up to a 4-byte (32-bit) number. That is
 a max value of 2,147,483,647. Be aware of this when creating a column that will
-hold file sizes in byte units. If you are tracking file size in bytes this
+hold file sizes in byte units. If you are tracking file size in bytes, this
 restricts the maximum file size to just over 2GB.
 
 To allow an integer column to hold up to an 8-byte (64-bit) number, explicitly
@@ -296,9 +334,11 @@ add_column(:projects, :foo, :integer, default: 10, limit: 8)
 
 ## Timestamp column type
 
-By default, Rails uses the `timestamp` data type that stores timestamp data without timezone information.
-The `timestamp` data type is used by calling either the `add_timestamps` or the `timestamps` method.
-Also Rails converts the `:datetime` data type to the `timestamp` one.
+By default, Rails uses the `timestamp` data type that stores timestamp data
+without timezone information. The `timestamp` data type is used by calling
+either the `add_timestamps` or the `timestamps` method.
+
+Also, Rails converts the `:datetime` data type to the `timestamp` one.
 
 Example:
 
@@ -319,14 +359,16 @@ def up
 end
 ```
 
-Instead of using these methods one should use the following methods to store timestamps with timezones:
+Instead of using these methods, one should use the following methods to store
+timestamps with timezones:
 
 - `add_timestamps_with_timezone`
 - `timestamps_with_timezone`
 
-This ensures all timestamps have a time zone specified. This in turn means existing timestamps won't
-suddenly use a different timezone when the system's timezone changes. It also makes it very clear which
-timezone was used in the first place.
+This ensures all timestamps have a time zone specified. This, in turn, means
+existing timestamps won't suddenly use a different timezone when the system's
+timezone changes. It also makes it very clear which timezone was used in the
+first place.
 
 ## Storing JSON in database
 
@@ -343,10 +385,11 @@ class AddOptionsToBuildMetadata < ActiveRecord::Migration[5.0]
 end
 ```
 
-On MySQL the `JSON` and `JSONB` is translated to `TEXT 1MB`, as `JSONB` is PostgreSQL only feature.
+On MySQL the `JSON` and `JSONB` is translated to `TEXT 1MB`, as `JSONB` is
+a PostgreSQL-only feature.
 
-For above reason you have to use a serializer to provide a translation layer
-in order to support PostgreSQL and MySQL seamlessly:
+For the above reason, you have to use a serializer to provide a translation
+layer in order to support PostgreSQL and MySQL seamlessly:
 
 ```ruby
 class BuildMetadata
@@ -364,7 +407,7 @@ Make sure your migration can be reversed.
 ## Data migration
 
 Please prefer Arel and plain SQL over usual ActiveRecord syntax. In case of
-using plain SQL you need to quote all input manually with `quote_string` helper.
+using plain SQL, you need to quote all input manually with `quote_string` helper.
 
 Example with Arel:
 
@@ -389,7 +432,7 @@ select_all("SELECT name, COUNT(id) as cnt FROM tags GROUP BY name HAVING COUNT(i
 end
 ```
 
-If you need more complex logic you can define and use models local to a
+If you need more complex logic, you can define and use models local to a
 migration. For example:
 
 ```ruby
@@ -400,13 +443,13 @@ class MyMigration < ActiveRecord::Migration[4.2]
 end
 ```
 
-When doing so be sure to explicitly set the model's table name so it's not
+When doing so be sure to explicitly set the model's table name, so it's not
 derived from the class name or namespace.
 
 ### Renaming reserved paths
 
-When a new route for projects is introduced that could conflict with any
-existing records. The path for this records should be renamed, and the
+When a new route for projects is introduced, that could conflict with any
+existing records. The path for these records should be renamed, and the
 related data should be moved on disk.
 
 Since we had to do this a few times already, there are now some helpers to help
