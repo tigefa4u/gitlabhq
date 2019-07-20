@@ -576,6 +576,12 @@ describe Gitlab::Database::MigrationHelpers do
   end
 
   describe '#add_column_with_default' do
+    let(:table_has_rows) { true }
+
+    before do
+      allow(model).to receive(:has_rows?).and_return(table_has_rows)
+    end
+
     context 'outside of a transaction' do
       context 'when a column limit is not set' do
         before do
@@ -675,13 +681,71 @@ describe Gitlab::Database::MigrationHelpers do
     end
 
     context 'inside a transaction' do
-      it 'raises RuntimeError' do
-        expect(model).to receive(:transaction_open?).and_return(true)
-
-        expect do
-          model.add_column_with_default(:projects, :foo, :integer, default: 10)
-        end.to raise_error(RuntimeError)
+      subject do
+        -> { model.add_column_with_default(:projects, :foo, :integer, default: 10) }
       end
+
+      context 'the table has rows' do
+        before do
+          expect(model).to receive(:transaction_open?).and_return(true)
+        end
+
+        it { is_expected.to raise_error(RuntimeError) }
+      end
+
+      context 'the table has no rows' do
+        let(:table_has_rows) { false }
+
+        it { is_expected.not_to raise_error(RuntimeError) }
+      end
+    end
+  end
+
+  describe '#has_rows?' do
+    let(:table_name) { :spec_has_rows_test }
+
+    before do
+      model.create_table(table_name) do |t|
+        t.integer :foo
+        t.text :bar
+      end
+    end
+
+    after do
+      model.drop_table table_name
+    end
+
+    subject { model.has_rows? table_name }
+
+    context 'there are no rows' do
+      it { is_expected.to be_falsey }
+    end
+
+    def insert_rows(*rows)
+      table = Arel::Table.new(table_name)
+      rows.each do |foo:, bar:|
+        stm = table.create_insert.insert([
+          [table[:foo], foo],
+          [table[:bar], bar]
+        ])
+        ActiveRecord::Base.connection.insert(stm.to_sql)
+      end
+    end
+
+    context 'there is one row' do
+      before do
+        insert_rows(foo: 1, bar: 'wibble')
+      end
+
+      it { is_expected.to be_truthy }
+    end
+
+    context 'there are several rows' do
+      before do
+        insert_rows(*(1..3).map { |i| { foo: i, bar: "wibble-#{i}" } })
+      end
+
+      it { is_expected.to be_truthy }
     end
   end
 

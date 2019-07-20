@@ -446,10 +446,22 @@ module Gitlab
       # This method can also take a block which is passed directly to the
       # `update_column_in_batches` method.
       def add_column_with_default(table, column, type, default:, limit: nil, allow_null: false, &block)
-        if transaction_open?
-          raise 'add_column_with_default can not be run inside a transaction, ' \
-            'you can disable transactions by calling disable_ddl_transaction! ' \
-            'in the body of your migration class'
+        has_rows = has_rows?(table)
+        if has_rows && transaction_open?
+          raise(<<~MSG.chomp)
+            `add_column_with_default` cannot be run inside a transaction,
+            unless the table is empty!
+
+            You can disable the "single transaction" mode by calling `disable_ddl_transaction!`
+            in the body of your migration class
+          MSG
+        end
+
+        # It is safe to add the column atomically here, since this table is empty
+        unless has_rows
+          opts = { default: default, null: allow_null, limit: limit }
+
+          return add_column(table, column, type, opts.reject { |_k, v| v.nil? })
         end
 
         disable_statement_timeout do
@@ -478,6 +490,13 @@ module Gitlab
             raise error
           end
         end
+      end
+
+      # Tests whether a table contains any data, without knowing anything about
+      # what kind of data that table is meant to hold.
+      def has_rows?(table_name)
+        q = Arel::Table.new(table_name).project(1).take(1)
+        ActiveRecord::Base.connection.exec_query(q.to_sql).present?
       end
 
       # Renames a column without requiring downtime.
