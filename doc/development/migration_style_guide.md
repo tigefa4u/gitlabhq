@@ -99,13 +99,13 @@ anything because the target table is not yet used.
 Such an approach allows having fewer migration steps, which are atomic ("all or
 nothing").
 
-## No DDL and DML in a single transaction
+## No schema changes and heavy operations in a single transaction
 
 However, a single-transaction migration (that one without
 `disable_ddl_transaction!`) involving schema changes must not include any
-processing of significant (more than 1000 rows) data processing. If you need to
-insert, update, or delete something, you must not do it inside a transaction
-with DDL.
+processing of significant (more than a few records rows) amounts of data.
+If you need to insert, update, or delete something, you must not do it inside
+a transaction with DDL.
 
 ## Multi-Threading
 
