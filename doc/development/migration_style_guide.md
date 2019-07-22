@@ -11,7 +11,7 @@ guide below.
 
 Migrations are **not** allowed to require GitLab installations to be taken
 offline unless _absolutely necessary_. Downtime assumptions should be based on
-the behavior of migration when performed using PostgreSQL, as various
+the behavior of the migration when performed using PostgreSQL, as various
 operations in MySQL may require downtime without there being alternatives.
 
 When downtime is necessary the migration has to be approved by:
