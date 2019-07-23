@@ -15,7 +15,7 @@ export default {
       required: true,
       default: () => [{ text: '', href: '' }],
     },
-    show: {
+    showAvatar: {
       type: Boolean,
       required: true,
       default: false,
@@ -31,7 +31,13 @@ export default {
 
 <template>
   <gl-breadcrumb :items="items" class="breadcrumbs">
-    <img v-show="show" slot="avatar" alt="avatar" class="breadcrumbs-avatar-tile" :src="imageSrc" />
+    <img
+      v-show="showAvatar"
+      slot="avatar"
+      alt="avatar"
+      class="breadcrumbs-avatar-tile"
+      :src="imageSrc"
+    />
     <icon slot="caret" name="angle-right" :size="8" />
   </gl-breadcrumb>
 </template>
