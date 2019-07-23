@@ -157,7 +157,8 @@ module Ci
       def finalize_fast_destroy(params)
         params.each do |project, artifact_files|
           delta = artifact_files.sum(&:size)
-          artifact_files.each(&:remove!)
+
+          Ci::DeleteStoredArtifactsWorker.perform_async(artifact_files)
 
           update_project_statistics!(project, :build_artifacts_size, -delta)
         end
