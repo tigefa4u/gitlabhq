@@ -17,7 +17,14 @@ GitLab's Markdown editor, which is used to create and edit issues, merge request
 Clicking on **Preview** in the top-left of the editor shows you exactly what your content would look like to others once published. Use this feature to preview media, verify the layout, and proofread your work.
 
 ### The Toolbar
-The toolbar at the top of the editor provides useful buttons for formatting text and inserting elements such as links, lists, tasks, and tables. Keep these functions handy in case you forget Markdown's syntax.
+The toolbar at the top of the editor provides useful buttons for formatting text and inserting elements such as:
+
+- links
+- lists
+- tasks
+- tables
+
+Using these buttons means you don't have to remember the matching Markdown syntax.
 
 ### Zen Mode
 Clicking the *Go full screen* button in the top-right of the editor enters a distraction-free, full-screen mode where you can focus exclusively on your Markdown.
