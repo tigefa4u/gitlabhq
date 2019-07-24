@@ -14735,16 +14735,16 @@ msgstr ""
 msgid "UserOnboardingTour|Thanks for taking the guided tour. Remember, if you want to go through it again, you can start %{emphasisStart}Learn GitLab%{emphasisEnd} in the help menu on the top right."
 msgstr ""
 
-msgid "UserOnboardingTour|That's it for issues. Let'st take a look at %{emphasisStart}Merge Requests%{emphasisEnd}."
+msgid "UserOnboardingTour|That's it for issues. Let's take a look at %{emphasisStart}Merge Requests%{emphasisEnd}."
 msgstr ""
 
-msgid "UserOnboardingTour|That's it for merge requests. Now for the finla part of this guided tour - the %{emphasisStart}CI/CD%{emphasisEnd}."
+msgid "UserOnboardingTour|That's it for merge requests. Now for the final part of this guided tour - the %{emphasisStart}CI/CD%{emphasisEnd}."
 msgstr ""
 
 msgid "UserOnboardingTour|That's it for the Repository. Let's take a look at the %{emphasisStart}Issues%{emphasisEnd}."
 msgstr ""
 
-msgid "UserOnboardingTour|The structure of this page is very similar to the onfe of issues. Status, description, discussion and the sidebar are all here.%{lineBreak}%{lineBreak}But take a look below the description and you'll notice that there's more information about the merge request, the CI/CD pipeline and the options for approving it.%{lineBreak}%{lineBreak}Below, alongside the discussion you can also see more information about commits in this merge request, the status of pipelines and review all changes that were made."
+msgid "UserOnboardingTour|The structure of this page is very similar to the one of issues. Status, description, discussion and the sidebar are all here.%{lineBreak}%{lineBreak}But take a look below the description and you'll notice that there's more information about the merge request, the CI/CD pipeline and the options for approving it.%{lineBreak}%{lineBreak}Below, alongside the discussion you can also see more information about commits in this merge request, the status of pipelines and review all changes that were made."
 msgstr ""
 
 msgid "UserOnboardingTour|There's a lot of information here but don't worry, we'll go through it.%{lineBreak}%{lineBreak}On the top you can see the status of the issue and when it was opened and by whom. Directly below it is the issue description and below that are other %{emphasisStart}related issues%{emphasisEnd} and %{emphasisStart}merge requests%{emphasisEnd} (if any). Then below that is the %{emphasisStart}discussion%{emphasisEnd}, that's where most of the communication happens.%{lineBreak}%{lineBreak}On the right, there's a sidebar where you can view/change the %{emphasisStart}assignee, milestone, due date, labels, weight%{emphasisEnd}, etc."
@@ -16840,4 +16840,3 @@ msgstr[1] "%d dakika içinde "
 
 msgid "yaml invalid"
 msgstr ""
-
