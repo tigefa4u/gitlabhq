@@ -51,7 +51,7 @@ Here's a list of the AWS services we will use, with links to pricing information
   [Amazon EBS pricing](https://aws.amazon.com/ebs/pricing/).
 - **S3**: We will use S3 to store backups, artifacts, LFS objects, etc. See the
   [Amazon S3 pricing](https://aws.amazon.com/s3/pricing/).
-- **ALB**: An Application Load Balancer will be used to route requests to the
+- **ELB**: A Classic Load Balancer will be used to route requests to the
   GitLab instance. See the [Amazon ELB pricing](https://aws.amazon.com/elasticloadbalancing/pricing/).
 - **RDS**: An Amazon Relational Database Service using PostgreSQL will be used
   to provide a High Availability database configuration. See the
@@ -317,20 +317,18 @@ and add a custom TCP rule for port `6379` accessible within itself.
 On the EC2 dashboard, look for Load Balancer on the left column:
 
 1. Click the **Create Load Balancer** button.
-   1. Choose the Application Load Balancer.
-   1. Give it a name (`gitlab-loadbalancer`) and set the scheme to "internet-facing".
+   1. Choose the Classic Load Balancer.
+   1. Give it a name (`gitlab-loadbalancer`).
    1. In the "Listeners" section, make sure it has HTTP and HTTPS.
-   1. In the "Availability Zones" section, select the `gitlab-vpc` we have created
+   1. In the "Create LB Inside" section, select the `gitlab-vpc` we have created
       and associate the **public subnets**.
-1. Click **Configure Security Settings** to go to the next section to
-   select the TLS certificate. When done, go to the next step.
 1. In the "Security Groups" section, create a new one by giving it a name
    (`gitlab-loadbalancer-sec-group`) and allow both HTTP ad HTTPS traffic
    from anywhere (`0.0.0.0/0, ::/0`).
-1. In the next step, configure the routing and select an existing target group
-   (`gitlab-public`). The Load Balancer Health will allow us to indicate where to
-   ping and what makes up a healthy or unhealthy instance.
-1. Leave the "Register Targets" section as is, and finally review the settings
+1. Click **Configure Security Settings** to go to the next section to
+   select the TLS certificate. When done, go to the next step.
+1. Click **Configure Health Check** to go to the next section. Use Ping Protocol: HTTP, and Ping Path "/explore"
+1. Click **Add EC2 Instances** Leave the "Register Targets" section as is, and finally review the settings
    and create the ELB.
 
 After the Load Balancer is up and running, you can revisit your Security
