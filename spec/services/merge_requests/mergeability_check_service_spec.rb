@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-describe MergeRequests::MergeabilityCheckService do
+describe MergeRequests::MergeabilityCheckService, :clean_gitlab_redis_shared_state do
   shared_examples_for 'unmergeable merge request' do
     it 'updates or keeps merge status as cannot_be_merged' do
       subject
@@ -66,18 +66,23 @@ describe MergeRequests::MergeabilityCheckService do
 
     it_behaves_like 'mergeable merge request'
 
-    context 'when multiple calls to the service' do
-      it 'returns success' do
-        subject
-        result = subject
+    context 'when concurrent calls' do
+      it 'succeeds through locking' do
+        threads = []
 
-        expect(result).to be_a(ServiceResponse)
-        expect(result.success?).to be(true)
-      end
+        3.times do
+          threads << Thread.new do
+            described_class.new(merge_request).execute
+          end
+        end
 
-      it 'second call does not change the merge-ref' do
-        expect { subject }.to change(merge_request, :merge_ref_head).from(nil)
-        expect { subject }.not_to change(merge_request.merge_ref_head, :id)
+        threads.each(&:join)
+
+        results = threads.map { |t| [t.value.status, t.value.message] }
+
+        expect(results).to contain_exactly([:error, 'Failed to obtain a lock'],
+                                           [:error, 'Failed to obtain a lock'],
+                                           [:success, nil])
       end
     end
 

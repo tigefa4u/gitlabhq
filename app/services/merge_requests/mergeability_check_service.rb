@@ -3,6 +3,9 @@
 module MergeRequests
   class MergeabilityCheckService < ::BaseService
     include Gitlab::Utils::StrongMemoize
+    include Gitlab::ExclusiveLeaseHelpers
+
+    LEASE_TIMEOUT = 1.minute
 
     delegate :project, to: :@merge_request
     delegate :repository, to: :project
@@ -28,6 +31,16 @@ module MergeRequests
       return ServiceResponse.error(message: 'Invalid argument') unless merge_request
       return ServiceResponse.error(message: 'Unsupported operation') if Gitlab::Database.read_only?
 
+      in_write_lock { check_mergeability(recheck) }
+    rescue FailedToObtainLockError => error
+      ServiceResponse.error(message: error.message)
+    end
+
+    private
+
+    attr_reader :merge_request
+
+    def check_mergeability(recheck)
       recheck! if recheck
       update_merge_status
 
@@ -46,9 +59,17 @@ module MergeRequests
       ServiceResponse.success(payload: payload)
     end
 
-    private
+    # It's possible for this service to send concurrent requests to Gitaly in order
+    # to "git update-ref" the same ref. Therefore we handle a light exclusive
+    # lease here.
+    #
+    def in_write_lock
+      lease_key = "mergeability_check:#{merge_request.id}"
 
-    attr_reader :merge_request
+      in_lock(lease_key, ttl: LEASE_TIMEOUT, retries: 0, sleep_sec: 0) do
+        yield
+      end
+    end
 
     def payload
       strong_memoize(:payload) do
