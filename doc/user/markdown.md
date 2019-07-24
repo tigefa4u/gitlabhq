@@ -27,7 +27,7 @@ The toolbar at the top of the editor provides useful buttons for formatting text
 Using these buttons means you don't have to remember the matching Markdown syntax.
 
 ### Zen Mode
-Clicking the *Go full screen* button in the top-right of the editor enters a distraction-free, full-screen mode where you can focus exclusively on your Markdown.
+Clicking the **Go full screen** button in the top-right of the editor enters a distraction-free, full-screen mode where you can focus exclusively on what you're writing.
 
 ### Indenting
 Most rich text editors allow you to indent code using <kbd>Tab</kbd> and <kbd>Shift Tab</kbd> In the GitLab Markdown editor, these shortcuts move focus to the next and previous input field, respectively (just like any other form). Instead, you can indent and unindent Markdown using <kbd>Control ]</kbd> and <kbd>Control [</kbd>, respectively (<kbd>&#8984; ]</kbd> and <kbd>&#8984; [</kbd> on Mac). If you have multiple lines selected, you can indent all lines at once, just like in an IDE.
