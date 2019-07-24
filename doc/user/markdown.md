@@ -14,7 +14,7 @@ NOTE: **Note:** We encourage you to view this document as [rendered by GitLab it
 GitLab's Markdown editor, which is used to create and edit issues, merge requests, or wiki pages (among other things), has several features that help you write Markdown better and faster.
 
 ### Previewing Your Work
-Clicking on *Preview* in the top-left of the editor shows you exactly what your content would look like to others once published. Use this feature to preview media, double-check the layout, and proofread your work.
+Clicking on **Preview** in the top-left of the editor shows you exactly what your content would look like to others once published. Use this feature to preview media, verify the layout, and proofread your work.
 
 ### The Toolbar
 The toolbar at the top of the editor provides useful buttons for formatting text and inserting elements such as links, lists, tasks, and tables. Keep these functions handy in case you forget Markdown's syntax.
