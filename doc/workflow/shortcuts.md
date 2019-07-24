@@ -99,6 +99,16 @@ You can see GitLab's keyboard shortcuts by using <kbd>shift</kbd> + <kbd>?</kbd>
 | ----------------- | ----------- |
 | <kbd>e</kbd> | Edit wiki page|
 
+## Markdown Editor
+
+| Keyboard Shortcut | Description |
+| ----------------- | ----------- |
+| <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>]</kbd> | Indent line/lines |
+| <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>[</kbd> | Unindent line/lines |
+| <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>z</kbd> | Undo |
+| <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>z</kbd> | Redo |
+
+
 ## Web IDE
 
 | Keyboard Shortcut | Description |
