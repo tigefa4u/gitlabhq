@@ -26,6 +26,10 @@ module QA
           element :import_github, "icon('github', text: 'GitHub')" # rubocop:disable QA/ElementWithPattern
         end
 
+        view 'app/views/shared/_visibility_radios.html.haml' do
+          element :visibility_checkbox, 'data: { qa_selector: "#{visibility_level_label(level).downcase}_visibility_checkbox"' # rubocop:disable QA/ElementWithPattern, Lint/InterpolationCheck
+        end
+
         def choose_test_namespace
           choose_namespace(Runtime::Namespace.path)
         end
@@ -59,7 +63,7 @@ module QA
         end
 
         def set_visibility(visibility)
-          choose visibility
+          click_element("#{visibility.downcase}_visibility_checkbox")
         end
 
         def click_github_link
