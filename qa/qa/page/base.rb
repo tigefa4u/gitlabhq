@@ -8,6 +8,7 @@ module QA
       prepend Support::Page::Logging if Runtime::Env.debug?
       include Capybara::DSL
       include Scenario::Actable
+      include Assertions
       extend Validatable
       extend SingleForwardable
 
@@ -67,6 +68,10 @@ module QA
         end
 
         page.evaluate_script('xhr.status') == 200
+      end
+
+      def element_text(name)
+        find_element(name).text
       end
 
       def find_element(name, **kwargs)

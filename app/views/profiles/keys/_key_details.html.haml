@@ -19,7 +19,7 @@
     = form_errors(@key, type: 'key') unless @key.valid?
     %p
       %span.light= _('Fingerprint:')
-      %code.key-fingerprint= @key.fingerprint
+      %code.key-fingerprint{ data: { qa_selector: 'key_fingerprint_code' }}= @key.fingerprint
     %pre.well-pre
       = @key.key
   .col-md-12

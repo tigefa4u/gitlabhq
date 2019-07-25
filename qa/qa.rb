@@ -126,6 +126,7 @@ module QA
   # Needed to execute click-driven-only black-box tests.
   #
   module Page
+    autoload :Assertions, 'qa/page/assertions'
     autoload :Base, 'qa/page/base'
     autoload :View, 'qa/page/view'
     autoload :Element, 'qa/page/element'
@@ -268,6 +269,7 @@ module QA
       autoload :Menu, 'qa/page/profile/menu'
       autoload :PersonalAccessTokens, 'qa/page/profile/personal_access_tokens'
       autoload :SSHKeys, 'qa/page/profile/ssh_keys'
+      autoload :SSHKey, 'qa/page/profile/ssh_key'
     end
 
     module Issuable

@@ -8,12 +8,27 @@ module QA
 
       let(:key_title) { "key for ssh tests #{Time.now.to_f}" }
 
+      after do
+        Page::Main::Menu.perform(&:click_settings_link)
+        Page::Profile::Menu.perform(&:click_ssh_keys)
+
+        Page::Profile::SSHKeys.perform do |ssh_keys|
+          ssh_keys.remove_key(key_title)
+
+          ssh_keys.assert_no_content(key_title)
+        end
+      end
+
       it 'user adds an ssh key and pushes code to the repository' do
         Runtime::Browser.visit(:gitlab, Page::Main::Login)
         Page::Main::Login.perform(&:sign_in_using_credentials)
 
         key = Resource::SSHKey.fabricate! do |resource|
           resource.title = key_title
+        end
+
+        Page::Profile::SSHKey.perform do |sshkey|
+          expect(sshkey.fingerprint).to eq(key.fingerprint)
         end
 
         project_push = Resource::Repository::ProjectPush.fabricate! do |push|
@@ -27,13 +42,6 @@ module QA
 
         expect(page).to have_content('README.md')
         expect(page).to have_content('Test Use SSH Key')
-
-        Page::Main::Menu.perform(&:click_settings_link)
-        Page::Profile::Menu.perform(&:click_ssh_keys)
-
-        Page::Profile::SSHKeys.perform do |ssh_keys|
-          ssh_keys.remove_key(key_title)
-        end
       end
     end
   end
