@@ -13,7 +13,7 @@ function git_config_user() {
 # In the global git ignore file specify that all directories (and files) in the
 # root named "ee" cannot get commited
 function git_config_exclude() {
-  echo "ee/*" >> /tmp/ignore
+  echo "/ee/*" >> /tmp/ignore
   git config --global --add core.excludesFile '/tmp/ignore'
 }
 
