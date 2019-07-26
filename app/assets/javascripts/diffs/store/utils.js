@@ -197,12 +197,22 @@ export function trimFirstCharOfLineContent(line = {}) {
   return parsedLine;
 }
 
+function getLineCode({ left, right }, index) {
+  if (left && left.line_code) {
+    return left.line_code;
+  } else if (right && right.line_code) {
+    return right.line_code;
+  }
+  return index;
+}
+
 export function parallelizeDiffLines(highlightedDiffLines = []) {
   let i = 0;
   const lines = [];
   let freeRightIndex = null;
 
-  highlightedDiffLines.forEach(line => {
+  highlightedDiffLines.forEach((line, index) => {
+    line.line_code = getLineCode(line, index);
     if (line.removed) {
       lines.push({
         left: line,
