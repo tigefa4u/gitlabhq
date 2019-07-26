@@ -31,7 +31,11 @@ module MergeRequests
       return ServiceResponse.error(message: 'Invalid argument') unless merge_request
       return ServiceResponse.error(message: 'Unsupported operation') if Gitlab::Database.read_only?
 
-      in_write_lock { check_mergeability(recheck) }
+      if merge_ref_auto_sync_lock_enabled?
+        in_write_lock { check_mergeability(recheck) }
+      else
+        check_mergeability(recheck)
+      end
     rescue FailedToObtainLockError => error
       ServiceResponse.error(message: error.message)
     end
@@ -136,6 +140,10 @@ module MergeRequests
 
     def merge_ref_auto_sync_enabled?
       Feature.enabled?(:merge_ref_auto_sync, project, default_enabled: true)
+    end
+
+    def merge_ref_auto_sync_lock_enabled?
+      Feature.enabled?(:merge_ref_auto_sync_lock, project, default_enabled: true)
     end
   end
 end
