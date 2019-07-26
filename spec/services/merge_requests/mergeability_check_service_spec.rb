@@ -67,6 +67,10 @@ describe MergeRequests::MergeabilityCheckService, :clean_gitlab_redis_shared_sta
     it_behaves_like 'mergeable merge request'
 
     context 'when concurrent calls' do
+      let!(:logger_spy) do
+        stub_logger(Gitlab::MergeRequestsServiceLogger)
+      end
+
       it 'succeeds through locking' do
         threads = []
 
@@ -83,6 +87,10 @@ describe MergeRequests::MergeabilityCheckService, :clean_gitlab_redis_shared_sta
         expect(results).to contain_exactly([:error, 'Failed to obtain a lock'],
                                            [:error, 'Failed to obtain a lock'],
                                            [:success, nil])
+
+        expect(logger_spy).to have_received(:error)
+          .with(message: 'Failed to obtain a lock', merge_request_id: merge_request.id)
+          .twice
       end
     end
 

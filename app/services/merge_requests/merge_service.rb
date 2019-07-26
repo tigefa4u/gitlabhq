@@ -61,11 +61,11 @@ module MergeRequests
     end
 
     def commit
-      log_info("Git merge started on JID #{merge_jid}")
+      log_info("Git merge started", merge_jid: merge_jid)
       commit_id = try_merge
 
       if commit_id
-        log_info("Git merge finished on JID #{merge_jid} commit #{commit_id}")
+        log_info("Git merge finished", merge_jid: merge_jid, commit_id: commit_id)
       else
         raise_error('Conflicts detected during merge')
       end
@@ -86,9 +86,9 @@ module MergeRequests
     end
 
     def after_merge
-      log_info("Post merge started on JID #{merge_jid} with state #{state}")
+      log_info("Post merge started", merge_jid: merge_jid, state: state)
       MergeRequests::PostMergeService.new(project, current_user).execute(merge_request)
-      log_info("Post merge finished on JID #{merge_jid} with state #{state}")
+      log_info("Post merge finished", merge_jid: merge_jid, state: state)
 
       if delete_source_branch?
         DeleteBranchService.new(@merge_request.source_project, branch_deletion_user)
@@ -113,13 +113,24 @@ module MergeRequests
     end
 
     def handle_merge_error(log_message:, save_message_on_model: false)
-      Rails.logger.error("MergeService ERROR: #{merge_request_info} - #{log_message}") # rubocop:disable Gitlab/RailsLogger
+      log_error("MergeService ERROR #{log_message}")
       @merge_request.update(merge_error: log_message) if save_message_on_model
     end
 
-    def log_info(message)
-      @logger ||= Rails.logger # rubocop:disable Gitlab/RailsLogger
-      @logger.info("#{merge_request_info} - #{message}")
+    override :log_info
+    def log_info(message, params = {})
+      super(message, log_params.merge(params))
+    end
+
+    override :log_error
+    def log_error(message, params = {})
+      super(message, log_params.merge(params))
+    end
+
+    def log_params
+      {
+        reference: merge_request_info
+      }
     end
 
     def merge_request_info

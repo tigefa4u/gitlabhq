@@ -2,6 +2,8 @@
 
 module MergeRequests
   class BaseService < ::IssuableBaseService
+    extend ::Gitlab::Utils::Override
+
     def create_note(merge_request, state = merge_request.state)
       SystemNoteService.change_status(merge_request, merge_request.target_project, current_user, state, nil)
     end
@@ -30,6 +32,20 @@ module MergeRequests
     end
 
     private
+
+    override :log_info
+    def log_info(message, params = {})
+      logger.info(params.merge(message: message))
+    end
+
+    override :log_error
+    def log_error(message, params = {})
+      logger.error(params.merge(message: message))
+    end
+
+    def logger
+      @logger ||= Gitlab::MergeRequestsServiceLogger.build
+    end
 
     def handle_wip_event(merge_request)
       if wip_event = params.delete(:wip_event)

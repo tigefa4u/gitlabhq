@@ -308,6 +308,21 @@ GraphQL queries are recorded in that file. For example:
 {"query_string":"query IntrospectionQuery{__schema {queryType { name },mutationType { name }}}...(etc)","variables":{"a":1,"b":2},"complexity":181,"depth":1,"duration":7}
 ```
 
+## `merge_requests_service_json.log`
+
+Introduced in GitLab 12.1. This file lives in `/var/log/gitlab/gitlab-rails/merge_requests_service_json.log` for
+Omnibus GitLab packages or in `/home/git/gitlab/log/merge_requests_service_json.log` for
+installations from source.
+
+It logs merge request operations such as merge and mergeability checks.
+
+```
+{"severity":"ERROR","time":"2019-07-26T18:45:12.319Z","correlation_id":null,"merge_request_id":1,"message":"Failed to obtain a lock"}
+{"severity":"ERROR","time":"2019-07-26T18:45:12.319Z","correlation_id":null,"merge_request_id":1,"message":"Failed to obtain a lock"}
+{"severity":"INFO","time":"2019-07-26T18:56:34.071Z","correlation_id":null,"merge_jid":null,"reference":"namespace1/project1!1","message":"Git merge started"}
+{"severity":"INFO","time":"2019-07-26T18:56:34.103Z","correlation_id":null,"merge_jid":null,"commit_id":"14305ceac4f73d55e750a08b7886e0229d324571","reference":"namespace1/project1!1","message":"Git merge finished"}
+```
+
 ## Reconfigure Logs
 
 Reconfigure log files live in `/var/log/gitlab/reconfigure` for Omnibus GitLab

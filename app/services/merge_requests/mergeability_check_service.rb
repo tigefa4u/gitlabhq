@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module MergeRequests
-  class MergeabilityCheckService < ::BaseService
+  class MergeabilityCheckService < ::MergeRequests::BaseService
     include Gitlab::Utils::StrongMemoize
     include Gitlab::ExclusiveLeaseHelpers
 
@@ -37,6 +37,7 @@ module MergeRequests
         check_mergeability(recheck)
       end
     rescue FailedToObtainLockError => error
+      log_error(error.message, merge_request_id: merge_request.id)
       ServiceResponse.error(message: error.message)
     end
 

@@ -21,11 +21,11 @@ class BaseService
     TodoService.new
   end
 
-  def log_info(message)
+  def log_info(message, _params = {})
     Gitlab::AppLogger.info message
   end
 
-  def log_error(message)
+  def log_error(message, _params = {})
     Gitlab::AppLogger.error message
   end
 
