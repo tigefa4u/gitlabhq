@@ -1,0 +1,5 @@
+---
+title: Filter the default metrics dashboard to only the expected metrics
+merge_request: 31186
+author:
+type: fixed
