@@ -17,6 +17,23 @@ describe Gitlab::Metrics::Dashboard::Processor do
       end
     end
 
+    context 'when the dashboard has unavailable metrics' do
+      let(:dashboard_yml) { YAML.load_file(Rails.root.join('config', 'prometheus', 'common_metrics.yml')) }
+      let(:available_group) { PrometheusMetricEnums.group_details[:nginx_ingress_vts] }
+      let(:available_metrics) { available_group[:required_metrics] }
+      let(:client) { double(label_values: available_metrics) }
+      let(:adapter) { double(can_query?: true, prometheus_client_wrapper: client) }
+
+      before do
+        allow(environment).to receive(:prometheus_adapter).and_return(adapter)
+      end
+
+      it 'removes groups for which metrics are unavailable' do
+        expect(dashboard[:panel_groups].length).to eq 1
+        expect(dashboard[:panel_groups].first[:group]).to eq available_group[:group_title]
+      end
+    end
+
     context 'when dashboard config corresponds to common metrics' do
       let!(:common_metric) { create(:prometheus_metric, :common, identifier: 'metric_a1') }
 

@@ -9,6 +9,7 @@ module Gitlab
       # info, and alerts (only in EE).
       class Processor
         SYSTEM_SEQUENCE = [
+          Stages::AvailableMetricsFilter,
           Stages::CommonMetricsInserter,
           Stages::ProjectMetricsInserter,
           Stages::EndpointInserter,
