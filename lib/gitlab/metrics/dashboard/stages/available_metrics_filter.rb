@@ -58,7 +58,7 @@ module Gitlab
           # to cache this info and poll the metrics dashboard
           # endpoint or maybe place the whole thing in a job.
           #
-          # TODO: INSERT A LINK TO AN ISSUE HERE
+          # TODO: https://gitlab.com/gitlab-org/gitlab-ce/issues/64983
           def available_metrics
             strong_memoize(:available_metrics) do
               adapter = environment.prometheus_adapter
