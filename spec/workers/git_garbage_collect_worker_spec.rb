@@ -1,8 +1,12 @@
+# frozen_string_literal: true
+
 require 'fileutils'
 
 require 'spec_helper'
 
 describe GitGarbageCollectWorker do
+  include GitHelpers
+
   let(:project) { create(:project, :repository) }
   let(:shell) { Gitlab::Shell.new }
   let!(:lease_uuid) { SecureRandom.uuid }
@@ -69,6 +73,17 @@ describe GitGarbageCollectWorker do
 
           subject.perform(project.id)
         end
+
+        context 'when the repository has joined a pool' do
+          let!(:pool) { create(:pool_repository, :ready) }
+          let(:project) { pool.source_project }
+
+          it 'ensures the repositories are linked' do
+            expect_any_instance_of(PoolRepository).to receive(:link_repository).once
+
+            subject.perform(project.id)
+          end
+        end
       end
 
       context 'when no lease can be obtained' do
@@ -97,6 +112,19 @@ describe GitGarbageCollectWorker do
           .and_return(nil)
 
         subject.perform(project.id, :full_repack, lease_key, lease_uuid)
+      end
+    end
+
+    context "pack_refs" do
+      before do
+        expect(subject).to receive(:get_lease_uuid).and_return(lease_uuid)
+      end
+
+      it "calls Gitaly" do
+        expect_any_instance_of(Gitlab::GitalyClient::RefService).to receive(:pack_refs)
+          .and_return(nil)
+
+        subject.perform(project.id, :pack_refs, lease_key, lease_uuid)
       end
     end
 
@@ -197,9 +225,7 @@ describe GitGarbageCollectWorker do
 
   # Create a new commit on a random new branch
   def create_objects(project)
-    rugged = Gitlab::GitalyClient::StorageSettings.allow_disk_access do
-      project.repository.rugged
-    end
+    rugged = rugged_repo(project.repository)
     old_commit = rugged.branches.first.target
     new_commit_sha = Rugged::Commit.create(
       rugged,

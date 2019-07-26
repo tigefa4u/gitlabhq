@@ -44,6 +44,36 @@ describe ExtractsPath do
       end
     end
 
+    context 'ref contains trailing space' do
+      let(:ref) { 'master ' }
+
+      it 'strips surrounding space' do
+        assign_ref_vars
+
+        expect(@ref).to eq('master')
+      end
+    end
+
+    context 'ref contains leading space' do
+      let(:ref) { ' master ' }
+
+      it 'strips surrounding space' do
+        assign_ref_vars
+
+        expect(@ref).to eq('master')
+      end
+    end
+
+    context 'ref contains space in the middle' do
+      let(:ref) { 'master plan ' }
+
+      it 'returns 404' do
+        expect(self).to receive(:render_404)
+
+        assign_ref_vars
+      end
+    end
+
     context 'path contains space' do
       let(:params) { { path: 'with space', ref: '38008cb17ce1466d8fec2dfa6f6ab8dcfe5cf49e' } }
 
@@ -205,28 +235,18 @@ describe ExtractsPath do
   end
 
   describe '#lfs_blob_ids' do
-    shared_examples '#lfs_blob_ids' do
-      let(:tag) { @project.repository.add_tag(@project.owner, 'my-annotated-tag', 'master', 'test tag') }
-      let(:ref) { tag.target }
-      let(:params) { { ref: ref, path: 'README.md' } }
+    let(:tag) { @project.repository.add_tag(@project.owner, 'my-annotated-tag', 'master', 'test tag') }
+    let(:ref) { tag.target }
+    let(:params) { { ref: ref, path: 'README.md' } }
 
-      before do
-        @project = create(:project, :repository)
-      end
-
-      it 'handles annotated tags' do
-        assign_ref_vars
-
-        expect(lfs_blob_ids).to eq([])
-      end
+    before do
+      @project = create(:project, :repository)
     end
 
-    context 'when gitaly is enabled' do
-      it_behaves_like '#lfs_blob_ids'
-    end
+    it 'handles annotated tags' do
+      assign_ref_vars
 
-    context 'when gitaly is disabled', :skip_gitaly_mock do
-      it_behaves_like '#lfs_blob_ids'
+      expect(lfs_blob_ids).to eq([])
     end
   end
 end

@@ -88,9 +88,11 @@ Definitions
 
 GitLab means GitLab Inc. and its affiliates and subsidiaries.
 
-## Requesting Approval for Licenses
+## Requesting Approval for Licenses or any other Intellectual Property
 
-Libraries that are not listed in the [Acceptable Licenses][Acceptable-Licenses] or [Unacceptable Licenses][Unacceptable-Licenses] list can be submitted to the legal team for review. Please email `legal@gitlab.com` with the details. After a decision has been made, the original requestor is responsible for updating this document.
+Libraries that are not already approved and listed on the [Acceptable Licenses][Acceptable-Licenses] list or that may be listed on the [Unacceptable Licenses][Unacceptable-Licenses] list may be submitted to the legal team for review and use on a case-by-case basis. Please email `legal@gitlab.com` with the details of how the software will be used, whether or not it will be modified, and how it will be distributed (if at all). After a decision has been made, the original requestor is responsible for updating this document, if applicable. Not all approvals will be approved for universal use and may continue to remain on the Unacceptable License list.
+
+All inquiries relating to patents should be directed to the Legal team.
 
 ## Notes
 
@@ -100,7 +102,7 @@ If a gem uses a license which is not listed above, open an issue and ask. If a l
 
 Keep in mind that each license has its own restrictions (typically defined in their body text). Please make sure to comply with those restrictions at all times whenever an external library is used.
 
-Gems which are included only in the "development" or "test" groups by Bundler are exempt from license requirements, as they're not distributed for use in production.
+Dependencies which are only used in development or test environment are exempt from license requirements, as they're not distributed for use in production.
 
 **NOTE:** This document is **not** legal advice, nor is it comprehensive. It should not be taken as such.
 

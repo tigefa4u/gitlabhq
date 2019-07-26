@@ -5,7 +5,7 @@ import Icon from '~/vue_shared/components/icon.vue';
 import DeprecatedModal from '~/vue_shared/components/deprecated_modal.vue';
 import CommitFilesList from './commit_sidebar/list.vue';
 import EmptyState from './commit_sidebar/empty_state.vue';
-import * as consts from '../stores/modules/commit/constants';
+import consts from '../stores/modules/commit/constants';
 import { activityBarViews, stageKeys } from '../constants';
 
 export default {
@@ -27,10 +27,10 @@ export default {
       'unusedSeal',
     ]),
     ...mapState('commit', ['commitMessage', 'submitCommitLoading']),
-    ...mapGetters(['lastOpenedFile', 'hasChanges', 'someUncommitedChanges', 'activeFile']),
+    ...mapGetters(['lastOpenedFile', 'hasChanges', 'someUncommittedChanges', 'activeFile']),
     ...mapGetters('commit', ['discardDraftButtonDisabled']),
     showStageUnstageArea() {
-      return !!(this.someUncommitedChanges || this.lastCommitMsg || !this.unusedSeal);
+      return Boolean(this.someUncommittedChanges || this.lastCommitMsg || !this.unusedSeal);
     },
     activeFileKey() {
       return this.activeFile ? this.activeFile.key : null;
@@ -71,9 +71,7 @@ export default {
 </script>
 
 <template>
-  <div
-    class="multi-file-commit-panel-section"
-  >
+  <div class="multi-file-commit-panel-section">
     <deprecated-modal
       id="ide-create-branch-modal"
       :primary-button-label="__('Create new branch')"
@@ -82,21 +80,22 @@ export default {
       @submit="forceCreateNewBranch"
     >
       <template slot="body">
-        {{ __(`This branch has changed since you started editing.
-          Would you like to create a new branch?`) }}
+        {{
+          __(`This branch has changed since you started editing.
+          Would you like to create a new branch?`)
+        }}
       </template>
     </deprecated-modal>
-    <template
-      v-if="showStageUnstageArea"
-    >
+    <template v-if="showStageUnstageArea">
       <commit-files-list
         :title="__('Unstaged')"
         :key-prefix="$options.stageKeys.unstaged"
         :file-list="changedFiles"
         :action-btn-text="__('Stage all changes')"
         :active-file-key="activeFileKey"
+        :empty-state-text="__('There are no unstaged changes')"
         action="stageAllChanges"
-        action-btn-icon="mobile-issue-close"
+        action-btn-icon="stage-all"
         item-action-component="stage-button"
         class="is-first"
         icon-name="unstaged"
@@ -108,14 +107,13 @@ export default {
         :action-btn-text="__('Unstage all changes')"
         :staged-list="true"
         :active-file-key="activeFileKey"
+        :empty-state-text="__('There are no staged changes')"
         action="unstageAllChanges"
-        action-btn-icon="history"
+        action-btn-icon="unstage-all"
         item-action-component="unstage-button"
         icon-name="staged"
       />
     </template>
-    <empty-state
-      v-if="unusedSeal"
-    />
+    <empty-state v-if="unusedSeal" />
   </div>
 </template>

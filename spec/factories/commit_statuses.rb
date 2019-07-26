@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :commit_status, class: CommitStatus do
     name 'default'
@@ -33,12 +35,20 @@ FactoryBot.define do
       status 'pending'
     end
 
+    trait :preparing do
+      status 'preparing'
+    end
+
     trait :created do
       status 'created'
     end
 
     trait :manual do
       status 'manual'
+    end
+
+    trait :scheduled do
+      status 'scheduled'
     end
 
     after(:build) do |build, evaluator|

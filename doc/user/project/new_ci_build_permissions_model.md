@@ -6,8 +6,6 @@ GitLab 8.12 has a completely redesigned [job permissions] system. You can find
 all discussion and all our concerns when choosing the current approach in issue
 [#18994](https://gitlab.com/gitlab-org/gitlab-ce/issues/18994).
 
----
-
 Jobs permissions should be tightly integrated with the permissions of a user
 who is triggering a job.
 
@@ -28,10 +26,10 @@ The reasons to do it like that are:
   and maximizing security.
 
 With the new behavior, any job that is triggered by the user, is also marked
-with their permissions. When a user does a `git push` or changes files through
+with their read permissions. When a user does a `git push` or changes files through
 the web UI, a new pipeline will be usually created. This pipeline will be marked
 as created be the pusher (local push or via the UI) and any job created in this
-pipeline will have the permissions of the pusher.
+pipeline will have the read permissions of the pusher but not write permissions.
 
 This allows us to make it really easy to evaluate the access for all projects
 that have [Git submodules][gitsub] or are using container images that the pusher
@@ -44,14 +42,14 @@ It is important to note that we have a few types of users:
 
 - **Administrators**: CI jobs created by Administrators will not have access
   to all GitLab projects, but only to projects and container images of projects
-  that the administrator is a member of.That means that if a project is either
+  that the administrator is a member of. That means that if a project is either
   public or internal users have access anyway, but if a project is private, the
   Administrator will have to be a member of it in order to have access to it
   via another project's job.
 
-- **External users**: CI jobs created by [external users][ext] will have
+- **External users**: CI jobs created by [external users](../permissions.md#external-users-permissions) will have
   access only to projects to which user has at least reporter access. This
-  rules out accessing all internal projects by default,
+  rules out accessing all internal projects by default.
 
 This allows us to make the CI and permission system more trustworthy.
 Let's consider the following scenario:
@@ -60,16 +58,17 @@ Let's consider the following scenario:
    hosted in private repositories and you have multiple CI jobs that make use
    of these repositories.
 
-2. You invite a new [external user][ext]. CI jobs created by that user do not
+1. You invite a new [external user](../permissions.md#external-users-permissions). CI jobs created by that user do not
    have access to internal repositories, because the user also doesn't have the
    access from within GitLab. You as an employee have to grant explicit access
    for this user. This allows us to prevent from accidental data leakage.
 
 ## Job token
 
-A unique job token is generated for each job and it allows the user to
+A unique job token is generated for each job and provides the user read
 access all projects that would be normally accessible to the user creating that
-job.
+job. The unique job token does not have any write permissions, but there
+is a [proposal to add support](https://gitlab.com/gitlab-org/gitlab-ce/issues/18106).
 
 We try to make sure that this token doesn't leak by:
 
@@ -106,8 +105,6 @@ It could be used for registering new specific Runners assigned to the project
 and to checkout project sources.
 It could also be used with the GitLab Container Registry for that project,
 allowing pulling and pushing Docker images from within the CI job.
-
----
 
 GitLab would create a special checkout URL like:
 
@@ -184,7 +181,7 @@ The [Job environment variable][jobenv] `CI_JOB_TOKEN` can be used to
 authenticate any clones of dependent repositories. For example:
 
 ```
-git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/myuser/mydependentrepo
+git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/<user>/<mydependentrepo>.git
 ```
 
 It can also be used for system-wide authentication
@@ -205,16 +202,17 @@ With the update permission model we also extended the support for accessing
 Container Registries for private projects.
 
 > **Notes:**
-- GitLab Runner versions prior to 1.8 don't incorporate the introduced changes
-  for permissions. This makes the `image:` directive to not work with private
-  projects automatically and it needs to be configured manually on Runner's host
-  with a predefined account (for example administrator's personal account with
-  access token created explicitly for this purpose). This issue is resolved with
-  latest changes in GitLab Runner 1.8 which receives GitLab credentials with
-  build data.
-- Starting from GitLab 8.12, if you have [2FA] enabled in your account, you need
-  to pass a [personal access token][pat] instead of your password in order to
-  login to GitLab's Container Registry.
+>
+> - GitLab Runner versions prior to 1.8 don't incorporate the introduced changes
+>   for permissions. This makes the `image:` directive to not work with private
+>   projects automatically and it needs to be configured manually on Runner's host
+>   with a predefined account (for example administrator's personal account with
+>   access token created explicitly for this purpose). This issue is resolved with
+>   latest changes in GitLab Runner 1.8 which receives GitLab credentials with
+>   build data.
+> - Starting from GitLab 8.12, if you have [2FA] enabled in your account, you need
+>   to pass a [personal access token][pat] instead of your password in order to
+>   login to GitLab's Container Registry.
 
 Your jobs can access all container images that you would normally have access
 to. The only implication is that you can push to the Container Registry of the
@@ -232,12 +230,11 @@ test:
 
 [job permissions]: ../permissions.md#job-permissions
 [comment]: https://gitlab.com/gitlab-org/gitlab-ce/issues/22484#note_16648302
-[ext]: ../permissions.md#external-users
 [gitsub]: ../../ci/git_submodules.md
 [https]: ../admin_area/settings/visibility_and_access_controls.md#enabled-git-access-protocols
 [triggers]: ../../ci/triggers/README.md
 [update-docs]: https://gitlab.com/gitlab-org/gitlab-ce/tree/master/doc/update
 [workhorse]: https://gitlab.com/gitlab-org/gitlab-workhorse
-[jobenv]: ../../ci/variables/README.md#predefined-variables-environment-variables
+[jobenv]: ../../ci/variables/README.md#predefined-environment-variables
 [2fa]: ../profile/account/two_factor_authentication.md
 [pat]: ../profile/personal_access_tokens.md

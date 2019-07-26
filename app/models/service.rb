@@ -2,9 +2,11 @@
 
 # To add new service you should build a class inherited from Service
 # and implement a set of methods
-class Service < ActiveRecord::Base
+class Service < ApplicationRecord
   include Sortable
   include Importable
+  include ProjectServicesLoggable
+  include DataFields
 
   serialize :properties, JSON # rubocop:disable Cop/ActiveRecordSerialize
 
@@ -49,6 +51,7 @@ class Service < ActiveRecord::Base
   scope :job_hooks, -> { where(job_events: true, active: true) }
   scope :pipeline_hooks, -> { where(pipeline_events: true, active: true) }
   scope :wiki_page_hooks, -> { where(wiki_page_events: true, active: true) }
+  scope :deployment_hooks, -> { where(deployment_events: true, active: true) }
   scope :external_issue_trackers, -> { issue_trackers.active.without_defaults }
   scope :deployment, -> { where(category: 'deployment') }
 
@@ -117,7 +120,7 @@ class Service < ActiveRecord::Base
   end
 
   def self.event_names
-    self.supported_events.map { |event| "#{event}_events" }
+    self.supported_events.map { |event| ServicesHelper.service_event_field_name(event) }
   end
 
   def event_field(event)
@@ -126,7 +129,7 @@ class Service < ActiveRecord::Base
 
   def api_field_names
     fields.map { |field| field[:name] }
-      .reject { |field_name| field_name =~ /(password|token|key)/ }
+      .reject { |field_name| field_name =~ /(password|token|key|title|description)/ }
   end
 
   def global_fields
@@ -149,7 +152,7 @@ class Service < ActiveRecord::Base
   end
 
   def self.supported_events
-    %w(push tag_push issue confidential_issue merge_request wiki_page)
+    %w(commit push tag_push issue confidential_issue merge_request wiki_page)
   end
 
   def execute(data)
@@ -209,11 +212,7 @@ class Service < ActiveRecord::Base
       class_eval %{
         def #{arg}?
           # '!!' is used because nil or empty string is converted to nil
-          if Gitlab.rails5?
-            !!ActiveRecord::Type::Boolean.new.cast(#{arg})
-          else
-            !!ActiveRecord::Type::Boolean.new.type_cast_from_database(#{arg})
-          end
+          !!ActiveRecord::Type::Boolean.new.cast(#{arg})
         end
       }
     end
@@ -252,6 +251,7 @@ class Service < ActiveRecord::Base
       bugzilla
       campfire
       custom_issue_tracker
+      discord
       drone_ci
       emails_on_push
       external_wiki
@@ -269,6 +269,7 @@ class Service < ActiveRecord::Base
       prometheus
       pushover
       redmine
+      youtrack
       slack_slash_commands
       slack
       teamcity
@@ -336,6 +337,8 @@ class Service < ActiveRecord::Base
       "Event will be triggered when a wiki page is created/updated"
     when "commit", "commit_events"
       "Event will be triggered when a commit is created/updated"
+    when "deployment"
+      "Event will be triggered when a deployment finishes"
     end
   end
 

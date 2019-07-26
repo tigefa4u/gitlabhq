@@ -115,6 +115,21 @@ describe 'Prioritize labels' do
       end
     end
 
+    it 'user can see a primary button when there are only prioritized labels', :js do
+      visit project_labels_path(project)
+
+      page.within('.other-labels') do
+        all('.js-toggle-priority').each do |el|
+          el.click
+        end
+        wait_for_requests
+      end
+
+      page.within('.top-area') do
+        expect(page).to have_link('New label')
+      end
+    end
+
     it 'shows a help message about prioritized labels' do
       visit project_labels_path(project)
 
@@ -123,29 +138,41 @@ describe 'Prioritize labels' do
   end
 
   context 'as a guest' do
-    it 'does not prioritize labels' do
+    before do
+      create(:label_priority, project: project, label: bug, priority: 1)
+      create(:label_priority, project: project, label: feature, priority: 2)
+
       guest = create(:user)
 
       sign_in guest
 
       visit project_labels_path(project)
+    end
 
+    it 'cannot prioritize labels' do
       expect(page).to have_content 'bug'
       expect(page).to have_content 'wontfix'
       expect(page).to have_content 'feature'
-      expect(page).not_to have_css('.prioritized-labels')
       expect(page).not_to have_content 'Star a label'
+    end
+
+    it 'cannot sort prioritized labels', :js do
+      drag_to(selector: '.prioritized-labels .label-list-item', from_index: 1, to_index: 2)
+
+      page.within('.prioritized-labels') do
+        expect(first('.label-list-item')).to have_content('bug')
+        expect(page.all('.label-list-item').last).to have_content('feature')
+      end
     end
   end
 
   context 'as a non signed in user' do
-    it 'does not prioritize labels' do
+    it 'cannot prioritize labels' do
       visit project_labels_path(project)
 
       expect(page).to have_content 'bug'
       expect(page).to have_content 'wontfix'
       expect(page).to have_content 'feature'
-      expect(page).not_to have_css('.prioritized-labels')
       expect(page).not_to have_content 'Star a label'
     end
   end

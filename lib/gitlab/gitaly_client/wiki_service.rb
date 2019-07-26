@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'stringio'
 
 module Gitlab
@@ -20,7 +22,7 @@ module Gitlab
           commit_details: gitaly_commit_details(commit_details)
         )
 
-        strio = binary_stringio(content)
+        strio = binary_io(content)
 
         enum = Enumerator.new do |y|
           until strio.eof?
@@ -47,7 +49,7 @@ module Gitlab
           commit_details: gitaly_commit_details(commit_details)
         )
 
-        strio = binary_stringio(content)
+        strio = binary_io(content)
 
         enum = Enumerator.new do |y|
           until strio.eof?
@@ -85,9 +87,35 @@ module Gitlab
         wiki_page_from_iterator(response)
       end
 
-      def get_all_pages(limit: 0)
-        request = Gitaly::WikiGetAllPagesRequest.new(repository: @gitaly_repo, limit: limit)
+      def list_all_pages(limit: 0, sort: nil, direction_desc: false)
+        sort_value = Gitaly::WikiListPagesRequest::SortBy.resolve(sort.to_s.upcase.to_sym)
+
+        params = { repository: @gitaly_repo, limit: limit, direction_desc: direction_desc }
+        params[:sort] = sort_value if sort_value
+
+        request = Gitaly::WikiListPagesRequest.new(params)
+        stream = GitalyClient.call(@repository.storage, :wiki_service, :wiki_list_pages, request, timeout: GitalyClient.medium_timeout)
+        stream.each_with_object([]) do |message, pages|
+          page = message.page
+
+          next unless page
+
+          wiki_page = GitalyClient::WikiPage.new(page.to_h)
+          version = new_wiki_page_version(page.version)
+
+          pages << [wiki_page, version]
+        end
+      end
+
+      def load_all_pages(limit: 0, sort: nil, direction_desc: false)
+        sort_value = Gitaly::WikiGetAllPagesRequest::SortBy.resolve(sort.to_s.upcase.to_sym)
+
+        params = { repository: @gitaly_repo, limit: limit, direction_desc: direction_desc }
+        params[:sort] = sort_value if sort_value
+
+        request = Gitaly::WikiGetAllPagesRequest.new(params)
         response = GitalyClient.call(@repository.storage, :wiki_service, :wiki_get_all_pages, request, timeout: GitalyClient.medium_timeout)
+
         pages = []
 
         loop do
@@ -110,7 +138,7 @@ module Gitlab
           repository: @gitaly_repo,
           page_path: encode_binary(page_path),
           page: options[:page] || 1,
-          per_page: options[:per_page] || Gollum::Page.per_page
+          per_page: options[:per_page] || Gitlab::Git::Wiki::DEFAULT_PAGINATION
         )
 
         stream = GitalyClient.call(@repository.storage, :wiki_service, :wiki_get_page_versions, request, timeout: GitalyClient.medium_timeout)
@@ -139,7 +167,7 @@ module Gitlab
           next unless message.name.present? || wiki_file
 
           if wiki_file
-            wiki_file.raw_data << message.raw_data
+            wiki_file.raw_data = "#{wiki_file.raw_data}#{message.raw_data}"
           else
             wiki_file = GitalyClient::WikiFile.new(message.to_h)
             # All gRPC strings in a response are frozen, so we get
@@ -160,7 +188,7 @@ module Gitlab
         )
 
         response = GitalyClient.call(@repository.storage, :wiki_service, :wiki_get_formatted_data, request)
-        response.reduce("") { |memo, msg| memo << msg.data }
+        response.reduce([]) { |memo, msg| memo << msg.data }.join
       end
 
       private

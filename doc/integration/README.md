@@ -11,12 +11,13 @@ See the documentation below for details on how to configure these services.
 
 - [Akismet](akismet.md) Configure Akismet to stop spam
 - [Auth0 OmniAuth](auth0.md) Enable the Auth0 OmniAuth provider
-- [Bitbucket](bitbucket.md) Import projects from Bitbucket.org and login to your GitLab instance with your
-Bitbucket.org account
+- [Bitbucket](bitbucket.md) Import projects from Bitbucket.org and login to your GitLab instance with your Bitbucket.org account
 - [CAS](cas.md) Configure GitLab to sign in using CAS
-- [External issue tracker](external-issue-tracker.md) Redmine, JIRA, etc.
+- [External issue tracker](external-issue-tracker.md) Redmine, Jira, etc.
 - [Gmail actions buttons](gmail_action_buttons_for_gitlab.md) Adds GitLab actions to messages
-- [JIRA](../user/project/integrations/jira.md) Integrate with the JIRA issue tracker
+- [Jenkins](jenkins.md) Integrate with the Jenkins CI
+- [Jira](../user/project/integrations/jira.md) Integrate with the Jira issue tracker
+- [Kerberos](kerberos.md) Integrate with Kerberos
 - [LDAP](ldap.md) Set up sign in via LDAP
 - [OAuth2 provider](oauth_provider.md) OAuth2 application creation
 - [OmniAuth](omniauth.md) Sign in via Twitter, GitHub, GitLab.com, Google, Bitbucket, Facebook, Shibboleth, SAML, Crowd, Azure and Authentiq ID
@@ -26,11 +27,11 @@ Bitbucket.org account
 - [SAML](saml.md) Configure GitLab as a SAML 2.0 Service Provider
 - [Trello](trello_power_up.md) Integrate Trello with GitLab
 
-> GitLab Enterprise Edition contains [advanced Jenkins support][jenkins].
+> GitLab Enterprise Edition contains [advanced Jenkins support](jenkins.md).
 
 ## Project services
 
-Integration with services such as Campfire, Flowdock, Gemnasium, HipChat,
+Integration with services such as Campfire, Flowdock, HipChat,
 Pivotal Tracker, and Slack are available in the form of a [Project Service][].
 
 [Project Service]: ../user/project/integrations/project_services.md
@@ -54,7 +55,7 @@ at Super User also has relevant information.
 
 **Omnibus Trusted Chain**
 
-[Install the self signed certificate or custom certificate authorities](http://docs.gitlab.com/omnibus/common_installation_problems/README.html#using-self-signed-certificate-or-custom-certificate-authorities)
+[Install the self signed certificate or custom certificate authorities](https://docs.gitlab.com/omnibus/common_installation_problems/README.html#using-self-signed-certificate-or-custom-certificate-authorities)
 in to GitLab Omnibus.
 
 It is enough to concatenate the certificate to the main trusted certificate
@@ -69,5 +70,3 @@ After that restart GitLab with:
 ```bash
 sudo gitlab-ctl restart
 ```
-
-[jenkins]: http://docs.gitlab.com/ee/integration/jenkins.html

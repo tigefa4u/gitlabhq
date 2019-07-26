@@ -4,7 +4,7 @@ describe FileUploader do
   let(:group) { create(:group, name: 'awesome') }
   let(:project) { create(:project, :legacy_storage, namespace: group, name: 'project') }
   let(:uploader) { described_class.new(project) }
-  let(:upload)  { double(model: project, path: 'secret/foo.jpg') }
+  let(:upload) { double(model: project, path: 'secret/foo.jpg') }
 
   subject { uploader }
 
@@ -81,19 +81,24 @@ describe FileUploader do
   end
 
   describe 'copy_to' do
+    let(:new_project) { create(:project) }
+    let(:moved) { described_class.copy_to(subject, new_project) }
+
     shared_examples 'returns a valid uploader' do
       describe 'returned uploader' do
-        let(:new_project) { create(:project) }
-        let(:moved) { described_class.copy_to(subject, new_project) }
-
         it 'generates a new secret' do
           expect(subject).to be
           expect(described_class).to receive(:generate_secret).once.and_call_original
           expect(moved).to be
         end
 
-        it 'create new upload' do
-          expect(moved.upload).not_to eq(subject.upload)
+        it 'creates new upload correctly' do
+          upload = moved.upload
+
+          expect(upload).not_to eq(subject.upload)
+          expect(upload.model).to eq(new_project)
+          expect(upload.uploader).to eq('FileUploader')
+          expect(upload.secret).not_to eq(subject.upload.secret)
         end
 
         it 'copies the file' do
@@ -111,6 +116,12 @@ describe FileUploader do
       end
 
       include_examples 'returns a valid uploader'
+
+      it 'copies the file to the correct location' do
+        expect(moved.upload.path).to eq("#{moved.upload.secret}/dk.png")
+        expect(moved.file.path).to end_with("public/uploads/#{new_project.disk_path}/#{moved.upload.secret}/dk.png")
+        expect(moved.filename).to eq('dk.png')
+      end
     end
 
     context 'files are stored remotely' do
@@ -121,6 +132,12 @@ describe FileUploader do
       end
 
       include_examples 'returns a valid uploader'
+
+      it 'copies the file to the correct location' do
+        expect(moved.upload.path).to eq("#{new_project.disk_path}/#{moved.upload.secret}/dk.png")
+        expect(moved.file.path).to eq("#{new_project.disk_path}/#{moved.upload.secret}/dk.png")
+        expect(moved.filename).to eq('dk.png')
+      end
     end
   end
 
@@ -167,40 +184,37 @@ describe FileUploader do
     end
   end
 
-  describe '#cache!' do
-    subject do
+  context 'when remote file is used' do
+    let(:temp_file) { Tempfile.new("test") }
+
+    let!(:fog_connection) do
+      stub_uploads_object_storage(described_class)
+    end
+
+    let(:filename) { "my file.txt" }
+    let(:uploaded_file) do
+      UploadedFile.new(temp_file.path, filename: filename, remote_id: "test/123123")
+    end
+
+    let!(:fog_file) do
+      fog_connection.directories.new(key: 'uploads').files.create(
+        key: 'tmp/uploads/test/123123',
+        body: 'content'
+      )
+    end
+
+    before do
+      FileUtils.touch(temp_file)
+
       uploader.store!(uploaded_file)
     end
 
-    context 'when remote file is used' do
-      let(:temp_file) { Tempfile.new("test") }
+    after do
+      FileUtils.rm_f(temp_file)
+    end
 
-      let!(:fog_connection) do
-        stub_uploads_object_storage(described_class)
-      end
-
-      let(:uploaded_file) do
-        UploadedFile.new(temp_file.path, filename: "my file.txt", remote_id: "test/123123")
-      end
-
-      let!(:fog_file) do
-        fog_connection.directories.get('uploads').files.create(
-          key: 'tmp/uploads/test/123123',
-          body: 'content'
-        )
-      end
-
-      before do
-        FileUtils.touch(temp_file)
-      end
-
-      after do
-        FileUtils.rm_f(temp_file)
-      end
-
+    describe '#cache!' do
       it 'file is stored remotely in permament location with sanitized name' do
-        subject
-
         expect(uploader).to be_exists
         expect(uploader).not_to be_cached
         expect(uploader).not_to be_file_storage
@@ -209,6 +223,19 @@ describe FileUploader do
         expect(uploader.path).not_to include('tmp/cache')
         expect(uploader.url).to include('/my_file.txt')
         expect(uploader.object_store).to eq(described_class::Store::REMOTE)
+      end
+    end
+
+    describe '#to_h' do
+      subject { uploader.to_h }
+
+      let(:filename) { 'my+file.txt' }
+
+      it 'generates URL using original file name instead of filename returned by object storage' do
+        # GCS returns a URL with a `+` instead of `%2B`
+        allow(uploader.file).to receive(:url).and_return('https://storage.googleapis.com/gitlab-test-uploads/@hashed/6b/86/6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b/64c5065e62100b1a12841644256a98be/my+file.txt')
+
+        expect(subject[:url]).to end_with(filename)
       end
     end
   end

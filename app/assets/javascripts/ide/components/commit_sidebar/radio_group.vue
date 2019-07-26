@@ -38,8 +38,8 @@ export default {
     },
   },
   computed: {
-    ...mapState('commit', ['commitAction']),
-    ...mapGetters('commit', ['newBranchName']),
+    ...mapState('commit', ['commitAction', 'newBranchName']),
+    ...mapGetters('commit', ['placeholderBranchName']),
     tooltipTitle() {
       return this.disabled ? this.title : '';
     },
@@ -56,7 +56,7 @@ export default {
       v-tooltip
       :title="tooltipTitle"
       :class="{
-        'is-disabled': disabled
+        'is-disabled': disabled,
       }"
     >
       <input
@@ -68,21 +68,13 @@ export default {
         @change="updateCommitAction($event.target.value)"
       />
       <span class="prepend-left-10">
-        <span
-          v-if="label"
-          class="ide-radio-label"
-        >
-          {{ label }}
-        </span>
-        <slot v-else></slot>
+        <span v-if="label" class="ide-radio-label"> {{ label }} </span> <slot v-else></slot>
       </span>
     </label>
-    <div
-      v-if="commitAction === value && showInput"
-      class="ide-commit-new-branch"
-    >
+    <div v-if="commitAction === value && showInput" class="ide-commit-new-branch">
       <input
-        :placeholder="newBranchName"
+        :placeholder="placeholderBranchName"
+        :value="newBranchName"
         type="text"
         class="form-control monospace"
         @input="updateBranchName($event.target.value)"

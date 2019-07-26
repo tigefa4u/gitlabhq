@@ -13,6 +13,10 @@ export default {
     Icon,
   },
   props: {
+    line: {
+      type: Object,
+      required: true,
+    },
     fileHash: {
       type: String,
       required: true,
@@ -21,30 +25,15 @@ export default {
       type: String,
       required: true,
     },
-    lineType: {
-      type: String,
-      required: false,
-      default: '',
-    },
     lineNumber: {
       type: Number,
       required: false,
       default: 0,
     },
-    lineCode: {
-      type: String,
-      required: false,
-      default: '',
-    },
     linePosition: {
       type: String,
       required: false,
       default: '',
-    },
-    metaData: {
-      type: Object,
-      required: false,
-      default: () => ({}),
     },
     showCommentButton: {
       type: Boolean,
@@ -76,11 +65,6 @@ export default {
       required: false,
       default: false,
     },
-    discussions: {
-      type: Array,
-      required: false,
-      default: () => [],
-    },
   },
   computed: {
     ...mapState({
@@ -88,13 +72,18 @@ export default {
       diffFiles: state => state.diffs.diffFiles,
     }),
     ...mapGetters(['isLoggedIn']),
+    lineCode() {
+      return (
+        this.line.line_code ||
+        (this.line.left && this.line.line.left.line_code) ||
+        (this.line.right && this.line.right.line_code)
+      );
+    },
     lineHref() {
-      return this.lineCode ? `#${this.lineCode}` : '#';
+      return `#${this.line.line_code || ''}`;
     },
     shouldShowCommentButton() {
       return (
-        this.isLoggedIn &&
-        this.showCommentButton &&
         this.isHover &&
         !this.isMatchLine &&
         !this.isContextLine &&
@@ -103,20 +92,28 @@ export default {
       );
     },
     hasDiscussions() {
-      return this.discussions.length > 0;
+      return this.line.discussions && this.line.discussions.length > 0;
     },
     shouldShowAvatarsOnGutter() {
-      if (!this.lineType && this.linePosition === LINE_POSITION_RIGHT) {
+      if (!this.line.type && this.linePosition === LINE_POSITION_RIGHT) {
         return false;
       }
-
       return this.showCommentButton && this.hasDiscussions;
+    },
+    shouldRenderCommentButton() {
+      return this.isLoggedIn && this.showCommentButton;
     },
   },
   methods: {
-    ...mapActions('diffs', ['loadMoreLines', 'showCommentForm']),
+    ...mapActions('diffs', [
+      'loadMoreLines',
+      'showCommentForm',
+      'setHighlightedRow',
+      'toggleLineDiscussions',
+      'toggleLineDiscussionWrappers',
+    ]),
     handleCommentButton() {
-      this.showCommentForm({ lineCode: this.lineCode });
+      this.showCommentForm({ lineCode: this.line.line_code, fileHash: this.fileHash });
     },
     handleLoadMoreLines() {
       if (this.isRequesting) {
@@ -125,8 +122,8 @@ export default {
 
       this.isRequesting = true;
       const endpoint = this.contextLinesPath;
-      const oldLineNumber = this.metaData.oldPos || 0;
-      const newLineNumber = this.metaData.newPos || 0;
+      const oldLineNumber = this.line.meta_data.old_pos || 0;
+      const newLineNumber = this.line.meta_data.new_pos || 0;
       const offset = newLineNumber - oldLineNumber;
       const bottom = this.isBottom;
       const { fileHash } = this;
@@ -142,12 +139,12 @@ export default {
         to = lineNumber + UNFOLD_COUNT;
       } else {
         const diffFile = utils.findDiffFile(this.diffFiles, this.fileHash);
-        const indexForInline = utils.findIndexInInlineLines(diffFile.highlightedDiffLines, {
+        const indexForInline = utils.findIndexInInlineLines(diffFile.highlighted_diff_lines, {
           oldLineNumber,
           newLineNumber,
         });
-        const prevLine = diffFile.highlightedDiffLines[indexForInline - 2];
-        const prevLineNumber = (prevLine && prevLine.newLine) || 0;
+        const prevLine = diffFile.highlighted_diff_lines[indexForInline - 2];
+        const prevLineNumber = (prevLine && prevLine.new_line) || 0;
 
         if (since <= prevLineNumber + 1) {
           since = prevLineNumber + 1;
@@ -172,36 +169,34 @@ export default {
 
 <template>
   <div>
-    <span
-      v-if="isMatchLine"
-      class="context-cell"
-      role="button"
-      @click="handleLoadMoreLines"
-    >...</span>
-    <template
-      v-else
+    <span v-if="isMatchLine" class="context-cell" role="button" @click="handleLoadMoreLines"
+      >...</span
     >
+    <template v-else>
       <button
-        v-if="shouldShowCommentButton"
+        v-if="shouldRenderCommentButton"
+        v-show="shouldShowCommentButton"
         type="button"
-        class="add-diff-note js-add-diff-note-button"
+        class="add-diff-note js-add-diff-note-button qa-diff-comment"
         title="Add a comment to this line"
         @click="handleCommentButton"
       >
-        <icon
-          :size="12"
-          name="comment"
-        />
+        <icon :size="12" name="comment" />
       </button>
       <a
         v-if="lineNumber"
         :data-linenumber="lineNumber"
         :href="lineHref"
+        @click="setHighlightedRow(lineCode)"
       >
       </a>
       <diff-gutter-avatars
         v-if="shouldShowAvatarsOnGutter"
-        :discussions="discussions"
+        :discussions="line.discussions"
+        :discussions-expanded="line.discussionsExpanded"
+        @toggleLineDiscussions="
+          toggleLineDiscussions({ lineCode, fileHash, expanded: !line.discussionsExpanded })
+        "
       />
     </template>
   </div>

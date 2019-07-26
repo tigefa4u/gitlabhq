@@ -18,9 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // eslint-disable-next-line no-new
   new AjaxVariableList({
     container: variableListEl,
-    saveButton: variableListEl.querySelector('.js-secret-variables-save-button'),
+    saveButton: variableListEl.querySelector('.js-ci-variables-save-button'),
     errorBox: variableListEl.querySelector('.js-ci-variable-error-box'),
     saveEndpoint: variableListEl.dataset.saveEndpoint,
+    maskableRegex: variableListEl.dataset.maskableRegex,
   });
 
   // hide extra auto devops settings based checkbox state

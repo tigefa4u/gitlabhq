@@ -1,8 +1,12 @@
+# frozen_string_literal: true
+
 module Gitlab
   module ImportExport
     extend self
 
-    # For every version update, the version history in import_export.md has to be kept up to date.
+    # For every version update the version history in these docs must be kept up to date:
+    # - development/import_export.md
+    # - user/project/settings/import_export.md
     VERSION = '0.2.4'.freeze
     FILENAME_LIMIT = 50
 
@@ -26,6 +30,14 @@ module Gitlab
       "project.bundle"
     end
 
+    def lfs_objects_filename
+      "lfs-objects.json"
+    end
+
+    def lfs_objects_storage
+      "lfs-objects"
+    end
+
     def config_file
       Rails.root.join('lib/gitlab/import_export/import_export.yml')
     end
@@ -38,10 +50,6 @@ module Gitlab
       basename = "#{Time.now.strftime('%Y-%m-%d_%H-%M-%3N')}_#{project.full_path.tr('/', '_')}"
 
       "#{basename[0..FILENAME_LIMIT]}_export.tar.gz"
-    end
-
-    def object_storage?
-      Feature.enabled?(:import_export_object_storage)
     end
 
     def version

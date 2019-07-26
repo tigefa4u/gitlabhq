@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Projects::DiscussionsController < Projects::ApplicationController
   include NotesHelper
   include RendersNotes
@@ -38,7 +40,7 @@ class Projects::DiscussionsController < Projects::ApplicationController
 
   def render_json_with_discussions_serializer
     render json:
-      DiscussionSerializer.new(project: project, noteable: discussion.noteable, current_user: current_user, note_entity:  ProjectNoteEntity)
+      DiscussionSerializer.new(project: project, noteable: discussion.noteable, current_user: current_user, note_entity: ProjectNoteEntity)
       .represent(discussion, context: self, render_truncated_diff_lines: true)
   end
 
@@ -50,9 +52,11 @@ class Projects::DiscussionsController < Projects::ApplicationController
     }
   end
 
+  # rubocop: disable CodeReuse/ActiveRecord
   def merge_request
     @merge_request ||= MergeRequestsFinder.new(current_user, project_id: @project.id).find_by!(iid: params[:merge_request_id])
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   def discussion
     @discussion ||= @merge_request.find_discussion(params[:id]) || render_404

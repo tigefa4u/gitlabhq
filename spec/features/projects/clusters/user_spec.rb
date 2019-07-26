@@ -9,7 +9,10 @@ describe 'User Cluster', :js do
   before do
     project.add_maintainer(user)
     gitlab_sign_in(user)
+
     allow(Projects::ClustersController).to receive(:STATUS_POLLING_INTERVAL) { 100 }
+    allow_any_instance_of(Clusters::Gcp::Kubernetes::CreateOrUpdateNamespaceService).to receive(:execute)
+    allow_any_instance_of(Clusters::Cluster).to receive(:retrieve_connection_status).and_return(:connected)
   end
 
   context 'when user does not have a cluster and visits cluster index page' do
@@ -25,16 +28,23 @@ describe 'User Cluster', :js do
         fill_in 'cluster_name', with: 'dev-cluster'
         fill_in 'cluster_platform_kubernetes_attributes_api_url', with: 'http://example.com'
         fill_in 'cluster_platform_kubernetes_attributes_token', with: 'my-token'
-        click_button 'Add Kubernetes cluster'
       end
 
+      subject { click_button 'Add Kubernetes cluster' }
+
       it 'user sees a cluster details page' do
+        subject
+
         expect(page).to have_content('Kubernetes cluster integration')
         expect(page.find_field('cluster[name]').value).to eq('dev-cluster')
         expect(page.find_field('cluster[platform_kubernetes_attributes][api_url]').value)
           .to have_content('http://example.com')
         expect(page.find_field('cluster[platform_kubernetes_attributes][token]').value)
           .to have_content('my-token')
+      end
+
+      it 'user sees RBAC is enabled by default' do
+        expect(page).to have_checked_field('RBAC-enabled cluster')
       end
     end
 
@@ -44,7 +54,7 @@ describe 'User Cluster', :js do
       end
 
       it 'user sees a validation error' do
-        expect(page).to have_css('#error_explanation')
+        expect(page).to have_css('.gl-field-error')
       end
     end
   end
@@ -63,7 +73,6 @@ describe 'User Cluster', :js do
     context 'when user disables the cluster' do
       before do
         page.find(:css, '.js-cluster-enable-toggle-area .js-project-feature-toggle').click
-        fill_in 'cluster_name', with: 'dev-cluster'
         page.within('#cluster-integration') { click_button 'Save changes' }
       end
 

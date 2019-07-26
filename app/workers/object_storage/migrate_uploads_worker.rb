@@ -20,7 +20,7 @@ module ObjectStorage
       end
 
       def to_s
-        success? ? "Migration successful." : "Error while migrating #{upload.id}: #{error.message}"
+        success? ? _("Migration successful.") : _("Error while migrating %{upload_id}: %{error_message}") % { upload_id: upload.id, error_message: error.message }
       end
     end
 
@@ -37,6 +37,7 @@ module ObjectStorage
         end
       end
 
+      # rubocop:disable Gitlab/RailsLogger
       def report!(results)
         success, failures = results.partition(&:success?)
 
@@ -45,9 +46,10 @@ module ObjectStorage
 
         raise MigrationFailures.new(failures.map(&:error)) if failures.any?
       end
+      # rubocop:enable Gitlab/RailsLogger
 
       def header(success, failures)
-        "Migrated #{success.count}/#{success.count + failures.count} files."
+        _("Migrated %{success_count}/%{total_count} files.") % { success_count: success.count, total_count: success.count + failures.count }
       end
 
       def failures(failures)
@@ -57,11 +59,13 @@ module ObjectStorage
 
     include Report
 
+    # rubocop: disable CodeReuse/ActiveRecord
     def self.enqueue!(uploads, model_class, mounted_as, to_store)
       sanity_check!(uploads, model_class, mounted_as)
 
       perform_async(uploads.ids, model_class.to_s, mounted_as, to_store)
     end
+    # rubocop: enable CodeReuse/ActiveRecord
 
     # We need to be sure all the uploads are for the same uploader and model type
     # and that the mount point exists if provided.
@@ -73,11 +77,12 @@ module ObjectStorage
       model_types = uploads.map(&:model_type).uniq
       model_has_mount = mounted_as.nil? || model_class.uploaders[mounted_as] == uploader_class
 
-      raise(SanityCheckError, "Multiple uploaders found: #{uploader_types}") unless uploader_types.count == 1
-      raise(SanityCheckError, "Multiple model types found: #{model_types}") unless model_types.count == 1
-      raise(SanityCheckError, "Mount point #{mounted_as} not found in #{model_class}.") unless model_has_mount
+      raise(SanityCheckError, _("Multiple uploaders found: %{uploader_types}") % { uploader_types: uploader_types }) unless uploader_types.count == 1
+      raise(SanityCheckError, _("Multiple model types found: %{model_types}") % { model_types: model_types }) unless model_types.count == 1
+      raise(SanityCheckError, _("Mount point %{mounted_as} not found in %{model_class}.") % { mounted_as: mounted_as, model_class: model_class }) unless model_has_mount
     end
 
+    # rubocop: disable CodeReuse/ActiveRecord
     def perform(*args)
       args_check!(args)
 
@@ -95,8 +100,9 @@ module ObjectStorage
       report!(results)
     rescue SanityCheckError => e
       # do not retry: the job is insane
-      Rails.logger.warn "#{self.class}: Sanity check error (#{e.message})"
+      Rails.logger.warn "#{self.class}: Sanity check error (#{e.message})" # rubocop:disable Gitlab/RailsLogger
     end
+    # rubocop: enable CodeReuse/ActiveRecord
 
     def sanity_check!(uploads)
       self.class.sanity_check!(uploads, @model_class, @mounted_as)
@@ -106,9 +112,9 @@ module ObjectStorage
       return if args.count == 4
 
       case args.count
-      when 3 then raise SanityCheckError, "Job is missing the `model_type` argument."
+      when 3 then raise SanityCheckError, _("Job is missing the `model_type` argument.")
       else
-        raise SanityCheckError, "Job has wrong arguments format."
+        raise SanityCheckError, _("Job has wrong arguments format.")
       end
     end
 
@@ -122,11 +128,9 @@ module ObjectStorage
 
     def process_uploader(uploader)
       MigrationResult.new(uploader.upload).tap do |result|
-        begin
-          uploader.migrate!(@to_store)
-        rescue => e
-          result.error = e
-        end
+        uploader.migrate!(@to_store)
+      rescue => e
+        result.error = e
       end
     end
   end

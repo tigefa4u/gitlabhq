@@ -7,7 +7,7 @@
 # which requires all tables to have a primary key constraint.
 #
 # In that sense, the migration is optional and not strictly needed.
-class CompositePrimaryKeysMigration < ActiveRecord::Migration
+class CompositePrimaryKeysMigration < ActiveRecord::Migration[4.2]
   include Gitlab::Database::MigrationHelpers
 
   DOWNTIME = false
@@ -29,18 +29,20 @@ class CompositePrimaryKeysMigration < ActiveRecord::Migration
   def up
     return unless Gitlab::Database.postgresql?
 
-    disable_statement_timeout
-    TABLES.each do |index|
-      add_primary_key(index)
+    disable_statement_timeout do
+      TABLES.each do |index|
+        add_primary_key(index)
+      end
     end
   end
 
   def down
     return unless Gitlab::Database.postgresql?
 
-    disable_statement_timeout
-    TABLES.each do |index|
-      remove_primary_key(index)
+    disable_statement_timeout do
+      TABLES.each do |index|
+        remove_primary_key(index)
+      end
     end
   end
 

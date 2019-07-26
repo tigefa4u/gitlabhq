@@ -1,4 +1,4 @@
-/* eslint-disable func-names, no-var, consistent-return, prefer-arrow-callback, no-return-assign, object-shorthand, comma-dangle, max-len */
+/* eslint-disable func-names, no-var, consistent-return, prefer-arrow-callback, no-return-assign, object-shorthand */
 
 function notificationGranted(message, opts, onclick) {
   var notification;
@@ -8,10 +8,11 @@ function notificationGranted(message, opts, onclick) {
     return notification.close();
   }, 8000);
 
-  return notification.onclick = onclick || notification.close;
+  return (notification.onclick = onclick || notification.close);
 }
 
 function notifyPermissions() {
+  /* eslint-disable-next-line @gitlab/i18n/no-non-i18n-strings */
   if ('Notification' in window) {
     return Notification.requestPermission();
   }
@@ -21,9 +22,10 @@ function notifyMe(message, body, icon, onclick) {
   var opts;
   opts = {
     body: body,
-    icon: icon
+    icon: icon,
   };
   // Let's check if the browser supports notifications
+  /* eslint-disable-next-line @gitlab/i18n/no-non-i18n-strings */
   if (!('Notification' in window)) {
     // do nothing
   } else if (Notification.permission === 'granted') {

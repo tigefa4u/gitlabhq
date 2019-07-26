@@ -1,6 +1,10 @@
+# frozen_string_literal: true
+
 require_relative '../support/helpers/test_env'
 
 FactoryBot.define do
+  PAGES_ACCESS_LEVEL_SCHEMA_VERSION ||= 20180423204600
+
   # Project without repository
   #
   # Project does not have bare repository.
@@ -23,10 +27,15 @@ FactoryBot.define do
       issues_access_level ProjectFeature::ENABLED
       merge_requests_access_level ProjectFeature::ENABLED
       repository_access_level ProjectFeature::ENABLED
+      pages_access_level do
+        visibility_level == Gitlab::VisibilityLevel::PUBLIC ? ProjectFeature::ENABLED : ProjectFeature::PRIVATE
+      end
 
       # we can't assign the delegated `#ci_cd_settings` attributes directly, as the
       # `#ci_cd_settings` relation needs to be created first
       group_runners_enabled nil
+      import_status nil
+      import_jid nil
     end
 
     after(:create) do |project, evaluator|
@@ -34,13 +43,20 @@ FactoryBot.define do
       builds_access_level = [evaluator.builds_access_level, evaluator.repository_access_level].min
       merge_requests_access_level = [evaluator.merge_requests_access_level, evaluator.repository_access_level].min
 
-      project.project_feature.update(
+      hash = {
         wiki_access_level: evaluator.wiki_access_level,
         builds_access_level: builds_access_level,
         snippets_access_level: evaluator.snippets_access_level,
         issues_access_level: evaluator.issues_access_level,
         merge_requests_access_level: merge_requests_access_level,
-        repository_access_level: evaluator.repository_access_level)
+        repository_access_level: evaluator.repository_access_level
+      }
+
+      if ActiveRecord::Migrator.current_version >= PAGES_ACCESS_LEVEL_SCHEMA_VERSION
+        hash.store("pages_access_level", evaluator.pages_access_level)
+      end
+
+      project.project_feature.update(hash)
 
       # Normally the class Projects::CreateService is used for creating
       # projects, and this class takes care of making sure the owner and current
@@ -54,6 +70,13 @@ FactoryBot.define do
 
       # assign the delegated `#ci_cd_settings` attributes after create
       project.reload.group_runners_enabled = evaluator.group_runners_enabled unless evaluator.group_runners_enabled.nil?
+
+      if evaluator.import_status
+        import_state = project.import_state || project.build_import_state
+        import_state.status = evaluator.import_status
+        import_state.jid = evaluator.import_jid
+        import_state.save
+      end
     end
 
     trait :public do
@@ -103,23 +126,7 @@ FactoryBot.define do
     end
 
     trait :with_export do
-      before(:create) do |_project, _evaluator|
-        allow(Feature).to receive(:enabled?).with(:import_export_object_storage) { false }
-        allow(Feature).to receive(:enabled?).with('import_export_object_storage') { false }
-      end
-
       after(:create) do |project, _evaluator|
-        ProjectExportWorker.new.perform(project.creator.id, project.id)
-      end
-    end
-
-    trait :with_object_export do
-      before(:create) do |_project, _evaluator|
-        allow(Feature).to receive(:enabled?).with(:import_export_object_storage) { true }
-        allow(Feature).to receive(:enabled?).with('import_export_object_storage') { true }
-      end
-
-      after(:create) do |project, evaluator|
         ProjectExportWorker.new.perform(project.creator.id, project.id)
       end
     end
@@ -127,6 +134,33 @@ FactoryBot.define do
     trait :broken_storage do
       after(:create) do |project|
         project.update_column(:repository_storage, 'broken')
+      end
+    end
+
+    # Build a custom repository by specifying a hash of `filename => content` in
+    # the transient `files` attribute. Each file will be created in its own
+    # commit, operating against the master branch. So, the following call:
+    #
+    #     create(:project, :custom_repo, files: { 'foo/a.txt' => 'foo', 'b.txt' => bar' })
+    #
+    # will create a repository containing two files, and two commits, in master
+    trait :custom_repo do
+      transient do
+        files {}
+      end
+
+      after :create do |project, evaluator|
+        raise "Failed to create repository!" unless project.create_repository
+
+        evaluator.files.each do |filename, content|
+          project.repository.create_file(
+            project.creator,
+            filename,
+            content,
+            message: "Automatically created file #{filename}",
+            branch_name: 'master'
+          )
+        end
       end
     end
 
@@ -230,9 +264,22 @@ FactoryBot.define do
     trait(:merge_requests_enabled)  { merge_requests_access_level ProjectFeature::ENABLED }
     trait(:merge_requests_disabled) { merge_requests_access_level ProjectFeature::DISABLED }
     trait(:merge_requests_private)  { merge_requests_access_level ProjectFeature::PRIVATE }
+    trait(:merge_requests_public)   { merge_requests_access_level ProjectFeature::PUBLIC }
     trait(:repository_enabled)      { repository_access_level ProjectFeature::ENABLED }
     trait(:repository_disabled)     { repository_access_level ProjectFeature::DISABLED }
     trait(:repository_private)      { repository_access_level ProjectFeature::PRIVATE }
+    trait(:pages_public)            { pages_access_level ProjectFeature::PUBLIC }
+    trait(:pages_enabled)           { pages_access_level ProjectFeature::ENABLED }
+    trait(:pages_disabled)          { pages_access_level ProjectFeature::DISABLED }
+    trait(:pages_private)           { pages_access_level ProjectFeature::PRIVATE }
+
+    trait :auto_devops do
+      association :auto_devops, factory: :project_auto_devops
+    end
+
+    trait :auto_devops_disabled do
+      association :auto_devops, factory: [:project_auto_devops, :disabled]
+    end
   end
 
   # Project with empty repository
@@ -263,25 +310,27 @@ FactoryBot.define do
   factory :redmine_project, parent: :project do
     has_external_issue_tracker true
 
-    after :create do |project|
-      project.create_redmine_service(
-        active: true,
-        properties: {
-          'project_url' => 'http://redmine/projects/project_name_in_redmine',
-          'issues_url' => 'http://redmine/projects/project_name_in_redmine/issues/:id',
-          'new_issue_url' => 'http://redmine/projects/project_name_in_redmine/issues/new'
-        }
-      )
-    end
+    redmine_service
+  end
+
+  factory :youtrack_project, parent: :project do
+    has_external_issue_tracker true
+
+    youtrack_service
   end
 
   factory :jira_project, parent: :project do
     has_external_issue_tracker true
+
     jira_service
   end
 
   factory :kubernetes_project, parent: :project do
     kubernetes_service
+  end
+
+  factory :mock_deployment_project, parent: :project do
+    mock_deployment_service
   end
 
   factory :prometheus_project, parent: :project do

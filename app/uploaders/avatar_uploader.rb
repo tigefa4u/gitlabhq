@@ -18,9 +18,13 @@ class AvatarUploader < GitlabUploader
     false
   end
 
+  def absolute_path
+    self.class.absolute_path(model.avatar.upload)
+  end
+
   private
 
   def dynamic_segment
-    File.join(model.class.to_s.underscore, mounted_as.to_s, model.id.to_s)
+    File.join(model.class.underscore, mounted_as.to_s, model.id.to_s)
   end
 end

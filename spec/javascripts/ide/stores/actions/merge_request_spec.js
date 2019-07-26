@@ -11,13 +11,17 @@ import service from '~/ide/services';
 import { activityBarViews } from '~/ide/constants';
 import { resetStore } from '../../helpers';
 
+const TEST_PROJECT = 'abcproject';
+const TEST_PROJECT_ID = 17;
+
 describe('IDE store merge request actions', () => {
   let mock;
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
 
-    store.state.projects.abcproject = {
+    store.state.projects[TEST_PROJECT] = {
+      id: TEST_PROJECT_ID,
       mergeRequests: {},
     };
   });
@@ -25,6 +29,98 @@ describe('IDE store merge request actions', () => {
   afterEach(() => {
     mock.restore();
     resetStore(store);
+  });
+
+  describe('getMergeRequestsForBranch', () => {
+    describe('success', () => {
+      const mrData = { iid: 2, source_branch: 'bar' };
+      const mockData = [mrData];
+
+      describe('base case', () => {
+        beforeEach(() => {
+          spyOn(service, 'getProjectMergeRequests').and.callThrough();
+          mock.onGet(/api\/(.*)\/projects\/abcproject\/merge_requests/).reply(200, mockData);
+        });
+
+        it('calls getProjectMergeRequests service method', done => {
+          store
+            .dispatch('getMergeRequestsForBranch', { projectId: TEST_PROJECT, branchId: 'bar' })
+            .then(() => {
+              expect(service.getProjectMergeRequests).toHaveBeenCalledWith(TEST_PROJECT, {
+                source_branch: 'bar',
+                source_project_id: TEST_PROJECT_ID,
+                order_by: 'created_at',
+                per_page: 1,
+              });
+
+              done();
+            })
+            .catch(done.fail);
+        });
+
+        it('sets the "Merge Request" Object', done => {
+          store
+            .dispatch('getMergeRequestsForBranch', { projectId: TEST_PROJECT, branchId: 'bar' })
+            .then(() => {
+              expect(store.state.projects.abcproject.mergeRequests).toEqual({
+                '2': jasmine.objectContaining(mrData),
+              });
+              done();
+            })
+            .catch(done.fail);
+        });
+
+        it('sets "Current Merge Request" object to the most recent MR', done => {
+          store
+            .dispatch('getMergeRequestsForBranch', { projectId: TEST_PROJECT, branchId: 'bar' })
+            .then(() => {
+              expect(store.state.currentMergeRequestId).toEqual('2');
+              done();
+            })
+            .catch(done.fail);
+        });
+      });
+
+      describe('no merge requests for branch available case', () => {
+        beforeEach(() => {
+          spyOn(service, 'getProjectMergeRequests').and.callThrough();
+          mock.onGet(/api\/(.*)\/projects\/abcproject\/merge_requests/).reply(200, []);
+        });
+
+        it('does not fail if there are no merge requests for current branch', done => {
+          store
+            .dispatch('getMergeRequestsForBranch', { projectId: TEST_PROJECT, branchId: 'foo' })
+            .then(() => {
+              expect(store.state.projects[TEST_PROJECT].mergeRequests).toEqual({});
+              expect(store.state.currentMergeRequestId).toEqual('');
+              done();
+            })
+            .catch(done.fail);
+        });
+      });
+    });
+
+    describe('error', () => {
+      beforeEach(() => {
+        mock.onGet(/api\/(.*)\/projects\/abcproject\/merge_requests/).networkError();
+      });
+
+      it('flashes message, if error', done => {
+        const flashSpy = spyOnDependency(actions, 'flash');
+
+        store
+          .dispatch('getMergeRequestsForBranch', { projectId: TEST_PROJECT, branchId: 'bar' })
+          .then(() => {
+            fail('Expected getMergeRequestsForBranch to throw an error');
+          })
+          .catch(() => {
+            expect(flashSpy).toHaveBeenCalled();
+            expect(flashSpy.calls.argsFor(0)[0]).toEqual('Error fetching merge requests for bar');
+          })
+          .then(done)
+          .catch(done.fail);
+      });
+    });
   });
 
   describe('getMergeRequestData', () => {
@@ -39,9 +135,9 @@ describe('IDE store merge request actions', () => {
 
       it('calls getProjectMergeRequestData service method', done => {
         store
-          .dispatch('getMergeRequestData', { projectId: 'abcproject', mergeRequestId: 1 })
+          .dispatch('getMergeRequestData', { projectId: TEST_PROJECT, mergeRequestId: 1 })
           .then(() => {
-            expect(service.getProjectMergeRequestData).toHaveBeenCalledWith('abcproject', 1, {
+            expect(service.getProjectMergeRequestData).toHaveBeenCalledWith(TEST_PROJECT, 1, {
               render_html: true,
             });
 
@@ -52,10 +148,12 @@ describe('IDE store merge request actions', () => {
 
       it('sets the Merge Request Object', done => {
         store
-          .dispatch('getMergeRequestData', { projectId: 'abcproject', mergeRequestId: 1 })
+          .dispatch('getMergeRequestData', { projectId: TEST_PROJECT, mergeRequestId: 1 })
           .then(() => {
-            expect(store.state.projects.abcproject.mergeRequests['1'].title).toBe('mergerequest');
             expect(store.state.currentMergeRequestId).toBe(1);
+            expect(store.state.projects[TEST_PROJECT].mergeRequests['1'].title).toBe(
+              'mergerequest',
+            );
 
             done();
           })
@@ -77,16 +175,16 @@ describe('IDE store merge request actions', () => {
             dispatch,
             state: store.state,
           },
-          { projectId: 'abcproject', mergeRequestId: 1 },
+          { projectId: TEST_PROJECT, mergeRequestId: 1 },
         )
           .then(done.fail)
           .catch(() => {
             expect(dispatch).toHaveBeenCalledWith('setErrorMessage', {
-              text: 'An error occured whilst loading the merge request.',
+              text: 'An error occurred whilst loading the merge request.',
               action: jasmine.any(Function),
               actionText: 'Please try again',
               actionPayload: {
-                projectId: 'abcproject',
+                projectId: TEST_PROJECT,
                 mergeRequestId: 1,
                 force: false,
               },
@@ -100,7 +198,7 @@ describe('IDE store merge request actions', () => {
 
   describe('getMergeRequestChanges', () => {
     beforeEach(() => {
-      store.state.projects.abcproject.mergeRequests['1'] = { changes: [] };
+      store.state.projects[TEST_PROJECT].mergeRequests['1'] = { changes: [] };
     });
 
     describe('success', () => {
@@ -114,9 +212,9 @@ describe('IDE store merge request actions', () => {
 
       it('calls getProjectMergeRequestChanges service method', done => {
         store
-          .dispatch('getMergeRequestChanges', { projectId: 'abcproject', mergeRequestId: 1 })
+          .dispatch('getMergeRequestChanges', { projectId: TEST_PROJECT, mergeRequestId: 1 })
           .then(() => {
-            expect(service.getProjectMergeRequestChanges).toHaveBeenCalledWith('abcproject', 1);
+            expect(service.getProjectMergeRequestChanges).toHaveBeenCalledWith(TEST_PROJECT, 1);
 
             done();
           })
@@ -125,9 +223,9 @@ describe('IDE store merge request actions', () => {
 
       it('sets the Merge Request Changes Object', done => {
         store
-          .dispatch('getMergeRequestChanges', { projectId: 'abcproject', mergeRequestId: 1 })
+          .dispatch('getMergeRequestChanges', { projectId: TEST_PROJECT, mergeRequestId: 1 })
           .then(() => {
-            expect(store.state.projects.abcproject.mergeRequests['1'].changes.title).toBe(
+            expect(store.state.projects[TEST_PROJECT].mergeRequests['1'].changes.title).toBe(
               'mergerequest',
             );
             done();
@@ -150,16 +248,16 @@ describe('IDE store merge request actions', () => {
             dispatch,
             state: store.state,
           },
-          { projectId: 'abcproject', mergeRequestId: 1 },
+          { projectId: TEST_PROJECT, mergeRequestId: 1 },
         )
           .then(done.fail)
           .catch(() => {
             expect(dispatch).toHaveBeenCalledWith('setErrorMessage', {
-              text: 'An error occured whilst loading the merge request changes.',
+              text: 'An error occurred whilst loading the merge request changes.',
               action: jasmine.any(Function),
               actionText: 'Please try again',
               actionPayload: {
-                projectId: 'abcproject',
+                projectId: TEST_PROJECT,
                 mergeRequestId: 1,
                 force: false,
               },
@@ -173,7 +271,7 @@ describe('IDE store merge request actions', () => {
 
   describe('getMergeRequestVersions', () => {
     beforeEach(() => {
-      store.state.projects.abcproject.mergeRequests['1'] = { versions: [] };
+      store.state.projects[TEST_PROJECT].mergeRequests['1'] = { versions: [] };
     });
 
     describe('success', () => {
@@ -186,9 +284,9 @@ describe('IDE store merge request actions', () => {
 
       it('calls getProjectMergeRequestVersions service method', done => {
         store
-          .dispatch('getMergeRequestVersions', { projectId: 'abcproject', mergeRequestId: 1 })
+          .dispatch('getMergeRequestVersions', { projectId: TEST_PROJECT, mergeRequestId: 1 })
           .then(() => {
-            expect(service.getProjectMergeRequestVersions).toHaveBeenCalledWith('abcproject', 1);
+            expect(service.getProjectMergeRequestVersions).toHaveBeenCalledWith(TEST_PROJECT, 1);
 
             done();
           })
@@ -197,9 +295,9 @@ describe('IDE store merge request actions', () => {
 
       it('sets the Merge Request Versions Object', done => {
         store
-          .dispatch('getMergeRequestVersions', { projectId: 'abcproject', mergeRequestId: 1 })
+          .dispatch('getMergeRequestVersions', { projectId: TEST_PROJECT, mergeRequestId: 1 })
           .then(() => {
-            expect(store.state.projects.abcproject.mergeRequests['1'].versions.length).toBe(1);
+            expect(store.state.projects[TEST_PROJECT].mergeRequests['1'].versions.length).toBe(1);
             done();
           })
           .catch(done.fail);
@@ -220,16 +318,16 @@ describe('IDE store merge request actions', () => {
             dispatch,
             state: store.state,
           },
-          { projectId: 'abcproject', mergeRequestId: 1 },
+          { projectId: TEST_PROJECT, mergeRequestId: 1 },
         )
           .then(done.fail)
           .catch(() => {
             expect(dispatch).toHaveBeenCalledWith('setErrorMessage', {
-              text: 'An error occured whilst loading the merge request version data.',
+              text: 'An error occurred whilst loading the merge request version data.',
               action: jasmine.any(Function),
               actionText: 'Please try again',
               actionPayload: {
-                projectId: 'abcproject',
+                projectId: TEST_PROJECT,
                 mergeRequestId: 1,
                 force: false,
               },
@@ -243,7 +341,7 @@ describe('IDE store merge request actions', () => {
 
   describe('openMergeRequest', () => {
     const mr = {
-      projectId: 'abcproject',
+      projectId: TEST_PROJECT,
       targetProjectId: 'defproject',
       mergeRequestId: 2,
     };
@@ -262,16 +360,28 @@ describe('IDE store merge request actions', () => {
         bar: {},
       };
 
-      spyOn(store, 'dispatch').and.callFake((type) => {
+      const originalDispatch = store.dispatch;
+
+      spyOn(store, 'dispatch').and.callFake((type, payload) => {
         switch (type) {
           case 'getMergeRequestData':
             return Promise.resolve(testMergeRequest);
           case 'getMergeRequestChanges':
             return Promise.resolve(testMergeRequestChanges);
-          default:
+          case 'getFiles':
+          case 'getMergeRequestVersions':
+          case 'getBranchData':
+          case 'setFileMrChange':
             return Promise.resolve();
+          default:
+            return originalDispatch(type, payload);
         }
       });
+      spyOn(service, 'getFileData').and.callFake(() =>
+        Promise.resolve({
+          headers: {},
+        }),
+      );
     });
 
     it('dispatch actions for merge request data', done => {
@@ -280,14 +390,20 @@ describe('IDE store merge request actions', () => {
           expect(store.dispatch.calls.allArgs()).toEqual([
             ['getMergeRequestData', mr],
             ['setCurrentBranchId', testMergeRequest.source_branch],
-            ['getBranchData', {
-              projectId: mr.projectId,
-              branchId: testMergeRequest.source_branch,
-            }],
-            ['getFiles', {
-              projectId: mr.projectId,
-              branchId: testMergeRequest.source_branch,
-            }],
+            [
+              'getBranchData',
+              {
+                projectId: mr.projectId,
+                branchId: testMergeRequest.source_branch,
+              },
+            ],
+            [
+              'getFiles',
+              {
+                projectId: mr.projectId,
+                branchId: testMergeRequest.source_branch,
+              },
+            ],
             ['getMergeRequestVersions', mr],
             ['getMergeRequestChanges', mr],
           ]);
@@ -297,25 +413,39 @@ describe('IDE store merge request actions', () => {
     });
 
     it('updates activity bar view and gets file data, if changes are found', done => {
+      store.state.entries.foo = {
+        url: 'test',
+      };
+      store.state.entries.bar = {
+        url: 'test',
+      };
+
       testMergeRequestChanges.changes = [
-        { new_path: 'foo' },
-        { new_path: 'bar' },
+        { new_path: 'foo', path: 'foo' },
+        { new_path: 'bar', path: 'bar' },
       ];
 
       openMergeRequest(store, mr)
         .then(() => {
-          expect(store.dispatch).toHaveBeenCalledWith('updateActivityBarView', activityBarViews.review);
+          expect(store.dispatch).toHaveBeenCalledWith(
+            'updateActivityBarView',
+            activityBarViews.review,
+          );
 
           testMergeRequestChanges.changes.forEach((change, i) => {
             expect(store.dispatch).toHaveBeenCalledWith('setFileMrChange', {
               file: store.state.entries[change.new_path],
               mrChange: change,
             });
+
             expect(store.dispatch).toHaveBeenCalledWith('getFileData', {
               path: change.new_path,
               makeFileActive: i === 0,
+              openFile: true,
             });
           });
+
+          expect(store.state.openFiles.length).toBe(testMergeRequestChanges.changes.length);
         })
         .then(done)
         .catch(done.fail);
@@ -334,7 +464,6 @@ describe('IDE store merge request actions', () => {
         })
         .then(done)
         .catch(done.fail);
-
     });
   });
 });

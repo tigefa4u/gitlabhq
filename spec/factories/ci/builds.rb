@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 include ActionDispatch::TestProcess
 
 FactoryBot.define do
@@ -7,7 +9,6 @@ FactoryBot.define do
     stage_idx 0
     ref 'master'
     tag false
-    commands 'ls -a'
     protected false
     created_at 'Di 29. Okt 09:50:00 CET 2013'
     pending
@@ -15,7 +16,8 @@ FactoryBot.define do
     options do
       {
         image: 'ruby:2.1',
-        services: ['postgres']
+        services: ['postgres'],
+        script: ['ls -a']
       }
     end
 
@@ -26,6 +28,11 @@ FactoryBot.define do
     end
 
     pipeline factory: :ci_pipeline
+
+    trait :degenerated do
+      options nil
+      yaml_variables nil
+    end
 
     trait :started do
       started_at 'Di 29. Okt 09:51:28 CET 2013'
@@ -70,6 +77,22 @@ FactoryBot.define do
       status 'created'
     end
 
+    trait :preparing do
+      status 'preparing'
+    end
+
+    trait :scheduled do
+      schedulable
+      status 'scheduled'
+      scheduled_at { 1.minute.since }
+    end
+
+    trait :expired_scheduled do
+      schedulable
+      status 'scheduled'
+      scheduled_at { 1.minute.ago }
+    end
+
     trait :manual do
       status 'manual'
       self.when 'manual'
@@ -77,9 +100,53 @@ FactoryBot.define do
 
     trait :teardown_environment do
       environment 'staging'
-      options environment: { name: 'staging',
-                             action: 'stop',
-                             url: 'http://staging.example.com/$CI_JOB_NAME' }
+      options do
+        {
+          script: %w(ls),
+          environment: { name: 'staging',
+                         action: 'stop',
+                         url: 'http://staging.example.com/$CI_JOB_NAME' }
+        }
+      end
+    end
+
+    trait :deploy_to_production do
+      environment 'production'
+
+      options do
+        {
+          script: %w(ls),
+          environment: { name: 'production',
+                         url: 'http://prd.example.com/$CI_JOB_NAME' }
+        }
+      end
+    end
+
+    trait :start_review_app do
+      environment 'review/$CI_COMMIT_REF_NAME'
+
+      options do
+        {
+          script: %w(ls),
+          environment: { name: 'review/$CI_COMMIT_REF_NAME',
+                         url: 'http://staging.example.com/$CI_JOB_NAME',
+                         on_stop: 'stop_review_app' }
+        }
+      end
+    end
+
+    trait :stop_review_app do
+      name 'stop_review_app'
+      environment 'review/$CI_COMMIT_REF_NAME'
+
+      options do
+        {
+          script: %w(ls),
+          environment: { name: 'review/$CI_COMMIT_REF_NAME',
+                         url: 'http://staging.example.com/$CI_JOB_NAME',
+                         action: 'stop' }
+        }
+      end
     end
 
     trait :allowed_to_fail do
@@ -96,6 +163,21 @@ FactoryBot.define do
 
     trait :retryable do
       success
+    end
+
+    trait :schedulable do
+      self.when 'delayed'
+
+      options do
+        {
+          script: ['ls -a'],
+          start_in: '1 minute'
+        }
+      end
+    end
+
+    trait :actionable do
+      self.when 'manual'
     end
 
     trait :retried do
@@ -148,6 +230,26 @@ FactoryBot.define do
       end
     end
 
+    trait :trace_with_duplicate_sections do
+      after(:create) do |build, evaluator|
+        trace = File.binread(
+          File.expand_path(
+            Rails.root.join('spec/fixtures/trace/trace_with_duplicate_sections')))
+
+        build.trace.set(trace)
+      end
+    end
+
+    trait :trace_with_sections do
+      after(:create) do |build, evaluator|
+        trace = File.binread(
+          File.expand_path(
+            Rails.root.join('spec/fixtures/trace/trace_with_sections')))
+
+        build.trace.set(trace)
+      end
+    end
+
     trait :unicode_trace_live do
       after(:create) do |build, evaluator|
         trace = File.binread(
@@ -159,24 +261,13 @@ FactoryBot.define do
     end
 
     trait :erased do
-      erased_at Time.now
+      erased_at { Time.now }
       erased_by factory: :user
     end
 
     trait :queued do
-      queued_at Time.now
+      queued_at { Time.now }
       runner factory: :ci_runner
-    end
-
-    trait :legacy_artifacts do
-      after(:create) do |build, _|
-        build.update!(
-          legacy_artifacts_file: fixture_file_upload(
-            Rails.root.join('spec/fixtures/ci_build_artifacts.zip'), 'application/zip'),
-          legacy_artifacts_metadata: fixture_file_upload(
-            Rails.root.join('spec/fixtures/ci_build_artifacts_metadata.gz'), 'application/x-gzip')
-        )
-      end
     end
 
     trait :artifacts do
@@ -194,7 +285,7 @@ FactoryBot.define do
     end
 
     trait :expired do
-      artifacts_expire_at 1.minute.ago
+      artifacts_expire_at { 1.minute.ago }
     end
 
     trait :with_commit do
@@ -214,6 +305,7 @@ FactoryBot.define do
         {
             image: { name: 'ruby:2.1', entrypoint: '/bin/sh' },
             services: ['postgres', { name: 'docker:stable-dind', entrypoint: '/bin/sh', command: 'sleep 30', alias: 'docker' }],
+            script: %w(echo),
             after_script: %w(ls date),
             artifacts: {
                 name: 'artifacts_file',
@@ -255,9 +347,14 @@ FactoryBot.define do
       failure_reason 2
     end
 
+    trait :prerequisite_failure do
+      failed
+      failure_reason 10
+    end
+
     trait :with_runner_session do
       after(:build) do |build|
-        build.build_runner_session(url: 'ws://localhost')
+        build.build_runner_session(url: 'https://localhost')
       end
     end
   end

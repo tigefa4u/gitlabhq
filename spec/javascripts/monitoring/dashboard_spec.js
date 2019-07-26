@@ -1,73 +1,125 @@
 import Vue from 'vue';
 import MockAdapter from 'axios-mock-adapter';
 import Dashboard from '~/monitoring/components/dashboard.vue';
+import { timeWindows, timeWindowsKeyNames } from '~/monitoring/constants';
+import * as types from '~/monitoring/stores/mutation_types';
+import { createStore } from '~/monitoring/stores';
 import axios from '~/lib/utils/axios_utils';
-import { metricsGroupsAPIResponse, mockApiEndpoint, environmentData } from './mock_data';
+import {
+  metricsGroupsAPIResponse,
+  mockApiEndpoint,
+  environmentData,
+  singleGroupResponse,
+  dashboardGitResponse,
+} from './mock_data';
+
+const propsData = {
+  hasMetrics: false,
+  documentationPath: '/path/to/docs',
+  settingsPath: '/path/to/settings',
+  clustersPath: '/path/to/clusters',
+  tagsPath: '/path/to/tags',
+  projectPath: '/path/to/project',
+  metricsEndpoint: mockApiEndpoint,
+  deploymentsEndpoint: null,
+  emptyGettingStartedSvgPath: '/path/to/getting-started.svg',
+  emptyLoadingSvgPath: '/path/to/loading.svg',
+  emptyNoDataSvgPath: '/path/to/no-data.svg',
+  emptyUnableToConnectSvgPath: '/path/to/unable-to-connect.svg',
+  environmentsEndpoint: '/root/hello-prometheus/environments/35',
+  currentEnvironmentName: 'production',
+  customMetricsAvailable: false,
+  customMetricsPath: '',
+  validateQueryPath: '',
+};
+
+export default propsData;
 
 describe('Dashboard', () => {
   let DashboardComponent;
-
-  const propsData = {
-    hasMetrics: false,
-    documentationPath: '/path/to/docs',
-    settingsPath: '/path/to/settings',
-    clustersPath: '/path/to/clusters',
-    tagsPath: '/path/to/tags',
-    projectPath: '/path/to/project',
-    metricsEndpoint: mockApiEndpoint,
-    deploymentEndpoint: null,
-    emptyGettingStartedSvgPath: '/path/to/getting-started.svg',
-    emptyLoadingSvgPath: '/path/to/loading.svg',
-    emptyNoDataSvgPath: '/path/to/no-data.svg',
-    emptyUnableToConnectSvgPath: '/path/to/unable-to-connect.svg',
-    environmentsEndpoint: '/root/hello-prometheus/environments/35',
-    currentEnvironmentName: 'production',
-  };
+  let mock;
+  let store;
+  let component;
 
   beforeEach(() => {
-    setFixtures('<div class="prometheus-graphs"></div>');
+    setFixtures(`
+      <div class="prometheus-graphs"></div>
+      <div class="layout-page"></div>
+    `);
+
+    window.gon = {
+      ...window.gon,
+      ee: false,
+    };
+
+    store = createStore();
+    mock = new MockAdapter(axios);
     DashboardComponent = Vue.extend(Dashboard);
   });
 
+  afterEach(() => {
+    component.$destroy();
+    mock.restore();
+  });
+
   describe('no metrics are available yet', () => {
-    it('shows a getting started empty state when no metrics are present', () => {
-      const component = new DashboardComponent({
+    beforeEach(() => {
+      component = new DashboardComponent({
         el: document.querySelector('.prometheus-graphs'),
-        propsData,
+        propsData: { ...propsData },
+        store,
+      });
+    });
+
+    it('shows a getting started empty state when no metrics are present', () => {
+      expect(component.$el.querySelector('.prometheus-graphs')).toBe(null);
+      expect(component.emptyState).toEqual('gettingStarted');
+    });
+
+    it('shows the environment selector', () => {
+      expect(component.$el.querySelector('.js-environments-dropdown')).toBeTruthy();
+    });
+  });
+
+  describe('no data found', () => {
+    it('shows the environment selector dropdown', () => {
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: { ...propsData, showEmptyState: true },
+        store,
       });
 
-      expect(component.$el.querySelector('.prometheus-graphs')).toBe(null);
-      expect(component.state).toEqual('gettingStarted');
+      expect(component.$el.querySelector('.js-environments-dropdown')).toBeTruthy();
     });
   });
 
   describe('requests information to the server', () => {
-    let mock;
     beforeEach(() => {
-      mock = new MockAdapter(axios);
       mock.onGet(mockApiEndpoint).reply(200, metricsGroupsAPIResponse);
     });
 
-    afterEach(() => {
-      mock.restore();
-    });
-
     it('shows up a loading state', done => {
-      const component = new DashboardComponent({
+      component = new DashboardComponent({
         el: document.querySelector('.prometheus-graphs'),
         propsData: { ...propsData, hasMetrics: true },
+        store,
       });
 
       Vue.nextTick(() => {
-        expect(component.state).toEqual('loading');
+        expect(component.emptyState).toEqual('loading');
         done();
       });
     });
 
     it('hides the legend when showLegend is false', done => {
-      const component = new DashboardComponent({
+      component = new DashboardComponent({
         el: document.querySelector('.prometheus-graphs'),
-        propsData: { ...propsData, hasMetrics: true, showLegend: false },
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showLegend: false,
+        },
+        store,
       });
 
       setTimeout(() => {
@@ -79,9 +131,14 @@ describe('Dashboard', () => {
     });
 
     it('hides the group panels when showPanels is false', done => {
-      const component = new DashboardComponent({
+      component = new DashboardComponent({
         el: document.querySelector('.prometheus-graphs'),
-        propsData: { ...propsData, hasMetrics: true, showPanels: false },
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showPanels: false,
+        },
+        store,
       });
 
       setTimeout(() => {
@@ -92,37 +149,325 @@ describe('Dashboard', () => {
       });
     });
 
-    it('renders the dropdown with a number of environments', done => {
-      const component = new DashboardComponent({
+    it('renders the environments dropdown with a number of environments', done => {
+      component = new DashboardComponent({
         el: document.querySelector('.prometheus-graphs'),
-        propsData: { ...propsData, hasMetrics: true, showPanels: false },
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showPanels: false,
+        },
+        store,
       });
 
-      component.store.storeEnvironmentsData(environmentData);
+      component.$store.commit(
+        `monitoringDashboard/${types.RECEIVE_ENVIRONMENTS_DATA_SUCCESS}`,
+        environmentData,
+      );
+      component.$store.commit(
+        `monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`,
+        singleGroupResponse,
+      );
 
-      setTimeout(() => {
-        const dropdownMenuEnvironments = component.$el.querySelectorAll('.dropdown-menu ul li a');
-        expect(dropdownMenuEnvironments.length).toEqual(component.store.environmentsData.length);
+      Vue.nextTick()
+        .then(() => {
+          const dropdownMenuEnvironments = component.$el.querySelectorAll(
+            '.js-environments-dropdown .dropdown-item',
+          );
+
+          expect(component.environments.length).toEqual(environmentData.length);
+          expect(dropdownMenuEnvironments.length).toEqual(component.environments.length);
+
+          Array.from(dropdownMenuEnvironments).forEach((value, index) => {
+            if (environmentData[index].metrics_path) {
+              expect(value).toHaveAttr('href', environmentData[index].metrics_path);
+            }
+          });
+
+          done();
+        })
+        .catch(done.fail);
+    });
+
+    it('hides the environments dropdown list when there is no environments', done => {
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showPanels: false,
+        },
+        store,
+      });
+
+      component.$store.commit(`monitoringDashboard/${types.RECEIVE_ENVIRONMENTS_DATA_SUCCESS}`, []);
+      component.$store.commit(
+        `monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`,
+        singleGroupResponse,
+      );
+
+      Vue.nextTick()
+        .then(() => {
+          const dropdownMenuEnvironments = component.$el.querySelectorAll(
+            '.js-environments-dropdown .dropdown-item',
+          );
+
+          expect(dropdownMenuEnvironments.length).toEqual(0);
+          done();
+        })
+        .catch(done.fail);
+    });
+
+    it('renders the environments dropdown with a single active element', done => {
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showPanels: false,
+        },
+        store,
+      });
+
+      component.$store.commit(
+        `monitoringDashboard/${types.RECEIVE_ENVIRONMENTS_DATA_SUCCESS}`,
+        environmentData,
+      );
+      component.$store.commit(
+        `monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`,
+        singleGroupResponse,
+      );
+
+      Vue.nextTick()
+        .then(() => {
+          const dropdownItems = component.$el.querySelectorAll(
+            '.js-environments-dropdown .dropdown-item.active',
+          );
+
+          expect(dropdownItems.length).toEqual(1);
+          done();
+        })
+        .catch(done.fail);
+    });
+
+    it('hides the dropdown', done => {
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showPanels: false,
+          environmentsEndpoint: '',
+        },
+        store,
+      });
+
+      Vue.nextTick(() => {
+        const dropdownIsActiveElement = component.$el.querySelectorAll('.environments');
+
+        expect(dropdownIsActiveElement.length).toEqual(0);
         done();
       });
     });
 
-    it('renders the dropdown with a single is-active element', done => {
-      const component = new DashboardComponent({
+    it('renders the time window dropdown with a set of options', done => {
+      component = new DashboardComponent({
         el: document.querySelector('.prometheus-graphs'),
-        propsData: { ...propsData, hasMetrics: true, showPanels: false },
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showPanels: false,
+        },
+        store,
       });
-
-      component.store.storeEnvironmentsData(environmentData);
+      const numberOfTimeWindows = Object.keys(timeWindows).length;
 
       setTimeout(() => {
-        const dropdownIsActiveElement = component.$el.querySelectorAll(
-          '.dropdown-menu ul li a.is-active',
+        const timeWindowDropdown = component.$el.querySelector('.js-time-window-dropdown');
+        const timeWindowDropdownEls = component.$el.querySelectorAll(
+          '.js-time-window-dropdown .dropdown-item',
         );
-        expect(dropdownIsActiveElement.length).toEqual(1);
-        expect(dropdownIsActiveElement[0].textContent.trim()).toEqual(
-          component.currentEnvironmentName,
+
+        expect(timeWindowDropdown).not.toBeNull();
+        expect(timeWindowDropdownEls.length).toEqual(numberOfTimeWindows);
+
+        done();
+      });
+    });
+
+    it('fetches the metrics data with proper time window', done => {
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showPanels: false,
+        },
+        store,
+      });
+
+      spyOn(component.$store, 'dispatch').and.stub();
+      const getTimeDiffSpy = spyOnDependency(Dashboard, 'getTimeDiff');
+
+      component.$store.commit(
+        `monitoringDashboard/${types.RECEIVE_ENVIRONMENTS_DATA_SUCCESS}`,
+        environmentData,
+      );
+
+      component.$mount();
+
+      Vue.nextTick()
+        .then(() => {
+          expect(component.$store.dispatch).toHaveBeenCalled();
+          expect(getTimeDiffSpy).toHaveBeenCalledWith(component.selectedTimeWindow);
+
+          done();
+        })
+        .catch(done.fail);
+    });
+
+    it('shows a specific time window selected from the url params', done => {
+      spyOnDependency(Dashboard, 'getParameterValues').and.returnValue(['thirtyMinutes']);
+
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: { ...propsData, hasMetrics: true },
+        store,
+      });
+
+      setTimeout(() => {
+        const selectedTimeWindow = component.$el.querySelector('.js-time-window-dropdown .active');
+
+        expect(selectedTimeWindow.textContent.trim()).toEqual('30 minutes');
+        done();
+      });
+    });
+
+    it('defaults to the eight hours time window for non valid url parameters', done => {
+      spyOnDependency(Dashboard, 'getParameterValues').and.returnValue([
+        '<script>alert("XSS")</script>',
+      ]);
+
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: { ...propsData, hasMetrics: true },
+        store,
+      });
+
+      Vue.nextTick(() => {
+        expect(component.selectedTimeWindowKey).toEqual(timeWindowsKeyNames.eightHours);
+
+        done();
+      });
+    });
+  });
+
+  describe('when the window resizes', () => {
+    beforeEach(() => {
+      mock.onGet(mockApiEndpoint).reply(200, metricsGroupsAPIResponse);
+      jasmine.clock().install();
+    });
+
+    afterEach(() => {
+      jasmine.clock().uninstall();
+    });
+
+    it('sets elWidth to page width when the sidebar is resized', done => {
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showPanels: false,
+        },
+        store,
+      });
+
+      expect(component.elWidth).toEqual(0);
+
+      const pageLayoutEl = document.querySelector('.layout-page');
+      pageLayoutEl.classList.add('page-with-icon-sidebar');
+
+      Vue.nextTick()
+        .then(() => {
+          jasmine.clock().tick(1000);
+          return Vue.nextTick();
+        })
+        .then(() => {
+          expect(component.elWidth).toEqual(pageLayoutEl.clientWidth);
+          done();
+        })
+        .catch(done.fail);
+    });
+  });
+
+  describe('external dashboard link', () => {
+    beforeEach(() => {
+      mock.onGet(mockApiEndpoint).reply(200, metricsGroupsAPIResponse);
+
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showPanels: false,
+          showTimeWindowDropdown: false,
+          externalDashboardUrl: '/mockUrl',
+        },
+        store,
+      });
+    });
+
+    it('shows the link', done => {
+      setTimeout(() => {
+        expect(component.$el.querySelector('.js-external-dashboard-link').innerText).toContain(
+          'View full dashboard',
         );
+        done();
+      });
+    });
+  });
+
+  describe('Dashboard dropdown', () => {
+    beforeEach(() => {
+      mock.onGet(mockApiEndpoint).reply(200, metricsGroupsAPIResponse);
+
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showPanels: false,
+        },
+        store,
+      });
+
+      component.$store.dispatch('monitoringDashboard/setFeatureFlags', {
+        prometheusEndpoint: false,
+        multipleDashboardsEnabled: true,
+      });
+
+      component.$store.commit(
+        `monitoringDashboard/${types.RECEIVE_ENVIRONMENTS_DATA_SUCCESS}`,
+        environmentData,
+      );
+
+      component.$store.commit(
+        `monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`,
+        singleGroupResponse,
+      );
+
+      component.$store.commit(
+        `monitoringDashboard/${types.SET_ALL_DASHBOARDS}`,
+        dashboardGitResponse,
+      );
+    });
+
+    it('shows the dashboard dropdown', done => {
+      setTimeout(() => {
+        const dashboardDropdown = component.$el.querySelector('.js-dashboards-dropdown');
+
+        expect(dashboardDropdown).not.toEqual(null);
         done();
       });
     });

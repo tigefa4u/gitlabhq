@@ -53,7 +53,7 @@ When run, this spec doesn't do what we might expect:
      (compared using ==)
 ```
 
-That's because FactoryBot sequences are not reseted for each example.
+This is because FactoryBot sequences are not reset for each example.
 
 Please remember that sequence-generated values exist only to avoid having to
 explicitly set attributes that have a uniqueness constraint when using a factory.
@@ -92,17 +92,19 @@ describe API::Labels do
 end
 ```
 
-## Avoid using `allow_any_instance_of` in RSpec
+## Avoid using `expect_any_instance_of` or `allow_any_instance_of` in RSpec
 
 ### Why
 
-* Because it is not isolated therefore it might be broken at times.
-* Because it doesn't work whenever the method we want to stub was defined
+- Because it is not isolated therefore it might be broken at times.
+- Because it doesn't work whenever the method we want to stub was defined
   in a prepended module, which is very likely the case in EE. We could see
   error like this:
 
-        1.1) Failure/Error: allow_any_instance_of(ApplicationSetting).to receive_messages(messages)
-               Using `any_instance` to stub a method (elasticsearch_indexing) that has been defined on a prepended module (EE::ApplicationSetting) is not supported.
+  ```
+  1.1) Failure/Error: expect_any_instance_of(ApplicationSetting).to receive_messages(messages)
+       Using `any_instance` to stub a method (elasticsearch_indexing) that has been defined on a prepended module (EE::ApplicationSetting) is not supported.
+  ```
 
 ### Alternative: `expect_next_instance_of`
 
@@ -110,7 +112,7 @@ Instead of writing:
 
 ```ruby
 # Don't do this:
-allow_any_instance_of(Project).to receive(:add_import_job)
+expect_any_instance_of(Project).to receive(:add_import_job)
 ```
 
 We could write:

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class NotifyPreview < ActionMailer::Preview
   def note_merge_request_email_for_individual_note
     note_email(:note_merge_request_email) do
@@ -7,7 +9,7 @@ class NotifyPreview < ActionMailer::Preview
         In this notification email, we expect to see:
 
         - The note contents (that's what you're looking at)
-        - A link to view this note on Gitlab
+        - A link to view this note on GitLab
         - An explanation for why the user is receiving this notification
       MD
 
@@ -24,7 +26,7 @@ class NotifyPreview < ActionMailer::Preview
 
         - A line saying who started this discussion
         - The note contents (that's what you're looking at)
-        - A link to view this discussion on Gitlab
+        - A link to view this discussion on GitLab
         - An explanation for why the user is receiving this notification
       MD
 
@@ -42,7 +44,7 @@ class NotifyPreview < ActionMailer::Preview
         - A line saying who started this discussion and on what file
         - The diff
         - The note contents (that's what you're looking at)
-        - A link to view this discussion on Gitlab
+        - A link to view this discussion on GitLab
         - An explanation for why the user is receiving this notification
       MD
 
@@ -66,6 +68,18 @@ class NotifyPreview < ActionMailer::Preview
     Notify.issue_status_changed_email(user.id, issue.id, 'closed', user.id).message
   end
 
+  def removed_milestone_issue_email
+    Notify.removed_milestone_issue_email(user.id, issue.id, user.id)
+  end
+
+  def changed_milestone_issue_email
+    Notify.changed_milestone_issue_email(user.id, issue.id, milestone, user.id)
+  end
+
+  def import_issues_csv_email
+    Notify.import_issues_csv_email(user, project, { success: 3, errors: [5, 6, 7], valid_file: true })
+  end
+
   def closed_merge_request_email
     Notify.closed_merge_request_email(user.id, issue.id, user.id).message
   end
@@ -78,16 +92,24 @@ class NotifyPreview < ActionMailer::Preview
     Notify.merged_merge_request_email(user.id, merge_request.id, user.id).message
   end
 
+  def removed_milestone_merge_request_email
+    Notify.removed_milestone_merge_request_email(user.id, merge_request.id, user.id)
+  end
+
+  def changed_milestone_merge_request_email
+    Notify.changed_milestone_merge_request_email(user.id, merge_request.id, milestone, user.id)
+  end
+
   def member_access_denied_email
     Notify.member_access_denied_email('project', project.id, user.id).message
   end
 
   def member_access_granted_email
-    Notify.member_access_granted_email('project', user.id).message
+    Notify.member_access_granted_email(member.source_type, member.id).message
   end
 
   def member_access_requested_email
-    Notify.member_access_requested_email('group', user.id, 'some@example.com').message
+    Notify.member_access_requested_email('group', user.id, user.id).message
   end
 
   def member_invite_accepted_email
@@ -123,6 +145,14 @@ class NotifyPreview < ActionMailer::Preview
     Notify.pipeline_failed_email(pipeline, pipeline.user.try(:email))
   end
 
+  def autodevops_disabled_email
+    Notify.autodevops_disabled_email(pipeline, user.email).message
+  end
+
+  def remote_mirror_update_failed_email
+    Notify.remote_mirror_update_failed_email(remote_mirror.id, user.id).message
+  end
+
   private
 
   def project
@@ -137,12 +167,24 @@ class NotifyPreview < ActionMailer::Preview
     @merge_request ||= project.merge_requests.first
   end
 
+  def milestone
+    @milestone ||= issue.milestone
+  end
+
   def pipeline
     @pipeline = Ci::Pipeline.last
   end
 
+  def remote_mirror
+    @remote_mirror ||= RemoteMirror.last
+  end
+
   def user
     @user ||= User.last
+  end
+
+  def member
+    @member ||= Member.last
   end
 
   def create_note(params)

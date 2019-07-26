@@ -15,7 +15,7 @@ To see how GitLab looks please see the [features page on our website](https://ab
 
 - Manage Git repositories with fine grained access controls that keep your code secure
 - Perform code reviews and enhance collaboration with merge requests
-- Complete continuous integration (CI) and CD pipelines to builds, test, and deploy your applications
+- Complete continuous integration (CI) and continuous deployment/delivery (CD) pipelines to build, test, and deploy your applications
 - Each project can also have an issue tracker, issue board, and a wiki
 - Used by more than 100,000 organizations, GitLab is the most popular solution to manage Git repositories on-premises
 - Completely free and open source (MIT Expat license)
@@ -54,11 +54,9 @@ Just select your operating system, download the respective package (Debian or RP
 
 There are various other options to install GitLab, please refer to the [installation page on the GitLab website](https://about.gitlab.com/installation/) for more information.
 
-You can access a new installation with the login **`root`** and password **`5iveL!fe`**, after login you are required to set a unique password.
-
 ## Contributing
 
-GitLab is an open source project and we are very happy to accept community contributions. Please refer to [CONTRIBUTING.md](/CONTRIBUTING.md) for details.
+GitLab is an open source project and we are very happy to accept community contributions. Please refer to [Contributing to GitLab page](https://about.gitlab.com/contributing/) for more details.
 
 ## Licensing
 
@@ -66,7 +64,7 @@ GitLab Community Edition (CE) is available freely under the MIT Expat license.
 
 All third party components incorporated into the GitLab Software are licensed under the original license provided by the owner of the applicable component.
 
-All Documentation content that resides under the doc/ directory of this repository is licensed under Creative Commons: CC BY-SA 4.0.
+All Documentation content that resides under the `doc/` directory of this repository is licensed under Creative Commons: CC BY-SA 4.0.
 
 ## Install a development environment
 
@@ -83,7 +81,7 @@ Instructions on how to start GitLab and how to run the tests can be found in the
 GitLab is a Ruby on Rails application that runs on the following software:
 
 - Ubuntu/Debian/CentOS/RHEL/OpenSUSE
-- Ruby (MRI) 2.3
+- Ruby (MRI) 2.4
 - Git 2.8.4+
 - Redis 2.8+
 - PostgreSQL (preferred) or MySQL
@@ -125,4 +123,3 @@ Please see [Getting help for GitLab](https://about.gitlab.com/getting-help/) on 
 ## Is it awesome?
 
 [These people](https://twitter.com/gitlab/likes) seem to like it.
-

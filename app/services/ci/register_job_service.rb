@@ -6,7 +6,7 @@ module Ci
   class RegisterJobService
     attr_reader :runner
 
-    JOB_QUEUE_DURATION_SECONDS_BUCKETS = [1, 3, 10, 30].freeze
+    JOB_QUEUE_DURATION_SECONDS_BUCKETS = [1, 3, 10, 30, 60, 300, 900].freeze
     JOBS_RUNNING_FOR_PROJECT_MAX_BUCKET = 5.freeze
 
     Result = Struct.new(:build, :valid?)
@@ -15,6 +15,7 @@ module Ci
       @runner = runner
     end
 
+    # rubocop: disable CodeReuse/ActiveRecord
     def execute(params = {})
       builds =
         if runner.instance_type?
@@ -35,7 +36,12 @@ module Ci
         builds = builds.with_any_tags
       end
 
-      builds.find do |build|
+      # pick builds that older than specified age
+      if params.key?(:job_age)
+        builds = builds.queued_before(params[:job_age].seconds.ago)
+      end
+
+      builds.each do |build|
         next unless runner.can_pick?(build)
 
         begin
@@ -44,7 +50,7 @@ module Ci
           if assign_runner!(build, params)
             register_success(build)
 
-            return Result.new(build, true) # rubocop:disable Cop/AvoidReturnFromBlocks
+            return Result.new(build, true)
           end
         rescue StateMachines::InvalidTransition, ActiveRecord::StaleObjectError
           # We are looping to find another build that is not conflicting
@@ -63,6 +69,7 @@ module Ci
       register_failure
       Result.new(nil, valid)
     end
+    # rubocop: enable CodeReuse/ActiveRecord
 
     private
 
@@ -80,10 +87,16 @@ module Ci
         return false
       end
 
+      if build.archived?
+        build.drop!(:archived_failure)
+        return false
+      end
+
       build.run!
       true
     end
 
+    # rubocop: disable CodeReuse/ActiveRecord
     def builds_for_shared_runner
       new_builds.
         # don't run projects which have not enabled shared runners and builds
@@ -97,27 +110,34 @@ module Ci
       joins("LEFT JOIN (#{running_builds_for_shared_runners.to_sql}) AS project_builds ON ci_builds.project_id=project_builds.project_id")
         .order('COALESCE(project_builds.running_builds, 0) ASC', 'ci_builds.id ASC')
     end
+    # rubocop: enable CodeReuse/ActiveRecord
 
+    # rubocop: disable CodeReuse/ActiveRecord
     def builds_for_project_runner
       new_builds.where(project: runner.projects.without_deleted.with_builds_enabled).order('id ASC')
     end
+    # rubocop: enable CodeReuse/ActiveRecord
 
+    # rubocop: disable CodeReuse/ActiveRecord
     def builds_for_group_runner
       # Workaround for weird Rails bug, that makes `runner.groups.to_sql` to return `runner_id = NULL`
       groups = ::Group.joins(:runner_namespaces).merge(runner.runner_namespaces)
 
-      hierarchy_groups = Gitlab::GroupHierarchy.new(groups).base_and_descendants
+      hierarchy_groups = Gitlab::ObjectHierarchy.new(groups).base_and_descendants
       projects = Project.where(namespace_id: hierarchy_groups)
         .with_group_runners_enabled
         .with_builds_enabled
         .without_deleted
       new_builds.where(project: projects).order('id ASC')
     end
+    # rubocop: enable CodeReuse/ActiveRecord
 
+    # rubocop: disable CodeReuse/ActiveRecord
     def running_builds_for_shared_runners
       Ci::Build.running.where(runner: Ci::Runner.instance_type)
         .group(:project_id).select(:project_id, 'count(*) AS running_builds')
     end
+    # rubocop: enable CodeReuse/ActiveRecord
 
     def new_builds
       builds = Ci::Build.pending.unstarted
@@ -138,6 +158,7 @@ module Ci
       attempt_counter.increment
     end
 
+    # rubocop: disable CodeReuse/ActiveRecord
     def jobs_running_for_project(job)
       return '+Inf' unless runner.instance_type?
 
@@ -146,6 +167,7 @@ module Ci
                               .limit(JOBS_RUNNING_FOR_PROJECT_MAX_BUCKET + 1).count - 1
       running_jobs_count < JOBS_RUNNING_FOR_PROJECT_MAX_BUCKET ? running_jobs_count : "#{JOBS_RUNNING_FOR_PROJECT_MAX_BUCKET}+"
     end
+    # rubocop: enable CodeReuse/ActiveRecord
 
     def failed_attempt_counter
       @failed_attempt_counter ||= Gitlab::Metrics.counter(:job_register_attempts_failed_total, "Counts the times a runner tries to register a job")

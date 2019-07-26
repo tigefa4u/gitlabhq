@@ -39,7 +39,7 @@ scope format: false do
     end
   end
 
-  scope constraints: { id: Gitlab::PathRegex.git_reference_regex } do
+  scope path: '-', constraints: { id: Gitlab::PathRegex.git_reference_regex } do
     resources :network, only: [:show]
 
     resources :graphs, only: [:show] do
@@ -52,17 +52,20 @@ scope format: false do
     end
 
     get '/branches/:state', to: 'branches#index', as: :branches_filtered, constraints: { state: /active|stale|all/ }
-    resources :branches, only: [:index, :new, :create, :destroy]
-    delete :merged_branches, controller: 'branches', action: :destroy_all_merged
-    resources :tags, only: [:index, :show, :new, :create, :destroy] do
-      resource :release, only: [:edit, :update]
+    resources :branches, only: [:index, :new, :create, :destroy] do
+      get :diverging_commit_counts, on: :collection
     end
 
-    resources :protected_branches, only: [:index, :show, :create, :update, :destroy]
+    delete :merged_branches, controller: 'branches', action: :destroy_all_merged
+    resources :tags, only: [:index, :show, :new, :create, :destroy] do
+      resource :release, controller: 'tags/releases', only: [:edit, :update]
+    end
+
+    resources :protected_branches, only: [:index, :show, :create, :update, :destroy, :patch], constraints: { id: Gitlab::PathRegex.git_reference_regex }
     resources :protected_tags, only: [:index, :show, :create, :update, :destroy]
   end
 
-  scope constraints: { id: /.+/ }  do
+  scope constraints: { id: /.+/ } do
     scope controller: :blob do
       get '/new/*id', action: :new, as: :new_blob
       post '/create/*id', action: :create, as: :create_blob

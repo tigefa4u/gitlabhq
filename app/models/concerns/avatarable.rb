@@ -9,7 +9,7 @@ module Avatarable
     include Gitlab::Utils::StrongMemoize
 
     validate :avatar_type, if: ->(user) { user.avatar.present? && user.avatar_changed? }
-    validates :avatar, file_size: { maximum: 200.kilobytes.to_i }
+    validates :avatar, file_size: { maximum: 200.kilobytes.to_i }, if: :avatar_changed?
 
     mount_uploader :avatar, AvatarUploader
 
@@ -43,7 +43,18 @@ module Avatarable
   end
 
   def avatar_path(only_path: true, size: nil)
-    return unless self[:avatar].present?
+    unless self.try(:id)
+      return uncached_avatar_path(only_path: only_path, size: size)
+    end
+
+    # Cache this avatar path only within the request because avatars in
+    # object storage may be generated with time-limited, signed URLs.
+    key = "#{self.class.name}:#{self.id}:#{only_path}:#{size}"
+    Gitlab::SafeRequestStore[key] ||= uncached_avatar_path(only_path: only_path, size: size)
+  end
+
+  def uncached_avatar_path(only_path: true, size: nil)
+    return unless self.try(:avatar).present?
 
     asset_host = ActionController::Base.asset_host
     use_asset_host = asset_host.present?
@@ -80,13 +91,14 @@ module Avatarable
   private
 
   def retrieve_upload_from_batch(identifier)
-    BatchLoader.for(identifier: identifier, model: self).batch(key: self.class) do |upload_params, loader, args|
+    BatchLoader.for(identifier: identifier, model: self)
+               .batch(key: self.class, cache: true, replace_methods: false) do |upload_params, loader, args|
       model_class = args[:key]
       paths = upload_params.flat_map do |params|
         params[:model].upload_paths(params[:identifier])
       end
 
-      Upload.where(uploader: AvatarUploader, path: paths).find_each do |upload|
+      Upload.where(uploader: AvatarUploader.name, path: paths).find_each do |upload|
         model = model_class.instantiate('id' => upload.model_id)
 
         loader.call({ model: model, identifier: File.basename(upload.path) }, upload)

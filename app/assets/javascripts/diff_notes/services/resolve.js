@@ -3,14 +3,13 @@
 import Vue from 'vue';
 import Flash from '../../flash';
 import '../../vue_shared/vue_resource_interceptor';
+import { __ } from '~/locale';
 
 window.gl = window.gl || {};
 
 class ResolveServiceClass {
   constructor(root) {
-    this.noteResource = Vue.resource(
-      `${root}/notes{/noteId}/resolve?html=true`,
-    );
+    this.noteResource = Vue.resource(`${root}/notes{/noteId}/resolve?html=true`);
     this.discussionResource = Vue.resource(
       `${root}/merge_requests{/mergeRequestId}/discussions{/discussionId}/resolve?html=true`,
     );
@@ -52,9 +51,7 @@ class ResolveServiceClass {
       })
       .catch(
         () =>
-          new Flash(
-            'An error occurred when trying to resolve a discussion. Please try again.',
-          ),
+          new Flash(__('An error occurred when trying to resolve a discussion. Please try again.')),
       );
   }
 

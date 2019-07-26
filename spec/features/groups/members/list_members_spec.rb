@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe 'Groups > Members > List members' do
   include Select2Helper
+  include Spec::Support::Helpers::Features::ListRowsHelpers
 
   let(:user1) { create(:user, name: 'John Doe') }
   let(:user2) { create(:user, name: 'Mary Jane') }
@@ -12,7 +13,7 @@ describe 'Groups > Members > List members' do
     sign_in(user1)
   end
 
-  it 'show members from current group and parent', :nested_groups do
+  it 'show members from current group and parent' do
     group.add_developer(user1)
     nested_group.add_developer(user2)
 
@@ -22,7 +23,7 @@ describe 'Groups > Members > List members' do
     expect(second_row.text).to include(user2.name)
   end
 
-  it 'show user once if member of both current group and parent', :nested_groups do
+  it 'show user once if member of both current group and parent' do
     group.add_developer(user1)
     nested_group.add_developer(user1)
 
@@ -42,13 +43,5 @@ describe 'Groups > Members > List members' do
     it_behaves_like 'showing user status' do
       let(:user_with_status) { user2 }
     end
-  end
-
-  def first_row
-    page.all('ul.content-list > li')[0]
-  end
-
-  def second_row
-    page.all('ul.content-list > li')[1]
   end
 end

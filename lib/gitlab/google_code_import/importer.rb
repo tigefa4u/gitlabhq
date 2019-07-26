@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   module GoogleCodeImport
     class Importer
@@ -78,6 +80,7 @@ module Gitlab
         end
       end
 
+      # rubocop: disable CodeReuse/ActiveRecord
       def import_issues
         return unless repo.issues
 
@@ -101,7 +104,7 @@ module Gitlab
             if username.start_with?("@")
               username = username[1..-1]
 
-              if user = User.find_by(username: username)
+              if user = UserFinder.new(username).find_by_username
                 assignee_id = user.id
               end
             end
@@ -123,6 +126,7 @@ module Gitlab
           import_issue_comments(issue, comments)
         end
       end
+      # rubocop: enable CodeReuse/ActiveRecord
 
       def import_issue_labels(raw_issue)
         labels = []

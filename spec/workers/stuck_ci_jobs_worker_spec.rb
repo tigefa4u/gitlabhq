@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe StuckCiJobsWorker do
@@ -5,8 +7,6 @@ describe StuckCiJobsWorker do
 
   let!(:runner) { create :ci_runner }
   let!(:job) { create :ci_build, runner: runner }
-  let(:trace_lease_key) { "trace:archive:#{job.id}" }
-  let(:trace_lease_uuid) { SecureRandom.uuid }
   let(:worker_lease_key) { StuckCiJobsWorker::EXCLUSIVE_LEASE_KEY }
   let(:worker_lease_uuid) { SecureRandom.uuid }
 
@@ -14,7 +14,6 @@ describe StuckCiJobsWorker do
 
   before do
     stub_exclusive_lease(worker_lease_key, worker_lease_uuid)
-    stub_exclusive_lease(trace_lease_key, trace_lease_uuid)
     job.update!(status: status, updated_at: updated_at)
   end
 
@@ -127,6 +126,47 @@ describe StuckCiJobsWorker do
     end
   end
 
+  describe 'drop stale scheduled builds' do
+    let(:status) { 'scheduled' }
+    let(:updated_at) { }
+
+    context 'when scheduled at 2 hours ago but it is not executed yet' do
+      let!(:job) { create(:ci_build, :scheduled, scheduled_at: 2.hours.ago) }
+
+      it 'drops the stale scheduled build' do
+        expect(Ci::Build.scheduled.count).to eq(1)
+        expect(job).to be_scheduled
+
+        worker.perform
+        job.reload
+
+        expect(Ci::Build.scheduled.count).to eq(0)
+        expect(job).to be_failed
+        expect(job).to be_stale_schedule
+      end
+    end
+
+    context 'when scheduled at 30 minutes ago but it is not executed yet' do
+      let!(:job) { create(:ci_build, :scheduled, scheduled_at: 30.minutes.ago) }
+
+      it 'does not drop the stale scheduled build yet' do
+        expect(Ci::Build.scheduled.count).to eq(1)
+        expect(job).to be_scheduled
+
+        worker.perform
+
+        expect(Ci::Build.scheduled.count).to eq(1)
+        expect(job).to be_scheduled
+      end
+    end
+
+    context 'when there are no stale scheduled builds' do
+      it 'does not drop the stale scheduled build yet' do
+        expect { worker.perform }.not_to raise_error
+      end
+    end
+  end
+
   describe 'exclusive lease' do
     let(:status) { 'running' }
     let(:updated_at) { 2.days.ago }
@@ -152,7 +192,6 @@ describe StuckCiJobsWorker do
     end
 
     it 'cancels exclusive leases after worker perform' do
-      expect_to_cancel_exclusive_lease(trace_lease_key, trace_lease_uuid)
       expect_to_cancel_exclusive_lease(worker_lease_key, worker_lease_uuid)
 
       worker.perform

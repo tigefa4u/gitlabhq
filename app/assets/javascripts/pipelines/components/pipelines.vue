@@ -4,7 +4,7 @@ import { __, sprintf, s__ } from '../../locale';
 import createFlash from '../../flash';
 import PipelinesService from '../services/pipelines_service';
 import pipelinesMixin from '../mixins/pipelines';
-import TablePagination from '../../vue_shared/components/table_pagination.vue';
+import TablePagination from '../../vue_shared/components/pagination/table_pagination.vue';
 import NavigationTabs from '../../vue_shared/components/navigation_tabs.vue';
 import NavigationControls from './nav_controls.vue';
 import { getParameterByName } from '../../lib/utils/common_utils';
@@ -155,14 +155,6 @@ export default {
       );
     },
 
-    shouldRenderPagination() {
-      return (
-        !this.isLoading &&
-        this.state.pipelines.length &&
-        this.state.pageInfo.total > this.state.pageInfo.perPage
-      );
-    },
-
     emptyTabMessage() {
       const { scopes } = this.$options;
       const possibleScopes = [scopes.pending, scopes.running, scopes.finished];
@@ -232,36 +224,6 @@ export default {
         this.setCommonData(resp.data.pipelines);
       }
     },
-    /**
-     * Handles URL and query parameter changes.
-     * When the user uses the pagination or the tabs,
-     *  - update URL
-     *  - Make API request to the server with new parameters
-     *  - Update the polling function
-     *  - Update the internal state
-     */
-    updateContent(parameters) {
-      this.updateInternalState(parameters);
-
-      // fetch new data
-      return this.service
-        .getPipelines(this.requestData)
-        .then(response => {
-          this.isLoading = false;
-          this.successCallback(response);
-
-          // restart polling
-          this.poll.restart({ data: this.requestData });
-        })
-        .catch(() => {
-          this.isLoading = false;
-          this.errorCallback();
-
-          // restart polling
-          this.poll.restart({ data: this.requestData });
-        });
-    },
-
     handleResetRunnersCache(endpoint) {
       this.isResetCacheButtonLoading = true;
 
@@ -285,20 +247,8 @@ export default {
       v-if="shouldRenderTabs || shouldRenderButtons"
       class="top-area scrolling-tabs-container inner-page-scroll-tabs"
     >
-      <div class="fade-left">
-        <i
-          class="fa fa-angle-left"
-          aria-hidden="true"
-        >
-        </i>
-      </div>
-      <div class="fade-right">
-        <i
-          class="fa fa-angle-right"
-          aria-hidden="true"
-        >
-        </i>
-      </div>
+      <div class="fade-left"><i class="fa fa-angle-left" aria-hidden="true"> </i></div>
+      <div class="fade-right"><i class="fa fa-angle-right" aria-hidden="true"> </i></div>
 
       <navigation-tabs
         v-if="shouldRenderTabs"
@@ -318,11 +268,10 @@ export default {
     </div>
 
     <div class="content-list pipelines">
-
-      <loading-icon
+      <gl-loading-icon
         v-if="stateToRender === $options.stateMap.loading"
         :label="s__('Pipelines|Loading Pipelines')"
-        size="3"
+        :size="3"
         class="prepend-top-20"
       />
 
@@ -336,8 +285,10 @@ export default {
       <svg-blank-state
         v-else-if="stateToRender === $options.stateMap.error"
         :svg-path="errorStateSvgPath"
-        :message="s__(`Pipelines|There was an error fetching the pipelines.
-        Try again in a few moments or contact your support team.`)"
+        :message="
+          s__(`Pipelines|There was an error fetching the pipelines.
+        Try again in a few moments or contact your support team.`)
+        "
       />
 
       <svg-blank-state
@@ -346,11 +297,7 @@ export default {
         :message="emptyTabMessage"
       />
 
-      <div
-        v-else-if="stateToRender === $options.stateMap.tableList"
-        class="table-holder"
-      >
-
+      <div v-else-if="stateToRender === $options.stateMap.tableList" class="table-holder">
         <pipelines-table-component
           :pipelines="state.pipelines"
           :update-graph-dropdown="updateGraphDropdown"

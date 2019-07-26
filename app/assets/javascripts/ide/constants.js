@@ -1,13 +1,12 @@
-// Fuzzy file finder
-export const MAX_FILE_FINDER_RESULTS = 40;
-export const FILE_FINDER_ROW_HEIGHT = 55;
-export const FILE_FINDER_EMPTY_ROW_HEIGHT = 33;
-
 export const MAX_WINDOW_HEIGHT_COMPACT = 750;
 
 // Commit message textarea
 export const MAX_TITLE_LENGTH = 50;
 export const MAX_BODY_LENGTH = 72;
+
+// File view modes
+export const FILE_VIEW_MODE_EDITOR = 'editor';
+export const FILE_VIEW_MODE_PREVIEW = 'preview';
 
 export const activityBarViews = {
   edit: 'ide-tree',
@@ -26,13 +25,30 @@ export const diffModes = {
   new: 'new',
   deleted: 'deleted',
   renamed: 'renamed',
+  mode_changed: 'mode_changed',
 };
 
+export const diffViewerModes = Object.freeze({
+  not_diffable: 'not_diffable',
+  no_preview: 'no_preview',
+  added: 'added',
+  deleted: 'deleted',
+  renamed: 'renamed',
+  mode_changed: 'mode_changed',
+  text: 'text',
+  image: 'image',
+});
+
+export const diffViewerErrors = Object.freeze({
+  too_large: 'too_large',
+  stored_externally: 'server_side_but_stored_externally',
+});
+
 export const rightSidebarViews = {
-  pipelines: 'pipelines-list',
-  jobsDetail: 'jobs-detail',
-  mergeRequestInfo: 'merge-request-info',
-  clientSidePreview: 'clientside',
+  pipelines: { name: 'pipelines-list', keepAlive: true },
+  jobsDetail: { name: 'jobs-detail', keepAlive: false },
+  mergeRequestInfo: { name: 'merge-request-info', keepAlive: true },
+  clientSidePreview: { name: 'clientside', keepAlive: false },
 };
 
 export const stageKeys = {
@@ -58,6 +74,13 @@ export const commitItemIconMap = {
 export const modalTypes = {
   rename: 'rename',
   tree: 'tree',
+};
+
+export const commitActionTypes = {
+  move: 'move',
+  delete: 'delete',
+  create: 'create',
+  update: 'update',
 };
 
 export const packageJsonPath = 'package.json';

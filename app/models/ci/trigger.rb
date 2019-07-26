@@ -1,11 +1,9 @@
 # frozen_string_literal: true
 
 module Ci
-  class Trigger < ActiveRecord::Base
+  class Trigger < ApplicationRecord
     extend Gitlab::Ci::Model
-    include IgnorableColumn
-
-    ignore_column :deleted_at
+    include Presentable
 
     belongs_to :project
     belongs_to :owner, class_name: "User"
@@ -13,6 +11,7 @@ module Ci
     has_many :trigger_requests
 
     validates :token, presence: true, uniqueness: true
+    validates :owner, presence: true, unless: :supports_legacy_tokens?
 
     before_validation :set_default_values
 
@@ -29,15 +28,20 @@ module Ci
     end
 
     def short_token
-      token[0...4]
+      token[0...4] if token.present?
     end
 
     def legacy?
       self.owner_id.blank?
     end
 
+    def supports_legacy_tokens?
+      Feature.enabled?(:use_legacy_pipeline_triggers, project)
+    end
+
     def can_access_project?
-      self.owner_id.blank? || Ability.allowed?(self.owner, :create_build, project)
+      supports_legacy_tokens? && legacy? ||
+        Ability.allowed?(self.owner, :create_build, project)
     end
   end
 end

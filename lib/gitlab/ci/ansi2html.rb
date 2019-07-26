@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # ANSI color library
 #
 # Implementation per http://en.wikipedia.org/wiki/ANSI_escape_code
@@ -29,7 +31,7 @@ module Gitlab
       end
 
       class Converter
-        def on_0(_) reset()                            end
+        def on_0(_) reset                              end
 
         def on_1(_) enable(STYLE_SWITCHES[:bold])      end
 
@@ -129,9 +131,9 @@ module Gitlab
 
         def on_109(_) set_bg_color(9, 'l') end
 
-        attr_accessor :offset, :n_open_tags, :fg_color, :bg_color, :style_mask
+        attr_accessor :offset, :n_open_tags, :fg_color, :bg_color, :style_mask, :sections, :lineno_in_section
 
-        STATE_PARAMS = [:offset, :n_open_tags, :fg_color, :bg_color, :style_mask].freeze
+        STATE_PARAMS = [:offset, :n_open_tags, :fg_color, :bg_color, :style_mask, :sections, :lineno_in_section].freeze
 
         def convert(stream, new_state)
           reset_state
@@ -151,10 +153,9 @@ module Gitlab
 
           start_offset = @offset
 
-          open_new_tag
-
           stream.each_line do |line|
             s = StringScanner.new(line)
+
             until s.eos?
 
               if s.scan(Gitlab::Regex.build_trace_section_regex)
@@ -164,18 +165,18 @@ module Gitlab
               elsif s.scan(/\e(([@-_])(.*?)?)?$/)
                 break
               elsif s.scan(/</)
-                @out << '&lt;'
+                write_in_tag '&lt;'
               elsif s.scan(/\r?\n/)
-                @out << '<br>'
+                handle_new_line
               else
-                @out << s.scan(/./m)
+                write_in_tag s.scan(/./m)
               end
 
               @offset += s.matched_size
             end
           end
 
-          close_open_tags()
+          close_open_tags
 
           OpenStruct.new(
             html: @out.force_encoding(Encoding.default_external),
@@ -188,13 +189,59 @@ module Gitlab
           )
         end
 
+        def section_to_class_name(section)
+          section.to_s.downcase.gsub(/[^a-z0-9]/, '-')
+        end
+
+        def handle_new_line
+          css_classes = []
+
+          if @sections.any?
+            css_classes = %w[section line] + sections.map { |section| "s_#{section}" }
+          end
+
+          write_in_tag %{<br/>}
+          write_raw %{<span class="#{css_classes.join(' ')}"></span>} if css_classes.any?
+          @lineno_in_section += 1
+          open_new_tag
+        end
+
         def handle_section(scanner)
           action = scanner[1]
           timestamp = scanner[2]
           section = scanner[3]
-          line = scanner.matched()[0...-5] # strips \r\033[0K
 
-          @out << %{<div class="hidden" data-action="#{action}" data-timestamp="#{timestamp}" data-section="#{section}">#{line}</div>}
+          normalized_section = section_to_class_name(section)
+
+          if action == "start"
+            handle_section_start(normalized_section, timestamp)
+          elsif action == "end"
+            handle_section_end(normalized_section, timestamp)
+          end
+        end
+
+        def handle_section_start(section, timestamp)
+          return if @sections.include?(section)
+
+          @sections << section
+          write_raw %{<div class="js-section-start fa fa-caret-down append-right-8 cursor-pointer" data-timestamp="#{timestamp}" data-section="#{data_section_names}" role="button"></div>}
+          @lineno_in_section = 0
+        end
+
+        def handle_section_end(section, timestamp)
+          return unless @sections.include?(section)
+
+          # close all sections up to section
+          until @sections.empty?
+            write_raw %{<div class="section-end" data-section="#{data_section_names}"></div>}
+
+            last_section = @sections.pop
+            break if section == last_section
+          end
+        end
+
+        def data_section_names
+          @sections.join(" ")
         end
 
         def handle_sequence(scanner)
@@ -207,26 +254,38 @@ module Gitlab
           # sequence gets stripped (including stuff like "delete last line")
           return unless indicator == '[' && terminator == 'm'
 
-          close_open_tags()
+          close_open_tags
 
-          if commands.empty?()
-            reset()
+          if commands.empty?
+            reset
             return
           end
 
           evaluate_command_stack(commands)
-
-          open_new_tag
         end
 
         def evaluate_command_stack(stack)
-          return unless command = stack.shift()
+          return unless command = stack.shift
 
           if self.respond_to?("on_#{command}", true)
             self.__send__("on_#{command}", stack) # rubocop:disable GitlabSecurity/PublicSend
           end
 
           evaluate_command_stack(stack)
+        end
+
+        def write_in_tag(data)
+          ensure_open_new_tag
+          @out << data
+        end
+
+        def write_raw(data)
+          close_open_tags
+          @out << data
+        end
+
+        def ensure_open_new_tag
+          open_new_tag if @n_open_tags == 0
         end
 
         def open_new_tag
@@ -249,7 +308,11 @@ module Gitlab
             css_classes << "term-#{css_class}" if @style_mask & flag != 0
           end
 
-          return if css_classes.empty?
+          if @sections.any?
+            css_classes << "section"
+            css_classes << "js-section-header section-header" if @lineno_in_section == 0
+            css_classes += sections.map { |section| "js-s-#{section}" }
+          end
 
           @out << %{<span class="#{css_classes.join(' ')}">}
           @n_open_tags += 1
@@ -265,7 +328,9 @@ module Gitlab
         def reset_state
           @offset = 0
           @n_open_tags = 0
-          @out = ''
+          @out = +''
+          @sections = []
+          @lineno_in_section = 0
           reset
         end
 
@@ -311,7 +376,7 @@ module Gitlab
 
         def get_term_color_class(color_index, prefix)
           color_name = COLOR[color_index]
-          return nil if color_name.nil?
+          return if color_name.nil?
 
           get_color_class(["term", prefix, color_name])
         end
@@ -331,8 +396,8 @@ module Gitlab
           return unless command_stack.length >= 2
           return unless command_stack[0] == "5"
 
-          command_stack.shift() # ignore the "5" command
-          color_index = command_stack.shift().to_i
+          command_stack.shift # ignore the "5" command
+          color_index = command_stack.shift.to_i
 
           return unless color_index >= 0
           return unless color_index <= 255

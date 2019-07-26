@@ -1,8 +1,11 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Projects::ForkService do
   include ProjectForksHelper
-  let(:gitlab_shell) { Gitlab::Shell.new }
+  include Gitlab::ShellAdapter
+
   context 'when forking a new project' do
     describe 'fork by user' do
       before do
@@ -31,6 +34,10 @@ describe Projects::ForkService do
 
           it { is_expected.not_to be_persisted }
           it { expect(subject.errors[:forked_from_project_id]).to eq(['is forbidden']) }
+
+          it 'does not create a fork network' do
+            expect { subject }.not_to change { @from_project.reload.fork_network }
+          end
         end
 
         describe "successfully creates project in the user namespace" do
@@ -70,6 +77,12 @@ describe Projects::ForkService do
             expect(fork_network.root_project).to eq(@from_project)
             expect(fork_network.projects).to contain_exactly(@from_project, to_project)
           end
+
+          it 'imports the repository of the forked project' do
+            to_project = fork_project(@from_project, @to_user, repository: true)
+
+            expect(to_project.empty_repo?).to be_falsy
+          end
         end
 
         context 'creating a fork of a fork' do
@@ -103,12 +116,13 @@ describe Projects::ForkService do
         end
       end
 
-      context 'repository already exists' do
+      context 'repository in legacy storage already exists' do
         let(:repository_storage) { 'default' }
         let(:repository_storage_path) { Gitlab.config.repositories.storages[repository_storage].legacy_disk_path }
 
         before do
-          gitlab_shell.create_repository(repository_storage, "#{@to_user.namespace.full_path}/#{@from_project.path}")
+          stub_application_setting(hashed_storage_enabled: false)
+          gitlab_shell.create_repository(repository_storage, "#{@to_user.namespace.full_path}/#{@from_project.path}", "#{@to_user.namespace.full_path}/#{@from_project.path}")
         end
 
         after do
@@ -129,6 +143,30 @@ describe Projects::ForkService do
           @from_project.enable_ci
           @to_project = fork_project(@from_project, @to_user)
           expect(@to_project.builds_enabled?).to be_truthy
+        end
+      end
+
+      context "CI/CD settings" do
+        let(:to_project) { fork_project(@from_project, @to_user) }
+
+        context "when origin has git depth specified" do
+          before do
+            @from_project.update(ci_default_git_depth: 42)
+          end
+
+          it "inherits default_git_depth from the origin project" do
+            expect(to_project.ci_default_git_depth).to eq(42)
+          end
+        end
+
+        context "when origin does not define git depth" do
+          before do
+            @from_project.update!(ci_default_git_depth: nil)
+          end
+
+          it "the fork has git depth set to 0" do
+            expect(to_project.ci_default_git_depth).to eq(0)
+          end
         end
       end
 
@@ -225,6 +263,33 @@ describe Projects::ForkService do
     end
   end
 
+  context 'when forking with object pools' do
+    let(:fork_from_project) { create(:project, :public) }
+    let(:forker) { create(:user) }
+
+    before do
+      stub_feature_flags(object_pools: true)
+    end
+
+    context 'when no pool exists' do
+      it 'creates a new object pool' do
+        forked_project = fork_project(fork_from_project, forker)
+
+        expect(forked_project.pool_repository).to eq(fork_from_project.pool_repository)
+      end
+    end
+
+    context 'when a pool already exists' do
+      let!(:pool_repository) { create(:pool_repository, source_project: fork_from_project) }
+
+      it 'joins the object pool' do
+        forked_project = fork_project(fork_from_project, forker)
+
+        expect(forked_project.pool_repository).to eq(fork_from_project.pool_repository)
+      end
+    end
+  end
+
   context 'when linking fork to an existing project' do
     let(:fork_from_project) { create(:project, :public) }
     let(:fork_to_project) { create(:project, :public) }
@@ -247,10 +312,12 @@ describe Projects::ForkService do
 
     context 'if project is not forked' do
       it 'creates fork relation' do
-        expect(fork_to_project.forked?).to be false
+        expect(fork_to_project.forked?).to be_falsy
         expect(forked_from_project(fork_to_project)).to be_nil
 
         subject.execute(fork_to_project)
+
+        fork_to_project.reload
 
         expect(fork_to_project.forked?).to be true
         expect(forked_from_project(fork_to_project)).to eq fork_from_project
@@ -263,6 +330,25 @@ describe Projects::ForkService do
         subject.execute(fork_to_project)
 
         expect(fork_from_project.forks_count).to eq(1)
+      end
+
+      it 'leaves no LFS objects dangling' do
+        create(:lfs_objects_project, project: fork_to_project)
+
+        expect { subject.execute(fork_to_project) }
+          .to change { fork_to_project.lfs_objects_projects.count }
+          .to(0)
+      end
+
+      context 'if the fork is not allowed' do
+        let(:fork_from_project) { create(:project, :private) }
+
+        it 'does not delete the LFS objects' do
+          create(:lfs_objects_project, project: fork_to_project)
+
+          expect { subject.execute(fork_to_project) }
+            .not_to change { fork_to_project.lfs_objects_projects.size }
+        end
       end
     end
   end

@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 # Use long options (e.g. --header instead of -H) for curl examples in documentation.
 echo '=> Checking for cURL short options...'
 grep --extended-regexp --recursive --color=auto 'curl (.+ )?-[^- ].*' doc/ >/dev/null 2>&1
-if [ $? == 0 ]
+if [ $? -eq 0 ]
 then
   echo '✖ ERROR: Short options for curl should not be used in documentation!
          Use long options (e.g., --header instead of -H):' >&2
@@ -35,7 +35,7 @@ fi
 
 # Do not use 'README.md', instead use 'index.md'
 # Number of 'README.md's as of 2018-03-26
-NUMBER_READMES_CE=42
+NUMBER_READMES_CE=46
 NUMBER_READMES_EE=46
 FIND_READMES=$(find doc/ -name "README.md" | wc -l)
 echo '=> Checking for new README.md files...'
@@ -45,7 +45,7 @@ then
   then
     echo
     echo '  ✖ ERROR: New README.md file(s) detected, prefer index.md over README.md.' >&2
-    echo '  https://docs.gitlab.com/ee/development/writing_documentation.html#location-and-naming-documents'
+    echo '  https://docs.gitlab.com/ee/development/documentation/styleguide.html#working-with-directories-and-files'
     echo
     exit 1
   fi
@@ -55,7 +55,7 @@ then
   then
     echo
     echo '  ✖ ERROR: New README.md file(s) detected, prefer index.md over README.md.' >&2
-    echo '  https://docs.gitlab.com/ee/development/writing_documentation.html#location-and-naming-documents'
+    echo '  https://docs.gitlab.com/ee/development/documentation/styleguide.html#working-with-directories-and-files'
     echo
     exit 1
   fi

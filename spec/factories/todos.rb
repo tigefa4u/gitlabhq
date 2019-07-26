@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :todo do
     project
@@ -49,7 +51,7 @@ FactoryBot.define do
     author
     user
     action { Todo::ASSIGNED }
-    commit_id RepoHelpers.sample_commit.id
+    commit_id { RepoHelpers.sample_commit.id }
     target_type "Commit"
   end
 end

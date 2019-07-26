@@ -5,6 +5,7 @@ import PipelinesArtifactsComponent from './pipelines_artifacts.vue';
 import CiBadge from '../../vue_shared/components/ci_badge_link.vue';
 import PipelineStage from './stage.vue';
 import PipelineUrl from './pipeline_url.vue';
+import PipelineTriggerer from './pipeline_triggerer.vue';
 import PipelinesTimeago from './time_ago.vue';
 import CommitComponent from '../../vue_shared/components/commit.vue';
 import LoadingButton from '../../vue_shared/components/loading_button.vue';
@@ -23,6 +24,7 @@ export default {
     CommitComponent,
     PipelineStage,
     PipelineUrl,
+    PipelineTriggerer,
     CiBadge,
     PipelinesTimeago,
     LoadingButton,
@@ -47,7 +49,7 @@ export default {
       required: true,
     },
     cancelingPipeline: {
-      type: String,
+      type: Number,
       required: false,
       default: null,
     },
@@ -59,6 +61,13 @@ export default {
     };
   },
   computed: {
+    actions() {
+      if (!this.pipeline || !this.pipeline.details) {
+        return [];
+      }
+      const { details } = this.pipeline;
+      return [...(details.manual_actions || []), ...(details.scheduled_actions || [])];
+    },
     /**
      * If provided, returns the commit tag.
      * Needed to render the commit component column.
@@ -132,10 +141,8 @@ export default {
       if (this.pipeline.ref) {
         return Object.keys(this.pipeline.ref).reduce((accumulator, prop) => {
           if (prop === 'path') {
-            // eslint-disable-next-line no-param-reassign
             accumulator.ref_url = this.pipeline.ref[prop];
           } else {
-            // eslint-disable-next-line no-param-reassign
             accumulator[prop] = this.pipeline.ref[prop];
           }
           return accumulator;
@@ -234,11 +241,15 @@ export default {
       return this.cancelingPipeline === this.pipeline.id;
     },
   },
-
+  watch: {
+    pipeline() {
+      this.isRetrying = false;
+    },
+  },
   methods: {
     handleCancelClick() {
       eventHub.$emit('openConfirmationModal', {
-        pipelineId: this.pipeline.id,
+        pipeline: this.pipeline,
         endpoint: this.pipeline.cancel_path,
       });
     },
@@ -252,56 +263,40 @@ export default {
 <template>
   <div class="commit gl-responsive-table-row">
     <div class="table-section section-10 commit-link">
-      <div
-        class="table-mobile-header"
-        role="rowheader"
-      >
-        Status
-      </div>
+      <div class="table-mobile-header" role="rowheader">{{ s__('Pipeline|Status') }}</div>
       <div class="table-mobile-content">
-        <ci-badge
-          :status="pipelineStatus"
-          :show-text="!isChildView"
-        />
+        <ci-badge :status="pipelineStatus" :show-text="!isChildView" />
       </div>
     </div>
 
-    <pipeline-url
-      :pipeline="pipeline"
-      :auto-devops-help-path="autoDevopsHelpPath"
-    />
+    <pipeline-url :pipeline="pipeline" :auto-devops-help-path="autoDevopsHelpPath" />
+    <pipeline-triggerer :pipeline="pipeline" />
 
-    <div class="table-section section-20">
-      <div
-        class="table-mobile-header"
-        role="rowheader">
-        Commit
-      </div>
+    <div class="table-section section-wrap section-20">
+      <div class="table-mobile-header" role="rowheader">{{ s__('Pipeline|Commit') }}</div>
       <div class="table-mobile-content">
         <commit-component
           :tag="commitTag"
           :commit-ref="commitRef"
           :commit-url="commitUrl"
+          :merge-request-ref="pipeline.merge_request"
           :short-sha="commitShortSha"
           :title="commitTitle"
           :author="commitAuthor"
-          :show-branch="!isChildView"
+          :show-ref-info="!isChildView"
         />
       </div>
     </div>
 
-    <div class="table-section section-wrap section-20 stage-cell">
-      <div
-        class="table-mobile-header"
-        role="rowheader">
-        Stages
-      </div>
+    <div class="table-section section-wrap section-15 stage-cell">
+      <div class="table-mobile-header" role="rowheader">{{ s__('Pipeline|Stages') }}</div>
       <div class="table-mobile-content">
         <template v-if="pipeline.details.stages.length > 0">
           <div
             v-for="(stage, index) in pipeline.details.stages"
             :key="index"
-            class="stage-container dropdown js-mini-pipeline-graph">
+            class="stage-container dropdown js-mini-pipeline-graph"
+          >
             <pipeline-stage
               :type="$options.pipelinesTable"
               :stage="stage"
@@ -312,25 +307,19 @@ export default {
       </div>
     </div>
 
-    <pipelines-timeago
-      :duration="pipelineDuration"
-      :finished-time="pipelineFinishedAt"
-    />
+    <pipelines-timeago :duration="pipelineDuration" :finished-time="pipelineFinishedAt" />
 
     <div
       v-if="displayPipelineActions"
       class="table-section section-20 table-button-footer pipeline-actions"
     >
       <div class="btn-group table-action-buttons">
-        <pipelines-actions-component
-          v-if="pipeline.details.manual_actions.length"
-          :actions="pipeline.details.manual_actions"
-        />
+        <pipelines-actions-component v-if="actions.length > 0" :actions="actions" />
 
         <pipelines-artifacts-component
           v-if="pipeline.details.artifacts.length"
           :artifacts="pipeline.details.artifacts"
-          class="d-none d-sm-none d-md-block"
+          class="d-md-block"
         />
 
         <loading-button

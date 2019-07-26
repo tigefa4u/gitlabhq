@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Todos::Destroy::GroupPrivateService do
@@ -33,14 +35,14 @@ describe Todos::Destroy::GroupPrivateService do
         expect(project_member.todos).to match_array([todo_project_member])
       end
 
-      context 'with nested groups', :nested_groups do
+      context 'with nested groups' do
         let(:parent_group) { create(:group) }
         let(:subgroup)     { create(:group, :private, parent: group) }
         let(:subproject)   { create(:project, group: subgroup) }
 
         let(:parent_member)  { create(:user) }
         let(:subgroup_member)  { create(:user) }
-        let(:subgproject_member)  { create(:user) }
+        let(:subgproject_member) { create(:user) }
 
         let!(:todo_parent_member)     { create(:todo, user: parent_member, group: group) }
         let!(:todo_subgroup_member)   { create(:todo, user: subgroup_member, group: group) }

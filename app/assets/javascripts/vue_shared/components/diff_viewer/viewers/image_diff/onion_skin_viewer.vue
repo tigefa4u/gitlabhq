@@ -15,11 +15,6 @@ export default {
       type: String,
       required: true,
     },
-    projectPath: {
-      type: String,
-      required: false,
-      default: '',
-    },
   },
   data() {
     return {
@@ -45,12 +40,15 @@ export default {
   },
   beforeDestroy() {
     document.body.removeEventListener('mouseup', this.stopDrag);
-    this.$refs.dragger.removeEventListener('mousedown', this.startDrag);
+    document.body.removeEventListener('touchend', this.stopDrag);
+    document.body.removeEventListener('mousemove', this.dragMove);
+    document.body.removeEventListener('touchmove', this.dragMove);
   },
   methods: {
     dragMove(e) {
       if (!this.dragging) return;
-      const left = e.pageX - this.$refs.dragTrack.getBoundingClientRect().left;
+      const moveX = e.pageX || e.touches[0].pageX;
+      const left = moveX - this.$refs.dragTrack.getBoundingClientRect().left;
       const dragTrackWidth =
         this.$refs.dragTrack.clientWidth - this.$refs.dragger.clientWidth || 100;
 
@@ -65,11 +63,13 @@ export default {
       this.dragging = true;
       document.body.style.userSelect = 'none';
       document.body.addEventListener('mousemove', this.dragMove);
+      document.body.addEventListener('touchmove', this.dragMove);
     },
     stopDrag() {
       this.dragging = false;
       document.body.style.userSelect = '';
       document.body.removeEventListener('mousemove', this.dragMove);
+      document.body.removeEventListener('touchmove', this.dragMove);
     },
     prepareOnionSkin() {
       if (this.onionOldImgInfo && this.onionNewImgInfo) {
@@ -87,6 +87,7 @@ export default {
           this.$refs.dragTrack.clientWidth - this.$refs.dragger.clientWidth || 100;
 
         document.body.addEventListener('mouseup', this.stopDrag);
+        document.body.addEventListener('touchend', this.stopDrag);
       }
     },
     onionNewImgLoaded(imgInfo) {
@@ -105,40 +106,43 @@ export default {
   <div class="onion-skin view">
     <div
       :style="{
-        'width': onionMaxPixelWidth,
-        'height': onionMaxPixelHeight,
-        'user-select': dragging === true ? 'none' : '',
+        width: onionMaxPixelWidth,
+        height: onionMaxPixelHeight,
+        'user-select': dragging ? 'none' : null,
       }"
-      class="onion-skin-frame">
+      class="onion-skin-frame"
+    >
       <div
         :style="{
-          'width': onionMaxPixelWidth,
-          'height': onionMaxPixelHeight,
+          width: onionMaxPixelWidth,
+          height: onionMaxPixelHeight,
         }"
-        class="frame deleted">
+        class="frame deleted"
+      >
         <image-viewer
           key="onionOldImg"
           :render-info="false"
           :path="oldPath"
-          :project-path="projectPath"
           @imgLoaded="onionOldImgLoaded"
         />
       </div>
       <div
         ref="addedFrame"
         :style="{
-          'opacity': onionOpacity,
-          'width': onionMaxPixelWidth,
-          'height': onionMaxPixelHeight,
+          opacity: onionOpacity,
+          width: onionMaxPixelWidth,
+          height: onionMaxPixelHeight,
         }"
-        class="added frame">
+        class="added frame"
+      >
         <image-viewer
           key="onionNewImg"
           :render-info="false"
           :path="newPath"
-          :project-path="projectPath"
           @imgLoaded="onionNewImgLoaded"
-        />
+        >
+          <slot slot="image-overlay" name="image-overlay"> </slot>
+        </image-viewer>
       </div>
       <div class="controls">
         <div class="transparent"></div>
@@ -146,12 +150,11 @@ export default {
           ref="dragTrack"
           class="drag-track"
           @mousedown="startDrag"
-          @mouseup="stopDrag">
-          <div
-            ref="dragger"
-            :style="{ 'left': onionDraggerPixelPos }"
-            class="dragger">
-          </div>
+          @mouseup="stopDrag"
+          @touchstart="startDrag"
+          @touchend="stopDrag"
+        >
+          <div ref="dragger" :style="{ left: onionDraggerPixelPos }" class="dragger"></div>
         </div>
         <div class="opaque"></div>
       </div>

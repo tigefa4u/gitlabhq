@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Member do
@@ -51,6 +53,39 @@ describe Member do
 
       it "is valid otherwise" do
         expect(member).to be_valid
+      end
+    end
+
+    context "when a child member inherits its access level" do
+      let(:user) { create(:user) }
+      let(:member) { create(:group_member, :developer, user: user) }
+      let(:child_group) { create(:group, parent: member.group) }
+      let(:child_member) { build(:group_member, group: child_group, user: user) }
+
+      it "requires a higher level" do
+        child_member.access_level = GroupMember::REPORTER
+
+        child_member.validate
+
+        expect(child_member).not_to be_valid
+      end
+
+      # Membership in a subgroup confers certain access rights, such as being
+      # able to merge or push code to protected branches.
+      it "is valid with an equal level" do
+        child_member.access_level = GroupMember::DEVELOPER
+
+        child_member.validate
+
+        expect(child_member).to be_valid
+      end
+
+      it "is valid with a higher level" do
+        child_member.access_level = GroupMember::MAINTAINER
+
+        child_member.validate
+
+        expect(child_member).to be_valid
       end
     end
   end

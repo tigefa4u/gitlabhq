@@ -3,17 +3,22 @@
 */
 
 import $ from 'jquery';
+import 'core-js/features/set-immediate';
 import 'vendor/jasmine-jquery';
 import '~/commons';
 import Vue from 'vue';
 import VueResource from 'vue-resource';
 import Translate from '~/vue_shared/translate';
 import jasmineDiff from 'jasmine-diff';
+import { config as testUtilsConfig } from '@vue/test-utils';
 
 import { getDefaultAdapter } from '~/lib/utils/axios_utils';
 import { FIXTURES_PATH, TEST_HOST } from './test_constants';
 
 import customMatchers from './matchers';
+
+// Tech debt issue TBD
+testUtilsConfig.logModifiedComponents = false;
 
 const isHeadlessChrome = /\bHeadlessChrome\//.test(navigator.userAgent);
 Vue.config.devtools = !isHeadlessChrome;
@@ -21,6 +26,16 @@ Vue.config.productionTip = false;
 
 let hasVueWarnings = false;
 Vue.config.warnHandler = (msg, vm, trace) => {
+  // The following workaround is necessary, so we are able to use setProps from Vue test utils
+  // see https://github.com/vuejs/vue-test-utils/issues/631#issuecomment-421108344
+  const currentStack = new Error().stack;
+  const isInVueTestUtils = currentStack
+    .split('\n')
+    .some(line => line.startsWith('    at VueWrapper.setProps ('));
+  if (isInVueTestUtils) {
+    return;
+  }
+
   hasVueWarnings = true;
   fail(`${msg}${trace}`);
 };
@@ -41,8 +56,8 @@ jasmine.getJSONFixtures().fixturesPath = FIXTURES_PATH;
 beforeAll(() => {
   jasmine.addMatchers(
     jasmineDiff(jasmine, {
-      colors: true,
-      inline: true,
+      colors: window.__karma__.config.color,
+      inline: window.__karma__.config.color,
     }),
   );
   jasmine.addMatchers(customMatchers);
@@ -57,6 +72,7 @@ window.gl = window.gl || {};
 window.gl.TEST_HOST = TEST_HOST;
 window.gon = window.gon || {};
 window.gon.test_env = true;
+window.gon.ee = process.env.IS_GITLAB_EE;
 gon.relative_url_root = '';
 
 let hasUnhandledPromiseRejections = false;
@@ -98,7 +114,7 @@ let longRunningTestTimeoutHandle;
 beforeEach(done => {
   longRunningTestTimeoutHandle = setTimeout(() => {
     done.fail('Test is running too long!');
-  }, 2000);
+  }, 4000);
   done();
 });
 
@@ -109,19 +125,26 @@ afterEach(() => {
 const axiosDefaultAdapter = getDefaultAdapter();
 
 // render all of our tests
-const testsContext = require.context('.', true, /_spec$/);
-testsContext.keys().forEach(function(path) {
-  try {
-    testsContext(path);
-  } catch (err) {
-    console.log(err);
-    console.error('[GL SPEC RUNNER ERROR] Unable to load spec: ', path);
-    describe('Test bundle', function() {
-      it(`includes '${path}'`, function() {
-        expect(err).toBeNull();
+const testContexts = [require.context('spec', true, /_spec$/)];
+
+if (process.env.IS_GITLAB_EE) {
+  testContexts.push(require.context('ee_spec', true, /_spec$/));
+}
+
+testContexts.forEach(context => {
+  context.keys().forEach(path => {
+    try {
+      context(path);
+    } catch (err) {
+      console.log(err);
+      console.error('[GL SPEC RUNNER ERROR] Unable to load spec: ', path);
+      describe('Test bundle', function() {
+        it(`includes '${path}'`, function() {
+          expect(err).toBeNull();
+        });
       });
-    });
-  }
+    }
+  });
 });
 
 describe('test errors', () => {
@@ -187,27 +210,39 @@ if (process.env.BABEL_ENV === 'coverage') {
     './terminal/terminal_bundle.js',
     './users/users_bundle.js',
     './issue_show/index.js',
+    './pages/admin/application_settings/show/index.js',
   ];
 
   describe('Uncovered files', function() {
-    const sourceFiles = require.context('~', true, /\.(js|vue)$/);
+    const sourceFilesContexts = [require.context('~', true, /\.(js|vue)$/)];
+
+    if (process.env.IS_GITLAB_EE) {
+      sourceFilesContexts.push(require.context('ee', true, /\.(js|vue)$/));
+    }
+
+    const allTestFiles = testContexts.reduce(
+      (accumulator, context) => accumulator.concat(context.keys()),
+      [],
+    );
 
     $.holdReady(true);
 
-    sourceFiles.keys().forEach(function(path) {
-      // ignore if there is a matching spec file
-      if (testsContext.keys().indexOf(`${path.replace(/\.(js|vue)$/, '')}_spec`) > -1) {
-        return;
-      }
-
-      it(`includes '${path}'`, function() {
-        try {
-          sourceFiles(path);
-        } catch (err) {
-          if (troubleMakers.indexOf(path) === -1) {
-            expect(err).toBeNull();
-          }
+    sourceFilesContexts.forEach(context => {
+      context.keys().forEach(path => {
+        // ignore if there is a matching spec file
+        if (allTestFiles.indexOf(`${path.replace(/\.(js|vue)$/, '')}_spec`) > -1) {
+          return;
         }
+
+        it(`includes '${path}'`, function() {
+          try {
+            context(path);
+          } catch (err) {
+            if (troubleMakers.indexOf(path) === -1) {
+              expect(err).toBeNull();
+            }
+          }
+        });
       });
     });
   });

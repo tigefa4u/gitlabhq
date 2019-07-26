@@ -41,7 +41,7 @@ describe 'Projects > Settings > Integration settings' do
         expect(page).to have_content('Issues events')
         expect(page).to have_content('Confidential issues events')
         expect(page).to have_content('Note events')
-        expect(page).to have_content('Merge requests  events')
+        expect(page).to have_content('Merge requests events')
         expect(page).to have_content('Pipeline events')
         expect(page).to have_content('Wiki page events')
       end
@@ -51,6 +51,7 @@ describe 'Projects > Settings > Integration settings' do
 
         fill_in 'hook_url', with: url
         check 'Tag push events'
+        fill_in 'hook_push_events_branch_filter', with: 'master'
         check 'Enable SSL verification'
         check 'Job events'
 

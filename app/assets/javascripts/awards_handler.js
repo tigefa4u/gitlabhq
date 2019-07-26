@@ -1,4 +1,4 @@
-/* eslint-disable class-methods-use-this */
+/* eslint-disable class-methods-use-this, @gitlab/i18n/no-non-i18n-strings */
 
 import $ from 'jquery';
 import _ from 'underscore';
@@ -8,6 +8,7 @@ import { updateTooltipTitle } from './lib/utils/common_utils';
 import { isInVueNoteablePage } from './lib/utils/dom_utils';
 import flash from './flash';
 import axios from './lib/utils/axios_utils';
+import bp from './breakpoints';
 
 const animationEndEventString = 'animationend webkitAnimationEnd MSAnimationEnd oAnimationEnd';
 const transitionEndEventString = 'transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd';
@@ -42,10 +43,11 @@ export class AwardsHandler {
   }
 
   bindEvents() {
+    const $parentEl = this.targetContainerEl ? $(this.targetContainerEl) : $(document);
     // If the user shows intent let's pre-build the menu
     this.registerEventListener(
       'one',
-      $(document),
+      $parentEl,
       'mouseenter focus',
       this.toggleButtonSelector,
       'mouseenter focus',
@@ -58,7 +60,7 @@ export class AwardsHandler {
         }
       },
     );
-    this.registerEventListener('on', $(document), 'click', this.toggleButtonSelector, e => {
+    this.registerEventListener('on', $parentEl, 'click', this.toggleButtonSelector, e => {
       e.stopPropagation();
       e.preventDefault();
       this.showEmojiMenu($(e.currentTarget));
@@ -76,7 +78,7 @@ export class AwardsHandler {
     });
 
     const emojiButtonSelector = `.js-awards-block .js-emoji-btn, .${this.menuClass} .js-emoji-btn`;
-    this.registerEventListener('on', $(document), 'click', emojiButtonSelector, e => {
+    this.registerEventListener('on', $parentEl, 'click', emojiButtonSelector, e => {
       e.preventDefault();
       const $target = $(e.currentTarget);
       const $glEmojiElement = $target.find('gl-emoji');
@@ -109,8 +111,6 @@ export class AwardsHandler {
     }
 
     const $menu = $(`.${this.menuClass}`);
-    const $thumbsBtn = $menu.find('[data-name="thumbsup"], [data-name="thumbsdown"]').parent();
-    const $userAuthored = this.isUserAuthored($addBtn);
     if ($menu.length) {
       if ($menu.is('.is-visible')) {
         $addBtn.removeClass('is-active');
@@ -134,9 +134,6 @@ export class AwardsHandler {
         }, 200);
       });
     }
-
-    $thumbsBtn.toggleClass('disabled', $userAuthored);
-    $thumbsBtn.prop('disabled', $userAuthored);
   }
 
   // Create the emoji menu with the first category of emojis.
@@ -173,7 +170,8 @@ export class AwardsHandler {
       </div>
     `;
 
-    document.body.insertAdjacentHTML('beforeend', emojiMenuMarkup);
+    const targetEl = this.targetContainerEl ? this.targetContainerEl : document.body;
+    targetEl.insertAdjacentHTML('beforeend', emojiMenuMarkup);
 
     this.addRemainingEmojiMenuCategories();
     this.setupSearch();
@@ -255,13 +253,22 @@ export class AwardsHandler {
   }
 
   positionMenu($menu, $addBtn) {
+    if (this.targetContainerEl) {
+      return $menu.css({
+        top: `${$addBtn.outerHeight()}px`,
+      });
+    }
+
     const position = $addBtn.data('position');
     // The menu could potentially be off-screen or in a hidden overflow element
     // So we position the element absolute in the body
     const css = {
       top: `${$addBtn.offset().top + $addBtn.outerHeight()}px`,
     };
-    if (position === 'right') {
+    // for xs screen we position the element on center
+    if (bp.getBreakpointSize() === 'xs') {
+      css.left = '5%';
+    } else if (position === 'right') {
       css.left = `${$addBtn.offset().left - $menu.outerWidth() + 20}px`;
       $menu.addClass('is-aligned-right');
     } else {
@@ -364,10 +371,6 @@ export class AwardsHandler {
     return $emojiButton.hasClass('active');
   }
 
-  isUserAuthored($button) {
-    return $button.hasClass('js-user-authored');
-  }
-
   decrementCounter($emojiButton, emoji) {
     const counter = $('.js-counter', $emojiButton);
     const counterNumber = parseInt(counter.text(), 10);
@@ -433,14 +436,12 @@ export class AwardsHandler {
       users = origTitle.trim().split(FROM_SENTENCE_REGEX);
     }
     users.unshift('You');
-    return awardBlock
-      .attr('title', this.toSentence(users))
-      .tooltip('_fixTitle');
+    return awardBlock.attr('title', this.toSentence(users)).tooltip('_fixTitle');
   }
 
   createAwardButtonForVotesBlock(votesBlock, emojiName) {
     const buttonHtml = `
-      <button class="btn award-control js-emoji-btn has-tooltip active" title="You" data-placement="bottom">
+      <button class="btn award-control js-emoji-btn has-tooltip active" title="You">
         ${this.emoji.glEmojiTag(emojiName)}
         <span class="award-control-text js-counter">1</span>
       </button>
@@ -474,20 +475,16 @@ export class AwardsHandler {
   }
 
   postEmoji($emojiButton, awardUrl, emoji, callback) {
-    if (this.isUserAuthored($emojiButton)) {
-      this.userAuthored($emojiButton);
-    } else {
-      axios
-        .post(awardUrl, {
-          name: emoji,
-        })
-        .then(({ data }) => {
-          if (data.ok) {
-            callback();
-          }
-        })
-        .catch(() => flash(__('Something went wrong on our end.')));
-    }
+    axios
+      .post(awardUrl, {
+        name: emoji,
+      })
+      .then(({ data }) => {
+        if (data.ok) {
+          callback();
+        }
+      })
+      .catch(() => flash(__('Something went wrong on our end.')));
   }
 
   findEmojiIcon(votesBlock, emoji) {
@@ -622,13 +619,11 @@ export class AwardsHandler {
 let awardsHandlerPromise = null;
 export default function loadAwardsHandler(reload = false) {
   if (!awardsHandlerPromise || reload) {
-    awardsHandlerPromise = import(/* webpackChunkName: 'emoji' */ './emoji').then(
-      Emoji => {
-        const awardsHandler = new AwardsHandler(Emoji);
-        awardsHandler.bindEvents();
-        return awardsHandler;
-      },
-    );
+    awardsHandlerPromise = import(/* webpackChunkName: 'emoji' */ './emoji').then(Emoji => {
+      const awardsHandler = new AwardsHandler(Emoji);
+      awardsHandler.bindEvents();
+      return awardsHandler;
+    });
   }
   return awardsHandlerPromise;
 }

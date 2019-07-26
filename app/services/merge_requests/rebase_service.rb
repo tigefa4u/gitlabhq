@@ -15,28 +15,20 @@ module MergeRequests
     end
 
     def rebase
-      if merge_request.rebase_in_progress?
+      if merge_request.gitaly_rebase_in_progress?
         log_error('Rebase task canceled: Another rebase is already in progress', save_message_on_model: true)
         return false
       end
 
-      log_prefix = "#{self.class.name} info (#{merge_request.to_reference(full: true)}):"
-
-      Gitlab::GitLogger.info("#{log_prefix} rebase started")
-
-      rebase_sha = repository.rebase(current_user, merge_request)
-
-      Gitlab::GitLogger.info("#{log_prefix} rebased to #{rebase_sha}")
-
-      merge_request.update(rebase_commit_sha: rebase_sha)
-
-      Gitlab::GitLogger.info("#{log_prefix} rebase SHA saved: #{rebase_sha}")
+      repository.rebase(current_user, merge_request)
 
       true
     rescue => e
       log_error(REBASE_ERROR, save_message_on_model: true)
       log_error(e.message)
       false
+    ensure
+      merge_request.update_column(:rebase_jid, nil)
     end
   end
 end

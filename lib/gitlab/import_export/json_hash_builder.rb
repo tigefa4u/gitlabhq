@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   module ImportExport
     # Generates a hash that conforms with http://apidock.com/rails/Hash/to_json
@@ -25,7 +27,7 @@ module Gitlab
       #   {:merge_requests=>[:merge_request_diff, :notes]}
       def process_model_objects(model_object_hash)
         json_config_hash = {}
-        current_key = model_object_hash.keys.first
+        current_key = model_object_hash.first.first
 
         model_object_hash.values.flatten.each do |model_object|
           @attributes_finder.parse(current_key) { |hash| json_config_hash[current_key] ||= hash }
@@ -65,7 +67,7 @@ module Gitlab
       # +value+ existing model to be included in the hash
       # +parsed_hash+ the original hash
       def parse_hash(value)
-        return nil if already_contains_methods?(value)
+        return if already_contains_methods?(value)
 
         @attributes_finder.parse(value) do |hash|
           { include: hash_or_merge(value, hash) }

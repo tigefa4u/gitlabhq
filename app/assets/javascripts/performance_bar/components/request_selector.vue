@@ -41,6 +41,7 @@ export default {
         v-for="request in requests"
         :key="request.id"
         :value="request.id"
+        class="qa-performance-bar-request"
       >
         {{ truncatedUrl(request.url) }}
       </option>

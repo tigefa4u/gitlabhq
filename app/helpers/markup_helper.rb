@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 require 'nokogiri'
 
 module MarkupHelper
-  include ActionView::Helpers::TagHelper
-  include ActionView::Context
+  include ActionView::Helpers::TextHelper
+  include ::Gitlab::ActionViewOutput::Context
 
   def plain?(filename)
     Gitlab::MarkupHelper.plain?(filename)
@@ -72,14 +74,22 @@ module MarkupHelper
   # the tag contents are truncated without removing the closing tag.
   def first_line_in_markdown(object, attribute, max_chars = nil, options = {})
     md = markdown_field(object, attribute, options)
+    return unless md.present?
 
-    text = truncate_visible(md, max_chars || md.length) if md.present?
+    tags = %w(a gl-emoji b pre code p span)
+    tags << 'img' if options[:allow_images]
 
-    sanitize(
+    text = truncate_visible(md, max_chars || md.length)
+    text = sanitize(
       text,
-      tags: %w(a img gl-emoji b pre code p span),
-      attributes: Rails::Html::WhiteListSanitizer.allowed_attributes + ['style', 'data-src', 'data-name', 'data-unicode-version']
+      tags: tags,
+      attributes: Rails::Html::WhiteListSanitizer.allowed_attributes +
+          %w(style data-src data-name data-unicode-version data-iid data-project-path data-mr-title)
     )
+
+    # since <img> tags are stripped, this can leave empty <a> tags hanging around
+    # (as our markdown wraps images in links)
+    options[:allow_images] ? text : strip_empty_link_tags(text).html_safe
   end
 
   def markdown(text, context = {})
@@ -107,23 +117,21 @@ module MarkupHelper
 
   def markup(file_name, text, context = {})
     context[:project] ||= @project
-    context[:markdown_engine] ||= :redcarpet
     html = context.delete(:rendered) || markup_unsafe(file_name, text, context)
     prepare_for_rendering(html, context)
   end
 
-  def render_wiki_content(wiki_page)
+  def render_wiki_content(wiki_page, context = {})
     text = wiki_page.content
     return '' unless text.present?
 
-    context = {
+    context.merge!(
       pipeline: :wiki,
       project: @project,
       project_wiki: @project_wiki,
       page_slug: wiki_page.slug,
-      issuable_state_filter_enabled: true,
-      markdown_engine: :redcarpet
-    }
+      issuable_state_filter_enabled: true
+    )
 
     html =
       case wiki_page.format
@@ -146,9 +154,7 @@ module MarkupHelper
     elsif asciidoc?(file_name)
       asciidoc_unsafe(text, context)
     elsif plain?(file_name)
-      content_tag :pre, class: 'plain-readme' do
-        text
-      end
+      plain_unsafe(text)
     else
       other_markup_unsafe(file_name, text, context)
     end
@@ -229,6 +235,14 @@ module MarkupHelper
     end
   end
 
+  def strip_empty_link_tags(text)
+    scrubber = Loofah::Scrubber.new do |node|
+      node.remove if node.name == 'a' && node.content.blank?
+    end
+
+    sanitize text, scrubber: scrubber
+  end
+
   def markdown_toolbar_button(options = {})
     data = options[:data].merge({ container: 'body' })
     content_tag :button,
@@ -247,7 +261,18 @@ module MarkupHelper
   end
 
   def asciidoc_unsafe(text, context = {})
+    context.merge!(
+      commit:         @commit,
+      ref:            @ref,
+      requested_path: @path
+    )
     Gitlab::Asciidoc.render(text, context)
+  end
+
+  def plain_unsafe(text)
+    content_tag :pre, class: 'plain-readme' do
+      text
+    end
   end
 
   def other_markup_unsafe(file_name, text, context = {})
@@ -257,7 +282,7 @@ module MarkupHelper
   def prepare_for_rendering(html, context = {})
     return '' unless html.present?
 
-    context.merge!(
+    context.reverse_merge!(
       current_user: (current_user if defined?(current_user)),
 
       # RelativeLinkFilter

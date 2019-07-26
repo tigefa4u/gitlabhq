@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module MicrosoftTeams
   class Notifier
     def initialize(webhook)
@@ -18,7 +20,7 @@ module MicrosoftTeams
 
         result = true if response
       rescue Gitlab::HTTP::Error, StandardError => error
-        Rails.logger.info("#{self.class.name}: Error while connecting to #{@webhook}: #{error.message}")
+        Rails.logger.info("#{self.class.name}: Error while connecting to #{@webhook}: #{error.message}") # rubocop:disable Gitlab/RailsLogger
       end
 
       result

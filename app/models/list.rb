@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class List < ActiveRecord::Base
+class List < ApplicationRecord
   belongs_to :board
   belongs_to :label
 
@@ -15,6 +15,8 @@ class List < ActiveRecord::Base
 
   scope :destroyable, -> { where(list_type: list_types.slice(*destroyable_types).values) }
   scope :movable, -> { where(list_type: list_types.slice(*movable_types).values) }
+  scope :preload_associations, -> { preload(:board, :label) }
+  scope :ordered, -> { order(:list_type, :position) }
 
   class << self
     def destroyable_types
@@ -53,6 +55,6 @@ class List < ActiveRecord::Base
   private
 
   def can_be_destroyed
-    destroyable?
+    throw(:abort) unless destroyable?
   end
 end

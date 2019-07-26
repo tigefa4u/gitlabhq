@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-class Event < ActiveRecord::Base
+class Event < ApplicationRecord
   include Sortable
   include IgnorableColumn
+  include FromUnion
   default_scope { reorder(nil) }
 
   CREATED   = 1
@@ -67,7 +68,7 @@ class Event < ActiveRecord::Base
 
   # Callbacks
   after_create :reset_project_activity
-  after_create :set_last_repository_updated_at, if: :push?
+  after_create :set_last_repository_updated_at, if: :push_action?
   after_create :track_user_interacted_projects
 
   # Scopes
@@ -86,7 +87,7 @@ class Event < ActiveRecord::Base
   scope :with_associations, -> do
     # We're using preload for "push_event_payload" as otherwise the association
     # is not always available (depending on the query being built).
-    includes(:author, :project, project: :namespace)
+    includes(:author, :project, project: [:project_feature, :import_data, :namespace])
       .preload(:target, :push_event_payload)
   end
 
@@ -113,19 +114,6 @@ class Event < ActiveRecord::Base
       end
     end
 
-    # Remove this method when removing Gitlab.rails5? code.
-    def subclass_from_attributes(attrs)
-      return super if Gitlab.rails5?
-
-      # Without this Rails will keep calling this method on the returned class,
-      # resulting in an infinite loop.
-      return unless self == Event
-
-      action = attrs.with_indifferent_access[inheritance_column].to_i
-
-      PushEvent if action == PUSHED
-    end
-
     # Update Gitlab::ContributionsCalendar#activity_dates if this changes
     def contributions
       where("action = ? OR (target_type IN (?) AND action IN (?)) OR (target_type = ? AND action = ?)",
@@ -147,21 +135,31 @@ class Event < ActiveRecord::Base
     end
   end
 
+  # rubocop:disable Metrics/CyclomaticComplexity
+  # rubocop:disable Metrics/PerceivedComplexity
   def visible_to_user?(user = nil)
-    if push? || commit_note?
+    if push_action? || commit_note?
       Ability.allowed?(user, :download_code, project)
     elsif membership_changed?
-      true
-    elsif created_project?
-      true
+      Ability.allowed?(user, :read_project, project)
+    elsif created_project_action?
+      Ability.allowed?(user, :read_project, project)
     elsif issue? || issue_note?
       Ability.allowed?(user, :read_issue, note? ? note_target : target)
     elsif merge_request? || merge_request_note?
       Ability.allowed?(user, :read_merge_request, note? ? note_target : target)
+    elsif personal_snippet_note?
+      Ability.allowed?(user, :read_personal_snippet, note_target)
+    elsif project_snippet_note?
+      Ability.allowed?(user, :read_project_snippet, note_target)
+    elsif milestone?
+      Ability.allowed?(user, :read_milestone, project)
     else
-      milestone?
+      false # No other event types are visible
     end
   end
+  # rubocop:enable Metrics/PerceivedComplexity
+  # rubocop:enable Metrics/CyclomaticComplexity
 
   def project_name
     if project
@@ -175,56 +173,56 @@ class Event < ActiveRecord::Base
     target.try(:title)
   end
 
-  def created?
+  def created_action?
     action == CREATED
   end
 
-  def push?
+  def push_action?
     false
   end
 
-  def merged?
+  def merged_action?
     action == MERGED
   end
 
-  def closed?
+  def closed_action?
     action == CLOSED
   end
 
-  def reopened?
+  def reopened_action?
     action == REOPENED
   end
 
-  def joined?
+  def joined_action?
     action == JOINED
   end
 
-  def left?
+  def left_action?
     action == LEFT
   end
 
-  def expired?
+  def expired_action?
     action == EXPIRED
   end
 
-  def destroyed?
+  def destroyed_action?
     action == DESTROYED
   end
 
-  def commented?
+  def commented_action?
     action == COMMENTED
   end
 
   def membership_changed?
-    joined? || left? || expired?
+    joined_action? || left_action? || expired_action?
   end
 
-  def created_project?
-    created? && !target && target_type.nil?
+  def created_project_action?
+    created_action? && !target && target_type.nil?
   end
 
   def created_target?
-    created? && target
+    created_action? && target
   end
 
   def milestone?
@@ -260,23 +258,23 @@ class Event < ActiveRecord::Base
   end
 
   def action_name
-    if push?
+    if push_action?
       push_action_name
-    elsif closed?
+    elsif closed_action?
       "closed"
-    elsif merged?
+    elsif merged_action?
       "accepted"
-    elsif joined?
+    elsif joined_action?
       'joined'
-    elsif left?
+    elsif left_action?
       'left'
-    elsif expired?
+    elsif expired_action?
       'removed due to membership expiration from'
-    elsif destroyed?
+    elsif destroyed_action?
       'destroyed'
-    elsif commented?
+    elsif commented_action?
       "commented on"
-    elsif created_project?
+    elsif created_project_action?
       created_project_action_name
     else
       "opened"
@@ -301,6 +299,10 @@ class Event < ActiveRecord::Base
 
   def project_snippet_note?
     note? && target && target.for_snippet?
+  end
+
+  def personal_snippet_note?
+    note? && target && target.for_personal_snippet?
   end
 
   def note_target
@@ -335,7 +337,7 @@ class Event < ActiveRecord::Base
   end
 
   def body?
-    if push?
+    if push_action?
       push_with_commits?
     elsif note?
       true

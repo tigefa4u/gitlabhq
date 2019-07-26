@@ -34,7 +34,7 @@
         = todo_due_date(todo)
 
     .todo-body
-      .todo-note
+      .todo-note.break-word
         .md
           = first_line_in_markdown(todo, :body, 150, project: todo.project)
 
@@ -49,5 +49,5 @@
   - else
     .todo-actions
       = link_to restore_dashboard_todo_path(todo), method: :patch, class: 'btn btn-loading js-add-todo', data: { href: restore_dashboard_todo_path(todo) } do
-        Add todo
+        Add a To Do
         = icon('spinner spin')

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ProfilesController < Profiles::ApplicationController
   include ActionView::Helpers::SanitizeHelper
 
@@ -13,7 +15,7 @@ class ProfilesController < Profiles::ApplicationController
       result = Users::UpdateService.new(current_user, user_params.merge(user: @user)).execute
 
       if result[:status] == :success
-        message = "Profile was successfully updated"
+        message = s_("Profiles|Profile was successfully updated")
 
         format.html { redirect_back_or_default(default: { action: 'show' }, options: { notice: message }) }
         format.json { render json: { message: message } }
@@ -29,7 +31,7 @@ class ProfilesController < Profiles::ApplicationController
       user.reset_incoming_email_token!
     end
 
-    flash[:notice] = "Incoming email token was successfully reset"
+    flash[:notice] = s_("Profiles|Incoming email token was successfully reset")
 
     redirect_to profile_personal_access_tokens_path
   end
@@ -39,16 +41,18 @@ class ProfilesController < Profiles::ApplicationController
       user.reset_feed_token!
     end
 
-    flash[:notice] = 'Feed token was successfully reset'
+    flash[:notice] = s_('Profiles|Feed token was successfully reset')
 
     redirect_to profile_personal_access_tokens_path
   end
 
+  # rubocop: disable CodeReuse/ActiveRecord
   def audit_log
     @events = AuditEvent.where(entity_type: "User", entity_id: current_user.id)
       .order("created_at DESC")
       .page(params[:page])
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   def update_username
     result = Users::UpdateService.new(current_user, user: @user, username: username_param).execute
@@ -94,13 +98,15 @@ class ProfilesController < Profiles::ApplicationController
       :location,
       :name,
       :public_email,
+      :commit_email,
       :skype,
       :twitter,
       :username,
       :website_url,
       :organization,
-      :preferred_language,
       :private_profile,
+      :include_private_contributions,
+      :timezone,
       status: [:emoji, :message]
     )
   end

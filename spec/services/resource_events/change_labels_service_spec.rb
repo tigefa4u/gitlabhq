@@ -10,12 +10,20 @@ describe ResourceEvents::ChangeLabelsService do
   describe '.change_labels' do
     subject { described_class.new(resource, author).execute(added_labels: added, removed_labels: removed) }
 
-    let(:labels)  { create_list(:label, 2, project: project) }
+    let(:labels) { create_list(:label, 2, project: project) }
 
     def expect_label_event(event, label, action)
       expect(event.user).to eq(author)
       expect(event.label).to eq(label)
       expect(event.action).to eq(action)
+    end
+
+    it 'expires resource note etag cache' do
+      expect_any_instance_of(Gitlab::EtagCaching::Store)
+        .to receive(:touch)
+        .with("/#{resource.project.namespace.to_param}/#{resource.project.to_param}/noteable/issue/#{resource.id}/notes")
+
+      described_class.new(resource, author).execute(added_labels: [labels[0]])
     end
 
     context 'when adding a label' do

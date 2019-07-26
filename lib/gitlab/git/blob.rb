@@ -1,15 +1,16 @@
-# Gitaly note: JV: seems to be completely migrated (behind feature flags).
+# frozen_string_literal: true
 
 module Gitlab
   module Git
     class Blob
-      include Linguist::BlobHelper
+      include Gitlab::BlobHelper
       include Gitlab::EncodingHelper
+      extend Gitlab::Git::WrapsGitalyErrors
 
       # This number is the maximum amount of data that we want to display to
-      # the user. We load as much as we can for encoding detection
-      # (Linguist) and LFS pointer parsing. All other cases where we need full
-      # blob data should use load_all_data!.
+      # the user. We load as much as we can for encoding detection and LFS
+      # pointer parsing. All other cases where we need full blob data should
+      # use load_all_data!.
       MAX_DATA_DISPLAY_SIZE = 10.megabytes
 
       # These limits are used as a heuristic to ignore files which can't be LFS
@@ -22,6 +23,10 @@ module Gitlab
 
       class << self
         def find(repository, sha, path, limit: MAX_DATA_DISPLAY_SIZE)
+          tree_entry(repository, sha, path, limit)
+        end
+
+        def tree_entry(repository, sha, path, limit)
           return unless path
 
           path = path.sub(%r{\A/*}, '')
@@ -75,7 +80,7 @@ module Gitlab
         # Returns array of Gitlab::Git::Blob
         # Does not guarantee blob data will be set
         def batch_lfs_pointers(repository, blob_ids)
-          repository.wrapped_gitaly_errors do
+          wrapped_gitaly_errors do
             repository.gitaly_blob_client.batch_lfs_pointers(blob_ids.to_a)
           end
         end
@@ -99,7 +104,7 @@ module Gitlab
         @loaded_all_data = @loaded_size == size
       end
 
-      def binary?
+      def binary_in_repo?
         @binary.nil? ? super : @binary == true
       end
 
@@ -173,8 +178,10 @@ module Gitlab
       private
 
       def has_lfs_version_key?
-        !empty? && text? && data.start_with?("version https://git-lfs.github.com/spec")
+        !empty? && text_in_repo? && data.start_with?("version https://git-lfs.github.com/spec")
       end
     end
   end
 end
+
+Gitlab::Git::Blob.singleton_class.prepend Gitlab::Git::RuggedImpl::Blob::ClassMethods

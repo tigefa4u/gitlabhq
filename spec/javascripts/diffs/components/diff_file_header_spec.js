@@ -3,28 +3,33 @@ import Vuex from 'vuex';
 import diffsModule from '~/diffs/store/modules';
 import notesModule from '~/notes/stores/modules';
 import DiffFileHeader from '~/diffs/components/diff_file_header.vue';
-import { convertObjectPropsToCamelCase } from '~/lib/utils/common_utils';
-import { mountComponentWithStore } from 'spec/helpers/vue_mount_component_helper';
+import mountComponent, { mountComponentWithStore } from 'spec/helpers/vue_mount_component_helper';
+import diffDiscussionsMockData from '../mock_data/diff_discussions';
+import { diffViewerModes } from '~/ide/constants';
 
-const discussionFixture = 'merge_requests/diff_discussion.json';
+Vue.use(Vuex);
 
 describe('diff_file_header', () => {
   let vm;
   let props;
-  const diffDiscussionMock = getJSONFixture(discussionFixture)[0];
+  const diffDiscussionMock = diffDiscussionsMockData;
   const Component = Vue.extend(DiffFileHeader);
 
   const store = new Vuex.Store({
     modules: {
-      diffs: diffsModule,
-      notes: notesModule,
+      diffs: diffsModule(),
+      notes: notesModule(),
     },
   });
 
   beforeEach(() => {
-    const diffFile = convertObjectPropsToCamelCase(diffDiscussionMock.diff_file, { deep: true });
+    const diffFile = diffDiscussionMock.diff_file;
+
+    diffFile.added_lines = 2;
+    diffFile.removed_lines = 1;
+
     props = {
-      diffFile,
+      diffFile: { ...diffFile },
       canCurrentUserFork: false,
     };
   });
@@ -58,19 +63,19 @@ describe('diff_file_header', () => {
 
     describe('titleLink', () => {
       beforeEach(() => {
+        props.discussionPath = 'link://to/discussion';
         Object.assign(props.diffFile, {
-          fileHash: 'badc0ffee',
-          submoduleLink: 'link://to/submodule',
-          submoduleTreeUrl: 'some://tree/url',
+          submodule_link: 'link://to/submodule',
+          submodule_tree_url: 'some://tree/url',
         });
       });
 
-      it('returns the fileHash for files', () => {
+      it('returns the discussionPath for files', () => {
         props.diffFile.submodule = false;
 
         vm = mountComponentWithStore(Component, { props, store });
 
-        expect(vm.titleLink).toBe(`#${props.diffFile.fileHash}`);
+        expect(vm.titleLink).toBe(props.discussionPath);
       });
 
       it('returns the submoduleTreeUrl for submodules', () => {
@@ -78,18 +83,26 @@ describe('diff_file_header', () => {
 
         vm = mountComponentWithStore(Component, { props, store });
 
-        expect(vm.titleLink).toBe(props.diffFile.submoduleTreeUrl);
+        expect(vm.titleLink).toBe(props.diffFile.submodule_tree_url);
       });
 
       it('returns the submoduleLink for submodules without submoduleTreeUrl', () => {
         Object.assign(props.diffFile, {
           submodule: true,
-          submoduleTreeUrl: null,
+          submodule_tree_url: null,
         });
 
         vm = mountComponentWithStore(Component, { props, store });
 
-        expect(vm.titleLink).toBe(props.diffFile.submoduleLink);
+        expect(vm.titleLink).toBe(props.diffFile.submodule_link);
+      });
+
+      it('sets the correct path to the discussion', () => {
+        props.discussionPath = 'link://to/discussion';
+        vm = mountComponentWithStore(Component, { props, store });
+        const href = vm.$el.querySelector('.js-title-wrapper').getAttribute('href');
+
+        expect(href).toBe(vm.discussionPath);
       });
     });
 
@@ -97,7 +110,7 @@ describe('diff_file_header', () => {
       beforeEach(() => {
         Object.assign(props.diffFile, {
           blob: { id: 'b10b1db10b1d' },
-          filePath: 'path/to/file',
+          file_path: 'path/to/file',
         });
       });
 
@@ -106,7 +119,7 @@ describe('diff_file_header', () => {
 
         vm = mountComponentWithStore(Component, { props, store });
 
-        expect(vm.filePath).toBe(props.diffFile.filePath);
+        expect(vm.filePath).toBe(props.diffFile.file_path);
       });
 
       it('appends the truncated blob id for submodules', () => {
@@ -115,14 +128,14 @@ describe('diff_file_header', () => {
         vm = mountComponentWithStore(Component, { props, store });
 
         expect(vm.filePath).toBe(
-          `${props.diffFile.filePath} @ ${props.diffFile.blob.id.substr(0, 8)}`,
+          `${props.diffFile.file_path} @ ${props.diffFile.blob.id.substr(0, 8)}`,
         );
       });
     });
 
     describe('titleTag', () => {
       it('returns a link tag if fileHash is set', () => {
-        props.diffFile.fileHash = 'some hash';
+        props.diffFile.file_hash = 'some hash';
 
         vm = mountComponentWithStore(Component, { props, store });
 
@@ -130,7 +143,7 @@ describe('diff_file_header', () => {
       });
 
       it('returns a span tag if fileHash is not set', () => {
-        props.diffFile.fileHash = null;
+        props.diffFile.file_hash = null;
 
         vm = mountComponentWithStore(Component, { props, store });
 
@@ -141,8 +154,8 @@ describe('diff_file_header', () => {
     describe('isUsingLfs', () => {
       beforeEach(() => {
         Object.assign(props.diffFile, {
-          storedExternally: true,
-          externalStorage: 'lfs',
+          stored_externally: true,
+          external_storage: 'lfs',
         });
       });
 
@@ -153,7 +166,7 @@ describe('diff_file_header', () => {
       });
 
       it('returns false if file is not stored externally', () => {
-        props.diffFile.storedExternally = false;
+        props.diffFile.stored_externally = false;
 
         vm = mountComponentWithStore(Component, { props, store });
 
@@ -161,7 +174,7 @@ describe('diff_file_header', () => {
       });
 
       it('returns false if file is not stored in LFS', () => {
-        props.diffFile.externalStorage = 'not lfs';
+        props.diffFile.external_storage = 'not lfs';
 
         vm = mountComponentWithStore(Component, { props, store });
 
@@ -190,7 +203,7 @@ describe('diff_file_header', () => {
     describe('viewFileButtonText', () => {
       it('contains the truncated content SHA', () => {
         const dummySha = 'deebd00f is no SHA';
-        props.diffFile.contentSha = dummySha;
+        props.diffFile.content_sha = dummySha;
 
         vm = mountComponentWithStore(Component, { props, store });
 
@@ -202,7 +215,7 @@ describe('diff_file_header', () => {
     describe('viewReplacedFileButtonText', () => {
       it('contains the truncated base SHA', () => {
         const dummySha = 'deadabba sings no more';
-        props.diffFile.diffRefs.baseSha = dummySha;
+        props.diffFile.diff_refs.base_sha = dummySha;
 
         vm = mountComponentWithStore(Component, { props, store });
 
@@ -236,6 +249,75 @@ describe('diff_file_header', () => {
         expect(vm.$emit).not.toHaveBeenCalled();
       });
     });
+
+    describe('handleFileNameClick', () => {
+      let e;
+
+      beforeEach(() => {
+        e = { preventDefault: () => {} };
+        spyOn(e, 'preventDefault');
+      });
+
+      describe('when file name links to other page', () => {
+        it('does not call preventDefault if submodule tree url exists', () => {
+          vm = mountComponent(Component, {
+            ...props,
+            diffFile: { ...props.diffFile, submodule_tree_url: 'foobar.com' },
+          });
+
+          vm.handleFileNameClick(e);
+
+          expect(e.preventDefault).not.toHaveBeenCalled();
+        });
+
+        it('does not call preventDefault if submodule_link exists', () => {
+          vm = mountComponent(Component, {
+            ...props,
+            diffFile: { ...props.diffFile, submodule_link: 'foobar.com' },
+          });
+          vm.handleFileNameClick(e);
+
+          expect(e.preventDefault).not.toHaveBeenCalled();
+        });
+
+        it('does not call preventDefault if discussionPath exists', () => {
+          vm = mountComponent(Component, {
+            ...props,
+            discussionPath: 'Foo bar',
+          });
+
+          vm.handleFileNameClick(e);
+
+          expect(e.preventDefault).not.toHaveBeenCalled();
+        });
+      });
+
+      describe('scrolling to diff', () => {
+        let scrollToElement;
+        let el;
+
+        beforeEach(() => {
+          el = document.createElement('div');
+          spyOn(document, 'querySelector').and.returnValue(el);
+          scrollToElement = spyOnDependency(DiffFileHeader, 'scrollToElement');
+          vm = mountComponent(Component, props);
+
+          vm.handleFileNameClick(e);
+        });
+
+        it('calls scrollToElement with file content', () => {
+          expect(scrollToElement).toHaveBeenCalledWith(el);
+        });
+
+        it('element adds the content id to the window location', () => {
+          expect(window.location.hash).toContain(props.diffFile.file_hash);
+        });
+
+        it('calls preventDefault when button does not link to other page', () => {
+          expect(e.preventDefault).toHaveBeenCalled();
+        });
+      });
+    });
   });
 
   describe('template', () => {
@@ -261,6 +343,7 @@ describe('diff_file_header', () => {
 
     it('displays an file icon in the title', () => {
       vm = mountComponentWithStore(Component, { props, store });
+
       expect(vm.$el.querySelector('svg.js-file-icon use').getAttribute('xlink:href')).toContain(
         'ruby',
       );
@@ -270,32 +353,32 @@ describe('diff_file_header', () => {
       const filePaths = () => vm.$el.querySelectorAll('.file-title-name');
 
       it('displays the path of a added file', () => {
-        props.diffFile.renamedFile = false;
+        props.diffFile.renamed_file = false;
 
         vm = mountComponentWithStore(Component, { props, store });
 
         expect(filePaths()).toHaveLength(1);
-        expect(filePaths()[0]).toHaveText(props.diffFile.filePath);
+        expect(filePaths()[0]).toHaveText(props.diffFile.file_path);
       });
 
       it('displays path for deleted file', () => {
-        props.diffFile.renamedFile = false;
-        props.diffFile.deletedFile = true;
+        props.diffFile.renamed_file = false;
+        props.diffFile.deleted_file = true;
 
         vm = mountComponentWithStore(Component, { props, store });
 
         expect(filePaths()).toHaveLength(1);
-        expect(filePaths()[0]).toHaveText(`${props.diffFile.filePath} deleted`);
+        expect(filePaths()[0]).toHaveText(`${props.diffFile.file_path} deleted`);
       });
 
       it('displays old and new path if the file was renamed', () => {
-        props.diffFile.renamedFile = true;
+        props.diffFile.viewer.name = diffViewerModes.renamed;
 
         vm = mountComponentWithStore(Component, { props, store });
 
         expect(filePaths()).toHaveLength(2);
-        expect(filePaths()[0]).toHaveText(props.diffFile.oldPath);
-        expect(filePaths()[1]).toHaveText(props.diffFile.newPath);
+        expect(filePaths()[0]).toHaveText(props.diffFile.old_path_html);
+        expect(filePaths()[1]).toHaveText(props.diffFile.new_path_html);
       });
     });
 
@@ -303,28 +386,31 @@ describe('diff_file_header', () => {
       vm = mountComponentWithStore(Component, { props, store });
 
       const button = vm.$el.querySelector('.btn-clipboard');
+
       expect(button).not.toBe(null);
-      expect(button.dataset.clipboardText).toBe('{"text":"files/ruby/popen.rb","gfm":"`files/ruby/popen.rb`"}');
+      expect(button.dataset.clipboardText).toBe('{"text":"CHANGELOG.rb","gfm":"`CHANGELOG.rb`"}');
     });
 
     describe('file mode', () => {
       it('it displays old and new file mode if it changed', () => {
-        props.diffFile.modeChanged = true;
+        props.diffFile.viewer.name = diffViewerModes.mode_changed;
 
         vm = mountComponentWithStore(Component, { props, store });
 
         const { fileMode } = vm.$refs;
+
         expect(fileMode).not.toBe(undefined);
-        expect(fileMode).toContainText(props.diffFile.aMode);
-        expect(fileMode).toContainText(props.diffFile.bMode);
+        expect(fileMode).toContainText(props.diffFile.a_mode);
+        expect(fileMode).toContainText(props.diffFile.b_mode);
       });
 
       it('does not display the file mode if it has not changed', () => {
-        props.diffFile.modeChanged = false;
+        props.diffFile.viewer.name = diffViewerModes.text;
 
         vm = mountComponentWithStore(Component, { props, store });
 
         const { fileMode } = vm.$refs;
+
         expect(fileMode).toBe(undefined);
       });
     });
@@ -334,8 +420,8 @@ describe('diff_file_header', () => {
 
       it('displays the LFS label for files stored in LFS', () => {
         Object.assign(props.diffFile, {
-          storedExternally: true,
-          externalStorage: 'lfs',
+          stored_externally: true,
+          external_storage: 'lfs',
         });
 
         vm = mountComponentWithStore(Component, { props, store });
@@ -345,7 +431,7 @@ describe('diff_file_header', () => {
       });
 
       it('does not display the LFS label for files stored in repository', () => {
-        props.diffFile.storedExternally = false;
+        props.diffFile.stored_externally = false;
 
         vm = mountComponentWithStore(Component, { props, store });
 
@@ -362,16 +448,16 @@ describe('diff_file_header', () => {
 
       it('should show edit button when file is editable', () => {
         props.addMergeRequestButtons = true;
-        props.diffFile.editPath = '/';
+        props.diffFile.edit_path = '/';
         vm = mountComponentWithStore(Component, { props, store });
 
-        expect(vm.$el.querySelector('.js-edit-blob')).toContainText('Edit');
+        expect(vm.$el.querySelector('.js-edit-blob')).not.toBe(null);
       });
 
       it('should not show edit button when file is deleted', () => {
         props.addMergeRequestButtons = true;
-        props.diffFile.deletedFile = true;
-        props.diffFile.editPath = '/';
+        props.diffFile.deleted_file = true;
+        props.diffFile.edit_path = '/';
         vm = mountComponentWithStore(Component, { props, store });
 
         expect(vm.$el.querySelector('.js-edit-blob')).toEqual(null);
@@ -381,7 +467,7 @@ describe('diff_file_header', () => {
     describe('addMergeRequestButtons', () => {
       beforeEach(() => {
         props.addMergeRequestButtons = true;
-        props.diffFile.editPath = '';
+        props.diffFile.edit_path = '';
       });
 
       describe('view on environment button', () => {
@@ -389,8 +475,8 @@ describe('diff_file_header', () => {
         const title = 'url.title';
 
         it('displays link to external url', () => {
-          props.diffFile.externalUrl = url;
-          props.diffFile.formattedExternalUrl = title;
+          props.diffFile.external_url = url;
+          props.diffFile.formatted_external_url = title;
 
           vm = mountComponentWithStore(Component, { props, store });
 
@@ -399,8 +485,8 @@ describe('diff_file_header', () => {
         });
 
         it('hides link if no external url', () => {
-          props.diffFile.externalUrl = '';
-          props.diffFile.formattedExternalUrl = title;
+          props.diffFile.external_url = '';
+          props.diffFile.formattedExternal_url = title;
 
           vm = mountComponentWithStore(Component, { props, store });
 
@@ -418,11 +504,11 @@ describe('diff_file_header', () => {
           path: 'lib/base.js',
           name: 'base.js',
           mode: '100644',
-          readableText: true,
+          readable_text: true,
           icon: 'file-text-o',
         };
         propsCopy.addMergeRequestButtons = true;
-        propsCopy.diffFile.deletedFile = true;
+        propsCopy.diffFile.deleted_file = true;
 
         vm = mountComponentWithStore(Component, {
           props: propsCopy,
@@ -435,7 +521,7 @@ describe('diff_file_header', () => {
       });
 
       describe('with discussions', () => {
-        it('dispatches toggleFileDiscussions when user clicks on toggle discussions button', () => {
+        it('dispatches toggleFileDiscussionWrappers when user clicks on toggle discussions button', () => {
           const propsCopy = Object.assign({}, props);
           propsCopy.diffFile.submodule = false;
           propsCopy.diffFile.blob = {
@@ -443,31 +529,185 @@ describe('diff_file_header', () => {
             path: 'lib/base.js',
             name: 'base.js',
             mode: '100644',
-            readableText: true,
+            readable_text: true,
             icon: 'file-text-o',
           };
           propsCopy.addMergeRequestButtons = true;
-          propsCopy.diffFile.deletedFile = true;
+          propsCopy.diffFile.deleted_file = true;
 
-          const discussionGetter = () => [diffDiscussionMock];
-          notesModule.getters.discussions = discussionGetter;
+          const discussionGetter = () => [
+            {
+              ...diffDiscussionMock,
+            },
+          ];
+          const notesModuleMock = notesModule();
+          notesModuleMock.getters.discussions = discussionGetter;
           vm = mountComponentWithStore(Component, {
             props: propsCopy,
             store: new Vuex.Store({
               modules: {
-                diffs: diffsModule,
-                notes: notesModule,
+                diffs: diffsModule(),
+                notes: notesModuleMock,
               },
             }),
           });
 
-          spyOn(vm, 'toggleFileDiscussions');
+          spyOn(vm, 'toggleFileDiscussionWrappers');
 
           vm.$el.querySelector('.js-btn-vue-toggle-comments').click();
 
-          expect(vm.toggleFileDiscussions).toHaveBeenCalled();
+          expect(vm.toggleFileDiscussionWrappers).toHaveBeenCalled();
         });
       });
+    });
+
+    describe('file actions', () => {
+      it('should not render if diff file has a submodule', () => {
+        props.diffFile.submodule = 'submodule';
+        vm = mountComponentWithStore(Component, { props, store });
+
+        expect(vm.$el.querySelector('.file-actions')).toEqual(null);
+      });
+
+      it('should not render if add merge request buttons is false', () => {
+        props.addMergeRequestButtons = false;
+        vm = mountComponentWithStore(Component, { props, store });
+
+        expect(vm.$el.querySelector('.file-actions')).toEqual(null);
+      });
+
+      describe('with add merge request buttons enabled', () => {
+        beforeEach(() => {
+          props.addMergeRequestButtons = true;
+          props.diffFile.edit_path = 'edit-path';
+        });
+
+        const viewReplacedFileButton = () => vm.$el.querySelector('.js-view-replaced-file');
+        const viewFileButton = () => vm.$el.querySelector('.js-view-file-button');
+        const externalUrl = () => vm.$el.querySelector('.js-external-url');
+
+        it('should render if add merge request buttons is true and diff file does not have a submodule', () => {
+          vm = mountComponentWithStore(Component, { props, store });
+
+          expect(vm.$el.querySelector('.file-actions')).not.toEqual(null);
+        });
+
+        it('should not render view replaced file button if no replaced view path is present', () => {
+          vm = mountComponentWithStore(Component, { props, store });
+
+          expect(viewReplacedFileButton()).toEqual(null);
+        });
+
+        it('should render view replaced file button if replaced view path is present', () => {
+          props.diffFile.replaced_view_path = 'replaced-view-path';
+          vm = mountComponentWithStore(Component, { props, store });
+
+          expect(viewReplacedFileButton()).not.toEqual(null);
+          expect(viewReplacedFileButton().getAttribute('href')).toBe('replaced-view-path');
+        });
+
+        it('should render correct file view button path', () => {
+          props.diffFile.view_path = 'view-path';
+          vm = mountComponentWithStore(Component, { props, store });
+
+          expect(viewFileButton().getAttribute('href')).toBe('view-path');
+          expect(viewFileButton().getAttribute('data-original-title')).toEqual(
+            `View file @ ${props.diffFile.content_sha.substr(0, 8)}`,
+          );
+        });
+
+        it('should not render external url view link if diff file has no external url', () => {
+          vm = mountComponentWithStore(Component, { props, store });
+
+          expect(externalUrl()).toEqual(null);
+        });
+
+        it('should render external url view link if diff file has external url', () => {
+          props.diffFile.external_url = 'external_url';
+          vm = mountComponentWithStore(Component, { props, store });
+
+          expect(externalUrl()).not.toEqual(null);
+          expect(externalUrl().getAttribute('href')).toBe('external_url');
+        });
+      });
+
+      describe('without file blob', () => {
+        beforeEach(() => {
+          props.diffFile.blob = null;
+          props.addMergeRequestButtons = true;
+          vm = mountComponentWithStore(Component, { props, store });
+        });
+
+        it('should not render toggle discussions button', () => {
+          expect(vm.$el.querySelector('.js-btn-vue-toggle-comments')).toEqual(null);
+        });
+
+        it('should not render edit button', () => {
+          expect(vm.$el.querySelector('.js-edit-blob')).toEqual(null);
+        });
+      });
+    });
+  });
+
+  describe('expand full file button', () => {
+    beforeEach(() => {
+      props.addMergeRequestButtons = true;
+      props.diffFile.edit_path = '/';
+    });
+
+    it('does not render button', () => {
+      vm = mountComponentWithStore(Component, { props, store });
+
+      expect(vm.$el.querySelector('.js-expand-file')).toBe(null);
+    });
+
+    it('renders button', () => {
+      props.diffFile.is_fully_expanded = false;
+
+      vm = mountComponentWithStore(Component, { props, store });
+
+      expect(vm.$el.querySelector('.js-expand-file')).not.toBe(null);
+    });
+
+    it('shows fully expanded text', () => {
+      props.diffFile.is_fully_expanded = false;
+      props.diffFile.isShowingFullFile = true;
+
+      vm = mountComponentWithStore(Component, { props, store });
+
+      expect(vm.$el.querySelector('.ic-doc-changes')).not.toBeNull();
+    });
+
+    it('shows expand text', () => {
+      props.diffFile.is_fully_expanded = false;
+
+      vm = mountComponentWithStore(Component, { props, store });
+
+      expect(vm.$el.querySelector('.ic-doc-expand')).not.toBeNull();
+    });
+
+    it('renders loading icon', () => {
+      props.diffFile.is_fully_expanded = false;
+      props.diffFile.isLoadingFullFile = true;
+
+      vm = mountComponentWithStore(Component, { props, store });
+
+      expect(vm.$el.querySelector('.js-expand-file .loading-container')).not.toBe(null);
+    });
+
+    it('calls toggleFullDiff on click', () => {
+      props.diffFile.is_fully_expanded = false;
+
+      vm = mountComponentWithStore(Component, { props, store });
+
+      spyOn(vm.$store, 'dispatch').and.stub();
+
+      vm.$el.querySelector('.js-expand-file').click();
+
+      expect(vm.$store.dispatch).toHaveBeenCalledWith(
+        'diffs/toggleFullDiff',
+        props.diffFile.file_path,
+      );
     });
   });
 });

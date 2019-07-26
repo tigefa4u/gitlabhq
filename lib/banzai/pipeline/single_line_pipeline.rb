@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Banzai
   module Pipeline
     class SingleLinePipeline < GfmPipeline
@@ -24,6 +26,12 @@ module Banzai
           Filter::CommitRangeReferenceFilter,
           Filter::CommitReferenceFilter
         ]
+      end
+
+      def self.transform_context(context)
+        super(context).merge(
+          no_sourcepos: true
+        )
       end
     end
   end

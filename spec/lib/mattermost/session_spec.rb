@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe Mattermost::Session, type: :request do
   include ExclusiveLeaseHelpers
+  include StubRequests
 
   let(:user) { create(:user) }
 
@@ -24,7 +25,7 @@ describe Mattermost::Session, type: :request do
     let(:location) { 'http://location.tld' }
     let(:cookie_header) {'MMOAUTH=taskik8az7rq8k6rkpuas7htia; Path=/;'}
     let!(:stub) do
-      WebMock.stub_request(:get, "#{mattermost_url}/oauth/gitlab/login")
+      stub_full_request("#{mattermost_url}/oauth/gitlab/login")
         .to_return(headers: { 'location' => location, 'Set-Cookie' => cookie_header }, status: 302)
     end
 
@@ -63,26 +64,28 @@ describe Mattermost::Session, type: :request do
         end
 
         before do
-          WebMock.stub_request(:get, "#{mattermost_url}/signup/gitlab/complete")
+          stub_full_request("#{mattermost_url}/signup/gitlab/complete")
             .with(query: hash_including({ 'state' => state }))
             .to_return do |request|
               post "/oauth/token",
-                client_id: doorkeeper.uid,
-                client_secret: doorkeeper.secret,
-                redirect_uri: params[:redirect_uri],
-                grant_type: 'authorization_code',
-                code: request.uri.query_values['code']
+                params: {
+                  client_id: doorkeeper.uid,
+                  client_secret: doorkeeper.secret,
+                  redirect_uri: params[:redirect_uri],
+                  grant_type: 'authorization_code',
+                  code: request.uri.query_values['code']
+                }
 
               if response.status == 200
                 { headers: { 'token' => 'thisworksnow' }, status: 202 }
               end
             end
 
-          WebMock.stub_request(:post, "#{mattermost_url}/api/v4/users/logout")
+          stub_full_request("#{mattermost_url}/api/v4/users/logout", method: :post)
             .to_return(headers: { Authorization: 'token thisworksnow' }, status: 200)
         end
 
-        it 'can setup a session' do
+        it 'can set up a session' do
           subject.with_session do |session|
           end
 
@@ -106,7 +109,7 @@ describe Mattermost::Session, type: :request do
         expect_to_obtain_exclusive_lease(lease_key, 'uuid')
         expect_to_cancel_exclusive_lease(lease_key, 'uuid')
 
-        # Cannot setup a session, but we should still cancel the lease
+        # Cannot set up a session, but we should still cancel the lease
         expect { subject.with_session }.to raise_error(Mattermost::NoSessionError)
       end
 

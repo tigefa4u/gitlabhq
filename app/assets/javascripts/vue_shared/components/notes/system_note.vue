@@ -20,7 +20,9 @@ import $ from 'jquery';
 import { mapGetters } from 'vuex';
 import noteHeader from '~/notes/components/note_header.vue';
 import Icon from '~/vue_shared/components/icon.vue';
+import TimelineEntryItem from './timeline_entry_item.vue';
 import { spriteIcon } from '../../../lib/utils/common_utils';
+import initMRPopovers from '~/mr_popover/';
 
 const MAX_VISIBLE_COMMIT_LIST_COUNT = 3;
 
@@ -29,6 +31,7 @@ export default {
   components: {
     Icon,
     noteHeader,
+    TimelineEntryItem,
   },
   props: {
     note: {
@@ -69,56 +72,41 @@ export default {
       );
     },
   },
+  mounted() {
+    initMRPopovers(this.$el.querySelectorAll('.gfm-merge_request'));
+  },
 };
 </script>
 
 <template>
-  <li
+  <timeline-entry-item
     :id="noteAnchorId"
     :class="{ target: isTargetNote }"
-    class="note system-note timeline-entry">
-    <div class="timeline-entry-inner">
-      <div
-        class="timeline-icon"
-        v-html="iconHtml">
+    class="note system-note note-wrapper"
+  >
+    <div class="timeline-icon" v-html="iconHtml"></div>
+    <div class="timeline-content">
+      <div class="note-header">
+        <note-header :author="note.author" :created-at="note.created_at" :note-id="note.id">
+          <span v-html="actionTextHtml"></span>
+        </note-header>
       </div>
-      <div class="timeline-content">
-        <div class="note-header">
-          <note-header
-            :author="note.author"
-            :created-at="note.created_at"
-            :note-id="note.id"
-          >
-            <span v-html="actionTextHtml"></span>
-          </note-header>
-        </div>
-        <div class="note-body">
-          <div
-            :class="{
-              'system-note-commit-list': hasMoreCommits,
-              'hide-shade': expanded
-            }"
-            class="note-text"
-            v-html="note.note_html"
-          ></div>
-          <div
-            v-if="hasMoreCommits"
-            class="flex-list"
-          >
-            <div
-              class="system-note-commit-list-toggler flex-row"
-              @click="expanded = !expanded"
-            >
-              <Icon
-                :name="toggleIcon"
-                :size="8"
-                class="append-right-5"
-              />
-              <span>Toggle commit list</span>
-            </div>
+      <div class="note-body">
+        <div
+          :class="{
+            'system-note-commit-list': hasMoreCommits,
+            'hide-shade': expanded,
+          }"
+          class="note-text md"
+          v-html="note.note_html"
+        ></div>
+        <div v-if="hasMoreCommits" class="flex-list">
+          <div class="system-note-commit-list-toggler flex-row" @click="expanded = !expanded">
+            <icon :name="toggleIcon" :size="8" class="append-right-5" />
+            <span>{{ __('Toggle commit list') }}</span>
           </div>
         </div>
       </div>
     </div>
-  </li>
+  </timeline-entry-item>
 </template>

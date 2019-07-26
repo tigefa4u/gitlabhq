@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   module LegacyGithubImport
     class Client
@@ -66,7 +68,7 @@ module Gitlab
       end
 
       def user(login)
-        return nil unless login.present?
+        return unless login.present?
         return @users[login] if @users.key?(login)
 
         @users[login] = api.user(login)

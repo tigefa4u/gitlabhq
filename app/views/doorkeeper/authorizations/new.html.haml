@@ -31,7 +31,7 @@
                   %strong= t scope, scope: [:doorkeeper, :scopes]
                   .text-secondary= t scope, scope: [:doorkeeper, :scope_desc]
         .form-actions.text-right
-          = form_tag oauth_authorization_path, method: :delete, class: 'inline'  do
+          = form_tag oauth_authorization_path, method: :delete, class: 'inline' do
             = hidden_field_tag :client_id, @pre_auth.client.uid
             = hidden_field_tag :redirect_uri, @pre_auth.redirect_uri
             = hidden_field_tag :state, @pre_auth.state
@@ -46,4 +46,4 @@
             = hidden_field_tag :response_type, @pre_auth.response_type
             = hidden_field_tag :scope, @pre_auth.scope
             = hidden_field_tag :nonce, @pre_auth.nonce
-            = submit_tag _("Authorize"), class: "btn btn-success prepend-left-10"
+            = submit_tag _("Authorize"), class: "btn btn-success prepend-left-10", data: { qa_selector: 'authorization_button' }

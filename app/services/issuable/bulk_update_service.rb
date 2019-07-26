@@ -1,7 +1,16 @@
 # frozen_string_literal: true
 
 module Issuable
-  class BulkUpdateService < IssuableBaseService
+  class BulkUpdateService
+    include Gitlab::Allowable
+
+    attr_accessor :current_user, :params
+
+    def initialize(user = nil, params = {})
+      @current_user, @params = user, params.dup
+    end
+
+    # rubocop: disable CodeReuse/ActiveRecord
     def execute(type)
       model_class = type.classify.constantize
       update_class = type.classify.pluralize.constantize::UpdateService
@@ -28,6 +37,7 @@ module Issuable
         success:  !items.count.zero?
       }
     end
+    # rubocop: enable CodeReuse/ActiveRecord
 
     private
 

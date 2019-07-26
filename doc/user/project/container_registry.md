@@ -1,61 +1,62 @@
 # GitLab Container Registry
 
->**Notes:**
-> [Introduced][ce-4040] in GitLab 8.8.
-- Docker Registry manifest `v1` support was added in GitLab 8.9 to support Docker
-  versions earlier than 1.10.
-- This document is about the user guide. To learn how to enable GitLab Container
-  Registry across your GitLab instance, visit the
-  [administrator documentation](../../administration/container_registry.md).
-- Starting from GitLab 8.12, if you have 2FA enabled in your account, you need
-  to pass a [personal access token][pat] instead of your password in order to
-  login to GitLab's Container Registry.
-- Multiple level image names support was added in GitLab 9.1
+> - [Introduced][ce-4040] in GitLab 8.8.
+> - Docker Registry manifest `v1` support was added in GitLab 8.9 to support Docker
+>   versions earlier than 1.10.
+> - Starting from GitLab 8.12, if you have 2FA enabled in your account, you need
+>   to pass a [personal access token][pat] instead of your password in order to
+>   login to GitLab's Container Registry.
+> - Multiple level image names support was added in GitLab 9.1.
 
 With the Docker Container Registry integrated into GitLab, every project can
 have its own space to store its Docker images.
 
-You can read more about Docker Registry at https://docs.docker.com/registry/introduction/.
+This document is the user guide. To learn how to enable GitLab Container
+Registry across your GitLab instance, visit the
+[administrator documentation](../../administration/container_registry.md).
+
+You can read more about Docker Registry at <https://docs.docker.com/registry/introduction/>.
 
 ## Enable the Container Registry for your project
 
-NOTE: **Note:**
-If you cannot find the Container Registry entry under your project's settings,
-that means that it is not enabled in your GitLab instance. Ask your administrator
-to enable it.
+If you cannot find the **Packages > Container Registry** entry under your
+project's sidebar, it is not enabled in your GitLab instance. Ask your
+administrator to enable GitLab Container Registry following the
+[administration documentation](../../administration/container_registry.md).
 
-1. First, ask your system administrator to enable GitLab Container Registry
-   following the [administration documentation](../../administration/container_registry.md).
-   If you are using GitLab.com, this is enabled by default so you can start using
-   the Registry immediately. Currently there is a soft (10GB) size restriction for 
-   registry on GitLab.com, as part of the [repository size limit](repository/index.html#repository-size).
-1. Go to your [project's General settings](settings/index.md#sharing-and-permissions)
+If you are using GitLab.com, this is enabled by default so you can start using
+the Registry immediately. Currently there is a soft (10GB) size restriction for
+registry on GitLab.com, as part of the [repository size limit](repository/index.md).
+
+Once enabled for your GitLab instance, to enable Container Registry for your
+project:
+
+1. Go to your project's **Settings > General** page.
+1. Expand the **Visibility, project features, permissions** section
    and enable the **Container Registry** feature on your project. For new
    projects this might be enabled by default. For existing projects
    (prior GitLab 8.8), you will have to explicitly enable it.
-1. Hit **Save changes** for the changes to take effect. You should now be able
-   to see the **Registry** link in the sidebar.
-
-![Container Registry](img/container_registry.png)
+1. Press **Save changes** for the changes to take effect. You should now be able
+   to see the **Packages > Container Registry**  link in the sidebar.
 
 ## Build and push images
 
->**Notes:**
-- Moving or renaming existing container registry repositories is not supported
-once you have pushed images because the images are signed, and the
-signature includes the repository name.
-- To move or rename a repository with a container registry you will have to
-delete all existing images.
+> **Notes:**
+>
+> - Moving or renaming existing container registry repositories is not supported
+>   once you have pushed images because the images are signed, and the
+>   signature includes the repository name.
+> - To move or rename a repository with a container registry you will have to
+>   delete all existing images.
 
+If you visit the **Packages > Container Registry** link under your project's
+menu, you can see the explicit instructions to login to the Container Registry
+using your GitLab credentials.
 
-If you visit the **Registry** link under your project's menu, you can see the
-explicit instructions to login to the Container Registry using your GitLab
-credentials.
-
-For example if the Registry's URL is `registry.example.com`, the you should be
+For example if the Registry's URL is `registry.example.com`, then you should be
 able to login with:
 
-```
+```sh
 docker login registry.example.com
 ```
 
@@ -63,14 +64,14 @@ Building and publishing images should be a straightforward process. Just make
 sure that you are using the Registry URL with the namespace and project name
 that is hosted on GitLab:
 
-```
+```sh
 docker build -t registry.example.com/group/project/image .
 docker push registry.example.com/group/project/image
 ```
 
 Your image will be named after the following scheme:
 
-```
+```text
 <registry URL>/<namespace>/<project>/<image>
 ```
 
@@ -78,7 +79,7 @@ GitLab supports up to three levels of image repository names.
 
 Following examples of image tags are valid:
 
-```
+```text
 registry.example.com/group/project:some-tag
 registry.example.com/group/project/image:latest
 registry.example.com/group/project/my/image:rc1
@@ -89,7 +90,7 @@ registry.example.com/group/project/my/image:rc1
 To download and run a container from images hosted in GitLab Container Registry,
 use `docker run`:
 
-```
+```sh
 docker run [options] registry.example.com/group/project/image [arguments]
 ```
 
@@ -99,7 +100,7 @@ For more information on running Docker containers, visit the
 ## Control Container Registry from within GitLab
 
 GitLab offers a simple Container Registry management panel. Go to your project
-and click **Registry** in the project menu.
+and click **Packages > Container Registry** in the project menu.
 
 This view will show you all tags in your project and will easily allow you to
 delete them.
@@ -112,6 +113,7 @@ This feature requires GitLab 8.8 and GitLab Runner 1.2.
 Make sure that your GitLab Runner is configured to allow building Docker images by
 following the [Using Docker Build](../../ci/docker/using_docker_build.md)
 and [Using the GitLab Container Registry documentation](../../ci/docker/using_docker_build.md#using-the-gitlab-container-registry).
+Alternatively, you can [build images with Kaniko](../../ci/docker/using_kaniko.md) if the Docker builds are not an option for you.
 
 ## Using with private projects
 
@@ -119,12 +121,17 @@ and [Using the GitLab Container Registry documentation](../../ci/docker/using_do
 > Project Deploy Tokens were [introduced][ce-17894] in GitLab 10.7
 
 If a project is private, credentials will need to be provided for authorization.
-The preferred way to do this, is either by using a [personal access tokens][pat] or a [project deploy token][pdt].
+There are two ways to do this:
+
+- By using a [personal access token](../profile/personal_access_tokens.md).
+- By using a [deploy token](../project/deploy_tokens/index.md).
+
 The minimal scope needed for both of them is `read_registry`.
 
-Example of using a personal access token:
-```
-docker login registry.example.com -u <your_username> -p <your_access_token>
+Example of using a token:
+
+```sh
+docker login registry.example.com -u <username> -p <token>
 ```
 
 ## Troubleshooting the GitLab Container Registry
@@ -134,12 +141,12 @@ docker login registry.example.com -u <your_username> -p <your_access_token>
 1. Check to make sure that the system clock on your Docker client and GitLab server have
    been synchronized (e.g. via NTP).
 
-2. If you are using an S3-backed Registry, double check that the IAM
+1. If you are using an S3-backed Registry, double check that the IAM
    permissions and the S3 credentials (including region) are correct. See [the
    sample IAM policy](https://docs.docker.com/registry/storage-drivers/s3/)
    for more details.
 
-3. Check the Registry logs (e.g. `/var/log/gitlab/registry/current`) and the GitLab production logs
+1. Check the Registry logs (e.g. `/var/log/gitlab/registry/current`) and the GitLab production logs
    for errors (e.g. `/var/log/gitlab/gitlab-rails/production.log`). You may be able to find clues
    there.
 
@@ -161,9 +168,23 @@ curl localhost:5001/debug/health
 curl localhost:5001/debug/vars
 ```
 
+#### Docker connection error
+
+A Docker connection error can occur when there are special characters in either the group,
+project or branch name. Special characters can include:
+
+- Leading underscore
+- Trailing hyphen/dash
+- Double hyphen/dash
+
+To get around this, you can [change the group path](../group/index.md#changing-a-groups-path),
+[change the project path](../project/settings/index.md#renaming-a-repository) or chanage the branch
+name.
+
 ### Advanced Troubleshooting
 
->**NOTE:** The following section is only recommended for experts.
+NOTE: **Note:**
+The following section is only recommended for experts.
 
 Sometimes it's not obvious what is wrong, and you may need to dive deeper into
 the communication between the Docker client and the Registry to find out
@@ -175,7 +196,7 @@ diagnose a problem with the S3 setup.
 A user attempted to enable an S3-backed Registry. The `docker login` step went
 fine. However, when pushing an image, the output showed:
 
-```
+```text
 The push refers to a repository [s3-testing.myregistry.com:4567/root/docker-test/docker-image]
 dc5e59c14160: Pushing [==================================================>] 14.85 kB
 03c20c1a019a: Pushing [==================================================>] 2.048 kB
@@ -198,7 +219,7 @@ at the communication between the client and the Registry.
 The REST API between the Docker client and Registry is [described
 here](https://docs.docker.com/registry/spec/api/). Normally, one would just
 use Wireshark or tcpdump to capture the traffic and see where things went
-wrong.  However, since all communication between Docker clients and servers
+wrong. However, since all communications between Docker clients and servers
 are done over HTTPS, it's a bit difficult to decrypt the traffic quickly even
 if you know the private key. What can we do instead?
 
@@ -216,15 +237,15 @@ needs to trust the mitmproxy SSL certificates for this to work.
 
 The following installation instructions assume you are running Ubuntu:
 
-1. Install mitmproxy (see http://docs.mitmproxy.org/en/stable/install.html)
+1. [Install mitmproxy](https://docs.mitmproxy.org/stable/overview-installation/).
 1. Run `mitmproxy --port 9000` to generate its certificates.
    Enter <kbd>CTRL</kbd>-<kbd>C</kbd> to quit.
 1. Install the certificate from `~/.mitmproxy` to your system:
 
-    ```sh
-    sudo cp ~/.mitmproxy/mitmproxy-ca-cert.pem /usr/local/share/ca-certificates/mitmproxy-ca-cert.crt
-    sudo update-ca-certificates
-    ```
+   ```sh
+   sudo cp ~/.mitmproxy/mitmproxy-ca-cert.pem /usr/local/share/ca-certificates/mitmproxy-ca-cert.crt
+   sudo update-ca-certificates
+   ```
 
 If successful, the output should indicate that a certificate was added:
 
@@ -245,7 +266,7 @@ This will run mitmproxy on port `9000`. In another window, run:
 curl --proxy http://localhost:9000 https://httpbin.org/status/200
 ```
 
-If everything is setup correctly, you will see information on the mitmproxy window and
+If everything is set up correctly, you will see information on the mitmproxy window and
 no errors from the curl commands.
 
 #### Running the Docker daemon with a proxy
@@ -278,9 +299,9 @@ In the example above, we see the following trace on the mitmproxy window:
 
 The above image shows:
 
-* The initial PUT requests went through fine with a 201 status code.
-* The 201 redirected the client to the S3 bucket.
-* The HEAD request to the AWS bucket reported a 403 Unauthorized.
+- The initial PUT requests went through fine with a 201 status code.
+- The 201 redirected the client to the S3 bucket.
+- The HEAD request to the AWS bucket reported a 403 Unauthorized.
 
 What does this mean? This strongly suggests that the S3 user does not have the right
 [permissions to perform a HEAD request](http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectHEAD.html).

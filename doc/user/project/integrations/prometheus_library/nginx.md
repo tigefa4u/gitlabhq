@@ -14,9 +14,9 @@ NGINX server metrics are detected, which tracks the pages and content directly s
 
 | Name | Query |
 | ---- | ----- |
-| Throughput (req/sec) | sum(rate(nginx_server_requests{server_zone!="*", server_zone!="_", %{environment_filter}}[2m])) by (code) |
-| Latency (ms) | avg(nginx_server_requestMsec{%{environment_filter}}) |
-| HTTP Error Rate (HTTP Errors / sec) | sum(rate(nginx_server_requests{code="5xx", %{environment_filter}}[2m])) |
+| Throughput (req/sec) | `sum(rate(nginx_server_requests{server_zone!="*", server_zone!="_", %{environment_filter}}[2m])) by (code)` |
+| Latency (ms) | `avg(nginx_server_requestMsec{%{environment_filter}})` |
+| HTTP Error Rate (HTTP Errors / sec) | `sum(rate(nginx_server_requests{code="5xx", %{environment_filter}}[2m]))` |
 
 ## Configuring Prometheus to monitor for NGINX metrics
 
@@ -27,4 +27,4 @@ If you are using NGINX as your Kubernetes ingress, GitLab will [automatically de
 ## Specifying the Environment label
 
 In order to isolate and only display relevant metrics for a given environment
-however, GitLab needs a method to detect which labels are associated. To do this, GitLab will [look for an `environment` label](metrics.md#identifying-environments).
+however, GitLab needs a method to detect which labels are associated. To do this, GitLab will [look for an `environment` label](index.md#identifying-environments).

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Projects::HooksController < Projects::ApplicationController
   include HooksExecution
 
@@ -30,7 +32,7 @@ class Projects::HooksController < Projects::ApplicationController
 
   def update
     if hook.update(hook_params)
-      flash[:notice] = 'Hook was successfully updated.'
+      flash[:notice] = _('Hook was successfully updated.')
       redirect_to project_settings_integrations_path(@project)
     else
       render 'edit'
@@ -66,6 +68,7 @@ class Projects::HooksController < Projects::ApplicationController
       :enable_ssl_verification,
       :token,
       :url,
+      :push_events_branch_filter,
       *ProjectHook.triggers.values
     )
   end

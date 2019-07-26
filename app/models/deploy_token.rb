@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
-class DeployToken < ActiveRecord::Base
+class DeployToken < ApplicationRecord
   include Expirable
   include TokenAuthenticatable
   include PolicyActor
+  include Gitlab::Utils::StrongMemoize
   add_authentication_token_field :token
 
   AVAILABLE_SCOPES = %i(read_repository read_registry).freeze
@@ -15,6 +16,14 @@ class DeployToken < ActiveRecord::Base
   has_many :projects, through: :project_deploy_tokens
 
   validate :ensure_at_least_one_scope
+  validates :username,
+    length: { maximum: 255 },
+    allow_nil: true,
+    format: {
+      with: /\A[a-zA-Z0-9\.\+_-]+\z/,
+      message: "can contain only letters, digits, '_', '-', '+', and '.'"
+    }
+
   before_save :ensure_token
 
   accepts_nested_attributes_for :project_deploy_tokens
@@ -38,7 +47,7 @@ class DeployToken < ActiveRecord::Base
   end
 
   def username
-    "gitlab+deploy-token-#{id}"
+    super || default_username
   end
 
   def has_access_to?(requested_project)
@@ -49,7 +58,9 @@ class DeployToken < ActiveRecord::Base
   # to a single project, later we're going to extend
   # that to be for multiple projects and namespaces.
   def project
-    projects.first
+    strong_memoize(:project) do
+      projects.first
+    end
   end
 
   def expires_at
@@ -71,5 +82,9 @@ class DeployToken < ActiveRecord::Base
 
   def ensure_at_least_one_scope
     errors.add(:base, "Scopes can't be blank") unless read_repository || read_registry
+  end
+
+  def default_username
+    "gitlab+deploy-token-#{id}" if persisted?
   end
 end

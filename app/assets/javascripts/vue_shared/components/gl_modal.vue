@@ -41,10 +41,14 @@ export default {
     },
   },
   mounted() {
-    $(this.$el).on('shown.bs.modal', this.opened).on('hidden.bs.modal', this.closed);
+    $(this.$el)
+      .on('shown.bs.modal', this.opened)
+      .on('hidden.bs.modal', this.closed);
   },
   beforeDestroy() {
-    $(this.$el).off('shown.bs.modal', this.opened).off('hidden.bs.modal', this.closed);
+    $(this.$el)
+      .off('shown.bs.modal', this.opened)
+      .off('hidden.bs.modal', this.closed);
   },
   methods: {
     emitCancel(event) {
@@ -64,24 +68,13 @@ export default {
 </script>
 
 <template>
-  <div
-    :id="id"
-    class="modal fade"
-    tabindex="-1"
-    role="dialog"
-  >
-    <div
-      :class="modalSizeClass"
-      class="modal-dialog"
-      role="document"
-    >
+  <div :id="id" class="modal fade" tabindex="-1" role="dialog">
+    <div :class="modalSizeClass" class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
           <slot name="header">
             <h4 class="modal-title">
-              <slot name="title">
-                {{ headerTitleText }}
-              </slot>
+              <slot name="title"> {{ headerTitleText }} </slot>
             </h4>
             <button
               :aria-label="s__('Modal|Close')"
@@ -95,15 +88,13 @@ export default {
           </slot>
         </div>
 
-        <div class="modal-body">
-          <slot></slot>
-        </div>
+        <div class="modal-body"><slot></slot></div>
 
         <div class="modal-footer">
           <slot name="footer">
             <button
               type="button"
-              class="btn js-modal-cancel-action"
+              class="btn js-modal-cancel-action qa-modal-cancel-button"
               data-dismiss="modal"
               @click="emitCancel($event)"
             >
@@ -112,7 +103,7 @@ export default {
             <button
               :class="`btn-${footerPrimaryButtonVariant}`"
               type="button"
-              class="btn js-modal-primary-action"
+              class="btn js-modal-primary-action qa-modal-primary-button"
               data-dismiss="modal"
               @click="emitSubmit($event)"
             >

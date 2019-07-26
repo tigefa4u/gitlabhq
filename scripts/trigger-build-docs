@@ -6,14 +6,14 @@ require 'gitlab'
 # Configure credentials to be used with gitlab gem
 #
 Gitlab.configure do |config|
-  config.endpoint       = 'https://gitlab.com/api/v4'
-  config.private_token  = ENV["DOCS_API_TOKEN"] # GitLab Docs bot access token with Developer access to gitlab-docs
+  config.endpoint      = 'https://gitlab.com/api/v4'
+  config.private_token = ENV["DOCS_API_TOKEN"] # GitLab Docs bot access token with Developer access to gitlab-docs
 end
 
 #
 # The remote docs project
 #
-GITLAB_DOCS_REPO = 'gitlab-com/gitlab-docs'.freeze
+GITLAB_DOCS_REPO = 'gitlab-org/gitlab-docs'.freeze
 
 #
 # Truncate the remote docs branch name otherwise we hit the filesystem
@@ -31,7 +31,7 @@ end
 # to avoid race conditions, since a triggered pipeline will also run right
 # after the branch creation. This only happens the very first time a branch
 # is created and will be skipped in subsequent runs. Read more in
-# https://gitlab.com/gitlab-com/gitlab-docs/issues/154.
+# https://gitlab.com/gitlab-org/gitlab-docs/issues/154.
 #
 def create_remote_branch
   Gitlab.create_branch(GITLAB_DOCS_REPO, docs_branch, 'master')
@@ -81,7 +81,7 @@ def slug
 end
 
 #
-# Overriding vars in https://gitlab.com/gitlab-com/gitlab-docs/blob/master/.gitlab-ci.yml
+# Overriding vars in https://gitlab.com/gitlab-org/gitlab-docs/blob/master/.gitlab-ci.yml
 #
 def param_name
   "BRANCH_#{slug.upcase}"
@@ -99,14 +99,14 @@ def trigger_pipeline
 
   puts "=> Follow the status of the triggered pipeline:"
   puts ""
-  puts "https://gitlab.com/gitlab-com/gitlab-docs/pipelines/#{pipeline.id}"
+  puts pipeline.web_url
   puts ""
   puts "=> In a few minutes, you will be able to preview your changes under the following URL:"
   puts ""
   puts app_url
   puts ""
-  puts "=> For more information, read the documentation"
-  puts "=> https://docs.gitlab.com/ee/development/writing_documentation.html#previewing-the-changes-live"
+  puts "=> For more information, see the documentation"
+  puts "=> https://docs.gitlab.com/ee/development/documentation/index.html#previewing-the-changes-live"
   puts ""
   puts "=> If something doesn't work, drop a line in the #docs chat channel."
   puts ""

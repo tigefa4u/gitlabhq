@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe Gitlab::HookData::IssueBuilder do
-  set(:issue) { create(:issue) }
+  set(:label) { create(:label) }
+  set(:issue) { create(:labeled_issue, labels: [label], project: label.project) }
   let(:builder) { described_class.new(issue) }
 
   describe '#build' do
@@ -39,6 +40,7 @@ describe Gitlab::HookData::IssueBuilder do
       expect(data).to include(:human_time_estimate)
       expect(data).to include(:human_total_time_spent)
       expect(data).to include(:assignee_ids)
+      expect(data).to include('labels' => [label.hook_attrs])
     end
 
     context 'when the issue has an image in the description' do
@@ -46,7 +48,10 @@ describe Gitlab::HookData::IssueBuilder do
       let(:builder) { described_class.new(issue_with_description) }
 
       it 'sets the image to use an absolute URL' do
-        expect(data[:description]).to eq("test![Issue_Image](#{Settings.gitlab.url}/uploads/abc/Issue_Image.png)")
+        expected_path = "#{issue_with_description.project.path_with_namespace}/uploads/abc/Issue_Image.png"
+
+        expect(data[:description])
+          .to eq("test![Issue_Image](#{Settings.gitlab.url}/#{expected_path})")
       end
     end
   end

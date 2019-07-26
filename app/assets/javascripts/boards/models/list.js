@@ -1,9 +1,12 @@
-/* eslint-disable no-underscore-dangle, class-methods-use-this, consistent-return, no-shadow, no-param-reassign, max-len */
+/* eslint-disable no-underscore-dangle, class-methods-use-this, consistent-return, no-shadow, no-param-reassign */
 /* global ListIssue */
 
-import ListLabel from '~/vue_shared/models/label';
-import ListAssignee from '~/vue_shared/models/assignee';
-import queryData from '../utils/query_data';
+import { __ } from '~/locale';
+import ListLabel from './label';
+import ListAssignee from './assignee';
+import { urlParamsToObject } from '~/lib/utils/common_utils';
+import boardsStore from '../stores/boards_store';
+import ListMilestone from './milestone';
 
 const PER_PAGE = 20;
 
@@ -23,6 +26,12 @@ const TYPES = {
     isExpandable: false,
     isBlank: true,
   },
+  default: {
+    // includes label, assignee, and milestone lists
+    isPreset: false,
+    isExpandable: true,
+    isBlank: false,
+  },
 };
 
 class List {
@@ -30,12 +39,12 @@ class List {
     this.id = obj.id;
     this._uid = this.guid();
     this.position = obj.position;
-    this.title = obj.title;
+    this.title = obj.list_type === 'backlog' ? __('Open') : obj.title;
     this.type = obj.list_type;
 
     const typeInfo = this.getTypeInfo(this.type);
-    this.preset = !!typeInfo.isPreset;
-    this.isExpandable = !!typeInfo.isExpandable;
+    this.preset = Boolean(typeInfo.isPreset);
+    this.isExpandable = Boolean(typeInfo.isExpandable);
     this.isExpanded = true;
     this.page = 1;
     this.loading = true;
@@ -49,6 +58,9 @@ class List {
     } else if (obj.user) {
       this.assignee = new ListAssignee(obj.user);
       this.title = this.assignee.name;
+    } else if (IS_EE && obj.milestone) {
+      this.milestone = new ListMilestone(obj.milestone);
+      this.title = this.milestone.title;
     }
 
     if (!typeInfo.isBlank && this.id) {
@@ -67,12 +79,14 @@ class List {
   }
 
   save() {
-    const entity = this.label || this.assignee;
+    const entity = this.label || this.assignee || this.milestone;
     let entityType = '';
     if (this.label) {
       entityType = 'label_id';
-    } else {
+    } else if (this.assignee) {
       entityType = 'assignee_id';
+    } else if (IS_EE && this.milestone) {
+      entityType = 'milestone_id';
     }
 
     return gl.boardService
@@ -82,15 +96,16 @@ class List {
         this.id = data.id;
         this.type = data.list_type;
         this.position = data.position;
+        this.label = data.label;
 
         return this.getIssues();
       });
   }
 
   destroy() {
-    const index = gl.issueBoards.BoardsStore.state.lists.indexOf(this);
-    gl.issueBoards.BoardsStore.state.lists.splice(index, 1);
-    gl.issueBoards.BoardsStore.updateNewListDropdown(this.id);
+    const index = boardsStore.state.lists.indexOf(this);
+    boardsStore.state.lists.splice(index, 1);
+    boardsStore.updateNewListDropdown(this.id);
 
     gl.boardService.destroyList(this.id).catch(() => {
       // TODO: handle request error
@@ -114,7 +129,10 @@ class List {
   }
 
   getIssues(emptyIssues = true) {
-    const data = queryData(gl.issueBoards.BoardsStore.filter.path, { page: this.page });
+    const data = {
+      ...urlParamsToObject(boardsStore.filter.path),
+      page: this.page,
+    };
 
     if (this.label && data.label_name) {
       data.label_name = data.label_name.filter(label => label !== this.label.title);
@@ -187,6 +205,13 @@ class List {
         issue.addAssignee(this.assignee);
       }
 
+      if (IS_EE && this.milestone) {
+        if (listFrom && listFrom.type === 'milestone') {
+          issue.removeMilestone(listFrom.milestone);
+        }
+        issue.addMilestone(this.milestone);
+      }
+
       if (listFrom) {
         this.issuesSize += 1;
 
@@ -229,16 +254,17 @@ class List {
     });
   }
 
-  getTypeInfo (type) {
-    return TYPES[type] || {};
+  getTypeInfo(type) {
+    return TYPES[type] || TYPES.default;
   }
 
-  onNewIssueResponse (issue, data) {
+  onNewIssueResponse(issue, data) {
     issue.id = data.id;
     issue.iid = data.iid;
     issue.project = data.project;
     issue.path = data.real_path;
     issue.referencePath = data.reference_path;
+    issue.assignableLabelsEndpoint = data.assignable_labels_endpoint;
 
     if (this.issuesSize > 1) {
       const moveBeforeId = this.issues[1].id;

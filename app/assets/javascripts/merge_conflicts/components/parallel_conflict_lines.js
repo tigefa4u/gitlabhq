@@ -4,7 +4,7 @@ import Vue from 'vue';
 import actionsMixin from '../mixins/line_conflict_actions';
 import utilsMixin from '../mixins/line_conflict_utils';
 
-((global) => {
+(global => {
   global.mergeConflicts = global.mergeConflicts || {};
 
   global.mergeConflicts.parallelConflictLines = Vue.extend({
@@ -16,7 +16,7 @@ import utilsMixin from '../mixins/line_conflict_utils';
       },
     },
     template: `
-      <table>
+      <table class="diff-wrap-lines code js-syntax-highlight">
         <tr class="line_holder parallel" v-for="section in file.parallelLines">
           <template v-for="line in section">
             <td class="diff-line-num header" :class="lineCssClass(line)" v-if="line.isHeader"></td>

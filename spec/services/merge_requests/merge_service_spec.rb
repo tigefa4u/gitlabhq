@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe MergeRequests::MergeService do
   set(:user) { create(:user) }
   set(:user2) { create(:user) }
-  let(:merge_request) { create(:merge_request, :simple, author: user2, assignee: user2) }
+  let(:merge_request) { create(:merge_request, :simple, author: user2, assignees: [user2]) }
   let(:project) { merge_request.project }
 
   before do
@@ -56,7 +58,7 @@ describe MergeRequests::MergeService do
         expect(issue.reload.closed?).to be_truthy
       end
 
-      context 'with JIRA integration' do
+      context 'with Jira integration' do
         include JiraServiceHelper
 
         let(:jira_tracker) { project.create_jira_service }
@@ -70,7 +72,7 @@ describe MergeRequests::MergeService do
           allow(merge_request).to receive(:commits).and_return([commit])
         end
 
-        it 'closes issues on JIRA issue tracker' do
+        it 'closes issues on Jira issue tracker' do
           jira_issue = ExternalIssue.new('JIRA-123', project)
           stub_jira_urls(jira_issue)
           commit = double('commit', safe_message: "Fixes #{jira_issue.to_reference}")
@@ -96,7 +98,7 @@ describe MergeRequests::MergeService do
         end
 
         context "wrong issue markdown" do
-          it 'does not close issues on JIRA issue tracker' do
+          it 'does not close issues on Jira issue tracker' do
             jira_issue = ExternalIssue.new('#JIRA-123', project)
             stub_jira_urls(jira_issue)
             commit = double('commit', safe_message: "Fixes #{jira_issue.to_reference}")
@@ -111,7 +113,7 @@ describe MergeRequests::MergeService do
     end
 
     context 'closes related todos' do
-      let(:merge_request) { create(:merge_request, assignee: user, author: user) }
+      let(:merge_request) { create(:merge_request, assignees: [user], author: user) }
       let(:project) { merge_request.project }
       let(:service) { described_class.new(project, user, commit_message: 'Awesome message') }
       let!(:todo) do
@@ -212,6 +214,19 @@ describe MergeRequests::MergeService do
         allow(Rails.logger).to receive(:error)
       end
 
+      context 'when source is missing' do
+        it 'logs and saves error' do
+          allow(merge_request).to receive(:diff_head_sha) { nil }
+
+          error_message = 'No source for merge'
+
+          service.execute(merge_request)
+
+          expect(merge_request.merge_error).to eq(error_message)
+          expect(Rails.logger).to have_received(:error).with(a_string_matching(error_message))
+        end
+      end
+
       it 'logs and saves error if there is an exception' do
         error_message = 'error message'
 
@@ -224,10 +239,22 @@ describe MergeRequests::MergeService do
         expect(Rails.logger).to have_received(:error).with(a_string_matching(error_message))
       end
 
+      it 'logs and saves error if user is not authorized' do
+        unauthorized_user = create(:user)
+        project.add_reporter(unauthorized_user)
+
+        service = described_class.new(project, unauthorized_user)
+
+        service.execute(merge_request)
+
+        expect(merge_request.merge_error)
+          .to eq('You are not allowed to merge this merge request')
+      end
+
       it 'logs and saves error if there is an PreReceiveError exception' do
         error_message = 'error message'
 
-        allow(service).to receive(:repository).and_raise(Gitlab::Git::PreReceiveError, error_message)
+        allow(service).to receive(:repository).and_raise(Gitlab::Git::PreReceiveError, "GitLab: #{error_message}")
         allow(service).to receive(:execute_hooks)
 
         service.execute(merge_request)
@@ -258,7 +285,7 @@ describe MergeRequests::MergeService do
         it 'logs and saves error if there is an error when squashing' do
           error_message = 'Failed to squash. Should be done manually'
 
-          allow_any_instance_of(MergeRequests::SquashService).to receive(:squash).and_return(nil)
+          allow_any_instance_of(MergeRequests::SquashService).to receive(:squash!).and_return(nil)
           merge_request.update(squash: true)
 
           service.execute(merge_request)

@@ -1,31 +1,37 @@
 ---
-author: Achilleas Pipinellis
-author_gitlab: axil
-level: intermediary
-article_type: tutorial
+type: howto
 date: 2016-06-28
 ---
 
 # How to install GitLab on OpenShift Origin 3
 
+CAUTION: **Deprecated:**
+This article is deprecated. Use the official Kubernetes Helm charts for
+installing GitLab to OpenShift. Check out the
+[official installation docs](https://docs.gitlab.com/charts/installation/cloud/openshift.html)
+for details.
+
 ## Introduction
 
-[OpenShift Origin][openshift] is an open source container application
-platform created by [RedHat], based on [kubernetes] and [Docker]. That means
+[OpenShift Origin](https://www.okd.io/) (**Note:** renamed to OKD in Aug 2018) is an open source container application
+platform created by [RedHat], based on [kubernetes](https://kubernetes.io/) and [Docker]. That means
 you can host your own PaaS for free and almost with no hassle.
 
 In this tutorial, we will see how to deploy GitLab in OpenShift using GitLab's
 official Docker image while getting familiar with the web interface and CLI
 tools that will help us achieve our goal.
 
-For a video demonstration on installing GitLab on Openshift, check the article [In 13 minutes from Kubernetes to a complete application development tool](https://about.gitlab.com/2016/11/14/idea-to-production/).
+For a video demonstration on installing GitLab on OpenShift, check the article [In 13 minutes from Kubernetes to a complete application development tool](https://about.gitlab.com/2016/11/14/idea-to-production/).
 
 ---
 
 ## Prerequisites
 
-OpenShift 3 is not yet deployed on RedHat's offered Online platform ([openshift.com]),
-so in order to test it, we will use an [all-in-one Virtualbox image][vm] that is
+CAUTION: **Caution:** This information is no longer up to date, as the current versions
+have changed and products have been renamed.
+
+OpenShift 3 is not yet deployed on RedHat's offered Online platform, [openshift.com](https://www.openshift.com/),
+so in order to test it, we will use an [all-in-one Virtualbox image](https://www.okd.io/minishift/) that is
 offered by the OpenShift developers and managed by Vagrant. If you haven't done
 already, go ahead and install the following components as they are essential to
 test OpenShift easily:
@@ -63,9 +69,11 @@ what we will use in this tutorial.
 In short:
 
 1. Open a terminal and in a new directory run:
+
    ```sh
    vagrant init openshift/origin-all-in-one
    ```
+
 1. This will generate a Vagrantfile based on the all-in-one VM image
 1. In the same directory where you generated the Vagrantfile
    enter:
@@ -78,7 +86,7 @@ This will download the VirtualBox image and fire up the VM with some preconfigur
 values as you can see in the Vagrantfile. As you may have noticed, you need
 plenty of RAM (5GB in our example), so make sure you have enough.
 
-Now that OpenShift is setup, let's see how the web console looks like.
+Now that OpenShift is set up, let's see how the web console looks like.
 
 ### Explore the OpenShift web console
 
@@ -140,12 +148,12 @@ Login successful.
 
 You have access to the following projects and can switch between them with 'oc project <projectname>':
 
-  * cockpit
-  * default (current)
-  * delete
-  * openshift
-  * openshift-infra
-  * sample
+- cockpit
+- default (current)
+- delete
+- openshift
+- openshift-infra
+- sample
 
 Using project "default".
 ```
@@ -453,7 +461,7 @@ OpenShift's website about [autoscaling].
 
 ## Current limitations
 
-As stated in the [all-in-one VM][vm] page:
+As stated in the [all-in-one VM](https://www.okd.io/minishift/) page:
 
 > By default, OpenShift will not allow a container to run as root or even a
 non-random container assigned userid. Most Docker images in the Dockerhub do not
@@ -469,13 +477,14 @@ GitLab service account to the `anyuid` [Security Context Constraints][scc].
 For OpenShift v3.0, you will need to do this manually:
 
 1. Edit the Security Context:
+
    ```sh
    oc edit scc anyuid
    ```
 
 1. Add `system:serviceaccount:<project>:gitlab-ce-user` to the `users` section.
    If you changed the Application Name from the default the user will
-     will be `<app-name>-user` instead of `gitlab-ce-user`
+   will be `<app-name>-user` instead of `gitlab-ce-user`
 
 1. Save and exit the editor
 
@@ -500,12 +509,8 @@ is capable of. As always, you can refer to the detailed
 PaaS and managing your applications with the ease of containers.
 
 [RedHat]: https://www.redhat.com/en "RedHat website"
-[openshift]: https://www.openshift.org "OpenShift Origin website"
-[vm]: https://www.openshift.org/vm/ "OpenShift All-in-one VM"
-[vm-new]: https://atlas.hashicorp.com/openshift/boxes/origin-all-in-one "Official OpenShift Vagrant box on Atlas"
+[vm-new]: https://app.vagrantup.com/openshift/boxes/origin-all-in-one "Official OpenShift Vagrant box on Vagrant Cloud"
 [template]: https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/docker/openshift-template.json "OpenShift template for GitLab"
-[openshift.com]: https://openshift.com "OpenShift Online"
-[kubernetes]: http://kubernetes.io/ "Kubernetes website"
 [Docker]: https://www.docker.com "Docker website"
 [oc]: https://docs.openshift.org/latest/cli_reference/get_started_cli.html "Documentation - oc CLI documentation"
 [VirtualBox]: https://www.virtualbox.org/wiki/Downloads "VirtualBox downloads"
@@ -515,7 +520,7 @@ PaaS and managing your applications with the ease of containers.
 [templates]: https://docs.openshift.org/latest/architecture/core_concepts/templates.html "Documentation - OpenShift templates"
 [old-post]: https://blog.openshift.com/deploy-gitlab-openshift/ "Old post - Deploy GitLab on OpenShift"
 [line]: https://gitlab.com/gitlab-org/omnibus-gitlab/blob/658c065c8d022ce858dd63eaeeadb0b2ddc8deea/docker/openshift-template.json#L239 "GitLab - OpenShift template"
-[oc-gh]: https://github.com/openshift/origin/releases/tag/v1.3.0 "Openshift 1.3.0 release on GitHub"
+[oc-gh]: https://github.com/openshift/origin/releases/tag/v1.3.0 "OpenShift Origin 1.3.0 release on GitHub"
 [ha]: ../../administration/high_availability/gitlab.html "Documentation - GitLab High Availability"
 [replicas]: https://docs.openshift.org/latest/architecture/core_concepts/deployments.html#replication-controllers "Documentation - Replication controller"
 [autoscaling]: https://docs.openshift.org/latest/dev_guide/pod_autoscaling.html "Documentation - Autoscale"

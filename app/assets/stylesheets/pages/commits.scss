@@ -58,14 +58,6 @@
     display: inline-block;
     vertical-align: middle;
 
-    .stage-cell .stage-container {
-      margin: 3px 3px 3px 0;
-    }
-
-    .stage-container:last-child {
-      margin-right: 0;
-    }
-
     .dropdown-menu {
       margin-top: 11px;
     }
@@ -128,17 +120,8 @@
 }
 
 .commit-row-title {
-  .notes_count {
-    float: right;
-    margin-right: 10px;
-  }
-
   .str-truncated {
     max-width: 70%;
-  }
-
-  .commit-row-message {
-    color: $gl-text-color;
   }
 }
 
@@ -171,8 +154,6 @@
 }
 
 .avatar-cell {
-  width: 46px;
-
   img {
     margin-right: 0;
   }
@@ -185,8 +166,8 @@
   flex-grow: 1;
   min-width: 0;
 
-  .project_namespace {
-    color: $gl-text-color-secondary;
+  .project-namespace {
+    color: $gl-text-color-tertiary;
   }
 }
 
@@ -199,6 +180,14 @@
     display: flex;
     align-items: center;
   }
+
+  .committer {
+    color: $gl-text-color-tertiary;
+
+    .commit-author-link {
+      color: $gl-text-color;
+    }
+  }
 }
 
 .commit-actions {
@@ -206,10 +195,6 @@
     .fa-spinner {
       font-size: 12px;
     }
-  }
-
-  .ci-status-link {
-    display: inline-flex;
   }
 
   .ci-status-icon svg {
@@ -223,6 +208,7 @@
   }
 }
 
+.clipboard-group,
 .commit-sha-group {
   display: inline-flex;
 
@@ -238,7 +224,6 @@
   }
 
   .label-monospace {
-    @extend .monospace;
     user-select: text;
     color: $gl-text-color;
     background-color: $gray-light;
@@ -265,7 +250,7 @@
 }
 
 .commit,
-.generic_commit_status {
+.generic-commit-status {
   a,
   button {
     vertical-align: baseline;
@@ -277,37 +262,22 @@
     &.autodevops-badge {
       color: $white-light;
     }
-
-    &.autodevops-link {
-      color: $gl-link-color;
-    }
   }
 
   .commit-row-description {
     @extend %commit-description-base;
     display: none;
     flex: 1;
-
-    a {
-      color: $gl-text-color;
-    }
   }
 
   &.inline-commit {
     .commit-row-title {
       font-size: 13px;
     }
-
-    .committed_ago {
-      @extend .cgray;
-      float: right;
-    }
   }
 }
 
 .branch-commit {
-  color: $gl-text-color;
-
   .commit-icon {
     text-align: center;
     display: inline-block;
@@ -319,13 +289,14 @@
       fill: $gl-text-color-secondary;
     }
   }
+}
 
+.commit,
+.generic-commit-status,
+.branch-commit {
+  .autodevops-link,
   .commit-sha {
-    color: $gl-link-color;
-  }
-
-  .commit-row-message {
-    color: $gl-text-color;
+    color: $blue-600;
   }
 }
 
@@ -341,11 +312,11 @@
   }
 
   &.invalid {
-    @include status-color($gray-dark, color("gray"), $gray-darkest);
+    @include status-color($gray-dark, color('gray'), $gray-darkest);
     border-color: $gray-darkest;
 
     &:not(span):hover {
-      color: color("gray");
+      color: color('gray');
     }
   }
 }

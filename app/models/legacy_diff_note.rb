@@ -20,11 +20,7 @@ class LegacyDiffNote < Note
   end
 
   def project_repository
-    if RequestStore.active?
-      RequestStore.fetch("project:#{project_id}:repository") { self.project.repository }
-    else
-      self.project.repository
-    end
+    Gitlab::SafeRequestStore.fetch("project:#{project_id}:repository") { self.project.repository }
   end
 
   def diff_file_hash
@@ -77,7 +73,7 @@ class LegacyDiffNote < Note
   private
 
   def find_diff
-    return nil unless noteable
+    return unless noteable
     return @diff if defined?(@diff)
 
     @diff = noteable.raw_diffs(Commit.max_diff_options).find do |d|

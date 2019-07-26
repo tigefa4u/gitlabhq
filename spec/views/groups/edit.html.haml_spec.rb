@@ -12,7 +12,7 @@ describe 'groups/edit.html.haml' do
     end
 
     shared_examples_for '"Share with group lock" setting' do |checkbox_options|
-      it 'should have the correct label, help text, and checkbox options' do
+      it 'has the correct label, help text, and checkbox options' do
         assign(:group, test_group)
         allow(view).to receive(:can?).with(test_user, :admin_group, test_group).and_return(true)
         allow(view).to receive(:can_change_group_visibility_level?).and_return(false)
@@ -35,7 +35,7 @@ describe 'groups/edit.html.haml' do
       it_behaves_like '"Share with group lock" setting', { disabled: false, checked: false }
     end
 
-    context 'for a subgroup', :nested_groups do
+    context 'for a subgroup' do
       let!(:subgroup) { create(:group, parent: root_group) }
       let(:sub_owner) { create(:user) }
       let(:test_group) { subgroup }

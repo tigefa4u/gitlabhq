@@ -6,6 +6,9 @@ Mattermost commands give users an extra interface to perform common operations
 from the chat environment. This allows one to, for example, create an issue as
 soon as the idea was discussed in Mattermost.
 
+GitLab can also send events (e.g., `issue created`) to Mattermost as notifications.
+This is the separately configured [Mattermost Notifications Service](mattermost.md).
+
 ## Prerequisites
 
 Mattermost 3.4 and up is required.
@@ -102,7 +105,7 @@ in a new slash command.
 
     ![Mattermost add command configuration](img/mattermost_slash_command_configuration.png)
 
-1. After you setup all the values, copy the token (we will use it below) and
+1. After you set up all the values, copy the token (we will use it below) and
    click **Done**.
 
     ![Mattermost slash command token](img/mattermost_slash_command_token.png)
@@ -152,7 +155,7 @@ trigger word followed by <kbd>help</kbd>. Example: <samp>/gitlab help</samp>
 ## Permissions
 
 The permissions to run the [available commands](#available-slash-commands) derive from
-the [permissions you have on the project](../../permissions.md#project).
+the [permissions you have on the project](../../permissions.md#project-members-permissions).
 
 ## Further reading
 

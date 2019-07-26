@@ -32,6 +32,26 @@ describe('Getters Notes Store', () => {
     };
   });
 
+  describe('showJumpToNextDiscussion', () => {
+    it('should return true if there are 2 or more unresolved discussions', () => {
+      const localGetters = {
+        unresolvedDiscussionsIdsByDate: ['123', '456'],
+        allResolvableDiscussions: [],
+      };
+
+      expect(getters.showJumpToNextDiscussion(state, localGetters)()).toBe(true);
+    });
+
+    it('should return false if there are 1 or less unresolved discussions', () => {
+      const localGetters = {
+        unresolvedDiscussionsIdsByDate: ['123'],
+        allResolvableDiscussions: [],
+      };
+
+      expect(getters.showJumpToNextDiscussion(state, localGetters)()).toBe(false);
+    });
+  });
+
   describe('discussions', () => {
     it('should return all discussions in the store', () => {
       expect(getters.discussions(state)).toEqual([individualNote]);
@@ -117,17 +137,15 @@ describe('Getters Notes Store', () => {
 
   describe('allResolvableDiscussions', () => {
     it('should return only resolvable discussions in same order', () => {
-      const localGetters = {
-        allDiscussions: [
-          discussion3,
-          unresolvableDiscussion,
-          discussion1,
-          unresolvableDiscussion,
-          discussion2,
-        ],
-      };
+      state.discussions = [
+        discussion3,
+        unresolvableDiscussion,
+        discussion1,
+        unresolvableDiscussion,
+        discussion2,
+      ];
 
-      expect(getters.allResolvableDiscussions(state, localGetters)).toEqual([
+      expect(getters.allResolvableDiscussions(state)).toEqual([
         discussion3,
         discussion1,
         discussion2,
@@ -135,11 +153,9 @@ describe('Getters Notes Store', () => {
     });
 
     it('should return empty array if there are no resolvable discussions', () => {
-      const localGetters = {
-        allDiscussions: [unresolvableDiscussion, unresolvableDiscussion],
-      };
+      state.discussions = [unresolvableDiscussion, unresolvableDiscussion];
 
-      expect(getters.allResolvableDiscussions(state, localGetters)).toEqual([]);
+      expect(getters.allResolvableDiscussions(state)).toEqual([]);
     });
   });
 
@@ -205,6 +221,7 @@ describe('Getters Notes Store', () => {
         '123',
         '456',
       ]);
+
       expect(getters.unresolvedDiscussionsIdsOrdered(state, localGetters)(undefined)).toEqual([
         '123',
         '456',
@@ -235,7 +252,7 @@ describe('Getters Notes Store', () => {
     it('should return the ID of the discussion after the ID provided', () => {
       expect(getters.nextUnresolvedDiscussionId(state, localGetters)('123')).toBe('456');
       expect(getters.nextUnresolvedDiscussionId(state, localGetters)('456')).toBe('789');
-      expect(getters.nextUnresolvedDiscussionId(state, localGetters)('789')).toBe(undefined);
+      expect(getters.nextUnresolvedDiscussionId(state, localGetters)('789')).toBe('123');
     });
   });
 
@@ -262,6 +279,14 @@ describe('Getters Notes Store', () => {
 
       expect(getters.firstUnresolvedDiscussionId(state, localGettersFalsy)(true)).toBeFalsy();
       expect(getters.firstUnresolvedDiscussionId(state, localGettersFalsy)(false)).toBeFalsy();
+    });
+  });
+
+  describe('getDiscussion', () => {
+    it('returns discussion by ID', () => {
+      state.discussions.push({ id: '1' });
+
+      expect(getters.getDiscussion(state)('1')).toEqual({ id: '1' });
     });
   });
 });

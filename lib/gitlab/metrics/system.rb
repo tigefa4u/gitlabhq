@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   module Metrics
     # Module for gathering system/process statistics such as the memory usage.
@@ -21,6 +23,14 @@ module Gitlab
         def self.file_descriptor_count
           Dir.glob('/proc/self/fd/*').length
         end
+
+        def self.max_open_file_descriptors
+          match = File.read('/proc/self/limits').match(/Max open files\s*(\d+)/)
+
+          return unless match && match[1]
+
+          match[1].to_i
+        end
       else
         def self.memory_usage
           0.0
@@ -29,19 +39,15 @@ module Gitlab
         def self.file_descriptor_count
           0
         end
+
+        def self.max_open_file_descriptors
+          0
+        end
       end
 
-      # THREAD_CPUTIME is not supported on OS X
-      if Process.const_defined?(:CLOCK_THREAD_CPUTIME_ID)
-        def self.cpu_time
-          Process
-            .clock_gettime(Process::CLOCK_THREAD_CPUTIME_ID, :float_second)
-        end
-      else
-        def self.cpu_time
-          Process
-            .clock_gettime(Process::CLOCK_PROCESS_CPUTIME_ID, :float_second)
-        end
+      def self.cpu_time
+        Process
+          .clock_gettime(Process::CLOCK_PROCESS_CPUTIME_ID, :float_second)
       end
 
       # Returns the current real time in a given precision.

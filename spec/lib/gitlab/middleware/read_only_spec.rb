@@ -8,7 +8,6 @@ describe Gitlab::Middleware::ReadOnly do
     rack = Rack::Builder.new do
       use ActionDispatch::Session::CacheStore
       use ActionDispatch::Flash
-      use ActionDispatch::ParamsParser
     end
 
     rack.run(subject)
@@ -34,7 +33,7 @@ describe Gitlab::Middleware::ReadOnly do
     end
   end
 
-  context 'normal requests to a read-only Gitlab instance' do
+  context 'normal requests to a read-only GitLab instance' do
     let(:fake_app) { lambda { |env| [200, { 'Content-Type' => 'text/plain' }, ['OK']] } }
 
     before do
@@ -102,16 +101,36 @@ describe Gitlab::Middleware::ReadOnly do
         expect(subject).not_to disallow_request
       end
 
-      it 'expects requests to sidekiq admin to be allowed' do
-        response = request.post('/admin/sidekiq')
+      context 'sidekiq admin requests' do
+        where(:mounted_at) do
+          [
+            '',
+            '/',
+            '/gitlab',
+            '/gitlab/',
+            '/gitlab/gitlab',
+            '/gitlab/gitlab/'
+          ]
+        end
 
-        expect(response).not_to be_redirect
-        expect(subject).not_to disallow_request
+        with_them do
+          before do
+            stub_config_setting(relative_url_root: mounted_at)
+          end
 
-        response = request.get('/admin/sidekiq')
+          it 'allows requests' do
+            path = File.join(mounted_at, 'admin/sidekiq')
+            response = request.post(path)
 
-        expect(response).not_to be_redirect
-        expect(subject).not_to disallow_request
+            expect(response).not_to be_redirect
+            expect(subject).not_to disallow_request
+
+            response = request.get(path)
+
+            expect(response).not_to be_redirect
+            expect(subject).not_to disallow_request
+          end
+        end
       end
 
       where(:description, :path) do

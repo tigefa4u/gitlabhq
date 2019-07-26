@@ -1,9 +1,13 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Service do
   describe "Associations" do
     it { is_expected.to belong_to :project }
     it { is_expected.to have_one :service_hook }
+    it { is_expected.to have_one :jira_tracker_data }
+    it { is_expected.to have_one :issue_tracker_data }
   end
 
   describe 'Validations' do
@@ -78,7 +82,7 @@ describe Service do
       context 'when template is invalid' do
         it 'sets service template to inactive when template is invalid' do
           project = create(:project)
-          template = KubernetesService.new(template: true, active: true)
+          template = build(:prometheus_service, template: true, active: true, properties: {})
           template.save(validate: false)
 
           service = described_class.build_from_template(project.id, template)
@@ -240,7 +244,8 @@ describe Service do
     let(:service) do
       GitlabIssueTrackerService.create(
         project: create(:project),
-        title: 'random title'
+        title: 'random title',
+        project_url: 'http://gitlab.example.com'
       )
     end
 
@@ -248,8 +253,12 @@ describe Service do
       expect { service }.not_to raise_error
     end
 
+    it 'sets title correctly' do
+      expect(service.title).to eq('random title')
+    end
+
     it 'creates the properties' do
-      expect(service.properties).to eq({ "title" => "random title" })
+      expect(service.properties).to eq({ "project_url" => "http://gitlab.example.com" })
     end
   end
 
@@ -289,7 +298,7 @@ describe Service do
   describe "#deprecated?" do
     let(:project) { create(:project, :repository) }
 
-    it 'should return false by default' do
+    it 'returns false by default' do
       service = create(:service, project: project)
       expect(service.deprecated?).to be_falsy
     end
@@ -298,17 +307,17 @@ describe Service do
   describe "#deprecation_message" do
     let(:project) { create(:project, :repository) }
 
-    it 'should be empty by default' do
+    it 'is empty by default' do
       service = create(:service, project: project)
       expect(service.deprecation_message).to be_nil
     end
   end
 
   describe '.find_by_template' do
-    let!(:kubernetes_service) { create(:kubernetes_service, template: true) }
+    let!(:service) { create(:service, template: true) }
 
     it 'returns service template' do
-      expect(KubernetesService.find_by_template).to eq(kubernetes_service)
+      expect(described_class.find_by_template).to eq(service)
     end
   end
 
@@ -343,6 +352,33 @@ describe Service do
 
     it 'filters out sensitive fields' do
       expect(service.api_field_names).to eq(['safe_field'])
+    end
+  end
+
+  context 'logging' do
+    let(:project) { create(:project) }
+    let(:service) { create(:service, project: project) }
+    let(:test_message) { "test message" }
+    let(:arguments) do
+      {
+        service_class: service.class.name,
+        project_path: project.full_path,
+        project_id: project.id,
+        message: test_message,
+        additional_argument: 'some argument'
+      }
+    end
+
+    it 'logs info messages using json logger' do
+      expect(Gitlab::JsonLogger).to receive(:info).with(arguments)
+
+      service.log_info(test_message, additional_argument: 'some argument')
+    end
+
+    it 'logs error messages using json logger' do
+      expect(Gitlab::JsonLogger).to receive(:error).with(arguments)
+
+      service.log_error(test_message, additional_argument: 'some argument')
     end
   end
 end

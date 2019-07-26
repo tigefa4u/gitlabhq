@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module API
   # Internal access API
   class Internal < Grape::API
@@ -6,8 +8,23 @@ module API
     helpers ::API::Helpers::InternalHelpers
     helpers ::Gitlab::Identifier
 
+    UNKNOWN_CHECK_RESULT_ERROR = 'Unknown check result'.freeze
+
+    helpers do
+      def response_with_status(code: 200, success: true, message: nil, **extra_options)
+        status code
+        { status: success, message: message }.merge(extra_options).compact
+      end
+
+      def lfs_authentication_url(project)
+        # This is a separate method so that EE can alter its behaviour more
+        # easily.
+        project.http_url_to_repo
+      end
+    end
+
     namespace 'internal' do
-      # Check if git command is allowed to project
+      # Check if git command is allowed for project
       #
       # Params:
       #   key_id - ssh key id for Git over SSH
@@ -17,9 +34,8 @@ module API
       #   project - project full_path (not path on disk)
       #   action - git action (git-upload-pack or git-receive-pack)
       #   changes - changes as "oldrev newrev ref", see Gitlab::ChangesList
+      # rubocop: disable CodeReuse/ActiveRecord
       post "/allowed" do
-        status 200
-
         # Stores some Git-specific env thread-safely
         env = parse_env
         Gitlab::Git::HookEnv.set(gl_repository, env) if project
@@ -30,7 +46,7 @@ module API
           elsif params[:user_id]
             User.find_by(id: params[:user_id])
           elsif params[:username]
-            User.find_by_username(params[:username])
+            UserFinder.new(params[:username]).find_by_username
           end
 
         protocol = params[:protocol]
@@ -43,35 +59,54 @@ module API
             actor
           end
 
-        access_checker_klass = wiki? ? Gitlab::GitAccessWiki : Gitlab::GitAccess
+        access_checker_klass = repo_type.access_checker_class
         access_checker = access_checker_klass.new(actor, project,
           protocol, authentication_abilities: ssh_authentication_abilities,
                     namespace_path: namespace_path, project_path: project_path,
                     redirected_path: redirected_path)
 
-        begin
-          access_checker.check(params[:action], params[:changes])
-          @project ||= access_checker.project
-        rescue Gitlab::GitAccess::UnauthorizedError, Gitlab::GitAccess::NotFoundError => e
-          break { status: false, message: e.message }
-        end
+        check_result = begin
+                         result = access_checker.check(params[:action], params[:changes])
+                         @project ||= access_checker.project
+                         result
+                       rescue Gitlab::GitAccess::UnauthorizedError => e
+                         break response_with_status(code: 401, success: false, message: e.message)
+                       rescue Gitlab::GitAccess::TimeoutError => e
+                         break response_with_status(code: 503, success: false, message: e.message)
+                       rescue Gitlab::GitAccess::NotFoundError => e
+                         break response_with_status(code: 404, success: false, message: e.message)
+                       end
 
         log_user_activity(actor)
 
-        {
-          status: true,
-          gl_repository: gl_repository,
-          gl_id: Gitlab::GlId.gl_id(user),
-          gl_username: user&.username,
+        case check_result
+        when ::Gitlab::GitAccessResult::Success
+          payload = {
+            gl_repository: gl_repository,
+            gl_project_path: gl_project_path,
+            gl_id: Gitlab::GlId.gl_id(user),
+            gl_username: user&.username,
+            git_config_options: [],
+            gitaly: gitaly_payload(params[:action]),
+            gl_console_messages: check_result.console_messages
+          }
 
-          # This repository_path is a bogus value but gitlab-shell still requires
-          # its presence. https://gitlab.com/gitlab-org/gitlab-shell/issues/135
-          repository_path: '/',
+          # Custom option for git-receive-pack command
+          receive_max_input_size = Gitlab::CurrentSettings.receive_max_input_size.to_i
+          if receive_max_input_size > 0
+            payload[:git_config_options] << "receive.maxInputSize=#{receive_max_input_size.megabytes}"
+          end
 
-          gitaly: gitaly_payload(params[:action])
-        }
+          response_with_status(**payload)
+        when ::Gitlab::GitAccessResult::CustomAction
+          response_with_status(code: 300, message: check_result.message, payload: check_result.payload)
+        else
+          response_with_status(code: 500, success: false, message: UNKNOWN_CHECK_RESULT_ERROR)
+        end
       end
+      # rubocop: enable CodeReuse/ActiveRecord
 
+      # rubocop: disable CodeReuse/ActiveRecord
       post "/lfs_authenticate" do
         status 200
 
@@ -85,14 +120,11 @@ module API
           raise ActiveRecord::RecordNotFound.new("No key_id or user_id passed!")
         end
 
-        token_handler = Gitlab::LfsToken.new(actor)
-
-        {
-          username: token_handler.actor_name,
-          lfs_token: token_handler.token,
-          repository_http_path: project.http_url_to_repo
-        }
+        Gitlab::LfsToken
+          .new(actor)
+          .authentication_payload(lfs_authentication_url(project))
       end
+      # rubocop: enable CodeReuse/ActiveRecord
 
       get "/merge_request_urls" do
         merge_request_urls
@@ -101,6 +133,7 @@ module API
       #
       # Get a ssh key using the fingerprint
       #
+      # rubocop: disable CodeReuse/ActiveRecord
       get "/authorized_keys" do
         fingerprint = params.fetch(:fingerprint) do
           Gitlab::InsecureKeyFingerprint.new(params.fetch(:key)).fingerprint
@@ -109,10 +142,12 @@ module API
         not_found!("Key") if key.nil?
         present key, with: Entities::SSHKey
       end
+      # rubocop: enable CodeReuse/ActiveRecord
 
       #
       # Discover user by ssh key, user id or username
       #
+      # rubocop: disable CodeReuse/ActiveRecord
       get "/discover" do
         if params[:key_id]
           key = Key.find(params[:key_id])
@@ -120,11 +155,12 @@ module API
         elsif params[:user_id]
           user = User.find_by(id: params[:user_id])
         elsif params[:username]
-          user = User.find_by(username: params[:username])
+          user = UserFinder.new(params[:username]).find_by_username
         end
 
         present user, with: Entities::UserSafe
       end
+      # rubocop: enable CodeReuse/ActiveRecord
 
       get "/check" do
         {
@@ -151,6 +187,7 @@ module API
         end
       end
 
+      # rubocop: disable CodeReuse/ActiveRecord
       post '/two_factor_recovery_codes' do
         status 200
 
@@ -192,6 +229,7 @@ module API
 
         { success: true, recovery_codes: codes }
       end
+      # rubocop: enable CodeReuse/ActiveRecord
 
       post '/pre_receive' do
         status 200
@@ -217,19 +255,26 @@ module API
 
       post '/post_receive' do
         status 200
+
+        output = {} # Messages to gitlab-shell
+        user = identify(params[:identifier])
+        project = Gitlab::GlRepository.parse(params[:gl_repository]).first
+        push_options = Gitlab::PushOptions.new(params[:push_options])
+
         PostReceive.perform_async(params[:gl_repository], params[:identifier],
-          params[:changes])
+          params[:changes], push_options.as_json)
+
+        mr_options = push_options.get(:merge_request)
+        output.merge!(process_mr_push_options(mr_options, project, user, params[:changes])) if mr_options.present?
+
         broadcast_message = BroadcastMessage.current&.last&.message
         reference_counter_decreased = Gitlab::ReferenceCounter.new(params[:gl_repository]).decrease
 
-        output = {
-          merge_request_urls: merge_request_urls,
+        output.merge!(
           broadcast_message: broadcast_message,
-          reference_counter_decreased: reference_counter_decreased
-        }
-
-        project = Gitlab::GlRepository.parse(params[:gl_repository]).first
-        user = identify(params[:identifier])
+          reference_counter_decreased: reference_counter_decreased,
+          merge_request_urls: merge_request_urls
+        )
 
         # A user is not guaranteed to be returned; an orphaned write deploy
         # key could be used

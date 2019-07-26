@@ -89,7 +89,7 @@ describe LabelsFinder do
         end
       end
 
-      context 'when including labels from group ancestors', :nested_groups do
+      context 'when including labels from group ancestors' do
         it 'returns labels from group and its ancestors' do
           private_group_1.add_developer(user)
           private_subgroup_1.add_developer(user)
@@ -108,7 +108,7 @@ describe LabelsFinder do
         end
       end
 
-      context 'when including labels from group descendants', :nested_groups do
+      context 'when including labels from group descendants' do
         it 'returns labels from group and its descendants' do
           private_group_1.add_developer(user)
           private_subgroup_1.add_developer(user)
@@ -128,7 +128,7 @@ describe LabelsFinder do
       end
     end
 
-    context 'filtering by project_id', :nested_groups do
+    context 'filtering by project_id' do
       context 'when include_ancestor_groups is true' do
         let!(:sub_project) { create(:project, namespace: private_subgroup_1 ) }
         let!(:project_label) { create(:label, project: sub_project, title: 'Label 5') }
@@ -208,6 +208,29 @@ describe LabelsFinder do
         finder = described_class.new(user, search: 'awesome')
 
         expect(finder.execute).to eq [project_label_1]
+      end
+
+      it 'returns labels matching a single character' do
+        finder = described_class.new(user, search: '(')
+
+        expect(finder.execute).to eq [group_label_1]
+      end
+    end
+
+    context 'filter by subscription' do
+      it 'returns labels user subscribed to' do
+        project_label_1.subscribe(user)
+
+        finder = described_class.new(user, subscribed: 'true')
+
+        expect(finder.execute).to eq [project_label_1]
+      end
+    end
+
+    context 'external authorization' do
+      it_behaves_like 'a finder with external authorization service' do
+        let!(:subject) { create(:label, project: project) }
+        let(:project_params) { { project_id: project.id } }
       end
     end
   end

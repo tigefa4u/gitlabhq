@@ -49,15 +49,17 @@ describe('Diffs Module Getters', () => {
     });
   });
 
-  describe('areAllFilesCollapsed', () => {
+  describe('hasCollapsedFile', () => {
     it('returns true when all files are collapsed', () => {
-      localState.diffFiles = [{ collapsed: true }, { collapsed: true }];
-      expect(getters.areAllFilesCollapsed(localState)).toEqual(true);
+      localState.diffFiles = [{ viewer: { collapsed: true } }, { viewer: { collapsed: true } }];
+
+      expect(getters.hasCollapsedFile(localState)).toEqual(true);
     });
 
-    it('returns false when at least one file is not collapsed', () => {
-      localState.diffFiles = [{ collapsed: false }, { collapsed: true }];
-      expect(getters.areAllFilesCollapsed(localState)).toEqual(false);
+    it('returns true when at least one file is collapsed', () => {
+      localState.diffFiles = [{ viewer: { collapsed: false } }, { viewer: { collapsed: true } }];
+
+      expect(getters.hasCollapsedFile(localState)).toEqual(true);
     });
   });
 
@@ -104,13 +106,13 @@ describe('Diffs Module Getters', () => {
     });
   });
 
-  describe('diffHasAllCollpasedDiscussions', () => {
+  describe('diffHasAllCollapsedDiscussions', () => {
     it('returns true when all discussions are collapsed', () => {
       discussionMock.diff_file.file_hash = diffFileMock.fileHash;
       discussionMock.expanded = false;
 
       expect(
-        getters.diffHasAllCollpasedDiscussions(localState, {
+        getters.diffHasAllCollapsedDiscussions(localState, {
           getDiffFileDiscussions: () => [discussionMock],
         })(diffFileMock),
       ).toEqual(true);
@@ -118,7 +120,7 @@ describe('Diffs Module Getters', () => {
 
     it('returns false when there are no discussions', () => {
       expect(
-        getters.diffHasAllCollpasedDiscussions(localState, {
+        getters.diffHasAllCollapsedDiscussions(localState, {
           getDiffFileDiscussions: () => [],
         })(diffFileMock),
       ).toEqual(false);
@@ -128,7 +130,7 @@ describe('Diffs Module Getters', () => {
       discussionMock1.expanded = false;
 
       expect(
-        getters.diffHasAllCollpasedDiscussions(localState, {
+        getters.diffHasAllCollapsedDiscussions(localState, {
           getDiffFileDiscussions: () => [discussionMock, discussionMock1],
         })(diffFileMock),
       ).toEqual(false);
@@ -184,107 +186,9 @@ describe('Diffs Module Getters', () => {
     });
   });
 
-  describe('singleDiscussionByLineCode', () => {
-    it('returns found discussion per line Code', () => {
-      const discussionsMock = {};
-      discussionsMock.ABC = discussionMock;
-
-      expect(
-        getters.singleDiscussionByLineCode(localState, {}, null, {
-          discussionsByLineCode: () => discussionsMock,
-        })('DEF'),
-      ).toEqual([]);
-    });
-
-    it('returns empty array when no discussions match', () => {
-      expect(
-        getters.singleDiscussionByLineCode(localState, {}, null, {
-          discussionsByLineCode: () => {},
-        })('DEF'),
-      ).toEqual([]);
-    });
-  });
-
-  describe('shouldRenderParallelCommentRow', () => {
-    let line;
-
-    beforeEach(() => {
-      line = {};
-
-      line.left = {
-        lineCode: 'ABC',
-      };
-
-      line.right = {
-        lineCode: 'DEF',
-      };
-    });
-
-    it('returns true when discussion is expanded', () => {
-      discussionMock.expanded = true;
-
-      expect(
-        getters.shouldRenderParallelCommentRow(localState, {
-          singleDiscussionByLineCode: () => [discussionMock],
-        })(line),
-      ).toEqual(true);
-    });
-
-    it('returns false when no discussion was found', () => {
-      localState.diffLineCommentForms.ABC = false;
-      localState.diffLineCommentForms.DEF = false;
-
-      expect(
-        getters.shouldRenderParallelCommentRow(localState, {
-          singleDiscussionByLineCode: () => [],
-        })(line),
-      ).toEqual(false);
-    });
-
-    it('returns true when discussionForm was found', () => {
-      localState.diffLineCommentForms.ABC = {};
-
-      expect(
-        getters.shouldRenderParallelCommentRow(localState, {
-          singleDiscussionByLineCode: () => [discussionMock],
-        })(line),
-      ).toEqual(true);
-    });
-  });
-
-  describe('shouldRenderInlineCommentRow', () => {
-    it('returns true when diffLineCommentForms has form', () => {
-      localState.diffLineCommentForms.ABC = {};
-
-      expect(
-        getters.shouldRenderInlineCommentRow(localState)({
-          lineCode: 'ABC',
-        }),
-      ).toEqual(true);
-    });
-
-    it('returns false when no line discussions were found', () => {
-      expect(
-        getters.shouldRenderInlineCommentRow(localState, {
-          singleDiscussionByLineCode: () => [],
-        })('DEF'),
-      ).toEqual(false);
-    });
-
-    it('returns true if all found discussions are expanded', () => {
-      discussionMock.expanded = true;
-
-      expect(
-        getters.shouldRenderInlineCommentRow(localState, {
-          singleDiscussionByLineCode: () => [discussionMock],
-        })('ABC'),
-      ).toEqual(true);
-    });
-  });
-
   describe('getDiffFileDiscussions', () => {
     it('returns an array with discussions when fileHash matches and the discussion belongs to a diff', () => {
-      discussionMock.diff_file.file_hash = diffFileMock.fileHash;
+      discussionMock.diff_file.file_hash = diffFileMock.file_hash;
 
       expect(
         getters.getDiffFileDiscussions(localState, {}, {}, { discussions: [discussionMock] })(
@@ -304,10 +208,10 @@ describe('Diffs Module Getters', () => {
   describe('getDiffFileByHash', () => {
     it('returns file by hash', () => {
       const fileA = {
-        fileHash: '123',
+        file_hash: '123',
       };
       const fileB = {
-        fileHash: '456',
+        file_hash: '456',
       };
       localState.diffFiles = [fileA, fileB];
 
@@ -316,7 +220,74 @@ describe('Diffs Module Getters', () => {
 
     it('returns null if no matching file is found', () => {
       localState.diffFiles = [];
+
       expect(getters.getDiffFileByHash(localState)('123')).toBeUndefined();
+    });
+  });
+
+  describe('allBlobs', () => {
+    it('returns an array of blobs', () => {
+      localState.treeEntries = {
+        file: {
+          type: 'blob',
+          path: 'file',
+          parentPath: '/',
+          tree: [],
+        },
+        tree: {
+          type: 'tree',
+          path: 'tree',
+          parentPath: '/',
+          tree: [],
+        },
+      };
+
+      expect(
+        getters.allBlobs(localState, {
+          flatBlobsList: getters.flatBlobsList(localState),
+        }),
+      ).toEqual([
+        {
+          isHeader: true,
+          path: '/',
+          tree: [
+            {
+              parentPath: '/',
+              path: 'file',
+              tree: [],
+              type: 'blob',
+            },
+          ],
+        },
+      ]);
+    });
+  });
+
+  describe('diffFilesLength', () => {
+    it('returns length of diff files', () => {
+      localState.diffFiles.push('test', 'test 2');
+
+      expect(getters.diffFilesLength(localState)).toBe(2);
+    });
+  });
+
+  describe('currentDiffIndex', () => {
+    it('returns index of currently selected diff in diffList', () => {
+      localState.diffFiles = [{ file_hash: '111' }, { file_hash: '222' }, { file_hash: '333' }];
+      localState.currentDiffFileId = '222';
+
+      expect(getters.currentDiffIndex(localState)).toEqual(1);
+
+      localState.currentDiffFileId = '333';
+
+      expect(getters.currentDiffIndex(localState)).toEqual(2);
+    });
+
+    it('returns 0 if no diff is selected yet or diff is not found', () => {
+      localState.diffFiles = [{ file_hash: '111' }, { file_hash: '222' }, { file_hash: '333' }];
+      localState.currentDiffFileId = '';
+
+      expect(getters.currentDiffIndex(localState)).toEqual(0);
     });
   });
 });

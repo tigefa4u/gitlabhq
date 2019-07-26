@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 describe Projects::BlobController do
@@ -10,10 +12,14 @@ describe Projects::BlobController do
 
     context 'with file path' do
       before do
+        expect(::Gitlab::GitalyClient).to receive(:allow_ref_name_caching).and_call_original
+
         get(:show,
-            namespace_id: project.namespace,
-            project_id: project,
-            id: id)
+            params: {
+              namespace_id: project.namespace,
+              project_id: project,
+              id: id
+            })
       end
 
       context "valid branch, valid file" do
@@ -35,6 +41,11 @@ describe Projects::BlobController do
         let(:id) { 'binary-encoding/encoding/binary-1.bin' }
         it { is_expected.to respond_with(:success) }
       end
+
+      context "Markdown file" do
+        let(:id) { 'master/README.md' }
+        it { is_expected.to respond_with(:success) }
+      end
     end
 
     context 'with file path and JSON format' do
@@ -43,9 +54,11 @@ describe Projects::BlobController do
 
         before do
           get(:show,
-              namespace_id: project.namespace,
-              project_id: project,
-              id: id,
+              params: {
+                namespace_id: project.namespace,
+                project_id: project,
+                id: id
+              },
               format: :json)
         end
 
@@ -61,11 +74,13 @@ describe Projects::BlobController do
 
         before do
           get(:show,
-              namespace_id: project.namespace,
-              project_id: project,
-              id: id,
-              format: :json,
-              viewer: 'none')
+              params: {
+                namespace_id: project.namespace,
+                project_id: project,
+                id: id,
+                viewer: 'none'
+              },
+              format: :json)
         end
 
         it do
@@ -79,9 +94,11 @@ describe Projects::BlobController do
     context 'with tree path' do
       before do
         get(:show,
-            namespace_id: project.namespace,
-            project_id: project,
-            id: id)
+            params: {
+              namespace_id: project.namespace,
+              project_id: project,
+              id: id
+            })
         controller.instance_variable_set(:@blob, nil)
       end
 
@@ -104,7 +121,7 @@ describe Projects::BlobController do
       params = { namespace_id: project.namespace,
                  project_id: project,
                  id: 'master/CHANGELOG' }
-      get :diff, params.merge(opts)
+      get :diff, params: params.merge(opts)
     end
 
     before do
@@ -131,54 +148,34 @@ describe Projects::BlobController do
       end
 
       context 'when rendering for merge request' do
-        it 'renders diff context lines Gitlab::Diff::Line array' do
-          do_get(since: 1, to: 5, offset: 10, from_merge_request: true)
-
-          lines = JSON.parse(response.body)
-
-          expect(lines.first).to have_key('type')
-          expect(lines.first).to have_key('rich_text')
-          expect(lines.first).to have_key('rich_text')
+        let(:presenter) { double(:presenter, diff_lines: diff_lines) }
+        let(:diff_lines) do
+          Array.new(3, Gitlab::Diff::Line.new('plain', nil, nil, nil, nil, rich_text: 'rich'))
         end
 
-        context 'when rendering match lines' do
-          it 'adds top match line when "since" is less than 1' do
-            do_get(since: 5, to: 10, offset: 10, from_merge_request: true)
+        before do
+          allow(Blobs::UnfoldPresenter).to receive(:new).and_return(presenter)
+        end
 
-            match_line = JSON.parse(response.body).first
+        it 'renders diff context lines Gitlab::Diff::Line array' do
+          do_get(since: 1, to: 2, offset: 0, from_merge_request: true)
 
-            expect(match_line['type']).to eq('match')
-            expect(match_line['meta_data']).to have_key('old_pos')
-            expect(match_line['meta_data']).to have_key('new_pos')
+          lines = json_response
+
+          expect(lines.size).to eq(diff_lines.size)
+          lines.each do |line|
+            expect(line).to have_key('type')
+            expect(line['text']).to eq('plain')
+            expect(line['rich_text']).to eq('rich')
           end
+        end
 
-          it 'does not add top match line when when "since" is equal 1' do
-            do_get(since: 1, to: 10, offset: 10, from_merge_request: true)
+        it 'handles full being true' do
+          do_get(full: true, from_merge_request: true)
 
-            match_line = JSON.parse(response.body).first
+          lines = json_response
 
-            expect(match_line['type']).to eq('context')
-          end
-
-          it 'adds bottom match line when "t"o is less than blob size' do
-            do_get(since: 1, to: 5, offset: 10, from_merge_request: true, bottom: true)
-
-            match_line = JSON.parse(response.body).last
-
-            expect(match_line['type']).to eq('match')
-            expect(match_line['meta_data']).to have_key('old_pos')
-            expect(match_line['meta_data']).to have_key('new_pos')
-          end
-
-          it 'does not add bottom match line when "to" is less than blob size' do
-            commit_id = project.repository.commit('master').id
-            blob = project.repository.blob_at(commit_id, 'CHANGELOG')
-            do_get(since: 1, to: blob.lines.count, offset: 10, from_merge_request: true, bottom: true)
-
-            match_line = JSON.parse(response.body).last
-
-            expect(match_line['type']).to eq('context')
-          end
+          expect(lines.size).to eq(diff_lines.size)
         end
       end
     end
@@ -195,7 +192,7 @@ describe Projects::BlobController do
 
     context 'anonymous' do
       before do
-        get :edit, default_params
+        get :edit, params: default_params
       end
 
       it 'redirects to sign in and returns' do
@@ -208,7 +205,7 @@ describe Projects::BlobController do
 
       before do
         sign_in(guest)
-        get :edit, default_params
+        get :edit, params: default_params
       end
 
       it 'redirects to blob show' do
@@ -222,7 +219,7 @@ describe Projects::BlobController do
       before do
         project.add_developer(developer)
         sign_in(developer)
-        get :edit, default_params
+        get :edit, params: default_params
       end
 
       it 'redirects to blob show' do
@@ -236,7 +233,7 @@ describe Projects::BlobController do
       before do
         project.add_maintainer(maintainer)
         sign_in(maintainer)
-        get :edit, default_params
+        get :edit, params: default_params
       end
 
       it 'redirects to blob show' do
@@ -269,7 +266,7 @@ describe Projects::BlobController do
     end
 
     it 'redirects to blob' do
-      put :update, default_params
+      put :update, params: default_params
 
       expect(response).to redirect_to(blob_after_edit_path)
     end
@@ -279,7 +276,7 @@ describe Projects::BlobController do
       let(:mr_params) { default_params.merge(from_merge_request_iid: merge_request.iid) }
 
       it 'redirects to MR diff' do
-        put :update, mr_params
+        put :update, params: mr_params
 
         after_edit_path = diffs_project_merge_request_path(project, merge_request)
         file_anchor = "##{Digest::SHA1.hexdigest('CHANGELOG')}"
@@ -292,8 +289,8 @@ describe Projects::BlobController do
           merge_request.update!(source_project: other_project, target_project: other_project)
         end
 
-        it "it redirect to blob" do
-          put :update, mr_params
+        it "redirects to blob" do
+          put :update, params: mr_params
 
           expect(response).to redirect_to(blob_after_edit_path)
         end
@@ -315,7 +312,7 @@ describe Projects::BlobController do
         end
 
         it 'redirects to blob' do
-          put :update, default_params
+          put :update, params: default_params
 
           expect(response).to redirect_to(project_blob_path(forked_project, 'master/CHANGELOG'))
         end
@@ -326,7 +323,7 @@ describe Projects::BlobController do
           default_params[:branch_name] = "fork-test-1"
           default_params[:create_merge_request] = 1
 
-          put :update, default_params
+          put :update, params: default_params
 
           expect(response).to redirect_to(
             project_new_merge_request_path(
@@ -339,6 +336,78 @@ describe Projects::BlobController do
               }
             )
           )
+        end
+      end
+    end
+  end
+
+  describe 'DELETE destroy' do
+    let(:user) { create(:user) }
+    let(:project_root_path) { project_tree_path(project, 'master') }
+
+    before do
+      project.add_maintainer(user)
+
+      sign_in(user)
+    end
+
+    context 'for a file in a subdirectory' do
+      let(:default_params) do
+        {
+          namespace_id: project.namespace,
+          project_id: project,
+          id: 'master/files/whitespace',
+          original_branch: 'master',
+          branch_name: 'master',
+          commit_message: 'Delete whitespace'
+        }
+      end
+
+      let(:after_delete_path) { project_tree_path(project, 'master/files') }
+
+      it 'redirects to the sub directory' do
+        delete :destroy, params: default_params
+
+        expect(response).to redirect_to(after_delete_path)
+      end
+    end
+
+    context 'if deleted file is the last one in a subdirectory' do
+      let(:default_params) do
+        {
+          namespace_id: project.namespace,
+          project_id: project,
+          id: 'master/bar/branch-test.txt',
+          original_branch: 'master',
+          branch_name: 'master',
+          commit_message: 'Delete whitespace'
+        }
+      end
+
+      it 'redirects to the project root' do
+        delete :destroy, params: default_params
+
+        expect(response).to redirect_to(project_root_path)
+      end
+
+      context 'when deleting a file in a branch other than master' do
+        let(:default_params) do
+          {
+            namespace_id: project.namespace,
+            project_id: project,
+            id: 'binary-encoding/foo/bar/.gitkeep',
+            original_branch: 'binary-encoding',
+            branch_name: 'binary-encoding',
+            commit_message: 'Delete whitespace'
+          }
+        end
+
+        let(:after_delete_path) { project_tree_path(project, 'binary-encoding') }
+
+        it 'redirects to the project root of the branch' do
+          delete :destroy, params: default_params
+
+          expect(response).to redirect_to(after_delete_path)
         end
       end
     end

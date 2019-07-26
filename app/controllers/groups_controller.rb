@@ -1,10 +1,20 @@
+# frozen_string_literal: true
+
 class GroupsController < Groups::ApplicationController
-  include IssuesAction
-  include MergeRequestsAction
+  include API::Helpers::RelatedResourcesHelpers
+  include IssuableCollectionsAction
   include ParamsBackwardCompatibility
   include PreviewMarkdown
+  include RecordUserLastActivity
+
+  before_action do
+    push_frontend_feature_flag(:manual_sorting, default_enabled: true)
+  end
 
   respond_to :html
+
+  prepend_before_action(only: [:show, :issues]) { authenticate_sessionless_user!(:rss) }
+  prepend_before_action(only: [:issues_calendar]) { authenticate_sessionless_user!(:ics) }
 
   before_action :authenticate_user!, only: [:new, :create]
   before_action :group, except: [:index, :new, :create]
@@ -16,7 +26,7 @@ class GroupsController < Groups::ApplicationController
   before_action :group_projects, only: [:projects, :activity, :issues, :merge_requests]
   before_action :event_filter, only: [:activity]
 
-  before_action :user_actions, only: [:show, :subgroups]
+  before_action :user_actions, only: [:show]
 
   skip_cross_project_access_check :index, :new, :create, :edit, :update,
                                   :destroy, :projects
@@ -53,14 +63,23 @@ class GroupsController < Groups::ApplicationController
   def show
     respond_to do |format|
       format.html do
-        @has_children = GroupDescendantsFinder.new(current_user: current_user,
-                                                   parent_group: @group,
-                                                   params: params).has_children?
+        render_show_html
       end
 
       format.atom do
-        load_events
-        render layout: 'xml.atom'
+        render_details_view_atom
+      end
+    end
+  end
+
+  def details
+    respond_to do |format|
+      format.html do
+        render_details_html
+      end
+
+      format.atom do
+        render_details_view_atom
       end
     end
   end
@@ -77,6 +96,7 @@ class GroupsController < Groups::ApplicationController
   end
 
   def edit
+    @badge_api_endpoint = expose_url(api_v4_groups_badges_path(id: @group.id))
   end
 
   def projects
@@ -87,7 +107,7 @@ class GroupsController < Groups::ApplicationController
     if Groups::UpdateService.new(@group, current_user, group_params).execute
       redirect_to edit_group_path(@group, anchor: params[:update_section]), notice: "Group '#{@group.name}' was successfully updated."
     else
-      @group.restore_path!
+      @group.path = @group.path_before_last_save || @group.path_was
 
       render action: "edit"
     end
@@ -99,6 +119,7 @@ class GroupsController < Groups::ApplicationController
     redirect_to root_path, status: 302, alert: "Group '#{@group.name}' was scheduled for deletion."
   end
 
+  # rubocop: disable CodeReuse/ActiveRecord
   def transfer
     parent_group = Group.find_by(id: params[:new_parent_group_id])
     service = ::Groups::TransferService.new(@group, current_user)
@@ -107,13 +128,28 @@ class GroupsController < Groups::ApplicationController
       flash[:notice] = "Group '#{@group.name}' was successfully transferred."
       redirect_to group_path(@group)
     else
-      flash.now[:alert] = service.error
-      render :edit
+      flash[:alert] = service.error
+      redirect_to edit_group_path(@group)
     end
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   protected
 
+  def render_show_html
+    render 'groups/show'
+  end
+
+  def render_details_html
+    render 'groups/show'
+  end
+
+  def render_details_view_atom
+    load_events
+    render layout: 'xml.atom', template: 'groups/show'
+  end
+
+  # rubocop: disable CodeReuse/ActiveRecord
   def authorize_create_group!
     allowed = if params[:parent_id].present?
                 parent = Group.find_by(id: params[:parent_id])
@@ -124,6 +160,7 @@ class GroupsController < Groups::ApplicationController
 
     render_404 unless allowed
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   def determine_layout
     if [:new, :create].include?(action_name.to_sym)
@@ -154,29 +191,32 @@ class GroupsController < Groups::ApplicationController
       :create_chat_team,
       :chat_team_name,
       :require_two_factor_authentication,
-      :two_factor_grace_period
+      :two_factor_grace_period,
+      :project_creation_level,
+      :subgroup_creation_level
     ]
   end
 
+  # rubocop: disable CodeReuse/ActiveRecord
   def load_events
     params[:sort] ||= 'latest_activity_desc'
 
     options = {}
-    options[:only_owned] = true if params[:shared] == '0'
-    options[:only_shared] = true if params[:shared] == '1'
+    options[:include_subgroups] = true
 
     @projects = GroupProjectsFinder.new(params: params, group: group, options: options, current_user: current_user)
                   .execute
                   .includes(:namespace)
 
     @events = EventCollection
-      .new(@projects, offset: params[:offset].to_i, filter: event_filter)
-      .to_a
+                .new(@projects, offset: params[:offset].to_i, filter: event_filter)
+                .to_a
 
     Events::RenderService
       .new(current_user)
       .execute(@events, atom_request: request.format.atom?)
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   def user_actions
     if current_user

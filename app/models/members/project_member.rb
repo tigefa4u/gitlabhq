@@ -3,8 +3,6 @@
 class ProjectMember < Member
   SOURCE_TYPE = 'Project'.freeze
 
-  include Gitlab::ShellAdapter
-
   belongs_to :project, foreign_key: 'source_id'
 
   # Make sure project member points only to project as it source
@@ -14,6 +12,10 @@ class ProjectMember < Member
   default_scope { where(source_type: SOURCE_TYPE) }
 
   scope :in_project, ->(project) { where(source_id: project.id) }
+  scope :in_namespaces, ->(groups) do
+    joins('INNER JOIN projects ON projects.id = members.source_id')
+      .where('projects.namespace_id in (?)', groups.select(:id))
+  end
 
   class << self
     # Add users to projects with passed access option
@@ -109,7 +111,7 @@ class ProjectMember < Member
   end
 
   def post_update_hook
-    if access_level_changed?
+    if saved_change_to_access_level?
       run_after_commit { notification_service.update_project_member(self) }
     end
 
@@ -138,7 +140,9 @@ class ProjectMember < Member
     super
   end
 
+  # rubocop: disable CodeReuse/ServiceClass
   def event_service
     EventCreateService.new
   end
+  # rubocop: enable CodeReuse/ServiceClass
 end

@@ -1,5 +1,6 @@
 import mutations from '~/ide/stores/mutations/file';
 import state from '~/ide/stores/state';
+import { FILE_VIEW_MODE_PREVIEW } from '~/ide/constants';
 import { file } from '../../helpers';
 
 describe('IDE store file mutations', () => {
@@ -82,6 +83,63 @@ describe('IDE store file mutations', () => {
       expect(localFile.renderError).toBe('render_error');
       expect(localFile.raw).toBeNull();
       expect(localFile.baseRaw).toBeNull();
+    });
+
+    it('sets extra file data to all arrays concerned', () => {
+      localState.stagedFiles = [localFile];
+      localState.changedFiles = [localFile];
+      localState.openFiles = [localFile];
+
+      const rawPath = 'foo/bar/blah.md';
+
+      mutations.SET_FILE_DATA(localState, {
+        data: {
+          raw_path: rawPath,
+        },
+        file: localFile,
+      });
+
+      expect(localState.stagedFiles[0].rawPath).toEqual(rawPath);
+      expect(localState.changedFiles[0].rawPath).toEqual(rawPath);
+      expect(localState.openFiles[0].rawPath).toEqual(rawPath);
+      expect(localFile.rawPath).toEqual(rawPath);
+    });
+
+    it('does not mutate certain props on the file', () => {
+      const path = 'New Path';
+      const name = 'New Name';
+      localFile.path = path;
+      localFile.name = name;
+
+      localState.stagedFiles = [localFile];
+      localState.changedFiles = [localFile];
+      localState.openFiles = [localFile];
+
+      mutations.SET_FILE_DATA(localState, {
+        data: {
+          path: 'Old Path',
+          name: 'Old Name',
+          raw: 'Old Raw',
+          base_raw: 'Old Base Raw',
+        },
+        file: localFile,
+      });
+
+      [
+        localState.stagedFiles[0],
+        localState.changedFiles[0],
+        localState.openFiles[0],
+        localFile,
+      ].forEach(f => {
+        expect(f).toEqual(
+          jasmine.objectContaining({
+            path,
+            name,
+            raw: null,
+            baseRaw: null,
+          }),
+        );
+      });
     });
   });
 
@@ -315,6 +373,19 @@ describe('IDE store file mutations', () => {
       expect(localState.stagedFiles.length).toBe(1);
       expect(localState.stagedFiles[0].raw).toEqual('testing 123');
     });
+
+    it('adds already-staged file to `replacedFiles`', () => {
+      localFile.raw = 'already-staged';
+
+      mutations.STAGE_CHANGE(localState, localFile.path);
+
+      localFile.raw = 'testing 123';
+
+      mutations.STAGE_CHANGE(localState, localFile.path);
+
+      expect(localState.replacedFiles.length).toBe(1);
+      expect(localState.replacedFiles[0].raw).toEqual('already-staged');
+    });
   });
 
   describe('UNSTAGE_CHANGE', () => {
@@ -355,10 +426,10 @@ describe('IDE store file mutations', () => {
     it('updates file view mode', () => {
       mutations.SET_FILE_VIEWMODE(localState, {
         file: localFile,
-        viewMode: 'preview',
+        viewMode: FILE_VIEW_MODE_PREVIEW,
       });
 
-      expect(localFile.viewMode).toBe('preview');
+      expect(localFile.viewMode).toBe(FILE_VIEW_MODE_PREVIEW);
     });
   });
 

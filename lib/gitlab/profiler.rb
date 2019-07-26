@@ -1,4 +1,6 @@
 # coding: utf-8
+# frozen_string_literal: true
+
 module Gitlab
   module Profiler
     FILTERED_STRING = '[FILTERED]'.freeze
@@ -14,7 +16,11 @@ module Gitlab
       ee/lib/gitlab/middleware/
       lib/gitlab/performance_bar/
       lib/gitlab/request_profiler/
+      lib/gitlab/query_limiting/
+      lib/gitlab/tracing/
       lib/gitlab/profiler.rb
+      lib/gitlab/correlation_id.rb
+      lib/gitlab/webpack/dev_server_middleware.rb
     ].freeze
 
     # Takes a URL to profile (can be a fully-qualified URL, or an absolute path)
@@ -44,12 +50,11 @@ module Gitlab
         headers['Content-Type'] = 'application/json'
       end
 
-      if user
-        private_token ||= user.personal_access_tokens.active.pluck(:token).first
-        raise 'Your user must have a personal_access_token' unless private_token
+      if private_token
+        headers['Private-Token'] = private_token
+        user = nil # private_token overrides user
       end
 
-      headers['Private-Token'] = private_token if private_token
       logger = create_custom_logger(logger, private_token: private_token)
 
       RequestStore.begin!
@@ -67,7 +72,9 @@ module Gitlab
       app.get('/api/v4/users')
 
       result = with_custom_logger(logger) do
-        RubyProf.profile { app.public_send(verb, url, post_data, headers) } # rubocop:disable GitlabSecurity/PublicSend
+        with_user(user) do
+          RubyProf.profile { app.public_send(verb, url, params: post_data, headers: headers) } # rubocop:disable GitlabSecurity/PublicSend
+        end
       end
 
       RequestStore.end!
@@ -126,15 +133,32 @@ module Gitlab
         ActionController::Base.logger = logger
       end
 
-      result = yield
-
-      ActiveSupport::LogSubscriber.colorize_logging = original_colorize_logging
-      ActiveRecord::Base.logger = original_activerecord_logger
-      ActionController::Base.logger = original_actioncontroller_logger
-
-      result
+      yield.tap do
+        ActiveSupport::LogSubscriber.colorize_logging = original_colorize_logging
+        ActiveRecord::Base.logger = original_activerecord_logger
+        ActionController::Base.logger = original_actioncontroller_logger
+      end
     end
 
+    def self.with_user(user)
+      if user
+        API::Helpers::CommonHelpers.send(:define_method, :find_current_user!) { user } # rubocop:disable GitlabSecurity/PublicSend
+        ApplicationController.send(:define_method, :current_user) { user } # rubocop:disable GitlabSecurity/PublicSend
+        ApplicationController.send(:define_method, :authenticate_user!) { } # rubocop:disable GitlabSecurity/PublicSend
+      end
+
+      yield.tap do
+        remove_method(API::Helpers::CommonHelpers, :find_current_user!)
+        remove_method(ApplicationController, :current_user)
+        remove_method(ApplicationController, :authenticate_user!)
+      end
+    end
+
+    def self.remove_method(klass, meth)
+      klass.send(:remove_method, meth) if klass.instance_methods(false).include?(meth) # rubocop:disable GitlabSecurity/PublicSend
+    end
+
+    # rubocop: disable CodeReuse/ActiveRecord
     def self.log_load_times_by_model(logger)
       return unless logger.respond_to?(:load_times_by_model)
 
@@ -142,10 +166,11 @@ module Gitlab
         [model, times.count, times.sum]
       end
 
-      summarised_load_times.sort_by(&:last).reverse.each do |(model, query_count, time)|
+      summarised_load_times.sort_by(&:last).reverse_each do |(model, query_count, time)|
         logger.info("#{model} total (#{query_count}): #{time.round(2)}ms")
       end
     end
+    # rubocop: enable CodeReuse/ActiveRecord
 
     def self.print_by_total_time(result, options = {})
       default_options = { sort_method: :total_time }

@@ -1,5 +1,6 @@
 <script>
 import { mapActions, mapState, mapGetters } from 'vuex';
+import IdeStatusList from 'ee_else_ce/ide/components/ide_status_list.vue';
 import icon from '~/vue_shared/components/icon.vue';
 import tooltip from '~/vue_shared/directives/tooltip';
 import timeAgoMixin from '~/vue_shared/mixins/timeago';
@@ -12,18 +13,12 @@ export default {
     icon,
     userAvatarImage,
     CiIcon,
+    IdeStatusList,
   },
   directives: {
     tooltip,
   },
   mixins: [timeAgoMixin],
-  props: {
-    file: {
-      type: Object,
-      required: false,
-      default: null,
-    },
-  },
   data() {
     return {
       lastCommitFormatedAge: null,
@@ -50,7 +45,9 @@ export default {
     this.stopPipelinePolling();
   },
   methods: {
-    ...mapActions(['setRightPane']),
+    ...mapActions('rightPane', {
+      openRightPane: 'open',
+    }),
     ...mapActions('pipelines', ['fetchLatestPipeline', 'stopPipelinePolling']),
     startTimer() {
       this.intervalId = setInterval(() => {
@@ -77,18 +74,12 @@ export default {
 
 <template>
   <footer class="ide-status-bar">
-    <div
-      v-if="lastCommit"
-      class="ide-status-branch"
-    >
-      <span
-        v-if="latestPipeline && latestPipeline.details"
-        class="ide-status-pipeline"
-      >
+    <div v-if="lastCommit" class="ide-status-branch">
+      <span v-if="latestPipeline && latestPipeline.details" class="ide-status-pipeline">
         <button
           type="button"
           class="p-0 border-0 h-50"
-          @click="setRightPane($options.rightSidebarViews.pipelines)"
+          @click="openRightPane($options.rightSidebarViews.pipelines)"
         >
           <ci-icon
             v-tooltip
@@ -97,23 +88,28 @@ export default {
           />
         </button>
         Pipeline
-        <a
-          :href="latestPipeline.details.status.details_path"
-          class="monospace">#{{ latestPipeline.id }}</a>
-        {{ latestPipeline.details.status.text }}
-        for
+        <a :href="latestPipeline.details.status.details_path" class="monospace"
+          >#{{ latestPipeline.id }}</a
+        >
+        {{ latestPipeline.details.status.text }} for
       </span>
 
-      <icon
-        name="commit"
-      />
+      <icon name="commit" />
       <a
         v-tooltip
         :title="lastCommit.message"
         :href="getCommitPath(lastCommit.short_id)"
         class="commit-sha"
-      >{{ lastCommit.short_id }}</a>
+        >{{ lastCommit.short_id }}</a
+      >
       by
+      <user-avatar-image
+        css-classes="ide-status-avatar"
+        :size="18"
+        :img-src="latestPipeline && latestPipeline.commit.author_gravatar_url"
+        :img-alt="lastCommit.author_name"
+        :tooltip-text="lastCommit.author_name"
+      />
       {{ lastCommit.author_name }}
       <time
         v-tooltip
@@ -121,32 +117,9 @@ export default {
         :title="tooltipTitle(lastCommit.committed_date)"
         data-placement="top"
         data-container="body"
+        >{{ lastCommitFormatedAge }}</time
       >
-        {{ lastCommitFormatedAge }}
-      </time>
     </div>
-    <div
-      v-if="file"
-      class="ide-status-file"
-    >
-      {{ file.name }}
-    </div>
-    <div
-      v-if="file"
-      class="ide-status-file"
-    >
-      {{ file.eol }}
-    </div>
-    <div
-      v-if="file && !file.binary"
-      class="ide-status-file">
-      {{ file.editorRow }}:{{ file.editorColumn }}
-    </div>
-    <div
-      v-if="file"
-      class="ide-status-file"
-    >
-      {{ file.fileLanguage }}
-    </div>
+    <ide-status-list class="ml-auto" />
   </footer>
 </template>

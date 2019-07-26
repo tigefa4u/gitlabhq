@@ -1,8 +1,8 @@
 import $ from 'jquery';
-import Shortcuts from '~/shortcuts';
+import Shortcuts from '~/behaviors/shortcuts/shortcuts';
 
 describe('Shortcuts', () => {
-  const fixtureName = 'snippets/show.html.raw';
+  const fixtureName = 'snippets/show.html';
   const createEvent = (type, target) =>
     $.Event(type, {
       target,

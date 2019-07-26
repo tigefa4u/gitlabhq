@@ -59,24 +59,44 @@ describe IconsHelper do
     describe 'non existing icon' do
       non_existing = 'non_existing_icon_sprite'
 
-      it 'should raise in development mode' do
+      it 'raises in development mode' do
         allow(Rails.env).to receive(:development?).and_return(true)
 
         expect { sprite_icon(non_existing) }.to raise_error(ArgumentError, /is not a known icon/)
       end
 
-      it 'should raise in test mode' do
+      it 'raises in test mode' do
         allow(Rails.env).to receive(:test?).and_return(true)
 
         expect { sprite_icon(non_existing) }.to raise_error(ArgumentError, /is not a known icon/)
       end
 
-      it 'should not raise in production mode' do
+      it 'does not raise in production mode' do
         allow(Rails.env).to receive(:test?).and_return(false)
         allow(Rails.env).to receive(:development?).and_return(false)
 
         expect { sprite_icon(non_existing) }.not_to raise_error
       end
+    end
+  end
+
+  describe 'audit icon' do
+    it 'returns right icon name for standard auth' do
+      icon_name = 'standard'
+      expect(audit_icon(icon_name).to_s)
+          .to eq '<i class="fa fa-key"></i>'
+    end
+
+    it 'returns right icon name for two-factor auth' do
+      icon_name = 'two-factor'
+      expect(audit_icon(icon_name).to_s)
+          .to eq '<i class="fa fa-key"></i>'
+    end
+
+    it 'returns right icon name for google_oauth2 auth' do
+      icon_name = 'google_oauth2'
+      expect(audit_icon(icon_name).to_s)
+          .to eq '<i class="fa fa-google"></i>'
     end
   end
 
@@ -105,6 +125,14 @@ describe IconsHelper do
       expect(file_type_icon_class('file', 0, 'filename.png')).to eq 'file-image-o'
     end
 
+    it 'returns file-image-o class with .apng' do
+      expect(file_type_icon_class('file', 0, 'filename.apng')).to eq 'file-image-o'
+    end
+
+    it 'returns file-image-o class with .webp' do
+      expect(file_type_icon_class('file', 0, 'filename.webp')).to eq 'file-image-o'
+    end
+
     it 'returns file-archive-o class with .tar' do
       expect(file_type_icon_class('file', 0, 'filename.tar')).to eq 'file-archive-o'
     end
@@ -125,6 +153,10 @@ describe IconsHelper do
       expect(file_type_icon_class('file', 0, 'filename.MP3')).to eq 'file-audio-o'
     end
 
+    it 'returns file-audio-o class with .m4a' do
+      expect(file_type_icon_class('file', 0, 'filename.m4a')).to eq 'file-audio-o'
+    end
+
     it 'returns file-audio-o class with .wav' do
       expect(file_type_icon_class('file', 0, 'filename.wav')).to eq 'file-audio-o'
     end
@@ -139,6 +171,10 @@ describe IconsHelper do
 
     it 'returns file-video-o class with .mp4' do
       expect(file_type_icon_class('file', 0, 'filename.mp4')).to eq 'file-video-o'
+    end
+
+    it 'returns file-word-o class with .odt' do
+      expect(file_type_icon_class('file', 0, 'filename.odt')).to eq 'file-word-o'
     end
 
     it 'returns file-word-o class with .doc' do
@@ -163,6 +199,10 @@ describe IconsHelper do
 
     it 'returns file-excel-o class with .xlsx' do
       expect(file_type_icon_class('file', 0, 'filename.xlsx')).to eq 'file-excel-o'
+    end
+
+    it 'returns file-excel-o class with .odp' do
+      expect(file_type_icon_class('file', 0, 'filename.odp')).to eq 'file-powerpoint-o'
     end
 
     it 'returns file-excel-o class with .ppt' do

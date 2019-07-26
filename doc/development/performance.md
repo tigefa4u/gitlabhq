@@ -9,23 +9,23 @@ The process of solving performance problems is roughly as follows:
 
 1. Make sure there's an issue open somewhere (e.g., on the GitLab CE issue
    tracker), create one if there isn't. See [#15607][#15607] for an example.
-2. Measure the performance of the code in a production environment such as
+1. Measure the performance of the code in a production environment such as
    GitLab.com (see the [Tooling](#tooling) section below). Performance should be
    measured over a period of _at least_ 24 hours.
-3. Add your findings based on the measurement period (screenshots of graphs,
+1. Add your findings based on the measurement period (screenshots of graphs,
    timings, etc) to the issue mentioned in step 1.
-4. Solve the problem.
-5. Create a merge request, assign the "Performance" label and assign it to
+1. Solve the problem.
+1. Create a merge request, assign the "Performance" label and assign it to
    [@yorickpeterse][yorickpeterse] for reviewing.
-6. Once a change has been deployed make sure to _again_ measure for at least 24
+1. Once a change has been deployed make sure to _again_ measure for at least 24
    hours to see if your changes have any impact on the production environment.
-7. Repeat until you're done.
+1. Repeat until you're done.
 
 When providing timings make sure to provide:
 
-* The 95th percentile
-* The 99th percentile
-* The mean
+- The 95th percentile
+- The 99th percentile
+- The mean
 
 When providing screenshots of graphs, make sure that both the X and Y axes and
 the legend are clearly visible. If you happen to have access to GitLab.com's own
@@ -34,16 +34,18 @@ graphs/dashboards.
 
 ## Tooling
 
-GitLab provides built-in tools to aid the process of improving performance:
+GitLab provides built-in tools to help improve performance and availability:
 
-* [Profiling](profiling.md)
-  * [Sherlock](profiling.md#sherlock)
-* [GitLab Performance Monitoring](../administration/monitoring/performance/index.md)
-* [Request Profiling](../administration/monitoring/performance/request_profiling.md)
-* [QueryRecoder](query_recorder.md) for preventing `N+1` regressions
+- [Profiling](profiling.md).
+  - [Sherlock](profiling.md#sherlock).
+- [Distributed Tracing](distributed_tracing.md)
+- [GitLab Performance Monitoring](../administration/monitoring/performance/index.md).
+- [Request Profiling](../administration/monitoring/performance/request_profiling.md).
+- [QueryRecoder](query_recorder.md) for preventing `N+1` regressions.
+- [Chaos endpoints](chaos_endpoints.md) for testing failure scenarios. Intended mainly for testing availability.
 
 GitLab employees can use GitLab.com's performance monitoring systems located at
-<http://performance.gitlab.net>, this requires you to log in using your
+<https://dashboards.gitlab.net>, this requires you to log in using your
 `@gitlab.com` Email address. Non-GitLab employees are advised to set up their
 own InfluxDB + Grafana stack.
 
@@ -93,14 +95,14 @@ result of this should be used instead of the `Benchmark` module.
 
 In short:
 
-1. Don't trust benchmarks you find on the internet.
-2. Never make claims based on just benchmarks, always measure in production to
+- Don't trust benchmarks you find on the internet.
+- Never make claims based on just benchmarks, always measure in production to
    confirm your findings.
-3. X being N times faster than Y is meaningless if you don't know what impact it
+- X being N times faster than Y is meaningless if you don't know what impact it
    will actually have on your production environment.
-4. A production environment is the _only_ benchmark that always tells the truth
+- A production environment is the _only_ benchmark that always tells the truth
    (unless your performance monitoring systems are not set up correctly).
-5. If you must write a benchmark use the benchmark-ips Gem instead of Ruby's
+- If you must write a benchmark use the benchmark-ips Gem instead of Ruby's
    `Benchmark` module.
 
 ## Profiling
@@ -244,6 +246,7 @@ irb(main):002:0> results.last.attributes.keys
 irb(main):003:0> results.where(status: "passed").average(:time).to_s
 => "0.211340155844156"
 ```
+
 These results can also be placed into a PostgreSQL database by setting the
 `RSPEC_PROFILING_POSTGRES_URL` variable. This is used to profile the test suite
 when running in the CI environment.
@@ -264,15 +267,15 @@ piece of code is worth optimizing. The only two things you can do are:
 1. Think about what the code does, how it's used, how many times it's called and
    how much time is spent in it relative to the total execution time (e.g., the
    total time spent in a web request).
-2. Ask others (preferably in the form of an issue).
+1. Ask others (preferably in the form of an issue).
 
 Some examples of changes that aren't really important/worth the effort:
 
-* Replacing double quotes with single quotes.
-* Replacing usage of Array with Set when the list of values is very small.
-* Replacing library A with library B when both only take up 0.1% of the total
+- Replacing double quotes with single quotes.
+- Replacing usage of Array with Set when the list of values is very small.
+- Replacing library A with library B when both only take up 0.1% of the total
   execution time.
-* Calling `freeze` on every string (see [String Freezing](#string-freezing)).
+- Calling `freeze` on every string (see [String Freezing](#string-freezing)).
 
 ## Slow Operations & Sidekiq
 
@@ -282,10 +285,10 @@ directly in a web request as much as possible. This has numerous benefits such
 as:
 
 1. An error won't prevent the request from completing.
-2. The process being slow won't affect the loading time of a page.
-3. In case of a failure it's easy to re-try the process (Sidekiq takes care of
+1. The process being slow won't affect the loading time of a page.
+1. In case of a failure it's easy to re-try the process (Sidekiq takes care of
    this automatically).
-4. By isolating the code from a web request it will hopefully be easier to test
+1. By isolating the code from a web request it will hopefully be easier to test
    and maintain.
 
 It's especially important to use Sidekiq as much as possible when dealing with
@@ -335,7 +338,6 @@ the same method won't end up retrieving data from Redis upon every call. When
 memoizing cached data in an instance variable, make sure to also reset the
 instance variable when flushing the cache. An example:
 
-
 ```ruby
 def first_branch
   @first_branch ||= cache.fetch(:first_branch) { branches.first }
@@ -364,8 +366,7 @@ Depending on the size of the String and how frequently it would be allocated
 there's no guarantee it will.
 
 Strings will be frozen by default in Ruby 3.0. To prepare our code base for
-this eventuality, it's a good practice to add the following header to all
-Ruby files:
+this eventuality, we will be adding the following header to all Ruby files:
 
 ```ruby
 # frozen_string_literal: true
@@ -378,6 +379,9 @@ strings. Instead of using `dup`, use the unary plus to get an unfrozen string:
 test = +"hello"
 test += " world"
 ```
+
+When adding new Ruby files, please check that you can add the above header,
+as omitting it may lead to style check failures.
 
 ## Anti-Patterns
 
@@ -407,6 +411,21 @@ there's nothing stopping somebody from doing this elsewhere in the code:
 ```ruby
 SOME_CONSTANT = 'bar'
 ```
+
+## How to seed a database with millions of rows
+
+You might want millions of project rows in your local database, for example,
+in order to compare relative query performance, or to reproduce a bug. You could
+do this by hand with SQL commands, but since you have ActiveRecord models, you
+might find using these gems more convenient:
+
+- [BulkInsert gem](https://github.com/jamis/bulk_insert)
+- [ActiveRecord::PgGenerateSeries gem](https://github.com/ryu39/active_record-pg_generate_series)
+
+### Examples
+
+You may find some useful examples in this snippet:
+<https://gitlab.com/gitlab-org/gitlab-ce/snippets/33946>
 
 [#15607]: https://gitlab.com/gitlab-org/gitlab-ce/issues/15607
 [yorickpeterse]: https://gitlab.com/yorickpeterse

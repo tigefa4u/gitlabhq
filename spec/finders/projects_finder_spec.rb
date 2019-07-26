@@ -137,7 +137,7 @@ describe ProjectsFinder do
     end
 
     describe 'filter by trending' do
-      let!(:trending_project) { create(:trending_project, project: public_project)  }
+      let!(:trending_project) { create(:trending_project, project: public_project) }
       let(:params) { { trending: true } }
 
       it { is_expected.to eq([public_project]) }
@@ -172,6 +172,13 @@ describe ProjectsFinder do
 
         is_expected.to eq([public_project])
       end
+    end
+
+    describe 'filter by without_deleted' do
+      let(:params) { { without_deleted: true } }
+      let!(:pending_delete_project) { create(:project, :public, pending_delete: true) }
+
+      it { is_expected.to match_array([public_project, internal_project]) }
     end
 
     describe 'sorting' do

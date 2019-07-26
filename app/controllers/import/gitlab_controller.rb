@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Import::GitlabController < Import::BaseController
   MAX_PROJECT_PAGES = 15
   PER_PAGE_PROJECTS = 100
@@ -12,6 +14,7 @@ class Import::GitlabController < Import::BaseController
     redirect_to status_import_gitlab_url
   end
 
+  # rubocop: disable CodeReuse/ActiveRecord
   def status
     @repos = client.projects(starting_page: 1, page_limit: MAX_PROJECT_PAGES, per_page: PER_PAGE_PROJECTS)
 
@@ -20,6 +23,7 @@ class Import::GitlabController < Import::BaseController
 
     @repos = @repos.to_a.reject { |repo| already_added_projects_names.include? repo["path_with_namespace"] }
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   def jobs
     render json: find_jobs('gitlab')
@@ -38,7 +42,7 @@ class Import::GitlabController < Import::BaseController
         render json: { errors: project_save_error(project) }, status: :unprocessable_entity
       end
     else
-      render json: { errors: 'This namespace has already been taken! Please choose another one.' }, status: :unprocessable_entity
+      render json: { errors: _('This namespace has already been taken! Please choose another one.') }, status: :unprocessable_entity
     end
   end
 

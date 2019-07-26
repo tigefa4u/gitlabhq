@@ -1,7 +1,7 @@
 <script>
 import { mapState, mapActions, mapGetters } from 'vuex';
-import LoadingIcon from '~/vue_shared/components/loading_icon.vue';
 import AccessorUtilities from '~/lib/utils/accessor';
+import { GlLoadingIcon } from '@gitlab/ui';
 import eventHub from '../event_hub';
 import store from '../store/';
 import { FREQUENT_ITEMS, STORAGE_KEY } from '../constants';
@@ -13,9 +13,9 @@ import frequentItemsMixin from './frequent_items_mixin';
 export default {
   store,
   components: {
-    LoadingIcon,
     FrequentItemsSearchInput,
     FrequentItemsList,
+    GlLoadingIcon,
   },
   mixins: [frequentItemsMixin],
   props: {
@@ -47,6 +47,12 @@ export default {
     }
 
     eventHub.$on(`${this.namespace}-dropdownOpen`, this.dropdownOpenHandler);
+
+    // As we init it through requestIdleCallback it could be that the dropdown is already open
+    const namespaceDropdown = document.getElementById(`nav-${this.namespace}-dropdown`);
+    if (namespaceDropdown && namespaceDropdown.classList.contains('show')) {
+      this.dropdownOpenHandler();
+    }
   },
   beforeDestroy() {
     eventHub.$off(`${this.namespace}-dropdownOpen`, this.dropdownOpenHandler);
@@ -95,19 +101,14 @@ export default {
 
 <template>
   <div>
-    <frequent-items-search-input
-      :namespace="namespace"
-    />
-    <loading-icon
+    <frequent-items-search-input :namespace="namespace" />
+    <gl-loading-icon
       v-if="isLoadingItems"
       :label="translations.loadingMessage"
+      :size="2"
       class="loading-animation prepend-top-20"
-      size="2"
     />
-    <div
-      v-if="!isLoadingItems && !hasSearchQuery"
-      class="section-header"
-    >
+    <div v-if="!isLoadingItems && !hasSearchQuery" class="section-header">
       {{ translations.header }}
     </div>
     <frequent-items-list

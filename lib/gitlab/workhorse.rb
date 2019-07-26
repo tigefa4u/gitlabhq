@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'base64'
 require 'json'
 require 'securerandom'
@@ -11,29 +13,38 @@ module Gitlab
     INTERNAL_API_REQUEST_HEADER = 'Gitlab-Workhorse-Api-Request'.freeze
     NOTIFICATION_CHANNEL = 'workhorse:notifications'.freeze
     ALLOWED_GIT_HTTP_ACTIONS = %w[git_receive_pack git_upload_pack info_refs].freeze
+    DETECT_HEADER = 'Gitlab-Workhorse-Detect-Content-Type'.freeze
 
     # Supposedly the effective key size for HMAC-SHA256 is 256 bits, i.e. 32
     # bytes https://tools.ietf.org/html/rfc4868#section-2.6
     SECRET_LENGTH = 32
 
     class << self
-      def git_http_ok(repository, is_wiki, user, action, show_all_refs: false)
+      def git_http_ok(repository, repo_type, user, action, show_all_refs: false)
         raise "Unsupported action: #{action}" unless ALLOWED_GIT_HTTP_ACTIONS.include?(action.to_s)
 
         project = repository.project
 
-        {
+        attrs = {
           GL_ID: Gitlab::GlId.gl_id(user),
-          GL_REPOSITORY: Gitlab::GlRepository.gl_repository(project, is_wiki),
+          GL_REPOSITORY: repo_type.identifier_for_subject(project),
           GL_USERNAME: user&.username,
           ShowAllRefs: show_all_refs,
           Repository: repository.gitaly_repository.to_h,
-          RepoPath: 'ignored but not allowed to be empty in gitlab-workhorse',
+          GitConfigOptions: [],
           GitalyServer: {
             address: Gitlab::GitalyClient.address(project.repository_storage),
             token: Gitlab::GitalyClient.token(project.repository_storage)
           }
         }
+
+        # Custom option for git-receive-pack command
+        receive_max_input_size = Gitlab::CurrentSettings.receive_max_input_size.to_i
+        if receive_max_input_size > 0
+          attrs[:GitConfigOptions] << "receive.maxInputSize=#{receive_max_input_size.megabytes}"
+        end
+
+        attrs
       end
 
       def send_git_blob(repository, blob)
@@ -52,16 +63,34 @@ module Gitlab
         ]
       end
 
-      def send_git_archive(repository, ref:, format:, append_sha:)
+      def send_git_archive(repository, ref:, format:, append_sha:, path: nil)
+        path_enabled = Feature.enabled?(:git_archive_path, default_enabled: true)
+        path = nil unless path_enabled
+
         format ||= 'tar.gz'
-        format.downcase!
-        params = repository.archive_metadata(ref, Gitlab.config.gitlab.repository_downloads_path, format, append_sha: append_sha)
-        raise "Repository or ref not found" if params.empty?
+        format = format.downcase
 
-        params['GitalyServer'] = gitaly_server_hash(repository)
+        metadata = repository.archive_metadata(
+          ref,
+          Gitlab.config.gitlab.repository_downloads_path,
+          format,
+          append_sha: append_sha,
+          path: path
+        )
 
-        # If present DisableCache must be a Boolean. Otherwise workhorse ignores it.
+        raise "Repository or ref not found" if metadata.empty?
+
+        params =
+          if path_enabled
+            send_git_archive_params(repository, metadata, path, archive_format(format))
+          else
+            metadata
+          end
+
+        # If present, DisableCache must be a Boolean. Otherwise
+        # workhorse ignores it.
         params['DisableCache'] = true if git_archive_cache_disabled?
+        params['GitalyServer'] = gitaly_server_hash(repository)
 
         [
           SEND_DATA_HEADER,
@@ -138,16 +167,16 @@ module Gitlab
         ]
       end
 
-      def terminal_websocket(terminal)
+      def channel_websocket(channel)
         details = {
-          'Terminal' => {
-            'Subprotocols' => terminal[:subprotocols],
-            'Url' => terminal[:url],
-            'Header' => terminal[:headers],
-            'MaxSessionTime' => terminal[:max_session_time]
+          'Channel' => {
+            'Subprotocols' => channel[:subprotocols],
+            'Url' => channel[:url],
+            'Header' => channel[:headers],
+            'MaxSessionTime' => channel[:max_session_time]
           }
         }
-        details['Terminal']['CAPem'] = terminal[:ca_pem] if terminal.key?(:ca_pem)
+        details['Channel']['CAPem'] = channel[:ca_pem] if channel.key?(:ca_pem)
 
         details
       end
@@ -192,7 +221,7 @@ module Gitlab
       end
 
       def set_key_and_notify(key, value, expire: nil, overwrite: true)
-        Gitlab::Redis::Queues.with do |redis|
+        Gitlab::Redis::SharedState.with do |redis|
           result = redis.set(key, value, ex: expire, nx: !overwrite)
           if result
             redis.publish(NOTIFICATION_CHANNEL, "#{key}=#{value}")
@@ -205,8 +234,17 @@ module Gitlab
 
       protected
 
+      # This is the outermost encoding of a senddata: header. It is safe for
+      # inclusion in HTTP response headers
       def encode(hash)
         Base64.urlsafe_encode64(JSON.dump(hash))
+      end
+
+      # This is for encoding individual fields inside the senddata JSON that
+      # contain binary data. In workhorse, the corresponding struct field should
+      # be type []byte
+      def encode_binary(binary)
+        Base64.encode64(binary)
       end
 
       def gitaly_server_hash(repository)
@@ -226,6 +264,34 @@ module Gitlab
 
       def git_archive_cache_disabled?
         ENV['WORKHORSE_ARCHIVE_CACHE_DISABLED'].present? || Feature.enabled?(:workhorse_archive_cache_disabled)
+      end
+
+      def archive_format(format)
+        case format
+        when "tar.bz2", "tbz", "tbz2", "tb2", "bz2"
+          Gitaly::GetArchiveRequest::Format::TAR_BZ2
+        when "tar"
+          Gitaly::GetArchiveRequest::Format::TAR
+        when "zip"
+          Gitaly::GetArchiveRequest::Format::ZIP
+        else
+          Gitaly::GetArchiveRequest::Format::TAR_GZ
+        end
+      end
+
+      def send_git_archive_params(repository, metadata, path, format)
+        {
+          'ArchivePath' => metadata['ArchivePath'],
+          'GetArchiveRequest' => encode_binary(
+            Gitaly::GetArchiveRequest.new(
+              repository: repository.gitaly_repository,
+              commit_id: metadata['CommitId'],
+              prefix: metadata['ArchivePrefix'],
+              format: format,
+              path: path.presence || ""
+            ).to_proto
+          )
+        }
       end
     end
   end

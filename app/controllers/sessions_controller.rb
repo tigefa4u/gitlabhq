@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class SessionsController < Devise::SessionsController
   include InternalRedirect
   include AuthenticatesWithTwoFactor
@@ -6,19 +8,34 @@ class SessionsController < Devise::SessionsController
   include Recaptcha::Verify
 
   skip_before_action :check_two_factor_requirement, only: [:destroy]
+  # replaced with :require_no_authentication_without_flash
+  skip_before_action :require_no_authentication, only: [:new, :create]
 
   prepend_before_action :check_initial_setup, only: [:new]
   prepend_before_action :authenticate_with_two_factor,
-    if: :two_factor_enabled?, only: [:create]
+    if: -> { action_name == 'create' && two_factor_enabled? }
   prepend_before_action :check_captcha, only: [:create]
   prepend_before_action :store_redirect_uri, only: [:new]
   prepend_before_action :ldap_servers, only: [:new, :create]
+  prepend_before_action :require_no_authentication_without_flash, only: [:new, :create]
+  prepend_before_action :ensure_password_authentication_enabled!, if: -> { action_name == 'create' && password_based_login? }
+
   before_action :auto_sign_in_with_provider, only: [:new]
   before_action :load_recaptcha
 
-  after_action :log_failed_login, only: [:new], if: :failed_login?
-
+  after_action :log_failed_login, if: -> { action_name == 'new' && failed_login? }
   helper_method :captcha_enabled?
+
+  # protect_from_forgery is already prepended in ApplicationController but
+  # authenticate_with_two_factor which signs in the user is prepended before
+  # that here.
+  # We need to make sure CSRF token is verified before authenticating the user
+  # because Devise.clean_up_csrf_token_on_authentication is set to true by
+  # default to avoid CSRF token fixation attacks. Authenticating the user first
+  # would cause the CSRF token to be cleared and then
+  # RequestForgeryProtection#verify_authenticity_token would fail because of
+  # token mismatch.
+  protect_from_forgery with: :exception, prepend: true
 
   CAPTCHA_HEADER = 'X-GitLab-Show-Login-Captcha'.freeze
 
@@ -52,6 +69,14 @@ class SessionsController < Devise::SessionsController
 
   private
 
+  def require_no_authentication_without_flash
+    require_no_authentication
+
+    if flash[:alert] == I18n.t('devise.failure.already_authenticated')
+      flash[:alert] = nil
+    end
+  end
+
   def captcha_enabled?
     request.headers[CAPTCHA_HEADER] && Gitlab::Recaptcha.enabled?
   end
@@ -68,7 +93,7 @@ class SessionsController < Devise::SessionsController
       increment_failed_login_captcha_counter
 
       self.resource = resource_class.new
-      flash[:alert] = 'There was an error with the reCAPTCHA. Please solve the reCAPTCHA again.'
+      flash[:alert] = _('There was an error with the reCAPTCHA. Please solve the reCAPTCHA again.')
       flash.delete :recaptcha_error
 
       respond_with_navigational(resource) { render :new }
@@ -102,11 +127,12 @@ class SessionsController < Devise::SessionsController
   end
 
   def failed_login?
-    (options = env["warden.options"]) && options[:action] == "unauthenticated"
+    (options = request.env["warden.options"]) && options[:action] == "unauthenticated"
   end
 
   # Handle an "initial setup" state, where there's only one user, it's an admin,
   # and they require a password change.
+  # rubocop: disable CodeReuse/ActiveRecord
   def check_initial_setup
     return unless User.limit(2).count == 1 # Count as much 2 to know if we have exactly one
 
@@ -119,7 +145,16 @@ class SessionsController < Devise::SessionsController
     end
 
     redirect_to edit_user_password_path(reset_password_token: @token),
-      notice: "Please create a password for your new account."
+      notice: _("Please create a password for your new account.")
+  end
+  # rubocop: enable CodeReuse/ActiveRecord
+
+  def ensure_password_authentication_enabled!
+    render_403 unless Gitlab::CurrentSettings.password_authentication_enabled_for_web?
+  end
+
+  def password_based_login?
+    user_params[:login].present? || user_params[:password].present?
   end
 
   def user_params

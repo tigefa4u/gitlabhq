@@ -1,7 +1,11 @@
 # Model relationships to be included in the project import/export
+#
+# This list _must_ only contain relationships that are available to both CE and
+# EE. EE specific relationships must be defined in the `ee` section further
+# down below.
 project_tree:
   - labels:
-      :priorities
+    - :priorities
   - milestones:
     - events:
       - :push_event_payload
@@ -15,20 +19,25 @@ project_tree:
         - :push_event_payload
     - label_links:
       - label:
-          :priorities
+        - :priorities
     - milestone:
       - events:
         - :push_event_payload
+    - resource_label_events:
+      - label:
+        - :priorities
     - :issue_assignees
   - snippets:
     - :award_emoji
     - notes:
-        :author
-  - :releases
+      - :author
+  - releases:
+    - :links
   - project_members:
     - :user
   - merge_requests:
     - :metrics
+    - :suggestions
     - notes:
       - :author
       - events:
@@ -41,11 +50,14 @@ project_tree:
     - :timelogs
     - label_links:
       - label:
-          :priorities
+        - :priorities
     - milestone:
       - events:
         - :push_event_payload
-  - pipelines:
+    - resource_label_events:
+      - label:
+        - :priorities
+  - ci_pipelines:
     - notes:
       - :author
       - events:
@@ -56,7 +68,6 @@ project_tree:
   - :triggers
   - :pipeline_schedules
   - :services
-  - :hooks
   - protected_branches:
     - :merge_access_levels
     - :push_access_levels
@@ -64,8 +75,11 @@ project_tree:
     - :create_access_levels
   - :project_feature
   - :custom_attributes
+  - :prometheus_metrics
   - :project_badges
   - :ci_cd_settings
+  - :error_tracking_setting
+  - :metrics_setting
 
 # Only include the following attributes for the models specified.
 included_attributes:
@@ -85,18 +99,18 @@ excluded_attributes:
     - :path
     - :namespace_id
     - :creator_id
+    - :pool_repository_id
     - :import_url
     - :import_status
     - :avatar
     - :import_type
     - :import_source
-    - :import_error
     - :mirror
     - :runners_token
+    - :runners_token_encrypted
     - :repository_storage
     - :repository_read_only
     - :lfs_enabled
-    - :import_jid
     - :created_at
     - :updated_at
     - :id
@@ -108,33 +122,80 @@ excluded_attributes:
     - :remote_mirror_available_overridden
     - :description_html
     - :repository_languages
+    - :bfg_object_map
+    - :detected_repository_languages
+    - :tag_list
+    - :mirror_user_id
+    - :mirror_trigger_builds
+    - :only_mirror_protected_branches
+    - :pull_mirror_available_overridden
+    - :mirror_overwrites_diverged_branches
+    - :packages_enabled
+    - :mirror_last_update_at
+    - :mirror_last_successful_update_at
+  namespaces:
+    - :runners_token
+    - :runners_token_encrypted
+  project_import_state:
+    - :last_error
+    - :jid
+    - :last_update_at
+    - :last_successful_update_at
+  prometheus_metrics:
+    - :common
+    - :identifier
   snippets:
     - :expired_at
   merge_request_diff:
-    - :st_diffs
+    - :external_diff
+    - :stored_externally
+    - :external_diff_store
   merge_request_diff_files:
     - :diff
+    - :external_diff_offset
+    - :external_diff_size
   issues:
     - :milestone_id
   merge_requests:
     - :milestone_id
     - :ref_fetched
     - :merge_jid
+    - :rebase_jid
     - :latest_merge_request_diff_id
   award_emoji:
     - :awardable_id
   statuses:
     - :trace
     - :token
+    - :token_encrypted
     - :when
     - :artifacts_file
     - :artifacts_metadata
+    - :artifacts_file_store
+    - :artifacts_metadata_store
+    - :artifacts_size
+    - :commands
   push_event_payload:
     - :event_id
   project_badges:
     - :group_id
+  resource_label_events:
+    - :reference
+    - :reference_html
+    - :epic_id
+  runners:
+    - :token
+    - :token_encrypted
+  services:
+    - :template
+  error_tracking_setting:
+    - :encrypted_token
+    - :encrypted_token_iv
+    - :enabled
 
 methods:
+  notes:
+    - :type
   labels:
     - :type
   label:
@@ -155,3 +216,12 @@ methods:
     - :action
   project_badges:
     - :type
+
+# EE specific relationships and settings to include. All of this will be merged
+# into the previous structures if EE is used.
+ee:
+  project_tree:
+    - protected_branches:
+      - :unprotect_access_levels
+    - protected_environments:
+      - :deploy_access_levels

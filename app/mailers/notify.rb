@@ -1,6 +1,10 @@
+# frozen_string_literal: true
+
 class Notify < BaseMailer
   include ActionDispatch::Routing::PolymorphicRoutes
   include GitlabRoutingHelper
+  include EmailsHelper
+  include IssuablesHelper
 
   include Emails::Issues
   include Emails::MergeRequests
@@ -10,7 +14,10 @@ class Notify < BaseMailer
   include Emails::Profile
   include Emails::Pipelines
   include Emails::Members
+  include Emails::AutoDevops
+  include Emails::RemoteMirrors
 
+  helper MilestonesHelper
   helper MergeRequestsHelper
   helper DiffHelper
   helper BlobHelper
@@ -18,6 +25,7 @@ class Notify < BaseMailer
   helper MembersHelper
   helper AvatarsHelper
   helper GitlabRoutingHelper
+  helper IssuablesHelper
 
   def test_email(recipient_email, subject, body)
     mail(to: recipient_email,
@@ -63,14 +71,18 @@ class Notify < BaseMailer
     address.format
   end
 
-  # Look up a User by their ID and return their email address
+  # Look up a User's notification email for a particular context.
+  # Can look up by their ID or can accept a User object.
   #
-  # recipient_id - User ID
+  # recipient          - User object OR a User ID
+  # notification_group - The parent group of the notification
   #
   # Returns a String containing the User's email address.
-  def recipient(recipient_id)
-    @current_user = User.find(recipient_id)
-    @current_user.notification_email
+  def recipient(recipient, notification_group = nil)
+    user = recipient if recipient.is_a?(User)
+    user ||= User.find(recipient)
+
+    user.notification_email_for(notification_group)
   end
 
   # Formats arguments into a String suitable for use as an email subject
@@ -92,12 +104,14 @@ class Notify < BaseMailer
   #   >> subject('Lorem ipsum', 'Dolor sit amet')
   #   => "Lorem ipsum | Dolor sit amet"
   def subject(*extra)
-    subject = ""
-    subject << "#{@project.name} | " if @project
-    subject << "#{@group.name} | " if @group
-    subject << extra.join(' | ') if extra.present?
-    subject << " | #{Gitlab.config.gitlab.email_subject_suffix}" if Gitlab.config.gitlab.email_subject_suffix.present?
-    subject
+    subject = []
+
+    subject << @project.name if @project
+    subject << @group.name if @group
+    subject.concat(extra) if extra.present?
+    subject << Gitlab.config.gitlab.email_subject_suffix if Gitlab.config.gitlab.email_subject_suffix.present?
+
+    subject.join(' | ')
   end
 
   # Return a string suitable for inclusion in the 'Message-Id' mail header.
@@ -113,6 +127,7 @@ class Notify < BaseMailer
     add_unsubscription_headers_and_links
 
     headers["X-GitLab-#{model.class.name}-ID"] = model.id
+    headers["X-GitLab-#{model.class.name}-IID"] = model.iid if model.respond_to?(:iid)
     headers['X-GitLab-Reply-Key'] = reply_key
 
     @reason = headers['X-GitLab-NotificationReason']
@@ -122,7 +137,7 @@ class Notify < BaseMailer
         address.display_name = reply_display_name(model)
       end
 
-      fallback_reply_message_id = "<reply-#{reply_key}@#{Gitlab.config.gitlab.host}>".freeze
+      fallback_reply_message_id = "<reply-#{reply_key}@#{Gitlab.config.gitlab.host}>"
       headers['References'] ||= []
       headers['References'].unshift(fallback_reply_message_id)
 
@@ -160,7 +175,7 @@ class Notify < BaseMailer
     headers['In-Reply-To'] = message_id(model)
     headers['References'] = [message_id(model)]
 
-    headers[:subject]&.prepend('Re: ')
+    headers[:subject] = "Re: #{headers[:subject]}" if headers[:subject]
 
     mail_thread(model, headers)
   end
@@ -172,7 +187,7 @@ class Notify < BaseMailer
 
     headers['X-GitLab-Discussion-ID'] = note.discussion.id if note.part_of_discussion?
 
-    headers[:subject]&.prepend('Re: ')
+    headers[:subject] = "Re: #{headers[:subject]}" if headers[:subject]
 
     mail_thread(model, headers)
   end
@@ -187,6 +202,7 @@ class Notify < BaseMailer
     headers['X-GitLab-Project'] = @project.name
     headers['X-GitLab-Project-Id'] = @project.id
     headers['X-GitLab-Project-Path'] = @project.full_path
+    headers['List-Id'] = "#{@project.full_path} <#{create_list_id_string(@project)}>"
   end
 
   def add_unsubscription_headers_and_links

@@ -1,11 +1,20 @@
+# frozen_string_literal: true
+
 module API
   class Settings < Grape::API
     before { authenticated_as_admin! }
+
+    helpers Helpers::SettingsHelpers
 
     helpers do
       def current_settings
         @current_setting ||=
           (ApplicationSetting.current_without_cache || ApplicationSetting.create_from_defaults)
+      end
+
+      def filter_attributes_using_license(attrs)
+        # This method will be redefined in EE.
+        attrs
       end
     end
 
@@ -27,13 +36,10 @@ module API
       given akismet_enabled: ->(val) { val } do
         requires :akismet_api_key, type: String, desc: 'Generate API key at http://www.akismet.com'
       end
-      optional :clientside_sentry_enabled, type: Boolean, desc: 'Sentry can also be used for reporting and logging clientside exceptions. https://sentry.io/for/javascript/'
-      given clientside_sentry_enabled: ->(val) { val } do
-        requires :clientside_sentry_dsn, type: String, desc: 'Clientside Sentry Data Source Name'
-      end
       optional :container_registry_token_expire_delay, type: Integer, desc: 'Authorization token duration (minutes)'
       optional :default_artifacts_expire_in, type: String, desc: "Set the default expiration time for each job's artifacts"
-      optional :default_branch_protection, type: Integer, values: [0, 1, 2], desc: 'Determine if developers can push to master'
+      optional :default_project_creation, type: Integer, values: ::Gitlab::Access.project_creation_values, desc: 'Determine if developers can create projects in the group'
+      optional :default_branch_protection, type: Integer, values: ::Gitlab::Access.protection_values, desc: 'Determine if developers can push to master'
       optional :default_group_visibility, type: String, values: Gitlab::VisibilityLevel.string_values, desc: 'The default group visibility'
       optional :default_project_visibility, type: String, values: Gitlab::VisibilityLevel.string_values, desc: 'The default project visibility'
       optional :default_projects_limit, type: Integer, desc: 'The maximum number of personal projects'
@@ -49,6 +55,8 @@ module API
       optional :gitaly_timeout_default, type: Integer, desc: 'Default Gitaly timeout, in seconds. Set to 0 to disable timeouts.'
       optional :gitaly_timeout_fast, type: Integer, desc: 'Gitaly fast operation timeout, in seconds. Set to 0 to disable timeouts.'
       optional :gitaly_timeout_medium, type: Integer, desc: 'Medium Gitaly timeout, in seconds. Set to 0 to disable timeouts.'
+      optional :grafana_enabled, type: Boolean, desc: 'Enable Grafana'
+      optional :grafana_url, type: String, desc: 'Grafana URL'
       optional :gravatar_enabled, type: Boolean, desc: 'Flag indicating if the Gravatar service is enabled'
       optional :help_page_hide_commercial_content, type: Boolean, desc: 'Hide marketing-related entries from help'
       optional :help_page_support_url, type: String, desc: 'Alternate support URL for help page'
@@ -64,10 +72,6 @@ module API
       optional :html_emails_enabled, type: Boolean, desc: 'By default GitLab sends emails in HTML and plain text formats so mail clients can choose what format to use. Disable this option if you only want to send emails in plain text format.'
       optional :import_sources, type: Array[String], values: %w[github bitbucket gitlab google_code fogbugz git gitlab_project manifest],
                                 desc: 'Enabled sources for code import during project creation. OmniAuth must be configured for GitHub, Bitbucket, and GitLab.com'
-      optional :koding_enabled, type: Boolean, desc: 'Enable Koding'
-      given koding_enabled: ->(val) { val } do
-        requires :koding_url, type: String, desc: 'The Koding team URL'
-      end
       optional :max_artifacts_size, type: Integer, desc: "Set the maximum file size for each job's artifacts"
       optional :max_attachment_size, type: Integer, desc: 'Maximum attachment size in MB'
       optional :max_pages_size, type: Integer, desc: 'Maximum size of pages in MB'
@@ -102,25 +106,16 @@ module API
       end
       optional :repository_checks_enabled, type: Boolean, desc: "GitLab will periodically run 'git fsck' in all project and wiki repositories to look for silent disk corruption issues."
       optional :repository_storages, type: Array[String], desc: 'Storage paths for new projects'
-      optional :require_two_factor_authentication, type: Boolean, desc: 'Require all users to setup Two-factor authentication'
+      optional :require_two_factor_authentication, type: Boolean, desc: 'Require all users to set up Two-factor authentication'
       given require_two_factor_authentication: ->(val) { val } do
         requires :two_factor_grace_period, type: Integer, desc: 'Amount of time (in hours) that users are allowed to skip forced configuration of two-factor authentication'
       end
       optional :restricted_visibility_levels, type: Array[String], desc: 'Selected levels cannot be used by non-admin users for groups, projects or snippets. If the public level is restricted, user profiles are only visible to logged in users.'
       optional :send_user_confirmation_email, type: Boolean, desc: 'Send confirmation email on sign-up'
-      optional :sentry_enabled, type: Boolean, desc: 'Sentry is an error reporting and logging tool which is currently not shipped with GitLab, get it here: https://getsentry.com'
-      given sentry_enabled: ->(val) { val } do
-        requires :sentry_dsn, type: String, desc: 'Sentry Data Source Name'
-      end
       optional :session_expire_delay, type: Integer, desc: 'Session duration in minutes. GitLab restart is required to apply changes.'
       optional :shared_runners_enabled, type: Boolean, desc: 'Enable shared runners for new projects'
       given shared_runners_enabled: ->(val) { val } do
         requires :shared_runners_text, type: String, desc: 'Shared runners text '
-      end
-      optional :sidekiq_throttling_enabled, type: Boolean, desc: 'Enable Sidekiq Job Throttling'
-      given sidekiq_throttling_enabled: ->(val) { val } do
-        requires :sidekiq_throttling_factor, type: Float, desc: 'The factor by which the queues should be throttled. A value between 0.0 and 1.0, exclusive.'
-        requires :sidekiq_throttling_queues, type: Array[String], desc: 'Choose which queues you wish to throttle'
       end
       optional :sign_in_text, type: String, desc: 'The sign in text of the GitLab application'
       optional :signin_enabled, type: Boolean, desc: 'Flag indicating if password authentication is enabled for the web interface' # support legacy names, can be removed in v5
@@ -128,6 +123,7 @@ module API
       optional :terminal_max_session_time, type: Integer, desc: 'Maximum time for web terminal websocket connection (in seconds). Set to 0 for unlimited time.'
       optional :usage_ping_enabled, type: Boolean, desc: 'Every week GitLab will report license usage back to GitLab, Inc.'
       optional :instance_statistics_visibility_private, type: Boolean, desc: 'When set to `true` Instance statistics will only be available to admins'
+      optional :local_markdown_version, type: Integer, desc: "Local markdown version, increase this value when any cached markdown should be invalidated"
 
       ApplicationSetting::SUPPORTED_KEY_TYPES.each do |type|
         optional :"#{type}_key_restriction",
@@ -136,10 +132,10 @@ module API
                  desc: "Restrictions on the complexity of uploaded #{type.upcase} keys. A value of #{ApplicationSetting::FORBIDDEN_KEY_VALUE} disables all #{type.upcase} keys."
       end
 
-      optional_attributes = ::ApplicationSettingsHelper.visible_attributes << :performance_bar_allowed_group_id
+      use :optional_params_ee
 
-      optional(*optional_attributes)
-      at_least_one_of(*optional_attributes)
+      optional(*Helpers::SettingsHelpers.optional_attributes)
+      at_least_one_of(*Helpers::SettingsHelpers.optional_attributes)
     end
     put "application/settings" do
       attrs = declared_params(include_missing: false)
@@ -161,6 +157,8 @@ module API
       elsif attrs.has_key?(:password_authentication_enabled)
         attrs[:password_authentication_enabled_for_web] = attrs.delete(:password_authentication_enabled)
       end
+
+      attrs = filter_attributes_using_license(attrs)
 
       if ApplicationSettings::UpdateService.new(current_settings, current_user, attrs).execute
         present current_settings, with: Entities::ApplicationSetting

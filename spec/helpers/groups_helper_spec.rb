@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe GroupsHelper do
@@ -84,7 +86,7 @@ describe GroupsHelper do
     end
   end
 
-  describe 'group_title', :nested_groups do
+  describe 'group_title' do
     let(:group) { create(:group) }
     let(:nested_group) { create(:group, parent: group) }
     let(:deep_nested_group) { create(:group, parent: nested_group) }
@@ -97,7 +99,7 @@ describe GroupsHelper do
   end
 
   # rubocop:disable Layout/SpaceBeforeComma
-  describe '#share_with_group_lock_help_text', :nested_groups do
+  describe '#share_with_group_lock_help_text' do
     let!(:root_group) { create(:group) }
     let!(:subgroup) { create(:group, parent: root_group) }
     let!(:sub_subgroup) { create(:group, parent: subgroup) }
@@ -225,6 +227,39 @@ describe GroupsHelper do
       end
 
       expect(helper.group_sidebar_links).not_to include(*cross_project_features)
+    end
+  end
+
+  describe 'parent_group_options' do
+    let(:current_user) { create(:user) }
+    let(:group) { create(:group, name: 'group') }
+    let(:group2) { create(:group, name: 'group2') }
+
+    before do
+      group.add_owner(current_user)
+      group2.add_owner(current_user)
+    end
+
+    it 'includes explicitly owned groups except self' do
+      expect(parent_group_options(group2)).to eq([{ id: group.id, text: group.human_name }].to_json)
+    end
+
+    it 'excludes parent group' do
+      subgroup = create(:group, parent: group2)
+
+      expect(parent_group_options(subgroup)).to eq([{ id: group.id, text: group.human_name }].to_json)
+    end
+
+    it 'includes subgroups with inherited ownership' do
+      subgroup = create(:group, parent: group)
+
+      expect(parent_group_options(group2)).to eq([{ id: group.id, text: group.human_name }, { id: subgroup.id, text: subgroup.human_name }].to_json)
+    end
+
+    it 'excludes own subgroups' do
+      create(:group, parent: group2)
+
+      expect(parent_group_options(group2)).to eq([{ id: group.id, text: group.human_name }].to_json)
     end
   end
 end

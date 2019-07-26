@@ -1,4 +1,4 @@
-class CreateRemoteMirrors < ActiveRecord::Migration
+class CreateRemoteMirrors < ActiveRecord::Migration[4.2]
   include Gitlab::Database::MigrationHelpers
 
   DOWNTIME = false
@@ -29,6 +29,6 @@ class CreateRemoteMirrors < ActiveRecord::Migration
   end
 
   def down
-    drop_table(:remote_mirrors) if table_exists?(:remote_mirrors)
+    # ee/db/migrate/20160321161032_create_remote_mirrors_ee.rb will remove the table
   end
 end

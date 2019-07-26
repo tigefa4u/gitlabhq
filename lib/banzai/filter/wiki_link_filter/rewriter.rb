@@ -1,7 +1,11 @@
+# frozen_string_literal: true
+
 module Banzai
   module Filter
     class WikiLinkFilter < HTML::Pipeline::Filter
       class Rewriter
+        UNSAFE_SLUG_REGEXES = [/\Ajavascript:/i].freeze
+
         def initialize(link_string, wiki:, slug:)
           @uri = Addressable::URI.parse(link_string)
           @wiki_base_path = wiki && wiki.wiki_base_path
@@ -10,11 +14,16 @@ module Banzai
 
         def apply_rules
           # Special case: relative URLs beginning with `/uploads/` refer to
-          # user-uploaded files and will be handled elsewhere.
-          return @uri.to_s if @uri.relative? && @uri.path.starts_with?('/uploads/')
+          # user-uploaded files will be handled elsewhere.
+          return @uri.to_s if public_upload?
 
-          apply_file_link_rules!
-          apply_hierarchical_link_rules!
+          # Special case: relative URLs beginning with Wikis::CreateAttachmentService::ATTACHMENT_PATH
+          # refer to user-uploaded files to the wiki repository.
+          unless repository_upload?
+            apply_file_link_rules!
+            apply_hierarchical_link_rules!
+          end
+
           apply_relative_link_rules!
           @uri.to_s
         end
@@ -28,6 +37,8 @@ module Banzai
 
         # Of the form `./link`, `../link`, or similar
         def apply_hierarchical_link_rules!
+          return if slug_considered_unsafe?
+
           @uri = Addressable::URI.join(@slug, @uri) if @uri.to_s[0] == '.'
         end
 
@@ -38,6 +49,18 @@ module Banzai
             link = "#{link}##{@uri.fragment}" if @uri.fragment
             @uri = Addressable::URI.parse(link)
           end
+        end
+
+        def public_upload?
+          @uri.relative? && @uri.path.starts_with?('/uploads/')
+        end
+
+        def repository_upload?
+          @uri.relative? && @uri.path.starts_with?(Wikis::CreateAttachmentService::ATTACHMENT_PATH)
+        end
+
+        def slug_considered_unsafe?
+          UNSAFE_SLUG_REGEXES.any? { |r| r.match?(@slug) }
         end
       end
     end

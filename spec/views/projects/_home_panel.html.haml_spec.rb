@@ -9,6 +9,7 @@ describe 'projects/_home_panel' do
 
       allow(view).to receive(:current_user).and_return(user)
       allow(view).to receive(:can?).with(user, :read_project, project).and_return(false)
+      allow(project).to receive(:license_anchor_data).and_return(false)
     end
 
     context 'when user is signed in' do
@@ -22,7 +23,7 @@ describe 'projects/_home_panel' do
       it 'makes it possible to set notification level' do
         render
 
-        expect(view).to render_template('shared/notifications/_button')
+        expect(view).to render_template('shared/notifications/_new_button')
         expect(rendered).to have_selector('.notification-dropdown')
       end
     end
@@ -44,7 +45,7 @@ describe 'projects/_home_panel' do
 
   context 'badges' do
     shared_examples 'show badges' do
-      it 'should render the all badges' do
+      it 'renders the all badges' do
         render
 
         expect(rendered).to have_selector('.project-badges a')
@@ -63,16 +64,16 @@ describe 'projects/_home_panel' do
 
       allow(view).to receive(:current_user).and_return(user)
       allow(view).to receive(:can?).with(user, :read_project, project).and_return(false)
+      allow(project).to receive(:license_anchor_data).and_return(false)
     end
 
     context 'has no badges' do
       let(:project) { create(:project) }
 
-      it 'should not render any badge' do
+      it 'does not render any badge' do
         render
 
-        expect(rendered).to have_selector('.project-badges')
-        expect(rendered).not_to have_selector('.project-badges > a')
+        expect(rendered).not_to have_selector('.project-badges')
       end
     end
 
@@ -118,6 +119,7 @@ describe 'projects/_home_panel' do
       assign(:project, project)
 
       allow(view).to receive(:current_user).and_return(user)
+      allow(project).to receive(:license_anchor_data).and_return(false)
     end
 
     context 'user can read project' do

@@ -1,4 +1,11 @@
 require 'settingslogic'
+require 'digest/md5'
+
+# We can not use `Rails.root` here, as this file might be loaded without the
+# full Rails environment being loaded. We can not use `require_relative` either,
+# as Rails uses `load` for `require_dependency` (used when loading the Rails
+# environment). This could then lead to this file being loaded twice.
+require_dependency File.expand_path('../lib/gitlab', __dir__)
 
 class Settings < Settingslogic
   source ENV.fetch('GITLAB_CONFIG') { Pathname.new(File.expand_path('..', __dir__)).join('config/gitlab.yml') }
@@ -56,6 +63,31 @@ class Settings < Settingslogic
       (base_url(gitlab) + [gitlab.relative_url_root]).join('')
     end
 
+    def kerberos_protocol
+      kerberos.https ? "https" : "http"
+    end
+
+    def kerberos_port
+      kerberos.use_dedicated_port ? kerberos.port : gitlab.port
+    end
+
+    # Curl expects username/password for authentication. However when using GSS-Negotiate not credentials should be needed.
+    # By inserting in the Kerberos dedicated URL ":@", we give to curl an empty username and password and GSS auth goes ahead
+    # Known bug reported in http://sourceforge.net/p/curl/bugs/440/ and http://curl.haxx.se/docs/knownbugs.html
+    def build_gitlab_kerberos_url
+      [
+        kerberos_protocol,
+        "://:@",
+        gitlab.host,
+        ":#{kerberos_port}",
+        gitlab.relative_url_root
+      ].join('')
+    end
+
+    def alternative_gitlab_kerberos_url?
+      kerberos.enabled && (build_gitlab_kerberos_url != build_gitlab_url)
+    end
+
     # check that values in `current` (string or integer) is a contant in `modul`.
     def verify_constant_array(modul, current, default)
       values = default || []
@@ -95,6 +127,14 @@ class Settings < Settingslogic
       Gitlab::Application.secrets.db_key_base[0..31]
     end
 
+    def attr_encrypted_db_key_base_32
+      Gitlab::Utils.ensure_utf8_size(attr_encrypted_db_key_base, bytes: 32.bytes)
+    end
+
+    def attr_encrypted_db_key_base_12
+      Gitlab::Utils.ensure_utf8_size(attr_encrypted_db_key_base, bytes: 12.bytes)
+    end
+
     # This should be used for :per_attribute_salt_and_iv mode. There is no
     # need to truncate the key because the encryptor will use the salt to
     # generate a hash of the password:
@@ -131,14 +171,17 @@ class Settings < Settingslogic
       URI.parse(url_without_path).host
     end
 
-    # Runs every minute in a random ten-minute period on Sundays, to balance the
-    # load on the server receiving these pings. The usage ping is safe to run
-    # multiple times because of a 24 hour exclusive lock.
+    # Runs at a random time of day on a consistent day of the week based on
+    # the instance UUID. This is to balance the load on the service receiving
+    # these pings. The sidekiq job handles temporary http failures.
     def cron_for_usage_ping
       hour = rand(24)
-      minute = rand(6)
+      minute = rand(60)
+      # Set a default UUID for the case when the UUID hasn't been initialized.
+      uuid = Gitlab::CurrentSettings.uuid || 'uuid-not-set'
+      day_of_week = Digest::MD5.hexdigest(uuid).to_i(16) % 7
 
-      "#{minute}0-#{minute}9 #{hour} * * 0"
+      "#{minute} #{hour} * * #{day_of_week}"
     end
   end
 end

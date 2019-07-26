@@ -1,26 +1,35 @@
 import Vue from 'vue';
-import Mousetrap from 'mousetrap';
 import store from '~/ide/stores';
 import ide from '~/ide/components/ide.vue';
 import { createComponentWithStore } from 'spec/helpers/vue_mount_component_helper';
 import { file, resetStore } from '../helpers';
 import { projectData } from '../mock_data';
 
-describe('ide component', () => {
+function bootstrap(projData) {
+  const Component = Vue.extend(ide);
+
+  store.state.currentProjectId = 'abcproject';
+  store.state.currentBranchId = 'master';
+  store.state.projects.abcproject = Object.assign({}, projData);
+  Vue.set(store.state.trees, 'abcproject/master', {
+    tree: [],
+    loading: false,
+  });
+
+  return createComponentWithStore(Component, store, {
+    emptyStateSvgPath: 'svg',
+    noChangesStateSvgPath: 'svg',
+    committedStateSvgPath: 'svg',
+  });
+}
+
+describe('ide component, empty repo', () => {
   let vm;
 
   beforeEach(() => {
-    const Component = Vue.extend(ide);
-
-    store.state.currentProjectId = 'abcproject';
-    store.state.currentBranchId = 'master';
-    store.state.projects.abcproject = Object.assign({}, projectData);
-
-    vm = createComponentWithStore(Component, store, {
-      emptyStateSvgPath: 'svg',
-      noChangesStateSvgPath: 'svg',
-      committedStateSvgPath: 'svg',
-    }).$mount();
+    const emptyProjData = Object.assign({}, projectData, { empty_repo: true, branches: {} });
+    vm = bootstrap(emptyProjData);
+    vm.$mount();
   });
 
   afterEach(() => {
@@ -29,17 +38,37 @@ describe('ide component', () => {
     resetStore(vm.$store);
   });
 
-  it('does not render right right when no files open', () => {
-    expect(vm.$el.querySelector('.panel-right')).toBeNull();
+  it('renders "New file" button in empty repo', done => {
+    vm.$nextTick(() => {
+      expect(vm.$el.querySelector('.ide-empty-state button[title="New file"]')).not.toBeNull();
+      done();
+    });
+  });
+});
+
+describe('ide component, non-empty repo', () => {
+  let vm;
+
+  beforeEach(() => {
+    vm = bootstrap(projectData);
+    vm.$mount();
   });
 
-  it('renders right panel when files are open', done => {
-    vm.$store.state.trees['abcproject/mybranch'] = {
-      tree: [file()],
+  afterEach(() => {
+    vm.$destroy();
+
+    resetStore(vm.$store);
+  });
+
+  it('shows error message when set', done => {
+    expect(vm.$el.querySelector('.flash-container')).toBe(null);
+
+    vm.$store.state.errorMessage = {
+      text: 'error',
     };
 
-    Vue.nextTick(() => {
-      expect(vm.$el.querySelector('.panel-right')).toBeNull();
+    vm.$nextTick(() => {
+      expect(vm.$el.querySelector('.flash-container')).not.toBe(null);
 
       done();
     });
@@ -72,87 +101,25 @@ describe('ide component', () => {
     });
   });
 
-  describe('file finder', () => {
-    beforeEach(done => {
-      spyOn(vm, 'toggleFileFinder');
-
-      vm.$store.state.fileFindVisible = true;
-
-      vm.$nextTick(done);
-    });
-
-    it('calls toggleFileFinder on `t` key press', done => {
-      Mousetrap.trigger('t');
-
-      vm
-        .$nextTick()
-        .then(() => {
-          expect(vm.toggleFileFinder).toHaveBeenCalled();
-        })
-        .then(done)
-        .catch(done.fail);
-    });
-
-    it('calls toggleFileFinder on `command+p` key press', done => {
-      Mousetrap.trigger('command+p');
-
-      vm
-        .$nextTick()
-        .then(() => {
-          expect(vm.toggleFileFinder).toHaveBeenCalled();
-        })
-        .then(done)
-        .catch(done.fail);
-    });
-
-    it('calls toggleFileFinder on `ctrl+p` key press', done => {
-      Mousetrap.trigger('ctrl+p');
-
-      vm
-        .$nextTick()
-        .then(() => {
-          expect(vm.toggleFileFinder).toHaveBeenCalled();
-        })
-        .then(done)
-        .catch(done.fail);
-    });
-
-    it('always allows `command+p` to trigger toggleFileFinder', () => {
-      expect(
-        vm.mousetrapStopCallback(null, vm.$el.querySelector('.dropdown-input-field'), 'command+p'),
-      ).toBe(false);
-    });
-
-    it('always allows `ctrl+p` to trigger toggleFileFinder', () => {
-      expect(
-        vm.mousetrapStopCallback(null, vm.$el.querySelector('.dropdown-input-field'), 'ctrl+p'),
-      ).toBe(false);
-    });
-
-    it('onlys handles `t` when focused in input-field', () => {
-      expect(
-        vm.mousetrapStopCallback(null, vm.$el.querySelector('.dropdown-input-field'), 't'),
-      ).toBe(true);
-    });
-
-    it('stops callback in monaco editor', () => {
-      setFixtures('<div class="inputarea"></div>');
-
-      expect(vm.mousetrapStopCallback(null, document.querySelector('.inputarea'), 't')).toBe(true);
+  describe('non-existent branch', () => {
+    it('does not render "New file" button for non-existent branch when repo is not empty', done => {
+      vm.$nextTick(() => {
+        expect(vm.$el.querySelector('.ide-empty-state button[title="New file"]')).toBeNull();
+        done();
+      });
     });
   });
 
-  it('shows error message when set', done => {
-    expect(vm.$el.querySelector('.flash-container')).toBe(null);
+  describe('branch with files', () => {
+    beforeEach(() => {
+      store.state.trees['abcproject/master'].tree = [file()];
+    });
 
-    vm.$store.state.errorMessage = {
-      text: 'error',
-    };
-
-    vm.$nextTick(() => {
-      expect(vm.$el.querySelector('.flash-container')).not.toBe(null);
-
-      done();
+    it('does not render "New file" button', done => {
+      vm.$nextTick(() => {
+        expect(vm.$el.querySelector('.ide-empty-state button[title="New file"]')).toBeNull();
+        done();
+      });
     });
   });
 });

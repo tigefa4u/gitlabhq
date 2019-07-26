@@ -36,7 +36,7 @@ describe TodosFinder do
           expect(todos).to match_array([todo1])
         end
 
-        context 'with subgroups', :nested_groups do
+        context 'with subgroups' do
           let(:subgroup) { create(:group, parent: group) }
           let!(:todo3) { create(:todo, user: user, group: subgroup, target: issue) }
 
@@ -45,6 +45,13 @@ describe TodosFinder do
 
             expect(todos).to match_array([todo1, todo2, todo3])
           end
+        end
+      end
+
+      context 'external authorization' do
+        it_behaves_like 'a finder with external authorization service' do
+          let!(:subject) { create(:todo, project: project, user: user) }
+          let(:project_params) { { project_id: project.id } }
         end
       end
     end
@@ -105,9 +112,24 @@ describe TodosFinder do
 
         todos = finder.new(user, { sort: 'priority' }).execute
 
-        puts todos.to_sql
         expect(todos).to eq([todo_3, todo_5, todo_4, todo_2, todo_1])
       end
+    end
+  end
+
+  describe '#any_for_target?' do
+    it 'returns true if there are any todos for the given target' do
+      todo = create(:todo, :pending)
+      finder = described_class.new(todo.user)
+
+      expect(finder.any_for_target?(todo.target)).to eq(true)
+    end
+
+    it 'returns false if there are no todos for the given target' do
+      issue = create(:issue)
+      finder = described_class.new(issue.author)
+
+      expect(finder.any_for_target?(issue)).to eq(false)
     end
   end
 end

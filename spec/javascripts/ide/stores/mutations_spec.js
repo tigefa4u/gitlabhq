@@ -79,6 +79,16 @@ describe('Multi-file store mutations', () => {
     });
   });
 
+  describe('CLEAR_REPLACED_FILES', () => {
+    it('clears replacedFiles array', () => {
+      localState.replacedFiles.push('a');
+
+      mutations.CLEAR_REPLACED_FILES(localState);
+
+      expect(localState.replacedFiles.length).toBe(0);
+    });
+  });
+
   describe('UPDATE_VIEWER', () => {
     it('sets viewer state', () => {
       mutations.UPDATE_VIEWER(localState, 'diff');
@@ -106,6 +116,62 @@ describe('Multi-file store mutations', () => {
       expect(localState.emptyStateSvgPath).toBe('emptyState');
       expect(localState.noChangesStateSvgPath).toBe('noChanges');
       expect(localState.committedStateSvgPath).toBe('commited');
+    });
+  });
+
+  describe('CREATE_TMP_ENTRY', () => {
+    beforeEach(() => {
+      localState.currentProjectId = 'gitlab-ce';
+      localState.currentBranchId = 'master';
+      localState.trees['gitlab-ce/master'] = {
+        tree: [],
+      };
+    });
+
+    it('creates temp entry in the tree', () => {
+      const tmpFile = file('test');
+      mutations.CREATE_TMP_ENTRY(localState, {
+        data: {
+          entries: {
+            test: {
+              ...tmpFile,
+              tempFile: true,
+              changed: true,
+            },
+          },
+          treeList: [tmpFile],
+        },
+        projectId: 'gitlab-ce',
+        branchId: 'master',
+      });
+
+      expect(localState.trees['gitlab-ce/master'].tree.length).toEqual(1);
+      expect(localState.entries.test.tempFile).toEqual(true);
+    });
+
+    it('marks entry as replacing previous entry if the old one has been deleted', () => {
+      const tmpFile = file('test');
+      localState.entries.test = {
+        ...tmpFile,
+        deleted: true,
+      };
+      mutations.CREATE_TMP_ENTRY(localState, {
+        data: {
+          entries: {
+            test: {
+              ...tmpFile,
+              tempFile: true,
+              changed: true,
+            },
+          },
+          treeList: [tmpFile],
+        },
+        projectId: 'gitlab-ce',
+        branchId: 'master',
+      });
+
+      expect(localState.trees['gitlab-ce/master'].tree.length).toEqual(1);
+      expect(localState.entries.test.replaces).toEqual(true);
     });
   });
 
@@ -213,6 +279,33 @@ describe('Multi-file store mutations', () => {
 
       expect(localState.changedFiles).toEqual([localState.entries.filePath]);
     });
+
+    it('does not add tempFile into changedFiles', () => {
+      localState.entries.filePath = {
+        deleted: false,
+        type: 'blob',
+        tempFile: true,
+      };
+
+      mutations.DELETE_ENTRY(localState, 'filePath');
+
+      expect(localState.changedFiles).toEqual([]);
+    });
+
+    it('removes tempFile from changedFiles when deleted', () => {
+      localState.entries.filePath = {
+        path: 'filePath',
+        deleted: false,
+        type: 'blob',
+        tempFile: true,
+      };
+
+      localState.changedFiles.push({ ...localState.entries.filePath });
+
+      mutations.DELETE_ENTRY(localState, 'filePath');
+
+      expect(localState.changedFiles).toEqual([]);
+    });
   });
 
   describe('UPDATE_FILE_AFTER_COMMIT', () => {
@@ -225,6 +318,7 @@ describe('Multi-file store mutations', () => {
         permalink: `${gl.TEST_HOST}/testing-123`,
         commitsPath: `${gl.TEST_HOST}/testing-123`,
         blamePath: `${gl.TEST_HOST}/testing-123`,
+        replaces: true,
       };
       localState.entries.test = f;
       localState.changedFiles.push(f);
@@ -235,6 +329,7 @@ describe('Multi-file store mutations', () => {
       expect(f.permalink).toBe(`${gl.TEST_HOST}/test`);
       expect(f.commitsPath).toBe(`${gl.TEST_HOST}/test`);
       expect(f.blamePath).toBe(`${gl.TEST_HOST}/test`);
+      expect(f.replaces).toBe(false);
     });
   });
 
@@ -271,13 +366,18 @@ describe('Multi-file store mutations', () => {
     });
 
     it('creates new renamed entry', () => {
-      mutations.RENAME_ENTRY(localState, { path: 'oldPath', name: 'newPath' });
+      mutations.RENAME_ENTRY(localState, {
+        path: 'oldPath',
+        name: 'newPath',
+        entryPath: null,
+        parentPath: '',
+      });
 
       expect(localState.entries.newPath).toEqual({
         ...localState.entries.oldPath,
         id: 'newPath',
         name: 'newPath',
-        key: 'newPath-blob-name',
+        key: 'newPath-blob-oldPath',
         path: 'newPath',
         tempFile: true,
         prevPath: 'oldPath',
@@ -286,6 +386,7 @@ describe('Multi-file store mutations', () => {
         url: `${gl.TEST_HOST}/newPath`,
         moved: jasmine.anything(),
         movedPath: jasmine.anything(),
+        opened: false,
       });
     });
 
@@ -308,7 +409,12 @@ describe('Multi-file store mutations', () => {
         ...file(),
       };
 
-      mutations.RENAME_ENTRY(localState, { path: 'oldPath', name: 'newPath' });
+      mutations.RENAME_ENTRY(localState, {
+        path: 'oldPath',
+        name: 'newPath',
+        entryPath: null,
+        parentPath: 'parentPath',
+      });
 
       expect(localState.entries.parentPath.tree.length).toBe(1);
     });

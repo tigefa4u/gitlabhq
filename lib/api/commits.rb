@@ -1,10 +1,15 @@
+# frozen_string_literal: true
+
 require 'mime/types'
 
 module API
   class Commits < Grape::API
     include PaginationParams
 
-    before { authorize! :download_code, user_project }
+    before do
+      require_repository_enabled!
+      authorize! :download_code, user_project
+    end
 
     helpers do
       def user_access
@@ -21,7 +26,7 @@ module API
     params do
       requires :id, type: String, desc: 'The ID of a project'
     end
-    resource :projects, requirements: API::PROJECT_ENDPOINT_REQUIREMENTS do
+    resource :projects, requirements: API::NAMESPACE_OR_PROJECT_REQUIREMENTS do
       desc 'Get a project repository commits' do
         success Entities::Commit
       end
@@ -71,25 +76,63 @@ module API
         detail 'This feature was introduced in GitLab 8.13'
       end
       params do
-        requires :branch, type: String, desc: 'Name of the branch to commit into. To create a new branch, also provide `start_branch`.'
+        requires :branch, type: String, desc: 'Name of the branch to commit into. To create a new branch, also provide either `start_branch` or `start_sha`, and optionally `start_project`.', allow_blank: false
         requires :commit_message, type: String, desc: 'Commit message'
-        requires :actions, type: Array[Hash], desc: 'Actions to perform in commit'
-        optional :start_branch, type: String, desc: 'Name of the branch to start the new commit from'
+        requires :actions, type: Array, desc: 'Actions to perform in commit' do
+          requires :action, type: String, desc: 'The action to perform, `create`, `delete`, `move`, `update`, `chmod`', values: %w[create update move delete chmod].freeze
+          requires :file_path, type: String, desc: 'Full path to the file. Ex. `lib/class.rb`'
+          given action: ->(action) { action == 'move' } do
+            requires :previous_path, type: String, desc: 'Original full path to the file being moved. Ex. `lib/class1.rb`'
+          end
+          given action: ->(action) { %w[create move].include? action } do
+            optional :content, type: String, desc: 'File content'
+          end
+          given action: ->(action) { action == 'update' } do
+            requires :content, type: String, desc: 'File content'
+          end
+          optional :encoding, type: String, desc: '`text` or `base64`', default: 'text', values: %w[text base64]
+          given action: ->(action) { %w[update move delete].include? action } do
+            optional :last_commit_id, type: String, desc: 'Last known file commit id'
+          end
+          given action: ->(action) { action == 'chmod' } do
+            requires :execute_filemode, type: Boolean, desc: 'When `true/false` enables/disables the execute flag on the file.'
+          end
+        end
+
+        optional :start_branch, type: String, desc: 'Name of the branch to start the new branch from'
+        optional :start_sha, type: String, desc: 'SHA of the commit to start the new branch from'
+        mutually_exclusive :start_branch, :start_sha
+
+        optional :start_project, types: [Integer, String], desc: 'The ID or path of the project to start the new branch from'
         optional :author_email, type: String, desc: 'Author email for commit'
         optional :author_name, type: String, desc: 'Author name for commit'
+        optional :stats, type: Boolean, default: true, desc: 'Include commit stats'
+        optional :force, type: Boolean, default: false, desc: 'When `true` overwrites the target branch with a new commit based on the `start_branch` or `start_sha`'
       end
       post ':id/repository/commits' do
+        if params[:start_project]
+          start_project = find_project!(params[:start_project])
+
+          unless user_project.forked_from?(start_project)
+            forbidden!("Project is not included in the fork network for #{start_project.full_name}")
+          end
+        end
+
         authorize_push_to_branch!(params[:branch])
 
         attrs = declared_params
         attrs[:branch_name] = attrs.delete(:branch)
-        attrs[:start_branch] ||= attrs[:branch_name]
+        attrs[:start_branch] ||= attrs[:branch_name] unless attrs[:start_sha]
+        attrs[:start_project] = start_project if start_project
 
         result = ::Files::MultiService.new(user_project, current_user, attrs).execute
 
         if result[:status] == :success
           commit_detail = user_project.repository.commit(result[:result])
-          present commit_detail, with: Entities::CommitDetail
+
+          Gitlab::UsageDataCounters::WebIdeCounter.increment_commits_count if find_user_from_warden
+
+          present commit_detail, with: Entities::CommitDetail, stats: params[:stats]
         else
           render_api_error!(result[:message], 400)
         end
@@ -136,6 +179,7 @@ module API
         use :pagination
         requires :sha, type: String, desc: 'A commit sha, or the name of a branch or tag'
       end
+      # rubocop: disable CodeReuse/ActiveRecord
       get ':id/repository/commits/:sha/comments', requirements: API::COMMIT_ENDPOINT_REQUIREMENTS do
         commit = user_project.commit(params[:sha])
 
@@ -144,6 +188,7 @@ module API
 
         present paginate(notes), with: Entities::CommitNote
       end
+      # rubocop: enable CodeReuse/ActiveRecord
 
       desc 'Cherry pick commit into a branch' do
         detail 'This feature was introduced in GitLab 8.15'
@@ -151,7 +196,7 @@ module API
       end
       params do
         requires :sha, type: String, desc: 'A commit sha, or the name of a branch or tag to be cherry picked'
-        requires :branch, type: String, desc: 'The name of the branch'
+        requires :branch, type: String, desc: 'The name of the branch', allow_blank: false
       end
       post ':id/repository/commits/:sha/cherry_pick', requirements: API::COMMIT_ENDPOINT_REQUIREMENTS do
         authorize_push_to_branch!(params[:branch])
@@ -159,8 +204,7 @@ module API
         commit = user_project.commit(params[:sha])
         not_found!('Commit') unless commit
 
-        branch = user_project.repository.find_branch(params[:branch])
-        not_found!('Branch') unless branch
+        find_branch!(params[:branch])
 
         commit_params = {
           commit: commit,
@@ -168,11 +212,47 @@ module API
           branch_name: params[:branch]
         }
 
-        result = ::Commits::CherryPickService.new(user_project, current_user, commit_params).execute
+        result = ::Commits::CherryPickService
+          .new(user_project, current_user, commit_params)
+          .execute
 
         if result[:status] == :success
-          branch = user_project.repository.find_branch(params[:branch])
-          present user_project.repository.commit(branch.dereferenced_target), with: Entities::Commit
+          present user_project.repository.commit(result[:result]),
+            with: Entities::Commit
+        else
+          render_api_error!(result[:message], 400)
+        end
+      end
+
+      desc 'Revert a commit in a branch' do
+        detail 'This feature was introduced in GitLab 11.5'
+        success Entities::Commit
+      end
+      params do
+        requires :sha, type: String, desc: 'Commit SHA to revert'
+        requires :branch, type: String, desc: 'Target branch name', allow_blank: false
+      end
+      post ':id/repository/commits/:sha/revert', requirements: API::COMMIT_ENDPOINT_REQUIREMENTS do
+        authorize_push_to_branch!(params[:branch])
+
+        commit = user_project.commit(params[:sha])
+        not_found!('Commit') unless commit
+
+        find_branch!(params[:branch])
+
+        commit_params = {
+          commit: commit,
+          start_branch: params[:branch],
+          branch_name: params[:branch]
+        }
+
+        result = ::Commits::RevertService
+          .new(user_project, current_user, commit_params)
+          .execute
+
+        if result[:status] == :success
+          present user_project.repository.commit(result[:result]),
+            with: Entities::Commit
         else
           render_api_error!(result[:message], 400)
         end
@@ -256,10 +336,34 @@ module API
         use :pagination
       end
       get ':id/repository/commits/:sha/merge_requests', requirements: API::COMMIT_ENDPOINT_REQUIREMENTS do
+        authorize! :read_merge_request, user_project
+
         commit = user_project.commit(params[:sha])
         not_found! 'Commit' unless commit
 
-        present paginate(commit.merge_requests), with: Entities::MergeRequestBasic
+        commit_merge_requests = MergeRequestsFinder.new(
+          current_user,
+          project_id: user_project.id,
+          commit_sha: commit.sha
+        ).execute
+
+        present paginate(commit_merge_requests), with: Entities::MergeRequestBasic
+      end
+
+      desc "Get a commit's GPG signature" do
+        success Entities::CommitSignature
+      end
+      params do
+        requires :sha, type: String, desc: 'A commit sha, or the name of a branch or tag'
+      end
+      get ':id/repository/commits/:sha/signature', requirements: API::COMMIT_ENDPOINT_REQUIREMENTS do
+        commit = user_project.commit(params[:sha])
+        not_found! 'Commit' unless commit
+
+        signature = commit.signature
+        not_found! 'GPG Signature' unless signature
+
+        present signature, with: Entities::CommitSignature
       end
     end
   end

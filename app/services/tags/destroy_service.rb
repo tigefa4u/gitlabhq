@@ -11,8 +11,12 @@ module Tags
       end
 
       if repository.rm_tag(current_user, tag_name)
-        release = project.releases.find_by(tag: tag_name)
-        release&.destroy
+        ##
+        # When a tag in a repository is destroyed,
+        # release assets will be destroyed too.
+        Releases::DestroyService
+          .new(project, current_user, tag: tag_name)
+          .execute
 
         push_data = build_push_data(tag)
         EventCreateService.new.push(project, current_user, push_data)
@@ -37,12 +41,11 @@ module Tags
 
     def build_push_data(tag)
       Gitlab::DataBuilder::Push.build(
-        project,
-        current_user,
-        tag.dereferenced_target.sha,
-        Gitlab::Git::BLANK_SHA,
-        "#{Gitlab::Git::TAG_REF_PREFIX}#{tag.name}",
-        [])
+        project: project,
+        user: current_user,
+        oldrev: tag.dereferenced_target.sha,
+        newrev: Gitlab::Git::BLANK_SHA,
+        ref: "#{Gitlab::Git::TAG_REF_PREFIX}#{tag.name}")
     end
   end
 end

@@ -1,4 +1,4 @@
-/* eslint-disable func-names, no-underscore-dangle, no-var, one-var, one-var-declaration-per-line, max-len, vars-on-top, wrap-iife, no-unused-vars, no-shadow, no-cond-assign, prefer-arrow-callback, no-return-assign, no-else-return, camelcase, no-lonely-if, guard-for-in, no-restricted-syntax, consistent-return, prefer-template, no-param-reassign, no-loop-func */
+/* eslint-disable func-names, no-underscore-dangle, no-var, one-var, vars-on-top, no-unused-vars, no-shadow, no-cond-assign, prefer-arrow-callback, no-return-assign, no-else-return, camelcase, no-lonely-if, guard-for-in, no-restricted-syntax, consistent-return, prefer-template, no-param-reassign, no-loop-func */
 /* global fuzzaldrinPlus */
 
 import $ from 'jquery';
@@ -307,8 +307,8 @@ GitLabDropdown = (function() {
     // Set Defaults
     this.filterInput = this.options.filterInput || this.getElement(FILTER_INPUT);
     this.noFilterInput = this.options.noFilterInput || this.getElement(NO_FILTER_INPUT);
-    this.highlight = !!this.options.highlight;
-    this.icon = !!this.options.icon;
+    this.highlight = Boolean(this.options.highlight);
+    this.icon = Boolean(this.options.icon);
     this.filterInputBlur =
       this.options.filterInputBlur != null ? this.options.filterInputBlur : true;
     // If no input is passed create a default one
@@ -335,6 +335,10 @@ GitLabDropdown = (function() {
               _this.fullData = data;
               _this.parseData(_this.fullData);
               _this.focusTextInput();
+
+              // Update dropdown position since remote data may have changed dropdown size
+              _this.dropdown.find('.dropdown-menu-toggle').dropdown('update');
+
               if (
                 _this.options.filterable &&
                 _this.filter &&
@@ -561,10 +565,14 @@ GitLabDropdown = (function() {
         !$target.data('isLink')
       ) {
         e.stopPropagation();
-        return false;
-      } else {
-        return true;
+
+        // This prevents automatic scrolling to the top
+        if ($target.closest('a').length) {
+          return false;
+        }
       }
+
+      return true;
     }
   };
 
@@ -656,23 +664,7 @@ GitLabDropdown = (function() {
     if (this.options.renderMenu) {
       return this.options.renderMenu(html);
     } else {
-      var ul = document.createElement('ul');
-
-      for (var i = 0; i < html.length; i += 1) {
-        var el = html[i];
-
-        if (el instanceof $) {
-          el = el.get(0);
-        }
-
-        if (typeof el === 'string') {
-          ul.innerHTML += el;
-        } else {
-          ul.appendChild(el);
-        }
-      }
-
-      return ul;
+      return $('<ul>').append(html);
     }
   };
 
@@ -718,6 +710,10 @@ GitLabDropdown = (function() {
       index = false;
     }
     html = document.createElement('li');
+
+    if (rowHidden) {
+      html.style.display = 'none';
+    }
 
     if (data === 'divider' || data === 'separator') {
       html.className = data;

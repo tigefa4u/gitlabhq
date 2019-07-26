@@ -6,17 +6,22 @@ module Groups
 
     def execute
       reject_parent_id!
+      remove_unallowed_params
 
       return false unless valid_visibility_level_change?(group, params[:visibility_level])
 
       return false unless valid_share_with_group_lock_change?
 
+      before_assignment_hook(group, params)
+
       group.assign_attributes(params)
 
       begin
-        after_update if group.save
+        success = group.save
 
-        true
+        after_update if success
+
+        success
       rescue Gitlab::UpdatePathError => e
         group.errors.add(:base, e.message)
 
@@ -26,15 +31,19 @@ module Groups
 
     private
 
+    def before_assignment_hook(group, params)
+      # overridden in EE
+    end
+
     def after_update
       if group.previous_changes.include?(:visibility_level) && group.private?
         # don't enqueue immediately to prevent todos removal in case of a mistake
-        TodosDestroyer::GroupPrivateWorker.perform_in(1.hour, group.id)
+        TodosDestroyer::GroupPrivateWorker.perform_in(Todo::WAIT_FOR_DELETE, group.id)
       end
     end
 
     def reject_parent_id!
-      params.except!(:parent_id)
+      params.delete(:parent_id)
     end
 
     def valid_share_with_group_lock_change?

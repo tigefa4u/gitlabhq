@@ -1,10 +1,12 @@
 require 'spec_helper'
 
 shared_examples 'base stage' do
-  let(:stage) { described_class.new(project: double, options: {}) }
+  ISSUES_MEDIAN = 30.minutes.to_i
+
+  let(:stage) { described_class.new(options: { project: double }) }
 
   before do
-    allow(stage).to receive(:median).and_return(1.12)
+    allow(stage).to receive(:project_median).and_return(1.12)
     allow_any_instance_of(Gitlab::CycleAnalytics::BaseEventFetcher).to receive(:event_result).and_return({})
   end
 

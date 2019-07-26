@@ -1,39 +1,40 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 describe Clusters::Applications::Ingress do
   let(:ingress) { create(:clusters_applications_ingress) }
 
+  it_behaves_like 'having unique enum values'
+
   include_examples 'cluster application core specs', :clusters_applications_ingress
-  include_examples 'cluster application status specs', :cluster_application_ingress
+  include_examples 'cluster application status specs', :clusters_applications_ingress
+  include_examples 'cluster application version specs', :clusters_applications_ingress
+  include_examples 'cluster application helm specs', :clusters_applications_ingress
+  include_examples 'cluster application initial status specs'
 
   before do
     allow(ClusterWaitForIngressIpAddressWorker).to receive(:perform_in)
     allow(ClusterWaitForIngressIpAddressWorker).to receive(:perform_async)
   end
 
-  describe '.installed' do
-    subject { described_class.installed }
+  describe '#can_uninstall?' do
+    subject { ingress.can_uninstall? }
 
-    let!(:cluster) { create(:clusters_applications_ingress, :installed) }
+    it 'returns true if application_jupyter_nil_or_installable? AND external_ip_or_hostname? are true' do
+      ingress.external_ip = 'IP'
 
-    before do
-      create(:clusters_applications_ingress, :errored)
+      is_expected.to be_truthy
     end
 
-    it { is_expected.to contain_exactly(cluster) }
-  end
+    it 'returns false if application_jupyter_nil_or_installable? is false' do
+      create(:clusters_applications_jupyter, :installed, cluster: ingress.cluster)
 
-  describe '#make_installing!' do
-    before do
-      application.make_installing!
+      is_expected.to be_falsey
     end
 
-    context 'application install previously errored with older version' do
-      let(:application) { create(:clusters_applications_ingress, :scheduled, version: '0.22.0') }
-
-      it 'updates the application version' do
-        expect(application.reload.version).to eq('0.23.0')
-      end
+    it 'returns false if external_ip_or_hostname? is false' do
+      is_expected.to be_falsey
     end
   end
 
@@ -77,6 +78,14 @@ describe Clusters::Applications::Ingress do
         expect(ClusterWaitForIngressIpAddressWorker).not_to have_received(:perform_in)
       end
     end
+
+    context 'when there is already an external_hostname' do
+      let(:application) { create(:clusters_applications_ingress, :installed, external_hostname: 'localhost.localdomain') }
+
+      it 'does not schedule a ClusterWaitForIngressIpAddressWorker' do
+        expect(ClusterWaitForIngressIpAddressWorker).not_to have_received(:perform_in)
+      end
+    end
   end
 
   describe '#install_command' do
@@ -84,18 +93,27 @@ describe Clusters::Applications::Ingress do
 
     it { is_expected.to be_an_instance_of(Gitlab::Kubernetes::Helm::InstallCommand) }
 
-    it 'should be initialized with ingress arguments' do
+    it 'is initialized with ingress arguments' do
       expect(subject.name).to eq('ingress')
       expect(subject.chart).to eq('stable/nginx-ingress')
-      expect(subject.version).to eq('0.23.0')
+      expect(subject.version).to eq('1.1.2')
+      expect(subject).to be_rbac
       expect(subject.files).to eq(ingress.files)
+    end
+
+    context 'on a non rbac enabled cluster' do
+      before do
+        ingress.cluster.platform_kubernetes.abac!
+      end
+
+      it { is_expected.not_to be_rbac }
     end
 
     context 'application failed to install previously' do
       let(:ingress) { create(:clusters_applications_ingress, :errored, version: 'nginx') }
 
-      it 'should be initialized with the locked version' do
-        expect(subject.version).to eq('0.23.0')
+      it 'is initialized with the locked version' do
+        expect(subject.version).to eq('1.1.2')
       end
     end
   end
@@ -106,34 +124,11 @@ describe Clusters::Applications::Ingress do
 
     subject { application.files }
 
-    it 'should include ingress valid keys in values' do
+    it 'includes ingress valid keys in values' do
       expect(values).to include('image')
       expect(values).to include('repository')
       expect(values).to include('stats')
       expect(values).to include('podAnnotations')
-    end
-
-    context 'when the helm application does not have a ca_cert' do
-      before do
-        application.cluster.application_helm.ca_cert = nil
-      end
-
-      it 'should not include cert files' do
-        expect(subject[:'ca.pem']).not_to be_present
-        expect(subject[:'cert.pem']).not_to be_present
-        expect(subject[:'key.pem']).not_to be_present
-      end
-    end
-
-    it 'should include cert files' do
-      expect(subject[:'ca.pem']).to be_present
-      expect(subject[:'ca.pem']).to eq(application.cluster.application_helm.ca_cert)
-
-      expect(subject[:'cert.pem']).to be_present
-      expect(subject[:'key.pem']).to be_present
-
-      cert = OpenSSL::X509::Certificate.new(subject[:'cert.pem'])
-      expect(cert.not_after).to be < 60.minutes.from_now
     end
   end
 end

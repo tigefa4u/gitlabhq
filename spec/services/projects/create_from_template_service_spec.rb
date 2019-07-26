@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Projects::CreateFromTemplateService do
@@ -47,7 +49,7 @@ describe Projects::CreateFromTemplateService do
     end
 
     it 'is not scheduled' do
-      expect(project.import_scheduled?).to be(false)
+      expect(project.import_scheduled?).to be_nil
     end
 
     it 'repository is empty' do

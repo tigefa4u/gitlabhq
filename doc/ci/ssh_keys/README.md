@@ -1,5 +1,6 @@
 ---
 last_updated: 2017-12-13
+type: tutorial
 ---
 
 # Using SSH keys with GitLab CI/CD
@@ -46,10 +47,10 @@ to access it. This is where an SSH key pair comes in handy.
 
 1. You will first need to create an SSH key pair. For more information, follow
    the instructions to [generate an SSH key](../../ssh/README.md#generating-a-new-ssh-key-pair).
-   **Do not** add a passphrase to the SSH key, or the `before_script` will\
+   **Do not** add a passphrase to the SSH key, or the `before_script` will
    prompt for it.
 
-1. Create a new [variable](../variables/README.md#variables).
+1. Create a new [variable](../variables/README.md#gitlab-cicd-environment-variables).
    As **Key** enter the name `SSH_PRIVATE_KEY` and in the **Value** field paste
    the content of your _private_ key that you created earlier.
 
@@ -92,7 +93,7 @@ to access it. This is where an SSH key pair comes in handy.
     ```
 
     NOTE: **Note:**
-    The [`before_script`](../yaml/README.md#before-script) can be set globally
+    The [`before_script`](../yaml/README.md#before_script-and-after_script) can be set globally
     or per-job.
 
 1. Make sure the private server's [SSH host keys are verified](#verifying-the-ssh-host-keys).
@@ -157,7 +158,7 @@ ssh-keyscan example.com
 ssh-keyscan 1.2.3.4
 ```
 
-Create a new [variable](../variables/README.md#variables) with
+Create a new [variable](../variables/README.md#gitlab-cicd-environment-variables) with
 `SSH_KNOWN_HOSTS` as "Key", and as a "Value" add the output of `ssh-keyscan`.
 
 NOTE: **Note:**
@@ -175,7 +176,7 @@ Now that the `SSH_KNOWN_HOSTS` variable is created, in addition to the
 [content of `.gitlab-ci.yml`](#ssh-keys-when-using-the-docker-executor)
 above, here's what more you need to add:
 
- ```yaml
+```yaml
 before_script:
   ##
   ## Assuming you created the SSH_KNOWN_HOSTS variable, uncomment the

@@ -1,6 +1,10 @@
+# frozen_string_literal: true
+
 module Peek
   module Views
-    class Gitaly < View
+    class Gitaly < DetailedView
+      private
+
       def duration
         ::Gitlab::GitalyClient.query_time
       end
@@ -9,21 +13,8 @@ module Peek
         ::Gitlab::GitalyClient.get_request_count
       end
 
-      def results
-        {
-          duration: formatted_duration,
-          calls: calls,
-          details: details
-        }
-      end
-
-      private
-
-      def details
+      def call_details
         ::Gitlab::GitalyClient.list_call_details
-          .values
-          .sort { |a, b| b[:duration] <=> a[:duration] }
-          .map(&method(:format_call_details))
       end
 
       def format_call_details(call)
@@ -31,15 +22,6 @@ module Peek
 
         call.merge(duration: (call[:duration] * 1000).round(3),
                    request: pretty_request || {})
-      end
-
-      def formatted_duration
-        ms = duration * 1000
-        if ms >= 1000
-          "%.2fms" % ms
-        else
-          "%.0fms" % ms
-        end
       end
 
       def setup_subscribers

@@ -37,11 +37,11 @@ describe 'User creates snippet', :js do
     dropzone_file Rails.root.join('spec', 'fixtures', 'banana_sample.gif')
     find('.js-md-preview-button').click
 
-    page.within('#new_personal_snippet .md-preview') do
+    page.within('#new_personal_snippet .md-preview-holder') do
       expect(page).to have_content('My Snippet')
 
       link = find('a.no-attachment-icon img[alt="banana_sample"]')['src']
-      expect(link).to match(%r{/uploads/-/system/temp/\h{32}/banana_sample\.gif\z})
+      expect(link).to match(%r{/uploads/-/system/user/#{user.id}/\h{32}/banana_sample\.gif\z})
 
       reqs = inspect_requests { visit(link) }
       expect(reqs.first.status_code).to eq(200)

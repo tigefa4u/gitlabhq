@@ -16,11 +16,6 @@ export default {
       type: String,
       required: true,
     },
-    projectPath: {
-      type: String,
-      required: false,
-      default: '',
-    },
   },
   data() {
     return {
@@ -30,7 +25,7 @@ export default {
       swipeMaxWidth: undefined,
       swipeMaxHeight: undefined,
       swipeBarPos: 1,
-      swipeWrapWidth: undefined,
+      swipeWrapWidth: 0,
     };
   },
   computed: {
@@ -51,6 +46,8 @@ export default {
     window.removeEventListener('resize', this.resizeThrottled, false);
     document.body.removeEventListener('mouseup', this.stopDrag);
     document.body.removeEventListener('mousemove', this.dragMove);
+    document.body.removeEventListener('touchend', this.stopDrag);
+    document.body.removeEventListener('touchmove', this.dragMove);
   },
   mounted() {
     window.addEventListener('resize', this.resize, false);
@@ -59,38 +56,38 @@ export default {
     dragMove(e) {
       if (!this.dragging) return;
 
-      let leftValue = e.pageX - this.$refs.swipeFrame.getBoundingClientRect().left;
-      const spaceLeft = 20;
+      const moveX = e.pageX || e.touches[0].pageX;
+      let leftValue = moveX - this.$refs.swipeFrame.getBoundingClientRect().left;
       const { clientWidth } = this.$refs.swipeFrame;
       if (leftValue <= 0) {
         leftValue = 0;
-      } else if (leftValue > clientWidth - spaceLeft) {
-        leftValue = clientWidth - spaceLeft;
+      } else if (leftValue > clientWidth) {
+        leftValue = clientWidth;
       }
 
-      this.swipeWrapWidth = this.swipeMaxWidth - leftValue;
+      this.swipeWrapWidth = (leftValue / clientWidth) * 100;
       this.swipeBarPos = leftValue;
     },
     startDrag() {
       this.dragging = true;
-      document.body.style.userSelect = 'none';
       document.body.addEventListener('mousemove', this.dragMove);
+      document.body.addEventListener('touchmove', this.dragMove);
     },
     stopDrag() {
       this.dragging = false;
-      document.body.style.userSelect = '';
       document.body.removeEventListener('mousemove', this.dragMove);
+      document.body.removeEventListener('touchmove', this.dragMove);
     },
     prepareSwipe() {
-      if (this.swipeOldImgInfo && this.swipeNewImgInfo) {
+      if (this.swipeOldImgInfo && this.swipeNewImgInfo && this.swipeOldImgInfo.renderedWidth > 0) {
         // Add 2 for border width
         this.swipeMaxWidth =
           Math.max(this.swipeOldImgInfo.renderedWidth, this.swipeNewImgInfo.renderedWidth) + 2;
-        this.swipeWrapWidth = this.swipeMaxWidth;
         this.swipeMaxHeight =
           Math.max(this.swipeOldImgInfo.renderedHeight, this.swipeNewImgInfo.renderedHeight) + 2;
 
         document.body.addEventListener('mouseup', this.stopDrag);
+        document.body.addEventListener('touchend', this.stopDrag);
       }
     },
     swipeNewImgLoaded(imgInfo) {
@@ -103,6 +100,8 @@ export default {
     },
     resize: _.throttle(function throttledResize() {
       this.swipeBarPos = 0;
+      this.swipeWrapWidth = 0;
+      this.prepareSwipe();
     }, 400),
   },
 };
@@ -113,45 +112,50 @@ export default {
     <div
       ref="swipeFrame"
       :style="{
-        'width': swipeMaxPixelWidth,
-        'height': swipeMaxPixelHeight,
+        width: swipeMaxPixelWidth,
+        height: swipeMaxPixelHeight,
+        'user-select': dragging ? 'none' : null,
       }"
-      class="swipe-frame">
-      <div class="frame deleted">
-        <image-viewer
-          key="swipeOldImg"
-          ref="swipeOldImg"
-          :render-info="false"
-          :path="oldPath"
-          :project-path="projectPath"
-          @imgLoaded="swipeOldImgLoaded"
-        />
-      </div>
+      class="swipe-frame"
+    >
+      <image-viewer
+        key="swipeOldImg"
+        ref="swipeOldImg"
+        :render-info="false"
+        :path="oldPath"
+        class="frame deleted"
+        @imgLoaded="swipeOldImgLoaded"
+      />
       <div
         ref="swipeWrap"
         :style="{
-          'width': swipeWrapPixelWidth,
-          'height': swipeMaxPixelHeight,
+          width: `${swipeWrapWidth}%`,
         }"
-        class="swipe-wrap">
-        <div class="frame added">
-          <image-viewer
-            key="swipeNewImg"
-            :render-info="false"
-            :path="newPath"
-            :project-path="projectPath"
-            @imgLoaded="swipeNewImgLoaded"
-          />
-        </div>
+        class="swipe-wrap"
+      >
+        <image-viewer
+          key="swipeNewImg"
+          :render-info="false"
+          :path="newPath"
+          :style="{
+            width: swipeMaxPixelWidth,
+          }"
+          class="frame added"
+          @imgLoaded="swipeNewImgLoaded"
+        >
+          <slot slot="image-overlay" name="image-overlay"> </slot>
+        </image-viewer>
       </div>
       <span
         ref="swipeBar"
-        :style="{ 'left': swipeBarPixelPos }"
+        :style="{ left: swipeBarPixelPos }"
         class="swipe-bar"
         @mousedown="startDrag"
-        @mouseup="stopDrag">
-        <span class="top-handle"></span>
-        <span class="bottom-handle"></span>
+        @mouseup="stopDrag"
+        @touchstart="startDrag"
+        @touchend="stopDrag"
+      >
+        <span class="top-handle"></span> <span class="bottom-handle"></span>
       </span>
     </div>
   </div>

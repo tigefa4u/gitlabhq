@@ -2,7 +2,7 @@
 
 require 'yaml'
 
-NO_CHANGELOG_LABELS = %w[backstage Documentation QA test].freeze
+NO_CHANGELOG_LABELS = %w[backstage ci-build Documentation meta QA test].freeze
 SEE_DOC = "See [the documentation](https://docs.gitlab.com/ce/development/changelog.html).".freeze
 CREATE_CHANGELOG_MESSAGE = <<~MSG.freeze
 You can create one with:
@@ -16,16 +16,12 @@ consider adding any of the %<labels>s labels.
 #{SEE_DOC}
 MSG
 
-def ee?
-  ENV['CI_PROJECT_NAME'] == 'gitlab-ee' || File.exist?('../../CHANGELOG-EE.md')
-end
-
 def ee_changelog?(changelog_path)
   changelog_path =~ /unreleased-ee/
 end
 
 def ce_port_changelog?(changelog_path)
-  ee? && !ee_changelog?(changelog_path)
+  helper.ee? && !ee_changelog?(changelog_path)
 end
 
 def check_changelog(path)
@@ -53,9 +49,11 @@ end
 changelog_needed = (gitlab.mr_labels & NO_CHANGELOG_LABELS).empty?
 changelog_found = git.added_files.find { |path| path =~ %r{\A(ee/)?(changelogs/unreleased)(-ee)?/} }
 
+mr_title = gitlab.mr_json["title"].gsub(/^WIP: */, '')
+
 if git.modified_files.include?("CHANGELOG.md")
   fail "**CHANGELOG.md was edited.** Please remove the additions and create a CHANGELOG entry.\n\n" +
-    format(CREATE_CHANGELOG_MESSAGE, mr_iid: gitlab.mr_json["iid"], mr_title: gitlab.mr_json["title"], labels: presented_no_changelog_labels)
+    format(CREATE_CHANGELOG_MESSAGE, mr_iid: gitlab.mr_json["iid"], mr_title: mr_title, labels: presented_no_changelog_labels)
 end
 
 if changelog_needed
@@ -63,6 +61,6 @@ if changelog_needed
     check_changelog(changelog_found)
   else
     warn "**[CHANGELOG missing](https://docs.gitlab.com/ce/development/changelog.html).**\n\n" +
-      format(CREATE_CHANGELOG_MESSAGE, mr_iid: gitlab.mr_json["iid"], mr_title: gitlab.mr_json["title"], labels: presented_no_changelog_labels)
+      format(CREATE_CHANGELOG_MESSAGE, mr_iid: gitlab.mr_json["iid"], mr_title: mr_title, labels: presented_no_changelog_labels)
   end
 end

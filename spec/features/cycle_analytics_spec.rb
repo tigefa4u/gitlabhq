@@ -11,7 +11,7 @@ describe 'Cycle Analytics', :js do
 
   context 'as an allowed user' do
     context 'when project is new' do
-      before  do
+      before do
         project.add_maintainer(user)
 
         sign_in(user)
@@ -58,7 +58,7 @@ describe 'Cycle Analytics', :js do
         expect_issue_to_be_present
 
         click_stage('Plan')
-        expect(find('.stage-events')).to have_content(mr.commits.last.title)
+        expect_issue_to_be_present
 
         click_stage('Code')
         expect_merge_request_to_be_present
@@ -88,25 +88,6 @@ describe 'Cycle Analytics', :js do
         it 'shows only relevant data' do
           expect(new_issues_counter).to have_content('1')
         end
-      end
-    end
-
-    context "when my preferred language is Spanish" do
-      before do
-        user.update_attribute(:preferred_language, 'es')
-
-        project.add_maintainer(user)
-        sign_in(user)
-        visit project_cycle_analytics_path(project)
-        wait_for_requests
-      end
-
-      it 'shows the content in Spanish' do
-        expect(page).to have_content('Estado del Pipeline')
-      end
-
-      it 'resets the language to English' do
-        expect(I18n.locale).to eq(:en)
       end
     end
   end

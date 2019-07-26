@@ -12,7 +12,7 @@ class SlashCommandsService < Service
   def valid_token?(token)
     self.respond_to?(:token) &&
       self.token.present? &&
-      ActiveSupport::SecurityUtils.variable_size_secure_compare(token, self.token)
+      ActiveSupport::SecurityUtils.secure_compare(token, self.token)
   end
 
   def self.supported_events
@@ -44,11 +44,15 @@ class SlashCommandsService < Service
 
   private
 
+  # rubocop: disable CodeReuse/ServiceClass
   def find_chat_user(params)
     ChatNames::FindUserService.new(self, params).execute
   end
+  # rubocop: enable CodeReuse/ServiceClass
 
+  # rubocop: disable CodeReuse/ServiceClass
   def authorize_chat_name_url(params)
     ChatNames::AuthorizeUserService.new(self, params).execute
   end
+  # rubocop: enable CodeReuse/ServiceClass
 end

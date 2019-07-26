@@ -37,6 +37,8 @@ describe 'Merge request > User resolves conflicts', :js do
       click_on 'Changes'
       wait_for_requests
 
+      find('.js-toggle-tree-list').click
+
       within find('.diff-file', text: 'files/ruby/popen.rb') do
         expect(page).to have_selector('.line_content.new', text: "vars = { 'PWD' => path }")
         expect(page).to have_selector('.line_content.new', text: "options = { chdir: path }")
@@ -44,9 +46,7 @@ describe 'Merge request > User resolves conflicts', :js do
 
       within find('.diff-file', text: 'files/ruby/regex.rb') do
         expect(page).to have_selector('.line_content.new', text: "def username_regexp")
-        expect(page).not_to have_selector('.line_content.new', text: "def username_regex")
         expect(page).to have_selector('.line_content.new', text: "def project_name_regexp")
-        expect(page).not_to have_selector('.line_content.new', text: "def project_name_regex")
         expect(page).to have_selector('.line_content.new', text: "def path_regexp")
         expect(page).to have_selector('.line_content.new', text: "def archive_formats_regexp")
         expect(page).to have_selector('.line_content.new', text: "def git_reference_regexp")
@@ -110,12 +110,8 @@ describe 'Merge request > User resolves conflicts', :js do
           click_link('conflicts', href: %r{/conflicts\Z})
         end
 
-        # TODO: https://gitlab.com/gitlab-org/gitlab-ce/issues/48034
-        # include_examples "conflicts are resolved in Interactive mode"
-        # include_examples "conflicts are resolved in Edit inline mode"
-
-        it 'prevents RSpec/EmptyExampleGroup' do
-        end
+        include_examples "conflicts are resolved in Interactive mode"
+        include_examples "conflicts are resolved in Edit inline mode"
       end
 
       context 'in Parallel view mode' do
@@ -124,12 +120,8 @@ describe 'Merge request > User resolves conflicts', :js do
           click_button 'Side-by-side'
         end
 
-        # TODO: https://gitlab.com/gitlab-org/gitlab-ce/issues/48034
-        # include_examples "conflicts are resolved in Interactive mode"
-        # include_examples "conflicts are resolved in Edit inline mode"
-
-        it 'prevents RSpec/EmptyExampleGroup' do
-        end
+        include_examples "conflicts are resolved in Interactive mode"
+        include_examples "conflicts are resolved in Edit inline mode"
       end
     end
 
@@ -170,6 +162,21 @@ describe 'Merge request > User resolves conflicts', :js do
         wait_for_requests
 
         expect(page).to have_content('Gregor Samsa woke from troubled dreams')
+      end
+    end
+
+    context "with malicious branch name" do
+      let(:bad_branch_name) { "malicious-branch-{{toString.constructor('alert(/xss/)')()}}" }
+      let(:branch) { project.repository.create_branch(bad_branch_name, 'conflict-resolvable') }
+      let(:merge_request) { create_merge_request(branch.name) }
+
+      before do
+        visit project_merge_request_path(project, merge_request)
+        click_link('conflicts', href: %r{/conflicts\Z})
+      end
+
+      it "renders bad name without xss issues" do
+        expect(find('.resolve-conflicts-form .resolve-info')).to have_content(bad_branch_name)
       end
     end
   end

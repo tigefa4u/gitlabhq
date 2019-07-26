@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   module HookData
     class IssuableBuilder < BaseBuilder
@@ -18,17 +20,13 @@ module Gitlab
           repository: issuable.project.hook_attrs.slice(:name, :url, :description, :homepage)
         }
 
-        if issuable.is_a?(Issue)
-          hook_data[:assignees] = issuable.assignees.map(&:hook_attrs) if issuable.assignees.any?
-        else
-          hook_data[:assignee] = issuable.assignee.hook_attrs if issuable.assignee
-        end
+        hook_data[:assignees] = issuable.assignees.map(&:hook_attrs) if issuable.assignees.any?
 
         hook_data
       end
 
       def safe_keys
-        issuable_builder::SAFE_HOOK_ATTRIBUTES + issuable_builder::SAFE_HOOK_RELATIONS
+        issuable_builder.safe_hook_attributes + issuable_builder::SAFE_HOOK_RELATIONS
       end
 
       private

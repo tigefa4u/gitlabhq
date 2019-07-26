@@ -10,10 +10,10 @@ migrations automatically reschedule themselves for a later point in time.
 
 ## When To Use Background Migrations
 
->**Note:**
-When adding background migrations _you must_ make sure they are announced in the
-monthly release post along with an estimate of how long it will take to complete
-the migrations.
+> **Note:**
+> When adding background migrations _you must_ make sure they are announced in the
+> monthly release post along with an estimate of how long it will take to complete
+> the migrations.
 
 In the vast majority of cases you will want to use a regular Rails migration
 instead. Background migrations should _only_ be used when migrating _data_ in
@@ -25,9 +25,9 @@ should only be used for data migrations.
 
 Some examples where background migrations can be useful:
 
-* Migrating events from one table to multiple separate tables.
-* Populating one column based on JSON stored in another column.
-* Migrating data that depends on the output of external services (e.g. an API).
+- Migrating events from one table to multiple separate tables.
+- Populating one column based on JSON stored in another column.
+- Migrating data that depends on the output of external services (e.g. an API).
 
 ## Isolation
 
@@ -127,23 +127,23 @@ big JSON blob) to column `bar` (containing a string). The process for this would
 roughly be as follows:
 
 1. Release A:
-  1. Create a migration class that perform the migration for a row with a given ID.
-  1. Deploy the code for this release, this should include some code that will
-     schedule jobs for newly created data (e.g. using an `after_create` hook).
-  1. Schedule jobs for all existing rows in a post-deployment migration. It's
-     possible some newly created rows may be scheduled twice so your migration
-     should take care of this.
+   1. Create a migration class that perform the migration for a row with a given ID.
+   1. Deploy the code for this release, this should include some code that will
+      schedule jobs for newly created data (e.g. using an `after_create` hook).
+   1. Schedule jobs for all existing rows in a post-deployment migration. It's
+      possible some newly created rows may be scheduled twice so your migration
+      should take care of this.
 1. Release B:
-  1. Deploy code so that the application starts using the new column and stops
-     scheduling jobs for newly created data.
-  1. In a post-deployment migration you'll need to ensure no jobs remain.
-     1. Use `Gitlab::BackgroundMigration.steal` to process any remaining
-        jobs in Sidekiq.
-     1. Reschedule the migration to be run directly (i.e. not through Sidekiq)
-        on any rows that weren't migrated by Sidekiq. This can happen if, for
-        instance, Sidekiq received a SIGKILL, or if a particular batch failed
-        enough times to be marked as dead.
-  1. Remove the old column.
+   1. Deploy code so that the application starts using the new column and stops
+      scheduling jobs for newly created data.
+   1. In a post-deployment migration you'll need to ensure no jobs remain.
+      1. Use `Gitlab::BackgroundMigration.steal` to process any remaining
+         jobs in Sidekiq.
+      1. Reschedule the migration to be run directly (i.e. not through Sidekiq)
+         on any rows that weren't migrated by Sidekiq. This can happen if, for
+         instance, Sidekiq received a SIGKILL, or if a particular batch failed
+         enough times to be marked as dead.
+   1. Remove the old column.
 
 This may also require a bump to the [import/export version][import-export], if
 importing a project from a prior version of GitLab requires the data to be in
@@ -211,7 +211,7 @@ existing data. Since we're dealing with a lot of rows we'll schedule jobs in
 batches instead of doing this one by one:
 
 ```ruby
-class ScheduleExtractServicesUrl < ActiveRecord::Migration
+class ScheduleExtractServicesUrl < ActiveRecord::Migration[4.2]
   disable_ddl_transaction!
 
   class Service < ActiveRecord::Base
@@ -242,7 +242,7 @@ jobs and manually run on any un-migrated rows. Such a migration would look like
 this:
 
 ```ruby
-class ConsumeRemainingExtractServicesUrlJobs < ActiveRecord::Migration
+class ConsumeRemainingExtractServicesUrlJobs < ActiveRecord::Migration[4.2]
   disable_ddl_transaction!
 
   class Service < ActiveRecord::Base

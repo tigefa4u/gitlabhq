@@ -2,10 +2,11 @@ require 'spec_helper'
 
 describe 'Dashboard Merge Requests' do
   include Spec::Support::Helpers::Features::SortingHelpers
-  include FilterItemSelectHelper
+  include FilteredSearchHelpers
   include ProjectForksHelper
 
   let(:current_user) { create :user }
+  let(:user) { current_user }
   let(:project) { create(:project) }
 
   let(:public_project) { create(:project, :public, :repository) }
@@ -36,23 +37,25 @@ describe 'Dashboard Merge Requests' do
 
   context 'no merge requests exist' do
     it 'shows an empty state' do
-      visit merge_requests_dashboard_path(assignee_id: current_user.id)
+      visit merge_requests_dashboard_path(assignee_username: current_user.username)
 
       expect(page).to have_selector('.empty-state')
     end
   end
 
   context 'merge requests exist' do
+    let(:label) { create(:label) }
+
     let!(:assigned_merge_request) do
       create(:merge_request,
-        assignee: current_user,
+        assignees: [current_user],
         source_project: project,
         author: create(:user))
     end
 
     let!(:assigned_merge_request_from_fork) do
       create(:merge_request,
-              source_branch: 'markdown', assignee: current_user,
+              source_branch: 'markdown', assignees: [current_user],
               target_project: public_project, source_project: forked_project,
               author: create(:user))
     end
@@ -71,6 +74,14 @@ describe 'Dashboard Merge Requests' do
               target_project: public_project, source_project: forked_project)
     end
 
+    let!(:labeled_merge_request) do
+      create(:labeled_merge_request,
+              source_branch: 'labeled',
+              labels: [label],
+              author: current_user,
+              source_project: project)
+    end
+
     let!(:other_merge_request) do
       create(:merge_request,
               source_branch: 'fix',
@@ -79,7 +90,7 @@ describe 'Dashboard Merge Requests' do
     end
 
     before do
-      visit merge_requests_dashboard_path(assignee_id: current_user.id)
+      visit merge_requests_dashboard_path(assignee_username: current_user.username)
     end
 
     it 'shows assigned merge requests' do
@@ -89,23 +100,37 @@ describe 'Dashboard Merge Requests' do
       expect(page).not_to have_content(authored_merge_request.title)
       expect(page).not_to have_content(authored_merge_request_from_fork.title)
       expect(page).not_to have_content(other_merge_request.title)
+      expect(page).not_to have_content(labeled_merge_request.title)
     end
 
     it 'shows authored merge requests', :js do
-      filter_item_select('Any Assignee', '.js-assignee-search')
-      filter_item_select(current_user.to_reference, '.js-author-search')
+      reset_filters
+      input_filtered_search("author:#{current_user.to_reference}")
 
       expect(page).to have_content(authored_merge_request.title)
       expect(page).to have_content(authored_merge_request_from_fork.title)
+      expect(page).to have_content(labeled_merge_request.title)
 
       expect(page).not_to have_content(assigned_merge_request.title)
       expect(page).not_to have_content(assigned_merge_request_from_fork.title)
       expect(page).not_to have_content(other_merge_request.title)
     end
 
+    it 'shows labeled merge requests', :js do
+      reset_filters
+      input_filtered_search("label:#{label.name}")
+
+      expect(page).to have_content(labeled_merge_request.title)
+
+      expect(page).not_to have_content(authored_merge_request.title)
+      expect(page).not_to have_content(authored_merge_request_from_fork.title)
+      expect(page).not_to have_content(assigned_merge_request.title)
+      expect(page).not_to have_content(assigned_merge_request_from_fork.title)
+      expect(page).not_to have_content(other_merge_request.title)
+    end
+
     it 'shows error message without filter', :js do
-      filter_item_select('Any Assignee', '.js-assignee-search')
-      filter_item_select('Any Author', '.js-author-search')
+      reset_filters
 
       expect(page).to have_content('Please select at least one filter to see results')
     end
@@ -113,7 +138,7 @@ describe 'Dashboard Merge Requests' do
     it 'shows sorted merge requests' do
       sort_by('Created date')
 
-      visit merge_requests_dashboard_path(assignee_id: current_user.id)
+      visit merge_requests_dashboard_path(assignee_username: current_user.username)
 
       expect(find('.issues-filters')).to have_content('Created date')
     end

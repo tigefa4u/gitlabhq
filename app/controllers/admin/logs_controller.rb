@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Admin::LogsController < Admin::ApplicationController
   before_action :loggers
 
@@ -12,7 +14,9 @@ class Admin::LogsController < Admin::ApplicationController
       Gitlab::GitLogger,
       Gitlab::EnvironmentLogger,
       Gitlab::SidekiqLogger,
-      Gitlab::RepositoryCheckLogger
+      Gitlab::RepositoryCheckLogger,
+      Gitlab::ProjectServiceLogger,
+      Gitlab::Kubernetes::Logger
     ]
   end
 end

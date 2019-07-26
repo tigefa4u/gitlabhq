@@ -1,6 +1,10 @@
 import $ from 'jquery';
 import axios from '~/lib/utils/axios_utils';
 import flash from '../flash';
+import { parseBoolean } from '~/lib/utils/common_utils';
+import TimezoneDropdown, {
+  formatTimezone,
+} from '~/pages/projects/pipeline_schedules/shared/components/timezone_dropdown';
 
 export default class Profile {
   constructor({ form } = {}) {
@@ -9,6 +13,14 @@ export default class Profile {
     this.setRepoRadio();
     this.bindEvents();
     this.initAvatarGlCrop();
+
+    this.$inputEl = $('#user_timezone');
+
+    this.timezoneDropdown = new TimezoneDropdown({
+      $inputEl: this.$inputEl,
+      $dropdownEl: $('.js-timezone-dropdown'),
+      displayFormat: selectedItem => formatTimezone(selectedItem),
+    });
   }
 
   initAvatarGlCrop() {
@@ -26,11 +38,8 @@ export default class Profile {
   }
 
   bindEvents() {
-    $('.js-preferences-form').on(
-      'change.preference',
-      'input[type=radio]',
-      this.submitForm,
-    );
+    $('.js-preferences-form').on('change.preference', 'input[type=radio]', this.submitForm);
+    $('.js-group-notification-email').on('change', this.submitForm);
     $('#user_notification_email').on('change', this.submitForm);
     $('#user_notified_of_own_activity').on('change', this.submitForm);
     this.form.on('submit', this.onSubmitForm);
@@ -84,7 +93,7 @@ export default class Profile {
 
   setRepoRadio() {
     const multiEditRadios = $('input[name="user[multi_file]"]');
-    if (this.newRepoActivated || this.newRepoActivated === 'true') {
+    if (parseBoolean(this.newRepoActivated)) {
       multiEditRadios.filter('[value=on]').prop('checked', true);
     } else {
       multiEditRadios.filter('[value=off]').prop('checked', true);

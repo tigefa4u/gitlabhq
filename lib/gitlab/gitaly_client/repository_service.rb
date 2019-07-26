@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 module Gitlab
   module GitalyClient
     class RepositoryService
       include Gitlab::EncodingHelper
 
-      MAX_MSG_SIZE = 128.kilobytes.freeze
+      MAX_MSG_SIZE = 128.kilobytes
 
       def initialize(repository)
         @repository = repository
@@ -45,6 +47,13 @@ module Gitlab
         response.size
       end
 
+      def get_object_directory_size
+        request = Gitaly::GetObjectDirectorySizeRequest.new(repository: @gitaly_repo)
+        response = GitalyClient.call(@storage, :repository_service, :get_object_directory_size, request, timeout: GitalyClient.medium_timeout)
+
+        response.size
+      end
+
       def apply_gitattributes(revision)
         request = Gitaly::ApplyGitattributesRequest.new(repository: @gitaly_repo, revision: encode_binary(revision))
         GitalyClient.call(@storage, :repository_service, :apply_gitattributes, request, timeout: GitalyClient.fast_timeout)
@@ -56,9 +65,9 @@ module Gitlab
         request = Gitaly::GetInfoAttributesRequest.new(repository: @gitaly_repo)
 
         response = GitalyClient.call(@storage, :repository_service, :get_info_attributes, request, timeout: GitalyClient.fast_timeout)
-        response.each_with_object("") do |message, attributes|
+        response.each_with_object([]) do |message, attributes|
           attributes << message.attributes
-        end
+        end.join
       end
 
       def fetch_remote(remote, ssh_auth:, forced:, no_tags:, timeout:, prune: true)
@@ -67,7 +76,7 @@ module Gitlab
           no_tags: no_tags, timeout: timeout, no_prune: !prune
         )
 
-        if ssh_auth&.ssh_import?
+        if ssh_auth&.ssh_mirror_url?
           if ssh_auth.ssh_key_auth? && ssh_auth.ssh_private_key.present?
             request.ssh_key = ssh_auth.ssh_private_key
           end
@@ -188,7 +197,7 @@ module Gitlab
 
       def fsck
         request = Gitaly::FsckRequest.new(repository: @gitaly_repo)
-        response = GitalyClient.call(@storage, :repository_service, :fsck, request)
+        response = GitalyClient.call(@storage, :repository_service, :fsck, request, timeout: GitalyClient.no_timeout)
 
         if response.error.empty?
           return "", 0
@@ -249,20 +258,15 @@ module Gitlab
         )
       end
 
-      def write_ref(ref_path, ref, old_ref, shell)
+      def write_ref(ref_path, ref, old_ref)
         request = Gitaly::WriteRefRequest.new(
           repository: @gitaly_repo,
           ref: ref_path.b,
-          revision: ref.b,
-          shell: shell
+          revision: ref.b
         )
         request.old_revision = old_ref.b unless old_ref.nil?
 
-        response = GitalyClient.call(@storage, :repository_service, :write_ref, request, timeout: GitalyClient.fast_timeout)
-
-        raise Gitlab::Git::CommandError, encode!(response.error) if response.error.present?
-
-        true
+        GitalyClient.call(@storage, :repository_service, :write_ref, request, timeout: GitalyClient.fast_timeout)
       end
 
       def set_config(entries)
@@ -329,10 +333,38 @@ module Gitlab
 
       def search_files_by_content(ref, query)
         request = Gitaly::SearchFilesByContentRequest.new(repository: @gitaly_repo, ref: ref, query: query)
-        GitalyClient.call(@storage, :repository_service, :search_files_by_content, request).flat_map(&:matches)
+        response = GitalyClient.call(@storage, :repository_service, :search_files_by_content, request)
+
+        search_results_from_response(response)
+      end
+
+      def disconnect_alternates
+        request = Gitaly::DisconnectGitAlternatesRequest.new(
+          repository: @gitaly_repo
+        )
+
+        GitalyClient.call(@storage, :object_pool_service, :disconnect_git_alternates, request)
       end
 
       private
+
+      def search_results_from_response(gitaly_response)
+        matches = []
+        current_match = +""
+
+        gitaly_response.each do |message|
+          next if message.nil?
+
+          current_match << message.match_data
+
+          if message.end_of_match
+            matches << current_match
+            current_match = +""
+          end
+        end
+
+        matches
+      end
 
       def gitaly_fetch_stream_to_file(save_path, rpc_name, request_class, timeout)
         request = request_class.new(repository: @gitaly_repo)
@@ -349,7 +381,7 @@ module Gitlab
             f.write(message.data)
           end
         end
-        # If the file is empty means that we recieved an empty stream, we delete the file
+        # If the file is empty means that we received an empty stream, we delete the file
         FileUtils.rm(save_path) if File.zero?(save_path)
       end
 

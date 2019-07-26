@@ -3,7 +3,7 @@ require 'spec_helper'
 describe API::Namespaces do
   let(:admin) { create(:admin) }
   let(:user) { create(:user) }
-  let!(:group1) { create(:group) }
+  let!(:group1) { create(:group, name: 'group.one') }
   let!(:group2) { create(:group, :nested) }
 
   describe "GET /namespaces" do
@@ -149,7 +149,7 @@ describe API::Namespaces do
 
       context "when namespace doesn't exist" do
         it 'returns not-found' do
-          get api('/namespaces/9999', request_actor)
+          get api('/namespaces/0', request_actor)
 
           expect(response).to have_gitlab_http_status(404)
         end

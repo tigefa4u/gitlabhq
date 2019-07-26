@@ -6,9 +6,9 @@ necessary to add database (version) specific behaviour.
 
 To facilitate this we have the following methods that you can use:
 
-* `Gitlab::Database.postgresql?`: returns `true` if PostgreSQL is being used
-* `Gitlab::Database.mysql?`: returns `true` if MySQL is being used
-* `Gitlab::Database.version`: returns the PostgreSQL version number as a string
+- `Gitlab::Database.postgresql?`: returns `true` if PostgreSQL is being used
+- `Gitlab::Database.mysql?`: returns `true` if MySQL is being used
+- `Gitlab::Database.version`: returns the PostgreSQL version number as a string
   in the format `X.Y.Z`. This method does not work for MySQL
 
 This allows you to write code such as:
@@ -25,7 +25,7 @@ else
 end
 ```
 
-# Read-only database
+## Read-only database
 
 The database can be used in read-only mode. In this case we have to
 make sure all GET requests don't attempt any write operations to the

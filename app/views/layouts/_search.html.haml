@@ -1,12 +1,8 @@
-- if controller.controller_path =~ /^groups/ && @group.persisted?
-  - label = _('This group')
-- if controller.controller_path =~ /^projects/ && @project.persisted?
-  - label = _('This project')
 - if @group && @group.persisted? && @group.path
-  - group_data_attrs = { group_path: j(@group.path), name: @group.name, issues_path: issues_group_path(j(@group.path)), mr_path: merge_requests_group_path(j(@group.path)) }
+  - group_data_attrs = { group_path: j(@group.path), name: j(@group.name), issues_path: issues_group_path(@group), mr_path: merge_requests_group_path(@group) }
 - if @project && @project.persisted?
   - project_data_attrs = { project_path: j(@project.path), name: j(@project.name), issues_path: project_issues_path(@project), mr_path: project_merge_requests_path(@project), issues_disabled: !@project.issues_enabled? }
-.search.search-form
+.search.search-form{ data: { track_label: "navbar_search", track_event: "activate_form_input", track_value: "" } }
   = form_tag search_path, method: :get, class: 'form-inline' do |f|
     .search-input-container
       .search-input-wrap
@@ -20,7 +16,7 @@
                                               mr_path: merge_requests_dashboard_path },
                                             aria: { label: _('Search or jump to…') }
           %button.hidden.js-dropdown-search-toggle{ type: 'button', data: { toggle: 'dropdown' } }
-          .dropdown-menu.dropdown-select
+          .dropdown-menu.dropdown-select.js-dashboard-search-options
             = dropdown_content do
               %ul
                 %li.dropdown-menu-empty-item

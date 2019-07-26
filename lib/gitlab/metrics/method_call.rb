@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   module Metrics
     # Class for tracking timing information about method calls
@@ -63,7 +65,7 @@ module Gitlab
       # Returns true if the total runtime of this method exceeds the method call
       # threshold.
       def above_threshold?
-        real_time.in_milliseconds >= Metrics.method_call_threshold
+        real_time.in_milliseconds >= ::Gitlab::Metrics.method_call_threshold
       end
     end
   end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Admin::HooksController < Admin::ApplicationController
   include HooksExecution
 
@@ -12,7 +14,7 @@ class Admin::HooksController < Admin::ApplicationController
     @hook = SystemHook.new(hook_params.to_h)
 
     if @hook.save
-      redirect_to admin_hooks_path, notice: 'Hook was successfully created.'
+      redirect_to admin_hooks_path, notice: _('Hook was successfully created.')
     else
       @hooks = SystemHook.all
       render :index
@@ -24,7 +26,7 @@ class Admin::HooksController < Admin::ApplicationController
 
   def update
     if hook.update(hook_params)
-      flash[:notice] = 'System hook was successfully updated.'
+      flash[:notice] = _('System hook was successfully updated.')
       redirect_to admin_hooks_path
     else
       render 'edit'

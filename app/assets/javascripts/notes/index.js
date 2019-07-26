@@ -1,11 +1,14 @@
 import Vue from 'vue';
+import initNoteStats from 'ee_else_ce/event_tracking/notes';
 import notesApp from './components/notes_app.vue';
+import initDiscussionFilters from './discussion_filters';
 import createStore from './stores';
 
 document.addEventListener('DOMContentLoaded', () => {
   const store = createStore();
 
-  return new Vue({
+  // eslint-disable-next-line no-new
+  new Vue({
     el: '#js-vue-notes',
     components: {
       notesApp,
@@ -15,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const notesDataset = document.getElementById('js-vue-notes').dataset;
       const parsedUserData = JSON.parse(notesDataset.currentUserData);
       const noteableData = JSON.parse(notesDataset.noteableData);
-      const markdownVersion = parseInt(notesDataset.markdownVersion, 10);
       let currentUserData = {};
 
       noteableData.noteableType = notesDataset.noteableType;
@@ -34,9 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
       return {
         noteableData,
         currentUserData,
-        markdownVersion,
         notesData: JSON.parse(notesDataset.notesData),
       };
+    },
+    mounted() {
+      initNoteStats();
     },
     render(createElement) {
       return createElement('notes-app', {
@@ -44,9 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
           noteableData: this.noteableData,
           notesData: this.notesData,
           userData: this.currentUserData,
-          markdownVersion: this.markdownVersion,
         },
       });
     },
   });
+
+  initDiscussionFilters(store);
 });

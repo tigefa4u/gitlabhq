@@ -1,10 +1,6 @@
 <script>
 import Icon from '~/vue_shared/components/icon.vue';
-import {
-  STATUS_FAILED,
-  STATUS_NEUTRAL,
-  STATUS_SUCCESS,
-} from '../constants';
+import { STATUS_FAILED, STATUS_NEUTRAL, STATUS_SUCCESS } from '../constants';
 
 export default {
   name: 'IssueStatusIcon',
@@ -16,6 +12,11 @@ export default {
     status: {
       type: String,
       required: true,
+    },
+    statusIconSize: {
+      type: Number,
+      required: false,
+      default: 24,
     },
   },
   computed: {
@@ -49,9 +50,6 @@ export default {
     }"
     class="report-block-list-icon"
   >
-    <icon
-      :name="iconName"
-      :size="32"
-    />
+    <icon :name="iconName" :size="statusIconSize" />
   </div>
 </template>

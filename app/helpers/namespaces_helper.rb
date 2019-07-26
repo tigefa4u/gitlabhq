@@ -1,12 +1,12 @@
+# frozen_string_literal: true
+
 module NamespacesHelper
   def namespace_id_from(params)
     params.dig(:project, :namespace_id) || params[:namespace_id]
   end
 
   def namespaces_options(selected = :current_user, display_path: false, groups: nil, extra_group: nil, groups_only: false)
-    groups ||= current_user.manageable_groups
-                 .eager_load(:route)
-                 .order('routes.path')
+    groups ||= current_user.manageable_groups_with_routes
     users = [current_user.namespace]
     selected_id = selected
 
@@ -49,18 +49,27 @@ module NamespacesHelper
     end
   end
 
+  def namespaces_options_with_developer_maintainer_access(options = {})
+    selected = options.delete(:selected) || :current_user
+    options[:groups] = current_user.manageable_groups_with_routes(include_groups_with_developer_maintainer_access: true)
+
+    namespaces_options(selected, options)
+  end
+
   private
 
   # Many importers create a temporary Group, so use the real
   # group if one exists by that name to prevent duplicates.
+  # rubocop: disable CodeReuse/ActiveRecord
   def dedup_extra_group(extra_group)
     unless extra_group.persisted?
-      existing_group = Group.find_by(name: extra_group.name)
+      existing_group = Group.find_by(path: extra_group.path)
       extra_group = existing_group if existing_group&.persisted?
     end
 
     extra_group
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   def options_for_group(namespaces, display_path:, type:)
     group_label = type.pluralize

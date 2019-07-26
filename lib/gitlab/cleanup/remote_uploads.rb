@@ -7,7 +7,7 @@ module Gitlab
       BATCH_SIZE = 100
 
       def initialize(logger: nil)
-        @logger = logger || Rails.logger
+        @logger = logger || Rails.logger # rubocop:disable Gitlab/RailsLogger
       end
 
       def run!(dry_run: false)
@@ -33,6 +33,7 @@ module Gitlab
 
       private
 
+      # rubocop: disable CodeReuse/ActiveRecord
       def each_orphan_file
         # we want to skip files already moved to lost_and_found directory
         lost_dir_match = "^#{lost_and_found_dir}\/"
@@ -50,6 +51,7 @@ module Gitlab
           end
         end
       end
+      # rubocop: enable CodeReuse/ActiveRecord
 
       def move_to_lost_and_found(file)
         new_path = "#{lost_and_found_dir}/#{file.key}"
@@ -65,7 +67,7 @@ module Gitlab
       end
 
       def remote_directory
-        connection.directories.get(configuration['remote_directory'])
+        connection.directories.new(key: configuration['remote_directory'])
       end
 
       def connection

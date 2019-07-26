@@ -22,34 +22,45 @@ if rspec_profiling_is_configured && (!ENV.key?('CI') || branch_can_be_profiled)
   require 'rspec_profiling/rspec'
 end
 
-if ENV['CI'] && !ENV['NO_KNAPSACK']
+if ENV['CI'] && ENV['KNAPSACK_GENERATE_REPORT'] && !ENV['NO_KNAPSACK']
   require 'knapsack'
   Knapsack::Adapters::RSpecAdapter.bind
 end
 
 # require rainbow gem String monkeypatch, so we can test SystemChecks
 require 'rainbow/ext/string'
+Rainbow.enabled = false
 
 # Requires supporting ruby files with custom matchers and macros, etc,
 # in spec/support/ and its subdirectories.
 # Requires helpers, and shared contexts/examples first since they're used in other support files
+
+# Load these first since they may be required by other helpers
+require Rails.root.join("spec/support/helpers/git_helpers.rb")
+
+# Then the rest
 Dir[Rails.root.join("spec/support/helpers/*.rb")].each { |f| require f }
 Dir[Rails.root.join("spec/support/shared_contexts/*.rb")].each { |f| require f }
 Dir[Rails.root.join("spec/support/shared_examples/*.rb")].each { |f| require f }
 Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }
 
+quality_level = Quality::TestLevel.new
+
 RSpec.configure do |config|
-  config.use_transactional_fixtures = false
+  config.use_transactional_fixtures = true
   config.use_instantiated_fixtures  = false
+  config.fixture_path = Rails.root
 
   config.verbose_retry = true
   config.display_try_failure_messages = true
 
   config.infer_spec_type_from_file_location!
+  config.full_backtrace = !!ENV['CI']
 
-  config.define_derived_metadata(file_path: %r{/spec/}) do |metadata|
+  config.define_derived_metadata(file_path: %r{(ee)?/spec/.+_spec\.rb\z}) do |metadata|
     location = metadata[:location]
 
+    metadata[:level] = quality_level.level_for(location)
     metadata[:api] = true if location =~ %r{/spec/requests/api/}
 
     # do not overwrite type if it's already set
@@ -59,6 +70,7 @@ RSpec.configure do |config|
     metadata[:type] = match[1].singularize.to_sym if match
   end
 
+  config.include LicenseHelpers
   config.include ActiveJob::TestHelper
   config.include ActiveSupport::Testing::TimeHelpers
   config.include CycleAnalyticsHelpers
@@ -75,6 +87,7 @@ RSpec.configure do |config|
   config.include Devise::Test::IntegrationHelpers, type: :feature
   config.include LoginHelpers, type: :feature
   config.include SearchHelpers, type: :feature
+  config.include WaitHelpers, type: :feature
   config.include EmailHelpers, :mailer, type: :mailer
   config.include Warden::Test::Helpers, type: :request
   config.include Gitlab::Routing, type: :routing
@@ -89,6 +102,9 @@ RSpec.configure do |config|
   config.include MigrationsHelpers, :migration
   config.include RedisHelpers
   config.include Rails.application.routes.url_helpers, type: :routing
+  config.include PolicyHelpers, type: :policy
+  config.include MemoryUsageHelper
+  config.include ExpectRequestWithStatus, type: :request
 
   if ENV['CI']
     # This includes the first try, i.e. tests will be run 4 times before failing.
@@ -108,9 +124,32 @@ RSpec.configure do |config|
     TestEnv.clean_test_path
   end
 
-  config.before(:example) do
+  config.before do |example|
     # Enable all features by default for testing
     allow(Feature).to receive(:enabled?) { true }
+
+    enabled = example.metadata[:enable_rugged].present?
+
+    # Disable Rugged features by default
+    Gitlab::Git::RuggedImpl::Repository::FEATURE_FLAGS.each do |flag|
+      allow(Feature).to receive(:enabled?).with(flag).and_return(enabled)
+    end
+
+    allow(Gitlab::GitalyClient).to receive(:can_use_disk?).and_return(enabled)
+
+    # The following can be removed when we remove the staged rollout strategy
+    # and we can just enable it using instance wide settings
+    # (ie. ApplicationSetting#auto_devops_enabled)
+    allow(Feature).to receive(:enabled?)
+      .with(:force_autodevops_on_by_default, anything)
+      .and_return(false)
+
+    Gitlab::ThreadMemoryCache.cache_backend.clear
+  end
+
+  config.around(:example, :quarantine) do
+    # Skip tests in quarantine unless we explicitly focus on them.
+    skip('In quarantine') unless config.inclusion_filter[:quarantine]
   end
 
   config.before(:example, :request_store) do
@@ -122,8 +161,12 @@ RSpec.configure do |config|
     RequestStore.clear!
   end
 
-  config.after(:example) do
+  config.after do
     Fog.unmock! if Fog.mock?
+  end
+
+  config.after do
+    Gitlab::CurrentSettings.clear_in_memory_application_settings!
   end
 
   config.before(:example, :mailer) do
@@ -181,6 +224,12 @@ RSpec.configure do |config|
     ActionController::Base.cache_store = caching_store
   end
 
+  config.around(:each, :use_sql_query_cache) do |example|
+    ActiveRecord::Base.cache do
+      example.run
+    end
+  end
+
   # The :each scope runs "inside" the example, so this hook ensures the DB is in the
   # correct state before any examples' before hooks are called. This prevents a
   # problem where `ScheduleIssuesClosedAtTypeChange` (or any migration that depends
@@ -198,23 +247,15 @@ RSpec.configure do |config|
 
   # Each example may call `migrate!`, so we must ensure we are migrated down every time
   config.before(:each, :migration) do
+    use_fake_application_settings
+
     schema_migrate_down!
   end
 
   config.after(:context, :migration) do
     schema_migrate_up!
-  end
 
-  config.around(:each, :nested_groups) do |example|
-    example.run if Group.supports_nested_groups?
-  end
-
-  config.around(:each, :postgresql) do |example|
-    example.run if Gitlab::Database.postgresql?
-  end
-
-  config.around(:each, :mysql) do |example|
-    example.run if Gitlab::Database.mysql?
+    Gitlab::CurrentSettings.clear_in_memory_application_settings!
   end
 
   # This makes sure the `ApplicationController#can?` method is stubbed with the
@@ -239,6 +280,16 @@ RSpec.configure do |config|
 
   config.before(:each, :https_pages_disabled) do |_|
     allow(Gitlab.config.pages).to receive(:external_https).and_return(false)
+  end
+
+  # We can't use an `around` hook here because the wrapping transaction
+  # is not yet opened at the time that is triggered
+  config.prepend_before do
+    Gitlab::Database.set_open_transactions_baseline
+  end
+
+  config.append_after do
+    Gitlab::Database.reset_open_transactions_baseline
   end
 end
 

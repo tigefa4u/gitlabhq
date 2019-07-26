@@ -1,15 +1,15 @@
 <script>
 import { mapActions, mapState } from 'vuex';
 import _ from 'underscore';
-import LoadingIcon from '~/vue_shared/components/loading_icon.vue';
 import Icon from '~/vue_shared/components/icon.vue';
+import { GlLoadingIcon } from '@gitlab/ui';
 import Item from './item.vue';
 
 export default {
   components: {
-    LoadingIcon,
     Item,
     Icon,
+    GlLoadingIcon,
   },
   data() {
     return {
@@ -62,45 +62,28 @@ export default {
       <div class="position-relative">
         <input
           ref="searchInput"
-          :placeholder="__('Search branches')"
           v-model="search"
+          :placeholder="__('Search branches')"
           type="search"
           class="form-control dropdown-input-field"
           @input="searchBranches"
         />
-        <icon
-          :size="18"
-          name="search"
-          class="input-icon"
-        />
+        <icon :size="18" name="search" class="input-icon" />
       </div>
     </div>
     <div class="dropdown-content ide-merge-requests-dropdown-content d-flex">
-      <loading-icon
+      <gl-loading-icon
         v-if="isLoading"
+        :size="2"
         class="mt-3 mb-3 align-self-center ml-auto mr-auto"
-        size="2"
       />
-      <ul
-        v-else
-        class="mb-3 w-100"
-      >
+      <ul v-else class="mb-3 w-100">
         <template v-if="hasBranches">
-          <li
-            v-for="item in branches"
-            :key="item.name"
-          >
-            <item
-              :item="item"
-              :project-id="currentProjectId"
-              :is-active="isActiveBranch(item)"
-            />
+          <li v-for="item in branches" :key="item.name">
+            <item :item="item" :project-id="currentProjectId" :is-active="isActiveBranch(item)" />
           </li>
         </template>
-        <li
-          v-else
-          class="ide-search-list-empty d-flex align-items-center justify-content-center"
-        >
+        <li v-else class="ide-search-list-empty d-flex align-items-center justify-content-center">
           <template v-if="hasNoSearchResults">
             {{ __('No branches found') }}
           </template>

@@ -42,6 +42,10 @@ describe Gitlab::ImportExport::ProjectTreeSaver do
         expect(saved_project_json).to include({ 'description' => 'description', 'visibility_level' => 20 })
       end
 
+      it 'has approvals_before_merge set' do
+        expect(saved_project_json['approvals_before_merge']).to eq(1)
+      end
+
       it 'has milestones' do
         expect(saved_project_json['milestones']).not_to be_empty
       end
@@ -78,12 +82,23 @@ describe Gitlab::ImportExport::ProjectTreeSaver do
         expect(saved_project_json['releases']).not_to be_empty
       end
 
+      it 'has no author on releases' do
+        expect(saved_project_json['releases'].first['author']).to be_nil
+      end
+
+      it 'has the author ID on releases' do
+        expect(saved_project_json['releases'].first['author_id']).not_to be_nil
+      end
+
       it 'has issues' do
         expect(saved_project_json['issues']).not_to be_empty
       end
 
       it 'has issue comments' do
-        expect(saved_project_json['issues'].first['notes']).not_to be_empty
+        notes = saved_project_json['issues'].first['notes']
+
+        expect(notes).not_to be_empty
+        expect(notes.first['type']).to eq('DiscussionNote')
       end
 
       it 'has issue assignees' do
@@ -119,16 +134,16 @@ describe Gitlab::ImportExport::ProjectTreeSaver do
       end
 
       it 'has pipeline stages' do
-        expect(saved_project_json.dig('pipelines', 0, 'stages')).not_to be_empty
+        expect(saved_project_json.dig('ci_pipelines', 0, 'stages')).not_to be_empty
       end
 
       it 'has pipeline statuses' do
-        expect(saved_project_json.dig('pipelines', 0, 'stages', 0, 'statuses')).not_to be_empty
+        expect(saved_project_json.dig('ci_pipelines', 0, 'stages', 0, 'statuses')).not_to be_empty
       end
 
       it 'has pipeline builds' do
         builds_count = saved_project_json
-          .dig('pipelines', 0, 'stages', 0, 'statuses')
+          .dig('ci_pipelines', 0, 'stages', 0, 'statuses')
           .count { |hash| hash['type'] == 'Ci::Build' }
 
         expect(builds_count).to eq(1)
@@ -142,11 +157,11 @@ describe Gitlab::ImportExport::ProjectTreeSaver do
       end
 
       it 'has pipeline commits' do
-        expect(saved_project_json['pipelines']).not_to be_empty
+        expect(saved_project_json['ci_pipelines']).not_to be_empty
       end
 
       it 'has ci pipeline notes' do
-        expect(saved_project_json['pipelines'].first['notes']).not_to be_empty
+        expect(saved_project_json['ci_pipelines'].first['notes']).not_to be_empty
       end
 
       it 'has labels with no associations' do
@@ -164,9 +179,17 @@ describe Gitlab::ImportExport::ProjectTreeSaver do
       end
 
       it 'has priorities associated to labels' do
-        priorities = saved_project_json['issues'].first['label_links'].map { |link| link['label']['priorities'] }
+        priorities = saved_project_json['issues'].first['label_links'].flat_map { |link| link['label']['priorities'] }
 
-        expect(priorities.flatten).not_to be_empty
+        expect(priorities).not_to be_empty
+      end
+
+      it 'has issue resource label events' do
+        expect(saved_project_json['issues'].first['resource_label_events']).not_to be_empty
+      end
+
+      it 'has merge request resource label events' do
+        expect(saved_project_json['merge_requests'].first['resource_label_events']).not_to be_empty
       end
 
       it 'saves the correct service type' do
@@ -268,7 +291,8 @@ describe Gitlab::ImportExport::ProjectTreeSaver do
                      issues: [issue],
                      snippets: [snippet],
                      releases: [release],
-                     group: group
+                     group: group,
+                     approvals_before_merge: 1
                     )
     project_label = create(:label, project: project)
     group_label = create(:group_label, group: group)
@@ -283,13 +307,16 @@ describe Gitlab::ImportExport::ProjectTreeSaver do
     create(:commit_status, project: project, pipeline: ci_build.pipeline)
 
     create(:milestone, project: project)
-    create(:note, noteable: issue, project: project)
+    create(:discussion_note, noteable: issue, project: project)
     create(:note, noteable: merge_request, project: project)
     create(:note, noteable: snippet, project: project)
     create(:note_on_commit,
            author: user,
            project: project,
            commit_id: ci_build.pipeline.sha)
+
+    create(:resource_label_event, label: project_label, issue: issue)
+    create(:resource_label_event, label: group_label, merge_request: merge_request)
 
     create(:event, :created, target: milestone, project: project, author: user)
     create(:service, project: project, type: 'CustomIssueTrackerService', category: 'issue_tracker', properties: { one: 'value' })

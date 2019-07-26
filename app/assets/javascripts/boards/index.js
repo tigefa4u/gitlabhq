@@ -1,65 +1,85 @@
 import $ from 'jquery';
-import _ from 'underscore';
 import Vue from 'vue';
 
 import Flash from '~/flash';
 import { __ } from '~/locale';
-import '~/vue_shared/models/label';
-import '~/vue_shared/models/assignee';
+import './models/label';
+import './models/assignee';
 
-import FilteredSearchBoards from './filtered_search_boards';
-import eventHub from './eventhub';
-import sidebarEventHub from '~/sidebar/event_hub'; // eslint-disable-line import/first
-import './models/issue';
-import './models/list';
-import './models/milestone';
-import './models/project';
-import './stores/boards_store';
-import ModalStore from './stores/modal_store';
-import BoardService from './services/board_service';
-import modalMixin from './mixins/modal_mixins';
-import './mixins/sortable_default_options';
-import './filters/due_date_filters';
-import './components/board';
-import './components/board_sidebar';
-import './components/new_list_dropdown';
-import BoardAddIssuesModal from './components/modal/index.vue';
-import '~/vue_shared/vue_resource_interceptor'; // eslint-disable-line import/first
+import FilteredSearchBoards from '~/boards/filtered_search_boards';
+import eventHub from '~/boards/eventhub';
+import sidebarEventHub from '~/sidebar/event_hub';
+import 'ee_else_ce/boards/models/issue';
+import 'ee_else_ce/boards/models/list';
+import '~/boards/models/milestone';
+import '~/boards/models/project';
+import boardsStore from '~/boards/stores/boards_store';
+import ModalStore from '~/boards/stores/modal_store';
+import BoardService from 'ee_else_ce/boards/services/board_service';
+import modalMixin from '~/boards/mixins/modal_mixins';
+import '~/boards/filters/due_date_filters';
+import Board from 'ee_else_ce/boards/components/board';
+import BoardSidebar from 'ee_else_ce/boards/components/board_sidebar';
+import initNewListDropdown from 'ee_else_ce/boards/components/new_list_dropdown';
+import BoardAddIssuesModal from '~/boards/components/modal/index.vue';
+import '~/vue_shared/vue_resource_interceptor';
+import {
+  NavigationType,
+  convertObjectPropsToCamelCase,
+  parseBoolean,
+} from '~/lib/utils/common_utils';
+import boardConfigToggle from 'ee_else_ce/boards/config_toggle';
+import toggleFocusMode from 'ee_else_ce/boards/toggle_focus';
+import {
+  setPromotionState,
+  setWeigthFetchingState,
+  setEpicFetchingState,
+  getMilestoneTitle,
+  getBoardsModalData,
+} from 'ee_else_ce/boards/ee_functions';
+import mountMultipleBoardsSwitcher from './mount_multiple_boards_switcher';
+
+let issueBoardsApp;
 
 export default () => {
   const $boardApp = document.getElementById('board-app');
-  const Store = gl.issueBoards.BoardsStore;
 
-  window.gl = window.gl || {};
+  // check for browser back and trigger a hard reload to circumvent browser caching.
+  window.addEventListener('pageshow', event => {
+    const isNavTypeBackForward =
+      window.performance && window.performance.navigation.type === NavigationType.TYPE_BACK_FORWARD;
 
-  if (gl.IssueBoardsApp) {
-    gl.IssueBoardsApp.$destroy(true);
+    if (event.persisted || isNavTypeBackForward) {
+      window.location.reload();
+    }
+  });
+
+  if (issueBoardsApp) {
+    issueBoardsApp.$destroy(true);
   }
 
-  Store.create();
+  boardsStore.create();
+  boardsStore.setTimeTrackingLimitToHours($boardApp.dataset.timeTrackingLimitToHours);
 
-  // hack to allow sidebar scripts like milestone_select manipulate the BoardsStore
-  gl.issueBoards.boardStoreIssueSet = (...args) => Vue.set(Store.detail.issue, ...args);
-  gl.issueBoards.boardStoreIssueDelete = (...args) => Vue.delete(Store.detail.issue, ...args);
-
-  gl.IssueBoardsApp = new Vue({
+  issueBoardsApp = new Vue({
     el: $boardApp,
     components: {
-      board: gl.issueBoards.Board,
-      'board-sidebar': gl.issueBoards.BoardSidebar,
+      Board,
+      BoardSidebar,
       BoardAddIssuesModal,
     },
     data: {
-      state: Store.state,
+      state: boardsStore.state,
       loading: true,
       boardsEndpoint: $boardApp.dataset.boardsEndpoint,
+      recentBoardsEndpoint: $boardApp.dataset.recentBoardsEndpoint,
       listsEndpoint: $boardApp.dataset.listsEndpoint,
       boardId: $boardApp.dataset.boardId,
-      disabled: $boardApp.dataset.disabled === 'true',
+      disabled: parseBoolean($boardApp.dataset.disabled),
       issueLinkBase: $boardApp.dataset.issueLinkBase,
       rootPath: $boardApp.dataset.rootPath,
       bulkUpdatePath: $boardApp.dataset.bulkUpdatePath,
-      detailIssue: Store.detail,
+      detailIssue: boardsStore.detail,
       defaultAvatar: $boardApp.dataset.defaultAvatar,
     },
     computed: {
@@ -68,13 +88,15 @@ export default () => {
       },
     },
     created() {
-      gl.boardService = new BoardService({
+      boardsStore.setEndpoints({
         boardsEndpoint: this.boardsEndpoint,
+        recentBoardsEndpoint: this.recentBoardsEndpoint,
         listsEndpoint: this.listsEndpoint,
         bulkUpdatePath: this.bulkUpdatePath,
         boardId: this.boardId,
       });
-      Store.rootPath = this.boardsEndpoint;
+      gl.boardService = new BoardService();
+      boardsStore.rootPath = this.boardsEndpoint;
 
       eventHub.$on('updateTokens', this.updateTokens);
       eventHub.$on('newDetailIssue', this.updateDetailIssue);
@@ -88,31 +110,37 @@ export default () => {
       sidebarEventHub.$off('toggleSubscription', this.toggleSubscription);
     },
     mounted() {
-      this.filterManager = new FilteredSearchBoards(Store.filter, true, Store.cantEdit);
+      this.filterManager = new FilteredSearchBoards(boardsStore.filter, true, boardsStore.cantEdit);
       this.filterManager.setup();
 
-      Store.disabled = this.disabled;
+      boardsStore.disabled = this.disabled;
       gl.boardService
         .all()
         .then(res => res.data)
-        .then(data => {
-          data.forEach(board => {
-            const list = Store.addList(board, this.defaultAvatar);
-
-            if (list.type === 'closed') {
-              list.position = Infinity;
-            } else if (list.type === 'backlog') {
-              list.position = -1;
+        .then(lists => {
+          lists.forEach(listObj => {
+            let { position } = listObj;
+            if (listObj.list_type === 'closed') {
+              position = Infinity;
+            } else if (listObj.list_type === 'backlog') {
+              position = -1;
             }
+
+            boardsStore.addList(
+              {
+                ...listObj,
+                position,
+              },
+              this.defaultAvatar,
+            );
           });
 
-          this.state.lists = _.sortBy(this.state.lists, 'position');
-
-          Store.addBlankState();
+          boardsStore.addBlankState();
+          setPromotionState(boardsStore);
           this.loading = false;
         })
         .catch(() => {
-          Flash('An error occurred while fetching the board lists. Please try again.');
+          Flash(__('An error occurred while fetching the board lists. Please try again.'));
         });
     },
     methods: {
@@ -123,27 +151,48 @@ export default () => {
         const { sidebarInfoEndpoint } = newIssue;
         if (sidebarInfoEndpoint && newIssue.subscribed === undefined) {
           newIssue.setFetchingState('subscriptions', true);
+          setWeigthFetchingState(newIssue, true);
+          setEpicFetchingState(newIssue, true);
           BoardService.getIssueInfo(sidebarInfoEndpoint)
             .then(res => res.data)
             .then(data => {
+              const {
+                subscribed,
+                totalTimeSpent,
+                timeEstimate,
+                humanTimeEstimate,
+                humanTotalTimeSpent,
+                weight,
+                epic,
+              } = convertObjectPropsToCamelCase(data);
+
               newIssue.setFetchingState('subscriptions', false);
+              setWeigthFetchingState(newIssue, false);
+              setEpicFetchingState(newIssue, false);
               newIssue.updateData({
-                subscribed: data.subscribed,
+                humanTimeSpent: humanTotalTimeSpent,
+                timeSpent: totalTimeSpent,
+                humanTimeEstimate,
+                timeEstimate,
+                subscribed,
+                weight,
+                epic,
               });
             })
             .catch(() => {
               newIssue.setFetchingState('subscriptions', false);
+              setWeigthFetchingState(newIssue, false);
               Flash(__('An error occurred while fetching sidebar data'));
             });
         }
 
-        Store.detail.issue = newIssue;
+        boardsStore.setIssueDetail(newIssue);
       },
       clearDetailIssue() {
-        Store.detail.issue = {};
+        boardsStore.clearDetailIssue();
       },
       toggleSubscription(id) {
-        const { issue } = Store.detail;
+        const { issue } = boardsStore.detail;
         if (issue.id === id && issue.toggleSubscriptionEndpoint) {
           issue.setFetchingState('subscriptions', true);
           BoardService.toggleIssueSubscription(issue.toggleSubscriptionEndpoint)
@@ -162,26 +211,32 @@ export default () => {
     },
   });
 
-  gl.IssueBoardsSearch = new Vue({
+  // eslint-disable-next-line no-new
+  new Vue({
     el: document.getElementById('js-add-list'),
     data: {
-      filters: Store.state.filters,
+      filters: boardsStore.state.filters,
+      ...getMilestoneTitle($boardApp),
     },
     mounted() {
-      gl.issueBoards.newListDropdownInit();
+      initNewListDropdown();
     },
   });
+
+  boardConfigToggle(boardsStore);
 
   const issueBoardsModal = document.getElementById('js-add-issues-btn');
 
   if (issueBoardsModal) {
-    gl.IssueBoardsModalAddBtn = new Vue({
+    // eslint-disable-next-line no-new
+    new Vue({
       el: issueBoardsModal,
       mixins: [modalMixin],
       data() {
         return {
           modal: ModalStore.store,
-          store: Store.state,
+          store: boardsStore.state,
+          ...getBoardsModalData($boardApp),
           canAdminList: this.$options.el.hasAttribute('data-can-admin-list'),
         };
       },
@@ -194,7 +249,7 @@ export default () => {
         },
         tooltipTitle() {
           if (this.disabled) {
-            return 'Please add a list to your board first';
+            return __('Please add a list to your board first');
           }
 
           return '';
@@ -229,7 +284,7 @@ export default () => {
       template: `
         <div class="board-extra-actions">
           <button
-            class="btn btn-create prepend-left-10"
+            class="btn btn-success prepend-left-10"
             type="button"
             data-placement="bottom"
             ref="addIssuesButton"
@@ -244,4 +299,7 @@ export default () => {
       `,
     });
   }
+
+  toggleFocusMode(ModalStore, boardsStore, $boardApp);
+  mountMultipleBoardsSwitcher();
 };

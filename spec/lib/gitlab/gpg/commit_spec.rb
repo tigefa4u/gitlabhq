@@ -26,6 +26,28 @@ describe Gitlab::Gpg::Commit do
       end
     end
 
+    context 'invalid signature' do
+      let!(:commit) { create :commit, project: project, sha: commit_sha, committer_email: GpgHelpers::User1.emails.first }
+
+      let!(:user) { create(:user, email: GpgHelpers::User1.emails.first) }
+
+      before do
+        allow(Gitlab::Git::Commit).to receive(:extract_signature_lazily)
+            .with(Gitlab::Git::Repository, commit_sha)
+            .and_return(
+              [
+                # Corrupt the key
+                GpgHelpers::User1.signed_commit_signature.tr('=', 'a'),
+                GpgHelpers::User1.signed_commit_base_data
+              ]
+            )
+      end
+
+      it 'returns nil' do
+        expect(described_class.new(commit).signature).to be_nil
+      end
+    end
+
     context 'known key' do
       context 'user matches the key uid' do
         context 'user email matches the email committer' do
@@ -84,6 +106,89 @@ describe Gitlab::Gpg::Commit do
               )
               expect(signature.persisted?).to be_falsey
             end
+          end
+        end
+
+        context 'valid key signed using recent version of Gnupg' do
+          let!(:commit) { create :commit, project: project, sha: commit_sha, committer_email: GpgHelpers::User1.emails.first }
+
+          let!(:user) { create(:user, email: GpgHelpers::User1.emails.first) }
+
+          let!(:gpg_key) do
+            create :gpg_key, key: GpgHelpers::User1.public_key, user: user
+          end
+
+          let!(:crypto) { instance_double(GPGME::Crypto) }
+
+          before do
+            fake_signature = [
+              GpgHelpers::User1.signed_commit_signature,
+              GpgHelpers::User1.signed_commit_base_data
+            ]
+
+            allow(Gitlab::Git::Commit).to receive(:extract_signature_lazily)
+              .with(Gitlab::Git::Repository, commit_sha)
+              .and_return(fake_signature)
+          end
+
+          it 'returns a valid signature' do
+            verified_signature = double('verified-signature', fingerprint: GpgHelpers::User1.fingerprint, valid?: true)
+            allow(GPGME::Crypto).to receive(:new).and_return(crypto)
+            allow(crypto).to receive(:verify).and_return(verified_signature)
+
+            signature = described_class.new(commit).signature
+
+            expect(signature).to have_attributes(
+              commit_sha: commit_sha,
+              project: project,
+              gpg_key: gpg_key,
+              gpg_key_primary_keyid: GpgHelpers::User1.primary_keyid,
+              gpg_key_user_name: GpgHelpers::User1.names.first,
+              gpg_key_user_email: GpgHelpers::User1.emails.first,
+              verification_status: 'verified'
+            )
+          end
+        end
+
+        context 'valid key signed using older version of Gnupg' do
+          let!(:commit) { create :commit, project: project, sha: commit_sha, committer_email: GpgHelpers::User1.emails.first }
+
+          let!(:user) { create(:user, email: GpgHelpers::User1.emails.first) }
+
+          let!(:gpg_key) do
+            create :gpg_key, key: GpgHelpers::User1.public_key, user: user
+          end
+
+          let!(:crypto) { instance_double(GPGME::Crypto) }
+
+          before do
+            fake_signature = [
+              GpgHelpers::User1.signed_commit_signature,
+              GpgHelpers::User1.signed_commit_base_data
+            ]
+
+            allow(Gitlab::Git::Commit).to receive(:extract_signature_lazily)
+              .with(Gitlab::Git::Repository, commit_sha)
+              .and_return(fake_signature)
+          end
+
+          it 'returns a valid signature' do
+            keyid = GpgHelpers::User1.fingerprint.last(16)
+            verified_signature = double('verified-signature', fingerprint: keyid, valid?: true)
+            allow(GPGME::Crypto).to receive(:new).and_return(crypto)
+            allow(crypto).to receive(:verify).and_return(verified_signature)
+
+            signature = described_class.new(commit).signature
+
+            expect(signature).to have_attributes(
+              commit_sha: commit_sha,
+              project: project,
+              gpg_key: gpg_key,
+              gpg_key_primary_keyid: GpgHelpers::User1.primary_keyid,
+              gpg_key_user_name: GpgHelpers::User1.names.first,
+              gpg_key_user_email: GpgHelpers::User1.emails.first,
+              verification_status: 'verified'
+            )
           end
         end
 

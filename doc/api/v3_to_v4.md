@@ -9,7 +9,7 @@ The V3 API documentation is still
 
 Below are the changes made between V3 and V4.
 
-### 8.17
+## 8.17
 
 - Removed `GET /projects/:search` (use: `GET /projects?search=x`) [!8877](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/8877)
 - `iid` filter has been removed from `GET /projects/:id/issues` [!8967](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/8967)
@@ -18,7 +18,7 @@ Below are the changes made between V3 and V4.
 - Project snippets do not return deprecated field `expires_at` [!8723](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/8723)
 - Endpoints under `GET /projects/:id/keys` have been removed (use `GET /projects/:id/deploy_keys`) [!8716](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/8716)
 
-### 9.0
+## 9.0
 
 - Status 409 returned for `POST /projects/:id/members` when a member already exists [!9093](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/9093)
 - Moved `DELETE /projects/:id/star` to `POST /projects/:id/unstar` [!9328](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/9328)
@@ -76,8 +76,8 @@ Below are the changes made between V3 and V4.
 - Simplify project payload exposed on Environment endpoints [!9675](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/9675)
 - API uses merge request `IID`s (internal ID, as in the web UI) rather than `ID`s. This affects the merge requests, award emoji, todos, and time tracking APIs. [!9530](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/9530)
 - API uses issue `IID`s (internal ID, as in the web UI) rather than `ID`s. This affects the issues, award emoji, todos, and time tracking APIs. [!9530](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/9530)
-- Change initial page from `0` to `1` on `GET /projects/:id/repository/commits` (like on the rest of the API) [!9679] (https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/9679)
-- Return correct `Link` header data for `GET /projects/:id/repository/commits` [!9679] (https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/9679)
+- Change initial page from `0` to `1` on `GET /projects/:id/repository/commits` (like on the rest of the API) [!9679](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/9679)
+- Return correct `Link` header data for `GET /projects/:id/repository/commits` [!9679](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/9679)
 - Update endpoints for repository files [!9637](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/9637)
   - Moved `GET /projects/:id/repository/files?file_path=:file_path` to `GET /projects/:id/repository/files/:file_path` (`:file_path` should be URL-encoded)
   - `GET /projects/:id/repository/blobs/:sha` now returns JSON attributes for the blob identified by `:sha`, instead of finding the commit identified by `:sha` and returning the raw content of the blob in that commit identified by the required `?filepath=:filepath`

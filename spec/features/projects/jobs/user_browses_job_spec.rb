@@ -16,9 +16,11 @@ describe 'User browses a job', :js do
     visit(project_job_path(project, build))
   end
 
-  it 'erases the job log' do
+  it 'erases the job log', :js do
+    wait_for_requests
+
     expect(page).to have_content("Job ##{build.id}")
-    expect(page).to have_css('#build-trace')
+    expect(page).to have_css('.js-build-trace')
 
     # scroll to the top of the page first
     execute_script "window.scrollTo(0,0)"
@@ -26,11 +28,55 @@ describe 'User browses a job', :js do
 
     expect(page).to have_no_css('.artifacts')
     expect(build).not_to have_trace
-    expect(build.artifacts_file.exists?).to be_falsy
-    expect(build.artifacts_metadata.exists?).to be_falsy
+    expect(build.artifacts_file.present?).to be_falsy
+    expect(build.artifacts_metadata.present?).to be_falsy
 
-    page.within('.erased') do
-      expect(page).to have_content('Job has been erased')
+    expect(page).to have_content('Job has been erased')
+  end
+
+  shared_examples 'has collapsible sections' do
+    it 'collapses the section clicked' do
+      wait_for_requests
+      text_to_hide = "Cloning into '/nolith/ci-tests'"
+      text_to_show = 'Waiting for pod'
+
+      expect(page).to have_content(text_to_hide)
+      expect(page).to have_content(text_to_show)
+
+      first('.js-section-start[data-section="get-sources"]').click
+
+      expect(page).not_to have_content(text_to_hide)
+      expect(page).to have_content(text_to_show)
+    end
+  end
+
+  context 'when job trace contains sections' do
+    let!(:build) { create(:ci_build, :success, :trace_with_sections, :coverage, pipeline: pipeline) }
+
+    it_behaves_like 'has collapsible sections'
+  end
+
+  context 'when job trace contains duplicate sections' do
+    let!(:build) { create(:ci_build, :success, :trace_with_duplicate_sections, :coverage, pipeline: pipeline) }
+
+    it_behaves_like 'has collapsible sections'
+  end
+
+  context 'when job trace contains sections' do
+    let!(:build) { create(:ci_build, :success, :trace_with_duplicate_sections, :coverage, pipeline: pipeline) }
+
+    it 'collapses a section' do
+      wait_for_requests
+      text_to_hide = "Cloning into '/nolith/ci-tests'"
+      text_to_show = 'Waiting for pod'
+
+      expect(page).to have_content(text_to_hide)
+      expect(page).to have_content(text_to_show)
+
+      first('.js-section-start[data-section="get-sources"]').click
+
+      expect(page).not_to have_content(text_to_hide)
+      expect(page).to have_content(text_to_show)
     end
   end
 
@@ -38,9 +84,10 @@ describe 'User browses a job', :js do
     let!(:build) { create(:ci_build, :failed, :trace_artifact, pipeline: pipeline) }
 
     it 'displays the failure reason' do
+      wait_for_all_requests
       within('.builds-container') do
         build_link = first('.build-job > a')
-        expect(build_link['data-title']).to eq('test - failed <br> (unknown failure)')
+        expect(build_link['data-original-title']).to eq('test - failed - (unknown failure)')
       end
     end
   end
@@ -49,9 +96,10 @@ describe 'User browses a job', :js do
     let!(:build) { create(:ci_build, :failed, :retried, :trace_artifact, pipeline: pipeline) }
 
     it 'displays the failure reason and retried label' do
+      wait_for_all_requests
       within('.builds-container') do
         build_link = first('.build-job > a')
-        expect(build_link['data-title']).to eq('test - failed <br> (unknown failure) (retried)')
+        expect(build_link['data-original-title']).to eq('test - failed - (unknown failure) (retried)')
       end
     end
   end

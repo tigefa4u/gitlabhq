@@ -1,10 +1,10 @@
 import Visibility from 'visibilityjs';
+import { GlLoadingIcon } from '@gitlab/ui';
 import { __ } from '../../locale';
 import Flash from '../../flash';
 import Poll from '../../lib/utils/poll';
 import EmptyState from '../components/empty_state.vue';
 import SvgBlankState from '../components/blank_state.vue';
-import LoadingIcon from '../../vue_shared/components/loading_icon.vue';
 import PipelinesTableComponent from '../components/pipelines_table.vue';
 import eventHub from '../event_hub';
 import { CANCEL_REQUEST } from '../constants';
@@ -14,7 +14,7 @@ export default {
     PipelinesTableComponent,
     SvgBlankState,
     EmptyState,
-    LoadingIcon,
+    GlLoadingIcon,
   },
   data() {
     return {
@@ -24,6 +24,11 @@ export default {
       updateGraphDropdown: false,
       hasMadeRequest: false,
     };
+  },
+  computed: {
+    shouldRenderPagination() {
+      return !this.isLoading;
+    },
   },
   beforeMount() {
     this.poll = new Poll({
@@ -67,6 +72,34 @@ export default {
     this.poll.stop();
   },
   methods: {
+    /**
+     * Handles URL and query parameter changes.
+     * When the user uses the pagination or the tabs,
+     *  - update URL
+     *  - Make API request to the server with new parameters
+     *  - Update the polling function
+     *  - Update the internal state
+     */
+    updateContent(parameters) {
+      this.updateInternalState(parameters);
+
+      // fetch new data
+      return this.service
+        .getPipelines(this.requestData)
+        .then(response => {
+          this.isLoading = false;
+          this.successCallback(response);
+
+          this.poll.enable({ data: this.requestData, response });
+        })
+        .catch(() => {
+          this.isLoading = false;
+          this.errorCallback();
+
+          // restart polling
+          this.poll.restart({ data: this.requestData });
+        });
+    },
     updateTable() {
       // Cancel ongoing request
       if (this.isMakingRequest) {
@@ -74,8 +107,8 @@ export default {
       }
       // Stop polling
       this.poll.stop();
-      // Update the table
-      return this.getPipelines().then(() => this.poll.restart());
+      // Restarting the poll also makes an initial request
+      this.poll.restart();
     },
     fetchPipelines() {
       if (!this.isMakingRequest) {
@@ -120,7 +153,7 @@ export default {
     postAction(endpoint) {
       this.service
         .postAction(endpoint)
-        .then(() => this.fetchPipelines())
+        .then(() => this.updateTable())
         .catch(() => Flash(__('An error occurred while making the request.')));
     },
   },

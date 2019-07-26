@@ -30,7 +30,7 @@ describe 'Environments page', :js do
       end
 
       describe 'in available tab page' do
-        it 'should show one environment' do
+        it 'shows one environment' do
           visit_environments(project, scope: 'available')
 
           expect(page).to have_css('.environments-container')
@@ -38,8 +38,25 @@ describe 'Environments page', :js do
         end
       end
 
+      describe 'with environments spanning multiple pages', :js do
+        before do
+          allow(Kaminari.config).to receive(:default_per_page).and_return(3)
+          create_list(:environment, 4, project: project, state: :available)
+        end
+
+        it 'renders second page of pipelines' do
+          visit_environments(project, scope: 'available')
+
+          find('.js-next-button').click
+          wait_for_requests
+
+          expect(page).to have_selector('.gl-pagination .page', count: 2)
+          expect(find('.gl-pagination .page-item.active .page-link').text).to eq("2")
+        end
+      end
+
       describe 'in stopped tab page' do
-        it 'should show no environments' do
+        it 'shows no environments' do
           visit_environments(project, scope: 'stopped')
 
           expect(page).to have_css('.environments-container')
@@ -55,7 +72,7 @@ describe 'Environments page', :js do
           allow_any_instance_of(Kubeclient::Client).to receive(:proxy_url).and_raise(Kubeclient::HttpError.new(401, 'Unauthorized', nil))
         end
 
-        it 'should show one environment without error' do
+        it 'shows one environment without error' do
           visit_environments(project, scope: 'available')
 
           expect(page).to have_css('.environments-container')
@@ -70,7 +87,7 @@ describe 'Environments page', :js do
       end
 
       describe 'in available tab page' do
-        it 'should show no environments' do
+        it 'shows no environments' do
           visit_environments(project, scope: 'available')
 
           expect(page).to have_css('.environments-container')
@@ -79,7 +96,7 @@ describe 'Environments page', :js do
       end
 
       describe 'in stopped tab page' do
-        it 'should show one environment' do
+        it 'shows one environment' do
           visit_environments(project, scope: 'stopped')
 
           expect(page).to have_css('.environments-container')
@@ -95,7 +112,7 @@ describe 'Environments page', :js do
     end
 
     it 'does not show environments and counters are set to zero' do
-      expect(page).to have_content('You don\'t have any environments right now.')
+      expect(page).to have_content('You don\'t have any environments right now')
 
       expect(page.find('.js-environments-tab-available .badge').text).to eq('0')
       expect(page.find('.js-environments-tab-stopped .badge').text).to eq('0')
@@ -128,11 +145,12 @@ describe 'Environments page', :js do
       end
     end
 
-    context 'when there are deployments' do
+    context 'when there are successful deployments' do
       let(:project) { create(:project, :repository) }
 
       let!(:deployment) do
-        create(:deployment, environment: environment,
+        create(:deployment, :success,
+                            environment: environment,
                             sha: project.commit.id)
       end
 
@@ -152,7 +170,8 @@ describe 'Environments page', :js do
         end
 
         let!(:deployment) do
-          create(:deployment, environment: environment,
+          create(:deployment, :success,
+                              environment: environment,
                               deployable: build,
                               sha: project.commit.id)
         end
@@ -162,16 +181,16 @@ describe 'Environments page', :js do
         end
 
         it 'shows a play button' do
-          find('.js-dropdown-play-icon-container').click
+          find('.js-environment-actions-dropdown').click
 
-          expect(page).to have_content(action.name.humanize)
+          expect(page).to have_content(action.name)
         end
 
         it 'allows to play a manual action', :js do
           expect(action).to be_manual
 
-          find('.js-dropdown-play-icon-container').click
-          expect(page).to have_content(action.name.humanize)
+          find('.js-environment-actions-dropdown').click
+          expect(page).to have_content(action.name)
 
           expect { find('.js-manual-action-link').click }
             .not_to change { Ci::Pipeline.count }
@@ -196,7 +215,7 @@ describe 'Environments page', :js do
         context 'with external_url' do
           let(:environment) { create(:environment, project: project, external_url: 'https://git.gitlab.com') }
           let(:build) { create(:ci_build, pipeline: pipeline) }
-          let(:deployment) { create(:deployment, environment: environment, deployable: build) }
+          let(:deployment) { create(:deployment, :success, environment: environment, deployable: build) }
 
           it 'shows an external link button' do
             expect(page).to have_link(nil, href: environment.external_url)
@@ -209,7 +228,8 @@ describe 'Environments page', :js do
           end
 
           let(:deployment) do
-            create(:deployment, environment: environment,
+            create(:deployment, :success,
+                                environment: environment,
                                 deployable: build,
                                 on_stop: 'close_app')
           end
@@ -228,7 +248,10 @@ describe 'Environments page', :js do
         end
 
         context 'when kubernetes terminal is available' do
-          shared_examples 'same behavior between KubernetesService and Platform::Kubernetes' do
+          context 'when user configured kubernetes from CI/CD > Clusters' do
+            let(:cluster) { create(:cluster, :provided_by_gcp, projects: [create(:project, :repository)]) }
+            let(:project) { cluster.project }
+
             context 'for project maintainer' do
               let(:role) { :maintainer }
 
@@ -245,20 +268,85 @@ describe 'Environments page', :js do
               end
             end
           end
+        end
+      end
 
-          context 'when user configured kubernetes from Integration > Kubernetes' do
-            let(:project) { create(:kubernetes_project, :test_repo) }
+      context 'when there is a delayed job' do
+        let!(:pipeline) { create(:ci_pipeline, project: project) }
+        let!(:build) { create(:ci_build, pipeline: pipeline) }
 
-            it_behaves_like 'same behavior between KubernetesService and Platform::Kubernetes'
+        let!(:delayed_job) do
+          create(:ci_build, :scheduled,
+                 pipeline: pipeline,
+                 name: 'delayed job',
+                 stage: 'test')
+        end
+
+        let!(:deployment) do
+          create(:deployment,
+                 :success,
+                 environment: environment,
+                 deployable: build,
+                 sha: project.commit.id)
+        end
+
+        before do
+          visit_environments(project)
+        end
+
+        it 'has a dropdown for actionable jobs' do
+          expect(page).to have_selector('.dropdown-new.btn.btn-default .ic-play')
+        end
+
+        it "has link to the delayed job's action" do
+          find('.js-environment-actions-dropdown').click
+
+          expect(page).to have_button('delayed job')
+          expect(page).to have_content(/\d{2}:\d{2}:\d{2}/)
+        end
+
+        context 'when delayed job is expired already' do
+          let!(:delayed_job) do
+            create(:ci_build, :expired_scheduled,
+                   pipeline: pipeline,
+                   name: 'delayed job',
+                   stage: 'test')
           end
 
-          context 'when user configured kubernetes from CI/CD > Clusters' do
-            let(:cluster) { create(:cluster, :provided_by_gcp, projects: [create(:project, :repository)]) }
-            let(:project) { cluster.project }
+          it "shows 00:00:00 as the remaining time" do
+            find('.js-environment-actions-dropdown').click
 
-            it_behaves_like 'same behavior between KubernetesService and Platform::Kubernetes'
+            expect(page).to have_content("00:00:00")
           end
         end
+
+        context 'when user played a delayed job immediately' do
+          before do
+            find('.js-environment-actions-dropdown').click
+            page.accept_confirm { click_button('delayed job') }
+            wait_for_requests
+          end
+
+          it 'enqueues the delayed job', :js do
+            expect(delayed_job.reload).to be_pending
+          end
+        end
+      end
+    end
+
+    context 'when there is a failed deployment' do
+      let(:project) { create(:project, :repository) }
+
+      let!(:deployment) do
+        create(:deployment, :failed,
+                            environment: environment,
+                            sha: project.commit.id)
+      end
+
+      it 'does not show deployments' do
+        visit_environments(project)
+
+        expect(page).to have_content('No deployments yet')
       end
     end
   end

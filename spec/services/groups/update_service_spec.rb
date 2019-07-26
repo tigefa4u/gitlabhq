@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Groups::UpdateService do
@@ -23,6 +25,12 @@ describe Groups::UpdateService do
           expect(public_group.errors.count).to eq(1)
 
           expect(TodosDestroyer::GroupPrivateWorker).not_to receive(:perform_in)
+        end
+
+        it "returns false if save failed" do
+          allow(public_group).to receive(:save).and_return(false)
+
+          expect(service.execute).to be_falsey
         end
       end
 
@@ -50,7 +58,7 @@ describe Groups::UpdateService do
           create(:project, :private, group: internal_group)
 
           expect(TodosDestroyer::GroupPrivateWorker).to receive(:perform_in)
-            .with(1.hour, internal_group.id)
+            .with(Todo::WAIT_FOR_DELETE, internal_group.id)
         end
 
         it "changes permission level to private" do
@@ -125,7 +133,7 @@ describe Groups::UpdateService do
     end
   end
 
-  context 'for a subgroup', :nested_groups do
+  context 'for a subgroup' do
     let(:subgroup) { create(:group, :private, parent: private_group) }
 
     context 'when the parent group share_with_group_lock is enabled' do

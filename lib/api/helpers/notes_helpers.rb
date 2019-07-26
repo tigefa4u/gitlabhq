@@ -1,6 +1,14 @@
+# frozen_string_literal: true
+
 module API
   module Helpers
     module NotesHelpers
+      def self.noteable_types
+        # This is a method instead of a constant, allowing EE to more easily
+        # extend it.
+        [Issue, MergeRequest, Snippet]
+      end
+
       def update_note(noteable, note_id)
         note = noteable.notes.find(params[:note_id])
 
@@ -65,21 +73,23 @@ module API
         "read_#{noteable.class.to_s.underscore}".to_sym
       end
 
-      def find_noteable(parent, noteables_str, noteable_id)
-        noteable = public_send("find_#{parent}_#{noteables_str.singularize}", noteable_id) # rubocop:disable GitlabSecurity/PublicSend
+      def find_noteable(parent_type, parent_id, noteable_type, noteable_id)
+        params = params_by_noteable_type_and_id(noteable_type, noteable_id)
 
-        readable =
-          if noteable.is_a?(Commit)
-            # for commits there is not :read_commit policy, check if user
-            # has :read_note permission on the commit's project
-            can?(current_user, :read_note, user_project)
+        noteable = NotesFinder.new(user_project, current_user, params).target
+        noteable = nil unless can?(current_user, noteable_read_ability_name(noteable), noteable)
+        noteable || not_found!(noteable_type)
+      end
+
+      def params_by_noteable_type_and_id(type, id)
+        target_type = type.name.underscore
+        { target_type: target_type }.tap do |h|
+          if %w(issue merge_request).include?(target_type)
+            h[:target_iid] = id
           else
-            can?(current_user, noteable_read_ability_name(noteable), noteable)
+            h[:target_id] = id
           end
-
-        return not_found!(noteables_str) unless readable
-
-        noteable
+        end
       end
 
       def noteable_parent(noteable)
@@ -87,15 +97,11 @@ module API
       end
 
       def create_note(noteable, opts)
-        policy_object = noteable.is_a?(Commit) ? user_project : noteable
-        authorize!(:create_note, policy_object)
+        authorize!(:create_note, noteable)
 
         parent = noteable_parent(noteable)
 
-        if opts[:created_at]
-          opts.delete(:created_at) unless
-            current_user.admin? || parent.owned_by?(current_user)
-        end
+        opts.delete(:created_at) unless current_user.can?(:set_note_created_at, noteable)
 
         opts[:updated_at] = opts[:created_at] if opts[:created_at]
 

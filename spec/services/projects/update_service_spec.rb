@@ -1,6 +1,9 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Projects::UpdateService do
+  include ExternalAuthorizationServiceHelpers
   include ProjectForksHelper
 
   let(:user) { create(:user) }
@@ -41,7 +44,8 @@ describe Projects::UpdateService do
         end
 
         it 'updates the project to private' do
-          expect(TodosDestroyer::ProjectPrivateWorker).to receive(:perform_in).with(1.hour, project.id)
+          expect(TodosDestroyer::ProjectPrivateWorker).to receive(:perform_in).with(Todo::WAIT_FOR_DELETE, project.id)
+          expect(TodosDestroyer::ConfidentialIssueWorker).to receive(:perform_in).with(Todo::WAIT_FOR_DELETE, nil, project.id)
 
           result = update_project(project, user, visibility_level: Gitlab::VisibilityLevel::PRIVATE)
 
@@ -191,7 +195,7 @@ describe Projects::UpdateService do
     context 'when changing feature visibility to private' do
       it 'updates the visibility correctly' do
         expect(TodosDestroyer::PrivateFeaturesWorker)
-          .to receive(:perform_in).with(1.hour, project.id)
+          .to receive(:perform_in).with(Todo::WAIT_FOR_DELETE, project.id)
 
         result = update_project(project, user, project_feature_attributes:
                                  { issues_access_level: ProjectFeature::PRIVATE }
@@ -232,7 +236,7 @@ describe Projects::UpdateService do
         let(:project) { create(:project, :legacy_storage, :repository, creator: user, namespace: user.namespace) }
 
         before do
-          gitlab_shell.create_repository(repository_storage, "#{user.namespace.full_path}/existing")
+          gitlab_shell.create_repository(repository_storage, "#{user.namespace.full_path}/existing", user.namespace.full_path)
         end
 
         after do
@@ -249,9 +253,20 @@ describe Projects::UpdateService do
           expect(project.errors.messages[:base]).to include('There is already a repository with that name on disk')
         end
 
-        context 'when hashed storage enabled' do
+        it 'renames the project without upgrading it' do
+          result = update_project(project, admin, path: 'new-path')
+
+          expect(result).not_to include(status: :error)
+          expect(project).to be_valid
+          expect(project.errors).to be_empty
+          expect(project.disk_path).to include('new-path')
+          expect(project.reload.hashed_storage?(:repository)).to be_falsey
+        end
+
+        context 'when hashed storage is enabled' do
           before do
             stub_application_setting(hashed_storage_enabled: true)
+            stub_feature_flags(skip_hashed_storage_upgrade: false)
           end
 
           it 'migrates project to a hashed storage instead of renaming the repo to another legacy name' do
@@ -261,6 +276,22 @@ describe Projects::UpdateService do
             expect(project).to be_valid
             expect(project.errors).to be_empty
             expect(project.reload.hashed_storage?(:repository)).to be_truthy
+          end
+
+          context 'when skip_hashed_storage_upgrade feature flag is enabled' do
+            before do
+              stub_feature_flags(skip_hashed_storage_upgrade: true)
+            end
+
+            it 'renames the project without upgrading it' do
+              result = update_project(project, admin, path: 'new-path')
+
+              expect(result).not_to include(status: :error)
+              expect(project).to be_valid
+              expect(project.errors).to be_empty
+              expect(project.disk_path).to include('new-path')
+              expect(project.reload.hashed_storage?(:repository)).to be_falsey
+            end
           end
         end
       end
@@ -313,6 +344,67 @@ describe Projects::UpdateService do
         call_service
       end
     end
+
+    context 'when updating #pages_access_level' do
+      subject(:call_service) do
+        update_project(project, admin, project_feature_attributes: { pages_access_level: ProjectFeature::ENABLED })
+      end
+
+      it 'updates the attribute' do
+        expect { call_service }
+          .to change { project.project_feature.pages_access_level }
+          .to(ProjectFeature::ENABLED)
+      end
+
+      it 'calls Projects::UpdatePagesConfigurationService' do
+        expect(Projects::UpdatePagesConfigurationService)
+          .to receive(:new)
+          .with(project)
+          .and_call_original
+
+        call_service
+      end
+    end
+
+    context 'with external authorization enabled' do
+      before do
+        enable_external_authorization_service_check
+      end
+
+      it 'does not save the project with an error if the service denies access' do
+        expect(::Gitlab::ExternalAuthorization)
+          .to receive(:access_allowed?).with(user, 'new-label') { false }
+
+        result = update_project(project, user, { external_authorization_classification_label: 'new-label' })
+
+        expect(result[:message]).to be_present
+        expect(result[:status]).to eq(:error)
+      end
+
+      it 'saves the new label if the service allows access' do
+        expect(::Gitlab::ExternalAuthorization)
+          .to receive(:access_allowed?).with(user, 'new-label') { true }
+
+        result = update_project(project, user, { external_authorization_classification_label: 'new-label' })
+
+        expect(result[:status]).to eq(:success)
+        expect(project.reload.external_authorization_classification_label).to eq('new-label')
+      end
+
+      it 'checks the default label when the classification label was cleared' do
+        expect(::Gitlab::ExternalAuthorization)
+          .to receive(:access_allowed?).with(user, 'default_label') { true }
+
+        update_project(project, user, { external_authorization_classification_label: '' })
+      end
+
+      it 'does not check the label when it does not change' do
+        expect(::Gitlab::ExternalAuthorization)
+          .not_to receive(:access_allowed?)
+
+        update_project(project, user, { name: 'New name' })
+      end
+    end
   end
 
   describe '#run_auto_devops_pipeline?' do
@@ -349,6 +441,8 @@ describe Projects::UpdateService do
     context 'when auto devops is set to instance setting' do
       before do
         project.create_auto_devops!(enabled: nil)
+        project.reload
+
         allow(project.auto_devops).to receive(:previous_changes).and_return('enabled' => true)
       end
 

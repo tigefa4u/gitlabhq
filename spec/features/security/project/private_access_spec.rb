@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe "Private Project Access"  do
+describe "Private Project Access" do
   include AccessMatchers
 
   set(:project) { create(:project, :private, :repository, public_builds: false) }
@@ -126,7 +126,7 @@ describe "Private Project Access"  do
 
   describe "GET /:project_path/blob" do
     let(:commit) { project.repository.commit }
-    subject { project_blob_path(project, File.join(commit.id, '.gitignore'))}
+    subject { project_blob_path(project, File.join(commit.id, '.gitignore')) }
 
     it { is_expected.to be_allowed_for(:admin) }
     it { is_expected.to be_allowed_for(:owner).of(project) }
@@ -485,7 +485,7 @@ describe "Private Project Access"  do
     it { is_expected.to be_allowed_for(:owner).of(project) }
     it { is_expected.to be_allowed_for(:maintainer).of(project) }
     it { is_expected.to be_allowed_for(:developer).of(project) }
-    it { is_expected.to be_allowed_for(:reporter).of(project) }
+    it { is_expected.to be_denied_for(:reporter).of(project) }
     it { is_expected.to be_denied_for(:guest).of(project) }
     it { is_expected.to be_denied_for(:user) }
     it { is_expected.to be_denied_for(:external) }

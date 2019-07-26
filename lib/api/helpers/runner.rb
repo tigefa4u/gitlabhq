@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module API
   module Helpers
     module Runner
@@ -5,8 +7,7 @@ module API
       JOB_TOKEN_PARAM = :token
 
       def runner_registration_token_valid?
-        ActiveSupport::SecurityUtils.variable_size_secure_compare(params[:token],
-                                                                  Gitlab::CurrentSettings.runners_registration_token)
+        ActiveSupport::SecurityUtils.secure_compare(params[:token], Gitlab::CurrentSettings.runners_registration_token)
       end
 
       def authenticate_runner!
@@ -24,7 +25,7 @@ module API
       end
 
       def get_runner_ip
-        { ip_address: request.ip }
+        { ip_address: env["action_dispatch.remote_ip"].to_s || request.ip }
       end
 
       def current_runner

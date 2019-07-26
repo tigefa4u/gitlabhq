@@ -1,12 +1,8 @@
-/* eslint-disable comma-dangle, no-alert */
-
 import $ from 'jquery';
 import Vue from 'vue';
+import { __ } from '~/locale';
 
-window.gl = window.gl || {};
-window.gl.issueBoards = window.gl.issueBoards || {};
-
-gl.issueBoards.BoardDelete = Vue.extend({
+export default Vue.extend({
   props: {
     list: {
       type: Object,
@@ -14,12 +10,13 @@ gl.issueBoards.BoardDelete = Vue.extend({
     },
   },
   methods: {
-    deleteBoard () {
+    deleteBoard() {
       $(this.$el).tooltip('hide');
 
-      if (window.confirm('Are you sure you want to delete this list?')) {
+      // eslint-disable-next-line no-alert
+      if (window.confirm(__('Are you sure you want to delete this list?'))) {
         this.list.destroy();
       }
-    }
-  }
+    },
+  },
 });

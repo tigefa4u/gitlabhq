@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe SessionsController do
@@ -26,7 +28,7 @@ describe SessionsController do
 
       context 'and auto_sign_in=false param is passed' do
         it 'responds with 200' do
-          get(:new, auto_sign_in: 'false')
+          get(:new, params: { auto_sign_in: 'false' })
 
           expect(response).to have_gitlab_http_status(200)
         end
@@ -42,7 +44,7 @@ describe SessionsController do
     context 'when using standard authentications' do
       context 'invalid password' do
         it 'does not authenticate user' do
-          post(:create, user: { login: 'invalid', password: 'invalid' })
+          post(:create, params: { user: { login: 'invalid', password: 'invalid' } })
 
           expect(response)
             .to set_flash.now[:alert].to /Invalid Login or password/
@@ -54,19 +56,38 @@ describe SessionsController do
         let(:user_params) { { login: user.username, password: user.password } }
 
         it 'authenticates user correctly' do
-          post(:create, user: user_params)
+          post(:create, params: { user: user_params })
 
-          expect(subject.current_user). to eq user
+          expect(subject.current_user).to eq user
+        end
+
+        context 'with password authentication disabled' do
+          before do
+            stub_application_setting(password_authentication_enabled_for_web: false)
+          end
+
+          it 'does not sign in the user' do
+            post(:create, params: { user: user_params })
+
+            expect(@request.env['warden']).not_to be_authenticated
+            expect(subject.current_user).to be_nil
+          end
+
+          it 'returns status 403' do
+            post(:create, params: { user: user_params })
+
+            expect(response.status).to eq 403
+          end
         end
 
         it 'creates an audit log record' do
-          expect { post(:create, user: user_params) }.to change { SecurityEvent.count }.by(1)
+          expect { post(:create, params: { user: user_params }) }.to change { SecurityEvent.count }.by(1)
           expect(SecurityEvent.last.details[:with]).to eq('standard')
         end
 
         include_examples 'user login request with unique ip limit', 302 do
           def request
-            post(:create, user: user_params)
+            post(:create, params: { user: user_params })
             expect(subject.current_user).to eq user
             subject.sign_out user
           end
@@ -74,7 +95,7 @@ describe SessionsController do
 
         it 'updates the user activity' do
           expect do
-            post(:create, user: user_params)
+            post(:create, params: { user: user_params })
           end.to change { user.reload.last_activity_on }.to(Date.today)
         end
       end
@@ -89,7 +110,7 @@ describe SessionsController do
         end
 
         it 'displays an error when the reCAPTCHA is not solved' do
-          # Without this, `verify_recaptcha` arbitraily returns true in test env
+          # Without this, `verify_recaptcha` arbitrarily returns true in test env
           Recaptcha.configuration.skip_verify_env.delete('test')
           counter = double(:counter)
 
@@ -98,7 +119,7 @@ describe SessionsController do
                                       .with(:failed_login_captcha_total, anything)
                                       .and_return(counter)
 
-          post(:create, user: user_params)
+          post(:create, params: { user: user_params })
 
           expect(response).to render_template(:new)
           expect(flash[:alert]).to include 'There was an error with the reCAPTCHA. Please solve the reCAPTCHA again.'
@@ -116,7 +137,7 @@ describe SessionsController do
                                       .and_return(counter)
           expect(Gitlab::Metrics).to receive(:counter).and_call_original
 
-          post(:create, user: user_params)
+          post(:create, params: { user: user_params })
 
           expect(subject.current_user).to eq user
         end
@@ -127,7 +148,7 @@ describe SessionsController do
       let(:user) { create(:user, :two_factor) }
 
       def authenticate_2fa(user_params)
-        post(:create, { user: user_params }, { otp_user_id: user.id })
+        post(:create, params: { user: user_params }, session: { otp_user_id: user.id })
       end
 
       context 'remember_me field' do
@@ -148,6 +169,19 @@ describe SessionsController do
           authenticate_2fa(remember_me: '0', otp_attempt: user.current_otp)
 
           expect(response.cookies['remember_user_token']).to be_nil
+        end
+      end
+
+      context 'with password authentication disabled' do
+        before do
+          stub_application_setting(password_authentication_enabled_for_web: false)
+        end
+
+        it 'allows 2FA stage of non-password login' do
+          authenticate_2fa(otp_attempt: user.current_otp)
+
+          expect(@request.env['warden']).to be_authenticated
+          expect(subject.current_user).to eq user
         end
       end
 
@@ -233,7 +267,7 @@ describe SessionsController do
               end
 
               it 'keeps the user locked on future login attempts' do
-                post(:create, user: { login: user.username, password: user.password })
+                post(:create, params: { user: { login: user.username, password: user.password } })
 
                 expect(response)
                   .to set_flash.now[:alert].to /Invalid Login or password/
@@ -265,7 +299,7 @@ describe SessionsController do
       let(:user) { create(:user, :two_factor) }
 
       def authenticate_2fa_u2f(user_params)
-        post(:create, { user: user_params }, { otp_user_id: user.id })
+        post(:create, params: { user: user_params }, session: { otp_user_id: user.id })
       end
 
       context 'remember_me field' do
@@ -309,7 +343,7 @@ describe SessionsController do
       search_path = "/search?search=seed_project"
       request.headers[:HTTP_REFERER] = "http://#{host}#{search_path}"
 
-      get(:new, redirect_to_referer: :yes)
+      get(:new, params: { redirect_to_referer: :yes })
 
       expect(controller.stored_location_for(:redirect)).to eq(search_path)
     end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ServicesHelper
   def service_event_description(event)
     case event
@@ -30,14 +32,14 @@ module ServicesHelper
   end
 
   def service_save_button(service)
-    button_tag(class: 'btn btn-save', type: 'submit', disabled: service.deprecated?) do
+    button_tag(class: 'btn btn-success', type: 'submit', disabled: service.deprecated?) do
       icon('spinner spin', class: 'hidden js-btn-spinner') +
         content_tag(:span, 'Save changes', class: 'js-btn-label')
     end
   end
 
   def disable_fields_service?(service)
-    !current_controller?("admin/services") && service.deprecated?
+    service.is_a?(KubernetesService) || (!current_controller?("admin/services") && service.deprecated?)
   end
 
   extend self

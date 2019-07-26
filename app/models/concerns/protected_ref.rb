@@ -47,17 +47,23 @@ module ProtectedRef
 
     def access_levels_for_ref(ref, action:, protected_refs: nil)
       self.matching(ref, protected_refs: protected_refs)
-        .map(&:"#{action}_access_levels").flatten
+        .flat_map(&:"#{action}_access_levels")
     end
 
+    # Returns all protected refs that match the given ref name.
+    # This checks all records from the scope built up so far, and does
+    # _not_ return a relation.
+    #
+    # This method optionally takes in a list of `protected_refs` to search
+    # through, to avoid calling out to the database.
     def matching(ref_name, protected_refs: nil)
-      ProtectedRefMatcher.matching(self, ref_name, protected_refs: protected_refs)
+      (protected_refs || self.all).select { |protected_ref| protected_ref.matches?(ref_name) }
     end
   end
 
   private
 
   def ref_matcher
-    @ref_matcher ||= ProtectedRefMatcher.new(self)
+    @ref_matcher ||= RefMatcher.new(self.name)
   end
 end

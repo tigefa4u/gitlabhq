@@ -6,7 +6,7 @@
 #
 # Usage:
 #
-#     class Milestone < ActiveRecord::Base
+#     class Milestone < ApplicationRecord
 #       strip_attributes :title
 #     end
 #
@@ -14,7 +14,7 @@
 module StripAttribute
   extend ActiveSupport::Concern
 
-  module ClassMethods
+  class_methods do
     def strip_attributes(*attrs)
       strip_attrs.concat(attrs)
     end

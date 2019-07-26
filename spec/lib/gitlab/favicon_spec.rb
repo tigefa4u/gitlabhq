@@ -7,7 +7,7 @@ RSpec.describe Gitlab::Favicon, :request_store do
       expect(described_class.main).to match_asset_path '/assets/favicon.png'
     end
 
-    it 'has blue favicon for development' do
+    it 'has blue favicon for development', unless: Gitlab.ee? do
       allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('development'))
       expect(described_class.main).to match_asset_path '/assets/favicon-blue.png'
     end
@@ -58,6 +58,7 @@ RSpec.describe Gitlab::Favicon, :request_store do
         favicon_status_not_found
         favicon_status_pending
         favicon_status_running
+        favicon_status_scheduled
         favicon_status_skipped
         favicon_status_success
         favicon_status_warning

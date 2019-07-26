@@ -43,14 +43,8 @@ describe "User creates wiki page" do
         expect(page).to have_content("Create Page")
       end
 
-      it "shows non-escaped link in the pages list", :js do
-        click_link("New page")
-
-        page.within("#modal-new-wiki") do
-          fill_in(:new_wiki_path, with: "one/two/three-test")
-
-          click_on("Create page")
-        end
+      it "shows non-escaped link in the pages list", :js, :quarantine do
+        fill_in(:wiki_title, with: "one/two/three-test")
 
         page.within(".wiki-form") do
           fill_in(:wiki_content, with: "wiki content")
@@ -85,7 +79,7 @@ describe "User creates wiki page" do
         expect(current_path).to eq(project_wiki_path(project, "test"))
 
         page.within(:css, ".nav-text") do
-          expect(page).to have_content("Test").and have_content("Create Page")
+          expect(page).to have_content("test").and have_content("Create Page")
         end
 
         click_link("Home")
@@ -97,7 +91,7 @@ describe "User creates wiki page" do
         expect(current_path).to eq(project_wiki_path(project, "api"))
 
         page.within(:css, ".nav-text") do
-          expect(page).to have_content("Create").and have_content("Api")
+          expect(page).to have_content("Create").and have_content("api")
         end
 
         click_link("Home")
@@ -109,7 +103,7 @@ describe "User creates wiki page" do
         expect(current_path).to eq(project_wiki_path(project, "raketasks"))
 
         page.within(:css, ".nav-text") do
-          expect(page).to have_content("Create").and have_content("Rake")
+          expect(page).to have_content("Create").and have_content("rake")
         end
       end
 
@@ -138,14 +132,22 @@ describe "User creates wiki page" do
 
         fill_in(:wiki_content, with: ascii_content)
 
-        page.within(".wiki-form") do
-          click_button("Create page")
-        end
+        # This is the dumbest bug in the world:
+        # When the #wiki_content textarea is filled in, JS captures the `Enter` keydown event in order to do
+        # auto-indentation and manually inserts a newline. However, for whatever reason, when you try to click on the
+        # submit button in Capybara, it will not trigger the `click` event if a \n or \r character has been manually
+        # added to the textarea. It will, however, trigger ALL OTHER EVENTS, including `mouseover`/down/up, focus, and
+        # blur. Just not `click`. But only when you manually insert \n or \r - if you manually insert any other sequence
+        # then `click` is fired normally. And it's only Capybara. Browsers and JSDOM don't have this issue.
+        # So that's why the next line performs the click via JS.
+        page.execute_script("document.querySelector('.qa-create-page-button').click()")
 
-        page.within ".wiki" do
+        page.within ".md" do
           expect(page).to have_selector(".katex", count: 3).and have_content("2+2 is 4")
         end
       end
+
+      it_behaves_like 'wiki file attachments', :quarantine
     end
 
     context "in a group namespace", :js do
@@ -155,7 +157,7 @@ describe "User creates wiki page" do
         expect(page).to have_field("wiki[message]", with: "Create home")
       end
 
-      it "creates a page from from the home page" do
+      it "creates a page from the home page", :quarantine do
         page.within(".wiki-form") do
           fill_in(:wiki_content, with: "My awesome wiki!")
 
@@ -198,7 +200,7 @@ describe "User creates wiki page" do
             click_button("Create page")
           end
 
-          expect(page).to have_content("Foo")
+          expect(page).to have_content("foo")
                      .and have_content("Last edited by #{user.name}")
                      .and have_content("My awesome wiki!")
         end
@@ -213,7 +215,7 @@ describe "User creates wiki page" do
           end
 
           # Commit message field should have correct value.
-          expect(page).to have_field("wiki[message]", with: "Create spaces in the name")
+          expect(page).to have_field("wiki[message]", with: "Create Spaces in the name")
 
           page.within(".wiki-form") do
             fill_in(:wiki_content, with: "My awesome wiki!")
@@ -244,7 +246,7 @@ describe "User creates wiki page" do
             click_button("Create page")
           end
 
-          expect(page).to have_content("Hyphens in the name")
+          expect(page).to have_content("hyphens in the name")
                      .and have_content("Last edited by #{user.name}")
                      .and have_content("My awesome wiki!")
         end
@@ -291,7 +293,7 @@ describe "User creates wiki page" do
             click_button("Create page")
           end
 
-          expect(page).to have_content("Foo")
+          expect(page).to have_content("foo")
                      .and have_content("Last edited by #{user.name}")
                      .and have_content("My awesome wiki!")
         end
@@ -309,7 +311,7 @@ describe "User creates wiki page" do
       it 'renders a default sidebar when there is no customized sidebar' do
         visit(project_wikis_path(project))
 
-        expect(page).to have_content('Another')
+        expect(page).to have_content('another')
         expect(page).to have_content('More Pages')
       end
 

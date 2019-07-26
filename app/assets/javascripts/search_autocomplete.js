@@ -1,8 +1,8 @@
-/* eslint-disable no-return-assign, one-var, no-var, one-var-declaration-per-line, no-unused-vars, consistent-return, object-shorthand, prefer-template, class-methods-use-this, no-lonely-if, vars-on-top, max-len */
+/* eslint-disable no-return-assign, one-var, no-var, no-unused-vars, consistent-return, object-shorthand, prefer-template, class-methods-use-this, no-lonely-if, vars-on-top */
 
 import $ from 'jquery';
 import { escape, throttle } from 'underscore';
-import { s__, sprintf } from '~/locale';
+import { s__, __, sprintf } from '~/locale';
 import { getIdenticonBackgroundClass, getIdenticonTitle } from '~/helpers/avatar_helper';
 import axios from './lib/utils/axios_utils';
 import DropdownUtils from './filtered_search/dropdown_utils';
@@ -68,7 +68,7 @@ function setSearchOptions() {
   }
 }
 
-export default class SearchAutocomplete {
+export class SearchAutocomplete {
   constructor({ wrap, optsEl, autocompletePath, projectId, projectRef } = {}) {
     setSearchOptions();
     this.bindEventContext();
@@ -226,7 +226,7 @@ export default class SearchAutocomplete {
             icon,
             text: term,
             template: s__('SearchAutocomplete|in all GitLab'),
-            url: `/search?search=${term}`,
+            url: `${gon.relative_url_root}/search?search=${term}`,
           });
 
           if (template) {
@@ -234,7 +234,9 @@ export default class SearchAutocomplete {
               icon,
               text: term,
               template,
-              url: `/search?search=${term}&project_id=${this.projectInputEl.val()}&group_id=${this.groupInputEl.val()}`,
+              url: `${
+                gon.relative_url_root
+              }/search?search=${term}&project_id=${this.projectInputEl.val()}&group_id=${this.groupInputEl.val()}`,
             });
           }
         }
@@ -251,7 +253,6 @@ export default class SearchAutocomplete {
   }
 
   getCategoryContents() {
-    const userId = gon.current_user_id;
     const userName = gon.current_username;
     const { projectOptions, groupOptions, dashboardOptions } = gl;
 
@@ -277,21 +278,21 @@ export default class SearchAutocomplete {
     const issueItems = [
       {
         text: s__('SearchAutocomplete|Issues assigned to me'),
-        url: `${issuesPath}/?assignee_id=${userId}`,
+        url: `${issuesPath}/?assignee_username=${userName}`,
       },
       {
         text: s__("SearchAutocomplete|Issues I've created"),
-        url: `${issuesPath}/?author_id=${userId}`,
+        url: `${issuesPath}/?author_username=${userName}`,
       },
     ];
     const mergeRequestItems = [
       {
         text: s__('SearchAutocomplete|Merge requests assigned to me'),
-        url: `${mrPath}/?assignee_id=${userId}`,
+        url: `${mrPath}/?assignee_username=${userName}`,
       },
       {
         text: s__("SearchAutocomplete|Merge requests I've created"),
-        url: `${mrPath}/?author_id=${userId}`,
+        url: `${mrPath}/?author_username=${userName}`,
       },
     ];
 
@@ -378,7 +379,7 @@ export default class SearchAutocomplete {
           }
         }
     }
-    this.wrap.toggleClass('has-value', !!e.target.value);
+    this.wrap.toggleClass('has-value', Boolean(e.target.value));
   }
 
   onSearchInputFocus() {
@@ -395,7 +396,7 @@ export default class SearchAutocomplete {
 
   onClearInputClick(e) {
     e.preventDefault();
-    this.wrap.toggleClass('has-value', !!e.target.value);
+    this.wrap.toggleClass('has-value', Boolean(e.target.value));
     return this.searchInput.val('').focus();
   }
 
@@ -404,8 +405,9 @@ export default class SearchAutocomplete {
     this.wrap.removeClass('search-active');
     // If input is blank then restore state
     if (this.searchInput.val() === '') {
-      return this.restoreOriginalState();
+      this.restoreOriginalState();
     }
+    this.dropdownMenu.removeClass('show');
   }
 
   restoreOriginalState() {
@@ -438,16 +440,18 @@ export default class SearchAutocomplete {
 
   restoreMenu() {
     var html;
-    html = '<ul><li class="dropdown-menu-empty-item"><a>Loading...</a></li></ul>';
+    html = `<ul><li class="dropdown-menu-empty-item"><a>${__('Loading...')}</a></li></ul>`;
     return this.dropdownContent.html(html);
   }
 
   onClick(item, $el, e) {
     if (window.location.pathname.indexOf(item.url) !== -1) {
       if (!e.metaKey) e.preventDefault();
+      /* eslint-disable-next-line @gitlab/i18n/no-non-i18n-strings */
       if (item.category === 'Projects') {
         this.projectInputEl.val(item.id);
       }
+      /* eslint-disable-next-line @gitlab/i18n/no-non-i18n-strings */
       if (item.category === 'Groups') {
         this.groupInputEl.val(item.id);
       }
@@ -498,4 +502,8 @@ export default class SearchAutocomplete {
 
     this.dropdownMenu.toggleClass('fade-out', !this.isScrolledUp());
   }
+}
+
+export default function initSearchAutocomplete(opts) {
+  return new SearchAutocomplete(opts);
 }

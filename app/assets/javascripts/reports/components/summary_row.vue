@@ -1,7 +1,7 @@
 <script>
 import CiIcon from '~/vue_shared/components/ci_icon.vue';
-import LoadingIcon from '~/vue_shared/components/loading_icon.vue';
 import Popover from '~/vue_shared/components/help_popover.vue';
+import { GlLoadingIcon } from '@gitlab/ui';
 
 /**
  * Renders the summary row for each report
@@ -15,8 +15,8 @@ export default {
   name: 'ReportSummaryRow',
   components: {
     CiIcon,
-    LoadingIcon,
     Popover,
+    GlLoadingIcon,
   },
   props: {
     summary: {
@@ -44,28 +44,20 @@ export default {
 };
 </script>
 <template>
-  <div class="report-block-list-issue report-block-list-issue-parent">
-    <div class="report-block-list-icon append-right-10 prepend-left-5">
-      <loading-icon
+  <div class="report-block-list-issue report-block-list-issue-parent align-items-center">
+    <div class="report-block-list-icon append-right-default">
+      <gl-loading-icon
         v-if="statusIcon === 'loading'"
         css-class="report-block-list-loading-icon"
+        size="md"
       />
-      <ci-icon
-        v-else
-        :status="iconStatus"
-      />
+      <ci-icon v-else :status="iconStatus" :size="24" />
     </div>
 
     <div class="report-block-list-issue-description">
-      <div class="report-block-list-issue-description-text">
-        {{ summary }}
-      </div>
+      <div class="report-block-list-issue-description-text">{{ summary }}</div>
 
-      <popover
-        v-if="popoverOptions"
-        :options="popoverOptions"
-      />
-
+      <popover v-if="popoverOptions" :options="popoverOptions" />
     </div>
   </div>
 </template>

@@ -1,4 +1,6 @@
-module DeclarativePolicy # rubocop:disable Naming/FileName
+# frozen_string_literal: true
+
+module DeclarativePolicy
   PREFERRED_SCOPE_KEY = :"DeclarativePolicy.preferred_scope"
 
   class << self

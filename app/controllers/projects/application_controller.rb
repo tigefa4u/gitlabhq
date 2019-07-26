@@ -1,4 +1,7 @@
+# frozen_string_literal: true
+
 class Projects::ApplicationController < ApplicationController
+  include CookiesHelper
   include RoutableActions
   include ChecksCollaboration
 
@@ -9,11 +12,16 @@ class Projects::ApplicationController < ApplicationController
 
   helper_method :repository, :can_collaborate_with_project?, :user_access
 
+  rescue_from Gitlab::Template::Finders::RepoTemplateFinder::FileNotFoundError do |exception|
+    log_exception(exception)
+    render_404
+  end
+
   private
 
   def project
     return @project if @project
-    return nil unless params[:project_id] || params[:id]
+    return unless params[:project_id] || params[:id]
 
     path = File.join(params[:namespace_id], params[:project_id] || params[:id])
     auth_proc = ->(project) { !project.pending_delete? }
@@ -74,7 +82,7 @@ class Projects::ApplicationController < ApplicationController
   end
 
   def apply_diff_view_cookie!
-    cookies.permanent[:diff_view] = params.delete(:view) if params[:view].present?
+    set_secure_cookie(:diff_view, params.delete(:view), permanent: true) if params[:view].present?
   end
 
   def require_pages_enabled!

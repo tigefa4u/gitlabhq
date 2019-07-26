@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module NotesHelper
   def note_target_fields(note)
     if note.noteable
@@ -83,7 +85,7 @@ module NotesHelper
 
       diffs_project_merge_request_path(discussion.project, discussion.noteable, path_params)
     elsif discussion.for_commit?
-      anchor = discussion.line_code if discussion.diff_discussion?
+      anchor = discussion.diff_discussion? ? discussion.line_code : "note_#{discussion.first_note.id}"
 
       project_commit_path(discussion.project, discussion.noteable, anchor: anchor)
     end
@@ -108,7 +110,7 @@ module NotesHelper
   end
 
   def noteable_note_url(note)
-    Gitlab::UrlBuilder.build(note)
+    Gitlab::UrlBuilder.build(note) if note.id
   end
 
   def form_resources
@@ -120,27 +122,21 @@ module NotesHelper
   end
 
   def new_form_url
-    return nil unless @snippet.is_a?(PersonalSnippet)
+    return unless @snippet.is_a?(PersonalSnippet)
 
     snippet_notes_path(@snippet)
   end
 
   def can_create_note?
-    issuable = @issue || @merge_request
+    noteable = @issue || @merge_request || @snippet || @project
 
-    if @snippet.is_a?(PersonalSnippet)
-      can?(current_user, :comment_personal_snippet, @snippet)
-    elsif issuable
-      can?(current_user, :create_note, issuable)
-    else
-      can?(current_user, :create_note, @project)
-    end
+    can?(current_user, :create_note, noteable)
   end
 
   def initial_notes_data(autocomplete)
     {
       notesUrl: notes_url,
-      notesIds: @notes.map(&:id),
+      notesIds: @noteable.notes.pluck(:id), # rubocop: disable CodeReuse/ActiveRecord
       now: Time.now.to_i,
       diffView: diff_view,
       enableGFM: {
@@ -169,14 +165,13 @@ module NotesHelper
       registerPath: new_session_path(:user, redirect_to_referer: 'yes', anchor: 'register-pane'),
       newSessionPath: new_session_path(:user, redirect_to_referer: 'yes'),
       markdownDocsPath: help_page_path('user/markdown'),
-      markdownVersion: issuable.cached_markdown_version,
       quickActionsDocsPath: help_page_path('user/project/quick_actions'),
       closePath: close_issuable_path(issuable),
       reopenPath: reopen_issuable_path(issuable),
       notesPath: notes_url,
       totalNotes: issuable.discussions.length,
       lastFetchedAt: Time.now.to_i
-    }.to_json
+    }
   end
 
   def discussion_resolved_intro(discussion)

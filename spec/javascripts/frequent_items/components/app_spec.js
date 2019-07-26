@@ -194,7 +194,7 @@ describe('Frequent Items App Component', () => {
 
         expect(loadingEl).toBeDefined();
         expect(loadingEl.classList.contains('prepend-top-20')).toBe(true);
-        expect(loadingEl.querySelector('i').getAttribute('aria-label')).toBe('Loading projects');
+        expect(loadingEl.querySelector('span').getAttribute('aria-label')).toBe('Loading projects');
         done();
       });
     });
@@ -232,8 +232,7 @@ describe('Frequent Items App Component', () => {
       expect(vm.$el.querySelectorAll('.frequent-items-list-container li').length).toBe(1);
 
       vm.$store.dispatch('setSearchQuery', 'gitlab');
-      vm
-        .$nextTick()
+      vm.$nextTick()
         .then(() => {
           expect(vm.$el.querySelector('.loading-animation')).toBeDefined();
         })

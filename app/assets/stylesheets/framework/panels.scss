@@ -3,10 +3,8 @@
 }
 
 .card-slim {
-  @extend .card;
   margin-bottom: $gl-vert-padding;
 }
-
 
 .card-header {
   padding: $gl-vert-padding $gl-padding;
@@ -52,9 +50,4 @@
     margin: -$gl-padding;
     margin-top: $gl-padding;
   }
-}
-
-.card-title {
-  font-size: inherit;
-  line-height: inherit;
 }

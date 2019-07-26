@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :cluster_provider_gcp, class: Clusters::Providers::Gcp do
     cluster
@@ -27,6 +29,10 @@ FactoryBot.define do
       after(:build) do |gcp, evaluator|
         gcp.make_errored('Something wrong')
       end
+    end
+
+    trait :abac_enabled do
+      legacy_abac true
     end
   end
 end

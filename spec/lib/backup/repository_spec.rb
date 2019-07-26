@@ -11,10 +11,6 @@ describe Backup::Repository do
     allow(FileUtils).to receive(:mkdir_p).and_return(true)
     allow(FileUtils).to receive(:mv).and_return(true)
 
-    allow_any_instance_of(String).to receive(:color) do |string, _color|
-      string
-    end
-
     allow_any_instance_of(described_class).to receive(:progress).and_return(progress)
   end
 
@@ -69,6 +65,19 @@ describe Backup::Repository do
 
           expect(progress).to have_received(:puts).with("[Failed] restoring #{project.full_path} repository")
         end
+      end
+    end
+
+    context 'restoring object pools' do
+      it 'schedules restoring of the pool' do
+        pool_repository = create(:pool_repository, :failed)
+        pool_repository.delete_object_pool
+
+        subject.restore
+
+        pool_repository.reload
+        expect(pool_repository).not_to be_failed
+        expect(pool_repository.object_pool.exists?).to be(true)
       end
     end
   end

@@ -40,14 +40,17 @@ export default {
   getProjectData(namespace, project) {
     return Api.project(`${namespace}/${project}`);
   },
+  getProjectMergeRequests(projectId, params = {}) {
+    return Api.projectMergeRequests(projectId, params);
+  },
   getProjectMergeRequestData(projectId, mergeRequestId, params = {}) {
-    return Api.mergeRequest(projectId, mergeRequestId, params);
+    return Api.projectMergeRequest(projectId, mergeRequestId, params);
   },
   getProjectMergeRequestChanges(projectId, mergeRequestId) {
-    return Api.mergeRequestChanges(projectId, mergeRequestId);
+    return Api.projectMergeRequestChanges(projectId, mergeRequestId);
   },
   getProjectMergeRequestVersions(projectId, mergeRequestId) {
-    return Api.mergeRequestVersions(projectId, mergeRequestId);
+    return Api.projectMergeRequestVersions(projectId, mergeRequestId);
   },
   getBranchData(projectId, currentBranchId) {
     return Api.branchSingle(projectId, currentBranchId);

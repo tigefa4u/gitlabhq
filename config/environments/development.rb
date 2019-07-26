@@ -7,6 +7,7 @@ Rails.application.configure do
   config.cache_classes = false
 
   # Show full error reports and disable caching
+  config.active_record.verbose_query_logs  = true
   config.consider_all_requests_local       = true
   config.action_controller.perform_caching = false
 
@@ -45,4 +46,9 @@ Rails.application.configure do
 
   # Do not log asset requests
   config.assets.quiet = true
+
+  config.allow_concurrency = defined?(::Puma)
+
+  # BetterErrors live shell (REPL) on every stack frame
+  BetterErrors::Middleware.allow_ip!("127.0.0.1/0")
 end

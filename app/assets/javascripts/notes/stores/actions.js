@@ -1,6 +1,8 @@
+import Vue from 'vue';
 import $ from 'jquery';
 import axios from '~/lib/utils/axios_utils';
 import Visibility from 'visibilityjs';
+import TaskList from '../../task_list';
 import Flash from '../../flash';
 import Poll from '../../lib/utils/poll';
 import * as types from './mutation_types';
@@ -9,11 +11,20 @@ import * as constants from '../constants';
 import service from '../services/notes_service';
 import loadAwardsHandler from '../../awards_handler';
 import sidebarTimeTrackingEventHub from '../../sidebar/event_hub';
-import { isInViewport, scrollToElement } from '../../lib/utils/common_utils';
+import { isInViewport, scrollToElement, isInMRPage } from '../../lib/utils/common_utils';
+import mrWidgetEventHub from '../../vue_merge_request_widget/event_hub';
+import { __ } from '~/locale';
+import Api from '~/api';
 
 let eTagPoll;
 
-export const expandDiscussion = ({ commit }, data) => commit(types.EXPAND_DISCUSSION, data);
+export const expandDiscussion = ({ commit, dispatch }, data) => {
+  if (data.discussionId) {
+    dispatch('diffs/renderFileForDiscussionId', data.discussionId, { root: true });
+  }
+
+  commit(types.EXPAND_DISCUSSION, data);
+};
 
 export const collapseDiscussion = ({ commit }, data) => commit(types.COLLAPSE_DISCUSSION, data);
 
@@ -35,60 +46,121 @@ export const setNotesFetchedState = ({ commit }, state) =>
 
 export const toggleDiscussion = ({ commit }, data) => commit(types.TOGGLE_DISCUSSION, data);
 
-export const fetchDiscussions = ({ commit }, path) =>
+export const fetchDiscussions = ({ commit, dispatch }, { path, filter }) =>
   service
-    .fetchDiscussions(path)
+    .fetchDiscussions(path, filter)
     .then(res => res.json())
     .then(discussions => {
       commit(types.SET_INITIAL_DISCUSSIONS, discussions);
+      dispatch('updateResolvableDiscussionsCounts');
     });
 
-export const refetchDiscussionById = ({ commit }, { path, discussionId }) =>
-  service
-    .fetchDiscussions(path)
-    .then(res => res.json())
-    .then(discussions => {
-      const selectedDiscussion = discussions.find(discussion => discussion.id === discussionId);
-      if (selectedDiscussion) commit(types.UPDATE_DISCUSSION, selectedDiscussion);
-    });
+export const updateDiscussion = ({ commit, state }, discussion) => {
+  commit(types.UPDATE_DISCUSSION, discussion);
 
-export const deleteNote = ({ commit }, note) =>
-  service.deleteNote(note.path).then(() => {
+  return utils.findNoteObjectById(state.discussions, discussion.id);
+};
+
+export const deleteNote = ({ commit, dispatch, state }, note) =>
+  axios.delete(note.path).then(() => {
+    const discussion = state.discussions.find(({ id }) => id === note.discussion_id);
+
     commit(types.DELETE_NOTE, note);
+
+    dispatch('updateMergeRequestWidget');
+    dispatch('updateResolvableDiscussionsCounts');
+
+    if (isInMRPage()) {
+      dispatch('diffs/removeDiscussionsFromDiff', discussion);
+    }
   });
 
-export const updateNote = ({ commit }, { endpoint, note }) =>
+export const updateNote = ({ commit, dispatch }, { endpoint, note }) =>
   service
     .updateNote(endpoint, note)
     .then(res => res.json())
     .then(res => {
       commit(types.UPDATE_NOTE, res);
+      dispatch('startTaskList');
     });
 
-export const replyToDiscussion = ({ commit }, { endpoint, data }) =>
+export const updateOrCreateNotes = ({ commit, state, getters, dispatch }, notes) => {
+  const { notesById } = getters;
+
+  notes.forEach(note => {
+    if (notesById[note.id]) {
+      commit(types.UPDATE_NOTE, note);
+    } else if (note.type === constants.DISCUSSION_NOTE || note.type === constants.DIFF_NOTE) {
+      const discussion = utils.findNoteObjectById(state.discussions, note.discussion_id);
+
+      if (discussion) {
+        commit(types.ADD_NEW_REPLY_TO_DISCUSSION, note);
+      } else if (note.type === constants.DIFF_NOTE) {
+        dispatch('fetchDiscussions', { path: state.notesData.discussionsPath });
+      } else {
+        commit(types.ADD_NEW_NOTE, note);
+      }
+    } else {
+      commit(types.ADD_NEW_NOTE, note);
+    }
+  });
+};
+
+export const replyToDiscussion = ({ commit, state, getters, dispatch }, { endpoint, data }) =>
   service
     .replyToDiscussion(endpoint, data)
     .then(res => res.json())
     .then(res => {
-      commit(types.ADD_NEW_REPLY_TO_DISCUSSION, res);
+      if (res.discussion) {
+        commit(types.UPDATE_DISCUSSION, res.discussion);
+
+        updateOrCreateNotes({ commit, state, getters, dispatch }, res.discussion.notes);
+
+        dispatch('updateMergeRequestWidget');
+        dispatch('startTaskList');
+        dispatch('updateResolvableDiscussionsCounts');
+      } else {
+        commit(types.ADD_NEW_REPLY_TO_DISCUSSION, res);
+      }
 
       return res;
     });
 
-export const createNewNote = ({ commit }, { endpoint, data }) =>
+export const createNewNote = ({ commit, dispatch }, { endpoint, data }) =>
   service
     .createNewNote(endpoint, data)
     .then(res => res.json())
     .then(res => {
       if (!res.errors) {
         commit(types.ADD_NEW_NOTE, res);
+
+        dispatch('updateMergeRequestWidget');
+        dispatch('startTaskList');
+        dispatch('updateResolvableDiscussionsCounts');
       }
       return res;
     });
 
 export const removePlaceholderNotes = ({ commit }) => commit(types.REMOVE_PLACEHOLDER_NOTES);
 
-export const toggleResolveNote = ({ commit }, { endpoint, isResolved, discussion }) =>
+export const resolveDiscussion = ({ state, dispatch, getters }, { discussionId }) => {
+  const discussion = utils.findNoteObjectById(state.discussions, discussionId);
+  const isResolved = getters.isDiscussionResolved(discussionId);
+
+  if (!discussion) {
+    return Promise.reject();
+  } else if (isResolved) {
+    return Promise.resolve();
+  }
+
+  return dispatch('toggleResolveNote', {
+    endpoint: discussion.resolve_path,
+    isResolved,
+    discussion: true,
+  });
+};
+
+export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, discussion }) =>
   service
     .toggleResolveNote(endpoint, isResolved)
     .then(res => res.json())
@@ -96,6 +168,10 @@ export const toggleResolveNote = ({ commit }, { endpoint, isResolved, discussion
       const mutationType = discussion ? types.UPDATE_DISCUSSION : types.UPDATE_NOTE;
 
       commit(mutationType, res);
+
+      dispatch('updateResolvableDiscussionsCounts');
+
+      dispatch('updateMergeRequestWidget');
     });
 
 export const closeIssue = ({ commit, dispatch, state }) => {
@@ -146,43 +222,67 @@ export const toggleIssueLocalState = ({ commit }, newState) => {
 
 export const saveNote = ({ commit, dispatch }, noteData) => {
   // For MR discussuions we need to post as `note[note]` and issue we use `note.note`.
-  const note = noteData.data['note[note]'] || noteData.data.note.note;
+  // For batch comments, we use draft_note
+  const note = noteData.data.draft_note || noteData.data['note[note]'] || noteData.data.note.note;
   let placeholderText = note;
   const hasQuickActions = utils.hasQuickActions(placeholderText);
   const replyId = noteData.data.in_reply_to_discussion_id;
-  const methodToDispatch = replyId ? 'replyToDiscussion' : 'createNewNote';
+  let methodToDispatch;
+  const postData = Object.assign({}, noteData);
+  if (postData.isDraft === true) {
+    methodToDispatch = replyId
+      ? 'batchComments/addDraftToDiscussion'
+      : 'batchComments/createNewDraft';
+    if (!postData.draft_note && noteData.note) {
+      postData.draft_note = postData.note;
+      delete postData.note;
+    }
+  } else {
+    methodToDispatch = replyId ? 'replyToDiscussion' : 'createNewNote';
+  }
 
-  commit(types.REMOVE_PLACEHOLDER_NOTES); // remove previous placeholders
   $('.notes-form .flash-container').hide(); // hide previous flash notification
+  commit(types.REMOVE_PLACEHOLDER_NOTES); // remove previous placeholders
 
-  if (hasQuickActions) {
-    placeholderText = utils.stripQuickActions(placeholderText);
+  if (replyId) {
+    if (hasQuickActions) {
+      placeholderText = utils.stripQuickActions(placeholderText);
+    }
+
+    if (placeholderText.length) {
+      commit(types.SHOW_PLACEHOLDER_NOTE, {
+        noteBody: placeholderText,
+        replyId,
+      });
+    }
+
+    if (hasQuickActions) {
+      commit(types.SHOW_PLACEHOLDER_NOTE, {
+        isSystemNote: true,
+        noteBody: utils.getQuickActionText(note),
+        replyId,
+      });
+    }
   }
 
-  if (placeholderText.length) {
-    commit(types.SHOW_PLACEHOLDER_NOTE, {
-      noteBody: placeholderText,
-      replyId,
-    });
-  }
-
-  if (hasQuickActions) {
-    commit(types.SHOW_PLACEHOLDER_NOTE, {
-      isSystemNote: true,
-      noteBody: utils.getQuickActionText(note),
-      replyId,
-    });
-  }
-
-  return dispatch(methodToDispatch, noteData).then(res => {
+  return dispatch(methodToDispatch, postData, { root: true }).then(res => {
     const { errors } = res;
     const commandsChanges = res.commands_changes;
 
-    if (hasQuickActions && errors && Object.keys(errors).length) {
-      eTagPoll.makeRequest();
+    if (errors && Object.keys(errors).length) {
+      /*
+       The following reply means that quick actions have been successfully applied:
 
-      $('.js-gfm-input').trigger('clear-commands-cache.atwho');
-      Flash('Commands applied', 'notice', noteData.flashContainer);
+       {"commands_changes":{},"valid":false,"errors":{"commands_only":["Commands applied"]}}
+       */
+      if (hasQuickActions) {
+        eTagPoll.makeRequest();
+
+        $('.js-gfm-input').trigger('clear-commands-cache.atwho');
+        Flash(__('Commands applied'), 'notice', noteData.flashContainer);
+      } else {
+        throw new Error(__('Failed to save comment!'));
+      }
     }
 
     if (commandsChanges) {
@@ -196,7 +296,7 @@ export const saveNote = ({ commit, dispatch }, noteData) => {
           })
           .catch(() => {
             Flash(
-              'Something went wrong while adding your award. Please try again.',
+              __('Something went wrong while adding your award. Please try again.'),
               'alert',
               noteData.flashContainer,
             );
@@ -211,7 +311,9 @@ export const saveNote = ({ commit, dispatch }, noteData) => {
     if (errors && errors.commands_only) {
       Flash(errors.commands_only, 'notice', noteData.flashContainer);
     }
-    commit(types.REMOVE_PLACEHOLDER_NOTES);
+    if (replyId) {
+      commit(types.REMOVE_PLACEHOLDER_NOTES);
+    }
 
     return res;
   });
@@ -219,25 +321,9 @@ export const saveNote = ({ commit, dispatch }, noteData) => {
 
 const pollSuccessCallBack = (resp, commit, state, getters, dispatch) => {
   if (resp.notes && resp.notes.length) {
-    const { notesById } = getters;
+    updateOrCreateNotes({ commit, state, getters, dispatch }, resp.notes);
 
-    resp.notes.forEach(note => {
-      if (notesById[note.id]) {
-        commit(types.UPDATE_NOTE, note);
-      } else if (note.type === constants.DISCUSSION_NOTE || note.type === constants.DIFF_NOTE) {
-        const discussion = utils.findNoteObjectById(state.discussions, note.discussion_id);
-
-        if (discussion) {
-          commit(types.ADD_NEW_REPLY_TO_DISCUSSION, note);
-        } else if (note.type === constants.DIFF_NOTE) {
-          dispatch('fetchDiscussions', state.notesData.discussionsPath);
-        } else {
-          commit(types.ADD_NEW_NOTE, note);
-        }
-      } else {
-        commit(types.ADD_NEW_NOTE, note);
-      }
-    });
+    dispatch('startTaskList');
   }
 
   commit(types.SET_LAST_FETCHED_AT, resp.last_fetched_at);
@@ -252,7 +338,7 @@ export const poll = ({ commit, state, getters, dispatch }) => {
     data: state,
     successCallback: resp =>
       resp.json().then(data => pollSuccessCallBack(data, commit, state, getters, dispatch)),
-    errorCallback: () => Flash('Something went wrong while fetching latest comments.'),
+    errorCallback: () => Flash(__('Something went wrong while fetching latest comments.')),
   });
 
   if (!Visibility.hidden()) {
@@ -271,11 +357,11 @@ export const poll = ({ commit, state, getters, dispatch }) => {
 };
 
 export const stopPolling = () => {
-  eTagPoll.stop();
+  if (eTagPoll) eTagPoll.stop();
 };
 
 export const restartPolling = () => {
-  eTagPoll.restart();
+  if (eTagPoll) eTagPoll.restart();
 };
 
 export const fetchData = ({ commit, state, getters }) => {
@@ -288,7 +374,7 @@ export const fetchData = ({ commit, state, getters }) => {
     .poll(requestData)
     .then(resp => resp.json)
     .then(data => pollSuccessCallBack(data, commit, state, getters))
-    .catch(() => Flash('Something went wrong while fetching latest comments.'));
+    .catch(() => Flash(__('Something went wrong while fetching latest comments.')));
 };
 
 export const toggleAward = ({ commit, getters }, { awardName, noteId }) => {
@@ -298,12 +384,9 @@ export const toggleAward = ({ commit, getters }, { awardName, noteId }) => {
 export const toggleAwardRequest = ({ dispatch }, data) => {
   const { endpoint, awardName } = data;
 
-  return service
-    .toggleAward(endpoint, { name: awardName })
-    .then(res => res.json())
-    .then(() => {
-      dispatch('toggleAward', data);
-    });
+  return axios.post(endpoint, { name: awardName }).then(() => {
+    dispatch('toggleAward', data);
+  });
 };
 
 export const scrollToNoteIfNeeded = (context, el) => {
@@ -313,12 +396,74 @@ export const scrollToNoteIfNeeded = (context, el) => {
 };
 
 export const fetchDiscussionDiffLines = ({ commit }, discussion) =>
-  axios.get(discussion.truncatedDiffLinesPath).then(({ data }) => {
+  axios.get(discussion.truncated_diff_lines_path).then(({ data }) => {
     commit(types.SET_DISCUSSION_DIFF_LINES, {
       discussionId: discussion.id,
       diffLines: data.truncated_diff_lines,
     });
   });
+
+export const updateMergeRequestWidget = () => {
+  mrWidgetEventHub.$emit('mr.discussion.updated');
+};
+
+export const setLoadingState = ({ commit }, data) => {
+  commit(types.SET_NOTES_LOADING_STATE, data);
+};
+
+export const filterDiscussion = ({ dispatch }, { path, filter }) => {
+  dispatch('setLoadingState', true);
+  dispatch('fetchDiscussions', { path, filter })
+    .then(() => {
+      dispatch('setLoadingState', false);
+      dispatch('setNotesFetchedState', true);
+    })
+    .catch(() => {
+      dispatch('setLoadingState', false);
+      dispatch('setNotesFetchedState', true);
+      Flash(__('Something went wrong while fetching comments. Please try again.'));
+    });
+};
+
+export const setCommentsDisabled = ({ commit }, data) => {
+  commit(types.DISABLE_COMMENTS, data);
+};
+
+export const startTaskList = ({ dispatch }) =>
+  Vue.nextTick(
+    () =>
+      new TaskList({
+        dataType: 'note',
+        fieldName: 'note',
+        selector: '.notes .is-editable',
+        onSuccess: () => dispatch('startTaskList'),
+      }),
+  );
+
+export const updateResolvableDiscussionsCounts = ({ commit }) =>
+  commit(types.UPDATE_RESOLVABLE_DISCUSSIONS_COUNTS);
+
+export const submitSuggestion = (
+  { commit, dispatch },
+  { discussionId, noteId, suggestionId, flashContainer },
+) =>
+  Api.applySuggestion(suggestionId)
+    .then(() => commit(types.APPLY_SUGGESTION, { discussionId, noteId, suggestionId }))
+    .then(() => dispatch('resolveDiscussion', { discussionId }).catch(() => {}))
+    .catch(err => {
+      const defaultMessage = __(
+        'Something went wrong while applying the suggestion. Please try again.',
+      );
+      const flashMessage = err.response.data ? `${err.response.data.message}.` : defaultMessage;
+
+      Flash(__(flashMessage), 'alert', flashContainer);
+    });
+
+export const convertToDiscussion = ({ commit }, noteId) =>
+  commit(types.CONVERT_TO_DISCUSSION, noteId);
+
+export const removeConvertedDiscussion = ({ commit }, noteId) =>
+  commit(types.REMOVE_CONVERTED_DISCUSSION, noteId);
 
 // prevent babel-plugin-rewire from generating an invalid default during karma tests
 export default () => {};

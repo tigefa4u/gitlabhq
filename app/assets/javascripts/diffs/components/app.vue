@@ -3,24 +3,38 @@ import { mapState, mapGetters, mapActions } from 'vuex';
 import Icon from '~/vue_shared/components/icon.vue';
 import { __ } from '~/locale';
 import createFlash from '~/flash';
+import { GlLoadingIcon } from '@gitlab/ui';
+import PanelResizer from '~/vue_shared/components/panel_resizer.vue';
+import Mousetrap from 'mousetrap';
 import eventHub from '../../notes/event_hub';
-import LoadingIcon from '../../vue_shared/components/loading_icon.vue';
 import CompareVersions from './compare_versions.vue';
-import ChangedFiles from './changed_files.vue';
 import DiffFile from './diff_file.vue';
 import NoChanges from './no_changes.vue';
 import HiddenFilesWarning from './hidden_files_warning.vue';
+import CommitWidget from './commit_widget.vue';
+import TreeList from './tree_list.vue';
+import {
+  TREE_LIST_WIDTH_STORAGE_KEY,
+  INITIAL_TREE_WIDTH,
+  MIN_TREE_WIDTH,
+  MAX_TREE_WIDTH,
+  TREE_HIDE_STATS_WIDTH,
+  MR_TREE_SHOW_KEY,
+  CENTERED_LIMITED_CONTAINER_CLASSES,
+} from '../constants';
 
 export default {
   name: 'DiffsApp',
   components: {
     Icon,
-    LoadingIcon,
     CompareVersions,
-    ChangedFiles,
     DiffFile,
     NoChanges,
     HiddenFilesWarning,
+    CommitWidget,
+    TreeList,
+    GlLoadingIcon,
+    PanelResizer,
   },
   props: {
     endpoint: {
@@ -40,6 +54,40 @@ export default {
       type: Object,
       required: true,
     },
+    helpPagePath: {
+      type: String,
+      required: false,
+      default: '',
+    },
+    changesEmptyStateIllustration: {
+      type: String,
+      required: false,
+      default: '',
+    },
+    isFluidLayout: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    dismissEndpoint: {
+      type: String,
+      required: false,
+      default: '',
+    },
+    showSuggestPopover: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+  },
+  data() {
+    const treeWidth =
+      parseInt(localStorage.getItem(TREE_LIST_WIDTH_STORAGE_KEY), 10) || INITIAL_TREE_WIDTH;
+
+    return {
+      assignedDiscussions: false,
+      treeWidth,
+    };
   },
   computed: {
     ...mapState({
@@ -48,8 +96,6 @@ export default {
       diffViewType: state => state.diffs.diffViewType,
       mergeRequestDiffs: state => state.diffs.mergeRequestDiffs,
       mergeRequestDiff: state => state.diffs.mergeRequestDiff,
-      latestVersionPath: state => state.diffs.latestVersionPath,
-      startVersion: state => state.diffs.startVersion,
       commit: state => state.diffs.commit,
       targetBranchName: state => state.diffs.targetBranchName,
       renderOverflowWarning: state => state.diffs.renderOverflowWarning,
@@ -58,8 +104,9 @@ export default {
       plainDiffPath: state => state.diffs.plainDiffPath,
       emailPatchPath: state => state.diffs.emailPatchPath,
     }),
-    ...mapGetters('diffs', ['isParallelView']),
-    ...mapGetters(['isNotesFetched']),
+    ...mapState('diffs', ['showTreeList', 'isLoading', 'startVersion']),
+    ...mapGetters('diffs', ['isParallelView', 'currentDiffIndex']),
+    ...mapGetters(['isNotesFetched', 'getNoteableData']),
     targetBranch() {
       return {
         branchName: this.targetBranchName,
@@ -67,26 +114,24 @@ export default {
         path: '',
       };
     },
-    notAllCommentsDisplayed() {
-      if (this.commit) {
-        return __('Only comments from the following commit are shown below');
-      } else if (this.startVersion) {
-        return __(
-          "Not all comments are displayed because you're comparing two versions of the diff.",
-        );
-      }
-      return __(
-        "Not all comments are displayed because you're viewing an old version of the diff.",
+    canCurrentUserFork() {
+      return this.currentUser.can_fork === true && this.currentUser.can_create_merge_request;
+    },
+    showCompareVersions() {
+      return this.mergeRequestDiffs && this.mergeRequestDiff;
+    },
+    renderDiffFiles() {
+      return (
+        this.diffFiles.length > 0 ||
+        (this.startVersion &&
+          this.startVersion.version_index === this.mergeRequestDiff.version_index)
       );
     },
-    showLatestVersion() {
-      if (this.commit) {
-        return __('Show latest version of the diff');
-      }
-      return __('Show latest version');
+    hideFileStats() {
+      return this.treeWidth <= TREE_HIDE_STATS_WIDTH;
     },
-    canCurrentUserFork() {
-      return this.currentUser.canFork === true && this.currentUser.canCreateMergeRequest;
+    isLimitedContainer() {
+      return !this.showTreeList && !this.isParallelView && !this.isFluidLayout;
     },
   },
   watch: {
@@ -102,59 +147,147 @@ export default {
 
       this.adjustView();
     },
+    isLoading: 'adjustView',
+    showTreeList: 'adjustView',
   },
   mounted() {
-    this.setBaseConfig({ endpoint: this.endpoint, projectPath: this.projectPath });
+    this.setBaseConfig({
+      endpoint: this.endpoint,
+      projectPath: this.projectPath,
+      dismissEndpoint: this.dismissEndpoint,
+      showSuggestPopover: this.showSuggestPopover,
+    });
 
     if (this.shouldShow) {
       this.fetchData();
     }
+
+    const id = window && window.location && window.location.hash;
+
+    if (id) {
+      this.setHighlightedRow(id.slice(1));
+    }
   },
   created() {
     this.adjustView();
+    eventHub.$once('fetchedNotesData', this.setDiscussions);
+    eventHub.$once('fetchDiffData', this.fetchData);
+    eventHub.$on('refetchDiffData', this.refetchDiffData);
+    this.CENTERED_LIMITED_CONTAINER_CLASSES = CENTERED_LIMITED_CONTAINER_CLASSES;
+  },
+  beforeDestroy() {
+    eventHub.$off('fetchDiffData', this.fetchData);
+    eventHub.$off('refetchDiffData', this.refetchDiffData);
+    this.removeEventListeners();
   },
   methods: {
-    ...mapActions('diffs', ['setBaseConfig', 'fetchDiffFiles']),
-    fetchData() {
-      this.fetchDiffFiles().catch(() => {
-        createFlash(__('Something went wrong on our end. Please try again!'));
-      });
+    ...mapActions(['startTaskList']),
+    ...mapActions('diffs', [
+      'setBaseConfig',
+      'fetchDiffFiles',
+      'startRenderDiffsQueue',
+      'assignDiscussionsToDiff',
+      'setHighlightedRow',
+      'cacheTreeListWidth',
+      'scrollToFile',
+      'toggleShowTreeList',
+    ]),
+    refetchDiffData() {
+      this.assignedDiscussions = false;
+      this.fetchData(false);
+    },
+    fetchData(toggleTree = true) {
+      this.fetchDiffFiles()
+        .then(() => {
+          if (toggleTree) {
+            this.hideTreeListIfJustOneFile();
+          }
+
+          requestIdleCallback(
+            () => {
+              this.setDiscussions();
+              this.startRenderDiffsQueue();
+            },
+            { timeout: 1000 },
+          );
+        })
+        .catch(() => {
+          createFlash(__('Something went wrong on our end. Please try again!'));
+        });
 
       if (!this.isNotesFetched) {
         eventHub.$emit('fetchNotesData');
       }
     },
+    setDiscussions() {
+      if (this.isNotesFetched && !this.assignedDiscussions && !this.isLoading) {
+        this.assignedDiscussions = true;
+
+        requestIdleCallback(
+          () =>
+            this.assignDiscussionsToDiff()
+              .then(this.$nextTick)
+              .then(this.startTaskList),
+          { timeout: 1000 },
+        );
+      }
+    },
     adjustView() {
-      if (this.shouldShow && this.isParallelView) {
-        window.mrTabs.expandViewContainer();
+      if (this.shouldShow) {
+        this.$nextTick(() => {
+          this.setEventListeners();
+        });
       } else {
-        window.mrTabs.resetViewContainer();
+        this.removeEventListeners();
+      }
+    },
+    setEventListeners() {
+      Mousetrap.bind(['[', 'k', ']', 'j'], (e, combo) => {
+        switch (combo) {
+          case '[':
+          case 'k':
+            this.jumpToFile(-1);
+            break;
+          case ']':
+          case 'j':
+            this.jumpToFile(+1);
+            break;
+          default:
+            break;
+        }
+      });
+    },
+    removeEventListeners() {
+      Mousetrap.unbind(['[', 'k', ']', 'j']);
+    },
+    jumpToFile(step) {
+      const targetIndex = this.currentDiffIndex + step;
+      if (targetIndex >= 0 && targetIndex < this.diffFiles.length) {
+        this.scrollToFile(this.diffFiles[targetIndex].file_path);
+      }
+    },
+    hideTreeListIfJustOneFile() {
+      const storedTreeShow = localStorage.getItem(MR_TREE_SHOW_KEY);
+
+      if ((storedTreeShow === null && this.diffFiles.length <= 1) || storedTreeShow === 'false') {
+        this.toggleShowTreeList(false);
       }
     },
   },
+  minTreeWidth: MIN_TREE_WIDTH,
+  maxTreeWidth: MAX_TREE_WIDTH,
 };
 </script>
 
 <template>
   <div v-show="shouldShow">
-    <div
-      v-if="isLoading"
-      class="loading"
-    >
-      <loading-icon />
-    </div>
-    <div
-      v-else
-      id="diffs"
-      :class="{ active: shouldShow }"
-      class="diffs tab-pane"
-    >
+    <div v-if="isLoading" class="loading"><gl-loading-icon /></div>
+    <div v-else id="diffs" :class="{ active: shouldShow }" class="diffs tab-pane">
       <compare-versions
-        v-if="!commit && mergeRequestDiffs.length > 1"
         :merge-request-diffs="mergeRequestDiffs"
         :merge-request-diff="mergeRequestDiff"
-        :start-version="startVersion"
         :target-branch="targetBranch"
+        :is-limited-container="isLimitedContainer"
       />
 
       <hidden-files-warning
@@ -166,39 +299,43 @@ export default {
       />
 
       <div
-        v-if="commit || startVersion || (mergeRequestDiff && !mergeRequestDiff.latest)"
-        class="mr-version-controls"
+        :data-can-create-note="getNoteableData.current_user.can_create_note"
+        class="files d-flex prepend-top-default"
       >
-        <div class="content-block comments-disabled-notif clearfix">
-          <i class="fa fa-info-circle"></i>
-          {{ notAllCommentsDisplayed }}
-          <div class="pull-right">
-            <a
-              :href="latestVersionPath"
-              class="btn btn-sm"
-            >
-              {{ showLatestVersion }}
-            </a>
-          </div>
+        <div
+          v-show="showTreeList"
+          :style="{ width: `${treeWidth}px` }"
+          class="diff-tree-list js-diff-tree-list"
+        >
+          <panel-resizer
+            :size.sync="treeWidth"
+            :start-size="treeWidth"
+            :min-size="$options.minTreeWidth"
+            :max-size="$options.maxTreeWidth"
+            side="right"
+            @resize-end="cacheTreeListWidth"
+          />
+          <tree-list :hide-file-stats="hideFileStats" />
+        </div>
+        <div
+          class="diff-files-holder"
+          :class="{
+            [CENTERED_LIMITED_CONTAINER_CLASSES]: isLimitedContainer,
+          }"
+        >
+          <commit-widget v-if="commit" :commit="commit" />
+          <template v-if="renderDiffFiles">
+            <diff-file
+              v-for="file in diffFiles"
+              :key="file.newPath"
+              :file="file"
+              :help-page-path="helpPagePath"
+              :can-current-user-fork="canCurrentUserFork"
+            />
+          </template>
+          <no-changes v-else :changes-empty-state-illustration="changesEmptyStateIllustration" />
         </div>
       </div>
-
-      <changed-files
-        :diff-files="diffFiles"
-      />
-
-      <div
-        v-if="diffFiles.length > 0"
-        class="files"
-      >
-        <diff-file
-          v-for="file in diffFiles"
-          :key="file.newPath"
-          :file="file"
-          :can-current-user-fork="canCurrentUserFork"
-        />
-      </div>
-      <no-changes v-else />
     </div>
   </div>
 </template>

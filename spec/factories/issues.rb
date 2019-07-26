@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :issue do
     title { generate(:title) }
@@ -11,6 +13,10 @@ FactoryBot.define do
 
     trait :opened do
       state :opened
+    end
+
+    trait :locked do
+      discussion_locked true
     end
 
     trait :closed do

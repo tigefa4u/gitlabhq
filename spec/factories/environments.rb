@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :environment, class: Environment do
     sequence(:name) { |n| "environment#{n}" }
@@ -22,6 +24,7 @@ FactoryBot.define do
                                        pipeline: pipeline)
 
         deployment = create(:deployment,
+                            :success,
                             environment: environment,
                             project: environment.project,
                             deployable: deployable,

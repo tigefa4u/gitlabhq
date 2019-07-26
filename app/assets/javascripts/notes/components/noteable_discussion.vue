@@ -1,55 +1,54 @@
 <script>
+import _ from 'underscore';
 import { mapActions, mapGetters } from 'vuex';
-import resolveDiscussionsSvg from 'icons/_icon_mr_issue.svg';
-import nextDiscussionsSvg from 'icons/_next_discussion.svg';
-import { convertObjectPropsToCamelCase } from '~/lib/utils/common_utils';
+import { GlTooltipDirective } from '@gitlab/ui';
 import { truncateSha } from '~/lib/utils/text_utility';
-import systemNote from '~/vue_shared/components/notes/system_note.vue';
-import { s__ } from '~/locale';
+import { s__, __, sprintf } from '~/locale';
+import { clearDraft, getDiscussionReplyKey } from '~/lib/utils/autosave';
+import icon from '~/vue_shared/components/icon.vue';
+import diffLineNoteFormMixin from 'ee_else_ce/notes/mixins/diff_line_note_form';
+import TimelineEntryItem from '~/vue_shared/components/notes/timeline_entry_item.vue';
 import Flash from '../../flash';
-import { SYSTEM_NOTE } from '../constants';
 import userAvatarLink from '../../vue_shared/components/user_avatar/user_avatar_link.vue';
-import noteableNote from './noteable_note.vue';
 import noteHeader from './note_header.vue';
 import noteSignedOutWidget from './note_signed_out_widget.vue';
 import noteEditedText from './note_edited_text.vue';
 import noteForm from './note_form.vue';
 import diffWithNote from './diff_with_note.vue';
-import placeholderNote from '../../vue_shared/components/notes/placeholder_note.vue';
-import placeholderSystemNote from '../../vue_shared/components/notes/placeholder_system_note.vue';
-import autosave from '../mixins/autosave';
 import noteable from '../mixins/noteable';
 import resolvable from '../mixins/resolvable';
 import discussionNavigation from '../mixins/discussion_navigation';
-import tooltip from '../../vue_shared/directives/tooltip';
+import eventHub from '../event_hub';
+import DiscussionNotes from './discussion_notes.vue';
+import DiscussionActions from './discussion_actions.vue';
 
 export default {
   name: 'NoteableDiscussion',
   components: {
-    noteableNote,
-    diffWithNote,
+    icon,
     userAvatarLink,
     noteHeader,
     noteSignedOutWidget,
     noteEditedText,
     noteForm,
-    placeholderNote,
-    placeholderSystemNote,
-    systemNote,
+    DraftNote: () => import('ee_component/batch_comments/components/draft_note.vue'),
+    TimelineEntryItem,
+    DiscussionNotes,
+    DiscussionActions,
   },
   directives: {
-    tooltip,
+    GlTooltip: GlTooltipDirective,
   },
-  mixins: [autosave, noteable, resolvable, discussionNavigation],
+  mixins: [noteable, resolvable, discussionNavigation, diffLineNoteFormMixin],
   props: {
     discussion: {
       type: Object,
       required: true,
     },
-    renderHeader: {
-      type: Boolean,
+    line: {
+      type: Object,
       required: false,
-      default: true,
+      default: null,
     },
     renderDiffFile: {
       type: Boolean,
@@ -66,6 +65,11 @@ export default {
       required: false,
       default: false,
     },
+    helpPagePath: {
+      type: String,
+      required: false,
+      default: '',
+    },
   },
   data() {
     return {
@@ -76,41 +80,29 @@ export default {
   },
   computed: {
     ...mapGetters([
+      'convertedDisscussionIds',
       'getNoteableData',
-      'discussionCount',
-      'resolvedDiscussionCount',
-      'allDiscussions',
-      'unresolvedDiscussionsIdsByDiff',
-      'unresolvedDiscussionsIdsByDate',
-      'unresolvedDiscussions',
-      'unresolvedDiscussionsIdsOrdered',
+      'userCanReply',
       'nextUnresolvedDiscussionId',
-      'isLastUnresolvedDiscussion',
+      'unresolvedDiscussionsCount',
+      'hasUnresolvedDiscussions',
+      'showJumpToNextDiscussion',
+      'getUserData',
     ]),
-    transformedDiscussion() {
-      return {
-        ...this.discussion.notes[0],
-        truncatedDiffLines: this.discussion.truncated_diff_lines || [],
-        truncatedDiffLinesPath: this.discussion.truncated_diff_lines_path,
-        diffFile: this.discussion.diff_file,
-        diffDiscussion: this.discussion.diff_discussion,
-        imageDiffHtml: this.discussion.image_diff_html,
-        active: this.discussion.active,
-        discussionPath: this.discussion.discussion_path,
-        resolved: this.discussion.resolved,
-        resolvedBy: this.discussion.resolved_by,
-        resolvedByPush: this.discussion.resolved_by_push,
-        resolvedAt: this.discussion.resolved_at,
-      };
+    currentUser() {
+      return this.getUserData;
     },
     author() {
-      return this.transformedDiscussion.author;
+      return this.firstNote.author;
     },
-    canReply() {
-      return this.getNoteableData.current_user.can_create_note;
+    autosaveKey() {
+      return getDiscussionReplyKey(this.firstNote.noteable_type, this.discussion.id);
     },
     newNotePath() {
       return this.getNoteableData.create_note_path;
+    },
+    firstNote() {
+      return this.discussion.notes.slice(0, 1)[0];
     },
     lastUpdatedBy() {
       const { notes } = this.discussion;
@@ -131,49 +123,87 @@ export default {
       return null;
     },
     resolvedText() {
-      return this.transformedDiscussion.resolvedByPush ? 'Automatically resolved' : 'Resolved';
+      return this.discussion.resolved_by_push ? __('Automatically resolved') : __('Resolved');
     },
-    hasMultipleUnresolvedDiscussions() {
-      return this.unresolvedDiscussions.length > 1;
-    },
-    showJumpToNextDiscussion() {
-      return this.hasMultipleUnresolvedDiscussions &&
-        !this.isLastUnresolvedDiscussion(this.discussion.id, this.discussionsByDiffOrder);
+    shouldShowJumpToNextDiscussion() {
+      return this.showJumpToNextDiscussion(this.discussionsByDiffOrder ? 'diff' : 'discussion');
     },
     shouldRenderDiffs() {
-      const { diffDiscussion, diffFile } = this.transformedDiscussion;
-
-      return diffDiscussion && diffFile && this.renderDiffFile;
+      return this.discussion.diff_discussion && this.renderDiffFile;
+    },
+    shouldGroupReplies() {
+      return !this.shouldRenderDiffs;
     },
     wrapperComponent() {
       return this.shouldRenderDiffs ? diffWithNote : 'div';
     },
     wrapperComponentProps() {
       if (this.shouldRenderDiffs) {
-        return { discussion: convertObjectPropsToCamelCase(this.discussion) };
+        return { discussion: this.discussion };
       }
 
       return {};
     },
-    wrapperClass() {
-      return this.isDiffDiscussion ? '' : 'card discussion-wrapper';
+    isExpanded() {
+      return this.discussion.expanded || this.alwaysExpanded;
     },
-  },
-  watch: {
-    isReplying() {
-      if (this.isReplying) {
-        this.$nextTick(() => {
-          // Pass an extra key to separate reply and note edit forms
-          this.initAutoSave(this.transformedDiscussion, ['Reply']);
-        });
-      } else {
-        this.disposeAutoSave();
+    shouldHideDiscussionBody() {
+      return this.shouldRenderDiffs && !this.isExpanded;
+    },
+    actionText() {
+      const linkStart = `<a href="${_.escape(this.discussion.discussion_path)}">`;
+      const linkEnd = '</a>';
+
+      let { commit_id: commitId } = this.discussion;
+      if (commitId) {
+        commitId = `<span class="commit-sha">${truncateSha(commitId)}</span>`;
       }
+
+      const {
+        for_commit: isForCommit,
+        diff_discussion: isDiffDiscussion,
+        active: isActive,
+      } = this.discussion;
+
+      let text = s__('MergeRequests|started a thread');
+      if (isForCommit) {
+        text = s__('MergeRequests|started a thread on commit %{linkStart}%{commitId}%{linkEnd}');
+      } else if (isDiffDiscussion && commitId) {
+        text = isActive
+          ? s__('MergeRequests|started a thread on commit %{linkStart}%{commitId}%{linkEnd}')
+          : s__(
+              'MergeRequests|started a thread on an outdated change in commit %{linkStart}%{commitId}%{linkEnd}',
+            );
+      } else if (isDiffDiscussion) {
+        text = isActive
+          ? s__('MergeRequests|started a thread on %{linkStart}the diff%{linkEnd}')
+          : s__(
+              'MergeRequests|started a thread on %{linkStart}an old version of the diff%{linkEnd}',
+            );
+      }
+
+      return sprintf(text, { commitId, linkStart, linkEnd }, false);
+    },
+    diffLine() {
+      if (this.line) {
+        return this.line;
+      }
+
+      if (this.discussion.diff_discussion && this.discussion.truncated_diff_lines) {
+        return this.discussion.truncated_diff_lines.slice(-1)[0];
+      }
+
+      return null;
+    },
+    resolveWithIssuePath() {
+      return !this.discussionResolved ? this.discussion.resolve_with_issue_path : '';
     },
   },
   created() {
-    this.resolveDiscussionsSvg = resolveDiscussionsSvg;
-    this.nextDiscussionsSvg = nextDiscussionsSvg;
+    eventHub.$on('startReplying', this.onStartReplying);
+  },
+  beforeDestroy() {
+    eventHub.$off('startReplying', this.onStartReplying);
   },
   methods: {
     ...mapActions([
@@ -182,25 +212,9 @@ export default {
       'removePlaceholderNotes',
       'toggleResolveNote',
       'expandDiscussion',
+      'removeConvertedDiscussion',
     ]),
     truncateSha,
-    componentName(note) {
-      if (note.isPlaceholderNote) {
-        if (note.placeholderType === SYSTEM_NOTE) {
-          return placeholderSystemNote;
-        }
-        return placeholderNote;
-      }
-
-      if (note.system) {
-        return systemNote;
-      }
-
-      return noteableNote;
-    },
-    componentData(note) {
-      return note.isPlaceholderNote ? this.discussion.notes[0] : note;
-    },
     toggleDiscussionHandler() {
       this.toggleDiscussion({ discussionId: this.discussion.id });
     },
@@ -217,15 +231,28 @@ export default {
         }
       }
 
+      if (this.convertedDisscussionIds.includes(this.discussion.id)) {
+        this.removeConvertedDiscussion(this.discussion.id);
+      }
+
       this.isReplying = false;
-      this.resetAutoSave();
+      clearDraft(this.autosaveKey);
     },
     saveReply(noteText, form, callback) {
+      if (!noteText) {
+        this.cancelReplyForm();
+        callback();
+        return;
+      }
       const postData = {
         in_reply_to_discussion_id: this.discussion.reply_id,
         target_type: this.getNoteableData.targetType,
         note: { note: noteText },
       };
+
+      if (this.convertedDisscussionIds.includes(this.discussion.id)) {
+        postData.return_discussion = true;
+      }
 
       if (this.discussion.for_commit) {
         postData.note_project_id = this.discussion.project_id;
@@ -240,15 +267,16 @@ export default {
       this.isReplying = false;
       this.saveNote(replyData)
         .then(() => {
-          this.resetAutoSave();
+          clearDraft(this.autosaveKey);
           callback();
         })
         .catch(err => {
           this.removePlaceholderNotes();
           this.isReplying = true;
           this.$nextTick(() => {
-            const msg = `Your comment could not be submitted!
-Please check your network connection and try again.`;
+            const msg = __(
+              'Your comment could not be submitted! Please check your network connection and try again.',
+            );
             Flash(msg, 'alert', this.$el);
             this.$refs.noteForm.note = noteText;
             callback(err);
@@ -256,68 +284,54 @@ Please check your network connection and try again.`;
         });
     },
     jumpToNextDiscussion() {
-      const nextId =
-        this.nextUnresolvedDiscussionId(this.discussion.id, this.discussionsByDiffOrder);
+      const nextId = this.nextUnresolvedDiscussionId(
+        this.discussion.id,
+        this.discussionsByDiffOrder,
+      );
 
       this.jumpToDiscussion(nextId);
+    },
+    deleteNoteHandler(note) {
+      this.$emit('noteDeleted', this.discussion, note);
+    },
+    onStartReplying(discussionId) {
+      if (this.discussion.id === discussionId) {
+        this.showReplyForm();
+      }
     },
   },
 };
 </script>
 
 <template>
-  <li class="note note-discussion timeline-entry">
-    <div class="timeline-entry-inner">
-      <div class="timeline-icon">
-        <user-avatar-link
-          :link-href="author.path"
-          :img-src="author.avatar_url"
-          :img-alt="author.name"
-          :img-size="40"
-        />
-      </div>
-      <div class="timeline-content">
-        <div
-          :data-discussion-id="transformedDiscussion.discussion_id"
-          class="discussion js-discussion-container"
-        >
-          <div
-            v-if="renderHeader"
-            class="discussion-header"
-          >
+  <timeline-entry-item class="note note-discussion">
+    <div class="timeline-content">
+      <div :data-discussion-id="discussion.id" class="discussion js-discussion-container">
+        <div v-if="shouldRenderDiffs" class="discussion-header note-wrapper">
+          <div v-once class="timeline-icon align-self-start flex-shrink-0">
+            <user-avatar-link
+              v-if="author"
+              :link-href="author.path"
+              :img-src="author.avatar_url"
+              :img-alt="author.name"
+              :img-size="40"
+            />
+          </div>
+          <div class="timeline-content w-100">
             <note-header
               :author="author"
-              :created-at="transformedDiscussion.created_at"
-              :note-id="transformedDiscussion.id"
+              :created-at="firstNote.created_at"
+              :note-id="firstNote.id"
               :include-toggle="true"
               :expanded="discussion.expanded"
               @toggleHandler="toggleDiscussionHandler"
             >
-              <template v-if="transformedDiscussion.diffDiscussion">
-                started a discussion on
-                <a :href="transformedDiscussion.discussionPath">
-                  <template v-if="transformedDiscussion.active">
-                    the diff
-                  </template>
-                  <template v-else>
-                    an old version of the diff
-                  </template>
-                </a>
-              </template>
-              <template v-else-if="discussion.for_commit">
-                started a discussion on commit
-                <a :href="discussion.discussion_path">
-                  {{ truncateSha(discussion.commit_id) }}
-                </a>
-              </template>
-              <template v-else>
-                started a discussion
-              </template>
+              <span v-html="actionText"></span>
             </note-header>
             <note-edited-text
-              v-if="transformedDiscussion.resolved"
-              :edited-at="transformedDiscussion.resolvedAt"
-              :edited-by="transformedDiscussion.resolvedBy"
+              v-if="discussion.resolved"
+              :edited-at="discussion.resolved_at"
+              :edited-by="discussion.resolved_by"
               :action-text="resolvedText"
               class-name="discussion-headline-light js-discussion-headline"
             />
@@ -329,110 +343,82 @@ Please check your network connection and try again.`;
               class-name="discussion-headline-light js-discussion-headline"
             />
           </div>
-          <div
-            v-if="discussion.expanded || alwaysExpanded"
-            class="discussion-body">
-            <component
-              :is="wrapperComponent"
-              v-bind="wrapperComponentProps"
-              :class="wrapperClass"
+        </div>
+        <div v-if="!shouldHideDiscussionBody" class="discussion-body">
+          <component
+            :is="wrapperComponent"
+            v-bind="wrapperComponentProps"
+            class="card discussion-wrapper"
+          >
+            <discussion-notes
+              :discussion="discussion"
+              :diff-line="diffLine"
+              :help-page-path="helpPagePath"
+              :is-expanded="isExpanded"
+              :line="line"
+              :should-group-replies="shouldGroupReplies"
+              @startReplying="showReplyForm"
+              @deleteNote="deleteNoteHandler"
             >
-              <div class="discussion-notes">
-                <ul class="notes">
-                  <component
-                    v-for="note in discussion.notes"
-                    :is="componentName(note)"
-                    :note="componentData(note)"
-                    :key="note.id"
-                  />
-                </ul>
+              <slot slot="avatar-badge" name="avatar-badge"></slot>
+              <template #footer="{ showReplies }">
+                <draft-note
+                  v-if="showDraft(discussion.reply_id)"
+                  :key="`draft_${discussion.id}`"
+                  :draft="draftForDiscussion(discussion.reply_id)"
+                />
                 <div
+                  v-else-if="showReplies"
                   :class="{ 'is-replying': isReplying }"
-                  class="discussion-reply-holder"
+                  class="discussion-reply-holder clearfix"
                 >
-                  <template v-if="!isReplying && canReply">
-                    <div
-                      class="btn-group d-flex discussion-with-resolve-btn"
-                      role="group">
-                      <div
-                        class="btn-group w-100"
-                        role="group">
-                        <button
-                          type="button"
-                          class="js-vue-discussion-reply btn btn-text-field mr-2"
-                          title="Add a reply"
-                          @click="showReplyForm">Reply...</button>
-                      </div>
-                      <div
-                        v-if="discussion.resolvable"
-                        class="btn-group"
-                        role="group">
-                        <button
-                          type="button"
-                          class="btn btn-default mr-2"
-                          @click="resolveHandler()"
-                        >
-                          <i
-                            v-if="isResolving"
-                            aria-hidden="true"
-                            class="fa fa-spinner fa-spin"
-                          ></i>
-                          {{ resolveButtonTitle }}
-                        </button>
-                      </div>
-                      <div
-                        v-if="discussion.resolvable"
-                        class="btn-group discussion-actions"
-                        role="group"
-                      >
-                        <div
-                          v-if="!discussionResolved"
-                          class="btn-group"
-                          role="group">
-                          <a
-                            v-tooltip
-                            :href="discussion.resolve_with_issue_path"
-                            :title="s__('MergeRequests|Resolve this discussion in a new issue')"
-                            class="new-issue-for-discussion btn
-                              btn-default discussion-create-issue-btn"
-                            data-container="body"
-                          >
-                            <span v-html="resolveDiscussionsSvg"></span>
-                          </a>
-                        </div>
-                        <div
-                          v-if="showJumpToNextDiscussion"
-                          class="btn-group"
-                          role="group">
-                          <button
-                            v-tooltip
-                            class="btn btn-default discussion-next-btn"
-                            title="Jump to next unresolved discussion"
-                            data-container="body"
-                            @click="jumpToNextDiscussion"
-                          >
-                            <span v-html="nextDiscussionsSvg"></span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </template>
-                  <note-form
-                    v-if="isReplying"
-                    ref="noteForm"
-                    :discussion="discussion"
-                    :is-editing="false"
-                    save-button-title="Comment"
-                    @handleFormUpdate="saveReply"
-                    @cancelForm="cancelReplyForm"
+                  <user-avatar-link
+                    v-if="!isReplying && userCanReply"
+                    :link-href="currentUser.path"
+                    :img-src="currentUser.avatar_url"
+                    :img-alt="currentUser.name"
+                    :img-size="40"
+                    class="d-none d-sm-block"
                   />
-                  <note-signed-out-widget v-if="!canReply" />
+                  <discussion-actions
+                    v-if="!isReplying && userCanReply"
+                    :discussion="discussion"
+                    :is-resolving="isResolving"
+                    :resolve-button-title="resolveButtonTitle"
+                    :resolve-with-issue-path="resolveWithIssuePath"
+                    :should-show-jump-to-next-discussion="shouldShowJumpToNextDiscussion"
+                    @showReplyForm="showReplyForm"
+                    @resolve="resolveHandler"
+                    @jumpToNextDiscussion="jumpToNextDiscussion"
+                  />
+                  <div v-if="isReplying" class="avatar-note-form-holder">
+                    <user-avatar-link
+                      v-if="currentUser"
+                      :link-href="currentUser.path"
+                      :img-src="currentUser.avatar_url"
+                      :img-alt="currentUser.name"
+                      :img-size="40"
+                      class="d-none d-sm-block"
+                    />
+                    <note-form
+                      ref="noteForm"
+                      :discussion="discussion"
+                      :is-editing="false"
+                      :line="diffLine"
+                      save-button-title="Comment"
+                      :autosave-key="autosaveKey"
+                      @handleFormUpdateAddToReview="addReplyToReview"
+                      @handleFormUpdate="saveReply"
+                      @cancelForm="cancelReplyForm"
+                    />
+                  </div>
+                  <note-signed-out-widget v-if="!userCanReply" />
                 </div>
-              </div>
-            </component>
-          </div>
+              </template>
+            </discussion-notes>
+          </component>
         </div>
       </div>
     </div>
-  </li>
+  </timeline-entry-item>
 </template>

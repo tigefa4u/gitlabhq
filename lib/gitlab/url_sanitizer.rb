@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 module Gitlab
   class UrlSanitizer
     ALLOWED_SCHEMES = %w[http https ssh git].freeze
 
     def self.sanitize(content)
-      regexp = URI::Parser.new.make_regexp(ALLOWED_SCHEMES)
+      regexp = URI::DEFAULT_PARSER.make_regexp(ALLOWED_SCHEMES)
 
       content.gsub(regexp) { |url| new(url).masked_url }
     rescue Addressable::URI::InvalidURIError
@@ -12,6 +14,7 @@ module Gitlab
 
     def self.valid?(url)
       return false unless url.present?
+      return false unless url.is_a?(String)
 
       uri = Addressable::URI.parse(url.strip)
 
@@ -42,6 +45,10 @@ module Gitlab
 
     def credentials
       @credentials ||= { user: @url.user.presence, password: @url.password.presence }
+    end
+
+    def user
+      credentials[:user]
     end
 
     def full_url

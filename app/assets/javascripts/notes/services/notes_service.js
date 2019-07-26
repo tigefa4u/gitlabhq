@@ -5,11 +5,9 @@ import * as constants from '../constants';
 Vue.use(VueResource);
 
 export default {
-  fetchDiscussions(endpoint) {
-    return Vue.http.get(endpoint);
-  },
-  deleteNote(endpoint) {
-    return Vue.http.delete(endpoint);
+  fetchDiscussions(endpoint, filter) {
+    const config = filter !== undefined ? { params: { notes_filter: filter } } : null;
+    return Vue.http.get(endpoint, config);
   },
   replyToDiscussion(endpoint, data) {
     return Vue.http.post(endpoint, data, { emulateJSON: true });
@@ -36,9 +34,6 @@ export default {
     };
 
     return Vue.http.get(endpoint, options);
-  },
-  toggleAward(endpoint, data) {
-    return Vue.http.post(endpoint, data, { emulateJSON: true });
   },
   toggleIssueState(endpoint, data) {
     return Vue.http.put(endpoint, data);

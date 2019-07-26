@@ -1,17 +1,16 @@
 # frozen_string_literal: true
 
-class Namespace < ActiveRecord::Base
+class Namespace < ApplicationRecord
   include CacheMarkdownField
   include Sortable
-  include Gitlab::ShellAdapter
   include Gitlab::VisibilityLevel
   include Routable
   include AfterCommitQueue
   include Storage::LegacyNamespace
   include Gitlab::SQL::Pattern
-  include IgnorableColumn
-
-  ignore_column :deleted_at
+  include FeatureGate
+  include FromUnion
+  include Gitlab::Utils::StrongMemoize
 
   # Prevent users from creating unreasonably deep level of nesting.
   # The number 20 was taken based on maximum nesting level of
@@ -33,12 +32,13 @@ class Namespace < ActiveRecord::Base
   belongs_to :parent, class_name: "Namespace"
   has_many :children, class_name: "Namespace", foreign_key: :parent_id
   has_one :chat_team, dependent: :destroy # rubocop:disable Cop/ActiveRecordDependent
+  has_one :root_storage_statistics, class_name: 'Namespace::RootStorageStatistics'
+  has_one :aggregation_schedule, class_name: 'Namespace::AggregationSchedule'
 
   validates :owner, presence: true, unless: ->(n) { n.type == "Group" }
   validates :name,
     presence: true,
-    length: { maximum: 255 },
-    namespace_name: true
+    length: { maximum: 255 }
 
   validates :description, length: { maximum: 255 }
   validates :path,
@@ -48,17 +48,20 @@ class Namespace < ActiveRecord::Base
 
   validate :nesting_level_allowed
 
+  validates_associated :runners
+
   delegate :name, to: :owner, allow_nil: true, prefix: true
+  delegate :avatar_url, to: :owner, allow_nil: true
 
   after_commit :refresh_access_of_projects_invited_groups, on: :update, if: -> { previous_changes.key?('share_with_group_lock') }
 
   before_create :sync_share_with_group_lock_with_parent
   before_update :sync_share_with_group_lock_with_parent, if: :parent_changed?
-  after_update :force_share_with_group_lock_on_descendants, if: -> { share_with_group_lock_changed? && share_with_group_lock? }
+  after_update :force_share_with_group_lock_on_descendants, if: -> { saved_change_to_share_with_group_lock? && share_with_group_lock? }
 
   # Legacy Storage specific hooks
 
-  after_update :move_dir, if: :path_or_parent_changed?
+  after_update :move_dir, if: :saved_change_to_path_or_parent?
   before_destroy(prepend: true) { prepare_for_destroy }
   after_destroy :rm_dir
 
@@ -71,8 +74,10 @@ class Namespace < ActiveRecord::Base
         'namespaces.*',
         'COALESCE(SUM(ps.storage_size), 0) AS storage_size',
         'COALESCE(SUM(ps.repository_size), 0) AS repository_size',
+        'COALESCE(SUM(ps.wiki_size), 0) AS wiki_size',
         'COALESCE(SUM(ps.lfs_objects_size), 0) AS lfs_objects_size',
-        'COALESCE(SUM(ps.build_artifacts_size), 0) AS build_artifacts_size'
+        'COALESCE(SUM(ps.build_artifacts_size), 0) AS build_artifacts_size',
+        'COALESCE(SUM(ps.packages_size), 0) AS packages_size'
       )
   end
 
@@ -81,7 +86,7 @@ class Namespace < ActiveRecord::Base
       find_by('lower(path) = :value', value: path.downcase)
     end
 
-    # Case insensetive search for namespace by path or name
+    # Case insensitive search for namespace by path or name
     def find_by_path_or_name(path)
       find_by("lower(path) = :path OR lower(name) = :path", path: path.downcase)
     end
@@ -124,7 +129,6 @@ class Namespace < ActiveRecord::Base
   def to_param
     full_path
   end
-  alias_method :flipper_id, :to_param
 
   def human_name
     owner_name
@@ -134,9 +138,13 @@ class Namespace < ActiveRecord::Base
     all_projects.any?(&:has_container_registry_tags?)
   end
 
+  def first_project_with_container_registry_tags
+    all_projects.find(&:has_container_registry_tags?)
+  end
+
   def send_update_instructions
     projects.each do |project|
-      project.send_move_instructions("#{full_path_was}/#{project.path}")
+      project.send_move_instructions("#{full_path_before_last_save}/#{project.path}")
     end
   end
 
@@ -144,11 +152,15 @@ class Namespace < ActiveRecord::Base
     type == 'Group' ? 'group' : 'user'
   end
 
-  def find_fork_of(project)
-    return nil unless project.fork_network
+  def user?
+    kind == 'user'
+  end
 
-    if RequestStore.active?
-      forks_in_namespace = RequestStore.fetch("namespaces:#{id}:forked_projects") do
+  def find_fork_of(project)
+    return unless project.fork_network
+
+    if Gitlab::SafeRequestStore.active?
+      forks_in_namespace = Gitlab::SafeRequestStore.fetch("namespaces:#{id}:forked_projects") do
         Hash.new do |found_forks, project|
           found_forks[project] = project.fork_network.find_forks_in(projects).first
         end
@@ -171,44 +183,44 @@ class Namespace < ActiveRecord::Base
 
   # Returns all ancestors, self, and descendants of the current namespace.
   def self_and_hierarchy
-    Gitlab::GroupHierarchy
+    Gitlab::ObjectHierarchy
       .new(self.class.where(id: id))
-      .all_groups
+      .all_objects
   end
 
   # Returns all the ancestors of the current namespaces.
   def ancestors
     return self.class.none unless parent_id
 
-    Gitlab::GroupHierarchy
+    Gitlab::ObjectHierarchy
       .new(self.class.where(id: parent_id))
       .base_and_ancestors
   end
 
-  # returns all ancestors upto but excluding the the given namespace
+  # returns all ancestors upto but excluding the given namespace
   # when no namespace is given, all ancestors upto the top are returned
-  def ancestors_upto(top = nil)
-    Gitlab::GroupHierarchy.new(self.class.where(id: id))
-      .ancestors(upto: top)
+  def ancestors_upto(top = nil, hierarchy_order: nil)
+    Gitlab::ObjectHierarchy.new(self.class.where(id: id))
+      .ancestors(upto: top, hierarchy_order: hierarchy_order)
   end
 
-  def self_and_ancestors
+  def self_and_ancestors(hierarchy_order: nil)
     return self.class.where(id: id) unless parent_id
 
-    Gitlab::GroupHierarchy
+    Gitlab::ObjectHierarchy
       .new(self.class.where(id: id))
-      .base_and_ancestors
+      .base_and_ancestors(hierarchy_order: hierarchy_order)
   end
 
   # Returns all the descendants of the current namespace.
   def descendants
-    Gitlab::GroupHierarchy
+    Gitlab::ObjectHierarchy
       .new(self.class.where(parent_id: id))
       .base_and_descendants
   end
 
   def self_and_descendants
-    Gitlab::GroupHierarchy
+    Gitlab::ObjectHierarchy
       .new(self.class.where(id: id))
       .base_and_descendants
   end
@@ -217,14 +229,16 @@ class Namespace < ActiveRecord::Base
     [owner_id]
   end
 
-  def parent_changed?
-    parent_id_changed?
-  end
-
   # Includes projects from this namespace and projects from all subgroups
   # that belongs to this namespace
   def all_projects
     Project.inside_path(full_path)
+  end
+
+  # Includes pipelines from this namespace and pipelines from all subgroups
+  # that belongs to this namespace
+  def all_pipelines
+    Ci::Pipeline.where(project: all_projects)
   end
 
   def has_parent?
@@ -232,7 +246,9 @@ class Namespace < ActiveRecord::Base
   end
 
   def root_ancestor
-    ancestors.reorder(nil).find_by(parent_id: nil)
+    strong_memoize(:root_ancestor) do
+      self_and_ancestors.reorder(nil).find_by(parent_id: nil)
+    end
   end
 
   def subgroup?
@@ -244,35 +260,56 @@ class Namespace < ActiveRecord::Base
     false
   end
 
-  def full_path_was
-    if parent_id_was.nil?
-      path_was
-    else
-      previous_parent = Group.find_by(id: parent_id_was)
-      previous_parent.full_path + '/' + path_was
-    end
+  # Overridden in EE::Namespace
+  def feature_available?(_feature)
+    false
   end
 
-  # Exports belonging to projects with legacy storage are placed in a common
-  # subdirectory of the namespace, so a simple `rm -rf` is sufficient to remove
-  # them.
-  #
-  # Exports of projects using hashed storage are placed in a location defined
-  # only by the project ID, so each must be removed individually.
-  def remove_exports!
-    remove_legacy_exports!
-
-    all_projects.with_storage_feature(:repository).find_each(&:remove_exports)
+  def full_path_before_last_save
+    if parent_id_before_last_save.nil?
+      path_before_last_save
+    else
+      previous_parent = Group.find_by(id: parent_id_before_last_save)
+      previous_parent.full_path + '/' + path_before_last_save
+    end
   end
 
   def refresh_project_authorizations
     owner.refresh_authorized_projects
   end
 
+  def auto_devops_enabled?
+    first_auto_devops_config[:status]
+  end
+
+  def first_auto_devops_config
+    return { scope: :group, status: auto_devops_enabled } unless auto_devops_enabled.nil?
+
+    strong_memoize(:first_auto_devops_config) do
+      if has_parent?
+        parent.first_auto_devops_config
+      else
+        { scope: :instance, status: Gitlab::CurrentSettings.auto_devops_enabled? }
+      end
+    end
+  end
+
+  def aggregation_scheduled?
+    aggregation_schedule.present?
+  end
+
   private
 
-  def path_or_parent_changed?
-    path_changed? || parent_changed?
+  def parent_changed?
+    parent_id_changed?
+  end
+
+  def saved_change_to_parent?
+    saved_change_to_parent_id?
+  end
+
+  def saved_change_to_path_or_parent?
+    saved_change_to_path? || saved_change_to_parent_id?
   end
 
   def refresh_access_of_projects_invited_groups
@@ -295,8 +332,6 @@ class Namespace < ActiveRecord::Base
   end
 
   def force_share_with_group_lock_on_descendants
-    return unless Group.supports_nested_groups?
-
     # We can't use `descendants.update_all` since Rails will throw away the WITH
     # RECURSIVE statement. We also can't use WHERE EXISTS since we can't use
     # different table aliases, hence we're just using WHERE IN. Since we have a
@@ -308,6 +343,7 @@ class Namespace < ActiveRecord::Base
   def write_projects_repository_config
     all_projects.find_each do |project|
       project.write_repository_config
+      project.track_project_repository
     end
   end
 end

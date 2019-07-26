@@ -1,7 +1,10 @@
+# frozen_string_literal: true
+
 require 'yaml'
 
 module Backup
   class Repository
+    include Gitlab::ShellAdapter
     attr_reader :progress
 
     def initialize(progress)
@@ -73,7 +76,6 @@ module Backup
 
     def restore
       prepare_directories
-      gitlab_shell = Gitlab::Shell.new
 
       Project.find_each(batch_size: 1000) do |project|
         progress.print " * #{project.full_path} ... "
@@ -91,7 +93,7 @@ module Backup
             progress.puts "Error: #{e}".color(:red)
           end
         else
-          restore_repo_success = gitlab_shell.create_repository(project.repository_storage, project.disk_path)
+          restore_repo_success = gitlab_shell.create_project_repository(project)
         end
 
         if restore_repo_success
@@ -116,6 +118,8 @@ module Backup
           end
         end
       end
+
+      restore_object_pools
     end
 
     protected
@@ -156,6 +160,18 @@ module Backup
 
     def display_repo_path(project)
       project.hashed_storage?(:repository) ? "#{project.full_path} (#{project.disk_path})" : project.full_path
+    end
+
+    def restore_object_pools
+      PoolRepository.includes(:source_project).find_each do |pool|
+        progress.puts " - Object pool #{pool.disk_path}..."
+
+        pool.source_project ||= pool.member_projects.first.root_of_fork_network
+        pool.state = 'none'
+        pool.save
+
+        pool.schedule
+      end
     end
   end
 end

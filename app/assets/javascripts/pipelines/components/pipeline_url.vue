@@ -1,14 +1,27 @@
 <script>
-import userAvatarLink from '../../vue_shared/components/user_avatar/user_avatar_link.vue';
-import tooltip from '../../vue_shared/directives/tooltip';
-import popover from '../../vue_shared/directives/popover';
+import { GlLink, GlTooltipDirective } from '@gitlab/ui';
+import _ from 'underscore';
+import { __, sprintf } from '~/locale';
+import UserAvatarLink from '~/vue_shared/components/user_avatar/user_avatar_link.vue';
+import popover from '~/vue_shared/directives/popover';
+
+const popoverTitle = sprintf(
+  _.escape(
+    __(
+      `This pipeline makes use of a predefined CI/CD configuration enabled by %{strongStart}Auto DevOps.%{strongEnd}`,
+    ),
+  ),
+  { strongStart: '<b>', strongEnd: '</b>' },
+  false,
+);
 
 export default {
   components: {
-    userAvatarLink,
+    UserAvatarLink,
+    GlLink,
   },
   directives: {
-    tooltip,
+    GlTooltip: GlTooltipDirective,
     popover,
   },
   props: {
@@ -31,14 +44,14 @@ export default {
         trigger: 'focus',
         placement: 'top',
         title: `<div class="autodevops-title">
-            This pipeline makes use of a predefined CI/CD configuration enabled by <b>Auto DevOps.</b>
+            ${popoverTitle}
           </div>`,
         content: `<a
             class="autodevops-link"
             href="${this.autoDevopsHelpPath}"
             target="_blank"
             rel="noopener noreferrer nofollow">
-            Learn more about Auto DevOps
+            ${_.escape(__('Learn more about Auto DevOps'))}
           </a>`,
       };
     },
@@ -46,59 +59,53 @@ export default {
 };
 </script>
 <template>
-  <div class="table-section section-15 d-none d-sm-none d-md-block pipeline-tags">
-    <a
-      :href="pipeline.path"
-      class="js-pipeline-url-link">
+  <div class="table-section section-10 d-none d-sm-none d-md-block pipeline-tags">
+    <gl-link :href="pipeline.path" class="js-pipeline-url-link js-onboarding-pipeline-item">
       <span class="pipeline-id">#{{ pipeline.id }}</span>
-    </a>
-    <span>by</span>
-    <user-avatar-link
-      v-if="user"
-      :link-href="pipeline.user.path"
-      :img-src="pipeline.user.avatar_url"
-      :tooltip-text="pipeline.user.name"
-      class="js-pipeline-url-user"
-    />
-    <span
-      v-if="!user"
-      class="js-pipeline-url-api api">
-      API
-    </span>
+    </gl-link>
     <div class="label-container">
       <span
-        v-tooltip
         v-if="pipeline.flags.latest"
+        v-gl-tooltip
+        :title="__('Latest pipeline for this branch')"
         class="js-pipeline-url-latest badge badge-success"
-        title="Latest pipeline for this branch">
-        latest
+      >
+        {{ __('latest') }}
       </span>
       <span
-        v-tooltip
         v-if="pipeline.flags.yaml_errors"
+        v-gl-tooltip
         :title="pipeline.yaml_errors"
-        class="js-pipeline-url-yaml badge badge-danger">
-        yaml invalid
+        class="js-pipeline-url-yaml badge badge-danger"
+      >
+        {{ __('yaml invalid') }}
       </span>
       <span
-        v-tooltip
         v-if="pipeline.flags.failure_reason"
+        v-gl-tooltip
         :title="pipeline.failure_reason"
-        class="js-pipeline-url-failure badge badge-danger">
-        error
+        class="js-pipeline-url-failure badge badge-danger"
+      >
+        {{ __('error') }}
       </span>
-      <a
-        v-popover="popoverOptions"
+      <gl-link
         v-if="pipeline.flags.auto_devops"
+        v-popover="popoverOptions"
         tabindex="0"
         class="js-pipeline-url-autodevops badge badge-info autodevops-badge"
-        role="button">
-        Auto DevOps
-      </a>
+        role="button"
+        >{{ __('Auto DevOps') }}</gl-link
+      >
+      <span v-if="pipeline.flags.stuck" class="js-pipeline-url-stuck badge badge-warning">
+        {{ __('stuck') }}
+      </span>
       <span
-        v-if="pipeline.flags.stuck"
-        class="js-pipeline-url-stuck badge badge-warning">
-        stuck
+        v-if="pipeline.flags.detached_merge_request_pipeline"
+        v-gl-tooltip
+        :title="__('This pipeline is run on the source branch')"
+        class="js-pipeline-url-detached badge badge-info"
+      >
+        {{ __('detached') }}
       </span>
     </div>
   </div>

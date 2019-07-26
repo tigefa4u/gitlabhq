@@ -1,5 +1,5 @@
 <script>
-import { __ } from '~/locale';
+import { __, sprintf } from '~/locale';
 import tooltip from '~/vue_shared/directives/tooltip';
 
 export default {
@@ -62,7 +62,8 @@ export default {
       return this.numberOfHiddenAssignees > 0;
     },
     hiddenAssigneesLabel() {
-      return `+ ${this.numberOfHiddenAssignees} more`;
+      const { numberOfHiddenAssignees } = this;
+      return sprintf(__('+ %{numberOfHiddenAssignees} more'), { numberOfHiddenAssignees });
     },
     collapsedTooltipTitle() {
       const maxRender = Math.min(this.defaultRenderCount, this.users.length);
@@ -74,8 +75,7 @@ export default {
       }
 
       if (!this.users.length) {
-        const emptyTooltipLabel = this.issuableType === 'issue' ?
-          __('Assignee(s)') : __('Assignee');
+        const emptyTooltipLabel = __('Assignee(s)');
         names.push(emptyTooltipLabel);
       }
 
@@ -89,6 +89,30 @@ export default {
       }
 
       return counter;
+    },
+    mergeNotAllowedTooltipMessage() {
+      const assigneesCount = this.users.length;
+
+      if (this.issuableType !== 'merge_request' || assigneesCount === 0) {
+        return null;
+      }
+
+      const cannotMergeCount = this.users.filter(u => u.can_merge === false).length;
+      const canMergeCount = assigneesCount - cannotMergeCount;
+
+      if (canMergeCount === assigneesCount) {
+        // Everyone can merge
+        return null;
+      } else if (cannotMergeCount === assigneesCount && assigneesCount > 1) {
+        return __('No one can merge');
+      } else if (assigneesCount === 1) {
+        return __('Cannot merge');
+      }
+
+      return sprintf(__('%{canMergeCount}/%{assigneesCount} can merge'), {
+        canMergeCount,
+        assigneesCount,
+      });
     },
   },
   methods: {
@@ -108,7 +132,7 @@ export default {
       return `${this.rootPath}${user.username}`;
     },
     assigneeAlt(user) {
-      return `${user.name}'s avatar`;
+      return sprintf(__("%{userName}'s avatar"), { userName: user.name });
     },
     assigneeUsername(user) {
       return `@${user.username}`;
@@ -133,12 +157,7 @@ export default {
       data-placement="left"
       data-boundary="viewport"
     >
-      <i
-        v-if="hasNoUsers"
-        aria-label="No Assignee"
-        class="fa fa-user"
-      >
-      </i>
+      <i v-if="hasNoUsers" :aria-label="__('None')" class="fa fa-user"> </i>
       <button
         v-for="(user, index) in users"
         v-if="shouldRenderCollapsedAssignee(index)"
@@ -152,55 +171,43 @@ export default {
           width="24"
           class="avatar avatar-inline s24"
         />
-        <span class="author">
-          {{ user.name }}
-        </span>
+        <span class="author"> {{ user.name }} </span>
       </button>
-      <button
-        v-if="hasMoreThanTwoAssignees"
-        class="btn-link"
-        type="button"
-      >
-        <span
-          class="avatar-counter sidebar-avatar-counter"
-        >
-          {{ sidebarAvatarCounter }}
-        </span>
+      <button v-if="hasMoreThanTwoAssignees" class="btn-link" type="button">
+        <span class="avatar-counter sidebar-avatar-counter"> {{ sidebarAvatarCounter }} </span>
       </button>
     </div>
     <div class="value hide-collapsed">
+      <span
+        v-if="mergeNotAllowedTooltipMessage"
+        v-tooltip
+        :title="mergeNotAllowedTooltipMessage"
+        data-placement="left"
+        class="float-right cannot-be-merged"
+      >
+        <i aria-hidden="true" data-hidden="true" class="fa fa-exclamation-triangle"></i>
+      </span>
       <template v-if="hasNoUsers">
-        <span class="assign-yourself no-value">
-          No assignee
+        <span class="assign-yourself no-value qa-assign-yourself">
+          {{ __('None') }}
           <template v-if="editable">
             -
-            <button
-              type="button"
-              class="btn-link"
-              @click="assignSelf"
-            >
-              assign yourself
+            <button type="button" class="btn-link" @click="assignSelf">
+              {{ __('assign yourself') }}
             </button>
           </template>
         </span>
       </template>
       <template v-else-if="hasOneUser">
-        <a
-          :href="assigneeUrl(firstUser)"
-          class="author-link bold"
-        >
+        <a :href="assigneeUrl(firstUser)" class="author-link bold">
           <img
             :alt="assigneeAlt(firstUser)"
             :src="avatarUrl(firstUser)"
             width="32"
             class="avatar avatar-inline s32"
           />
-          <span class="author">
-            {{ firstUser.name }}
-          </span>
-          <span class="username">
-            {{ assigneeUsername(firstUser) }}
-          </span>
+          <span class="author"> {{ firstUser.name }} </span>
+          <span class="username"> {{ assigneeUsername(firstUser) }} </span>
         </a>
       </template>
       <template v-else>
@@ -227,25 +234,15 @@ export default {
             </a>
           </div>
         </div>
-        <div
-          v-if="renderShowMoreSection"
-          class="user-list-more"
-        >
-          <button
-            type="button"
-            class="btn-link"
-            @click="toggleShowLess"
-          >
+        <div v-if="renderShowMoreSection" class="user-list-more">
+          <button type="button" class="btn-link" @click="toggleShowLess">
             <template v-if="showLess">
               {{ hiddenAssigneesLabel }}
             </template>
-            <template v-else>
-              - show less
-            </template>
+            <template v-else>{{ __('- show less') }}</template>
           </button>
         </div>
       </template>
     </div>
   </div>
 </template>
-

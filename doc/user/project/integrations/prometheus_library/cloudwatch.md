@@ -18,13 +18,13 @@ The [Prometheus service](../prometheus.md) must be enabled.
 
 ## Configuring Prometheus to monitor for Cloudwatch metrics
 
-To get started with Cloudwatch monitoring, you should install and configure the [Cloudwatch exporter](https://github.com/hnlq715/nginx-vts-exporter) which retrieves and parses the specified Cloudwatch metrics and translates them into a Prometheus monitoring endpoint.
+To get started with Cloudwatch monitoring, you should install and configure the [Cloudwatch exporter](https://github.com/prometheus/cloudwatch_exporter) which retrieves and parses the specified Cloudwatch metrics and translates them into a Prometheus monitoring endpoint.
 
-Right now, the only AWS resource supported is the Elastic Load Balancer, whose Cloudwatch metrics can be found [here](http://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-cloudwatch-metrics.html).
+Right now, the only AWS resource supported is the Elastic Load Balancer, whose Cloudwatch metrics are [documented here](https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-cloudwatch-metrics.html).
 
 A sample Cloudwatch Exporter configuration file, configured for basic AWS ELB monitoring, is [available for download](../samples/cloudwatch.yml).
 
 ## Specifying the Environment label
 
 In order to isolate and only display relevant metrics for a given environment
-however, GitLab needs a method to detect which labels are associated. To do this, GitLab will [look for an `environment` label](metrics.md#identifying-environments).
+however, GitLab needs a method to detect which labels are associated. To do this, GitLab will [look for an `environment` label](index.md#identifying-environments).

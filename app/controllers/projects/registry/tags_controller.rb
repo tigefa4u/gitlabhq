@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 module Projects
   module Registry
     class TagsController < ::Projects::Registry::ApplicationController
-      before_action :authorize_update_container_image!, only: [:destroy]
+      before_action :authorize_destroy_container_image!, only: [:destroy]
 
       def index
         respond_to do |format|

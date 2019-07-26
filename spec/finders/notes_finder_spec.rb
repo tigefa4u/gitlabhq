@@ -9,6 +9,35 @@ describe NotesFinder do
   end
 
   describe '#execute' do
+    context 'when notes filter is present' do
+      let!(:comment) { create(:note_on_issue, project: project) }
+      let!(:system_note) { create(:note_on_issue, project: project, system: true) }
+
+      it 'returns only user notes when using only_comments filter' do
+        finder = described_class.new(project, user, notes_filter: UserPreference::NOTES_FILTERS[:only_comments])
+
+        notes = finder.execute
+
+        expect(notes).to match_array(comment)
+      end
+
+      it 'returns only system notes when using only_activity filters' do
+        finder = described_class.new(project, user, notes_filter: UserPreference::NOTES_FILTERS[:only_activity])
+
+        notes = finder.execute
+
+        expect(notes).to match_array(system_note)
+      end
+
+      it 'gets all notes' do
+        finder = described_class.new(project, user, notes_filter: UserPreference::NOTES_FILTERS[:all_activity])
+
+        notes = finder.execute
+
+        expect(notes).to match_array([comment, system_note])
+      end
+    end
+
     it 'finds notes on merge requests' do
       create(:note_on_merge_request, project: project)
 
@@ -92,7 +121,7 @@ describe NotesFinder do
       let(:note1) { create :note_on_commit, project: project }
       let(:note2) { create :note_on_commit, project: project }
       let(:commit) { note1.noteable }
-      let(:params)  { { target_id: commit.id, target_type: 'commit', last_fetched_at: 1.hour.ago.to_i } }
+      let(:params) { { target_id: commit.id, target_type: 'commit', last_fetched_at: 1.hour.ago.to_i } }
 
       before do
         note1
@@ -261,6 +290,32 @@ describe NotesFinder do
 
       it 'returns the commit' do
         expect(subject.target).to eq(commit)
+      end
+    end
+
+    context 'target_iid' do
+      let(:issue) { create(:issue, project: project) }
+      let(:merge_request) { create(:merge_request, source_project: project, target_project: project) }
+
+      it 'finds issues by iid' do
+        iid_params = { target_type: 'issue', target_iid: issue.iid }
+        expect(described_class.new(project, user, iid_params).target).to eq(issue)
+      end
+
+      it 'finds merge requests by iid' do
+        iid_params = { target_type: 'merge_request', target_iid: merge_request.iid }
+        expect(described_class.new(project, user, iid_params).target).to eq(merge_request)
+      end
+
+      it 'returns nil if both target_id and target_iid are not given' do
+        params_without_any_id = { target_type: 'issue' }
+        expect(described_class.new(project, user, params_without_any_id).target).to be_nil
+      end
+
+      it 'prioritizes target_id over target_iid' do
+        issue2 = create(:issue, project: project)
+        iid_params = { target_type: 'issue', target_id: issue2.id, target_iid: issue.iid }
+        expect(described_class.new(project, user, iid_params).target).to eq(issue2)
       end
     end
   end

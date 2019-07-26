@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 load File.expand_path('../../bin/changelog', __dir__)
@@ -80,7 +82,7 @@ describe 'bin/changelog' do
       end
     end
 
-    describe '.read_type'  do
+    describe '.read_type' do
       let(:type) { '1' }
 
       it 'reads type from $stdin' do
@@ -95,6 +97,7 @@ describe 'bin/changelog' do
 
         it 'shows error message and exits the program' do
           allow($stdin).to receive(:getc).and_return(type)
+
           expect do
             expect { described_class.read_type }.to raise_error(
               ChangelogHelpers::Abort,

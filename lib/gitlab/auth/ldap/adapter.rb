@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   module Auth
     module LDAP
@@ -28,14 +30,7 @@ module Gitlab
 
         def users(fields, value, limit = nil)
           options = user_options(Array(fields), value, limit)
-
-          entries = ldap_search(options).select do |entry|
-            entry.respond_to? config.uid
-          end
-
-          entries.map do |entry|
-            Gitlab::Auth::LDAP::Person.new(entry, provider)
-          end
+          users_search(options)
         end
 
         def user(*args)
@@ -60,7 +55,7 @@ module Gitlab
               response = ldap.get_operation_result
 
               unless response.code.zero?
-                Rails.logger.warn("LDAP search error: #{response.message}")
+                Rails.logger.warn("LDAP search error: #{response.message}") # rubocop:disable Gitlab/RailsLogger
               end
 
               []
@@ -72,7 +67,7 @@ module Gitlab
           retries += 1
           error_message = connection_error_message(error)
 
-          Rails.logger.warn(error_message)
+          Rails.logger.warn(error_message) # rubocop:disable Gitlab/RailsLogger
 
           if retries < MAX_SEARCH_RETRIES
             renew_connection_adapter
@@ -86,6 +81,16 @@ module Gitlab
 
         def timeout_time(retry_number)
           SEARCH_RETRY_FACTOR[retry_number] * config.timeout
+        end
+
+        def users_search(options)
+          entries = ldap_search(options).select do |entry|
+            entry.respond_to? config.uid
+          end
+
+          entries.map do |entry|
+            Gitlab::Auth::LDAP::Person.new(entry, provider)
+          end
         end
 
         def user_options(fields, value, limit)

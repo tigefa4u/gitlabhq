@@ -13,7 +13,7 @@ require 'erb'
 #
 #   Raw Markdown
 #   -> `markdown` helper
-#     -> Redcarpet::Render::GitlabHTML converts Markdown to HTML
+#     -> CommonMark::Render::GitlabHTML converts Markdown to HTML
 #       -> Post-process HTML
 #         -> `gfm` helper
 #           -> HTML::Pipeline
@@ -264,9 +264,9 @@ describe 'GitLab Markdown', :aggregate_failures do
       @project_wiki = @feat.project_wiki
       @project_wiki_page = @feat.project_wiki_page
 
-      file = Gollum::File.new(@project_wiki.wiki)
-      expect(file).to receive(:path).and_return('images/example.jpg')
-      expect(@project_wiki).to receive(:find_file).with('images/example.jpg').and_return(file)
+      path = 'images/example.jpg'
+      gitaly_wiki_file = Gitlab::GitalyClient::WikiFile.new(path: path)
+      expect(@project_wiki).to receive(:find_file).with(path).and_return(Gitlab::Git::WikiFile.new(gitaly_wiki_file))
       allow(@project_wiki).to receive(:wiki_base_path) { '/namespace1/gitlabhq/wikis' }
 
       @html = markdown(@feat.raw_markdown, { pipeline: :wiki, project_wiki: @project_wiki, page_slug: @project_wiki_page.slug })
@@ -320,31 +320,6 @@ describe 'GitLab Markdown', :aggregate_failures do
 
       aggregate_failures 'ColorFilter' do
         expect(doc).to parse_colors
-      end
-    end
-  end
-
-  context 'Redcarpet documents' do
-    before do
-      allow_any_instance_of(Banzai::Filter::MarkdownFilter).to receive(:engine).and_return('Redcarpet')
-      @html = markdown(@feat.raw_markdown)
-    end
-
-    it 'processes certain elements differently' do
-      aggregate_failures 'parses superscript' do
-        expect(doc).to have_selector('sup', count: 3)
-      end
-
-      aggregate_failures 'permits style attribute in th elements' do
-        expect(doc.at_css('th:contains("Header")')['style']).to eq 'text-align: center'
-        expect(doc.at_css('th:contains("Row")')['style']).to eq 'text-align: right'
-        expect(doc.at_css('th:contains("Example")')['style']).to eq 'text-align: left'
-      end
-
-      aggregate_failures 'permits style attribute in td elements' do
-        expect(doc.at_css('td:contains("Foo")')['style']).to eq 'text-align: center'
-        expect(doc.at_css('td:contains("Bar")')['style']).to eq 'text-align: right'
-        expect(doc.at_css('td:contains("Baz")')['style']).to eq 'text-align: left'
       end
     end
   end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Projects::SnippetsController < Projects::ApplicationController
   include RendersNotes
   include ToggleAwardEmoji
@@ -5,7 +7,8 @@ class Projects::SnippetsController < Projects::ApplicationController
   include SnippetsActions
   include RendersBlob
 
-  skip_before_action :verify_authenticity_token, only: [:show], if: :js_request?
+  skip_before_action :verify_authenticity_token,
+    if: -> { action_name == 'show' && js_request? }
 
   before_action :check_snippets_available!
   before_action :snippet, only: [:show, :edit, :destroy, :update, :raw, :toggle_award_emoji, :mark_as_spam]
@@ -73,7 +76,14 @@ class Projects::SnippetsController < Projects::ApplicationController
       format.json do
         render_blob_json(blob)
       end
-      format.js { render 'shared/snippets/show'}
+
+      format.js do
+        if @snippet.embeddable?
+          render 'shared/snippets/show'
+        else
+          head :not_found
+        end
+      end
     end
   end
 

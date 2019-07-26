@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'zlib'
 require 'json'
 
@@ -9,8 +11,8 @@ module Gitlab
           ParserError = Class.new(StandardError)
           InvalidStreamError = Class.new(StandardError)
 
-          VERSION_PATTERN = /^[\w\s]+(\d+\.\d+\.\d+)/
-          INVALID_PATH_PATTERN = %r{(^\.?\.?/)|(/\.?\.?/)}
+          VERSION_PATTERN = /^[\w\s]+(\d+\.\d+\.\d+)/.freeze
+          INVALID_PATH_PATTERN = %r{(^\.?\.?/)|(/\.?\.?/)}.freeze
 
           attr_reader :stream, :path, :full_version
 
@@ -59,9 +61,12 @@ module Gitlab
 
             until gz.eof?
               begin
-                path = read_string(gz).force_encoding('UTF-8')
-                meta = read_string(gz).force_encoding('UTF-8')
+                path = read_string(gz)&.force_encoding('UTF-8')
+                meta = read_string(gz)&.force_encoding('UTF-8')
 
+                # We might hit an EOF while reading either value, so we should
+                # abort if we don't get any data.
+                next unless path && meta
                 next unless path.valid_encoding? && meta.valid_encoding?
                 next unless path =~ match_pattern
                 next if path =~ INVALID_PATH_PATTERN
@@ -93,12 +98,12 @@ module Gitlab
 
           def read_uint32(gz)
             binary = gz.read(4)
-            binary.unpack('L>')[0] if binary
+            binary.unpack1('L>') if binary
           end
 
           def read_string(gz)
             string_size = read_uint32(gz)
-            return nil unless string_size
+            return unless string_size
 
             gz.read(string_size)
           end

@@ -1,3 +1,7 @@
+---
+type: reference
+---
+
 # System hooks
 
 Your GitLab instance can perform HTTP POST requests on the following events:
@@ -27,11 +31,9 @@ The triggers for most of these are self-explanatory, but `project_update` and `p
 
 System hooks can be used, e.g. for logging or changing information in a LDAP server.
 
-> **Note:**
->
-> We follow the same structure from Webhooks for Push and Tag events, but we never display commits.
->
-> Same deprecations from Webhooks are valid here.
+NOTE: **Note:**
+We follow the same structure and deprecations as [Webhooks](../user/project/integrations/webhooks.md)
+for Push and Tag events, but we never display commits.
 
 ## Hooks request example
 
@@ -138,7 +140,7 @@ Please refer to `group_rename` and `user_rename` for that case.
                   "created_at": "2012-07-21T07:30:56Z",
                   "updated_at": "2012-07-21T07:38:22Z",
                   "event_name": "user_add_to_team",
-              "project_access": "Maintainer",
+                "access_level": "Maintainer",
                   "project_id": 74,
                 "project_name": "StoreCloud",
                 "project_path": "storecloud",
@@ -147,7 +149,7 @@ Please refer to `group_rename` and `user_rename` for that case.
                    "user_name": "John Smith",
                "user_username": "johnsmith",
                      "user_id": 41,
-          "project_visibility": "private"
+          "project_visibility": "visibilitylevel|private"
 }
 ```
 
@@ -158,7 +160,7 @@ Please refer to `group_rename` and `user_rename` for that case.
                   "created_at": "2012-07-21T07:30:56Z",
                   "updated_at": "2012-07-21T07:38:22Z",
                   "event_name": "user_remove_from_team",
-              "project_access": "Maintainer",
+                "access_level": "Maintainer",
                   "project_id": 74,
                 "project_name": "StoreCloud",
                 "project_path": "storecloud",
@@ -167,7 +169,7 @@ Please refer to `group_rename` and `user_rename` for that case.
                    "user_name": "John Smith",
                "user_username": "johnsmith",
                      "user_id": 41,
-          "project_visibility": "private"
+          "project_visibility": "visibilitylevel|private"
 }
 ```
 
@@ -272,7 +274,7 @@ If the user is blocked via LDAP, `state` will be `ldap_blocked`.
 }
 ```
 
-`owner_name` and `owner_email` are always `null`. Please see https://gitlab.com/gitlab-org/gitlab-ce/issues/39675.
+`owner_name` and `owner_email` are always `null`. Please see <https://gitlab.com/gitlab-org/gitlab-ce/issues/39675>.
 
 **Group removed:**
 
@@ -289,7 +291,7 @@ If the user is blocked via LDAP, `state` will be `ldap_blocked`.
 }
 ```
 
-`owner_name` and `owner_email` are always `null`. Please see https://gitlab.com/gitlab-org/gitlab-ce/issues/39675.
+`owner_name` and `owner_email` are always `null`. Please see <https://gitlab.com/gitlab-org/gitlab-ce/issues/39675>.
 
 **Group renamed:**
 
@@ -309,7 +311,7 @@ If the user is blocked via LDAP, `state` will be `ldap_blocked`.
 }
 ```
 
-`owner_name` and `owner_email` are always `null`. Please see https://gitlab.com/gitlab-org/gitlab-ce/issues/39675.
+`owner_name` and `owner_email` are always `null`. Please see <https://gitlab.com/gitlab-org/gitlab-ce/issues/39675>.
 
 **New Group Member:**
 
@@ -328,6 +330,7 @@ If the user is blocked via LDAP, `state` will be `ldap_blocked`.
        "user_id": 41
 }
 ```
+
 **Group Member Removed:**
 
 ```json
@@ -640,3 +643,15 @@ X-Gitlab-Event: System Hook
   "refs":["refs/heads/master"]
 }
 ```
+
+<!-- ## Troubleshooting
+
+Include any troubleshooting steps that you can foresee. If you know beforehand what issues
+one might have when setting this up, or when something is changed, or on upgrading, it's
+important to describe those, too. Think of things that may go wrong and include them here.
+This is important to minimize requests for support, and to avoid doc comments with
+questions that you know someone might ask.
+
+Each scenario can be a third-level heading, e.g. `### Getting error message X`.
+If you have none to add when creating a doc, leave this section in place
+but commented out to help encourage others to add to it in the future. -->

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   module ImportExport
     class ProjectTreeRestorer
@@ -18,11 +20,13 @@ module Gitlab
           json = IO.read(@path)
           @tree_hash = ActiveSupport::JSON.decode(json)
         rescue => e
-          Rails.logger.error("Import/Export error: #{e.message}")
+          Rails.logger.error("Import/Export error: #{e.message}") # rubocop:disable Gitlab/RailsLogger
           raise Gitlab::ImportExport::Error.new('Incorrect JSON format')
         end
 
         @project_members = @tree_hash.delete('project_members')
+
+        RelationRenameService.rename(@tree_hash)
 
         ActiveRecord::Base.uncached do
           ActiveRecord::Base.no_touching do
@@ -94,13 +98,16 @@ module Gitlab
       end
 
       def restore_project
-        @project.update_columns(project_params)
+        Gitlab::Timeless.timeless(@project) do
+          @project.update(project_params)
+        end
+
         @project
       end
 
       def project_params
         @project_params ||= begin
-          attrs = json_params.merge(override_params)
+          attrs = json_params.merge(override_params).merge(visibility_level)
 
           # Cleaning all imported and overridden params
           Gitlab::ImportExport::AttributeCleaner.clean(relation_hash: attrs,
@@ -120,6 +127,14 @@ module Gitlab
         end
       end
 
+      def visibility_level
+        level = override_params['visibility_level'] || json_params['visibility_level'] || @project.visibility_level
+        level = @project.group.visibility_level if @project.group && level.to_i > @project.group.visibility_level
+        level = Gitlab::VisibilityLevel::PRIVATE if level == Gitlab::VisibilityLevel::INTERNAL && Gitlab::CurrentSettings.restricted_visibility_levels.include?(level)
+
+        { 'visibility_level' => level }
+      end
+
       # Given a relation hash containing one or more models and its relationships,
       # loops through each model and each object from a model type and
       # and assigns its correspondent attributes hash from +tree_hash+
@@ -133,16 +148,25 @@ module Gitlab
         return if tree_hash[relation_key].blank?
 
         tree_array = [tree_hash[relation_key]].flatten
+        null_iid_pipelines = []
 
         # Avoid keeping a possible heavy object in memory once we are done with it
-        while relation_item = tree_array.shift
+        while relation_item = (tree_array.shift || null_iid_pipelines.shift)
+          if nil_iid_pipeline?(relation_key, relation_item) && tree_array.any?
+            # Move pipelines with NULL IIDs to the end
+            # so they don't clash with existing IIDs.
+            null_iid_pipelines << relation_item
+
+            next
+          end
+
           # The transaction at this level is less speedy than one single transaction
           # But we can't have it in the upper level or GC won't get rid of the AR objects
           # after we save the batch.
           Project.transaction do
             process_sub_relation(relation, relation_item)
 
-            # For every subrelation that hangs from Project, save the associated records alltogether
+            # For every subrelation that hangs from Project, save the associated records altogether
             # This effectively batches all records per subrelation item, only keeping those in memory
             # We have to keep in mind that more batch granularity << Memory, but >> Slowness
             if save
@@ -196,7 +220,11 @@ module Gitlab
       end
 
       def excluded_keys_for_relation(relation)
-        @reader.attributes_finder.find_excluded_keys(relation)
+        reader.attributes_finder.find_excluded_keys(relation)
+      end
+
+      def nil_iid_pipeline?(relation_key, relation_item)
+        relation_key == 'ci_pipelines' && relation_item['iid'].nil?
       end
     end
   end

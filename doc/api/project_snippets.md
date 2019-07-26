@@ -1,6 +1,6 @@
 # Project snippets
 
-### Snippet visibility level
+## Snippet visibility level
 
 Snippets in GitLab can be either private, internal or public.
 You can set it with the `visibility` field in the snippet.
@@ -12,6 +12,12 @@ Constants for snippet visibility levels are:
 | `private`  | The snippet is visible only the snippet creator |
 | `internal` | The snippet is visible for any logged in user |
 | `public`   | The snippet can be accessed without any authentication |
+
+NOTE: **Note:**
+From July 2019, the `Internal` visibility setting is disabled for new projects, groups,
+and snippets on GitLab.com. Existing projects, groups, and snippets using the `Internal`
+visibility setting keep this setting. You can read more about the change in the
+[relevant issue](https://gitlab.com/gitlab-org/gitlab-ee/issues/12388).
 
 ## List snippets
 
@@ -121,9 +127,7 @@ Parameters:
 
 ## Get user agent details
 
-> **Notes:**
 > [Introduced][ce-29508] in GitLab 9.4.
-
 
 Available only for admins.
 
@@ -137,7 +141,7 @@ GET /projects/:id/snippets/:snippet_id/user_agent_detail
 | `snippet_id`  | Integer | yes      | The ID of a snippet                  |
 
 ```bash
-curl --request GET --header "PRIVATE-TOKEN: 9koXpg98eAheJpvBs5tK" https://gitlab.example.com/api/v4/projects/1/snippets/2/user_agent_detail
+curl --request GET --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/1/snippets/2/user_agent_detail
 ```
 
 Example response:

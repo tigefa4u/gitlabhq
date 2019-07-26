@@ -1,7 +1,7 @@
-/* eslint-disable no-param-reassign */
 import * as types from '../mutation_types';
 import { sortTree } from '../utils';
 import { diffModes } from '../../constants';
+import { convertObjectPropsToCamelCase } from '~/lib/utils/common_utils';
 
 export default {
   [types.SET_FILE_ACTIVE](state, { path, active }) {
@@ -36,19 +36,22 @@ export default {
     }
   },
   [types.SET_FILE_DATA](state, { data, file }) {
-    Object.assign(state.entries[file.path], {
-      id: data.id,
-      blamePath: data.blame_path,
-      commitsPath: data.commits_path,
-      permalink: data.permalink,
-      rawPath: data.raw_path,
-      binary: data.binary,
-      renderError: data.render_error,
-      raw: (state.entries[file.path] && state.entries[file.path].raw) || null,
-      baseRaw: null,
-      html: data.html,
-      size: data.size,
-      lastCommitSha: data.last_commit_sha,
+    const stateEntry = state.entries[file.path];
+    const stagedFile = state.stagedFiles.find(f => f.path === file.path);
+    const openFile = state.openFiles.find(f => f.path === file.path);
+    const changedFile = state.changedFiles.find(f => f.path === file.path);
+
+    [stateEntry, stagedFile, openFile, changedFile].forEach(f => {
+      if (f) {
+        Object.assign(
+          f,
+          convertObjectPropsToCamelCase(data, { dropKeys: ['path', 'name', 'raw', 'baseRaw'] }),
+          {
+            raw: (stateEntry && stateEntry.raw) || null,
+            baseRaw: null,
+          },
+        );
+      }
     });
   },
   [types.SET_FILE_RAW_DATA](state, { file, raw }) {
@@ -56,7 +59,7 @@ export default {
       f => f.path === file.path && f.pending && !(f.tempFile && !f.prevPath),
     );
 
-    if (file.tempFile) {
+    if (file.tempFile && file.content === '') {
       Object.assign(state.entries[file.path], {
         content: raw,
       });
@@ -171,12 +174,16 @@ export default {
       entries: Object.assign(state.entries, {
         [path]: Object.assign(state.entries[path], {
           staged: true,
-          changed: false,
         }),
       }),
     });
 
     if (stagedFile) {
+      Object.assign(state, {
+        replacedFiles: state.replacedFiles.concat({
+          ...stagedFile,
+        }),
+      });
       Object.assign(stagedFile, {
         ...state.entries[path],
       });

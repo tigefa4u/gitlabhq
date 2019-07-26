@@ -5,7 +5,7 @@
 #
 # Example:
 #
-#     class User < ActiveRecord::Base
+#     class User < ApplicationRecord
 #       include IgnorableColumn
 #
 #       ignore_column :updated_at
@@ -14,7 +14,7 @@
 module IgnorableColumn
   extend ActiveSupport::Concern
 
-  module ClassMethods
+  class_methods do
     def columns
       super.reject { |column| ignored_columns.include?(column.name) }
     end

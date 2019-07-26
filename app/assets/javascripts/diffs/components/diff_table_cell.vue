@@ -1,5 +1,5 @@
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 import DiffLineGutterContent from './diff_line_gutter_content.vue';
 import {
   MATCH_LINE_TYPE,
@@ -11,8 +11,6 @@ import {
   LINE_HOVER_CLASS_NAME,
   LINE_UNFOLD_CLASS_NAME,
   INLINE_DIFF_VIEW_TYPE,
-  LINE_POSITION_LEFT,
-  LINE_POSITION_RIGHT,
 } from '../constants';
 
 export default {
@@ -31,6 +29,11 @@ export default {
     contextLinesPath: {
       type: String,
       required: true,
+    },
+    isHighlighted: {
+      type: Boolean,
+      required: true,
+      default: false,
     },
     diffViewType: {
       type: String,
@@ -67,82 +70,61 @@ export default {
       required: false,
       default: false,
     },
-    discussions: {
-      type: Array,
-      required: false,
-      default: () => [],
-    },
   },
   computed: {
     ...mapGetters(['isLoggedIn']),
-    normalizedLine() {
-      let normalizedLine;
-
-      if (this.diffViewType === INLINE_DIFF_VIEW_TYPE) {
-        normalizedLine = this.line;
-      } else if (this.linePosition === LINE_POSITION_LEFT) {
-        normalizedLine = this.line.left;
-      } else if (this.linePosition === LINE_POSITION_RIGHT) {
-        normalizedLine = this.line.right;
-      }
-
-      return normalizedLine;
-    },
     isMatchLine() {
-      return this.normalizedLine.type === MATCH_LINE_TYPE;
+      return this.line.type === MATCH_LINE_TYPE;
     },
     isContextLine() {
-      return this.normalizedLine.type === CONTEXT_LINE_TYPE;
+      return this.line.type === CONTEXT_LINE_TYPE;
     },
     isMetaLine() {
-      const { type } = this.normalizedLine;
+      const { type } = this.line;
 
       return (
         type === OLD_NO_NEW_LINE_TYPE || type === NEW_NO_NEW_LINE_TYPE || type === EMPTY_CELL_TYPE
       );
     },
     classNameMap() {
-      const { type } = this.normalizedLine;
+      const { type } = this.line;
 
-      return {
-        [type]: type,
-        [LINE_UNFOLD_CLASS_NAME]: this.isMatchLine,
-        [LINE_HOVER_CLASS_NAME]:
-          this.isLoggedIn &&
-          this.isHover &&
-          !this.isMatchLine &&
-          !this.isContextLine &&
-          !this.isMetaLine,
-      };
+      return [
+        type,
+        {
+          hll: this.isHighlighted,
+          [LINE_UNFOLD_CLASS_NAME]: this.isMatchLine,
+          [LINE_HOVER_CLASS_NAME]:
+            this.isLoggedIn &&
+            this.isHover &&
+            !this.isMatchLine &&
+            !this.isContextLine &&
+            !this.isMetaLine,
+        },
+      ];
     },
     lineNumber() {
-      const { lineType, normalizedLine } = this;
-
-      return lineType === OLD_LINE_TYPE ? normalizedLine.oldLine : normalizedLine.newLine;
+      return this.lineType === OLD_LINE_TYPE ? this.line.old_line : this.line.new_line;
     },
   },
+  methods: mapActions('diffs', ['setHighlightedRow']),
 };
 </script>
 
 <template>
-  <td
-    :class="classNameMap"
-  >
+  <td :class="classNameMap">
     <diff-line-gutter-content
+      :line="line"
       :file-hash="fileHash"
       :context-lines-path="contextLinesPath"
-      :line-type="normalizedLine.type"
-      :line-code="normalizedLine.lineCode"
       :line-position="linePosition"
       :line-number="lineNumber"
-      :meta-data="normalizedLine.metaData"
       :show-comment-button="showCommentButton"
       :is-hover="isHover"
       :is-bottom="isBottom"
       :is-match-line="isMatchLine"
       :is-context-line="isContentLine"
       :is-meta-line="isMetaLine"
-      :discussions="discussions"
     />
   </td>
 </template>

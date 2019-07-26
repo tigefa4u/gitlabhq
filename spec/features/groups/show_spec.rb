@@ -56,32 +56,69 @@ describe 'Group show page' do
   end
 
   context 'subgroup support' do
-    let(:user) { create(:user) }
-
-    before do
-      group.add_owner(user)
-      sign_in(user)
+    let(:restricted_group) do
+      create(:group, subgroup_creation_level: ::Gitlab::Access::OWNER_SUBGROUP_ACCESS)
     end
 
-    context 'when subgroups are supported', :js, :nested_groups do
+    let(:relaxed_group) do
+      create(:group, subgroup_creation_level: ::Gitlab::Access::MAINTAINER_SUBGROUP_ACCESS)
+    end
+
+    let(:owner) { create(:user) }
+    let(:maintainer) { create(:user) }
+
+    context 'for owners' do
+      let(:path) { group_path(restricted_group) }
+
       before do
-        allow(Group).to receive(:supports_nested_groups?) { true }
-        visit path
+        restricted_group.add_owner(owner)
+        sign_in(owner)
       end
 
-      it 'allows creating subgroups' do
-        expect(page).to have_css("li[data-text='New subgroup']", visible: false)
+      context 'when subgroups are supported' do
+        it 'allows creating subgroups' do
+          visit path
+
+          expect(page)
+            .to have_css("li[data-text='New subgroup']", visible: false)
+        end
       end
     end
 
-    context 'when subgroups are not supported' do
+    context 'for maintainers' do
       before do
-        allow(Group).to receive(:supports_nested_groups?) { false }
-        visit path
+        sign_in(maintainer)
       end
 
-      it 'allows creating subgroups' do
-        expect(page).not_to have_selector("li[data-text='New subgroup']", visible: false)
+      context 'when subgroups are supported' do
+        context 'when subgroup_creation_level is set to maintainers' do
+          before do
+            relaxed_group.add_maintainer(maintainer)
+          end
+
+          it 'allows creating subgroups' do
+            path = group_path(relaxed_group)
+            visit path
+
+            expect(page)
+              .to have_css("li[data-text='New subgroup']", visible: false)
+          end
+        end
+
+        context 'when subgroup_creation_level is set to owners' do
+          before do
+            restricted_group.add_maintainer(maintainer)
+          end
+
+          it 'does not allow creating subgroups' do
+            path = group_path(restricted_group)
+            visit path
+
+            expect(page)
+              .not_to have_selector("li[data-text='New subgroup']",
+                                    visible: false)
+          end
+        end
       end
     end
   end
@@ -99,6 +136,27 @@ describe 'Group show page' do
     it 'shows the project info' do
       expect(page).to have_content(project.title)
       expect(page).to have_emoji('smile')
+    end
+  end
+
+  context 'where group has projects' do
+    let(:user) { create(:user) }
+
+    before do
+      group.add_owner(user)
+      sign_in(user)
+    end
+
+    it 'allows users to sorts projects by most stars', :js do
+      project1 = create(:project, namespace: group, star_count: 2)
+      project2 = create(:project, namespace: group, star_count: 3)
+      project3 = create(:project, namespace: group, star_count: 0)
+
+      visit group_path(group, sort: :stars_desc)
+
+      expect(find('.group-row:nth-child(1) .namespace-title > a')).to have_content(project2.title)
+      expect(find('.group-row:nth-child(2) .namespace-title > a')).to have_content(project1.title)
+      expect(find('.group-row:nth-child(3) .namespace-title > a')).to have_content(project3.title)
     end
   end
 end

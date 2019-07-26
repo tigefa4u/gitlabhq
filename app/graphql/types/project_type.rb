@@ -1,8 +1,12 @@
+# frozen_string_literal: true
+
 module Types
   class ProjectType < BaseObject
-    expose_permissions Types::PermissionTypes::Project
-
     graphql_name 'Project'
+
+    authorize :read_project
+
+    expose_permissions Types::PermissionTypes::Project
 
     field :id, GraphQL::ID_TYPE, null: false
 
@@ -13,8 +17,8 @@ module Types
     field :name, GraphQL::STRING_TYPE, null: false
 
     field :description, GraphQL::STRING_TYPE, null: true
+    markdown_field :description_html, null: true
 
-    field :default_branch, GraphQL::STRING_TYPE, null: true
     field :tag_list, GraphQL::STRING_TYPE, null: true
 
     field :ssh_url_to_repo, GraphQL::STRING_TYPE, null: true
@@ -22,7 +26,7 @@ module Types
     field :web_url, GraphQL::STRING_TYPE, null: true
 
     field :star_count, GraphQL::INT_TYPE, null: false
-    field :forks_count, GraphQL::INT_TYPE, null: false
+    field :forks_count, GraphQL::INT_TYPE, null: false, calls_gitaly: true # 4 times
 
     field :created_at, Types::TimeType, null: true
     field :last_activity_at, Types::TimeType, null: true
@@ -36,7 +40,7 @@ module Types
     field :lfs_enabled, GraphQL::BOOLEAN_TYPE, null: true
     field :merge_requests_ff_only_enabled, GraphQL::BOOLEAN_TYPE, null: true
 
-    field :avatar_url, GraphQL::STRING_TYPE, null: true, resolve: -> (project, args, ctx) do
+    field :avatar_url, GraphQL::STRING_TYPE, null: true, calls_gitaly: true, resolve: -> (project, args, ctx) do
       project.avatar_url(only_path: false)
     end
 
@@ -57,23 +61,44 @@ module Types
     end
 
     field :import_status, GraphQL::STRING_TYPE, null: true
-    field :ci_config_path, GraphQL::STRING_TYPE, null: true
 
     field :only_allow_merge_if_pipeline_succeeds, GraphQL::BOOLEAN_TYPE, null: true
     field :request_access_enabled, GraphQL::BOOLEAN_TYPE, null: true
     field :only_allow_merge_if_all_discussions_are_resolved, GraphQL::BOOLEAN_TYPE, null: true
     field :printing_merge_request_link_enabled, GraphQL::BOOLEAN_TYPE, null: true
 
+    field :namespace, Types::NamespaceType, null: true
+    field :group, Types::GroupType, null: true
+
+    field :statistics, Types::ProjectStatisticsType,
+          null: true,
+          resolve: -> (obj, _args, _ctx) { Gitlab::Graphql::Loaders::BatchProjectStatisticsLoader.new(obj.id).find }
+
+    field :repository, Types::RepositoryType, null: true
+
+    field :merge_requests,
+          Types::MergeRequestType.connection_type,
+          null: true,
+          resolver: Resolvers::MergeRequestsResolver
+
     field :merge_request,
           Types::MergeRequestType,
           null: true,
-          resolver: Resolvers::MergeRequestResolver do
-      authorize :read_merge_request
-    end
+          resolver: Resolvers::MergeRequestsResolver.single
+
+    field :issues,
+          Types::IssueType.connection_type,
+          null: true,
+          resolver: Resolvers::IssuesResolver
+
+    field :issue,
+          Types::IssueType,
+          null: true,
+          resolver: Resolvers::IssuesResolver.single
 
     field :pipelines,
           Types::Ci::PipelineType.connection_type,
-          null: false,
+          null: true,
           resolver: Resolvers::ProjectPipelinesResolver
   end
 end

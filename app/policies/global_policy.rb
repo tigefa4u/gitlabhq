@@ -1,10 +1,6 @@
 # frozen_string_literal: true
 
 class GlobalPolicy < BasePolicy
-  desc "User is blocked"
-  with_options scope: :user, score: 0
-  condition(:blocked) { @user&.blocked? }
-
   desc "User is an internal user"
   with_options scope: :user, score: 0
   condition(:internal) { @user&.internal? }
@@ -44,7 +40,6 @@ class GlobalPolicy < BasePolicy
     prevent :access_api
     prevent :access_git
     prevent :receive_notifications
-    prevent :use_quick_actions
   end
 
   rule { required_terms_not_accepted }.policy do
@@ -66,6 +61,10 @@ class GlobalPolicy < BasePolicy
 
   rule { ~(anonymous & restricted_public_level) }.policy do
     enable :read_users_list
+  end
+
+  rule { ~anonymous }.policy do
+    enable :read_instance_metadata
   end
 
   rule { admin }.policy do

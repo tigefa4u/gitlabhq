@@ -15,6 +15,7 @@ class SubmitUsagePingService
 
   def execute
     return false unless Gitlab::CurrentSettings.usage_ping_enabled?
+    return false if User.single_user&.requires_usage_stats_consent?
 
     response = Gitlab::HTTP.post(
       URL,
@@ -27,7 +28,7 @@ class SubmitUsagePingService
 
     true
   rescue Gitlab::HTTP::Error => e
-    Rails.logger.info "Unable to contact GitLab, Inc.: #{e}"
+    Rails.logger.info "Unable to contact GitLab, Inc.: #{e}" # rubocop:disable Gitlab/RailsLogger
 
     false
   end

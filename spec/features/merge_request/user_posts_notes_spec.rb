@@ -66,6 +66,26 @@ describe 'Merge request > User posts notes', :js do
         is_expected.to have_css('.js-note-text', visible: true)
       end
     end
+
+    describe 'reply button' do
+      before do
+        visit project_merge_request_path(project, merge_request)
+      end
+
+      it 'shows a reply button' do
+        reply_button = find('.js-reply-button', match: :first)
+
+        expect(reply_button).to have_selector('.ic-comment')
+      end
+
+      it 'shows reply placeholder when clicking reply button' do
+        reply_button = find('.js-reply-button', match: :first)
+
+        reply_button.click
+
+        expect(page).to have_selector('.discussion-reply-holder')
+      end
+    end
   end
 
   describe 'when previewing a note' do
@@ -111,7 +131,7 @@ describe 'Merge request > User posts notes', :js do
       it 'allows using markdown buttons after saving a note and then trying to edit it again' do
         page.within('.current-note-edit-form') do
           fill_in 'note[note]', with: 'This is the new content'
-          find('.btn-save').click
+          find('.btn-success').click
         end
 
         find('.note').hover
@@ -121,7 +141,7 @@ describe 'Merge request > User posts notes', :js do
 
         page.within('.current-note-edit-form') do
           expect(find('#note_note').value).to eq('This is the new content')
-          find('.js-md:first-child').click
+          first('.js-md').click
           expect(find('#note_note').value).to eq('This is the new content****')
         end
       end
@@ -129,7 +149,7 @@ describe 'Merge request > User posts notes', :js do
       it 'appends the edited at time to the note' do
         page.within('.current-note-edit-form') do
           fill_in 'note[note]', with: 'Some new content'
-          find('.btn-save').click
+          find('.btn-success').click
         end
 
         page.within("#note_#{note.id}") do

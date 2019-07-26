@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe QA::Page::View do
   let(:element) do
     double('element', name: :something, pattern: /some element/)
@@ -8,8 +10,8 @@ describe QA::Page::View do
   describe '.evaluate' do
     it 'evaluates a block and returns a DSL object' do
       results = described_class.evaluate do
-        element :something, 'my pattern'
-        element :something_else, /another pattern/
+        element :something
+        element :something_else
       end
 
       expect(results.elements.size).to eq 2

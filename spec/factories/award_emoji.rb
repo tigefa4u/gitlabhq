@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :award_emoji do
     name "thumbsup"
@@ -5,7 +7,7 @@ FactoryBot.define do
     awardable factory: :issue
 
     after(:create) do |award, evaluator|
-      award.awardable.project.add_guest(evaluator.user)
+      award.awardable.project&.add_guest(evaluator.user)
     end
 
     trait :upvote

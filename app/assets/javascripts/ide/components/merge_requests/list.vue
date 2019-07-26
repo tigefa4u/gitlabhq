@@ -3,7 +3,7 @@ import { mapActions, mapState } from 'vuex';
 import _ from 'underscore';
 import { __ } from '~/locale';
 import Icon from '~/vue_shared/components/icon.vue';
-import LoadingIcon from '~/vue_shared/components/loading_icon.vue';
+import { GlLoadingIcon } from '@gitlab/ui';
 import Item from './item.vue';
 import TokenedInput from '../shared/tokened_input.vue';
 
@@ -14,10 +14,10 @@ const SEARCH_TYPES = [
 
 export default {
   components: {
-    LoadingIcon,
     TokenedInput,
     Item,
     Icon,
+    GlLoadingIcon,
   },
   data() {
     return {
@@ -39,14 +39,10 @@ export default {
       return this.hasSearchFocus && !this.search && !this.currentSearchType;
     },
     type() {
-      return this.currentSearchType
-        ? this.currentSearchType.type
-        : '';
+      return this.currentSearchType ? this.currentSearchType.type : '';
     },
     searchTokens() {
-      return this.currentSearchType
-        ? [this.currentSearchType]
-        : [];
+      return this.currentSearchType ? [this.currentSearchType] : [];
     },
   },
   watch: {
@@ -90,50 +86,33 @@ export default {
           @input="searchMergeRequests"
           @removeToken="setSearchType(null)"
         />
-        <icon
-          :size="18"
-          name="search"
-          class="input-icon"
-        />
+        <icon :size="18" name="search" class="input-icon" />
       </div>
     </div>
     <div class="dropdown-content ide-merge-requests-dropdown-content d-flex">
-      <loading-icon
+      <gl-loading-icon
         v-if="isLoading"
+        :size="2"
         class="mt-3 mb-3 align-self-center ml-auto mr-auto"
-        size="2"
       />
       <template v-else>
-        <ul
-          class="mb-3 w-100"
-        >
+        <ul class="mb-3 w-100">
           <template v-if="showSearchTypes">
-            <li
-              v-for="searchType in $options.searchTypes"
-              :key="searchType.type"
-            >
+            <li v-for="searchType in $options.searchTypes" :key="searchType.type">
               <button
                 type="button"
                 class="btn-link d-flex align-items-center"
                 @click.stop="setSearchType(searchType)"
               >
                 <span class="d-flex append-right-default ide-search-list-current-icon">
-                  <icon
-                    :size="18"
-                    name="search"
-                  />
+                  <icon :size="18" name="search" />
                 </span>
-                <span>
-                  {{ searchType.label }}
-                </span>
+                <span> {{ searchType.label }} </span>
               </button>
             </li>
           </template>
           <template v-else-if="hasMergeRequests">
-            <li
-              v-for="item in mergeRequests"
-              :key="item.id"
-            >
+            <li v-for="item in mergeRequests" :key="item.id">
               <item
                 :item="item"
                 :current-id="currentMergeRequestId"
@@ -141,10 +120,7 @@ export default {
               />
             </li>
           </template>
-          <li
-            v-else
-            class="ide-search-list-empty d-flex align-items-center justify-content-center"
-          >
+          <li v-else class="ide-search-list-empty d-flex align-items-center justify-content-center">
             {{ __('No merge requests found') }}
           </li>
         </ul>

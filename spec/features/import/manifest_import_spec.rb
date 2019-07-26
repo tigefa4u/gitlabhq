@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Import multiple repositories by uploading a manifest file', :js, :postgresql do
+describe 'Import multiple repositories by uploading a manifest file', :js do
   include Select2Helper
 
   let(:user) { create(:admin) }
@@ -22,7 +22,7 @@ describe 'Import multiple repositories by uploading a manifest file', :js, :post
     expect(page).to have_content('https://android-review.googlesource.com/platform/build/blueprint')
   end
 
-  it 'imports succesfully imports a project' do
+  it 'imports successfully imports a project' do
     visit new_import_manifest_path
 
     attach_file('manifest', Rails.root.join('spec/fixtures/aosp_manifest.xml'))

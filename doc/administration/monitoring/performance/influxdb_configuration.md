@@ -95,10 +95,10 @@ UDP can be done using the following settings:
 This does the following:
 
 1. Enable UDP and bind it to port 8089 for all addresses.
-2. Store any data received in the "gitlab" database.
-3. Define a batch of points to be 1000 points in size and allow a maximum of
+1. Store any data received in the "gitlab" database.
+1. Define a batch of points to be 1000 points in size and allow a maximum of
    5 batches _or_ flush them automatically after 1 second.
-4. Define a UDP read buffer size of 200 MB.
+1. Define a UDP read buffer size of 200 MB.
 
 One of the most important settings here is the UDP read buffer size as if this
 value is set too low, packets will be dropped. You must also make sure the OS
@@ -187,7 +187,7 @@ Read more on:
 [influxdb documentation]: https://docs.influxdata.com/influxdb/v0.9/
 [influxdb cli]: https://docs.influxdata.com/influxdb/v0.9/tools/shell/
 [udp]: https://docs.influxdata.com/influxdb/v0.9/write_protocols/udp/
-[influxdb]: https://influxdata.com/time-series-platform/influxdb/
+[influxdb]: https://www.influxdata.com/products/influxdb-overview/
 [tsm tree]: https://influxdata.com/blog/new-storage-engine-time-structured-merge-tree/
 [tsm1-commit]: https://github.com/influxdata/influxdb/commit/15d723dc77651bac83e09e2b1c94be480966cb0d
 [influx-admin]: https://docs.influxdata.com/influxdb/v0.9/administration/authentication_and_authorization/#create-a-new-admin-user

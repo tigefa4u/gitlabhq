@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module UsersHelper
   def user_link(user)
     link_to(user.name, user_path(user),
@@ -6,7 +8,7 @@ module UsersHelper
   end
 
   def user_email_help_text(user)
-    return 'We also use email for avatar detection if no avatar is uploaded.' unless user.unconfirmed_email.present?
+    return 'We also use email for avatar detection if no avatar is uploaded' unless user.unconfirmed_email.present?
 
     confirmation_link = link_to 'Resend confirmation e-mail', user_confirmation_path(user: { email: @user.unconfirmed_email }), method: :post
 
@@ -21,6 +23,17 @@ module UsersHelper
 
   def profile_tab?(tab)
     profile_tabs.include?(tab)
+  end
+
+  def user_internal_regex_data
+    settings = Gitlab::CurrentSettings.current_application_settings
+
+    pattern, options = if settings.user_default_internal_regex_enabled?
+                         regex = settings.user_default_internal_regex_instance
+                         JsRegex.new(regex).to_h.slice(:source, :options).values
+                       end
+
+    { user_internal_regex_pattern: pattern, user_internal_regex_options: options }
   end
 
   def current_user_menu_items
@@ -57,13 +70,26 @@ module UsersHelper
     end
   end
 
+  def impersonation_enabled?
+    Gitlab.config.gitlab.impersonation_enabled
+  end
+
+  def user_badges_in_admin_section(user)
+    [].tap do |badges|
+      badges << { text: s_('AdminUsers|Blocked'), variant: 'danger' } if user.blocked?
+      badges << { text: s_('AdminUsers|Admin'), variant: 'success' } if user.admin?
+      badges << { text: s_('AdminUsers|External'), variant: 'secondary' } if user.external?
+      badges << { text: s_("AdminUsers|It's you!"), variant: nil } if current_user == user
+    end
+  end
+
   private
 
   def get_profile_tabs
     tabs = []
 
     if can?(current_user, :read_user_profile, @user)
-      tabs += [:activity, :groups, :contributed, :projects, :snippets]
+      tabs += [:overview, :activity, :groups, :contributed, :projects, :snippets]
     end
 
     tabs

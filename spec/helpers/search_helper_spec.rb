@@ -12,13 +12,13 @@ describe SearchHelper do
         allow(self).to receive(:current_user).and_return(nil)
       end
 
-      it "it returns nil" do
+      it "returns nil" do
         expect(search_autocomplete_opts("q")).to be_nil
       end
     end
 
     context "with a standard user" do
-      let(:user)   { create(:user) }
+      let(:user) { create(:user) }
 
       before do
         allow(self).to receive(:current_user).and_return(user)
@@ -113,8 +113,10 @@ describe SearchHelper do
         expect(search_filter_input_options('')[:data]['project-id']).to eq(@project.id)
       end
 
-      it 'includes project base-endpoint' do
-        expect(search_filter_input_options('')[:data]['base-endpoint']).to eq(project_path(@project))
+      it 'includes project endpoints' do
+        expect(search_filter_input_options('')[:data]['runner-tags-endpoint']).to eq(tag_list_admin_runners_path)
+        expect(search_filter_input_options('')[:data]['labels-endpoint']).to eq(project_labels_path(@project))
+        expect(search_filter_input_options('')[:data]['milestones-endpoint']).to eq(project_milestones_path(@project))
       end
 
       it 'includes autocomplete=off flag' do
@@ -131,8 +133,47 @@ describe SearchHelper do
         expect(search_filter_input_options('')[:data]['project-id']).to eq(nil)
       end
 
-      it 'includes group base-endpoint' do
-        expect(search_filter_input_options('')[:data]['base-endpoint']).to eq("/groups#{group_path(@group)}")
+      it 'includes group endpoints' do
+        expect(search_filter_input_options('')[:data]['runner-tags-endpoint']).to eq(tag_list_admin_runners_path)
+        expect(search_filter_input_options('')[:data]['labels-endpoint']).to eq(group_labels_path(@group))
+        expect(search_filter_input_options('')[:data]['milestones-endpoint']).to eq(group_milestones_path(@group))
+      end
+    end
+
+    context 'dashboard' do
+      it 'does not include group-id and project-id' do
+        expect(search_filter_input_options('')[:data]['project-id']).to eq(nil)
+        expect(search_filter_input_options('')[:data]['group-id']).to eq(nil)
+      end
+
+      it 'includes dashboard endpoints' do
+        expect(search_filter_input_options('')[:data]['runner-tags-endpoint']).to eq(tag_list_admin_runners_path)
+        expect(search_filter_input_options('')[:data]['labels-endpoint']).to eq(dashboard_labels_path)
+        expect(search_filter_input_options('')[:data]['milestones-endpoint']).to eq(dashboard_milestones_path)
+      end
+    end
+  end
+
+  describe 'search_history_storage_prefix' do
+    context 'project' do
+      it 'returns project full_path' do
+        @project = create(:project, :repository)
+
+        expect(search_history_storage_prefix).to eq(@project.full_path)
+      end
+    end
+
+    context 'group' do
+      it 'returns group full_path' do
+        @group = create(:group, :nested, name: 'group-name')
+
+        expect(search_history_storage_prefix).to eq(@group.full_path)
+      end
+    end
+
+    context 'dashboard' do
+      it 'returns dashboard' do
+        expect(search_history_storage_prefix).to eq("dashboard")
       end
     end
   end

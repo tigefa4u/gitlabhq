@@ -13,7 +13,10 @@ class Import::BitbucketServerController < Import::BaseController
   # Repository names are limited to 128 characters. They must start with a
   # letter or number and may contain spaces, hyphens, underscores, and periods.
   # (https://community.atlassian.com/t5/Answers-Developer-Questions/stash-repository-names/qaq-p/499054)
-  VALID_BITBUCKET_CHARS = /\A[\w\-_\.\s]+\z/
+  #
+  # Bitbucket Server starts personal project names with a tilde.
+  VALID_BITBUCKET_PROJECT_CHARS = /\A~?[\w\-\.\s]+\z/.freeze
+  VALID_BITBUCKET_CHARS = /\A[\w\-\.\s]+\z/.freeze
 
   def new
   end
@@ -22,7 +25,7 @@ class Import::BitbucketServerController < Import::BaseController
     repo = bitbucket_client.repo(@project_key, @repo_slug)
 
     unless repo
-      return render json: { errors: "Project #{@project_key}/#{@repo_slug} could not be found" }, status: :unprocessable_entity
+      return render json: { errors: _("Project %{project_repo} could not be found") % { project_repo: "#{@project_key}/#{@repo_slug}" } }, status: :unprocessable_entity
     end
 
     project_name = params[:new_name].presence || repo.name
@@ -38,10 +41,10 @@ class Import::BitbucketServerController < Import::BaseController
         render json: { errors: project_save_error(project) }, status: :unprocessable_entity
       end
     else
-      render json: { errors: 'This namespace has already been taken! Please choose another one.' }, status: :unprocessable_entity
+      render json: { errors: _('This namespace has already been taken! Please choose another one.') }, status: :unprocessable_entity
     end
-  rescue BitbucketServer::Client::ServerError => e
-    render json: { errors: "Unable to connect to server: #{e}" }, status: :unprocessable_entity
+  rescue BitbucketServer::Connection::ConnectionError => error
+    render json: { errors: _("Unable to connect to server: %{error}") % { error: error } }, status: :unprocessable_entity
   end
 
   def configure
@@ -52,26 +55,34 @@ class Import::BitbucketServerController < Import::BaseController
     redirect_to status_import_bitbucket_server_path
   end
 
+  # rubocop: disable CodeReuse/ActiveRecord
   def status
-    repos = bitbucket_client.repos
+    @collection = bitbucket_client.repos(page_offset: page_offset, limit: limit_per_page)
+    @repos, @incompatible_repos = @collection.partition { |repo| repo.valid? }
 
-    @repos, @incompatible_repos = repos.partition { |repo| repo.valid? }
-
-    @already_added_projects = find_already_added_projects('bitbucket_server')
+    # Use the import URL to filter beyond what BaseService#find_already_added_projects
+    @already_added_projects = filter_added_projects('bitbucket_server', @repos.map(&:browse_url))
     already_added_projects_names = @already_added_projects.pluck(:import_source)
 
-    @repos.to_a.reject! { |repo| already_added_projects_names.include?(repo.browse_url) }
-  rescue BitbucketServer::Connection::ConnectionError, BitbucketServer::Client::ServerError => e
-    flash[:alert] = "Unable to connect to server: #{e}"
+    @repos.reject! { |repo| already_added_projects_names.include?(repo.browse_url) }
+  rescue BitbucketServer::Connection::ConnectionError => error
+    flash[:alert] = _("Unable to connect to server: %{error}") % { error: error }
     clear_session_data
     redirect_to new_import_bitbucket_server_path
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   def jobs
     render json: find_jobs('bitbucket_server')
   end
 
   private
+
+  # rubocop: disable CodeReuse/ActiveRecord
+  def filter_added_projects(import_type, import_sources)
+    current_user.created_projects.where(import_type: import_type, import_source: import_sources).includes(:import_state)
+  end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   def bitbucket_client
     @bitbucket_client ||= BitbucketServer::Client.new(credentials)
@@ -83,7 +94,7 @@ class Import::BitbucketServerController < Import::BaseController
 
     return render_validation_error('Missing project key') unless @project_key.present? && @repo_slug.present?
     return render_validation_error('Missing repository slug') unless @repo_slug.present?
-    return render_validation_error('Invalid project key') unless @project_key =~ VALID_BITBUCKET_CHARS
+    return render_validation_error('Invalid project key') unless @project_key =~ VALID_BITBUCKET_PROJECT_CHARS
     return render_validation_error('Invalid repository slug') unless @repo_slug =~ VALID_BITBUCKET_CHARS
   end
 
@@ -127,5 +138,13 @@ class Import::BitbucketServerController < Import::BaseController
       user: session[bitbucket_server_username_key],
       password: session[personal_access_token_key]
     }
+  end
+
+  def page_offset
+    [0, params[:page].to_i].max
+  end
+
+  def limit_per_page
+    BitbucketServer::Paginator::PAGE_LENGTH
   end
 end

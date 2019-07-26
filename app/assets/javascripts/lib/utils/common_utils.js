@@ -1,8 +1,13 @@
+/**
+ * @module common-utils
+ */
+
 import $ from 'jquery';
 import axios from './axios_utils';
 import { getLocationHash } from './url_utility';
 import { convertToCamelCase } from './text_utility';
 import { isObject } from './type_utility';
+import breakpointInstance from '../../breakpoints';
 
 export const getPagePath = (index = 0) => {
   const page = $('body').attr('data-page') || '';
@@ -56,7 +61,8 @@ export const rstrip = val => {
   return val;
 };
 
-export const updateTooltipTitle = ($tooltipEl, newTitle) => $tooltipEl.attr('title', newTitle).tooltip('_fixTitle');
+export const updateTooltipTitle = ($tooltipEl, newTitle) =>
+  $tooltipEl.attr('title', newTitle).tooltip('_fixTitle');
 
 export const disableButtonIfEmptyField = (fieldSelector, buttonSelector, eventName = 'input') => {
   const field = $(fieldSelector);
@@ -86,6 +92,10 @@ export const handleLocationHash = () => {
   const fixedTabs = document.querySelector('.js-tabs-affix');
   const fixedDiffStats = document.querySelector('.js-diff-files-changed');
   const fixedNav = document.querySelector('.navbar-gitlab');
+  const performanceBar = document.querySelector('#js-peek');
+  const topPadding = 8;
+  const diffFileHeader = document.querySelector('.js-file-title');
+  const versionMenusContainer = document.querySelector('.mr-version-menus-container');
 
   let adjustment = 0;
   if (fixedNav) adjustment -= fixedNav.offsetHeight;
@@ -102,19 +112,36 @@ export const handleLocationHash = () => {
     adjustment -= fixedDiffStats.offsetHeight;
   }
 
+  if (performanceBar) {
+    adjustment -= performanceBar.offsetHeight;
+  }
+
+  if (diffFileHeader) {
+    adjustment -= diffFileHeader.offsetHeight;
+  }
+
+  if (versionMenusContainer) {
+    adjustment -= versionMenusContainer.offsetHeight;
+  }
+
+  if (isInMRPage()) {
+    adjustment -= topPadding;
+  }
+
   window.scrollBy(0, adjustment);
 };
 
 // Check if element scrolled into viewport from above or below
 // Courtesy http://stackoverflow.com/a/7557433/414749
-export const isInViewport = el => {
+export const isInViewport = (el, offset = {}) => {
   const rect = el.getBoundingClientRect();
+  const { top, left } = offset;
 
   return (
-    rect.top >= 0 &&
-    rect.left >= 0 &&
+    rect.top >= (top || 0) &&
+    rect.left >= (left || 0) &&
     rect.bottom <= window.innerHeight &&
-    rect.right <= window.innerWidth
+    parseInt(rect.right, 10) <= window.innerWidth
   );
 };
 
@@ -131,16 +158,42 @@ export const parseUrlPathname = url => {
   return parsedUrl.pathname.charAt(0) === '/' ? parsedUrl.pathname : `/${parsedUrl.pathname}`;
 };
 
-// We can trust that each param has one & since values containing & will be encoded
-// Remove the first character of search as it is always ?
-export const getUrlParamsArray = () =>
-  window.location.search
-    .slice(1)
-    .split('&')
+const splitPath = (path = '') => path.replace(/^\?/, '').split('&');
+
+export const urlParamsToArray = (path = '') =>
+  splitPath(path)
+    .filter(param => param.length > 0)
     .map(param => {
       const split = param.split('=');
       return [decodeURI(split[0]), split[1]].join('=');
     });
+
+export const getUrlParamsArray = () => urlParamsToArray(window.location.search);
+
+export const urlParamsToObject = (path = '') =>
+  splitPath(path).reduce((dataParam, filterParam) => {
+    if (filterParam === '') {
+      return dataParam;
+    }
+
+    const data = dataParam;
+    let [key, value] = filterParam.split('=');
+    const isArray = key.includes('[]');
+    key = key.replace('[]', '');
+    value = decodeURIComponent(value.replace(/\+/g, ' '));
+
+    if (isArray) {
+      if (!data[key]) {
+        data[key] = [];
+      }
+
+      data[key].push(value);
+    } else {
+      data[key] = value;
+    }
+
+    return data;
+  }, {});
 
 export const isMetaKey = e => e.metaKey || e.ctrlKey || e.altKey || e.shiftKey;
 
@@ -150,13 +203,89 @@ export const isMetaKey = e => e.metaKey || e.ctrlKey || e.altKey || e.shiftKey;
 // 3) Middle-click or Mouse Wheel Click (e.which is 2)
 export const isMetaClick = e => e.metaKey || e.ctrlKey || e.which === 2;
 
-export const contentTop = () => {
-  const perfBar = $('#js-peek').height() || 0;
-  const mrTabsHeight = $('.merge-request-tabs').height() || 0;
-  const headerHeight = $('.navbar-gitlab').height() || 0;
-  const diffFilesChanged = $('.js-diff-files-changed').height() || 0;
+export const getPlatformLeaderKey = () => {
+  // eslint-disable-next-line @gitlab/i18n/no-non-i18n-strings
+  if (navigator && navigator.platform && navigator.platform.startsWith('Mac')) {
+    return 'meta';
+  }
+  return 'ctrl';
+};
 
-  return perfBar + mrTabsHeight + headerHeight + diffFilesChanged;
+export const getPlatformLeaderKeyHTML = () => {
+  if (getPlatformLeaderKey() === 'meta') {
+    return '&#8984;';
+  }
+  // eslint-disable-next-line @gitlab/i18n/no-non-i18n-strings
+  return 'Ctrl';
+};
+
+export const isPlatformLeaderKey = e => {
+  if (getPlatformLeaderKey() === 'meta') {
+    return Boolean(e.metaKey);
+  }
+  return Boolean(e.ctrlKey);
+};
+
+/**
+ * Tests if a KeyboardEvent corresponds exactly to a keystroke.
+ *
+ * This function avoids hacking around an old version of Mousetrap, which we ship at the moment. It should be removed after we upgrade to the newest Mousetrap. See:
+ * - https://gitlab.com/gitlab-org/gitlab-ce/issues/63182
+ * - https://gitlab.com/gitlab-org/gitlab-ce/issues/64246
+ *
+ * @example
+ *     // Matches the enter key with exactly zero modifiers
+ *     keystroke(event, 13)
+ *
+ * @example
+ *     // Matches Control-Shift-Z
+ *     keystroke(event, 90, 'cs')
+ *
+ * @param e The KeyboardEvent to test.
+ * @param keyCode The key code of the key to test. Why keycodes? IE/Edge don't support the more convenient `key` and `code` properties.
+ * @param modifiers A string of modifiers keys. Each modifier key is represented by one character. The set of pressed modifier keys must match the given string exactly. Available options are 'a' for Alt/Option, 'c' for Control, 'm' for Meta/Command, 's' for Shift, and 'l' for the leader key (Meta on MacOS and Control otherwise).
+ * @returns {boolean} True if the KeyboardEvent corresponds to the given keystroke.
+ */
+export const keystroke = (e, keyCode, modifiers = '') => {
+  if (!e || !keyCode) {
+    return false;
+  }
+
+  const leader = getPlatformLeaderKey();
+  const mods = modifiers.toLowerCase().replace('l', leader.charAt(0));
+
+  // Match depressed modifier keys
+  if (
+    e.altKey !== mods.includes('a') ||
+    e.ctrlKey !== mods.includes('c') ||
+    e.metaKey !== mods.includes('m') ||
+    e.shiftKey !== mods.includes('s')
+  ) {
+    return false;
+  }
+
+  // Match the depressed key
+  return keyCode === (e.keyCode || e.which);
+};
+
+export const contentTop = () => {
+  const perfBar = $('#js-peek').outerHeight() || 0;
+  const mrTabsHeight = $('.merge-request-tabs').outerHeight() || 0;
+  const headerHeight = $('.navbar-gitlab').outerHeight() || 0;
+  const diffFilesChanged = $('.js-diff-files-changed').outerHeight() || 0;
+  const isDesktop = breakpointInstance.isDesktop();
+  const diffFileTitleBar =
+    (isDesktop && $('.diff-file .file-title-flex-parent:visible').outerHeight()) || 0;
+  const compareVersionsHeaderHeight = (isDesktop && $('.mr-version-controls').outerHeight()) || 0;
+
+  return (
+    perfBar +
+    mrTabsHeight +
+    headerHeight +
+    diffFilesChanged +
+    diffFileTitleBar +
+    compareVersionsHeaderHeight
+  );
 };
 
 export const scrollToElement = element => {
@@ -175,6 +304,22 @@ export const scrollToElement = element => {
 };
 
 /**
+ * Returns a function that can only be invoked once between
+ * each browser screen repaint.
+ * @param {Function} fn
+ */
+export const debounceByAnimationFrame = fn => {
+  let requestId;
+
+  return function debounced(...args) {
+    if (requestId) {
+      window.cancelAnimationFrame(requestId);
+    }
+    requestId = window.requestAnimationFrame(() => fn.apply(this, args));
+  };
+};
+
+/**
   this will take in the `name` of the param you want to parse in the url
   if the name does not exist this function will return `null`
   otherwise it will return the value of the param key provided
@@ -189,7 +334,17 @@ export const getParameterByName = (name, urlToParse) => {
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 };
 
-const handleSelectedRange = (range) => {
+const handleSelectedRange = (range, restrictToNode) => {
+  // Make sure this range is within the restricting container
+  if (restrictToNode && !range.intersectsNode(restrictToNode)) return null;
+
+  // If only a part of the range is within the wanted container, we need to restrict the range to it
+  if (restrictToNode && !restrictToNode.contains(range.commonAncestorContainer)) {
+    if (!restrictToNode.contains(range.startContainer)) range.setStart(restrictToNode, 0);
+    if (!restrictToNode.contains(range.endContainer))
+      range.setEnd(restrictToNode, restrictToNode.childNodes.length);
+  }
+
   const container = range.commonAncestorContainer;
   // add context to fragment if needed
   if (container.tagName === 'OL') {
@@ -200,14 +355,22 @@ const handleSelectedRange = (range) => {
   return range.cloneContents();
 };
 
-export const getSelectedFragment = () => {
+export const getSelectedFragment = restrictToNode => {
   const selection = window.getSelection();
   if (selection.rangeCount === 0) return null;
+  // Most usages of the selection only want text from a part of the page (e.g. discussion)
+  if (restrictToNode && !selection.containsNode(restrictToNode, true)) return null;
+
   const documentFragment = document.createDocumentFragment();
+  documentFragment.originalNodes = [];
 
   for (let i = 0; i < selection.rangeCount; i += 1) {
     const range = selection.getRangeAt(i);
-    documentFragment.appendChild(handleSelectedRange(range));
+    const handledRange = handleSelectedRange(range, restrictToNode);
+    if (handledRange) {
+      documentFragment.appendChild(handledRange);
+      documentFragment.originalNodes.push(range.commonAncestorContainer);
+    }
   }
   if (documentFragment.textContent.length === 0) return null;
 
@@ -349,8 +512,11 @@ export const objectToQueryString = (params = {}) =>
     .map(param => `${param}=${params[param]}`)
     .join('&');
 
-export const buildUrlWithCurrentLocation = param =>
-  (param ? `${window.location.pathname}${param}` : window.location.pathname);
+export const buildUrlWithCurrentLocation = param => {
+  if (param) return `${window.location.pathname}${param}`;
+
+  return window.location.pathname;
+};
 
 /**
  * Based on the current location and the string parameters provided
@@ -363,18 +529,26 @@ export const historyPushState = newUrl => {
 };
 
 /**
- * Converts permission provided as strings to booleans.
+ * Returns true for a String value of "true" and false otherwise.
+ * This is the opposite of Boolean(...).toString().
+ * `parseBoolean` is idempotent.
  *
- * @param  {String} string
+ * @param  {String} value
  * @returns {Boolean}
  */
-export const convertPermissionToBoolean = permission => permission === 'true';
+export const parseBoolean = value => (value && value.toString()) === 'true';
+
+/**
+ * @callback backOffCallback
+ * @param {Function} next
+ * @param {Function} stop
+ */
 
 /**
  * Back Off exponential algorithm
  * backOff :: (Function<next, stop>, Number) -> Promise<Any, Error>
  *
- * @param {Function<next, stop>} fn function to be called
+ * @param {backOffCallback} fn function to be called
  * @param {Number} timeout
  * @return {Promise<Any, Error>}
  * @example
@@ -426,7 +600,7 @@ export const backOff = (fn, timeout = 60000) => {
 export const createOverlayIcon = (iconPath, overlayPath) => {
   const faviconImage = document.createElement('img');
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     faviconImage.onload = () => {
       const size = 32;
 
@@ -437,13 +611,29 @@ export const createOverlayIcon = (iconPath, overlayPath) => {
       const context = canvas.getContext('2d');
       context.clearRect(0, 0, size, size);
       context.drawImage(
-        faviconImage, 0, 0, faviconImage.width, faviconImage.height, 0, 0, size, size,
+        faviconImage,
+        0,
+        0,
+        faviconImage.width,
+        faviconImage.height,
+        0,
+        0,
+        size,
+        size,
       );
 
       const overlayImage = document.createElement('img');
       overlayImage.onload = () => {
         context.drawImage(
-          overlayImage, 0, 0, overlayImage.width, overlayImage.height, 0, 0, size, size,
+          overlayImage,
+          0,
+          0,
+          overlayImage.width,
+          overlayImage.height,
+          0,
+          0,
+          size,
+          size,
         );
 
         const faviconWithOverlayUrl = canvas.toDataURL();
@@ -456,17 +646,21 @@ export const createOverlayIcon = (iconPath, overlayPath) => {
   });
 };
 
-export const setFaviconOverlay = (overlayPath) => {
+export const setFaviconOverlay = overlayPath => {
   const faviconEl = document.getElementById('favicon');
 
-  if (!faviconEl) { return null; }
+  if (!faviconEl) {
+    return null;
+  }
 
   const iconPath = faviconEl.getAttribute('data-original-href');
 
-  return createOverlayIcon(iconPath, overlayPath).then(faviconWithOverlayUrl => faviconEl.setAttribute('href', faviconWithOverlayUrl));
+  return createOverlayIcon(iconPath, overlayPath).then(faviconWithOverlayUrl =>
+    faviconEl.setAttribute('href', faviconWithOverlayUrl),
+  );
 };
 
-export const setFavicon = (faviconPath) => {
+export const setFavicon = faviconPath => {
   const faviconEl = document.getElementById('favicon');
   if (faviconEl && faviconPath) {
     faviconEl.setAttribute('href', faviconPath);
@@ -491,7 +685,10 @@ export const setCiStatusFavicon = pageUrl =>
       }
       return resetFavicon();
     })
-    .catch(resetFavicon);
+    .catch(error => {
+      resetFavicon();
+      throw error;
+    });
 
 export const spriteIcon = (icon, className = '') => {
   const classAttribute = className.length > 0 ? `class="${className}"` : '';
@@ -501,10 +698,18 @@ export const spriteIcon = (icon, className = '') => {
 
 /**
  * This method takes in object with snake_case property names
- * and returns new object with camelCase property names
+ * and returns a new object with camelCase property names
  *
  * Reasoning for this method is to ensure consistent property
  * naming conventions across JS code.
+ *
+ * This method also supports additional params in `options` object
+ *
+ * @param {Object} obj - Object to be converted.
+ * @param {Object} options - Object containing additional options.
+ * @param {boolean} options.deep - FLag to allow deep object converting
+ * @param {Array[]} dropKeys - List of properties to discard while building new object
+ * @param {Array[]} ignoreKeyNames - List of properties to leave intact (as snake_case) while building new object
  */
 export const convertObjectPropsToCamelCase = (obj = {}, options = {}) => {
   if (obj === null) {
@@ -512,12 +717,26 @@ export const convertObjectPropsToCamelCase = (obj = {}, options = {}) => {
   }
 
   const initial = Array.isArray(obj) ? [] : {};
+  const { deep = false, dropKeys = [], ignoreKeyNames = [] } = options;
 
   return Object.keys(obj).reduce((acc, prop) => {
     const result = acc;
     const val = obj[prop];
 
-    if (options.deep && (isObject(val) || Array.isArray(val))) {
+    // Drop properties from new object if
+    // there are any mentioned in options
+    if (dropKeys.indexOf(prop) > -1) {
+      return acc;
+    }
+
+    // Skip converting properties in new object
+    // if there are any mentioned in options
+    if (ignoreKeyNames.indexOf(prop) > -1) {
+      result[prop] = obj[prop];
+      return acc;
+    }
+
+    if (deep && (isObject(val) || Array.isArray(val))) {
       result[convertToCamelCase(prop)] = convertObjectPropsToCamelCase(val, options);
     } else {
       result[convertToCamelCase(prop)] = obj[prop];
@@ -560,6 +779,29 @@ export const roundOffFloat = (number, precision = 0) => {
   const multiplier = Math.pow(10, precision);
   return Math.round(number * multiplier) / multiplier;
 };
+
+/**
+ * Represents navigation type constants of the Performance Navigation API.
+ * Detailed explanation see https://developer.mozilla.org/en-US/docs/Web/API/PerformanceNavigation.
+ */
+export const NavigationType = {
+  TYPE_NAVIGATE: 0,
+  TYPE_RELOAD: 1,
+  TYPE_BACK_FORWARD: 2,
+  TYPE_RESERVED: 255,
+};
+
+/**
+ * Checks if the given Label has a special syntax `::` in
+ * it's title.
+ *
+ * Expected Label to be an Object with `title` as a key:
+ *   { title: 'LabelTitle', ...otherProperties };
+ *
+ * @param {Object} label
+ * @returns Boolean
+ */
+export const isScopedLabel = ({ title = '' }) => title.indexOf('::') !== -1;
 
 window.gl = window.gl || {};
 window.gl.utils = {

@@ -1,17 +1,26 @@
 import $ from 'jquery';
 import createFlash from '~/flash';
-import GfmAutoComplete from '~/gfm_auto_complete';
+import GfmAutoComplete from 'ee_else_ce/gfm_auto_complete';
+import emojiRegex from 'emoji-regex';
 import EmojiMenu from './emoji_menu';
+import { __ } from '~/locale';
+
+const defaultStatusEmoji = 'speech_balloon';
 
 document.addEventListener('DOMContentLoaded', () => {
   const toggleEmojiMenuButtonSelector = '.js-toggle-emoji-menu';
   const toggleEmojiMenuButton = document.querySelector(toggleEmojiMenuButtonSelector);
   const statusEmojiField = document.getElementById('js-status-emoji-field');
   const statusMessageField = document.getElementById('js-status-message-field');
-  const findNoEmojiPlaceholder = () => document.getElementById('js-no-emoji-placeholder');
 
+  const toggleNoEmojiPlaceholder = isVisible => {
+    const placeholderElement = document.getElementById('js-no-emoji-placeholder');
+    placeholderElement.classList.toggle('hidden', !isVisible);
+  };
+
+  const findStatusEmoji = () => toggleEmojiMenuButton.querySelector('gl-emoji');
   const removeStatusEmoji = () => {
-    const statusEmoji = toggleEmojiMenuButton.querySelector('gl-emoji');
+    const statusEmoji = findStatusEmoji();
     if (statusEmoji) {
       statusEmoji.remove();
     }
@@ -19,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const selectEmojiCallback = (emoji, emojiTag) => {
     statusEmojiField.value = emoji;
-    findNoEmojiPlaceholder().classList.add('hidden');
+    toggleNoEmojiPlaceholder(false);
     removeStatusEmoji();
     toggleEmojiMenuButton.innerHTML += emojiTag;
   };
@@ -29,11 +38,22 @@ document.addEventListener('DOMContentLoaded', () => {
     statusEmojiField.value = '';
     statusMessageField.value = '';
     removeStatusEmoji();
-    findNoEmojiPlaceholder().classList.remove('hidden');
+    toggleNoEmojiPlaceholder(true);
   });
 
   const emojiAutocomplete = new GfmAutoComplete();
   emojiAutocomplete.setup($(statusMessageField), { emojis: true });
+
+  const userNameInput = document.getElementById('user_name');
+  userNameInput.addEventListener('input', () => {
+    const EMOJI_REGEX = emojiRegex();
+    if (EMOJI_REGEX.test(userNameInput.value)) {
+      // set field to invalid so it gets detected by GlFieldErrors
+      userNameInput.setCustomValidity(__('Invalid field'));
+    } else {
+      userNameInput.setCustomValidity('');
+    }
+  });
 
   import(/* webpackChunkName: 'emoji' */ '~/emoji')
     .then(Emoji => {
@@ -44,6 +64,23 @@ document.addEventListener('DOMContentLoaded', () => {
         selectEmojiCallback,
       );
       emojiMenu.bindEvents();
+
+      const defaultEmojiTag = Emoji.glEmojiTag(defaultStatusEmoji);
+      statusMessageField.addEventListener('input', () => {
+        const hasStatusMessage = statusMessageField.value.trim() !== '';
+        const statusEmoji = findStatusEmoji();
+        if (hasStatusMessage && statusEmoji) {
+          return;
+        }
+
+        if (hasStatusMessage) {
+          toggleNoEmojiPlaceholder(false);
+          toggleEmojiMenuButton.innerHTML += defaultEmojiTag;
+        } else if (statusEmoji.dataset.name === defaultStatusEmoji) {
+          toggleNoEmojiPlaceholder(true);
+          removeStatusEmoji();
+        }
+      });
     })
-    .catch(() => createFlash('Failed to load emoji list!'));
+    .catch(() => createFlash(__('Failed to load emoji list.')));
 });

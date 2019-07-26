@@ -1,4 +1,5 @@
 # coding: utf-8
+# frozen_string_literal: true
 require 'spec_helper'
 
 describe ApplicationController do
@@ -62,8 +63,6 @@ describe ApplicationController do
       sign_in user
     end
 
-    let(:json_response) { JSON.parse(response.body) }
-
     controller(described_class) do
       def index
         render json: Gon.all_variables
@@ -107,59 +106,6 @@ describe ApplicationController do
     end
   end
 
-  describe "#authenticate_user_from_personal_access_token!" do
-    before do
-      stub_authentication_activity_metrics(debug: false)
-    end
-
-    controller(described_class) do
-      def index
-        render text: 'authenticated'
-      end
-    end
-
-    let(:personal_access_token) { create(:personal_access_token, user: user) }
-
-    context "when the 'personal_access_token' param is populated with the personal access token" do
-      it "logs the user in" do
-        expect(authentication_metrics)
-          .to increment(:user_authenticated_counter)
-          .and increment(:user_session_override_counter)
-          .and increment(:user_sessionless_authentication_counter)
-
-        get :index, private_token: personal_access_token.token
-
-        expect(response).to have_gitlab_http_status(200)
-        expect(response.body).to eq('authenticated')
-      end
-    end
-
-    context "when the 'PERSONAL_ACCESS_TOKEN' header is populated with the personal access token" do
-      it "logs the user in" do
-        expect(authentication_metrics)
-          .to increment(:user_authenticated_counter)
-          .and increment(:user_session_override_counter)
-          .and increment(:user_sessionless_authentication_counter)
-
-        @request.headers["PRIVATE-TOKEN"] = personal_access_token.token
-        get :index
-
-        expect(response).to have_gitlab_http_status(200)
-        expect(response.body).to eq('authenticated')
-      end
-    end
-
-    it "doesn't log the user in otherwise" do
-      expect(authentication_metrics)
-        .to increment(:user_unauthenticated_counter)
-
-      get :index, private_token: "token"
-
-      expect(response.status).not_to eq(200)
-      expect(response.body).not_to eq('authenticated')
-    end
-  end
-
   describe 'session expiration' do
     controller(described_class) do
       # The anonymous controller will report 401 and fail to run any actions.
@@ -167,7 +113,7 @@ describe ApplicationController do
       skip_before_action :authenticate_user!, only: :index
 
       def index
-        render text: 'authenticated'
+        render html: 'authenticated'
       end
     end
 
@@ -187,30 +133,6 @@ describe ApplicationController do
 
         expect(request.env['rack.session.options'][:expire_after]).to eq(Settings.gitlab['unauthenticated_session_expire_delay'])
       end
-    end
-  end
-
-  describe 'rescue from Gitlab::Git::Storage::Inaccessible' do
-    controller(described_class) do
-      def index
-        raise Gitlab::Git::Storage::Inaccessible.new('broken', 100)
-      end
-    end
-
-    it 'renders a 503 when storage is not available' do
-      sign_in(create(:user))
-
-      get :index
-
-      expect(response.status).to eq(503)
-    end
-
-    it 'renders includes a Retry-After header' do
-      sign_in(create(:user))
-
-      get :index
-
-      expect(response.headers['Retry-After']).to eq(100)
     end
   end
 
@@ -244,74 +166,6 @@ describe ApplicationController do
         get :index
 
         expect(response).to have_gitlab_http_status 404
-      end
-    end
-  end
-
-  describe '#authenticate_sessionless_user!' do
-    before do
-      stub_authentication_activity_metrics(debug: false)
-    end
-
-    describe 'authenticating a user from a feed token' do
-      controller(described_class) do
-        def index
-          render text: 'authenticated'
-        end
-      end
-
-      context "when the 'feed_token' param is populated with the feed token" do
-        context 'when the request format is atom' do
-          it "logs the user in" do
-            expect(authentication_metrics)
-              .to increment(:user_authenticated_counter)
-              .and increment(:user_session_override_counter)
-              .and increment(:user_sessionless_authentication_counter)
-
-            get :index, feed_token: user.feed_token, format: :atom
-
-            expect(response).to have_gitlab_http_status 200
-            expect(response.body).to eq 'authenticated'
-          end
-        end
-
-        context 'when the request format is ics' do
-          it "logs the user in" do
-            expect(authentication_metrics)
-              .to increment(:user_authenticated_counter)
-              .and increment(:user_session_override_counter)
-              .and increment(:user_sessionless_authentication_counter)
-
-            get :index, feed_token: user.feed_token, format: :ics
-
-            expect(response).to have_gitlab_http_status 200
-            expect(response.body).to eq 'authenticated'
-          end
-        end
-
-        context 'when the request format is neither atom nor ics' do
-          it "doesn't log the user in" do
-            expect(authentication_metrics)
-              .to increment(:user_unauthenticated_counter)
-
-            get :index, feed_token: user.feed_token
-
-            expect(response.status).not_to have_gitlab_http_status 200
-            expect(response.body).not_to eq 'authenticated'
-          end
-        end
-      end
-
-      context "when the 'feed_token' param is populated with an invalid feed token" do
-        it "doesn't log the user" do
-          expect(authentication_metrics)
-            .to increment(:user_unauthenticated_counter)
-
-          get :index, feed_token: 'token', format: :atom
-
-          expect(response.status).not_to eq 200
-          expect(response.body).not_to eq 'authenticated'
-        end
       end
     end
   end
@@ -350,8 +204,19 @@ describe ApplicationController do
     describe '#check_two_factor_requirement' do
       subject { controller.send :check_two_factor_requirement }
 
+      it 'does not redirect if user has temporary oauth email' do
+        oauth_user = create(:user, email: 'temp-email-for-oauth@email.com')
+        allow(controller).to receive(:two_factor_authentication_required?).and_return(true)
+        allow(controller).to receive(:current_user).and_return(oauth_user)
+
+        expect(controller).not_to receive(:redirect_to)
+
+        subject
+      end
+
       it 'does not redirect if 2FA is not required' do
         allow(controller).to receive(:two_factor_authentication_required?).and_return(false)
+
         expect(controller).not_to receive(:redirect_to)
 
         subject
@@ -360,6 +225,7 @@ describe ApplicationController do
       it 'does not redirect if user is not logged in' do
         allow(controller).to receive(:two_factor_authentication_required?).and_return(true)
         allow(controller).to receive(:current_user).and_return(nil)
+
         expect(controller).not_to receive(:redirect_to)
 
         subject
@@ -367,8 +233,9 @@ describe ApplicationController do
 
       it 'does not redirect if user has 2FA enabled' do
         allow(controller).to receive(:two_factor_authentication_required?).and_return(true)
-        allow(controller).to receive(:current_user).twice.and_return(user)
+        allow(controller).to receive(:current_user).thrice.and_return(user)
         allow(user).to receive(:two_factor_enabled?).and_return(true)
+
         expect(controller).not_to receive(:redirect_to)
 
         subject
@@ -376,9 +243,10 @@ describe ApplicationController do
 
       it 'does not redirect if 2FA setup can be skipped' do
         allow(controller).to receive(:two_factor_authentication_required?).and_return(true)
-        allow(controller).to receive(:current_user).twice.and_return(user)
+        allow(controller).to receive(:current_user).thrice.and_return(user)
         allow(user).to receive(:two_factor_enabled?).and_return(false)
         allow(controller).to receive(:skip_two_factor?).and_return(true)
+
         expect(controller).not_to receive(:redirect_to)
 
         subject
@@ -386,10 +254,11 @@ describe ApplicationController do
 
       it 'redirects to 2FA setup otherwise' do
         allow(controller).to receive(:two_factor_authentication_required?).and_return(true)
-        allow(controller).to receive(:current_user).twice.and_return(user)
+        allow(controller).to receive(:current_user).thrice.and_return(user)
         allow(user).to receive(:two_factor_enabled?).and_return(false)
         allow(controller).to receive(:skip_two_factor?).and_return(false)
         allow(controller).to receive(:profile_two_factor_auth_path)
+
         expect(controller).to receive(:redirect_to)
 
         subject
@@ -414,6 +283,13 @@ describe ApplicationController do
 
       it 'returns true if a 2FA requirement is set on the user' do
         user.require_two_factor_authentication_from_group = true
+        allow(controller).to receive(:current_user).and_return(user)
+
+        expect(subject).to be_truthy
+      end
+
+      it 'returns true if user has signed up using omniauth-ultraauth' do
+        user = create(:omniauth_user, provider: 'ultraauth')
         allow(controller).to receive(:current_user).and_return(user)
 
         expect(subject).to be_truthy
@@ -546,7 +422,7 @@ describe ApplicationController do
   context 'terms' do
     controller(described_class) do
       def index
-        render text: 'authenticated'
+        render html: 'authenticated'
       end
     end
 
@@ -568,7 +444,7 @@ describe ApplicationController do
         enforce_terms
       end
 
-      it 'redirects if the user did not accept the terms'  do
+      it 'redirects if the user did not accept the terms' do
         get :index
 
         expect(response).to have_gitlab_http_status(302)
@@ -581,36 +457,6 @@ describe ApplicationController do
 
         expect(response).to have_gitlab_http_status(200)
       end
-
-      context 'for sessionless users' do
-        render_views
-
-        before do
-          sign_out user
-        end
-
-        it 'renders a 403 when the sessionless user did not accept the terms' do
-          get :index, feed_token: user.feed_token, format: :atom
-
-          expect(response).to have_gitlab_http_status(403)
-        end
-
-        it 'renders the error message when the format was html' do
-          get :index,
-              private_token: create(:personal_access_token, user: user).token,
-              format: :html
-
-          expect(response.body).to have_content /accept the terms of service/i
-        end
-
-        it 'renders a 200 when the sessionless user accepted the terms' do
-          accept_terms(user)
-
-          get :index, feed_token: user.feed_token, format: :atom
-
-          expect(response).to have_gitlab_http_status(200)
-        end
-      end
     end
   end
 
@@ -619,7 +465,7 @@ describe ApplicationController do
       attr_reader :last_payload
 
       def index
-        render text: 'authenticated'
+        render html: 'authenticated'
       end
 
       def append_info_to_payload(payload)
@@ -633,6 +479,14 @@ describe ApplicationController do
       get :index
 
       expect(controller.last_payload.has_key?(:response)).to be_falsey
+    end
+
+    it 'does log correlation id' do
+      Labkit::Correlation::CorrelationId.use_id('new-id') do
+        get :index
+      end
+
+      expect(controller.last_payload).to include('correlation_id' => 'new-id')
     end
 
     context '422 errors' do
@@ -674,7 +528,7 @@ describe ApplicationController do
   describe '#access_denied' do
     controller(described_class) do
       def index
-        access_denied!(params[:message])
+        access_denied!(params[:message], params[:status])
       end
     end
 
@@ -686,12 +540,194 @@ describe ApplicationController do
       get :index
 
       expect(response).to have_gitlab_http_status(404)
+      expect(response).to render_template('errors/not_found')
     end
 
     it 'renders a 403 when a message is passed to access denied' do
-      get :index, message: 'None shall pass'
+      get :index, params: { message: 'None shall pass' }
 
       expect(response).to have_gitlab_http_status(403)
+      expect(response).to render_template('errors/access_denied')
+    end
+
+    it 'renders a status passed to access denied' do
+      get :index, params: { status: 401 }
+
+      expect(response).to have_gitlab_http_status(401)
+    end
+  end
+
+  context 'when invalid UTF-8 parameters are received' do
+    controller(described_class) do
+      def index
+        params[:text].split(' ')
+
+        render json: :ok
+      end
+    end
+
+    before do
+      sign_in user
+    end
+
+    context 'html' do
+      subject { get :index, params: { text: "hi \255" } }
+
+      it 'renders 412' do
+        expect { subject }.to raise_error(ActionController::BadRequest)
+      end
+    end
+
+    context 'js' do
+      subject { get :index, format: :js, params: { text: "hi \255" } }
+
+      it 'renders 412' do
+        expect { subject }.to raise_error(ActionController::BadRequest)
+      end
+    end
+  end
+
+  context 'X-GitLab-Custom-Error header' do
+    before do
+      sign_in user
+    end
+
+    context 'given a 422 error page' do
+      controller do
+        def index
+          render 'errors/omniauth_error', layout: 'errors', status: 422
+        end
+      end
+
+      it 'sets a custom header' do
+        get :index
+
+        expect(response.headers['X-GitLab-Custom-Error']).to eq '1'
+      end
+    end
+
+    context 'given a 500 error page' do
+      controller do
+        def index
+          render 'errors/omniauth_error', layout: 'errors', status: 500
+        end
+      end
+
+      it 'sets a custom header' do
+        get :index
+
+        expect(response.headers['X-GitLab-Custom-Error']).to eq '1'
+      end
+    end
+
+    context 'given a 200 success page' do
+      controller do
+        def index
+          render 'errors/omniauth_error', layout: 'errors', status: 200
+        end
+      end
+
+      it 'does not set a custom header' do
+        get :index
+
+        expect(response.headers['X-GitLab-Custom-Error']).to be_nil
+      end
+    end
+
+    context 'given a json response' do
+      controller do
+        def index
+          render json: {}, status: :unprocessable_entity
+        end
+      end
+
+      it 'does not set a custom header' do
+        get :index, format: :json
+
+        expect(response.headers['X-GitLab-Custom-Error']).to be_nil
+      end
+    end
+
+    context 'given a json response for an html request' do
+      controller do
+        def index
+          render json: {}, status: :unprocessable_entity
+        end
+      end
+
+      it 'does not set a custom header' do
+        get :index
+
+        expect(response.headers['X-GitLab-Custom-Error']).to be_nil
+      end
+    end
+  end
+
+  context 'control headers' do
+    controller(described_class) do
+      def index
+        render json: :ok
+      end
+    end
+
+    context 'user not logged in' do
+      it 'sets the default headers' do
+        get :index
+
+        expect(response.headers['Cache-Control']).to be_nil
+      end
+    end
+
+    context 'user logged in' do
+      it 'sets the default headers' do
+        sign_in(user)
+
+        get :index
+
+        expect(response.headers['Cache-Control']).to eq 'max-age=0, private, must-revalidate, no-store'
+      end
+
+      it 'does not set the "no-store" header for XHR requests' do
+        sign_in(user)
+
+        get :index, xhr: true
+
+        expect(response.headers['Cache-Control']).to eq 'max-age=0, private, must-revalidate'
+      end
+    end
+  end
+
+  context 'Gitlab::Session' do
+    controller(described_class) do
+      prepend_before_action do
+        authenticate_sessionless_user!(:rss)
+      end
+
+      def index
+        if Gitlab::Session.current
+          head :created
+        else
+          head :not_found
+        end
+      end
+    end
+
+    it 'is set on web requests' do
+      sign_in(user)
+
+      get :index
+
+      expect(response).to have_gitlab_http_status(:created)
+    end
+
+    context 'with sessionless user' do
+      it 'is not set' do
+        personal_access_token = create(:personal_access_token, user: user)
+
+        get :index, format: :atom, params: { private_token: personal_access_token.token }
+
+        expect(response).to have_gitlab_http_status(:not_found)
+      end
     end
   end
 end

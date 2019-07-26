@@ -1,8 +1,9 @@
+# frozen_string_literal: true
+
 module SystemCheck
   module Orphans
     class RepositoryCheck < SystemCheck::BaseCheck
       set_name 'Orphaned repositories:'
-      attr_accessor :orphans
 
       def multi_check
         Gitlab::GitalyClient::StorageSettings.allow_disk_access do

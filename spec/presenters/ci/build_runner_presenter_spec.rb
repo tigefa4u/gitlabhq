@@ -3,7 +3,6 @@ require 'spec_helper'
 describe Ci::BuildRunnerPresenter do
   let(:presenter) { described_class.new(build) }
   let(:archive) { { paths: ['sample.txt'] } }
-  let(:junit) { { junit: ['junit.xml'] } }
 
   let(:archive_expectation) do
     {
@@ -11,16 +10,6 @@ describe Ci::BuildRunnerPresenter do
       artifact_format: :zip,
       paths: archive[:paths],
       untracked: archive[:untracked]
-    }
-  end
-
-  let(:junit_expectation) do
-    {
-      name: 'junit.xml',
-      artifact_type: :junit,
-      artifact_format: :gzip,
-      paths: ['junit.xml'],
-      when: 'always'
     }
   end
 
@@ -49,20 +38,46 @@ describe Ci::BuildRunnerPresenter do
       end
     end
 
-    context "when option has 'junit' keyword" do
-      let(:build) { create(:ci_build, options: { artifacts: { reports: junit } } ) }
+    context "with reports" do
+      Ci::JobArtifact::DEFAULT_FILE_NAMES.each do |file_type, filename|
+        context file_type.to_s do
+          let(:report) { { "#{file_type}": [filename] } }
+          let(:build) { create(:ci_build, options: { artifacts: { reports: report } } ) }
 
-      it 'presents correct hash' do
-        expect(presenter.artifacts.first).to include(junit_expectation)
+          let(:report_expectation) do
+            {
+              name: filename,
+              artifact_type: :"#{file_type}",
+              artifact_format: Ci::JobArtifact::TYPE_AND_FORMAT_PAIRS.fetch(file_type),
+              paths: [filename],
+              when: 'always'
+            }
+          end
+
+          it 'presents correct hash' do
+            expect(presenter.artifacts.first).to include(report_expectation)
+          end
+        end
       end
     end
 
     context "when option has both archive and reports specification" do
-      let(:build) { create(:ci_build, options: { script: 'echo', artifacts: { **archive, reports: junit } } ) }
+      let(:report) { { junit: ['junit.xml'] } }
+      let(:build) { create(:ci_build, options: { script: 'echo', artifacts: { **archive, reports: report } } ) }
+
+      let(:report_expectation) do
+        {
+          name: 'junit.xml',
+          artifact_type: :junit,
+          artifact_format: :gzip,
+          paths: ['junit.xml'],
+          when: 'always'
+        }
+      end
 
       it 'presents correct hash' do
         expect(presenter.artifacts.first).to include(archive_expectation)
-        expect(presenter.artifacts.second).to include(junit_expectation)
+        expect(presenter.artifacts.second).to include(report_expectation)
       end
 
       context "when archive specifies 'expire_in' keyword" do
@@ -70,7 +85,7 @@ describe Ci::BuildRunnerPresenter do
 
         it 'inherits expire_in from archive' do
           expect(presenter.artifacts.first).to include({ **archive_expectation, expire_in: '3 mins 4 sec' })
-          expect(presenter.artifacts.second).to include({ **junit_expectation, expire_in: '3 mins 4 sec' })
+          expect(presenter.artifacts.second).to include({ **report_expectation, expire_in: '3 mins 4 sec' })
         end
       end
     end
@@ -80,6 +95,116 @@ describe Ci::BuildRunnerPresenter do
 
       it 'does not present hash' do
         expect(presenter.artifacts).to be_nil
+      end
+    end
+  end
+
+  describe '#ref_type' do
+    subject { presenter.ref_type }
+
+    let(:build) { create(:ci_build, tag: tag) }
+    let(:tag) { true }
+
+    it 'returns the correct ref type' do
+      is_expected.to eq('tag')
+    end
+
+    context 'when tag is false' do
+      let(:tag) { false }
+
+      it 'returns the correct ref type' do
+        is_expected.to eq('branch')
+      end
+    end
+  end
+
+  describe '#git_depth' do
+    let(:build) { create(:ci_build) }
+
+    subject(:git_depth) { presenter.git_depth }
+
+    context 'when GIT_DEPTH variable is specified' do
+      before do
+        create(:ci_pipeline_variable, key: 'GIT_DEPTH', value: 1, pipeline: build.pipeline)
+      end
+
+      it 'returns its value' do
+        expect(git_depth).to eq(1)
+      end
+    end
+
+    it 'defaults to git depth setting for the project' do
+      expect(git_depth).to eq(build.project.ci_default_git_depth)
+    end
+
+    context 'when feature flag :ci_project_git_depth is disabled' do
+      before do
+        stub_feature_flags(ci_project_git_depth: { enabled: false })
+      end
+
+      it 'defaults to 0' do
+        expect(git_depth).to eq(0)
+      end
+    end
+  end
+
+  describe '#refspecs' do
+    subject { presenter.refspecs }
+
+    let(:build) { create(:ci_build) }
+
+    it 'returns the correct refspecs' do
+      is_expected.to contain_exactly("+refs/heads/#{build.ref}:refs/remotes/origin/#{build.ref}")
+    end
+
+    context 'when ref is tag' do
+      let(:build) { create(:ci_build, :tag) }
+
+      it 'returns the correct refspecs' do
+        is_expected.to contain_exactly("+refs/tags/#{build.ref}:refs/tags/#{build.ref}")
+      end
+
+      context 'when GIT_DEPTH is zero' do
+        before do
+          create(:ci_pipeline_variable, key: 'GIT_DEPTH', value: 0, pipeline: build.pipeline)
+        end
+
+        it 'returns the correct refspecs' do
+          is_expected.to contain_exactly('+refs/tags/*:refs/tags/*',
+                                         '+refs/heads/*:refs/remotes/origin/*')
+        end
+      end
+    end
+
+    context 'when pipeline is detached merge request pipeline' do
+      let(:merge_request) { create(:merge_request, :with_detached_merge_request_pipeline) }
+      let(:pipeline) { merge_request.all_pipelines.first }
+      let(:build) { create(:ci_build, ref: pipeline.ref, pipeline: pipeline) }
+
+      it 'returns the correct refspecs' do
+        is_expected
+          .to contain_exactly('+refs/merge-requests/1/head:refs/merge-requests/1/head')
+      end
+
+      context 'when GIT_DEPTH is zero' do
+        before do
+          create(:ci_pipeline_variable, key: 'GIT_DEPTH', value: 0, pipeline: build.pipeline)
+        end
+
+        it 'returns the correct refspecs' do
+          is_expected
+            .to contain_exactly('+refs/merge-requests/1/head:refs/merge-requests/1/head',
+                                '+refs/heads/*:refs/remotes/origin/*',
+                                '+refs/tags/*:refs/tags/*')
+        end
+      end
+
+      context 'when pipeline is legacy detached merge request pipeline' do
+        let(:merge_request) { create(:merge_request, :with_legacy_detached_merge_request_pipeline) }
+
+        it 'returns the correct refspecs' do
+          is_expected.to contain_exactly("+refs/heads/#{build.ref}:refs/remotes/origin/#{build.ref}")
+        end
       end
     end
   end

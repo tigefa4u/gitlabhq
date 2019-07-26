@@ -1,13 +1,14 @@
 <script>
+import { GlLoadingIcon } from '@gitlab/ui';
 import ciHeader from '../../vue_shared/components/header_ci_component.vue';
 import eventHub from '../event_hub';
-import loadingIcon from '../../vue_shared/components/loading_icon.vue';
+import { __ } from '~/locale';
 
 export default {
   name: 'PipelineHeaderSection',
   components: {
     ciHeader,
-    loadingIcon,
+    GlLoadingIcon,
   },
   props: {
     pipeline: {
@@ -54,7 +55,7 @@ export default {
 
       if (this.pipeline.retry_path) {
         actions.push({
-          label: 'Retry',
+          label: __('Retry'),
           path: this.pipeline.retry_path,
           cssClass: 'js-retry-button btn btn-inverted-secondary',
           type: 'button',
@@ -64,7 +65,7 @@ export default {
 
       if (this.pipeline.cancel_path) {
         actions.push({
-          label: 'Cancel running',
+          label: __('Cancel running'),
           path: this.pipeline.cancel_path,
           cssClass: 'js-btn-cancel-pipeline btn btn-danger',
           type: 'button',
@@ -89,10 +90,6 @@ export default {
       item-name="Pipeline"
       @actionClicked="postAction"
     />
-    <loading-icon
-      v-if="isLoading"
-      size="2"
-      class="prepend-top-default append-bottom-default"
-    />
+    <gl-loading-icon v-if="isLoading" :size="2" class="prepend-top-default append-bottom-default" />
   </div>
 </template>

@@ -1,17 +1,35 @@
 # frozen_string_literal: true
 
 module Ci
-  class Runner < ActiveRecord::Base
+  class Runner < ApplicationRecord
     extend Gitlab::Ci::Model
     include Gitlab::SQL::Pattern
     include IgnorableColumn
     include RedisCacheable
     include ChronicDurationAttribute
+    include FromUnion
+    include TokenAuthenticatable
+
+    add_authentication_token_field :token, encrypted: -> { Feature.enabled?(:ci_runners_tokens_optional_encryption, default_enabled: true) ? :optional : :required }
+
+    enum access_level: {
+      not_protected: 0,
+      ref_protected: 1
+    }
+
+    enum runner_type: {
+      instance_type: 1,
+      group_type: 2,
+      project_type: 3
+    }
 
     RUNNER_QUEUE_EXPIRY_TIME = 60.minutes
     ONLINE_CONTACT_TIMEOUT = 1.hour
     UPDATE_DB_RUNNER_INFO_EVERY = 40.minutes
-    AVAILABLE_SCOPES = %w[specific shared active paused online].freeze
+    AVAILABLE_TYPES_LEGACY = %w[specific shared].freeze
+    AVAILABLE_TYPES = runner_types.keys.freeze
+    AVAILABLE_STATUSES = %w[active paused online offline].freeze
+    AVAILABLE_SCOPES = (AVAILABLE_TYPES_LEGACY + AVAILABLE_TYPES + AVAILABLE_STATUSES).freeze
     FORM_EDITABLE = %i[description tag_list active run_untagged locked access_level maximum_timeout_human_readable].freeze
 
     ignore_column :is_shared
@@ -24,17 +42,23 @@ module Ci
 
     has_one :last_build, ->() { order('id DESC') }, class_name: 'Ci::Build'
 
-    before_validation :set_default_values
+    before_save :ensure_token
 
     scope :active, -> { where(active: true) }
     scope :paused, -> { where(active: false) }
     scope :online, -> { where('contacted_at > ?', contact_time_deadline) }
+    # The following query using negation is cheaper than using `contacted_at <= ?`
+    # because there are less runners online than have been created. The
+    # resulting query is quickly finding online ones and then uses the regular
+    # indexed search and rejects the ones that are in the previous set. If we
+    # did `contacted_at <= ?` the query would effectively have to do a seq
+    # scan.
+    scope :offline, -> { where.not(id: online) }
     scope :ordered, -> { order(id: :desc) }
 
     # BACKWARD COMPATIBILITY: There are needed to maintain compatibility with `AVAILABLE_SCOPES` used by `lib/api/runners.rb`
     scope :deprecated_shared, -> { instance_type }
-    # this should get replaced with `project_type.or(group_type)` once using Rails5
-    scope :deprecated_specific, -> { where(runner_type: [runner_types[:project_type], runner_types[:group_type]]) }
+    scope :deprecated_specific, -> { project_type.or(group_type) }
 
     scope :belonging_to_project, -> (project_id) {
       joins(:runner_projects).where(ci_runner_projects: { project_id: project_id })
@@ -42,26 +66,38 @@ module Ci
 
     scope :belonging_to_parent_group_of_project, -> (project_id) {
       project_groups = ::Group.joins(:projects).where(projects: { id: project_id })
-      hierarchy_groups = Gitlab::GroupHierarchy.new(project_groups).base_and_ancestors
+      hierarchy_groups = Gitlab::ObjectHierarchy.new(project_groups).base_and_ancestors
 
       joins(:groups).where(namespaces: { id: hierarchy_groups })
     }
 
     scope :owned_or_instance_wide, -> (project_id) do
-      union = Gitlab::SQL::Union.new(
-        [belonging_to_project(project_id), belonging_to_parent_group_of_project(project_id), instance_type],
+      from_union(
+        [
+          belonging_to_project(project_id),
+          belonging_to_parent_group_of_project(project_id),
+          instance_type
+        ],
         remove_duplicates: false
       )
-      from("(#{union.to_sql}) ci_runners")
     end
 
     scope :assignable_for, ->(project) do
       # FIXME: That `to_sql` is needed to workaround a weird Rails bug.
       #        Without that, placeholders would miss one and couldn't match.
+      #
+      # We use "unscoped" here so that any current Ci::Runner filters don't
+      # apply to the inner query, which is not necessary.
+      exclude_runners = unscoped { project.runners.select(:id) }.to_sql
+
       where(locked: false)
-        .where.not("ci_runners.id IN (#{project.runners.select(:id).to_sql})")
+        .where.not("ci_runners.id IN (#{exclude_runners})")
         .project_type
     end
+
+    scope :order_contacted_at_asc, -> { order(contacted_at: :asc) }
+    scope :order_created_at_desc, -> { order(created_at: :desc) }
+    scope :with_tags, -> { preload(:tags) }
 
     validate :tag_constraints
     validates :access_level, presence: true
@@ -76,20 +112,10 @@ module Ci
 
     after_destroy :cleanup_runner_queue
 
-    enum access_level: {
-      not_protected: 0,
-      ref_protected: 1
-    }
-
-    enum runner_type: {
-      instance_type: 1,
-      group_type: 2,
-      project_type: 3
-    }
-
     cached_attr_reader :version, :revision, :platform, :architecture, :ip_address, :contacted_at
 
-    chronic_duration_attr :maximum_timeout_human_readable, :maximum_timeout
+    chronic_duration_attr :maximum_timeout_human_readable, :maximum_timeout,
+        error_message: 'Maximum job timeout has a value which could not be accepted'
 
     validates :maximum_timeout, allow_nil: true,
                                 numericality: { greater_than_or_equal_to: 600,
@@ -115,8 +141,12 @@ module Ci
       ONLINE_CONTACT_TIMEOUT.ago
     end
 
-    def set_default_values
-      self.token = SecureRandom.hex(15) if self.token.blank?
+    def self.order_by(order)
+      if order == 'contacted_asc'
+        order_contacted_at_asc
+      else
+        order_created_at_desc
+      end
     end
 
     def assign_to(project, current_user = nil)
@@ -227,10 +257,14 @@ module Ci
       end
     end
 
+    def uncached_contacted_at
+      read_attribute(:contacted_at)
+    end
+
     private
 
     def cleanup_runner_queue
-      Gitlab::Redis::Queues.with do |redis|
+      Gitlab::Redis::SharedState.with do |redis|
         redis.del(runner_queue_key)
       end
     end

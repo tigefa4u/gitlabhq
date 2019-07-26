@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module TodosHelper
   def todos_pending_count
     @todos_pending_count ||= current_user.todos_pending_count
@@ -94,9 +96,7 @@ module TodosHelper
       end
     end
 
-    path = request.path
-    path << "?#{options.to_param}"
-    path
+    "#{request.path}?#{options.to_param}"
   end
 
   def todo_actions_options
@@ -152,10 +152,11 @@ module TodosHelper
         ''
       end
 
-    html = "&middot; ".html_safe
-    html << content_tag(:span, class: css_class) do
+    content = content_tag(:span, class: css_class) do
       "Due #{is_due_today ? "today" : todo.target.due_date.to_s(:medium)}"
     end
+
+    "&middot; #{content}".html_safe
   end
 
   private
@@ -169,7 +170,7 @@ module TodosHelper
   end
 
   def todo_group_options
-    groups = current_user.authorized_groups.map do |group|
+    groups = current_user.authorized_groups.with_route.map do |group|
       { id: group.id, text: group.full_name }
     end
 

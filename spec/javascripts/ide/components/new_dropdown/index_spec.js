@@ -36,6 +36,7 @@ describe('new dropdown component', () => {
 
   it('renders new file, upload and new directory links', () => {
     const buttons = vm.$el.querySelectorAll('.dropdown-menu button');
+
     expect(buttons[0].textContent.trim()).toBe('New file');
     expect(buttons[1].textContent.trim()).toBe('Upload file');
     expect(buttons[2].textContent.trim()).toBe('New directory');
@@ -55,11 +56,11 @@ describe('new dropdown component', () => {
     });
   });
 
-  describe('dropdownOpen', () => {
+  describe('isOpen', () => {
     it('scrolls dropdown into view', done => {
       spyOn(vm.$refs.dropdownMenu, 'scrollIntoView');
 
-      vm.dropdownOpen = true;
+      vm.isOpen = true;
 
       setTimeout(() => {
         expect(vm.$refs.dropdownMenu.scrollIntoView).toHaveBeenCalledWith({

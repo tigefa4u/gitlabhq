@@ -1,37 +1,24 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 describe Clusters::Applications::Runner do
   let(:ci_runner) { create(:ci_runner) }
 
   include_examples 'cluster application core specs', :clusters_applications_runner
-  include_examples 'cluster application status specs', :cluster_application_runner
+  include_examples 'cluster application status specs', :clusters_applications_runner
+  include_examples 'cluster application version specs', :clusters_applications_runner
+  include_examples 'cluster application helm specs', :clusters_applications_runner
+  include_examples 'cluster application initial status specs'
 
   it { is_expected.to belong_to(:runner) }
 
-  describe '#make_installing!' do
-    before do
-      application.make_installing!
-    end
+  describe '#can_uninstall?' do
+    let(:gitlab_runner) { create(:clusters_applications_runner, runner: ci_runner) }
 
-    context 'application install previously errored with older version' do
-      let(:application) { create(:clusters_applications_runner, :scheduled, version: '0.1.30') }
+    subject { gitlab_runner.can_uninstall? }
 
-      it 'updates the application version' do
-        expect(application.reload.version).to eq('0.1.31')
-      end
-    end
-  end
-
-  describe '.installed' do
-    subject { described_class.installed }
-
-    let!(:cluster) { create(:clusters_applications_runner, :installed) }
-
-    before do
-      create(:clusters_applications_runner, :errored)
-    end
-
-    it { is_expected.to contain_exactly(cluster) }
+    it { is_expected.to be_truthy }
   end
 
   describe '#install_command' do
@@ -42,19 +29,28 @@ describe Clusters::Applications::Runner do
 
     it { is_expected.to be_an_instance_of(Gitlab::Kubernetes::Helm::InstallCommand) }
 
-    it 'should be initialized with 4 arguments' do
+    it 'is initialized with 4 arguments' do
       expect(subject.name).to eq('runner')
       expect(subject.chart).to eq('runner/gitlab-runner')
-      expect(subject.version).to eq('0.1.31')
+      expect(subject.version).to eq(Clusters::Applications::Runner::VERSION)
+      expect(subject).to be_rbac
       expect(subject.repository).to eq('https://charts.gitlab.io')
       expect(subject.files).to eq(gitlab_runner.files)
+    end
+
+    context 'on a non rbac enabled cluster' do
+      before do
+        gitlab_runner.cluster.platform_kubernetes.abac!
+      end
+
+      it { is_expected.not_to be_rbac }
     end
 
     context 'application failed to install previously' do
       let(:gitlab_runner) { create(:clusters_applications_runner, :errored, runner: ci_runner, version: '0.1.13') }
 
-      it 'should be initialized with the locked version' do
-        expect(subject.version).to eq('0.1.31')
+      it 'is initialized with the locked version' do
+        expect(subject.version).to eq(Clusters::Applications::Runner::VERSION)
       end
     end
   end
@@ -65,30 +61,7 @@ describe Clusters::Applications::Runner do
 
     subject { application.files }
 
-    it 'should include cert files' do
-      expect(subject[:'ca.pem']).to be_present
-      expect(subject[:'ca.pem']).to eq(application.cluster.application_helm.ca_cert)
-
-      expect(subject[:'cert.pem']).to be_present
-      expect(subject[:'key.pem']).to be_present
-
-      cert = OpenSSL::X509::Certificate.new(subject[:'cert.pem'])
-      expect(cert.not_after).to be < 60.minutes.from_now
-    end
-
-    context 'when the helm application does not have a ca_cert' do
-      before do
-        application.cluster.application_helm.ca_cert = nil
-      end
-
-      it 'should not include cert files' do
-        expect(subject[:'ca.pem']).not_to be_present
-        expect(subject[:'cert.pem']).not_to be_present
-        expect(subject[:'key.pem']).not_to be_present
-      end
-    end
-
-    it 'should include runner valid values' do
+    it 'includes runner valid values' do
       expect(values).to include('concurrent')
       expect(values).to include('checkInterval')
       expect(values).to include('rbac')
@@ -96,29 +69,62 @@ describe Clusters::Applications::Runner do
       expect(values).to include('privileged: true')
       expect(values).to include('image: ubuntu:16.04')
       expect(values).to include('resources')
-      expect(values).to match(/runnerToken: '?#{ci_runner.token}/)
-      expect(values).to match(/gitlabUrl: '?#{Gitlab::Routing.url_helpers.root_url}/)
+      expect(values).to match(/runnerToken: '?#{Regexp.escape(ci_runner.token)}/)
+      expect(values).to match(/gitlabUrl: '?#{Regexp.escape(Gitlab::Routing.url_helpers.root_url)}/)
     end
 
     context 'without a runner' do
-      let(:project) { create(:project) }
-      let(:cluster) { create(:cluster, :with_installed_helm, projects: [project]) }
-      let(:application) { create(:clusters_applications_runner, cluster: cluster) }
+      let(:application) { create(:clusters_applications_runner, runner: nil, cluster: cluster) }
+      let(:runner) { application.runner }
 
-      it 'creates a runner' do
-        expect do
+      shared_examples 'runner creation' do
+        it 'creates a runner' do
+          expect { subject }.to change { Ci::Runner.count }.by(1)
+        end
+
+        it 'uses the new runner token' do
+          expect(values).to match(/runnerToken: '?#{Regexp.escape(runner.token)}/)
+        end
+      end
+
+      context 'project cluster' do
+        let(:project) { create(:project) }
+        let(:cluster) { create(:cluster, :with_installed_helm, projects: [project]) }
+
+        include_examples 'runner creation'
+
+        it 'creates a project runner' do
           subject
-        end.to change { Ci::Runner.count }.by(1)
+
+          expect(runner).to be_project_type
+          expect(runner.projects).to eq [project]
+        end
       end
 
-      it 'uses the new runner token' do
-        expect(values).to match(/runnerToken: '?#{application.reload.runner.token}/)
+      context 'group cluster' do
+        let(:group) { create(:group) }
+        let(:cluster) { create(:cluster, :with_installed_helm, cluster_type: :group_type, groups: [group]) }
+
+        include_examples 'runner creation'
+
+        it 'creates a group runner' do
+          subject
+
+          expect(runner).to be_group_type
+          expect(runner.groups).to eq [group]
+        end
       end
 
-      it 'assigns the new runner to runner' do
-        subject
+      context 'instance cluster' do
+        let(:cluster) { create(:cluster, :with_installed_helm, :instance) }
 
-        expect(application.reload.runner).to be_project_type
+        include_examples 'runner creation'
+
+        it 'creates an instance runner' do
+          subject
+
+          expect(runner).to be_instance_type
+        end
       end
     end
 
@@ -145,9 +151,40 @@ describe Clusters::Applications::Runner do
         allow(application).to receive(:chart_values).and_return(stub_values)
       end
 
-      it 'should overwrite values.yaml' do
+      it 'overwrites values.yaml' do
         expect(values).to match(/privileged: '?#{application.privileged}/)
       end
+    end
+  end
+
+  describe '#prepare_uninstall' do
+    it 'pauses associated runner' do
+      active_runner = create(:ci_runner, contacted_at: 1.second.ago)
+
+      expect(active_runner.status).to eq(:online)
+
+      application_runner = create(:clusters_applications_runner, :scheduled, runner: active_runner)
+      application_runner.prepare_uninstall
+
+      expect(active_runner.status).to eq(:paused)
+    end
+  end
+
+  describe '#make_uninstalling!' do
+    subject { create(:clusters_applications_runner, :scheduled, runner: ci_runner) }
+
+    it 'calls prepare_uninstall' do
+      expect_any_instance_of(described_class).to receive(:prepare_uninstall).and_call_original
+
+      subject.make_uninstalling!
+    end
+  end
+
+  describe '#post_uninstall' do
+    it 'destroys its runner' do
+      application_runner = create(:clusters_applications_runner, :scheduled, runner: ci_runner)
+
+      expect { application_runner.post_uninstall }.to change { Ci::Runner.count }.by(-1)
     end
   end
 end

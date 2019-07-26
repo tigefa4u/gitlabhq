@@ -1,15 +1,15 @@
 <script>
 import $ from 'jquery';
+import { glEmojiTag } from '~/emoji';
 
 import detailedMetric from './detailed_metric.vue';
 import requestSelector from './request_selector.vue';
-import simpleMetric from './simple_metric.vue';
+import { s__ } from '~/locale';
 
 export default {
   components: {
     detailedMetric,
     requestSelector,
-    simpleMetric,
   },
   props: {
     store: {
@@ -34,15 +34,26 @@ export default {
     },
   },
   detailedMetrics: [
-    { metric: 'pg', header: 'SQL queries', details: 'queries', keys: ['sql'] },
+    { metric: 'pg', header: s__('PerformanceBar|SQL queries'), details: 'queries', keys: ['sql'] },
     {
       metric: 'gitaly',
-      header: 'Gitaly calls',
+      header: s__('PerformanceBar|Gitaly calls'),
       details: 'details',
       keys: ['feature', 'request'],
     },
+    {
+      metric: 'rugged',
+      header: s__('PerformanceBar|Rugged calls'),
+      details: 'details',
+      keys: ['feature', 'args'],
+    },
+    {
+      metric: 'redis',
+      header: s__('PerformanceBar|Redis calls'),
+      details: 'details',
+      keys: ['cmd'],
+    },
   ],
-  simpleMetrics: ['redis', 'sidekiq'],
   data() {
     return { currentRequestId: '' };
   },
@@ -64,6 +75,16 @@ export default {
     lineProfileModal() {
       return $('#modal-peek-line-profile');
     },
+    hasHost() {
+      return this.currentRequest && this.currentRequest.details && this.currentRequest.details.host;
+    },
+    birdEmoji() {
+      if (this.hasHost && this.currentRequest.details.host.canary) {
+        return glEmojiTag('baby_chick');
+      }
+
+      return '';
+    },
   },
   mounted() {
     this.currentRequest = this.requestId;
@@ -80,22 +101,15 @@ export default {
 };
 </script>
 <template>
-  <div
-    id="js-peek"
-    :class="env"
-  >
-    <div
-      v-if="currentRequest"
-      class="d-flex container-fluid container-limited"
-    >
-      <div
-        id="peek-view-host"
-        class="view"
-      >
+  <div id="js-peek" :class="env">
+    <div v-if="currentRequest" class="d-flex container-fluid container-limited qa-performance-bar">
+      <div id="peek-view-host" class="view">
         <span
-          v-if="currentRequest.details"
+          v-if="hasHost"
           class="current-host"
+          :class="{ canary: currentRequest.details.host.canary }"
         >
+          <span v-html="birdEmoji"></span>
           {{ currentRequest.details.host.hostname }}
         </span>
       </div>
@@ -108,45 +122,29 @@ export default {
         :details="metric.details"
         :keys="metric.keys"
       />
-      <div
-        v-if="initialRequest"
-        id="peek-view-rblineprof"
-        class="view"
-      >
+      <div v-if="initialRequest" id="peek-view-rblineprof" class="view">
         <button
           v-if="lineProfileModal.length"
           class="btn-link btn-blank"
           data-toggle="modal"
           data-target="#modal-peek-line-profile"
         >
-          profile
+          {{ s__('PerformanceBar|profile') }}
         </button>
-        <a
-          v-else
-          :href="profileUrl"
-        >
-          profile
-        </a>
+        <a v-else :href="profileUrl">{{ s__('PerformanceBar|profile') }}</a>
       </div>
-      <simple-metric
-        v-for="metric in $options.simpleMetrics"
-        :current-request="currentRequest"
-        :key="metric"
-        :metric="metric"
-      />
+      <div id="peek-view-gc" class="view">
+        <span v-if="currentRequest.details" class="bold">
+          <span title="Invoke Time">{{ currentRequest.details.gc.gc_time }}</span
+          >ms / <span title="Invoke Count">{{ currentRequest.details.gc.invokes }}</span> gc
+        </span>
+      </div>
       <div
-        id="peek-view-gc"
+        v-if="currentRequest.details && currentRequest.details.tracing"
+        id="peek-view-trace"
         class="view"
       >
-        <span
-          v-if="currentRequest.details"
-          class="bold"
-        >
-          <span title="Invoke Time">{{ currentRequest.details.gc.gc_time }}</span>ms
-          /
-          <span title="Invoke Count">{{ currentRequest.details.gc.invokes }}</span>
-          gc
-        </span>
+        <a :href="currentRequest.details.tracing.tracing_url">{{ s__('PerformanceBar|trace') }}</a>
       </div>
       <request-selector
         v-if="currentRequest"

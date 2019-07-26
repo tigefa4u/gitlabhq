@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Dir[Rails.root.join("app/models/project_services/chat_message/*.rb")].each { |f| require f }
 
 RSpec.shared_examples 'slack or mattermost notifications' do
@@ -102,6 +104,14 @@ RSpec.shared_examples 'slack or mattermost notifications' do
 
     it "calls Slack/Mattermost API for wiki page events" do
       chat_service.execute(@wiki_page_sample_data)
+
+      expect(WebMock).to have_requested(:post, webhook_url).once
+    end
+
+    it "calls Slack/Mattermost API for deployment events" do
+      deployment_event_data = { object_kind: 'deployment' }
+
+      chat_service.execute(deployment_event_data)
 
       expect(WebMock).to have_requested(:post, webhook_url).once
     end
@@ -267,7 +277,7 @@ RSpec.shared_examples 'slack or mattermost notifications' do
 
         it 'does not notify push events if they are not for the default branch' do
           ref = "#{Gitlab::Git::BRANCH_REF_PREFIX}test"
-          push_sample_data = Gitlab::DataBuilder::Push.build(project, user, nil, nil, ref, [])
+          push_sample_data = Gitlab::DataBuilder::Push.build(project: project, user: user, ref: ref)
 
           chat_service.execute(push_sample_data)
 
@@ -284,7 +294,7 @@ RSpec.shared_examples 'slack or mattermost notifications' do
 
         it 'still notifies about pushed tags' do
           ref = "#{Gitlab::Git::TAG_REF_PREFIX}test"
-          push_sample_data = Gitlab::DataBuilder::Push.build(project, user, nil, nil, ref, [])
+          push_sample_data = Gitlab::DataBuilder::Push.build(project: project, user: user, ref: ref)
 
           chat_service.execute(push_sample_data)
 
@@ -299,7 +309,7 @@ RSpec.shared_examples 'slack or mattermost notifications' do
 
         it 'notifies about all push events' do
           ref = "#{Gitlab::Git::BRANCH_REF_PREFIX}test"
-          push_sample_data = Gitlab::DataBuilder::Push.build(project, user, nil, nil, ref, [])
+          push_sample_data = Gitlab::DataBuilder::Push.build(project: project, user: user, ref: ref)
 
           chat_service.execute(push_sample_data)
 

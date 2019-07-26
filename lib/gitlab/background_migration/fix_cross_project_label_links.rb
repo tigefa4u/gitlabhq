@@ -95,7 +95,7 @@ module Gitlab
         local_labels = available_labels(project_id)
 
         # get all label links for the given resource (issue/MR)
-        # which reference a label not included in avaiable_labels
+        # which reference a label not included in available_labels
         # (other than its project labels and labels of ancestor groups)
         cross_labels = LabelLink
           .select('label_id, labels.title as title, labels.color as color, label_links.id as label_link_id')
@@ -108,7 +108,7 @@ module Gitlab
 
           next unless matching_label
 
-          Rails.logger.info "#{resource.class.name.demodulize} #{resource.id}: replacing #{label.label_id} with #{matching_label.id}"
+          Rails.logger.info "#{resource.class.name.demodulize} #{resource.id}: replacing #{label.label_id} with #{matching_label.id}" # rubocop:disable Gitlab/RailsLogger
           LabelLink.update(label.label_link_id, label_id: matching_label.id)
         end
       end

@@ -13,8 +13,6 @@ You can select the tag in the version dropdown in the top left corner of GitLab 
 ### 0. Backup
 
 It's useful to make a backup just in case things go south:
-(With MySQL, this may require granting "LOCK TABLES" privileges to the GitLab
-user on the database version)
 
 ```bash
 cd /home/git/gitlab
@@ -48,11 +46,7 @@ sudo -u git -H git checkout LATEST_TAG -b LATEST_TAG
 ```bash
 cd /home/git/gitlab
 
-# PostgreSQL
 sudo -u git -H bundle install --without development test mysql --deployment
-
-# MySQL
-sudo -u git -H bundle install --without development test postgres --deployment
 
 # Optional: clean up old gems
 sudo -u git -H bundle clean
@@ -67,7 +61,7 @@ sudo -u git -H bundle exec rake gettext:pack RAILS_ENV=production
 sudo -u git -H bundle exec rake gettext:po_to_json RAILS_ENV=production
 
 # Clean up assets and cache
-sudo -u git -H bundle exec rake yarn:install gitlab:assets:clean gitlab:assets:compile cache:clear RAILS_ENV=production NODE_ENV=production
+sudo -u git -H bundle exec rake yarn:install gitlab:assets:clean gitlab:assets:compile cache:clear RAILS_ENV=production NODE_ENV=production NODE_OPTIONS="--max_old_space_size=4096"
 ```
 
 ### 4. Update gitlab-workhorse to the corresponding version
@@ -83,7 +77,7 @@ sudo -u git -H bundle exec rake "gitlab:workhorse:install[/home/git/gitlab-workh
 ```bash
 cd /home/git/gitlab
 
-sudo -u git -H bundle exec rake "gitlab:gitaly:install[/home/git/gitaly]" RAILS_ENV=production
+sudo -u git -H bundle exec rake "gitlab:gitaly:install[/home/git/gitaly,/home/git/repositories]" RAILS_ENV=production
 ```
 
 ### 6. Update gitlab-shell to the corresponding version
@@ -106,14 +100,20 @@ sudo -u git -H git checkout v$(</home/git/gitlab/GITLAB_PAGES_VERSION)
 sudo -u git -H make
 ```
 
-### 8. Start application
+### 8. Install/Update `gitlab-elasticsearch-indexer` (optional) **(STARTER ONLY)**
+
+If you're interested in using GitLab's new [elasticsearch repository indexer](../integration/elasticsearch.md#elasticsearch-repository-indexer-beta) (currently in beta)
+please follow the instructions on the document linked above and enable the
+indexer usage in the GitLab admin settings.
+
+### 9. Start application
 
 ```bash
 sudo service gitlab start
 sudo service nginx restart
 ```
 
-### 9. Check application status
+### 10. Check application status
 
 Check if GitLab and its environment are configured correctly:
 

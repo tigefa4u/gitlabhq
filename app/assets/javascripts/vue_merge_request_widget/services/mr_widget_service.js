@@ -21,16 +21,20 @@ export default class MRWidgetService {
     return axios.delete(this.endpoints.sourceBranchPath);
   }
 
-  fetchDeployments() {
-    return axios.get(this.endpoints.ciEnvironmentsStatusPath);
+  fetchDeployments(targetParam) {
+    return axios.get(this.endpoints.ciEnvironmentsStatusPath, {
+      params: {
+        environment_target: targetParam,
+      },
+    });
   }
 
   poll() {
-    return axios.get(`${this.endpoints.statusPath}?serializer=basic`);
+    return axios.get(this.endpoints.mergeRequestBasicPath);
   }
 
   checkStatus() {
-    return axios.get(`${this.endpoints.statusPath}?serializer=widget`);
+    return axios.get(this.endpoints.mergeRequestWidgetPath);
   }
 
   fetchMergeActionsContent() {

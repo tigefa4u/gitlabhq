@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Banzai
   module Pipeline
     class PostProcessPipeline < BasePipeline
@@ -10,9 +12,11 @@ module Banzai
 
       def self.internal_link_filters
         [
-          Filter::RedactorFilter,
+          Filter::ReferenceRedactorFilter,
+          Filter::InlineMetricsRedactorFilter,
           Filter::RelativeLinkFilter,
-          Filter::IssuableStateFilter
+          Filter::IssuableStateFilter,
+          Filter::SuggestionFilter
         ]
       end
 

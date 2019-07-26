@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   module ImportExport
     class Importer
@@ -92,8 +94,6 @@ module Gitlab
       end
 
       def remove_import_file
-        return unless Gitlab::ImportExport.object_storage?
-
         upload = @project.import_export_upload
 
         return unless upload&.import_file&.file

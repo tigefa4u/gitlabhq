@@ -5,31 +5,37 @@
  *
  * Makes a post request when the button is clicked.
  */
+import { GlTooltipDirective, GlLoadingIcon, GlModalDirective, GlButton } from '@gitlab/ui';
 import { s__ } from '~/locale';
 import Icon from '~/vue_shared/components/icon.vue';
-import tooltip from '~/vue_shared/directives/tooltip';
+import ConfirmRollbackModal from './confirm_rollback_modal.vue';
 import eventHub from '../event_hub';
-import LoadingIcon from '../../vue_shared/components/loading_icon.vue';
 
 export default {
   components: {
     Icon,
-    LoadingIcon,
+    GlLoadingIcon,
+    GlButton,
+    ConfirmRollbackModal,
   },
-
   directives: {
-    tooltip,
+    GlTooltip: GlTooltipDirective,
+    GlModal: GlModalDirective,
   },
-
   props: {
-    retryUrl: {
-      type: String,
-      default: '',
-    },
-
     isLastDeployment: {
       type: Boolean,
       default: true,
+    },
+
+    environment: {
+      type: Object,
+      required: true,
+    },
+
+    retryUrl: {
+      type: String,
+      required: true,
     },
   },
   data() {
@@ -40,36 +46,38 @@ export default {
 
   computed: {
     title() {
-      return this.isLastDeployment ? s__('Environments|Re-deploy to environment') : s__('Environments|Rollback environment');
+      return this.isLastDeployment
+        ? s__('Environments|Re-deploy to environment')
+        : s__('Environments|Rollback environment');
     },
   },
 
   methods: {
     onClick() {
-      this.isLoading = true;
-
-      eventHub.$emit('postAction', { endpoint: this.retryUrl });
+      eventHub.$emit('requestRollbackEnvironment', {
+        ...this.environment,
+        retryUrl: this.retryUrl,
+        isLastDeployment: this.isLastDeployment,
+      });
+      eventHub.$on('rollbackEnvironment', environment => {
+        if (environment.id === this.environment.id) {
+          this.isLoading = true;
+        }
+      });
     },
   },
 };
 </script>
 <template>
-  <button
-    v-tooltip
+  <gl-button
+    v-gl-tooltip
+    v-gl-modal.confirm-rollback-modal
     :disabled="isLoading"
     :title="title"
-    type="button"
-    class="btn d-none d-sm-none d-md-block"
+    class="d-none d-md-block text-secondary"
     @click="onClick"
   >
-
-    <icon
-      v-if="isLastDeployment"
-      name="repeat" />
-    <icon
-      v-else
-      name="redo"/>
-
-    <loading-icon v-if="isLoading" />
-  </button>
+    <icon v-if="isLastDeployment" name="repeat" /> <icon v-else name="redo" />
+    <gl-loading-icon v-if="isLoading" />
+  </gl-button>
 </template>

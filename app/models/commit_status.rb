@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class CommitStatus < ActiveRecord::Base
+class CommitStatus < ApplicationRecord
   include HasStatus
   include Importable
   include AfterCommitQueue
@@ -41,16 +41,11 @@ class CommitStatus < ActiveRecord::Base
   scope :latest_ordered, -> { latest.ordered.includes(project: :namespace) }
   scope :retried_ordered, -> { retried.ordered.includes(project: :namespace) }
   scope :after_stage, -> (index) { where('stage_idx > ?', index) }
+  scope :processables, -> { where(type: %w[Ci::Build Ci::Bridge]) }
 
-  enum_with_nil failure_reason: {
-    unknown_failure: nil,
-    script_failure: 1,
-    api_failure: 2,
-    stuck_or_timeout_failure: 3,
-    runner_system_failure: 4,
-    missing_dependency_failure: 5,
-    runner_unsupported: 6
-  }
+  # We use `CommitStatusEnums.failure_reasons` here so that EE can more easily
+  # extend this `Hash` with new values.
+  enum_with_nil failure_reason: ::CommitStatusEnums.failure_reasons
 
   ##
   # We still create some CommitStatuses outside of CreatePipelineService.
@@ -58,9 +53,11 @@ class CommitStatus < ActiveRecord::Base
   # These are pages deployments and external statuses.
   #
   before_create unless: :importing? do
+    # rubocop: disable CodeReuse/ServiceClass
     Ci::EnsureStageService.new(project, user).execute(self) do |stage|
       self.run_after_commit { StageUpdateWorker.perform_async(stage.id) }
     end
+    # rubocop: enable CodeReuse/ServiceClass
   end
 
   state_machine :status do
@@ -69,7 +66,10 @@ class CommitStatus < ActiveRecord::Base
     end
 
     event :enqueue do
-      transition [:created, :skipped, :manual] => :pending
+      # A CommitStatus will never have prerequisites, but this event
+      # is shared by Ci::Build, which cannot progress unless prerequisites
+      # are satisfied.
+      transition [:created, :preparing, :skipped, :manual, :scheduled] => :pending, unless: :any_unmet_prerequisites?
     end
 
     event :run do
@@ -77,26 +77,26 @@ class CommitStatus < ActiveRecord::Base
     end
 
     event :skip do
-      transition [:created, :pending] => :skipped
+      transition [:created, :preparing, :pending] => :skipped
     end
 
     event :drop do
-      transition [:created, :pending, :running] => :failed
+      transition [:created, :preparing, :pending, :running, :scheduled] => :failed
     end
 
     event :success do
-      transition [:created, :pending, :running] => :success
+      transition [:created, :preparing, :pending, :running] => :success
     end
 
     event :cancel do
-      transition [:created, :pending, :running, :manual] => :canceled
+      transition [:created, :preparing, :pending, :running, :manual, :scheduled] => :canceled
     end
 
-    before_transition [:created, :skipped, :manual] => :pending do |commit_status|
+    before_transition [:created, :preparing, :skipped, :manual, :scheduled] => :pending do |commit_status|
       commit_status.queued_at = Time.now
     end
 
-    before_transition [:created, :pending] => :running do |commit_status|
+    before_transition [:created, :preparing, :pending] => :running do |commit_status|
       commit_status.started_at = Time.now
     end
 
@@ -106,7 +106,7 @@ class CommitStatus < ActiveRecord::Base
 
     before_transition any => :failed do |commit_status, transition|
       failure_reason = transition.args.first
-      commit_status.failure_reason = failure_reason
+      commit_status.failure_reason = CommitStatus.failure_reasons[failure_reason]
     end
 
     after_transition do |commit_status, transition|
@@ -130,15 +130,17 @@ class CommitStatus < ActiveRecord::Base
     after_transition any => :failed do |commit_status|
       next unless commit_status.project
 
+      # rubocop: disable CodeReuse/ServiceClass
       commit_status.run_after_commit do
         MergeRequests::AddTodoWhenBuildFailsService
           .new(project, nil).execute(self)
       end
+      # rubocop: enable CodeReuse/ServiceClass
     end
   end
 
   def locking_enabled?
-    status_changed?
+    will_save_change_to_status?
   end
 
   def before_sha
@@ -161,13 +163,15 @@ class CommitStatus < ActiveRecord::Base
     false
   end
 
-  # To be overriden when inherrited from
   def retryable?
     false
   end
 
-  # To be overriden when inherrited from
   def cancelable?
+    false
+  end
+
+  def archived?
     false
   end
 
@@ -176,6 +180,10 @@ class CommitStatus < ActiveRecord::Base
   end
 
   def has_trace?
+    false
+  end
+
+  def any_unmet_prerequisites?
     false
   end
 

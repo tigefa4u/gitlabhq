@@ -27,7 +27,7 @@ describe 'Dashboard Groups page', :js do
     expect(page).not_to have_content(another_group.name)
   end
 
-  it 'shows subgroups the user is member of', :nested_groups do
+  it 'shows subgroups the user is member of' do
     group.add_owner(user)
     nested_group.add_owner(user)
 
@@ -40,7 +40,7 @@ describe 'Dashboard Groups page', :js do
     expect(page).to have_content(nested_group.name)
   end
 
-  context 'when filtering groups', :nested_groups do
+  context 'when filtering groups' do
     before do
       group.add_owner(user)
       nested_group.add_owner(user)
@@ -79,7 +79,7 @@ describe 'Dashboard Groups page', :js do
     end
   end
 
-  context 'with subgroups', :nested_groups do
+  context 'with subgroups' do
     let!(:subgroup) { create(:group, :public, parent: group) }
 
     before do
@@ -125,7 +125,7 @@ describe 'Dashboard Groups page', :js do
     end
 
     it 'loads results for next page' do
-      expect(page).to have_selector('.gl-pagination .page', count: 2)
+      expect(page).to have_selector('.gl-pagination .page-item a.page-link', count: 3)
 
       # Check first page
       expect(page).to have_content(group2.full_name)
@@ -134,7 +134,7 @@ describe 'Dashboard Groups page', :js do
       expect(page).not_to have_selector("#group-#{group.id}")
 
       # Go to next page
-      find(".gl-pagination .page:not(.active) a").click
+      find('.gl-pagination .page-item:last-of-type a.page-link').click
 
       wait_for_requests
 

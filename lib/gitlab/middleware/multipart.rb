@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Gitlab::Middleware::Multipart - a Rack::Multipart replacement
 #
 # Rack::Multipart leaves behind tempfiles in /tmp and uses valuable Ruby
@@ -30,7 +32,7 @@ module Gitlab
 
       class Handler
         def initialize(env, message)
-          @request = Rack::Request.new(env)
+          @request = ActionDispatch::Request.new(env)
           @rewritten_fields = message['rewritten_fields']
           @open_files = []
         end
@@ -82,9 +84,13 @@ module Gitlab
         end
 
         def open_file(params, key)
-          ::UploadedFile.from_params(
-            params, key,
-            [FileUploader.root, Gitlab.config.uploads.storage_path])
+          allowed_paths = [
+            ::FileUploader.root,
+            Gitlab.config.uploads.storage_path,
+            File.join(Rails.root, 'public/uploads/tmp')
+          ]
+
+          ::UploadedFile.from_params(params, key, allowed_paths)
         end
       end
 

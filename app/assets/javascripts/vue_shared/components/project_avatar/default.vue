@@ -26,10 +26,7 @@ export default {
 </script>
 
 <template>
-  <span
-    :class="sizeClass"
-    class="avatar-container project-avatar"
-  >
+  <span :class="sizeClass" class="avatar-container rect-avatar project-avatar">
     <project-avatar-image
       v-if="project.avatar_url"
       :link-href="project.path"
@@ -42,6 +39,7 @@ export default {
       :entity-id="project.id"
       :entity-name="project.name"
       :size-class="sizeClass"
+      class="rect-avatar"
     />
   </span>
 </template>

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Projects::EnvironmentsController < Projects::ApplicationController
   layout 'project'
   before_action :authorize_read_environment!
@@ -8,6 +10,12 @@ class Projects::EnvironmentsController < Projects::ApplicationController
   before_action :environment, only: [:show, :edit, :update, :stop, :terminal, :terminal_websocket_authorize, :metrics]
   before_action :verify_api_request!, only: :terminal_websocket_authorize
   before_action :expire_etag_cache, only: [:index]
+  before_action only: [:metrics, :additional_metrics, :metrics_dashboard] do
+    push_frontend_feature_flag(:environment_metrics_use_prometheus_endpoint)
+    push_frontend_feature_flag(:environment_metrics_show_multiple_dashboards)
+    push_frontend_feature_flag(:environment_metrics_additional_panel_types)
+    push_frontend_feature_flag(:prometheus_computed_alerts)
+  end
 
   def index
     @environments = project.environments
@@ -19,11 +27,7 @@ class Projects::EnvironmentsController < Projects::ApplicationController
         Gitlab::PollingInterval.set_header(response, interval: 3_000)
 
         render json: {
-          environments: EnvironmentSerializer
-            .new(project: @project, current_user: @current_user)
-            .with_pagination(request, response)
-            .within_folders
-            .represent(@environments),
+          environments: serialize_environments(request, response, params[:nested]),
           available_count: project.environments.available.count,
           stopped_count: project.environments.stopped.count
         }
@@ -31,6 +35,8 @@ class Projects::EnvironmentsController < Projects::ApplicationController
     end
   end
 
+  # Returns all environments for a given folder
+  # rubocop: disable CodeReuse/ActiveRecord
   def folder
     folder_environments = project.environments.where(environment_type: params[:id])
     @environments = folder_environments.with_state(params[:scope] || :available)
@@ -41,20 +47,20 @@ class Projects::EnvironmentsController < Projects::ApplicationController
       format.html
       format.json do
         render json: {
-          environments: EnvironmentSerializer
-            .new(project: @project, current_user: @current_user)
-            .with_pagination(request, response)
-            .represent(@environments),
+          environments: serialize_environments(request, response),
           available_count: folder_environments.available.count,
           stopped_count: folder_environments.stopped.count
         }
       end
     end
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
+  # rubocop: disable CodeReuse/ActiveRecord
   def show
     @deployments = environment.deployments.order(id: :desc).page(params[:page])
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   def new
     @environment = project.environments.new
@@ -114,9 +120,9 @@ class Projects::EnvironmentsController < Projects::ApplicationController
     terminal = environment.terminals.try(:first)
     if terminal
       set_workhorse_internal_api_content_type
-      render json: Gitlab::Workhorse.terminal_websocket(terminal)
+      render json: Gitlab::Workhorse.channel_websocket(terminal)
     else
-      render text: 'Not found', status: :not_found
+      render html: 'Not found', status: :not_found
     end
   end
 
@@ -131,13 +137,13 @@ class Projects::EnvironmentsController < Projects::ApplicationController
   end
 
   def metrics
-    # Currently, this acts as a hint to load the metrics details into the cache
-    # if they aren't there already
-    @metrics = environment.metrics || {}
-
     respond_to do |format|
       format.html
       format.json do
+        # Currently, this acts as a hint to load the metrics details into the cache
+        # if they aren't there already
+        @metrics = environment.metrics || {}
+
         render json: @metrics, status: @metrics.any? ? :ok : :no_content
       end
     end
@@ -146,9 +152,56 @@ class Projects::EnvironmentsController < Projects::ApplicationController
   def additional_metrics
     respond_to do |format|
       format.json do
-        additional_metrics = environment.additional_metrics || {}
+        additional_metrics = environment.additional_metrics(*metrics_params) || {}
 
         render json: additional_metrics, status: additional_metrics.any? ? :ok : :no_content
+      end
+    end
+  end
+
+  def metrics_dashboard
+    if Feature.enabled?(:gfm_embedded_metrics, project) && params[:embedded]
+      result = dashboard_finder.find(
+        project,
+        current_user,
+        environment,
+        embedded: params[:embedded]
+      )
+    elsif Feature.enabled?(:environment_metrics_show_multiple_dashboards, project)
+      result = dashboard_finder.find(
+        project,
+        current_user,
+        environment,
+        dashboard_path: params[:dashboard]
+      )
+
+      result[:all_dashboards] = dashboard_finder.find_all_paths(project)
+    else
+      result = dashboard_finder.find(project, current_user, environment)
+    end
+
+    respond_to do |format|
+      if result[:status] == :success
+        format.json do
+          render status: :ok, json: result.slice(:all_dashboards, :dashboard, :status)
+        end
+      else
+        format.json do
+          render(
+            status: result[:http_status],
+            json: result.slice(:all_dashboards, :message, :status)
+          )
+        end
+      end
+    end
+  end
+
+  def search
+    respond_to do |format|
+      format.json do
+        environment_names = search_environment_names
+
+        render json: environment_names, status: environment_names.any? ? :ok : :no_content
       end
     end
   end
@@ -174,6 +227,28 @@ class Projects::EnvironmentsController < Projects::ApplicationController
 
   def environment
     @environment ||= project.environments.find(params[:id])
+  end
+
+  def metrics_params
+    params.require([:start, :end])
+  end
+
+  def dashboard_finder
+    Gitlab::Metrics::Dashboard::Finder
+  end
+
+  def search_environment_names
+    return [] unless params[:query]
+
+    project.environments.for_name_like(params[:query]).pluck_names
+  end
+
+  def serialize_environments(request, response, nested = false)
+    EnvironmentSerializer
+      .new(project: @project, current_user: @current_user)
+      .tap { |serializer| serializer.within_folders if nested }
+      .with_pagination(request, response)
+      .represent(@environments)
   end
 
   def authorize_stop_environment!

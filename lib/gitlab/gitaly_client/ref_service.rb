@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   module GitalyClient
     class RefService
@@ -82,15 +84,22 @@ module Gitlab
         commits
       end
 
-      def list_new_blobs(newrev, limit = 0)
+      def list_new_blobs(newrev, limit = 0, dynamic_timeout: nil)
         request = Gitaly::ListNewBlobsRequest.new(
           repository: @gitaly_repo,
           commit_id: newrev,
           limit: limit
         )
 
+        timeout =
+          if dynamic_timeout
+            [dynamic_timeout, GitalyClient.medium_timeout].min
+          else
+            GitalyClient.medium_timeout
+          end
+
         response = GitalyClient
-          .call(@storage, :ref_service, :list_new_blobs, request, timeout: GitalyClient.medium_timeout)
+          .call(@storage, :ref_service, :list_new_blobs, request, timeout: timeout)
 
         response.flat_map do |msg|
           # Returns an Array of Gitaly::NewBlobObject objects
@@ -218,7 +227,7 @@ module Gitlab
         request = Gitaly::GetTagMessagesRequest.new(repository: @gitaly_repo, tag_ids: tag_ids)
         response = GitalyClient.call(@repository.storage, :ref_service, :get_tag_messages, request, timeout: GitalyClient.fast_timeout)
 
-        messages = Hash.new { |h, k| h[k] = ''.b }
+        messages = Hash.new { |h, k| h[k] = +''.b }
         current_tag_id = nil
 
         response.each do |rpc_message|
@@ -228,6 +237,12 @@ module Gitlab
         end
 
         messages
+      end
+
+      def pack_refs
+        request = Gitaly::PackRefsRequest.new(repository: @gitaly_repo)
+
+        GitalyClient.call(@storage, :ref_service, :pack_refs, request)
       end
 
       private

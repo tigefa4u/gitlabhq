@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe EmailsOnPushWorker, :mailer do
@@ -101,7 +103,7 @@ describe EmailsOnPushWorker, :mailer do
 
     context "when there are multiple recipients" do
       before do
-        # This is a hack because we modify the mail object before sending, for efficency,
+        # This is a hack because we modify the mail object before sending, for efficiency,
         # but the TestMailer adapter just appends the objects to an array. To clone a mail
         # object, create a new one!
         #   https://github.com/mikel/mail/issues/314#issuecomment-12750108

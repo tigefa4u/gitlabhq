@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Projects::LfsApiController < Projects::GitHttpClientController
   include LfsRequest
 
@@ -24,7 +26,7 @@ class Projects::LfsApiController < Projects::GitHttpClientController
   def deprecated
     render(
       json: {
-        message: 'Server supports batch API only, please update your Git LFS client to version 1.0.1 and up.',
+        message: _('Server supports batch API only, please update your Git LFS client to version 1.0.1 and up.'),
         documentation_url: "#{Gitlab.config.gitlab.url}/help"
       },
       status: :not_implemented
@@ -41,11 +43,13 @@ class Projects::LfsApiController < Projects::GitHttpClientController
     params[:operation] == 'upload'
   end
 
+  # rubocop: disable CodeReuse/ActiveRecord
   def existing_oids
     @existing_oids ||= begin
       project.all_lfs_objects.where(oid: objects.map { |o| o['oid'].to_s }).pluck(:oid)
     end
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   def download_objects!
     objects.each do |object|
@@ -58,7 +62,7 @@ class Projects::LfsApiController < Projects::GitHttpClientController
       else
         object[:error] = {
           code: 404,
-          message: "Object does not exist on the server or you don't have permissions to access it"
+          message: _("Object does not exist on the server or you don't have permissions to access it")
         }
       end
     end

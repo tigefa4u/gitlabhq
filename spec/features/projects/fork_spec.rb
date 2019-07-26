@@ -50,7 +50,19 @@ describe 'Project fork' do
       click_link('New merge request')
     end
 
-    expect(current_path).to have_content(/#{user.namespace.name}/i)
+    expect(current_path).to have_content(/#{user.namespace.path}/i)
+  end
+
+  it 'shows avatars when Gravatar is disabled' do
+    stub_application_setting(gravatar_enabled: false)
+
+    visit project_path(project)
+
+    click_link 'Fork'
+
+    page.within('.fork-thumbnail-container') do
+      expect(page).to have_css('div.identicon')
+    end
   end
 
   it 'shows the forked project on the list' do

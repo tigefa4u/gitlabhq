@@ -1,9 +1,12 @@
+# frozen_string_literal: true
+
 module IssuesHelper
   def issue_css_classes(issue)
-    classes = "issue"
-    classes << " closed" if issue.closed?
-    classes << " today" if issue.today?
-    classes
+    classes = ["issue"]
+    classes << "closed" if issue.closed?
+    classes << "today" if issue.today?
+    classes << "user-can-drag" if @sort == 'relative_position'
+    classes.join(' ')
   end
 
   # Returns an OpenStruct object suitable for use by <tt>options_from_collection_for_select</tt>
@@ -62,7 +65,11 @@ module IssuesHelper
   end
 
   def issue_button_visibility(issue, closed)
-    return 'hidden' if issue.closed? == closed
+    return 'hidden' if issue_button_hidden?(issue, closed)
+  end
+
+  def issue_button_hidden?(issue, closed)
+    issue.closed? == closed || (!closed && issue.discussion_locked)
   end
 
   def confidential_icon(issue)
@@ -92,14 +99,6 @@ module IssuesHelper
     end
   end
 
-  def award_user_authored_class(award)
-    if award == 'thumbsdown' || award == 'thumbsup'
-      'user-authored js-user-authored'
-    else
-      ''
-    end
-  end
-
   def awards_sort(awards)
     awards.sort_by do |award, award_emojis|
       if award == "thumbsup"
@@ -113,8 +112,8 @@ module IssuesHelper
   end
 
   def link_to_discussions_to_resolve(merge_request, single_discussion = nil)
-    link_text = merge_request.to_reference
-    link_text += " (discussion #{single_discussion.first_note.id})" if single_discussion
+    link_text = [merge_request.to_reference]
+    link_text << "(discussion #{single_discussion.first_note.id})" if single_discussion
 
     path = if single_discussion
              Gitlab::UrlBuilder.build(single_discussion.first_note)
@@ -123,7 +122,7 @@ module IssuesHelper
              project_merge_request_path(project, merge_request)
            end
 
-    link_to link_text, path
+    link_to link_text.join(' '), path
   end
 
   def show_new_issue_link?(project)
@@ -135,6 +134,20 @@ module IssuesHelper
     return true unless current_user
 
     can?(current_user, :create_issue, project)
+  end
+
+  def create_confidential_merge_request_enabled?
+    Feature.enabled?(:create_confidential_merge_request, @project, default_enabled: true)
+  end
+
+  def show_new_branch_button?
+    can_create_confidential_merge_request? || !@issue.confidential?
+  end
+
+  def can_create_confidential_merge_request?
+    @issue.confidential? && !@project.private? &&
+      create_confidential_merge_request_enabled? &&
+      can?(current_user, :create_merge_request_in, @project)
   end
 
   # Required for Banzai::Filter::IssueReferenceFilter

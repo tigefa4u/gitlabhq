@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'flipper/adapters/active_record'
 require 'flipper/adapters/active_support_cache_store'
 
@@ -28,11 +30,14 @@ class Feature
     end
 
     def persisted_names
-      if RequestStore.active?
-        RequestStore[:flipper_persisted_names] ||= FlipperFeature.feature_names
-      else
-        FlipperFeature.feature_names
-      end
+      Gitlab::SafeRequestStore[:flipper_persisted_names] ||=
+        begin
+          # We saw on GitLab.com, this database request was called 2300
+          # times/s. Let's cache it for a minute to avoid that load.
+          Gitlab::ThreadMemoryCache.cache_backend.fetch('flipper:persisted_names', expires_in: 1.minute) do
+            FlipperFeature.feature_names
+          end
+        end
     end
 
     def persisted?(feature)
@@ -42,12 +47,21 @@ class Feature
       persisted_names.include?(feature.name.to_s)
     end
 
-    def enabled?(key, thing = nil)
-      get(key).enabled?(thing)
+    # use `default_enabled: true` to default the flag to being `enabled`
+    # unless set explicitly.  The default is `disabled`
+    def enabled?(key, thing = nil, default_enabled: false)
+      feature = Feature.get(key)
+
+      # If we're not default enabling the flag or the feature has been set, always evaluate.
+      # `persisted?` can potentially generate DB queries and also checks for inclusion
+      # in an array of feature names (177 at last count), possibly reducing performance by half.
+      # So we only perform the `persisted` check if `default_enabled: true`
+      !default_enabled || Feature.persisted?(feature) ? feature.enabled?(thing) : true
     end
 
-    def disabled?(key, thing = nil)
-      !enabled?(key, thing)
+    def disabled?(key, thing = nil, default_enabled: false)
+      # we need to make different method calls to make it easy to mock / define expectations in test mode
+      thing.nil? ? !enabled?(key, default_enabled: default_enabled) : !enabled?(key, thing, default_enabled: default_enabled)
     end
 
     def enable(key, thing = true)
@@ -67,8 +81,8 @@ class Feature
     end
 
     def flipper
-      if RequestStore.active?
-        RequestStore[:flipper] ||= build_flipper_instance
+      if Gitlab::SafeRequestStore.active?
+        Gitlab::SafeRequestStore[:flipper] ||= build_flipper_instance
       else
         @flipper ||= build_flipper_instance
       end
@@ -89,10 +103,71 @@ class Feature
         feature_class: FlipperFeature,
         gate_class: FlipperGate)
 
+      # Redis L2 cache
+      redis_cache_adapter =
+        Flipper::Adapters::ActiveSupportCacheStore.new(
+          active_record_adapter,
+          l2_cache_backend,
+          expires_in: 1.hour)
+
+      # Thread-local L1 cache: use a short timeout since we don't have a
+      # way to expire this cache all at once
       Flipper::Adapters::ActiveSupportCacheStore.new(
-        active_record_adapter,
-        Rails.cache,
-        expires_in: 1.hour)
+        redis_cache_adapter,
+        l1_cache_backend,
+        expires_in: 1.minute)
+    end
+
+    def l1_cache_backend
+      Gitlab::ThreadMemoryCache.cache_backend
+    end
+
+    def l2_cache_backend
+      Rails.cache
+    end
+  end
+
+  class Target
+    attr_reader :params
+
+    def initialize(params)
+      @params = params
+    end
+
+    def gate_specified?
+      %i(user project group feature_group).any? { |key| params.key?(key) }
+    end
+
+    def targets
+      [feature_group, user, project, group].compact
+    end
+
+    private
+
+    # rubocop: disable CodeReuse/ActiveRecord
+    def feature_group
+      return unless params.key?(:feature_group)
+
+      Feature.group(params[:feature_group])
+    end
+    # rubocop: enable CodeReuse/ActiveRecord
+
+    def user
+      return unless params.key?(:user)
+
+      UserFinder.new(params[:user]).find_by_username!
+    end
+
+    def project
+      return unless params.key?(:project)
+
+      Project.find_by_full_path(params[:project])
+    end
+
+    def group
+      return unless params.key?(:group)
+
+      Group.find_by_full_path(params[:group])
     end
   end
 end

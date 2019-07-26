@@ -5,6 +5,7 @@ import Vue from 'vue';
 import collapseIcon from '../icons/collapse_icon.svg';
 import Notes from '../../notes';
 import userAvatarImage from '../../vue_shared/components/user_avatar/user_avatar_image.vue';
+import { n__ } from '~/locale';
 
 const DiffNoteAvatars = Vue.extend({
   components: {
@@ -44,7 +45,7 @@ const DiffNoteAvatars = Vue.extend({
       if (this.discussion) {
         const extra = this.discussion.notesCount() - this.shownAvatars;
 
-        return `${extra} more comment${extra > 1 ? 's' : ''}`;
+        return n__('%d more comment', '%d more comments', extra);
       }
 
       return '';
@@ -83,7 +84,11 @@ const DiffNoteAvatars = Vue.extend({
       this.addNoCommentClass();
       this.setDiscussionVisible();
 
-      this.lineType = $(this.$el).closest('.diff-line-num').hasClass('old_line') ? 'old' : 'new';
+      this.lineType = $(this.$el)
+        .closest('.diff-line-num')
+        .hasClass('old_line')
+        ? 'old'
+        : 'new';
     });
 
     $(document).on('toggle.comments', () => {
@@ -113,20 +118,30 @@ const DiffNoteAvatars = Vue.extend({
     addNoCommentClass() {
       const { notesCount } = this;
 
-      $(this.$el).closest('.js-avatar-container')
+      $(this.$el)
+        .closest('.js-avatar-container')
         .toggleClass('no-comment-btn', notesCount > 0)
         .nextUntil('.js-avatar-container')
         .toggleClass('no-comment-btn', notesCount > 0);
     },
     toggleDiscussionsToggleState() {
-      const $notesHolders = $(this.$el).closest('.code').find('.notes_holder');
+      const $notesHolders = $(this.$el)
+        .closest('.code')
+        .find('.notes_holder');
       const $visibleNotesHolders = $notesHolders.filter(':visible');
-      const $toggleDiffCommentsBtn = $(this.$el).closest('.diff-file').find('.js-toggle-diff-comments');
+      const $toggleDiffCommentsBtn = $(this.$el)
+        .closest('.diff-file')
+        .find('.js-toggle-diff-comments');
 
-      $toggleDiffCommentsBtn.toggleClass('active', $notesHolders.length === $visibleNotesHolders.length);
+      $toggleDiffCommentsBtn.toggleClass(
+        'active',
+        $notesHolders.length === $visibleNotesHolders.length,
+      );
     },
     setDiscussionVisible() {
-      this.isVisible = $(`.diffs .notes[data-discussion-id="${this.discussion.id}"]`).is(':visible');
+      this.isVisible = $(`.diffs .notes[data-discussion-id="${this.discussion.id}"]`).is(
+        ':visible',
+      );
     },
     getTooltipText(note) {
       return `${note.authorName}: ${note.noteTruncated}`;

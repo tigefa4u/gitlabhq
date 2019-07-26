@@ -2,6 +2,7 @@ require 'rails_helper'
 
 describe 'Issue Boards', :js do
   include BoardHelpers
+  include FilteredSearchHelpers
 
   let(:user)         { create(:user) }
   let(:user2)        { create(:user) }
@@ -15,7 +16,9 @@ describe 'Issue Boards', :js do
   let!(:issue2)      { create(:labeled_issue, project: project, labels: [development, stretch], relative_position: 1) }
   let(:board)        { create(:board, project: project) }
   let!(:list)        { create(:list, board: board, label: development, position: 0) }
-  let(:card) { find('.board:nth-child(2)').first('.board-card') }
+  let(:card)         { find('.board:nth-child(2)').first('.board-card') }
+
+  let(:application_settings) { {} }
 
   around do |example|
     Timecop.freeze { example.run }
@@ -25,6 +28,8 @@ describe 'Issue Boards', :js do
     project.add_maintainer(user)
 
     sign_in(user)
+
+    stub_application_setting(application_settings)
 
     visit project_board_path(project, board)
     wait_for_requests
@@ -129,9 +134,10 @@ describe 'Issue Boards', :js do
           click_link 'Unassigned'
         end
 
+        close_dropdown_menu_if_visible
         wait_for_requests
 
-        expect(page).to have_content('No assignee')
+        expect(page).to have_content('None')
       end
 
       expect(card_two).not_to have_selector('.avatar')
@@ -141,7 +147,7 @@ describe 'Issue Boards', :js do
       click_card(card)
 
       page.within(find('.assignee')) do
-        expect(page).to have_content('No assignee')
+        expect(page).to have_content('None')
 
         click_button 'assign yourself'
 
@@ -216,6 +222,29 @@ describe 'Issue Boards', :js do
         page.within('.value') do
           expect(page).not_to have_content(milestone.title)
         end
+      end
+    end
+  end
+
+  context 'time tracking' do
+    let(:compare_meter_tooltip) { find('.time-tracking .time-tracking-content .compare-meter')['data-original-title'] }
+
+    before do
+      issue2.timelogs.create(time_spent: 14400, user: user)
+      issue2.update!(time_estimate: 128800)
+
+      click_card(card)
+    end
+
+    it 'shows time tracking progress bar' do
+      expect(compare_meter_tooltip).to eq('Time remaining: 3d 7h 46m')
+    end
+
+    context 'when time_tracking_limit_to_hours is true' do
+      let(:application_settings) { { time_tracking_limit_to_hours: true } }
+
+      it 'shows time tracking progress bar' do
+        expect(compare_meter_tooltip).to eq('Time remaining: 31h 46m')
       end
     end
   end
@@ -335,6 +364,8 @@ describe 'Issue Boards', :js do
 
       page.within('.labels') do
         click_link 'Edit'
+        wait_for_requests
+
         click_link 'Create project label'
         fill_in 'new_label_name', with: 'test label'
         first('.suggest-colors-dropdown a').click
@@ -343,6 +374,26 @@ describe 'Issue Boards', :js do
 
         expect(page).to have_link 'test label'
       end
+      expect(page).to have_selector('.board', count: 3)
+    end
+
+    it 'creates project label and list' do
+      click_card(card)
+
+      page.within('.labels') do
+        click_link 'Edit'
+        wait_for_requests
+
+        click_link 'Create project label'
+        fill_in 'new_label_name', with: 'test label'
+        first('.suggest-colors-dropdown a').click
+        first('.js-add-list').click
+        click_button 'Create'
+        wait_for_requests
+
+        expect(page).to have_link 'test label'
+      end
+      expect(page).to have_selector('.board', count: 4)
     end
   end
 

@@ -15,8 +15,13 @@ class DiffsEntity < Grape::Entity
     merge_request&.target_branch
   end
 
-  expose :commit do |diffs|
-    options[:commit]
+  expose :commit do |diffs, options|
+    CommitEntity.represent options[:commit], options.merge(
+      type: :full,
+      commit_url_params: { merge_request_iid: merge_request&.iid },
+      pipeline_ref: merge_request&.source_branch,
+      pipeline_project: merge_request&.source_project
+    )
   end
 
   expose :merge_request_diff, using: MergeRequestDiffEntity do |diffs|
@@ -35,13 +40,17 @@ class DiffsEntity < Grape::Entity
     diffs_project_merge_request_path(merge_request&.project, merge_request)
   end
 
+  # rubocop: disable CodeReuse/ActiveRecord
   expose :added_lines do |diffs|
     diffs.diff_files.sum(&:added_lines)
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
+  # rubocop: disable CodeReuse/ActiveRecord
   expose :removed_lines do |diffs|
     diffs.diff_files.sum(&:removed_lines)
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   expose :render_overflow_warning do |diffs|
     render_overflow_warning?(diffs.diff_files)
@@ -55,7 +64,10 @@ class DiffsEntity < Grape::Entity
     merge_request_path(merge_request, format: :diff)
   end
 
-  expose :diff_files, using: DiffFileEntity
+  expose :diff_files do |diffs, options|
+    submodule_links = Gitlab::SubmoduleLinks.new(merge_request.project.repository)
+    DiffFileEntity.represent(diffs.diff_files, options.merge(submodule_links: submodule_links))
+  end
 
   expose :merge_request_diffs, using: MergeRequestDiffEntity, if: -> (_, options) { options[:merge_request_diffs]&.any? } do |diffs|
     options[:merge_request_diffs]

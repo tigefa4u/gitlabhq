@@ -1,10 +1,10 @@
 <script>
 import { mapActions } from 'vuex';
-import LoadingIcon from '../../vue_shared/components/loading_icon.vue';
+import { GlLoadingIcon } from '@gitlab/ui';
 
 export default {
   components: {
-    LoadingIcon,
+    GlLoadingIcon,
   },
   props: {
     message: {
@@ -43,15 +43,9 @@ export default {
 </script>
 
 <template>
-  <div
-    class="flash-container flash-container-page"
-    @click="clickFlash"
-  >
+  <div class="flash-container flash-container-page" @click="clickFlash">
     <div class="flash-alert">
-      <span
-        v-html="message.text"
-      >
-      </span>
+      <span v-html="message.text"> </span>
       <button
         v-if="message.action"
         type="button"
@@ -59,10 +53,7 @@ export default {
         @click.stop.prevent="clickAction"
       >
         {{ message.actionText }}
-        <loading-icon
-          v-show="isLoading"
-          inline
-        />
+        <gl-loading-icon v-show="isLoading" inline />
       </button>
     </div>
   </div>

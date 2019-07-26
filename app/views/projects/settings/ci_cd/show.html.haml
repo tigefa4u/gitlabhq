@@ -2,7 +2,7 @@
 - page_title _("CI / CD Settings")
 - page_title _("CI / CD")
 
-- expanded = Rails.env.test?
+- expanded = expanded_by_default?
 - general_expanded = @project.errors.empty? ? expanded : true
 
 %section.settings#js-general-pipeline-settings.no-animate{ class: ('expanded' if general_expanded) }
@@ -12,11 +12,11 @@
     %button.btn.js-settings-toggle{ type: 'button' }
       = expanded ? _('Collapse') : _('Expand')
     %p
-      = _("Access your runner token, customize your pipeline configuration, and view your pipeline status and coverage report.")
+      = _("Customize your pipeline configuration, view your pipeline status and coverage report.")
   .settings-content
     = render 'form'
 
-%section.qa-autodevops-settings.settings#autodevops-settings.no-animate{ class: ('expanded' if expanded) }
+%section.settings#autodevops-settings.no-animate{ class: ('expanded' if expanded), data: { qa_selector: 'autodevops_settings_content' } }
   .settings-header
     %h4
       = s_('CICD|Auto DevOps')
@@ -26,11 +26,11 @@
       = s_('CICD|Auto DevOps will automatically build, test, and deploy your application based on a predefined Continuous Integration and Delivery configuration.')
       = link_to s_('CICD|Learn more about Auto DevOps'), help_page_path('topics/autodevops/index.md')
   .settings-content
-    = render 'autodevops_form'
+    = render 'autodevops_form', auto_devops_enabled: @project.auto_devops_enabled?
 
 = render_if_exists 'projects/settings/ci_cd/protected_environments', expanded: expanded
 
-%section.qa-runners-settings.settings.no-animate#js-runners-settings{ class: ('expanded' if expanded) }
+%section.settings.no-animate#js-runners-settings{ class: ('expanded' if expanded), data: { qa_selector: 'runners_settings_content' } }
   .settings-header
     %h4
       = _("Runners")
@@ -41,15 +41,9 @@
   .settings-content
     = render 'projects/runners/index'
 
-%section.qa-variables-settings.settings.no-animate{ class: ('expanded' if expanded) }
+%section.settings.no-animate{ class: ('expanded' if expanded), data: { qa_selector: 'variables_settings_content' } }
   .settings-header
-    %h4
-      = _('Variables')
-      = link_to icon('question-circle'), help_page_path('ci/variables/README', anchor: 'variables'), target: '_blank', rel: 'noopener noreferrer'
-    %button.btn.js-settings-toggle{ type: 'button' }
-      = expanded ? _('Collapse') : _('Expand')
-    %p.append-bottom-0
-      = render "ci/variables/content"
+    = render 'ci/variables/header', expanded: expanded
   .settings-content
     = render 'ci/variables/index', save_endpoint: project_variables_path(@project)
 

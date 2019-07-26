@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Gitlab::Access module
 #
 # Define allowed roles that can be used
@@ -22,6 +24,15 @@ module Gitlab
     PROTECTION_FULL          = 2
     PROTECTION_DEV_CAN_MERGE = 3
 
+    # Default project creation level
+    NO_ONE_PROJECT_ACCESS = 0
+    MAINTAINER_PROJECT_ACCESS = 1
+    DEVELOPER_MAINTAINER_PROJECT_ACCESS = 2
+
+    # Default subgroup creation level
+    OWNER_SUBGROUP_ACCESS = 0
+    MAINTAINER_SUBGROUP_ACCESS = 1
+
     class << self
       delegate :values, to: :options
 
@@ -41,6 +52,12 @@ module Gitlab
       def options_with_owner
         options.merge(
           "Owner" => OWNER
+        )
+      end
+
+      def options_with_none
+        options_with_owner.merge(
+          "None" => NO_ACCESS
         )
       end
 
@@ -73,10 +90,41 @@ module Gitlab
       def human_access(access)
         options_with_owner.key(access)
       end
+
+      def human_access_with_none(access)
+        options_with_none.key(access)
+      end
+
+      def project_creation_options
+        {
+          s_('ProjectCreationLevel|No one') => NO_ONE_PROJECT_ACCESS,
+          s_('ProjectCreationLevel|Maintainers') => MAINTAINER_PROJECT_ACCESS,
+          s_('ProjectCreationLevel|Developers + Maintainers') => DEVELOPER_MAINTAINER_PROJECT_ACCESS
+        }
+      end
+
+      def project_creation_values
+        project_creation_options.values
+      end
+
+      def project_creation_level_name(name)
+        project_creation_options.key(name)
+      end
+
+      def subgroup_creation_options
+        {
+          s_('SubgroupCreationlevel|Owners') => OWNER_SUBGROUP_ACCESS,
+          s_('SubgroupCreationlevel|Maintainers') => MAINTAINER_SUBGROUP_ACCESS
+        }
+      end
     end
 
     def human_access
       Gitlab::Access.human_access(access_field)
+    end
+
+    def human_access_with_none
+      Gitlab::Access.human_access_with_none(access_field)
     end
 
     def owner?

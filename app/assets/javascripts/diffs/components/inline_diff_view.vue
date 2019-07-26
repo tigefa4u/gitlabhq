@@ -1,14 +1,17 @@
 <script>
-import { mapGetters, mapState } from 'vuex';
+import { mapGetters } from 'vuex';
+import draftCommentsMixin from 'ee_else_ce/diffs/mixins/draft_comments';
 import inlineDiffTableRow from './inline_diff_table_row.vue';
 import inlineDiffCommentRow from './inline_diff_comment_row.vue';
-import { trimFirstCharOfLineContent } from '../store/utils';
 
 export default {
   components: {
     inlineDiffCommentRow,
     inlineDiffTableRow,
+    InlineDraftCommentRow: () =>
+      import('ee_component/batch_comments/components/inline_draft_comment_row.vue'),
   },
+  mixins: [draftCommentsMixin],
   props: {
     diffFile: {
       type: Object,
@@ -18,58 +21,48 @@ export default {
       type: Array,
       required: true,
     },
+    helpPagePath: {
+      type: String,
+      required: false,
+      default: '',
+    },
   },
   computed: {
-    ...mapGetters('diffs', [
-      'commitId',
-      'shouldRenderInlineCommentRow',
-      'singleDiscussionByLineCode',
-    ]),
-    ...mapState({
-      diffLineCommentForms: state => state.diffs.diffLineCommentForms,
-    }),
-    normalizedDiffLines() {
-      return this.diffLines.map(line => (line.richText ? trimFirstCharOfLineContent(line) : line));
-    },
+    ...mapGetters('diffs', ['commitId']),
     diffLinesLength() {
-      return this.normalizedDiffLines.length;
-    },
-    userColorScheme() {
-      return window.gon.user_color_scheme;
+      return this.diffLines.length;
     },
   },
-  methods: {
-    discussionsList(line) {
-      return line.lineCode !== undefined ? this.singleDiscussionByLineCode(line.lineCode) : [];
-    },
-  },
+  userColorScheme: window.gon.user_color_scheme,
 };
 </script>
 
 <template>
   <table
-    :class="userColorScheme"
+    :class="$options.userColorScheme"
     :data-commit-id="commitId"
-    class="code diff-wrap-lines js-syntax-highlight text-file js-diff-inline-view">
+    class="code diff-wrap-lines js-syntax-highlight text-file js-diff-inline-view"
+  >
     <tbody>
-      <template
-        v-for="(line, index) in normalizedDiffLines"
-      >
+      <template v-for="(line, index) in diffLines">
         <inline-diff-table-row
-          :file-hash="diffFile.fileHash"
-          :context-lines-path="diffFile.contextLinesPath"
+          :key="line.line_code"
+          :file-hash="diffFile.file_hash"
+          :context-lines-path="diffFile.context_lines_path"
           :line="line"
           :is-bottom="index + 1 === diffLinesLength"
-          :key="line.lineCode"
-          :discussions="discussionsList(line)"
         />
         <inline-diff-comment-row
-          v-if="shouldRenderInlineCommentRow(line)"
-          :diff-file-hash="diffFile.fileHash"
+          :key="`icr-${line.line_code || index}`"
+          :diff-file-hash="diffFile.file_hash"
           :line="line"
-          :line-index="index"
-          :key="index"
-          :discussions="discussionsList(line)"
+          :help-page-path="helpPagePath"
+          :has-draft="shouldRenderDraftRow(diffFile.file_hash, line) || false"
+        />
+        <inline-draft-comment-row
+          v-if="shouldRenderDraftRow(diffFile.file_hash, line)"
+          :key="`draft_${index}`"
+          :draft="draftForLine(diffFile.file_hash, line)"
         />
       </template>
     </tbody>

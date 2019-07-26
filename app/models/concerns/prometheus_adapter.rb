@@ -6,7 +6,6 @@ module PrometheusAdapter
   included do
     include ReactiveCaching
 
-    self.reactive_cache_key = ->(adapter) { [adapter.class.model_name.singular, adapter.id] }
     self.reactive_cache_lease_timeout = 30.seconds
     self.reactive_cache_refresh_interval = 30.seconds
     self.reactive_cache_lifetime = 1.minute
@@ -36,7 +35,7 @@ module PrometheusAdapter
     def calculate_reactive_cache(query_class_name, *args)
       return unless prometheus_client
 
-      data = Kernel.const_get(query_class_name).new(prometheus_client_wrapper).query(*args)
+      data = Object.const_get(query_class_name, false).new(prometheus_client_wrapper).query(*args)
       {
         success: true,
         data: data,
@@ -51,7 +50,7 @@ module PrometheusAdapter
     end
 
     def build_query_args(*args)
-      args.map(&:id)
+      args.map { |arg| arg.respond_to?(:id) ? arg.id : arg }
     end
   end
 end

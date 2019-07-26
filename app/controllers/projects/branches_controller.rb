@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Projects::BranchesController < Projects::ApplicationController
   include ActionView::Helpers::SanitizeHelper
   include SortingHelper
@@ -20,16 +22,8 @@ class Projects::BranchesController < Projects::ApplicationController
         # Fetch branches for the specified mode
         fetch_branches_by_mode
 
-        @refs_pipelines = @project.pipelines.latest_successful_for_refs(@branches.map(&:name))
+        @refs_pipelines = @project.ci_pipelines.latest_successful_for_refs(@branches.map(&:name))
         @merged_branch_names = repository.merged_branch_names(@branches.map(&:name))
-
-        # n+1: https://gitlab.com/gitlab-org/gitaly/issues/992
-        Gitlab::GitalyClient.allow_n_plus_1_calls do
-          @max_commits = @branches.reduce(0) do |memo, branch|
-            diverging_commit_counts = repository.diverging_commit_counts(branch)
-            [memo, diverging_commit_counts[:behind], diverging_commit_counts[:ahead]].max
-          end
-        end
 
         # https://gitlab.com/gitlab-org/gitlab-ce/issues/48097
         Gitlab::GitalyClient.allow_n_plus_1_calls do
@@ -48,8 +42,22 @@ class Projects::BranchesController < Projects::ApplicationController
     @branches = @repository.recent_branches
   end
 
+  def diverging_commit_counts
+    respond_to do |format|
+      format.json do
+        service = Branches::DivergingCommitCountsService.new(repository)
+        branches = BranchesFinder.new(repository, params.permit(names: [])).execute
+
+        Gitlab::GitalyClient.allow_n_plus_1_calls do
+          render json: branches.to_h { |branch| [branch.name, service.call(branch)] }
+        end
+      end
+    end
+  end
+
+  # rubocop: disable CodeReuse/ActiveRecord
   def create
-    branch_name = sanitize(strip_tags(params[:branch_name]))
+    branch_name = strip_tags(sanitize(params[:branch_name]))
     branch_name = Addressable::URI.unescape(branch_name)
 
     redirect_to_autodeploy = project.empty_repo? && project.deployment_platform.present?
@@ -60,8 +68,9 @@ class Projects::BranchesController < Projects::ApplicationController
     success = (result[:status] == :success)
 
     if params[:issue_iid] && success
-      issue = IssuesFinder.new(current_user, project_id: @project.id).find_by(iid: params[:issue_iid])
-      SystemNoteService.new_issue_branch(issue, @project, current_user, branch_name) if issue
+      target_project = confidential_issue_project || @project
+      issue = IssuesFinder.new(current_user, project_id: target_project.id).find_by(iid: params[:issue_iid])
+      SystemNoteService.new_issue_branch(issue, target_project, current_user, branch_name, branch_project: @project) if issue
     end
 
     respond_to do |format|
@@ -88,6 +97,7 @@ class Projects::BranchesController < Projects::ApplicationController
       end
     end
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 
   def destroy
     @branch_name = Addressable::URI.unescape(params[:id])
@@ -95,14 +105,14 @@ class Projects::BranchesController < Projects::ApplicationController
 
     respond_to do |format|
       format.html do
-        flash_type = result[:status] == :error ? :alert : :notice
-        flash[flash_type] = result[:message]
+        flash_type = result.error? ? :alert : :notice
+        flash[flash_type] = result.message
 
         redirect_to project_branches_path(@project), status: :see_other
       end
 
-      format.js { render nothing: true, status: result[:return_code] }
-      format.json { render json: { message: result[:message] }, status: result[:return_code] }
+      format.js { head result.http_status }
+      format.json { render json: { message: result.message }, status: result.http_status }
     end
   end
 
@@ -110,14 +120,14 @@ class Projects::BranchesController < Projects::ApplicationController
     DeleteMergedBranchesService.new(@project, current_user).async_execute
 
     redirect_to project_branches_path(@project),
-      notice: 'Merged branches are being deleted. This can take some time depending on the number of branches. Please refresh the page to see changes.'
+      notice: _('Merged branches are being deleted. This can take some time depending on the number of branches. Please refresh the page to see changes.')
   end
 
   private
 
   def ref
     if params[:ref]
-      ref_escaped = sanitize(strip_tags(params[:ref]))
+      ref_escaped = strip_tags(sanitize(params[:ref]))
       Addressable::URI.unescape(ref_escaped)
     else
       @project.default_branch || 'master'
@@ -138,7 +148,7 @@ class Projects::BranchesController < Projects::ApplicationController
   def redirect_for_legacy_index_sort_or_search
     # Normalize a legacy URL with redirect
     if request.format != :json && !params[:state].presence && [:sort, :search, :page].any? { |key| params[key].presence }
-      redirect_to project_branches_filtered_path(@project, state: 'all'), notice: 'Update your bookmarked URLs as filtered/sorted branches URL has been changed.'
+      redirect_to project_branches_filtered_path(@project, state: 'all'), notice: _('Update your bookmarked URLs as filtered/sorted branches URL has been changed.')
     end
   end
 
@@ -156,5 +166,16 @@ class Projects::BranchesController < Projects::ApplicationController
       @branches = @branches.select { |b| b.state.to_s == @mode } if %w[active stale].include?(@mode)
       @branches = Kaminari.paginate_array(@branches).page(params[:page])
     end
+  end
+
+  def confidential_issue_project
+    return unless helpers.create_confidential_merge_request_enabled?
+    return if params[:confidential_issue_project_id].blank?
+
+    confidential_issue_project = Project.find(params[:confidential_issue_project_id])
+
+    return unless can?(current_user, :update_issue, confidential_issue_project)
+
+    confidential_issue_project
   end
 end

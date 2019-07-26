@@ -1,8 +1,9 @@
-/* eslint-disable object-shorthand, func-names, comma-dangle, no-else-return, quotes */
+/* eslint-disable object-shorthand, func-names, no-else-return */
 /* global CommentsStore */
 /* global ResolveService */
 
 import Vue from 'vue';
+import { __ } from '~/locale';
 
 const ResolveDiscussionBtn = Vue.extend({
   props: {
@@ -25,44 +26,44 @@ const ResolveDiscussionBtn = Vue.extend({
     };
   },
   computed: {
-    showButton: function () {
+    showButton: function() {
       if (this.discussion) {
         return this.discussion.isResolvable();
       } else {
         return false;
       }
     },
-    isDiscussionResolved: function () {
+    isDiscussionResolved: function() {
       if (this.discussion) {
         return this.discussion.isResolved();
       } else {
         return false;
       }
     },
-    buttonText: function () {
+    buttonText: function() {
       if (this.isDiscussionResolved) {
-        return "Unresolve discussion";
+        return __('Unresolve discussion');
       } else {
-        return "Resolve discussion";
+        return __('Resolve discussion');
       }
     },
-    loading: function () {
+    loading: function() {
       if (this.discussion) {
         return this.discussion.loading;
       } else {
         return false;
       }
-    }
+    },
   },
-  created: function () {
+  created: function() {
     CommentsStore.createDiscussion(this.discussionId, this.canResolve);
 
     this.discussion = CommentsStore.state[this.discussionId];
   },
   methods: {
-    resolve: function () {
+    resolve: function() {
       ResolveService.toggleResolveForDiscussion(this.mergeRequestId, this.discussionId);
-    }
+    },
   },
 });
 

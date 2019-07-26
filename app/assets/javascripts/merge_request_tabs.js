@@ -8,17 +8,21 @@ import flash from './flash';
 import BlobForkSuggestion from './blob/blob_fork_suggestion';
 import initChangesDropdown from './init_changes_dropdown';
 import bp from './breakpoints';
-import { parseUrlPathname, handleLocationHash, isMetaClick } from './lib/utils/common_utils';
+import {
+  parseUrlPathname,
+  handleLocationHash,
+  isMetaClick,
+  parseBoolean,
+} from './lib/utils/common_utils';
 import { isInVueNoteablePage } from './lib/utils/dom_utils';
 import { getLocationHash } from './lib/utils/url_utility';
-import initDiscussionTab from './image_diff/init_discussion_tab';
 import Diff from './diff';
 import { localTimeAgo } from './lib/utils/datetime_utility';
 import syntaxHighlight from './syntax_highlight';
 import Notes from './notes';
 import { polyfillSticky } from './lib/utils/sticky';
+import { __ } from './locale';
 
-/* eslint-disable max-len */
 // MergeRequestTabs
 //
 // Handles persisting and restoring the current tab selection and lazily-loading
@@ -62,7 +66,6 @@ import { polyfillSticky } from './lib/utils/sticky';
 //     </div>
 //   </div>
 //
-/* eslint-enable max-len */
 
 // Store the `location` object, allowing for easier stubbing in tests
 let { location } = window;
@@ -115,8 +118,9 @@ export default class MergeRequestTabs {
       this.mergeRequestTabs &&
       this.mergeRequestTabs.querySelector(`a[data-action='${action}']`) &&
       this.mergeRequestTabs.querySelector(`a[data-action='${action}']`).click
-    )
+    ) {
       this.mergeRequestTabs.querySelector(`a[data-action='${action}']`).click();
+    }
     this.initAffix();
   }
 
@@ -143,14 +147,14 @@ export default class MergeRequestTabs {
       e.stopImmediatePropagation();
       e.preventDefault();
 
-      const { action } = e.currentTarget.dataset;
+      const { action } = e.currentTarget.dataset || {};
 
-      if (action) {
-        const href = e.currentTarget.getAttribute('href');
-        this.tabShown(action, href);
-      } else if (isMetaClick(e)) {
+      if (isMetaClick(e)) {
         const targetLink = e.currentTarget.getAttribute('href');
         window.open(targetLink, '_blank');
+      } else if (action) {
+        const href = e.currentTarget.getAttribute('href');
+        this.tabShown(action, href);
       }
     }
   }
@@ -193,9 +197,7 @@ export default class MergeRequestTabs {
         if (bp.getBreakpointSize() !== 'lg') {
           this.shrinkView();
         }
-        if (this.diffViewType() === 'parallel') {
-          this.expandViewContainer();
-        }
+        this.expandViewContainer();
         this.destroyPipelinesView();
         this.commitsTab.classList.remove('active');
       } else if (action === 'pipelines') {
@@ -210,14 +212,34 @@ export default class MergeRequestTabs {
         }
         this.resetViewContainer();
         this.destroyPipelinesView();
-
-        initDiscussionTab();
       }
       if (this.setUrl) {
         this.setCurrentAction(action);
       }
 
       this.eventHub.$emit('MergeRequestTabChange', this.getCurrentAction());
+    } else if (action === this.currentAction) {
+      // ContentTop is used to handle anything at the top of the page before the main content
+      const mainContentContainer = document.querySelector('.content-wrapper');
+      const tabContentContainer = document.querySelector('.tab-content');
+
+      if (mainContentContainer && tabContentContainer) {
+        const mainContentTop = mainContentContainer.getBoundingClientRect().top;
+        const tabContentTop = tabContentContainer.getBoundingClientRect().top;
+
+        // 51px is the height of the navbar buttons, e.g. `Discussion | Commits | Changes`
+        const scrollDestination = tabContentTop - mainContentTop - 51;
+
+        // scrollBehavior is only available in browsers that support scrollToOptions
+        if ('scrollBehavior' in document.documentElement.style) {
+          window.scrollTo({
+            top: scrollDestination,
+            behavior: 'smooth',
+          });
+        } else {
+          window.scrollTo(0, scrollDestination);
+        }
+      }
     }
   }
 
@@ -305,7 +327,7 @@ export default class MergeRequestTabs {
       })
       .catch(() => {
         this.toggleLoading(false);
-        flash('An error occurred while fetching this tab.');
+        flash(__('An error occurred while fetching this tab.'));
       });
   }
 
@@ -354,7 +376,7 @@ export default class MergeRequestTabs {
         localTimeAgo($('.js-timeago', 'div#diffs'));
         syntaxHighlight($('#diffs .js-syntax-highlight'));
 
-        if (this.diffViewType() === 'parallel' && this.isDiffAction(this.currentAction)) {
+        if (this.isDiffAction(this.currentAction)) {
           this.expandViewContainer();
         }
         this.diffsLoaded = true;
@@ -377,7 +399,7 @@ export default class MergeRequestTabs {
         const hash = getLocationHash();
         const anchor = hash && $container.find(`.note[id="${hash}"]`);
         if (anchor && anchor.length > 0) {
-          const notesContent = anchor.closest('.notes_content');
+          const notesContent = anchor.closest('.notes-content');
           const lineType = notesContent.hasClass('new') ? 'new' : 'old';
           Notes.instance.toggleDiffNote({
             target: anchor,
@@ -395,7 +417,7 @@ export default class MergeRequestTabs {
       })
       .catch(() => {
         this.toggleLoading(false);
-        flash('An error occurred while fetching this tab.');
+        flash(__('An error occurred while fetching this tab.'));
       });
   }
 
@@ -407,19 +429,23 @@ export default class MergeRequestTabs {
   }
 
   diffViewType() {
-    return $('.inline-parallel-buttons a.active').data('viewType');
+    return $('.js-diff-view-buttons button.active').data('viewType');
   }
 
   isDiffAction(action) {
     return action === 'diffs' || action === 'new/diffs';
   }
 
-  expandViewContainer() {
+  expandViewContainer(removeLimited = true) {
     const $wrapper = $('.content-wrapper .container-fluid').not('.breadcrumbs');
     if (this.fixedLayoutPref === null) {
       this.fixedLayoutPref = $wrapper.hasClass('container-limited');
     }
-    $wrapper.removeClass('container-limited');
+    if (this.diffViewType() === 'parallel' || removeLimited) {
+      $wrapper.removeClass('container-limited');
+    } else {
+      $wrapper.toggleClass('container-limited', this.fixedLayoutPref);
+    }
   }
 
   resetViewContainer() {
@@ -442,7 +468,7 @@ export default class MergeRequestTabs {
 
   // Expand the issuable sidebar unless the user explicitly collapsed it
   expandView() {
-    if (Cookies.get('collapsed_gutter') === 'true') {
+    if (parseBoolean(Cookies.get('collapsed_gutter'))) {
       return;
     }
     const $gutterIcon = $('.js-sidebar-toggle i:visible');

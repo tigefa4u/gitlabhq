@@ -2,7 +2,6 @@ import * as types from './mutation_types';
 import { parseIntPagination, normalizeHeaders } from '../../lib/utils/common_utils';
 
 export default {
-
   [types.SET_MAIN_ENDPOINT](state, endpoint) {
     Object.assign(state, { endpoint });
   },
@@ -10,7 +9,7 @@ export default {
   [types.SET_REPOS_LIST](state, list) {
     Object.assign(state, {
       repos: list.map(el => ({
-        canDelete: !!el.destroy_path,
+        canDelete: Boolean(el.destroy_path),
         destroyPath: el.destroy_path,
         id: el.id,
         isLoading: false,
@@ -43,12 +42,13 @@ export default {
       location: element.location,
       createdAt: element.created_at,
       destroyPath: element.destroy_path,
-      canDelete: !!element.destroy_path,
+      canDelete: Boolean(element.destroy_path),
     }));
   },
 
   [types.TOGGLE_REGISTRY_LIST_LOADING](state, list) {
     const listToUpdate = state.repos.find(el => el.id === list.id);
+
     listToUpdate.isLoading = !listToUpdate.isLoading;
   },
 };

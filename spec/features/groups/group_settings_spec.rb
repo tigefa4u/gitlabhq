@@ -18,14 +18,14 @@ describe 'Edit group settings' do
       update_path(new_group_path)
       visit new_group_full_path
       expect(current_path).to eq(new_group_full_path)
-      expect(find('h1.group-title')).to have_content(group.name)
+      expect(find('h1.home-panel-title')).to have_content(group.name)
     end
 
     it 'the old group path redirects to the new path' do
       update_path(new_group_path)
       visit old_group_full_path
       expect(current_path).to eq(new_group_full_path)
-      expect(find('h1.group-title')).to have_content(group.name)
+      expect(find('h1.home-panel-title')).to have_content(group.name)
     end
 
     context 'with a subgroup' do
@@ -37,14 +37,14 @@ describe 'Edit group settings' do
         update_path(new_group_path)
         visit new_subgroup_full_path
         expect(current_path).to eq(new_subgroup_full_path)
-        expect(find('h1.group-title')).to have_content(subgroup.name)
+        expect(find('h1.home-panel-title')).to have_content(subgroup.name)
       end
 
       it 'the old subgroup path redirects to the new path' do
         update_path(new_group_path)
         visit old_subgroup_full_path
         expect(current_path).to eq(new_subgroup_full_path)
-        expect(find('h1.group-title')).to have_content(subgroup.name)
+        expect(find('h1.home-panel-title')).to have_content(subgroup.name)
       end
     end
 
@@ -77,6 +77,22 @@ describe 'Edit group settings' do
     end
   end
 
+  describe 'project creation level menu' do
+    it 'shows the selection menu' do
+      visit edit_group_path(group)
+
+      expect(page).to have_content('Allowed to create projects')
+    end
+  end
+
+  describe 'subgroup creation level menu' do
+    it 'shows the selection menu' do
+      visit edit_group_path(group)
+
+      expect(page).to have_content('Allowed to create subgroups')
+    end
+  end
+
   describe 'edit group avatar' do
     before do
       visit edit_group_path(group)
@@ -98,6 +114,22 @@ describe 'Edit group settings' do
     end
   end
 
+  describe 'edit group path' do
+    it 'has a root URL label for top-level group' do
+      visit edit_group_path(group)
+
+      expect(find(:css, '.group-root-path').text).to eq(root_url)
+    end
+
+    it 'has a parent group URL label for a subgroup group' do
+      subgroup = create(:group, parent: group)
+
+      visit edit_group_path(subgroup)
+
+      expect(find(:css, '.group-root-path').text).to eq(group_url(subgroup.parent) + '/')
+    end
+  end
+
   def update_path(new_group_path)
     visit edit_group_path(group)
 
@@ -109,7 +141,7 @@ describe 'Edit group settings' do
 
   def save_group
     page.within('.gs-general') do
-      click_button 'Save group'
+      click_button 'Save changes'
     end
   end
 end

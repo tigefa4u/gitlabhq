@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module API
   class Runner < Grape::API
     helpers ::API::Helpers::Runner
@@ -13,22 +15,24 @@ module API
         optional :info, type: Hash, desc: %q(Runner's metadata)
         optional :active, type: Boolean, desc: 'Should Runner be active'
         optional :locked, type: Boolean, desc: 'Should Runner be locked for current project'
+        optional :access_level, type: String, values: Ci::Runner.access_levels.keys,
+                                desc: 'The access_level of the runner'
         optional :run_untagged, type: Boolean, desc: 'Should Runner handle untagged jobs'
         optional :tag_list, type: Array[String], desc: %q(List of Runner's tags)
         optional :maximum_timeout, type: Integer, desc: 'Maximum timeout set when this Runner will handle the job'
       end
       post '/' do
-        attributes = attributes_for_keys([:description, :active, :locked, :run_untagged, :tag_list, :maximum_timeout])
+        attributes = attributes_for_keys([:description, :active, :locked, :run_untagged, :tag_list, :access_level, :maximum_timeout])
           .merge(get_runner_details_from_request)
 
         attributes =
           if runner_registration_token_valid?
             # Create shared runner. Requires admin access
             attributes.merge(runner_type: :instance_type)
-          elsif project = Project.find_by(runners_token: params[:token])
+          elsif project = Project.find_by_runners_token(params[:token])
             # Create a specific runner for the project
             attributes.merge(runner_type: :project_type, projects: [project])
-          elsif group = Group.find_by(runners_token: params[:token])
+          elsif group = Group.find_by_runners_token(params[:token])
             # Create a specific runner for the group
             attributes.merge(runner_type: :group_type, groups: [group])
           else
@@ -94,6 +98,7 @@ module API
           optional :certificate, type: String, desc: %q(Session's certificate)
           optional :authorization, type: String, desc: %q(Session's authorization)
         end
+        optional :job_age, type: Integer, desc: %q(Job should be older than passed age in seconds to be ran on runner)
       end
       post '/request' do
         authenticate_runner!
@@ -138,8 +143,7 @@ module API
         requires :id, type: Integer, desc: %q(Job's ID)
         optional :trace, type: String, desc: %q(Job's full trace)
         optional :state, type: String, desc: %q(Job's status: success, failed)
-        optional :failure_reason, type: String, values: CommitStatus.failure_reasons.keys,
-                                  desc: %q(Job's failure_reason)
+        optional :failure_reason, type: String, desc: %q(Job's failure_reason)
       end
       put '/:id' do
         job = authenticate_job!

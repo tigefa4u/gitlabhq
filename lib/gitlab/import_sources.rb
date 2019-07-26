@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Gitlab::ImportSources module
 #
 # Define import sources that can be used
@@ -8,7 +10,7 @@ module Gitlab
     ImportSource = Struct.new(:name, :title, :importer)
 
     # We exclude `bare_repository` here as it has no import class associated
-    ImportTable = [
+    IMPORT_TABLE = [
       ImportSource.new('github',           'GitHub',           Gitlab::GithubImport::ParallelImporter),
       ImportSource.new('bitbucket',        'Bitbucket Cloud',  Gitlab::BitbucketImport::Importer),
       ImportSource.new('bitbucket_server', 'Bitbucket Server', Gitlab::BitbucketServerImport::Importer),
@@ -18,7 +20,8 @@ module Gitlab
       ImportSource.new('git',              'Repo by URL',      nil),
       ImportSource.new('gitlab_project',   'GitLab export',    Gitlab::ImportExport::Importer),
       ImportSource.new('gitea',            'Gitea',            Gitlab::LegacyGithubImport::Importer),
-      ImportSource.new('manifest',         'Manifest file',    nil)
+      ImportSource.new('manifest',         'Manifest file',    nil),
+      ImportSource.new('phabricator',      'Phabricator',      Gitlab::PhabricatorImport::Importer)
     ].freeze
 
     class << self
@@ -43,7 +46,7 @@ module Gitlab
       end
 
       def import_table
-        ImportTable
+        IMPORT_TABLE
       end
     end
   end

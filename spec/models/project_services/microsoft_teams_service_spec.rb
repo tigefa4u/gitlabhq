@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe MicrosoftTeamsService do
@@ -25,6 +27,12 @@ describe MicrosoftTeamsService do
       end
 
       it { is_expected.not_to validate_presence_of(:webhook) }
+    end
+  end
+
+  describe '.supported_events' do
+    it 'does not support deployment_events' do
+      expect(described_class.supported_events).not_to include('deployment')
     end
   end
 
@@ -280,6 +288,18 @@ describe MicrosoftTeamsService do
 
           expect(result).to be_falsy
         end
+      end
+
+      context 'when disabled' do
+        let(:pipeline) do
+          create(:ci_pipeline, :failed, project: project, ref: 'not-the-default-branch')
+        end
+
+        before do
+          chat_service.notify_only_default_branch = false
+        end
+
+        it_behaves_like 'call Microsoft Teams API'
       end
     end
   end

@@ -1,5 +1,15 @@
 <script>
+import { GlTooltipDirective, GlButton } from '@gitlab/ui';
+import Icon from '~/vue_shared/components/icon.vue';
+
 export default {
+  components: {
+    GlButton,
+    Icon,
+  },
+  directives: {
+    GlTooltip: GlTooltipDirective,
+  },
   props: {
     editPath: {
       type: String,
@@ -17,12 +27,7 @@ export default {
   },
   methods: {
     handleEditClick(evt) {
-      if (!this.canCurrentUserFork || this.canModifyBlob) {
-        // if we can Edit, do default Edit button behavior
-        return;
-      }
-
-      if (this.canCurrentUserFork) {
+      if (this.canCurrentUserFork && !this.canModifyBlob) {
         evt.preventDefault();
         this.$emit('showForkMessage');
       }
@@ -32,11 +37,13 @@ export default {
 </script>
 
 <template>
-  <a
+  <gl-button
+    v-gl-tooltip.top
     :href="editPath"
-    class="btn btn-default js-edit-blob"
-    @click="handleEditClick"
+    :title="__('Edit file')"
+    class="js-edit-blob"
+    @click.native="handleEditClick"
   >
-    Edit
-  </a>
+    <icon name="pencil" />
+  </gl-button>
 </template>

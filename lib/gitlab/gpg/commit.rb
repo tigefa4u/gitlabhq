@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   module Gpg
     class Commit
@@ -26,6 +28,7 @@ module Gitlab
         !!(signature_text && signed_text)
       end
 
+      # rubocop: disable CodeReuse/ActiveRecord
       def signature
         return unless has_signature?
 
@@ -36,30 +39,35 @@ module Gitlab
 
         @signature = create_cached_signature!
       end
+      # rubocop: enable CodeReuse/ActiveRecord
 
       def update_signature!(cached_signature)
         using_keychain do |gpg_key|
           cached_signature.update!(attributes(gpg_key))
+          @signature = cached_signature
         end
-
-        @signature = cached_signature
       end
 
       private
 
       def using_keychain
         Gitlab::Gpg.using_tmp_keychain do
-          # first we need to get the keyid from the signature to query the gpg
-          # key belonging to the keyid.
+          # first we need to get the fingerprint from the signature to query the gpg
+          # key belonging to the fingerprint.
           # This way we can add the key to the temporary keychain and extract
           # the proper signature.
-          # NOTE: the invoked method is #fingerprint but it's only returning
-          # 16 characters (the format used by keyid) instead of 40.
-          gpg_key = find_gpg_key(verified_signature.fingerprint)
+          # NOTE: the invoked method is #fingerprint but versions of GnuPG
+          # prior to 2.2.13 return 16 characters (the format used by keyid)
+          # instead of 40.
+          fingerprint = verified_signature&.fingerprint
+
+          break unless fingerprint
+
+          gpg_key = find_gpg_key(fingerprint)
 
           if gpg_key
             Gitlab::Gpg::CurrentKeyChain.add(gpg_key.key)
-            @verified_signature = nil
+            clear_memoization(:verified_signature)
           end
 
           yield gpg_key
@@ -67,16 +75,24 @@ module Gitlab
       end
 
       def verified_signature
-        @verified_signature ||= GPGME::Crypto.new.verify(signature_text, signed_text: signed_text) do |verified_signature|
+        strong_memoize(:verified_signature) { gpgme_signature }
+      end
+
+      def gpgme_signature
+        GPGME::Crypto.new.verify(signature_text, signed_text: signed_text) do |verified_signature|
+          # Return the first signature for now: https://gitlab.com/gitlab-org/gitlab-ce/issues/54932
           break verified_signature
         end
+      rescue GPGME::Error
+        nil
       end
 
       def create_cached_signature!
         using_keychain do |gpg_key|
-          signature = GpgSignature.new(attributes(gpg_key))
-          signature.save! unless Gitlab::Database.read_only?
-          signature
+          attributes = attributes(gpg_key)
+          break GpgSignature.new(attributes) if Gitlab::Database.read_only?
+
+          GpgSignature.safe_create!(attributes)
         end
       end
 
@@ -88,7 +104,7 @@ module Gitlab
           commit_sha: @commit.sha,
           project: @commit.project,
           gpg_key: gpg_key,
-          gpg_key_primary_keyid: gpg_key&.keyid || verified_signature.fingerprint,
+          gpg_key_primary_keyid: gpg_key&.keyid || verified_signature&.fingerprint,
           gpg_key_user_name: user_infos[:name],
           gpg_key_user_email: user_infos[:email],
           verification_status: verification_status
@@ -98,7 +114,7 @@ module Gitlab
       def verification_status(gpg_key)
         return :unknown_key unless gpg_key
         return :unverified_key unless gpg_key.verified?
-        return :unverified unless verified_signature.valid?
+        return :unverified unless verified_signature&.valid?
 
         if gpg_key.verified_and_belongs_to_email?(@commit.committer_email)
           :verified
@@ -113,8 +129,12 @@ module Gitlab
         gpg_key&.verified_user_infos&.first || gpg_key&.user_infos&.first || {}
       end
 
-      def find_gpg_key(keyid)
-        GpgKey.find_by(primary_keyid: keyid) || GpgKeySubkey.find_by(keyid: keyid)
+      def find_gpg_key(fingerprint)
+        if fingerprint.length > 16
+          GpgKey.find_by_fingerprint(fingerprint) || GpgKeySubkey.find_by_fingerprint(fingerprint)
+        else
+          GpgKey.find_by_primary_keyid(fingerprint) || GpgKeySubkey.find_by_keyid(fingerprint)
+        end
       end
     end
   end

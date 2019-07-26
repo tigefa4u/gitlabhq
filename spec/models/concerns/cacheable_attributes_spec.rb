@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe CacheableAttributes do
@@ -18,6 +20,10 @@ describe CacheableAttributes do
 
       def self.last
         @_last ||= new('foo' => 'a', 'bar' => 'b')
+      end
+
+      def self.column_names
+        %w[foo bar baz]
       end
 
       attr_accessor :attributes
@@ -41,7 +47,7 @@ describe CacheableAttributes do
       expect(minimal_test_class.current_without_cache).to eq(minimal_test_class.last)
     end
 
-    it 'can be overriden' do
+    it 'can be overridden' do
       minimal_test_class.define_singleton_method(:current_without_cache) do
         first
       end
@@ -64,7 +70,7 @@ describe CacheableAttributes do
     context 'with defaults defined' do
       include_context 'with defaults'
 
-      it 'can be overriden' do
+      it 'can be overridden' do
         expect(minimal_test_class.defaults).to eq({ foo: 'a', bar: 'b', baz: 'c' })
       end
     end
@@ -75,13 +81,13 @@ describe CacheableAttributes do
 
     context 'without any attributes given' do
       it 'intializes a new object with the defaults' do
-        expect(minimal_test_class.build_from_defaults.attributes).to eq(minimal_test_class.defaults)
+        expect(minimal_test_class.build_from_defaults.attributes).to eq(minimal_test_class.defaults.stringify_keys)
       end
     end
 
     context 'with attributes given' do
       it 'intializes a new object with the given attributes merged into the defaults' do
-        expect(minimal_test_class.build_from_defaults(foo: 'd').attributes[:foo]).to eq('d')
+        expect(minimal_test_class.build_from_defaults(foo: 'd').attributes['foo']).to eq('d')
       end
     end
 
@@ -137,14 +143,14 @@ describe CacheableAttributes do
         allow(ApplicationSetting).to receive(:current_without_cache).twice.and_return(nil)
 
         expect(ApplicationSetting.current).to be_nil
-        expect(Rails.cache.exist?(ApplicationSetting.cache_key)).to be(false)
+        expect(ApplicationSetting.cache_backend.exist?(ApplicationSetting.cache_key)).to be(false)
       end
 
       it 'caches non-nil object' do
         create(:application_setting)
 
         expect(ApplicationSetting.current).to eq(ApplicationSetting.last)
-        expect(Rails.cache.exist?(ApplicationSetting.cache_key)).to be(true)
+        expect(ApplicationSetting.cache_backend.exist?(ApplicationSetting.cache_key)).to be(true)
 
         # subsequent calls retrieve the record from the cache
         last_record = ApplicationSetting.last
@@ -155,6 +161,10 @@ describe CacheableAttributes do
 
     describe 'edge cases' do
       describe 'caching behavior', :use_clean_rails_memory_store_caching do
+        before do
+          stub_commonmark_sourcepos_disabled
+        end
+
         it 'retrieves upload fields properly' do
           ar_record = create(:appearance, :with_logo)
           ar_record.cache!
@@ -178,11 +188,12 @@ describe CacheableAttributes do
       end
     end
 
-    it 'uses RequestStore in addition to Rails.cache', :request_store do
+    it 'uses RequestStore in addition to Thread memory cache', :request_store do
       # Warm up the cache
       create(:application_setting).cache!
 
-      expect(Rails.cache).to receive(:read).with(ApplicationSetting.cache_key).once.and_call_original
+      expect(ApplicationSetting.cache_backend).to eq(Gitlab::ThreadMemoryCache.cache_backend)
+      expect(ApplicationSetting.cache_backend).to receive(:read).with(ApplicationSetting.cache_key).once.and_call_original
 
       2.times { ApplicationSetting.current }
     end

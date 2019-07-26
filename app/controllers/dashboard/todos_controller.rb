@@ -1,12 +1,16 @@
+# frozen_string_literal: true
+
 class Dashboard::TodosController < Dashboard::ApplicationController
   include ActionView::Helpers::NumberHelper
 
   before_action :authorize_read_project!, only: :index
+  before_action :authorize_read_group!, only: :index
   before_action :find_todos, only: [:index, :destroy_all]
 
   def index
     @sort = params[:sort]
     @todos = @todos.page(params[:page])
+    @todos = @todos.with_entity_associations
 
     return if redirect_out_of_range(@todos)
   end
@@ -18,7 +22,7 @@ class Dashboard::TodosController < Dashboard::ApplicationController
       format.html do
         redirect_to dashboard_todos_path,
                     status: 302,
-                    notice: 'Todo was successfully marked as done.'
+                    notice: _('To-do item successfully marked as done.')
       end
       format.js { head :ok }
       format.json { render json: todos_counts }
@@ -29,7 +33,7 @@ class Dashboard::TodosController < Dashboard::ApplicationController
     updated_ids = TodoService.new.mark_todos_as_done(@todos, current_user)
 
     respond_to do |format|
-      format.html { redirect_to dashboard_todos_path, status: 302, notice: 'All todos were marked as done.' }
+      format.html { redirect_to dashboard_todos_path, status: 302, notice: _('Everything on your to-do list is marked as done.') }
       format.js { head :ok }
       format.json { render json: todos_counts.merge(updated_ids: updated_ids) }
     end
@@ -58,6 +62,15 @@ class Dashboard::TodosController < Dashboard::ApplicationController
     end
   end
 
+  def authorize_read_group!
+    group_id = params[:group_id]
+
+    if group_id.present?
+      group = Group.find(group_id)
+      render_404 unless can?(current_user, :read_group, group)
+    end
+  end
+
   def find_todos
     @todos ||= TodosFinder.new(current_user, todo_params).execute
   end
@@ -73,6 +86,7 @@ class Dashboard::TodosController < Dashboard::ApplicationController
     params.permit(:action_id, :author_id, :project_id, :type, :sort, :state, :group_id)
   end
 
+  # rubocop: disable CodeReuse/ActiveRecord
   def redirect_out_of_range(todos)
     total_pages =
       if todo_params.except(:sort, :page).empty?
@@ -91,4 +105,5 @@ class Dashboard::TodosController < Dashboard::ApplicationController
 
     out_of_range
   end
+  # rubocop: enable CodeReuse/ActiveRecord
 end

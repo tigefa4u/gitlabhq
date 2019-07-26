@@ -25,17 +25,17 @@ describe MarkupHelper do
       let(:actual) { "#{merge_request.to_reference} -> #{commit.to_reference} -> #{issue.to_reference}" }
 
       it "links to the merge request" do
-        expected = project_merge_request_path(project, merge_request)
+        expected = urls.project_merge_request_path(project, merge_request)
         expect(helper.markdown(actual)).to match(expected)
       end
 
       it "links to the commit" do
-        expected = project_commit_path(project, commit)
+        expected = urls.project_commit_path(project, commit)
         expect(helper.markdown(actual)).to match(expected)
       end
 
       it "links to the issue" do
-        expected = project_issue_path(project, issue)
+        expected = urls.project_issue_path(project, issue)
         expect(helper.markdown(actual)).to match(expected)
       end
     end
@@ -46,8 +46,45 @@ describe MarkupHelper do
       let(:second_issue) { create(:issue, project: second_project) }
 
       it 'links to the issue' do
-        expected = project_issue_path(second_project, second_issue)
+        expected = urls.project_issue_path(second_project, second_issue)
         expect(markdown(actual, project: second_project)).to match(expected)
+      end
+    end
+
+    describe 'uploads' do
+      let(:text) { "![ImageTest](/uploads/test.png)" }
+      let(:group) { create(:group) }
+
+      subject { helper.markdown(text) }
+
+      describe 'inside a project' do
+        it 'renders uploads relative to project' do
+          expect(subject).to include("#{project.full_path}/uploads/test.png")
+        end
+      end
+
+      describe 'inside a group' do
+        before do
+          helper.instance_variable_set(:@group, group)
+          helper.instance_variable_set(:@project, nil)
+        end
+
+        it 'renders uploads relative to the group' do
+          expect(subject).to include("#{group.full_path}/-/uploads/test.png")
+        end
+      end
+
+      describe "with a group in the context" do
+        let(:project_in_group) { create(:project, group: group) }
+
+        before do
+          helper.instance_variable_set(:@group, group)
+          helper.instance_variable_set(:@project, project_in_group)
+        end
+
+        it 'renders uploads relative to project' do
+          expect(subject).to include("#{project_in_group.path_with_namespace}/uploads/test.png")
+        end
       end
     end
   end
@@ -78,7 +115,8 @@ describe MarkupHelper do
     let(:link)    { '/commits/0a1b2c3d' }
     let(:issues)  { create_list(:issue, 2, project: project) }
 
-    it 'handles references nested in links with all the text' do
+    # Clean the cache to make sure the title is re-rendered from the stubbed one
+    it 'handles references nested in links with all the text', :clean_gitlab_redis_cache do
       allow(commit).to receive(:title).and_return("This should finally fix #{issues[0].to_reference} and #{issues[1].to_reference} for real")
 
       actual = helper.link_to_markdown_field(commit, :title, link)
@@ -93,7 +131,7 @@ describe MarkupHelper do
 
       # First issue link
       expect(doc.css('a')[1].attr('href'))
-        .to eq project_issue_path(project, issues[0])
+        .to eq urls.project_issue_path(project, issues[0])
       expect(doc.css('a')[1].text).to eq issues[0].to_reference
 
       # Internal commit link
@@ -102,7 +140,7 @@ describe MarkupHelper do
 
       # Second issue link
       expect(doc.css('a')[3].attr('href'))
-        .to eq project_issue_path(project, issues[1])
+        .to eq urls.project_issue_path(project, issues[1])
       expect(doc.css('a')[3].text).to eq issues[1].to_reference
 
       # Trailing commit link
@@ -128,7 +166,7 @@ describe MarkupHelper do
 
       # First issue link
       expect(doc.css('a')[1].attr('href'))
-        .to eq project_issue_path(project, issues[0])
+        .to eq urls.project_issue_path(project, issues[0])
       expect(doc.css('a')[1].text).to eq issues[0].to_reference
 
       # Internal commit link
@@ -137,7 +175,7 @@ describe MarkupHelper do
 
       # Second issue link
       expect(doc.css('a')[3].attr('href'))
-        .to eq project_issue_path(project, issues[1])
+        .to eq urls.project_issue_path(project, issues[1])
       expect(doc.css('a')[3].text).to eq issues[1].to_reference
 
       # Trailing commit link
@@ -183,7 +221,7 @@ describe MarkupHelper do
       doc = Nokogiri::HTML.parse(rendered)
 
       expect(doc.css('a')[0].attr('href'))
-        .to eq project_issue_path(project, issue)
+        .to eq urls.project_issue_path(project, issue)
       expect(doc.css('a')[0].text).to eq issue.to_reference
 
       wrapped = helper.link_to_html(rendered, link)
@@ -207,7 +245,7 @@ describe MarkupHelper do
 
       expect(helper).to receive(:markdown_unsafe).with('wiki content',
         pipeline: :wiki, project: project, project_wiki: @wiki, page_slug: "nested/page",
-        issuable_state_filter_enabled: true, markdown_engine: :redcarpet)
+        issuable_state_filter_enabled: true)
 
       helper.render_wiki_content(@wiki)
     end
@@ -230,7 +268,7 @@ describe MarkupHelper do
     end
   end
 
-  describe 'markup' do
+  describe '#markup' do
     let(:content) { 'Noël' }
 
     it 'preserves encoding' do
@@ -259,10 +297,79 @@ describe MarkupHelper do
       expect(helper.markup('foo.md', content, rendered: '<p>NOEL</p>')).to eq('<p>NOEL</p>')
     end
 
-    it 'defaults to Redcarpet' do
-      expect(helper).to receive(:markdown_unsafe).with(content, hash_including(markdown_engine: :redcarpet)).and_return('NOEL')
+    it 'defaults to CommonMark' do
+      expect(helper.markup('foo.md', 'x^2')).to include('x^2')
+    end
+  end
 
-      expect(helper.markup('foo.md', content)).to eq('NOEL')
+  describe '#markup_unsafe' do
+    subject { helper.markup_unsafe(file_name, text, context) }
+
+    let(:file_name) { 'foo.bar' }
+    let(:text) { 'Noël' }
+    let(:project_base) { build(:project, :repository) }
+    let(:context) { { project: project_base } }
+
+    context 'when text is missing' do
+      let(:text) { nil }
+
+      it 'returns an empty string' do
+        is_expected.to eq('')
+      end
+    end
+
+    context 'when file is a markdown file' do
+      let(:file_name) { 'foo.md' }
+
+      it 'returns html (rendered by Banzai)' do
+        expected_html = '<p data-sourcepos="1:1-1:5" dir="auto">Noël</p>'
+
+        expect(Banzai).to receive(:render).with(text, context) { expected_html }
+
+        is_expected.to eq(expected_html)
+      end
+
+      context 'when renderer returns an error' do
+        before do
+          allow(Banzai).to receive(:render).and_raise("An error")
+        end
+
+        it 'returns html (rendered by ActionView:TextHelper)' do
+          is_expected.to eq('<p>Noël</p>')
+        end
+      end
+    end
+
+    context 'when file is asciidoc file' do
+      let(:file_name) { 'foo.adoc' }
+
+      it 'returns html (rendered by Gitlab::Asciidoc)' do
+        expected_html = "<div>\n<p>Noël</p>\n</div>"
+
+        expect(Gitlab::Asciidoc).to receive(:render).with(text, context) { expected_html }
+
+        is_expected.to eq(expected_html)
+      end
+    end
+
+    context 'when file is a regular text file' do
+      let(:file_name) { 'foo.txt' }
+
+      it 'returns html (rendered by ActionView::TagHelper)' do
+        is_expected.to eq('<pre class="plain-readme">Noël</pre>')
+      end
+    end
+
+    context 'when file has an unknown type' do
+      let(:file_name) { 'foo' }
+
+      it 'returns html (rendered by Gitlab::OtherMarkup)' do
+        expected_html = 'Noël'
+
+        expect(Gitlab::OtherMarkup).to receive(:render).with(file_name, text, context) { expected_html }
+
+        is_expected.to eq(expected_html)
+      end
     end
   end
 
@@ -320,11 +427,25 @@ describe MarkupHelper do
         expect(first_line_in_markdown(object, attribute, 150, project: project)).to eq(expected)
       end
 
-      it 'preserves data-src for lazy images' do
-        object = create_object("![ImageTest](/uploads/test.png)")
-        image_url = "data-src=\".*/uploads/test.png\""
+      context 'when images are allowed' do
+        it 'preserves data-src for lazy images' do
+          object    = create_object("![ImageTest](/uploads/test.png)")
+          image_url = "data-src=\".*/uploads/test.png\""
+          text      = first_line_in_markdown(object, attribute, 150, project: project, allow_images: true)
 
-        expect(first_line_in_markdown(object, attribute, 150, project: project)).to match(image_url)
+          expect(text).to match(image_url)
+          expect(text).to match('<a')
+        end
+      end
+
+      context 'when images are not allowed' do
+        it 'removes any images' do
+          object = create_object("![ImageTest](/uploads/test.png)")
+          text   = first_line_in_markdown(object, attribute, 150, project: project)
+
+          expect(text).not_to match('<img')
+          expect(text).not_to match('<a')
+        end
       end
 
       context 'labels formatting' do
@@ -413,5 +534,9 @@ describe MarkupHelper do
     it 'shows the full issue reference' do
       expect(helper.cross_project_reference(project, issue)).to include(project.full_path)
     end
+  end
+
+  def urls
+    Gitlab::Routing.url_helpers
   end
 end

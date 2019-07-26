@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   class JsonLogger < ::Gitlab::Logger
     def self.file_name_noext
@@ -8,6 +10,7 @@ module Gitlab
       data = {}
       data[:severity] = severity
       data[:time] = timestamp.utc.iso8601(3)
+      data[Labkit::Correlation::CorrelationId::LOG_KEY] = Labkit::Correlation::CorrelationId.current_id
 
       case message
       when String

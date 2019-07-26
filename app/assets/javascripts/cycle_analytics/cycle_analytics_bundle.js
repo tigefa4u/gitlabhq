@@ -5,26 +5,28 @@ import Flash from '../flash';
 import Translate from '../vue_shared/translate';
 import banner from './components/banner.vue';
 import stageCodeComponent from './components/stage_code_component.vue';
-import stagePlanComponent from './components/stage_plan_component.vue';
 import stageComponent from './components/stage_component.vue';
 import stageReviewComponent from './components/stage_review_component.vue';
 import stageStagingComponent from './components/stage_staging_component.vue';
 import stageTestComponent from './components/stage_test_component.vue';
 import CycleAnalyticsService from './cycle_analytics_service';
 import CycleAnalyticsStore from './cycle_analytics_store';
+import { __ } from '~/locale';
 
 Vue.use(Translate);
 
 export default () => {
   const OVERVIEW_DIALOG_COOKIE = 'cycle_analytics_help_dismissed';
+  const cycleAnalyticsEl = document.querySelector('#cycle-analytics');
 
-  new Vue({ // eslint-disable-line no-new
+  // eslint-disable-next-line no-new
+  new Vue({
     el: '#cycle-analytics',
     name: 'CycleAnalytics',
     components: {
       banner,
       'stage-issue-component': stageComponent,
-      'stage-plan-component': stagePlanComponent,
+      'stage-plan-component': stageComponent,
       'stage-code-component': stageCodeComponent,
       'stage-test-component': stageTestComponent,
       'stage-review-component': stageReviewComponent,
@@ -32,7 +34,6 @@ export default () => {
       'stage-production-component': stageComponent,
     },
     data() {
-      const cycleAnalyticsEl = document.querySelector('#cycle-analytics');
       const cycleAnalyticsService = new CycleAnalyticsService({
         requestPath: cycleAnalyticsEl.dataset.requestPath,
       });
@@ -55,25 +56,34 @@ export default () => {
       },
     },
     created() {
-      this.fetchCycleAnalyticsData();
+      // Conditional check placed here to prevent this method from being called on the
+      // new Cycle Analytics page (i.e. the new page will be initialized blank and only
+      // after a group is selected the cycle analyitcs data will be fetched). Once the
+      // old (current) page has been removed this entire created method as well as the
+      // variable itself can be completely removed.
+      // Follow up issue: https://gitlab.com/gitlab-org/gitlab-ce/issues/64490
+      if (cycleAnalyticsEl.dataset.requestPath) this.fetchCycleAnalyticsData();
     },
     methods: {
       handleError() {
         this.store.setErrorState(true);
-        return new Flash('There was an error while fetching cycle analytics data.');
+        return new Flash(__('There was an error while fetching cycle analytics data.'));
       },
       initDropdown() {
         const $dropdown = $('.js-ca-dropdown');
         const $label = $dropdown.find('.dropdown-label');
 
-        $dropdown.find('li a').off('click').on('click', (e) => {
-          e.preventDefault();
-          const $target = $(e.currentTarget);
-          this.startDate = $target.data('value');
+        $dropdown
+          .find('li a')
+          .off('click')
+          .on('click', e => {
+            e.preventDefault();
+            const $target = $(e.currentTarget);
+            this.startDate = $target.data('value');
 
-          $label.text($target.text().trim());
-          this.fetchCycleAnalyticsData({ startDate: this.startDate });
-        });
+            $label.text($target.text().trim());
+            this.fetchCycleAnalyticsData({ startDate: this.startDate });
+          });
       },
       fetchCycleAnalyticsData(options) {
         const fetchOptions = options || { startDate: this.startDate };
@@ -82,7 +92,7 @@ export default () => {
 
         this.service
           .fetchCycleAnalyticsData(fetchOptions)
-          .then((response) => {
+          .then(response => {
             this.store.setCycleAnalyticsData(response);
             this.selectDefaultStage();
             this.initDropdown();
@@ -115,7 +125,7 @@ export default () => {
             stage,
             startDate: this.startDate,
           })
-          .then((response) => {
+          .then(response => {
             this.isEmptyStage = !response.events.length;
             this.store.setStageEvents(response.events, stage);
             this.isLoadingStage = false;

@@ -36,6 +36,13 @@ describe DiscussionEntity do
     )
   end
 
+  it 'resolved_by matches note_user_entity schema' do
+    Notes::ResolveService.new(note.project, user).execute(note)
+
+    expect(subject[:resolved_by].with_indifferent_access)
+      .to match_schema('entities/note_user_entity')
+  end
+
   context 'when is LegacyDiffDiscussion' do
     let(:project) { create(:project) }
     let(:merge_request) { create(:merge_request, source_project: project) }
@@ -66,14 +73,6 @@ describe DiscussionEntity do
         :line_code,
         :active
       )
-    end
-
-    context 'when diff file is a image' do
-      it 'exposes image attributes' do
-        allow(discussion).to receive(:on_image?).and_return(true)
-
-        expect(subject.keys).to include(:image_diff_html)
-      end
     end
   end
 end

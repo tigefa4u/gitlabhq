@@ -35,11 +35,13 @@ describe 'Multi-file editor new file', :js do
     find('.js-ide-commit-mode').click
 
     find('.multi-file-commit-list-item').hover
-    first('.multi-file-discard-btn .btn').click
+    click_button 'Stage'
 
     fill_in('commit-message', with: 'commit message ide')
 
-    click_button('Commit')
+    page.within '.multi-file-commit-form' do
+      click_button('Commit')
+    end
 
     expect(page).to have_content('file name')
   end

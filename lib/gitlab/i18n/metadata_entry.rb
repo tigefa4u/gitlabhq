@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   module I18n
     class MetadataEntry
@@ -13,7 +15,7 @@ module Gitlab
       end
 
       def expected_forms
-        return nil unless plural_information
+        return unless plural_information
 
         plural_information['nplurals'].to_i
       end

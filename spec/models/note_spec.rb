@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Note do
@@ -175,6 +177,7 @@ describe Note do
             pipeline: :note,
             cache_key: [note1, "note"],
             project: note1.project,
+            rendered: note1.note_html,
             author: note1.author
           }
         }]).and_call_original
@@ -187,6 +190,7 @@ describe Note do
             pipeline: :note,
             cache_key: [note2, "note"],
             project: note2.project,
+            rendered: note2.note_html,
             author: note2.author
           }
         }]).and_call_original
@@ -205,6 +209,24 @@ describe Note do
     it "returns false" do
       note = build(:note, system: true)
       expect(note.editable?).to be_falsy
+    end
+  end
+
+  describe "edited?" do
+    let(:note) { build(:note, updated_by_id: nil, created_at: Time.now, updated_at: Time.now + 5.hours) }
+
+    context "with updated_by" do
+      it "returns true" do
+        note.updated_by = build(:user)
+
+        expect(note.edited?).to be_truthy
+      end
+    end
+
+    context "without updated_by" do
+      it "returns false" do
+        expect(note.edited?).to be_falsy
+      end
     end
   end
 
@@ -231,33 +253,60 @@ describe Note do
     let(:ext_proj)  { create(:project, :public) }
     let(:ext_issue) { create(:issue, project: ext_proj) }
 
-    let(:note) do
-      create :note,
-        noteable: ext_issue, project: ext_proj,
-        note: "mentioned in issue #{private_issue.to_reference(ext_proj)}",
-        system: true
+    shared_examples "checks references" do
+      it "returns true" do
+        expect(note.cross_reference_not_visible_for?(ext_issue.author)).to be_truthy
+      end
+
+      it "returns false" do
+        expect(note.cross_reference_not_visible_for?(private_user)).to be_falsy
+      end
+
+      it "returns false if user visible reference count set" do
+        note.user_visible_reference_count = 1
+        note.total_reference_count = 1
+
+        expect(note).not_to receive(:reference_mentionables)
+        expect(note.cross_reference_not_visible_for?(ext_issue.author)).to be_falsy
+      end
+
+      it "returns true if ref count is 0" do
+        note.user_visible_reference_count = 0
+
+        expect(note).not_to receive(:reference_mentionables)
+        expect(note.cross_reference_not_visible_for?(ext_issue.author)).to be_truthy
+      end
     end
 
-    it "returns true" do
-      expect(note.cross_reference_not_visible_for?(ext_issue.author)).to be_truthy
+    context "when there is one reference in note" do
+      let(:note) do
+        create :note,
+          noteable: ext_issue, project: ext_proj,
+          note: "mentioned in issue #{private_issue.to_reference(ext_proj)}",
+          system: true
+      end
+
+      it_behaves_like "checks references"
     end
 
-    it "returns false" do
-      expect(note.cross_reference_not_visible_for?(private_user)).to be_falsy
-    end
+    context "when there are two references in note" do
+      let(:note) do
+        create :note,
+          noteable: ext_issue, project: ext_proj,
+          note: "mentioned in issue #{private_issue.to_reference(ext_proj)} and " \
+                "public issue #{ext_issue.to_reference(ext_proj)}",
+          system: true
+      end
 
-    it "returns false if user visible reference count set" do
-      note.user_visible_reference_count = 1
+      it_behaves_like "checks references"
 
-      expect(note).not_to receive(:reference_mentionables)
-      expect(note.cross_reference_not_visible_for?(ext_issue.author)).to be_falsy
-    end
+      it "returns true if user visible reference count set and there is a private reference" do
+        note.user_visible_reference_count = 1
+        note.total_reference_count = 2
 
-    it "returns true if ref count is 0" do
-      note.user_visible_reference_count = 0
-
-      expect(note).not_to receive(:reference_mentionables)
-      expect(note.cross_reference_not_visible_for?(ext_issue.author)).to be_truthy
+        expect(note).not_to receive(:reference_mentionables)
+        expect(note.cross_reference_not_visible_for?(ext_issue.author)).to be_truthy
+      end
     end
   end
 
@@ -269,7 +318,7 @@ describe Note do
     end
 
     context 'when the note might contain cross references' do
-      SystemNoteMetadata::TYPES_WITH_CROSS_REFERENCES.each do |type|
+      SystemNoteMetadata.new.cross_reference_types.each do |type|
         let(:note) { create(:note, :system) }
         let!(:metadata) { create(:system_note_metadata, note: note, action: type) }
 
@@ -490,7 +539,7 @@ describe Note do
 
   describe '#to_ability_name' do
     it 'returns snippet for a project snippet note' do
-      expect(build(:note_on_project_snippet).to_ability_name).to eq('snippet')
+      expect(build(:note_on_project_snippet).to_ability_name).to eq('project_snippet')
     end
 
     it 'returns personal_snippet for a personal snippet note' do
@@ -837,6 +886,45 @@ describe Note do
 
         note.save!
       end
+    end
+
+    describe '#with_notes_filter' do
+      let!(:comment) { create(:note) }
+      let!(:system_note) { create(:note, system: true) }
+
+      context 'when notes filter is nil' do
+        subject { described_class.with_notes_filter(nil) }
+
+        it { is_expected.to include(comment, system_note) }
+      end
+
+      context 'when notes filter is set to all notes' do
+        subject { described_class.with_notes_filter(UserPreference::NOTES_FILTERS[:all_notes]) }
+
+        it { is_expected.to include(comment, system_note) }
+      end
+
+      context 'when notes filter is set to only comments' do
+        subject { described_class.with_notes_filter(UserPreference::NOTES_FILTERS[:only_comments]) }
+
+        it { is_expected.to include(comment) }
+        it { is_expected.not_to include(system_note) }
+      end
+    end
+  end
+
+  describe '#parent' do
+    it 'returns project for project notes' do
+      project = create(:project)
+      note = create(:note_on_issue, project: project)
+
+      expect(note.parent).to eq(project)
+    end
+
+    it 'returns nil for personal snippet note' do
+      note = create(:note_on_personal_snippet)
+
+      expect(note.parent).to be_nil
     end
   end
 end

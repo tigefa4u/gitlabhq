@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 shared_examples 'handle uploads' do
   let(:user)  { create(:user) }
   let(:jpg)   { fixture_file_upload('spec/fixtures/rails_sample.jpg', 'image/jpg') }
@@ -8,8 +10,7 @@ shared_examples 'handle uploads' do
   describe "POST #create" do
     context 'when a user is not authorized to upload a file' do
       it 'returns 404 status' do
-        post :create, params.merge(file: jpg, format: :json)
-
+        post :create, params: params.merge(file: jpg), format: :json
         expect(response.status).to eq(404)
       end
     end
@@ -22,7 +23,7 @@ shared_examples 'handle uploads' do
 
       context "without params['file']" do
         it "returns an error" do
-          post :create, params.merge(format: :json)
+          post :create, params: params, format: :json
 
           expect(response).to have_gitlab_http_status(422)
         end
@@ -30,7 +31,7 @@ shared_examples 'handle uploads' do
 
       context 'with valid image' do
         before do
-          post :create, params.merge(file: jpg, format: :json)
+          post :create, params: params.merge(file: jpg), format: :json
         end
 
         it 'returns a content with original filename, new link, and correct type.' do
@@ -54,7 +55,7 @@ shared_examples 'handle uploads' do
 
       context 'with valid non-image file' do
         before do
-          post :create, params.merge(file: txt, format: :json)
+          post :create, params: params.merge(file: txt), format: :json
         end
 
         it 'returns a content with original filename, new link, and correct type.' do
@@ -67,7 +68,7 @@ shared_examples 'handle uploads' do
 
   describe "GET #show" do
     let(:show_upload) do
-      get :show, params.merge(secret: secret, filename: "rails_sample.jpg")
+      get :show, params: params.merge(secret: secret, filename: "rails_sample.jpg")
     end
 
     before do

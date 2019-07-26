@@ -38,54 +38,11 @@ describe('Pipeline Url Component', () => {
     expect(component.$el.querySelector('.js-pipeline-url-link').getAttribute('href')).toEqual(
       'foo',
     );
+
     expect(component.$el.querySelector('.js-pipeline-url-link span').textContent).toEqual('#1');
   });
 
-  it('should render user information when a user is provided', () => {
-    const mockData = {
-      pipeline: {
-        id: 1,
-        path: 'foo',
-        flags: {},
-        user: {
-          web_url: '/',
-          name: 'foo',
-          avatar_url: '/',
-          path: '/',
-        },
-      },
-      autoDevopsHelpPath: 'foo',
-    };
-
-    const component = new PipelineUrlComponent({
-      propsData: mockData,
-    }).$mount();
-
-    const image = component.$el.querySelector('.js-pipeline-url-user img');
-
-    expect(component.$el.querySelector('.js-pipeline-url-user').getAttribute('href')).toEqual(
-      mockData.pipeline.user.web_url,
-    );
-    expect(image.getAttribute('data-original-title')).toEqual(mockData.pipeline.user.name);
-    expect(image.getAttribute('src')).toEqual(`${mockData.pipeline.user.avatar_url}?width=20`);
-  });
-
-  it('should render "API" when no user is provided', () => {
-    const component = new PipelineUrlComponent({
-      propsData: {
-        pipeline: {
-          id: 1,
-          path: 'foo',
-          flags: {},
-        },
-        autoDevopsHelpPath: 'foo',
-      },
-    }).$mount();
-
-    expect(component.$el.querySelector('.js-pipeline-url-api').textContent).toContain('API');
-  });
-
-  it('should render latest, yaml invalid and stuck flags when provided', () => {
+  it('should render latest, yaml invalid, merge request, and stuck flags when provided', () => {
     const component = new PipelineUrlComponent({
       propsData: {
         pipeline: {
@@ -95,6 +52,8 @@ describe('Pipeline Url Component', () => {
             latest: true,
             yaml_errors: true,
             stuck: true,
+            merge_request_pipeline: true,
+            detached_merge_request_pipeline: true,
           },
         },
         autoDevopsHelpPath: 'foo',
@@ -102,10 +61,16 @@ describe('Pipeline Url Component', () => {
     }).$mount();
 
     expect(component.$el.querySelector('.js-pipeline-url-latest').textContent).toContain('latest');
+
     expect(component.$el.querySelector('.js-pipeline-url-yaml').textContent).toContain(
       'yaml invalid',
     );
+
     expect(component.$el.querySelector('.js-pipeline-url-stuck').textContent).toContain('stuck');
+
+    expect(component.$el.querySelector('.js-pipeline-url-detached').textContent).toContain(
+      'detached',
+    );
   });
 
   it('should render a badge for autodevops', () => {

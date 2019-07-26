@@ -1,12 +1,12 @@
 <script>
 import { __ } from '~/locale';
 import tooltip from '~/vue_shared/directives/tooltip';
+import { GlLoadingIcon } from '@gitlab/ui';
 
 import Icon from '~/vue_shared/components/icon.vue';
-import LoadingIcon from '~/vue_shared/components/loading_icon.vue';
 
-const MARK_TEXT = __('Mark todo as done');
-const TODO_TEXT = __('Add todo');
+const MARK_TEXT = __('Mark as done');
+const TODO_TEXT = __('Add a To Do');
 
 export default {
   directives: {
@@ -14,7 +14,7 @@ export default {
   },
   components: {
     Icon,
-    LoadingIcon,
+    GlLoadingIcon,
   },
   props: {
     issuableId: {
@@ -43,12 +43,15 @@ export default {
   },
   computed: {
     buttonClasses() {
-      return this.collapsed ?
-        'btn-blank btn-todo sidebar-collapsed-icon dont-change-state' :
-        'btn btn-default btn-todo issuable-header-btn float-right';
+      return this.collapsed
+        ? 'btn-blank btn-todo sidebar-collapsed-icon dont-change-state'
+        : 'btn btn-default btn-todo issuable-header-btn float-right';
     },
     buttonLabel() {
       return this.isTodo ? MARK_TEXT : TODO_TEXT;
+    },
+    buttonTooltip() {
+      return !this.collapsed ? undefined : this.buttonLabel;
     },
     collapsedButtonIconClasses() {
       return this.isTodo ? 'todo-undone' : '';
@@ -69,7 +72,7 @@ export default {
   <button
     v-tooltip
     :class="buttonClasses"
-    :title="buttonLabel"
+    :title="buttonTooltip"
     :aria-label="buttonLabel"
     :data-issuable-id="issuableId"
     :data-issuable-type="issuableType"
@@ -84,15 +87,7 @@ export default {
       :css-classes="collapsedButtonIconClasses"
       :name="collapsedButtonIcon"
     />
-    <span
-      v-show="!collapsed"
-      class="issuable-todo-inner"
-    >
-      {{ buttonLabel }}
-    </span>
-    <loading-icon
-      v-show="isActionActive"
-      :inline="true"
-    />
+    <span v-show="!collapsed" class="issuable-todo-inner"> {{ buttonLabel }} </span>
+    <gl-loading-icon v-show="isActionActive" :inline="true" />
   </button>
 </template>

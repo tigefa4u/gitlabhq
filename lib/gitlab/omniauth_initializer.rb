@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gitlab
   class OmniauthInitializer
     def initialize(devise_config)
@@ -34,10 +36,33 @@ module Gitlab
         hash_arguments = provider['args'].merge(provider_defaults(provider))
 
         # A Hash from the configuration will be passed as is.
-        provider_arguments << hash_arguments.symbolize_keys
+        provider_arguments << normalize_hash_arguments(hash_arguments)
       end
 
       provider_arguments
+    end
+
+    def normalize_hash_arguments(args)
+      args.symbolize_keys!
+
+      # Rails 5.1 deprecated the use of string names in the middleware
+      # (https://github.com/rails/rails/commit/83b767ce), so we need to
+      # pass in the actual class to Devise.
+      if args[:strategy_class].is_a?(String)
+        args[:strategy_class] = args[:strategy_class].constantize
+      end
+
+      # Providers that are known to depend on rack-oauth2, like those using
+      # Omniauth::Strategies::OpenIDConnect, need to be quirked so the
+      # client_auth_method argument value is passed as a symbol.
+      if (args[:strategy_class] == OmniAuth::Strategies::OpenIDConnect ||
+        args[:name] == 'openid_connect') &&
+        args[:client_auth_method].is_a?(String)
+
+        args[:client_auth_method] = args[:client_auth_method].to_sym
+      end
+
+      args
     end
 
     def provider_defaults(provider)

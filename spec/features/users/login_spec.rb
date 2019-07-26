@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe 'Login' do
   include TermsHelper
+  include UserLoginHelper
 
   before do
     stub_authentication_activity_metrics(debug: true)
@@ -131,19 +132,17 @@ describe 'Login' do
       it 'does not show a "You are already signed in." error message' do
         expect(authentication_metrics)
           .to increment(:user_authenticated_counter)
-          .and increment(:user_session_override_counter)
           .and increment(:user_two_factor_authenticated_counter)
 
         enter_code(user.current_otp)
 
-        expect(page).not_to have_content('You are already signed in.')
+        expect(page).not_to have_content(I18n.t('devise.failure.already_authenticated'))
       end
 
       context 'using one-time code' do
         it 'allows login with valid code' do
           expect(authentication_metrics)
             .to increment(:user_authenticated_counter)
-            .and increment(:user_session_override_counter)
             .and increment(:user_two_factor_authenticated_counter)
 
           enter_code(user.current_otp)
@@ -169,7 +168,6 @@ describe 'Login' do
         it 'allows login with invalid code, then valid code' do
           expect(authentication_metrics)
             .to increment(:user_authenticated_counter)
-            .and increment(:user_session_override_counter)
             .and increment(:user_two_factor_authenticated_counter)
 
           enter_code('foo')
@@ -177,6 +175,15 @@ describe 'Login' do
 
           enter_code(user.current_otp)
           expect(current_path).to eq root_path
+        end
+
+        it 'triggers ActiveSession.cleanup for the user' do
+          expect(authentication_metrics)
+            .to increment(:user_authenticated_counter)
+            .and increment(:user_two_factor_authenticated_counter)
+          expect(ActiveSession).to receive(:cleanup).with(user).once.and_call_original
+
+          enter_code(user.current_otp)
         end
       end
 
@@ -194,7 +201,6 @@ describe 'Login' do
           it 'allows login' do
             expect(authentication_metrics)
               .to increment(:user_authenticated_counter)
-              .and increment(:user_session_override_counter)
               .and increment(:user_two_factor_authenticated_counter)
 
             enter_code(codes.sample)
@@ -205,7 +211,6 @@ describe 'Login' do
           it 'invalidates the used code' do
             expect(authentication_metrics)
               .to increment(:user_authenticated_counter)
-              .and increment(:user_session_override_counter)
               .and increment(:user_two_factor_authenticated_counter)
 
             expect { enter_code(codes.sample) }
@@ -215,7 +220,6 @@ describe 'Login' do
           it 'invalidates backup codes twice in a row' do
             expect(authentication_metrics)
               .to increment(:user_authenticated_counter).twice
-              .and increment(:user_session_override_counter).twice
               .and increment(:user_two_factor_authenticated_counter).twice
               .and increment(:user_session_destroyed_counter)
 
@@ -228,6 +232,15 @@ describe 'Login' do
 
             expect { enter_code(codes.sample) }
               .to change { user.reload.otp_backup_codes.size }.by(-1)
+          end
+
+          it 'triggers ActiveSession.cleanup for the user' do
+            expect(authentication_metrics)
+              .to increment(:user_authenticated_counter)
+                    .and increment(:user_two_factor_authenticated_counter)
+            expect(ActiveSession).to receive(:cleanup).with(user).once.and_call_original
+
+            enter_code(codes.sample)
           end
         end
 
@@ -273,7 +286,7 @@ describe 'Login' do
 
           expect(authentication_metrics)
             .to increment(:user_authenticated_counter)
-            .and increment(:user_session_override_counter)
+          expect(ActiveSession).to receive(:cleanup).with(user).once.and_call_original
 
           sign_in_using_saml!
 
@@ -286,8 +299,8 @@ describe 'Login' do
         it 'shows 2FA prompt after OAuth login' do
           expect(authentication_metrics)
             .to increment(:user_authenticated_counter)
-            .and increment(:user_session_override_counter)
             .and increment(:user_two_factor_authenticated_counter)
+          expect(ActiveSession).to receive(:cleanup).with(user).once.and_call_original
 
           sign_in_using_saml!
 
@@ -316,7 +329,25 @@ describe 'Login' do
         gitlab_sign_in(user)
 
         expect(current_path).to eq root_path
-        expect(page).not_to have_content('You are already signed in.')
+        expect(page).not_to have_content(I18n.t('devise.failure.already_authenticated'))
+      end
+
+      it 'does not show already signed in message when opening sign in page after login' do
+        expect(authentication_metrics)
+          .to increment(:user_authenticated_counter)
+
+        gitlab_sign_in(user)
+        visit new_user_session_path
+
+        expect(page).not_to have_content(I18n.t('devise.failure.already_authenticated'))
+      end
+
+      it 'triggers ActiveSession.cleanup for the user' do
+        expect(authentication_metrics)
+          .to increment(:user_authenticated_counter)
+        expect(ActiveSession).to receive(:cleanup).with(user).once.and_call_original
+
+        gitlab_sign_in(user)
       end
     end
 
@@ -433,16 +464,22 @@ describe 'Login' do
 
         context 'within the grace period' do
           it 'redirects to two-factor configuration page' do
-            expect(authentication_metrics)
-              .to increment(:user_authenticated_counter)
+            Timecop.freeze do
+              expect(authentication_metrics)
+                .to increment(:user_authenticated_counter)
 
-            gitlab_sign_in(user)
+              gitlab_sign_in(user)
 
-            expect(current_path).to eq profile_two_factor_auth_path
-            expect(page).to have_content(
-              'The group settings for Group 1 and Group 2 require you to enable ' \
-              'Two-Factor Authentication for your account. You need to do this ' \
-              'before ')
+              expect(current_path).to eq profile_two_factor_auth_path
+              expect(page).to have_content(
+                'The group settings for Group 1 and Group 2 require you to enable '\
+                'Two-Factor Authentication for your account. '\
+                'You can leave Group 1 and leave Group 2. '\
+                'You need to do this '\
+                'before '\
+                "#{(Time.zone.now + 2.days).strftime("%a, %d %b %Y %H:%M:%S %z")}"
+              )
+            end
           end
 
           it 'allows skipping two-factor configuration', :js do
@@ -499,7 +536,8 @@ describe 'Login' do
           expect(current_path).to eq profile_two_factor_auth_path
           expect(page).to have_content(
             'The group settings for Group 1 and Group 2 require you to enable ' \
-            'Two-Factor Authentication for your account.'
+            'Two-Factor Authentication for your account. '\
+            'You can leave Group 1 and leave Group 2.'
           )
         end
       end
@@ -546,29 +584,6 @@ describe 'Login' do
         ensure_tab_pane_correctness(false)
       end
     end
-
-    def ensure_tab_pane_correctness(visit_path = true)
-      if visit_path
-        visit new_user_session_path
-      end
-
-      ensure_tab_pane_counts
-      ensure_one_active_tab
-      ensure_one_active_pane
-    end
-
-    def ensure_tab_pane_counts
-      tabs_count = page.all('[role="tab"]').size
-      expect(page).to have_selector('[role="tabpanel"]', count: tabs_count)
-    end
-
-    def ensure_one_active_tab
-      expect(page).to have_selector('ul.new-session-tabs > li > a.active', count: 1)
-    end
-
-    def ensure_one_active_pane
-      expect(page).to have_selector('.tab-pane.active', count: 1)
-    end
   end
 
   context 'when terms are enforced' do
@@ -594,7 +609,7 @@ describe 'Login' do
       click_button 'Accept terms'
 
       expect(current_path).to eq(root_path)
-      expect(page).not_to have_content('You are already signed in.')
+      expect(page).not_to have_content(I18n.t('devise.failure.already_authenticated'))
     end
 
     it 'does not ask for terms when the user already accepted them' do
@@ -654,7 +669,6 @@ describe 'Login' do
         it 'asks the user to accept the terms' do
           expect(authentication_metrics)
             .to increment(:user_authenticated_counter)
-            .and increment(:user_session_override_counter)
             .and increment(:user_two_factor_authenticated_counter)
 
           visit new_user_session_path
@@ -713,7 +727,6 @@ describe 'Login' do
       it 'asks the user to accept the terms before setting an email' do
         expect(authentication_metrics)
           .to increment(:user_authenticated_counter)
-          .and increment(:user_session_override_counter)
 
         gitlab_sign_in_via('saml', user, 'my-uid')
 

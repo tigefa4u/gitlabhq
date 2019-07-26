@@ -12,6 +12,8 @@ describe 'Projects > Files > User deletes files', :js do
   let(:user) { create(:user) }
 
   before do
+    stub_feature_flags(vue_file_list: false)
+
     sign_in(user)
   end
 
@@ -31,7 +33,7 @@ describe 'Projects > Files > User deletes files', :js do
       fill_in(:commit_message, with: 'New commit message', visible: true)
       click_button('Delete file')
 
-      expect(current_path).to eq(project_tree_path(project, 'master'))
+      expect(current_path).to eq(project_tree_path(project, 'master/'))
       expect(page).not_to have_content('.gitignore')
     end
   end

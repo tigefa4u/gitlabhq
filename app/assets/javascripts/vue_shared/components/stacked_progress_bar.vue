@@ -71,7 +71,11 @@ export default {
   },
   methods: {
     getPercent(count) {
-      return roundOffFloat((count / this.totalCount) * 100, 1);
+      const percent = roundOffFloat((count / this.totalCount) * 100, 1);
+      if (percent > 0 && percent < 1) {
+        return '< 1';
+      }
+      return percent;
     },
     barStyle(percent) {
       return `width: ${percent}%;`;
@@ -84,19 +88,11 @@ export default {
 </script>
 
 <template>
-  <div
-    :class="cssClass"
-    class="stacked-progress-bar"
-  >
+  <div :class="cssClass" class="stacked-progress-bar">
+    <span v-if="!totalCount" class="status-unavailable"> {{ __('Not available') }} </span>
     <span
-      v-if="!totalCount"
-      class="status-unavailable"
-    >
-      {{ __("Not available") }}
-    </span>
-    <span
-      v-tooltip
       v-if="successPercent"
+      v-tooltip
       :title="successTooltip"
       :style="successBarStyle"
       class="status-green"
@@ -105,8 +101,8 @@ export default {
       {{ successPercent }}%
     </span>
     <span
-      v-tooltip
       v-if="neutralPercent"
+      v-tooltip
       :title="neutralTooltip"
       :style="neutralBarStyle"
       class="status-neutral"
@@ -115,8 +111,8 @@ export default {
       {{ neutralPercent }}%
     </span>
     <span
-      v-tooltip
       v-if="failurePercent"
+      v-tooltip
       :title="failureTooltip"
       :style="failureBarStyle"
       class="status-red"

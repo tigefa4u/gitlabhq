@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :ci_runner, class: Ci::Runner do
     sequence(:description) { |n| "My runner#{n}" }
@@ -9,7 +11,7 @@ FactoryBot.define do
     runner_type :instance_type
 
     trait :online do
-      contacted_at Time.now
+      contacted_at { Time.now }
     end
 
     trait :instance do
@@ -46,6 +48,16 @@ FactoryBot.define do
 
     trait :ref_protected do
       access_level :ref_protected
+    end
+
+    trait :tagged_only do
+      run_untagged false
+
+      tag_list %w(tag1 tag2)
+    end
+
+    trait :locked do
+      locked true
     end
   end
 end

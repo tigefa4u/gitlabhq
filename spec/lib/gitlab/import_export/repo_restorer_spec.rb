@@ -1,6 +1,8 @@
 require 'spec_helper'
 
 describe Gitlab::ImportExport::RepoRestorer do
+  include GitHelpers
+
   describe 'bundle a project Git repo' do
     let(:user) { create(:user) }
     let!(:project_with_repo) { create(:project, :repository, name: 'test-repo-restorer', path: 'test-repo-restorer') }
@@ -31,14 +33,6 @@ describe Gitlab::ImportExport::RepoRestorer do
 
     it 'restores the repo successfully' do
       expect(restorer.restore).to be_truthy
-    end
-
-    it 'has the webhooks' do
-      restorer.restore
-
-      Gitlab::GitalyClient::StorageSettings.allow_disk_access do
-        expect(Gitlab::Git::Hook.new('post-receive', project.repository.raw_repository)).to exist
-      end
     end
   end
 end

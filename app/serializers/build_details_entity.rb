@@ -3,15 +3,59 @@
 class BuildDetailsEntity < JobEntity
   expose :coverage, :erased_at, :duration
   expose :tag_list, as: :tags
+  expose :has_trace?, as: :has_trace
+  expose :stage
+  expose :stuck?, as: :stuck
   expose :user, using: UserEntity
   expose :runner, using: RunnerEntity
+  expose :metadata, using: BuildMetadataEntity
   expose :pipeline, using: PipelineEntity
 
-  expose :metadata, using: BuildMetadataEntity
+  expose :deployment_status, if: -> (*) { build.starts_environment? } do
+    expose :deployment_status, as: :status
+    expose :persisted_environment, as: :environment do |build, options|
+      options.merge(deployment_details: false).yield_self do |opts|
+        EnvironmentEntity.represent(build.persisted_environment, opts)
+      end
+    end
+  end
+
+  expose :artifact, if: -> (*) { can?(current_user, :read_build, build) } do
+    expose :download_path, if: -> (*) { build.artifacts? } do |build|
+      download_project_job_artifacts_path(project, build)
+    end
+
+    expose :browse_path, if: -> (*) { build.browsable_artifacts? } do |build|
+      browse_project_job_artifacts_path(project, build)
+    end
+
+    expose :keep_path, if: -> (*) { build.has_expiring_artifacts? && can?(current_user, :update_build, build) } do |build|
+      keep_project_job_artifacts_path(project, build)
+    end
+
+    expose :expire_at, if: -> (*) { build.artifacts_expire_at.present? } do |build|
+      build.artifacts_expire_at
+    end
+
+    expose :expired, if: -> (*) { build.artifacts_expire_at.present? } do |build|
+      build.artifacts_expired?
+    end
+  end
+
+  expose :report_artifacts,
+    as: :reports,
+    using: JobArtifactReportEntity,
+    if: -> (*) { can?(current_user, :read_build, build) }
 
   expose :erased_by, if: -> (*) { build.erased? }, using: UserEntity
   expose :erase_path, if: -> (*) { build.erasable? && can?(current_user, :erase_build, build) } do |build|
     erase_project_job_path(project, build)
+  end
+
+  expose :failure_reason, if: -> (*) { build.failed? }
+
+  expose :terminal_path, if: -> (*) { can_create_build_terminal? } do |build|
+    terminal_project_job_path(project, build)
   end
 
   expose :merge_request, if: -> (*) { can?(current_user, :read_merge_request, build.merge_request) } do
@@ -33,6 +77,26 @@ class BuildDetailsEntity < JobEntity
     raw_project_job_path(project, build)
   end
 
+  expose :trigger, if: -> (*) { build.trigger_request } do
+    expose :trigger_short_token, as: :short_token
+
+    expose :trigger_variables, as: :variables, using: TriggerVariableEntity
+  end
+
+  expose :runners do
+    expose :online do |build|
+      build.any_runners_online?
+    end
+
+    expose :available do |build|
+      project.any_runners?
+    end
+
+    expose :settings_path, if: -> (*) { can_admin_build? } do |build|
+      project_runners_path(project)
+    end
+  end
+
   private
 
   def build_failed_issue_options
@@ -46,5 +110,13 @@ class BuildDetailsEntity < JobEntity
 
   def project
     build.project
+  end
+
+  def can_create_build_terminal?
+    can?(current_user, :create_build_terminal, build) && build.has_terminal?
+  end
+
+  def can_admin_build?
+    can?(request.current_user, :admin_build, project)
   end
 end

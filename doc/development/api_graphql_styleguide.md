@@ -1,5 +1,16 @@
 # GraphQL API
 
+## Deep Dive
+
+In March 2019, Nick Thomas hosted a [Deep Dive](https://gitlab.com/gitlab-org/create-stage/issues/1)
+on GitLab's [GraphQL API](../api/graphql/index.md) to share his domain specific knowledge
+with anyone who may work in this part of the code base in the future. You can find the
+[recording on YouTube](https://www.youtube.com/watch?v=-9L_1MWrjkg), and the slides on
+[Google Slides](https://docs.google.com/presentation/d/1qOTxpkTdHIp1CRjuTvO-aXg0_rUtzE3ETfLUdnBB5uQ/edit)
+and in [PDF](https://gitlab.com/gitlab-org/create-stage/uploads/8e78ea7f326b2ef649e7d7d569c26d56/GraphQL_Deep_Dive__Create_.pdf).
+Everything covered in this deep dive was accurate as of GitLab 11.9, and while specific
+details may have changed since then, it should still serve as a good introduction.
+
 ## Authentication
 
 Authentication happens through the `GraphqlController`, right now this
@@ -8,28 +19,6 @@ can be shared.
 
 It is also possible to add a `private_token` to the querystring, or
 add a `HTTP_PRIVATE_TOKEN` header.
-
-### Authorization
-
-Fields can be authorized using the same abilities used in the Rails
-app. This can be done using the `authorize` helper:
-
-```ruby
-module Types
-  class QueryType < BaseObject
-    graphql_name 'Query'
-
-    field :project, Types::ProjectType, null: true, resolver: Resolvers::ProjectResolver do
-      authorize :read_project
-    end
-  end
-```
-
-The object found by the resolve call is used for authorization.
-
-This works for authorizing a single record, for authorizing
-collections, we should only load what the currently authenticated user
-is allowed to view. Preferably we use our existing finders for that.
 
 ## Types
 
@@ -53,6 +42,21 @@ a new presenter specifically for GraphQL.
 
 The presenter is initialized using the object resolved by a field, and
 the context.
+
+### Exposing Global ids
+
+When exposing an `id` field on a type, we will by default try to
+expose a global id by calling `to_global_id` on the resource being
+rendered.
+
+To override this behaviour, you can implement an `id` method on the
+type for which you are exposing an id. Please make sure that when
+exposing a `GraphQL::ID_TYPE` using a custom method that it is
+globally unique.
+
+The records that are exposing a `full_path` as an `ID_TYPE` are one of
+these exceptions. Since the full path is a unique identifier for a
+`Project` or `Namespace`.
 
 ### Connection Types
 
@@ -101,14 +105,14 @@ look like this:
           {
             "cursor": "Nzc=",
             "node": {
-              "id": "77",
+              "id": "gid://gitlab/Pipeline/77",
               "status": "FAILED"
             }
           },
           {
             "cursor": "Njc=",
             "node": {
-              "id": "67",
+              "id": "gid://gitlab/Pipeline/67",
               "status": "FAILED"
             }
           }
@@ -187,6 +191,114 @@ end
   policies at once. The fields for these will all have be non-nullable
   booleans with a default description.
 
+## Authorization
+
+Authorizations can be applied to both types and fields using the same
+abilities as in the Rails app.
+
+If the:
+
+- Currently authenticated user fails the authorization, the authorized
+  resource will be returned as `null`.
+- Resource is part of a collection, the collection will be filtered to
+  exclude the objects that the user's authorization checks failed against.
+
+TIP: **Tip:**
+Try to load only what the currently authenticated user is allowed to
+view with our existing finders first, without relying on authorization
+to filter the records. This minimizes database queries and unnecessary
+authorization checks of the loaded records.
+
+### Type authorization
+
+Authorize a type by passing an ability to the `authorize` method. All
+fields with the same type will be authorized by checking that the
+currently authenticated user has the required ability.
+
+For example, the following authorization ensures that the currently
+authenticated user can only see projects that they have the
+`read_project` ability for (so long as the project is returned in a
+field that uses `Types::ProjectType`):
+
+```ruby
+module Types
+  class ProjectType < BaseObject
+    authorize :read_project
+  end
+end
+```
+
+You can also authorize against multiple abilities, in which case all of
+the ability checks must pass.
+
+For example, the following authorization ensures that the currently
+authenticated user must have `read_project` and `another_ability`
+abilities to see a project:
+
+```ruby
+module Types
+  class ProjectType < BaseObject
+    authorize [:read_project, :another_ability]
+  end
+end
+```
+
+### Field authorization
+
+Fields can be authorized with the `authorize` option.
+
+For example, the following authorization ensures that the currently
+authenticated user must have the `owner_access` ability to see the
+project:
+
+```ruby
+module Types
+  class MyType < BaseObject
+    field :project, Types::ProjectType, null: true, resolver: Resolvers::ProjectResolver, authorize: :owner_access
+  end
+end
+```
+
+Fields can also be authorized against multiple abilities, in which case
+all of ability checks must pass. **Note:** This requires explicitly
+passing a block to `field`:
+
+```ruby
+module Types
+  class MyType < BaseObject
+    field :project, Types::ProjectType, null: true, resolver: Resolvers::ProjectResolver do
+      authorize [:owner_access, :another_ability]
+    end
+  end
+end
+```
+
+NOTE: **Note:** If the field's type already [has a particular
+authorization](#type-authorization) then there is no need to add that
+same authorization to the field.
+
+### Type and Field authorizations together
+
+Authorizations are cumulative, so where authorizations are defined on
+a field, and also on the field's type, then the currently authenticated
+user would need to pass all ability checks.
+
+In the following simplified example the currently authenticated user
+would need both `first_permission` and `second_permission` abilities in
+order to see the author of the issue.
+
+```ruby
+class UserType
+  authorize :first_permission
+end
+```
+
+```ruby
+class IssueType
+  field :author, UserType, authorize: :second_permission
+end
+```
+
 ## Resolvers
 
 To find objects to display in a field, we can add resolvers to
@@ -244,7 +356,7 @@ argument :project_path, GraphQL::ID_TYPE,
          required: true,
          description: "The project the merge request to mutate is in"
 
-argument :iid, GraphQL::ID_TYPE,
+argument :iid, GraphQL::STRING_TYPE,
          required: true,
          description: "The iid of the merge request to mutate"
 
@@ -312,12 +424,8 @@ Will generate a field called `mergeRequestSetWip` that
 
 ### Authorizing resources
 
-To authorize resources inside a mutation, we can include the
-`Gitlab::Graphql::Authorize::AuthorizeResource` concern in the
-mutation.
-
-This allows us to provide the required abilities on the mutation like
-this:
+To authorize resources inside a mutation, we first provide the required
+ abilities on the mutation like this:
 
 ```ruby
 module Mutations
@@ -336,7 +444,7 @@ want to validate the abilities for.
 
 Alternatively, we can add a `find_object` method that will load the
 object on the mutation. This would allow you to use the
-`authorized_find!` and `authorized_find!` helper methods.
+`authorized_find!` helper method.
 
 When a user is not allowed to perform the action, or an object is not
 found, we should raise a
@@ -379,7 +487,7 @@ let(:mutation) do
   )
 end
 
-it 'returns a successfull response' do
+it 'returns a successful response' do
    post_graphql_mutation(mutation, current_user: user)
 
    expect(response).to have_gitlab_http_status(:success)

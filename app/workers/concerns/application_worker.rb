@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'sidekiq/api'
+
 Sidekiq::Worker.extend ActiveSupport::Concern
 
 module ApplicationWorker
@@ -11,7 +13,7 @@ module ApplicationWorker
     set_queue
   end
 
-  module ClassMethods
+  class_methods do
     def inherited(subclass)
       subclass.set_queue
     end
@@ -44,6 +46,10 @@ module ApplicationWorker
       get_sidekiq_options['queue'].to_s
     end
 
+    def queue_size
+      Sidekiq::Queue.new(queue).size
+    end
+
     def bulk_perform_async(args_list)
       Sidekiq::Client.push_bulk('class' => self, 'args' => args_list)
     end
@@ -53,7 +59,7 @@ module ApplicationWorker
       schedule = now + delay.to_i
 
       if schedule <= now
-        raise ArgumentError, 'The schedule time must be in the future!'
+        raise ArgumentError, _('The schedule time must be in the future!')
       end
 
       Sidekiq::Client.push_bulk('class' => self, 'args' => args_list, 'at' => schedule)
