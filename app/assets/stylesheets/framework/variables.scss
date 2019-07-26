@@ -336,6 +336,7 @@ $tooltip-font-size: 12px;
  */
 $gl-padding-4: 4px;
 $gl-padding-8: 8px;
+$gl-padding-12: 12px;
 $gl-padding: 16px;
 $gl-padding-24: 24px;
 $gl-padding-32: 32px;
@@ -506,7 +507,6 @@ $toast-height: 48px;
 $toast-max-width: 586px;
 $toast-padding-right: 42px;
 $toast-default-margin: 8px;
-$toast-action-margin-left: 16px;
 $toast-background-opacity: 0.95;
 
 /*
@@ -804,10 +804,16 @@ $border-color-settings: #e1e1e1;
 /*
 Modals
 */
-$modal-body-height: 134px;
+$modal-body-height: 80px;
 $modal-border-color: #e9ecef;
+$modal-border-radius: 0.25rem;
 
 $priority-label-empty-state-width: 114px;
+
+/*
+Popovers
+*/
+$popover-max-width: 384px;
 
 /*
 Issues Analytics
@@ -817,7 +823,7 @@ $issues-analytics-popover-boarder-color: rgba(0, 0, 0, 0.15);
 /*
 Merge Requests
 */
-$mr-tabs-height: 51px;
+$mr-tabs-height: 48px;
 $mr-version-controls-height: 56px;
 
 /*

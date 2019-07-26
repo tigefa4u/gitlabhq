@@ -6,7 +6,7 @@ type: concepts, howto
 
 > - Liveness and readiness probes were [introduced][ce-10416] in GitLab 9.1.
 > - The `health_check` endpoint was [introduced][ce-3888] in GitLab 8.8 and was
->   be deprecated in GitLab 9.1.
+>   deprecated in GitLab 9.1.
 > - [Access token](#access-token-deprecated) has been deprecated in GitLab 9.4
 >   in favor of [IP whitelist](#ip-whitelist).
 
@@ -41,42 +41,51 @@ The readiness and liveness probes will provide a report of system health in JSON
 
 ```json
 {
-   "queues_check" : {
-      "status" : "ok"
+   "db_check":{
+      "status":"ok"
    },
-   "redis_check" : {
-      "status" : "ok"
+   "redis_check":{
+      "status":"ok"
    },
-   "shared_state_check" : {
-      "status" : "ok"
+   "cache_check":{
+      "status":"ok"
    },
-   "db_check" : {
-      "status" : "ok"
+   "queues_check":{
+      "status":"ok"
    },
-   "cache_check" : {
-      "status" : "ok"
+   "shared_state_check":{
+      "status":"ok"
+   },
+   "gitaly_check":{
+      "status":"ok",
+      "labels":{
+         "shard":"default"
+         }
+      }
    }
-}
 ```
 
 `liveness` probe example output:
 
 ```json
 {
-   "cache_check" : {
-      "status" : "ok"
+   "db_check":{
+      "status":"ok"
    },
-   "db_check" : {
-      "status" : "ok"
+   "redis_check":{
+      "status":"ok"
    },
-   "redis_check" : {
-      "status" : "ok"
+   "cache_check":{
+      "status":"ok"
    },
-   "queues_check" : {
-      "status" : "ok"
+   "queues_check":{
+      "status":"ok"
    },
-   "shared_state_check" : {
-      "status" : "ok"
+   "shared_state_check":{
+      "status":"ok"
+   },
+   "gitaly_check":{
+      "status":"ok"
    }
 }
 ```

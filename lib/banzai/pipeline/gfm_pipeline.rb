@@ -25,7 +25,7 @@ module Banzai
           Filter::VideoLinkFilter,
           Filter::ImageLazyLoadFilter,
           Filter::ImageLinkFilter,
-          Filter::EmojiFilter,
+          Filter::InlineMetricsFilter,
           Filter::TableOfContentsFilter,
           Filter::AutolinkFilter,
           Filter::ExternalLinkFilter,
@@ -34,6 +34,7 @@ module Banzai
 
           *reference_filters,
 
+          Filter::EmojiFilter,
           Filter::TaskListFilter,
           Filter::InlineDiffFilter,
 

@@ -416,6 +416,7 @@ img.emoji {
 .center { text-align: center; }
 .block { display: block; }
 .flex { display: flex; }
+.vertical-align-top { vertical-align: top; }
 .vertical-align-middle { vertical-align: middle; }
 .vertical-align-sub { vertical-align: sub; }
 .flex-align-self-center { align-self: center; }
@@ -433,12 +434,14 @@ img.emoji {
 
 /** COMMON SIZING CLASSES **/
 .w-0 { width: 0; }
+.w-8em { width: 8em; }
 
 .h-12em { height: 12em; }
 
 .mw-460 { max-width: 460px; }
 .mw-6em { max-width: 6em; }
 .mw-70p { max-width: 70%; }
+.mw-90p { max-width: 90%; }
 
 .min-height-0 { min-height: 0; }
 

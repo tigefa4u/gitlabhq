@@ -18,9 +18,11 @@ class ProjectsController < Projects::ApplicationController
   before_action :redirect_git_extension, only: [:show]
   before_action :project, except: [:index, :new, :create, :resolve]
   before_action :repository, except: [:index, :new, :create, :resolve]
-  before_action :assign_ref_vars, only: [:show], if: :repo_exists?
-  before_action :tree, only: [:show], if: [:repo_exists?, :project_view_files?]
-  before_action :lfs_blob_ids, only: [:show], if: [:repo_exists?, :project_view_files?]
+  before_action :assign_ref_vars, if: -> { action_name == 'show' && repo_exists? }
+  before_action :tree,
+    if: -> { action_name == 'show' && repo_exists? && project_view_files? }
+  before_action :lfs_blob_ids,
+    if: -> { action_name == 'show' && repo_exists? && project_view_files? }
   before_action :project_export_enabled, only: [:export, :download_export, :remove_export, :generate_new_export]
   before_action :present_project, only: [:edit]
   before_action :authorize_download_code!, only: [:refs]
@@ -182,7 +184,7 @@ class ProjectsController < Projects::ApplicationController
   end
 
   def housekeeping
-    ::Projects::HousekeepingService.new(@project).execute
+    ::Projects::HousekeepingService.new(@project, :gc).execute
 
     redirect_to(
       project_path(@project),
@@ -298,7 +300,7 @@ class ProjectsController < Projects::ApplicationController
       elsif @project.feature_available?(:issues, current_user)
         @issues = issuables_collection.page(params[:page])
         @collection_type = 'Issue'
-        @issuable_meta_data = issuable_meta_data(@issues, @collection_type)
+        @issuable_meta_data = issuable_meta_data(@issues, @collection_type, current_user)
       end
 
       render :show

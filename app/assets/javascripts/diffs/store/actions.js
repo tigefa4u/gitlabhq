@@ -12,6 +12,7 @@ import {
   getNoteFormData,
   convertExpandLines,
   idleCallback,
+  allDiscussionWrappersExpanded,
 } from './utils';
 import * as types from './mutation_types';
 import {
@@ -36,8 +37,8 @@ import {
 import { diffViewerModes } from '~/ide/constants';
 
 export const setBaseConfig = ({ commit }, options) => {
-  const { endpoint, projectPath } = options;
-  commit(types.SET_BASE_CONFIG, { endpoint, projectPath });
+  const { endpoint, projectPath, dismissEndpoint, showSuggestPopover } = options;
+  commit(types.SET_BASE_CONFIG, { endpoint, projectPath, dismissEndpoint, showSuggestPopover });
 };
 
 export const fetchDiffFiles = ({ state, commit }) => {
@@ -79,6 +80,7 @@ export const assignDiscussionsToDiff = (
   discussions = rootState.notes.discussions,
 ) => {
   const diffPositionByLineCode = getDiffPositionByLineCode(state.diffFiles);
+  const hash = getLocationHash();
 
   discussions
     .filter(discussion => discussion.diff_discussion)
@@ -86,6 +88,7 @@ export const assignDiscussionsToDiff = (
       commit(types.SET_LINE_DISCUSSIONS_FOR_FILE, {
         discussion,
         diffPositionByLineCode,
+        hash,
       });
     });
 
@@ -97,6 +100,10 @@ export const assignDiscussionsToDiff = (
 export const removeDiscussionsFromDiff = ({ commit }, removeDiscussion) => {
   const { file_hash, line_code, id } = removeDiscussion;
   commit(types.REMOVE_LINE_DISCUSSIONS_FOR_FILE, { fileHash: file_hash, lineCode: line_code, id });
+};
+
+export const toggleLineDiscussions = ({ commit }, options) => {
+  commit(types.TOGGLE_LINE_DISCUSSIONS, options);
 };
 
 export const renderFileForDiscussionId = ({ commit, rootState, state }, discussionId) => {
@@ -257,6 +264,31 @@ export const toggleFileDiscussions = ({ getters, dispatch }, diff) => {
   });
 };
 
+export const toggleFileDiscussionWrappers = ({ commit }, diff) => {
+  const discussionWrappersExpanded = allDiscussionWrappersExpanded(diff);
+  let linesWithDiscussions;
+  if (diff.highlighted_diff_lines) {
+    linesWithDiscussions = diff.highlighted_diff_lines.filter(line => line.discussions.length);
+  }
+  if (diff.parallel_diff_lines) {
+    linesWithDiscussions = diff.parallel_diff_lines.filter(
+      line =>
+        (line.left && line.left.discussions.length) ||
+        (line.right && line.right.discussions.length),
+    );
+  }
+
+  if (linesWithDiscussions.length) {
+    linesWithDiscussions.forEach(line => {
+      commit(types.TOGGLE_LINE_DISCUSSIONS, {
+        fileHash: diff.file_hash,
+        lineCode: line.line_code,
+        expanded: !discussionWrappersExpanded,
+      });
+    });
+  }
+};
+
 export const saveDiffDiscussion = ({ state, dispatch }, { note, formData }) => {
   const postData = getNoteFormData({
     commit: state.commit,
@@ -267,7 +299,7 @@ export const saveDiffDiscussion = ({ state, dispatch }, { note, formData }) => {
   return dispatch('saveNote', postData, { root: true })
     .then(result => dispatch('updateDiscussion', result.discussion, { root: true }))
     .then(discussion => dispatch('assignDiscussionsToDiff', [discussion]))
-    .then(() => dispatch('updateResolvableDiscussonsCounts', null, { root: true }))
+    .then(() => dispatch('updateResolvableDiscussionsCounts', null, { root: true }))
     .then(() => dispatch('closeDiffFileCommentForm', formData.diffFile.file_hash))
     .catch(() => createFlash(s__('MergeRequests|Saving the comment failed')));
 };
@@ -454,6 +486,18 @@ export const toggleFullDiff = ({ dispatch, getters, state }, filePath) => {
 
 export const setFileCollapsed = ({ commit }, { filePath, collapsed }) =>
   commit(types.SET_FILE_COLLAPSED, { filePath, collapsed });
+
+export const setSuggestPopoverDismissed = ({ commit, state }) =>
+  axios
+    .post(state.dismissEndpoint, {
+      feature_name: 'suggest_popover_dismissed',
+    })
+    .then(() => {
+      commit(types.SET_SHOW_SUGGEST_POPOVER);
+    })
+    .catch(() => {
+      createFlash(s__('MergeRequest|Error dismissing suggestion popover. Please try again.'));
+    });
 
 // prevent babel-plugin-rewire from generating an invalid default during karma tests
 export default () => {};

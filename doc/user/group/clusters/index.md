@@ -5,7 +5,6 @@ type: reference
 # Group-level Kubernetes clusters
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/issues/34758) in GitLab 11.6.
-> Group Cluster integration is currently in [Beta](https://about.gitlab.com/handbook/product/#alpha-beta-ga).
 
 ## Overview
 
@@ -42,7 +41,7 @@ to the group containing the project if the project's cluster is available and no
 In the case of sub-groups, GitLab will use the cluster of the closest ancestor group
 to the project, provided the cluster is not disabled.
 
-## Multiple Kubernetes clusters **[PREMIUM]**
+## Multiple Kubernetes clusters **(PREMIUM)**
 
 With GitLab Premium, you can associate more than one Kubernetes clusters to your
 group. That way you can have different clusters for different environments,
@@ -56,10 +55,6 @@ differentiate the new cluster from the rest.
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/22011) in GitLab 11.5.
 > Became [optional](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/26565) in GitLab 11.11.
-
-NOTE: **Note:**
-Only available when creating clusters. Existing clusters not managed by GitLab
-cannot become GitLab-managed later.
 
 You can choose to allow GitLab to manage your cluster for you. If your cluster is
 managed by GitLab, resources for your projects will be automatically created. See the
@@ -86,7 +81,7 @@ the [Auto DevOps](../../../topics/autodevops/index.md) stages.
 
 The domain should have a wildcard DNS configured to the Ingress IP address.
 
-## Environment scopes **[PREMIUM]**
+## Environment scopes **(PREMIUM)**
 
 When adding more than one Kubernetes cluster to your project, you need to differentiate
 them with an environment scope. The environment scope associates clusters with
@@ -142,13 +137,12 @@ The result will then be:
 - The Staging cluster will be used for the `deploy to staging` job.
 - The Production cluster will be used for the `deploy to production` job.
 
-## Unavailable features
+## Security of Runners
 
-The following features are not currently available for group-level clusters:
-
-1. Terminals (see [related issue](https://gitlab.com/gitlab-org/gitlab-ce/issues/55487)).
-1. Pod logs (see [related issue](https://gitlab.com/gitlab-org/gitlab-ce/issues/55488)).
-1. Deployment boards (see [related issue](https://gitlab.com/gitlab-org/gitlab-ce/issues/55489)).
+For important information about securely configuring GitLab Runners, see
+[Security of
+Runners](../../project/clusters/index.md#security-of-gitlab-runners)
+documentation for project-level clusters.
 
 <!-- ## Troubleshooting
 

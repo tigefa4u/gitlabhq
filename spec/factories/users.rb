@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :user, aliases: [:author, :assignee, :recipient, :owner, :resource_owner] do
     email { generate(:email) }
@@ -63,6 +65,16 @@ FactoryBot.define do
         additional = create(:email, :confirmed, user: user, email: "commit-#{user.email}")
 
         user.update!(commit_email: additional.email)
+      end
+    end
+
+    transient do
+      developer_projects []
+    end
+
+    after(:create) do |user, evaluator|
+      evaluator.developer_projects.each do |project|
+        project.add_developer(user)
       end
     end
 

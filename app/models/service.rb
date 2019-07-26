@@ -6,6 +6,7 @@ class Service < ApplicationRecord
   include Sortable
   include Importable
   include ProjectServicesLoggable
+  include DataFields
 
   serialize :properties, JSON # rubocop:disable Cop/ActiveRecordSerialize
 
@@ -119,7 +120,7 @@ class Service < ApplicationRecord
   end
 
   def self.event_names
-    self.supported_events.map { |event| "#{event}_events" }
+    self.supported_events.map { |event| ServicesHelper.service_event_field_name(event) }
   end
 
   def event_field(event)
@@ -128,7 +129,7 @@ class Service < ApplicationRecord
 
   def api_field_names
     fields.map { |field| field[:name] }
-      .reject { |field_name| field_name =~ /(password|token|key)/ }
+      .reject { |field_name| field_name =~ /(password|token|key|title|description)/ }
   end
 
   def global_fields
@@ -151,7 +152,7 @@ class Service < ApplicationRecord
   end
 
   def self.supported_events
-    %w(push tag_push issue confidential_issue merge_request wiki_page)
+    %w(commit push tag_push issue confidential_issue merge_request wiki_page)
   end
 
   def execute(data)

@@ -2,10 +2,7 @@
 
 class Environment < ApplicationRecord
   include Gitlab::Utils::StrongMemoize
-  # Used to generate random suffixes for the slug
-  LETTERS = ('a'..'z').freeze
-  NUMBERS = ('0'..'9').freeze
-  SUFFIX_CHARS = LETTERS.to_a + NUMBERS.to_a
+  include ReactiveCaching
 
   belongs_to :project, required: true
 
@@ -17,6 +14,7 @@ class Environment < ApplicationRecord
   before_validation :generate_slug, if: ->(env) { env.slug.blank? }
 
   before_save :set_environment_type
+  after_save :clear_reactive_cache!
 
   validates :name,
             presence: true,
@@ -155,15 +153,29 @@ class Environment < ApplicationRecord
   end
 
   def has_terminals?
-    deployment_platform.present? && available? && last_deployment.present?
+    available? && deployment_platform.present? && last_deployment.present?
   end
 
   def terminals
-    deployment_platform.terminals(self) if has_terminals?
+    with_reactive_cache do |data|
+      deployment_platform.terminals(self, data)
+    end
+  end
+
+  def calculate_reactive_cache
+    return unless has_terminals? && !project.pending_delete?
+
+    deployment_platform.calculate_reactive_cache_for(self)
+  end
+
+  def deployment_namespace
+    strong_memoize(:kubernetes_namespace) do
+      deployment_platform&.kubernetes_namespace_for(project)
+    end
   end
 
   def has_metrics?
-    prometheus_adapter&.can_query? && available?
+    available? && prometheus_adapter&.can_query?
   end
 
   def metrics
@@ -184,40 +196,6 @@ class Environment < ApplicationRecord
 
   def slug
     super.presence || generate_slug
-  end
-
-  # An environment name is not necessarily suitable for use in URLs, DNS
-  # or other third-party contexts, so provide a slugified version. A slug has
-  # the following properties:
-  #   * contains only lowercase letters (a-z), numbers (0-9), and '-'
-  #   * begins with a letter
-  #   * has a maximum length of 24 bytes (OpenShift limitation)
-  #   * cannot end with `-`
-  def generate_slug
-    # Lowercase letters and numbers only
-    slugified = +name.to_s.downcase.gsub(/[^a-z0-9]/, '-')
-
-    # Must start with a letter
-    slugified = 'env-' + slugified unless LETTERS.cover?(slugified[0])
-
-    # Repeated dashes are invalid (OpenShift limitation)
-    slugified.gsub!(/\-+/, '-')
-
-    # Maximum length: 24 characters (OpenShift limitation)
-    slugified = slugified[0..23]
-
-    # Cannot end with a dash (Kubernetes label limitation)
-    slugified.chop! if slugified.end_with?('-')
-
-    # Add a random suffix, shortening the current string if necessary, if it
-    # has been slugified. This ensures uniqueness.
-    if slugified != name
-      slugified = slugified[0..16]
-      slugified << '-' unless slugified.end_with?('-')
-      slugified << random_suffix
-    end
-
-    self.slug = slugified
   end
 
   def external_url_for(path, commit_sha)
@@ -257,11 +235,7 @@ class Environment < ApplicationRecord
 
   private
 
-  # Slugifying a name may remove the uniqueness guarantee afforded by it being
-  # based on name (which must be unique). To compensate, we add a random
-  # 6-byte suffix in those circumstances. This is not *guaranteed* uniqueness,
-  # but the chance of collisions is vanishingly small
-  def random_suffix
-    (0..5).map { SUFFIX_CHARS.sample }.join
+  def generate_slug
+    self.slug = Gitlab::Slug::Environment.new(name).generate
   end
 end

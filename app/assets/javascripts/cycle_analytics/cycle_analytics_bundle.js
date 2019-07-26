@@ -5,7 +5,6 @@ import Flash from '../flash';
 import Translate from '../vue_shared/translate';
 import banner from './components/banner.vue';
 import stageCodeComponent from './components/stage_code_component.vue';
-import stagePlanComponent from './components/stage_plan_component.vue';
 import stageComponent from './components/stage_component.vue';
 import stageReviewComponent from './components/stage_review_component.vue';
 import stageStagingComponent from './components/stage_staging_component.vue';
@@ -18,6 +17,7 @@ Vue.use(Translate);
 
 export default () => {
   const OVERVIEW_DIALOG_COOKIE = 'cycle_analytics_help_dismissed';
+  const cycleAnalyticsEl = document.querySelector('#cycle-analytics');
 
   // eslint-disable-next-line no-new
   new Vue({
@@ -26,7 +26,7 @@ export default () => {
     components: {
       banner,
       'stage-issue-component': stageComponent,
-      'stage-plan-component': stagePlanComponent,
+      'stage-plan-component': stageComponent,
       'stage-code-component': stageCodeComponent,
       'stage-test-component': stageTestComponent,
       'stage-review-component': stageReviewComponent,
@@ -34,7 +34,6 @@ export default () => {
       'stage-production-component': stageComponent,
     },
     data() {
-      const cycleAnalyticsEl = document.querySelector('#cycle-analytics');
       const cycleAnalyticsService = new CycleAnalyticsService({
         requestPath: cycleAnalyticsEl.dataset.requestPath,
       });
@@ -57,7 +56,13 @@ export default () => {
       },
     },
     created() {
-      this.fetchCycleAnalyticsData();
+      // Conditional check placed here to prevent this method from being called on the
+      // new Cycle Analytics page (i.e. the new page will be initialized blank and only
+      // after a group is selected the cycle analyitcs data will be fetched). Once the
+      // old (current) page has been removed this entire created method as well as the
+      // variable itself can be completely removed.
+      // Follow up issue: https://gitlab.com/gitlab-org/gitlab-ce/issues/64490
+      if (cycleAnalyticsEl.dataset.requestPath) this.fetchCycleAnalyticsData();
     },
     methods: {
       handleError() {

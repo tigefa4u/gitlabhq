@@ -89,6 +89,15 @@ Supported:
   - In `script`, it will work in the following lines of `script`.
   - In `after_script`, it will work in following lines of `after_script`.
 
+In the case of `after_script` scripts, they can:
+
+- Only use variables defined before the script within the same `after_script`
+  section.
+- Not use variables defined in `before_script` and `script`.
+
+These restrictions are because `after_script` scripts are executed in a
+[separated shell context](../yaml/README.md#before_script-and-after_script).
+
 ## Persisted variables
 
 NOTE: **Note:**

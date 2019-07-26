@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe API::Helpers::Pagination do
@@ -114,7 +116,7 @@ describe API::Helpers::Pagination do
             expect(paginated_relation.order_values).to be_present
             expect(paginated_relation.order_values.size).to eq(1)
             expect(paginated_relation.order_values.first).to be_descending
-            expect(paginated_relation.order_values.first.expr.name).to eq :id
+            expect(paginated_relation.order_values.first.expr.name).to eq 'id'
           end
         end
 
@@ -151,9 +153,9 @@ describe API::Helpers::Pagination do
             expect(paginated_relation.order_values).to be_present
             expect(paginated_relation.order_values.size).to eq(2)
             expect(paginated_relation.order_values.first).to be_descending
-            expect(paginated_relation.order_values.first.expr.name).to eq :name
+            expect(paginated_relation.order_values.first.expr.name).to eq 'name'
             expect(paginated_relation.order_values.second).to be_descending
-            expect(paginated_relation.order_values.second.expr.name).to eq :id
+            expect(paginated_relation.order_values.second.expr.name).to eq 'id'
           end
 
           it 'returns the right records (first page)' do
@@ -341,7 +343,7 @@ describe API::Helpers::Pagination do
           expect(resource.order_values).to be_empty
           expect(paginated_relation.order_values).to be_present
           expect(paginated_relation.order_values.first).to be_ascending
-          expect(paginated_relation.order_values.first.expr.name).to eq :id
+          expect(paginated_relation.order_values.first.expr.name).to eq 'id'
         end
 
         it 'is present it does not add anything' do
@@ -349,7 +351,7 @@ describe API::Helpers::Pagination do
 
           expect(paginated_relation.order_values).to be_present
           expect(paginated_relation.order_values.first).to be_descending
-          expect(paginated_relation.order_values.first.expr.name).to eq :created_at
+          expect(paginated_relation.order_values.first.expr.name).to eq 'created_at'
         end
       end
     end

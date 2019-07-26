@@ -12,6 +12,10 @@ describe AutoMerge::BaseService do
   describe '#execute' do
     subject { service.execute(merge_request) }
 
+    before do
+      allow(AutoMergeProcessWorker).to receive(:perform_async) {}
+    end
+
     it 'sets properies to the merge request' do
       subject
 
@@ -55,6 +59,11 @@ describe AutoMerge::BaseService do
     context 'when strategy is merge when pipeline succeeds' do
       let(:service) { AutoMerge::MergeWhenPipelineSucceedsService.new(project, user) }
 
+      before do
+        pipeline = build(:ci_pipeline)
+        allow(merge_request).to receive(:actual_head_pipeline) { pipeline }
+      end
+
       it 'sets the auto merge strategy' do
         subject
 
@@ -64,6 +73,12 @@ describe AutoMerge::BaseService do
 
       it 'returns activated strategy name' do
         is_expected.to eq(AutoMergeService::STRATEGY_MERGE_WHEN_PIPELINE_SUCCEEDS.to_sym)
+      end
+
+      it 'calls AutoMergeProcessWorker' do
+        expect(AutoMergeProcessWorker).to receive(:perform_async).with(merge_request.id).once
+
+        subject
       end
     end
 
@@ -82,11 +97,31 @@ describe AutoMerge::BaseService do
     end
   end
 
-  describe '#cancel' do
-    subject { service.cancel(merge_request) }
+  describe '#update' do
+    subject { service.update(merge_request) }
 
     let(:merge_request) { create(:merge_request, :merge_when_pipeline_succeeds) }
 
+    context 'when merge params are specified' do
+      let(:params) do
+        {
+          'commit_message' => "Merge branch 'patch-12' into 'master'",
+          'sha' => "200fcc9c260f7219eaf0daba87d818f0922c5b18",
+          'should_remove_source_branch' => false,
+          'squash' => false,
+          'squash_commit_message' => "Update README.md"
+        }
+      end
+
+      it 'updates merge params' do
+        expect { subject }.to change {
+          merge_request.reload.merge_params.slice(*params.keys)
+        }.from({}).to(params)
+      end
+    end
+  end
+
+  shared_examples_for 'Canceled or Dropped' do
     it 'removes properies from the merge request' do
       subject
 
@@ -134,10 +169,44 @@ describe AutoMerge::BaseService do
       it 'does not yield block' do
         expect { |b| service.execute(merge_request, &b) }.not_to yield_control
       end
+    end
+  end
+
+  describe '#cancel' do
+    subject { service.cancel(merge_request) }
+
+    let(:merge_request) { create(:merge_request, :merge_when_pipeline_succeeds) }
+
+    it_behaves_like 'Canceled or Dropped'
+
+    context 'when failed to save' do
+      before do
+        allow(merge_request).to receive(:save) { false }
+      end
 
       it 'returns error status' do
         expect(subject[:status]).to eq(:error)
         expect(subject[:message]).to eq("Can't cancel the automatic merge")
+      end
+    end
+  end
+
+  describe '#abort' do
+    subject { service.abort(merge_request, reason) }
+
+    let(:merge_request) { create(:merge_request, :merge_when_pipeline_succeeds) }
+    let(:reason) { 'an error'}
+
+    it_behaves_like 'Canceled or Dropped'
+
+    context 'when failed to save' do
+      before do
+        allow(merge_request).to receive(:save) { false }
+      end
+
+      it 'returns error status' do
+        expect(subject[:status]).to eq(:error)
+        expect(subject[:message]).to eq("Can't abort the automatic merge")
       end
     end
   end

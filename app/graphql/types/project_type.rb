@@ -17,6 +17,7 @@ module Types
     field :name, GraphQL::STRING_TYPE, null: false
 
     field :description, GraphQL::STRING_TYPE, null: true
+    markdown_field :description_html, null: true
 
     field :tag_list, GraphQL::STRING_TYPE, null: true
 
@@ -25,7 +26,7 @@ module Types
     field :web_url, GraphQL::STRING_TYPE, null: true
 
     field :star_count, GraphQL::INT_TYPE, null: false
-    field :forks_count, GraphQL::INT_TYPE, null: false
+    field :forks_count, GraphQL::INT_TYPE, null: false, calls_gitaly: true # 4 times
 
     field :created_at, Types::TimeType, null: true
     field :last_activity_at, Types::TimeType, null: true
@@ -39,7 +40,7 @@ module Types
     field :lfs_enabled, GraphQL::BOOLEAN_TYPE, null: true
     field :merge_requests_ff_only_enabled, GraphQL::BOOLEAN_TYPE, null: true
 
-    field :avatar_url, GraphQL::STRING_TYPE, null: true, resolve: -> (project, args, ctx) do
+    field :avatar_url, GraphQL::STRING_TYPE, null: true, calls_gitaly: true, resolve: -> (project, args, ctx) do
       project.avatar_url(only_path: false)
     end
 
@@ -66,14 +67,14 @@ module Types
     field :only_allow_merge_if_all_discussions_are_resolved, GraphQL::BOOLEAN_TYPE, null: true
     field :printing_merge_request_link_enabled, GraphQL::BOOLEAN_TYPE, null: true
 
-    field :namespace, Types::NamespaceType, null: false
+    field :namespace, Types::NamespaceType, null: true
     field :group, Types::GroupType, null: true
 
     field :statistics, Types::ProjectStatisticsType,
-          null: false,
+          null: true,
           resolve: -> (obj, _args, _ctx) { Gitlab::Graphql::Loaders::BatchProjectStatisticsLoader.new(obj.id).find }
 
-    field :repository, Types::RepositoryType, null: false
+    field :repository, Types::RepositoryType, null: true
 
     field :merge_requests,
           Types::MergeRequestType.connection_type,

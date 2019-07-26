@@ -693,4 +693,30 @@ describe 'project routing' do
 
     it_behaves_like 'redirecting a legacy project path', "/gitlab/gitlabhq/settings/repository", "/gitlab/gitlabhq/-/settings/repository"
   end
+
+  describe Projects::TemplatesController, 'routing' do
+    describe '#show' do
+      def show_with_template_type(template_type)
+        "/gitlab/gitlabhq/templates/#{template_type}/template_name"
+      end
+
+      it 'routes when :template_type is `merge_request`' do
+        expect(get(show_with_template_type('merge_request'))).to route_to('projects/templates#show', namespace_id: 'gitlab', project_id: 'gitlabhq', template_type: 'merge_request', key: 'template_name', format: 'json')
+      end
+
+      it 'routes when :template_type is `issue`' do
+        expect(get(show_with_template_type('issue'))).to route_to('projects/templates#show', namespace_id: 'gitlab', project_id: 'gitlabhq', template_type: 'issue', key: 'template_name', format: 'json')
+      end
+
+      it 'routes to application#route_not_found when :template_type is unknown' do
+        expect(get(show_with_template_type('invalid'))).to route_to('application#route_not_found', unmatched_route: 'gitlab/gitlabhq/templates/invalid/template_name')
+      end
+    end
+  end
+
+  describe Projects::DeployTokensController, 'routing' do
+    it 'routes to deploy_tokens#revoke' do
+      expect(put("/gitlab/gitlabhq/-/deploy_tokens/1/revoke")).to route_to("projects/deploy_tokens#revoke", namespace_id: 'gitlab', project_id: 'gitlabhq', id: '1')
+    end
+  end
 end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitaly::Server do
@@ -45,6 +47,12 @@ describe Gitaly::Server do
         expect(server).not_to be_writeable
       end
     end
+  end
+
+  describe "#filesystem_type" do
+    subject { server.filesystem_type }
+
+    it { is_expected.to be_present }
   end
 
   describe 'request memoization' do

@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import paginationComp from '~/vue_shared/components/table_pagination.vue';
+import paginationComp from '~/vue_shared/components/pagination/table_pagination.vue';
 
 describe('Pagination component', () => {
   let component;
@@ -217,7 +217,7 @@ describe('Pagination component', () => {
           change: spy,
         });
 
-        expect(component.$el.querySelector('.js-next-button').textContent.trim()).toEqual('Next');
+        expect(component.$el.querySelector('.js-next-button').textContent.trim()).toEqual('Next ›');
 
         component.$el.querySelector('.js-next-button .page-link').click();
 
@@ -237,7 +237,7 @@ describe('Pagination component', () => {
           change: spy,
         });
 
-        expect(component.$el.querySelector('.js-next-button').textContent.trim()).toEqual('Next');
+        expect(component.$el.querySelector('.js-next-button').textContent.trim()).toEqual('Next ›');
 
         component.$el.querySelector('.js-next-button .page-link').click();
 

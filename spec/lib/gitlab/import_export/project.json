@@ -2775,7 +2775,8 @@
           "action": 1,
           "author_id": 1
         }
-      ]
+      ],
+      "approvals_before_merge": 1
     },
     {
       "id": 26,
@@ -6223,7 +6224,10 @@
               "erased_by_id": null,
               "erased_at": null,
               "type": "Ci::Build",
-              "token": "abcd"
+              "token": "abcd",
+              "artifacts_file_store": 1,
+              "artifacts_metadata_store": 1,
+              "artifacts_size": 10
             },
             {
               "id": 72,
@@ -6627,8 +6631,16 @@
       "id": 123,
       "token": "cdbfasdf44a5958c83654733449e585",
       "project_id": 5,
+      "owner_id": 1,
       "created_at": "2017-01-16T15:25:28.637Z",
       "updated_at": "2017-01-16T15:25:28.637Z"
+    },
+    {
+      "id": 456,
+      "token": "33a66349b5ad01fc00174af87804e40",
+      "project_id": 5,
+      "created_at": "2017-01-16T15:25:29.637Z",
+      "updated_at": "2017-01-16T15:25:29.637Z"
     }
   ],
   "deploy_keys": [],
@@ -6757,7 +6769,7 @@
     },
     {
       "id": 95,
-      "title": "JIRA",
+      "title": "Jira",
       "project_id": 5,
       "created_at": "2016-06-14T15:01:51.255Z",
       "updated_at": "2016-06-14T15:01:51.255Z",

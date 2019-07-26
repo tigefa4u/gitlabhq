@@ -145,6 +145,9 @@ DELETE /projects/:id/registry/repositories/:repository_id/tags/:tag_name
 curl --request DELETE --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/5/registry/repositories/2/tags/v10.0.0"
 ```
 
+This action does not delete blobs. In order to delete them and recycle disk space,
+[run the garbage collection](https://docs.gitlab.com/omnibus/maintenance/README.html#removing-unused-layers-not-referenced-by-manifests).
+
 ## Delete repository tags in bulk
 
 Delete repository tags in bulk based on given criteria.
@@ -174,6 +177,8 @@ This API call performs the following operations:
 These operations are executed asynchronously and it might
 take time to get executed. You can run this at most
 once an hour for a given container repository.
+This action does not delete blobs. In order to delete them and recycle disk space,
+[run the garbage collection](https://docs.gitlab.com/omnibus/maintenance/README.html#removing-unused-layers-not-referenced-by-manifests).
 
 NOTE: **Note:**
 Due to a [Docker Distribution deficiency](https://gitlab.com/gitlab-org/gitlab-ce/issues/21405),
@@ -188,13 +193,13 @@ Examples:
    curl --request DELETE --data 'name_regex=[0-9a-z]{40}' --data 'keep_n=5' --data 'older_than=2d' --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/5/registry/repositories/2/tags"
    ```
 
-2. Remove all tags, but keep always the latest 5:
+1. Remove all tags, but keep always the latest 5:
 
    ```bash
    curl --request DELETE --data 'name_regex=.*' --data 'keep_n=5' --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/5/registry/repositories/2/tags"
    ```
 
-3. Remove all tags that are older than 1 month:
+1. Remove all tags that are older than 1 month:
 
    ```bash
    curl --request DELETE --data 'name_regex=.*' --data 'older_than=1month' --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/5/registry/repositories/2/tags"

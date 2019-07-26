@@ -158,6 +158,8 @@ class Note < ApplicationRecord
       Discussion.build_collection(all.includes(:noteable).fresh, context_noteable)
     end
 
+    # Note: Where possible consider using Discussion#lazy_find to return
+    # Discussions in order to benefit from having records batch loaded.
     def find_discussion(discussion_id)
       notes = where(discussion_id: discussion_id).fresh.to_a
 
@@ -290,7 +292,7 @@ class Note < ApplicationRecord
   end
 
   def special_role=(role)
-    raise "Role is undefined, #{role} not found in #{SpecialRole.values}" unless SpecialRole.values.include?(role)
+    raise "Role is undefined, #{role} not found in #{SpecialRole.values}" unless SpecialRole.value?(role)
 
     @special_role = role
   end
@@ -342,7 +344,7 @@ class Note < ApplicationRecord
   end
 
   def to_ability_name
-    for_snippet? ? noteable.class.name.underscore : noteable_type.underscore
+    for_snippet? ? noteable.class.name.underscore : noteable_type.demodulize.underscore
   end
 
   def can_be_discussion_note?
@@ -452,12 +454,12 @@ class Note < ApplicationRecord
 
     noteable_object&.touch
 
-    # We return the noteable object so we can re-use it in EE for ElasticSearch.
+    # We return the noteable object so we can re-use it in EE for Elasticsearch.
     noteable_object
   end
 
   def banzai_render_context(field)
-    super.merge(noteable: noteable)
+    super.merge(noteable: noteable, system_note: system?)
   end
 
   def retrieve_upload(_identifier, paths)

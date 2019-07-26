@@ -1,11 +1,7 @@
 # frozen_string_literal: true
 
 class ProjectAutoDevops < ApplicationRecord
-  include IgnorableColumn
-
-  ignore_column :domain
-
-  belongs_to :project
+  belongs_to :project, inverse_of: :auto_devops
 
   enum deploy_strategy: {
     continuous: 0,

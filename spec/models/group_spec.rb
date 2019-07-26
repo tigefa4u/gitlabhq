@@ -71,7 +71,7 @@ describe Group do
       end
     end
 
-    describe '#notification_settings', :nested_groups do
+    describe '#notification_settings' do
       let(:user) { create(:user) }
       let(:group) { create(:group) }
       let(:sub_group) { create(:group, parent_id: group.id) }
@@ -91,6 +91,43 @@ describe Group do
           expect do
             sub_group.destroy
           end.to change { NotificationSetting.count }.by(-1)
+        end
+      end
+    end
+
+    describe '#notification_email_for' do
+      let(:user) { create(:user) }
+      let(:group) { create(:group) }
+      let(:subgroup) { create(:group, parent: group) }
+
+      let(:group_notification_email) { 'user+group@example.com' }
+      let(:subgroup_notification_email) { 'user+subgroup@example.com' }
+
+      subject { subgroup.notification_email_for(user) }
+
+      context 'when both group notification emails are set' do
+        it 'returns subgroup notification email' do
+          create(:notification_setting, user: user, source: group, notification_email: group_notification_email)
+          create(:notification_setting, user: user, source: subgroup, notification_email: subgroup_notification_email)
+
+          is_expected.to eq(subgroup_notification_email)
+        end
+      end
+
+      context 'when subgroup notification email is blank' do
+        it 'returns parent group notification email' do
+          create(:notification_setting, user: user, source: group, notification_email: group_notification_email)
+          create(:notification_setting, user: user, source: subgroup, notification_email: '')
+
+          is_expected.to eq(group_notification_email)
+        end
+      end
+
+      context 'when only the parent group notification email is set' do
+        it 'returns parent group notification email' do
+          create(:notification_setting, user: user, source: group, notification_email: group_notification_email)
+
+          is_expected.to eq(group_notification_email)
         end
       end
     end
@@ -200,7 +237,7 @@ describe Group do
         it { is_expected.to match_array([private_group, internal_group, group]) }
       end
 
-      context 'when user is a member of private subgroup', :postgresql do
+      context 'when user is a member of private subgroup' do
         let!(:private_subgroup) { create(:group, :private, parent: private_group) }
 
         before do
@@ -379,7 +416,7 @@ describe Group do
       it { expect(group.last_owner?(@members[:owner])).to be_falsy }
     end
 
-    context 'with owners from a parent', :postgresql do
+    context 'with owners from a parent' do
       before do
         parent_group = create(:group)
         create(:group_member, :owner, group: parent_group)
@@ -487,7 +524,7 @@ describe Group do
     it { expect(subject.parent).to be_kind_of(described_class) }
   end
 
-  describe '#members_with_parents', :nested_groups do
+  describe '#members_with_parents' do
     let!(:group) { create(:group, :nested) }
     let!(:maintainer) { group.parent.add_user(create(:user), GroupMember::MAINTAINER) }
     let!(:developer) { group.add_user(create(:user), GroupMember::DEVELOPER) }
@@ -498,7 +535,7 @@ describe Group do
     end
   end
 
-  describe '#direct_and_indirect_members', :nested_groups do
+  describe '#direct_and_indirect_members' do
     let!(:group) { create(:group, :nested) }
     let!(:sub_group) { create(:group, parent: group) }
     let!(:maintainer) { group.parent.add_user(create(:user), GroupMember::MAINTAINER) }
@@ -515,7 +552,7 @@ describe Group do
     end
   end
 
-  describe '#users_with_descendants', :nested_groups do
+  describe '#users_with_descendants' do
     let(:user_a) { create(:user) }
     let(:user_b) { create(:user) }
 
@@ -534,7 +571,7 @@ describe Group do
     end
   end
 
-  describe '#direct_and_indirect_users', :nested_groups do
+  describe '#direct_and_indirect_users' do
     let(:user_a) { create(:user) }
     let(:user_b) { create(:user) }
     let(:user_c) { create(:user) }
@@ -564,7 +601,7 @@ describe Group do
     end
   end
 
-  describe '#project_users_with_descendants', :nested_groups do
+  describe '#project_users_with_descendants' do
     let(:user_a) { create(:user) }
     let(:user_b) { create(:user) }
     let(:user_c) { create(:user) }
@@ -603,40 +640,96 @@ describe Group do
   describe '#update_two_factor_requirement' do
     let(:user) { create(:user) }
 
-    before do
-      group.add_user(user, GroupMember::OWNER)
-    end
-
-    it 'is called when require_two_factor_authentication is changed' do
-      expect_any_instance_of(User).to receive(:update_two_factor_requirement)
-
-      group.update!(require_two_factor_authentication: true)
-    end
-
-    it 'is called when two_factor_grace_period is changed' do
-      expect_any_instance_of(User).to receive(:update_two_factor_requirement)
-
-      group.update!(two_factor_grace_period: 23)
-    end
-
-    it 'is not called when other attributes are changed' do
-      expect_any_instance_of(User).not_to receive(:update_two_factor_requirement)
-
-      group.update!(description: 'foobar')
-    end
-
-    it 'calls #update_two_factor_requirement on each group member' do
-      other_user = create(:user)
-      group.add_user(other_user, GroupMember::OWNER)
-
-      calls = 0
-      allow_any_instance_of(User).to receive(:update_two_factor_requirement) do
-        calls += 1
+    context 'group membership' do
+      before do
+        group.add_user(user, GroupMember::OWNER)
       end
 
-      group.update!(require_two_factor_authentication: true, two_factor_grace_period: 23)
+      it 'is called when require_two_factor_authentication is changed' do
+        expect_any_instance_of(User).to receive(:update_two_factor_requirement)
 
-      expect(calls).to eq 2
+        group.update!(require_two_factor_authentication: true)
+      end
+
+      it 'is called when two_factor_grace_period is changed' do
+        expect_any_instance_of(User).to receive(:update_two_factor_requirement)
+
+        group.update!(two_factor_grace_period: 23)
+      end
+
+      it 'is not called when other attributes are changed' do
+        expect_any_instance_of(User).not_to receive(:update_two_factor_requirement)
+
+        group.update!(description: 'foobar')
+      end
+
+      it 'calls #update_two_factor_requirement on each group member' do
+        other_user = create(:user)
+        group.add_user(other_user, GroupMember::OWNER)
+
+        calls = 0
+        allow_any_instance_of(User).to receive(:update_two_factor_requirement) do
+          calls += 1
+        end
+
+        group.update!(require_two_factor_authentication: true, two_factor_grace_period: 23)
+
+        expect(calls).to eq 2
+      end
+    end
+
+    context 'sub groups and projects' do
+      it 'enables two_factor_requirement for group member' do
+        group.add_user(user, GroupMember::OWNER)
+
+        group.update!(require_two_factor_authentication: true)
+
+        expect(user.reload.require_two_factor_authentication_from_group).to be_truthy
+      end
+
+      context 'expanded group members' do
+        let(:indirect_user) { create(:user) }
+
+        it 'enables two_factor_requirement for subgroup member' do
+          subgroup = create(:group, :nested, parent: group)
+          subgroup.add_user(indirect_user, GroupMember::OWNER)
+
+          group.update!(require_two_factor_authentication: true)
+
+          expect(indirect_user.reload.require_two_factor_authentication_from_group).to be_truthy
+        end
+
+        it 'does not enable two_factor_requirement for ancestor group member' do
+          ancestor_group = create(:group)
+          ancestor_group.add_user(indirect_user, GroupMember::OWNER)
+          group.update!(parent: ancestor_group)
+
+          group.update!(require_two_factor_authentication: true)
+
+          expect(indirect_user.reload.require_two_factor_authentication_from_group).to be_falsey
+        end
+      end
+
+      context 'project members' do
+        it 'does not enable two_factor_requirement for child project member' do
+          project = create(:project, group: group)
+          project.add_maintainer(user)
+
+          group.update!(require_two_factor_authentication: true)
+
+          expect(user.reload.require_two_factor_authentication_from_group).to be_falsey
+        end
+
+        it 'does not enable two_factor_requirement for subgroup child project member' do
+          subgroup = create(:group, :nested, parent: group)
+          project = create(:project, group: subgroup)
+          project.add_maintainer(user)
+
+          group.update!(require_two_factor_authentication: true)
+
+          expect(user.reload.require_two_factor_authentication_from_group).to be_falsey
+        end
+      end
     end
   end
 
@@ -727,7 +820,7 @@ describe Group do
       it_behaves_like 'ref is protected'
     end
 
-    context 'when group has children', :postgresql do
+    context 'when group has children' do
       let(:group_child)      { create(:group, parent: group) }
       let(:group_child_2)    { create(:group, parent: group_child) }
       let(:group_child_3)    { create(:group, parent: group_child_2) }
@@ -750,7 +843,7 @@ describe Group do
     end
   end
 
-  describe '#highest_group_member', :nested_groups do
+  describe '#highest_group_member' do
     let(:nested_group) { create(:group, parent: group) }
     let(:nested_group_2) { create(:group, parent: nested_group) }
     let(:user) { create(:user) }
@@ -810,35 +903,6 @@ describe Group do
     end
   end
 
-  describe '#group_clusters_enabled?' do
-    before do
-      # Override global stub in spec/spec_helper.rb
-      expect(Feature).to receive(:enabled?).and_call_original
-    end
-
-    subject { group.group_clusters_enabled? }
-
-    it { is_expected.to be_truthy }
-
-    context 'explicitly disabled for root ancestor' do
-      before do
-        feature = Feature.get(:group_clusters)
-        feature.disable(group.root_ancestor)
-      end
-
-      it { is_expected.to be_falsey }
-    end
-
-    context 'explicitly disabled for root ancestor' do
-      before do
-        feature = Feature.get(:group_clusters)
-        feature.enable(group.root_ancestor)
-      end
-
-      it { is_expected.to be_truthy }
-    end
-  end
-
   describe '#first_auto_devops_config' do
     using RSpec::Parameterized::TableSyntax
 
@@ -868,7 +932,7 @@ describe Group do
       it { is_expected.to eq(config) }
     end
 
-    context 'with parent groups', :nested_groups do
+    context 'with parent groups' do
       where(:instance_value, :parent_value, :group_value, :config) do
         # Instance level enabled
         true | nil   | nil    | { status: true, scope: :instance }
@@ -965,6 +1029,13 @@ describe Group do
       group = create(:group, project_creation_level: nil)
 
       expect(group.project_creation_level).to eq(Gitlab::CurrentSettings.default_project_creation)
+    end
+  end
+
+  describe 'subgroup_creation_level' do
+    it 'defaults to maintainers' do
+      expect(group.subgroup_creation_level)
+        .to eq(Gitlab::Access::MAINTAINER_SUBGROUP_ACCESS)
     end
   end
 end

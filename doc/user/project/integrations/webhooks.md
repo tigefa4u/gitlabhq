@@ -24,7 +24,7 @@ to the webhook URL.
 
 In most cases, you'll need to set up your own [webhook receiver](#example-webhook-receiver)
 to receive information from GitLab, and send it to another app, according to your needs.
-We already have a [built-in receiver](http://docs.gitlab.com/ce/project_services/slack.html)
+We already have a [built-in receiver](slack.md)
 for sending [Slack](https://api.slack.com/incoming-webhooks) notifications _per project_.
 
 ## Overview
@@ -58,13 +58,13 @@ Navigate to the webhooks page by going to your project's
 If you are writing your own endpoint (web server) that will receive
 GitLab webhooks keep in mind the following things:
 
--   Your endpoint should send its HTTP response as fast as possible. If
-    you wait too long, GitLab may decide the hook failed and retry it.
--   Your endpoint should ALWAYS return a valid HTTP response. If you do
-    not do this then GitLab will think the hook failed and retry it.
-    Most HTTP libraries take care of this for you automatically but if
-    you are writing a low-level hook this is important to remember.
--   GitLab ignores the HTTP status code returned by your endpoint.
+- Your endpoint should send its HTTP response as fast as possible. If
+  you wait too long, GitLab may decide the hook failed and retry it.
+- Your endpoint should ALWAYS return a valid HTTP response. If you do
+  not do this then GitLab will think the hook failed and retry it.
+  Most HTTP libraries take care of this for you automatically but if
+  you are writing a low-level hook this is important to remember.
+- GitLab ignores the HTTP status code returned by your endpoint.
 
 ## Secret token
 
@@ -326,7 +326,7 @@ X-Gitlab-Event: Issue Hook
       "current": 1
     },
     "updated_at": {
-      "previous": "2017-09-15 16:50:55 UTC", 
+      "previous": "2017-09-15 16:50:55 UTC",
       "current": "2017-09-15 16:52:00 UTC"
     },
     "labels": {
@@ -653,7 +653,33 @@ X-Gitlab-Event: Note Hook
     "description": "test",
     "milestone_id": null,
     "state": "closed",
-    "iid": 17
+    "iid": 17,
+    "labels": [
+      {
+        "id": 25,
+        "title": "Afterpod",
+        "color": "#3e8068",
+        "project_id": null,
+        "created_at": "2019-06-05T14:32:20.211Z",
+        "updated_at": "2019-06-05T14:32:20.211Z",
+        "template": false,
+        "description": null,
+        "type": "GroupLabel",
+        "group_id": 4
+      },
+      {
+        "id": 86,
+        "title": "Element",
+        "color": "#231afe",
+        "project_id": 4,
+        "created_at": "2019-06-05T14:32:20.637Z",
+        "updated_at": "2019-06-05T14:32:20.637Z",
+        "template": false,
+        "description": null,
+        "type": "ProjectLabel",
+        "group_id": null
+      }
+    ],
   }
 }
 ```
@@ -862,7 +888,7 @@ X-Gitlab-Event: Merge Request Hook
       "current": 1
     },
     "updated_at": {
-      "previous": "2017-09-15 16:50:55 UTC", 
+      "previous": "2017-09-15 16:50:55 UTC",
       "current":"2017-09-15 16:52:00 UTC"
     },
     "labels": {

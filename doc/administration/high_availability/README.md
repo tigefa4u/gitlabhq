@@ -1,3 +1,7 @@
+---
+type: reference, concepts
+---
+
 # Scaling and High Availability
 
 GitLab supports several different types of clustering and high-availability.
@@ -26,8 +30,7 @@ experience with GitLab.com and Enterprise Edition on-premises customers.
 
 For a detailed insight into how GitLab scales and configures GitLab.com, you can
 watch [this 1 hour Q&A](https://www.youtube.com/watch?v=uCU8jdYzpac)
-with [John Northrup](https://gitlab.com/northrup), one of our infrastructure
-engineers, and live questions coming in from some of our customers.
+with [John Northrup](https://gitlab.com/northrup), and live questions coming in from some of our customers.
 
 ## GitLab Components
 
@@ -66,6 +69,7 @@ larger one.
 - 1 Redis node
 - 1 NFS/Gitaly storage server
 - 2 or more GitLab application nodes (Unicorn, Workhorse, Sidekiq)
+- 1 Monitoring node (Prometheus, Grafana)
 
 #### Installation Instructions
 
@@ -77,6 +81,7 @@ you can continue with the next step.
 1. [Redis](redis.md#redis-in-a-scaled-environment)
 1. [Gitaly](gitaly.md) (recommended) or [NFS](nfs.md)
 1. [GitLab application nodes](gitlab.md)
+1. [Monitoring node (Prometheus and Grafana)](monitoring_node.md)
 
 ### Full Scaling
 
@@ -91,6 +96,7 @@ in size, indicating that there is contention or not enough resources.
 - 2 or more NFS/Gitaly storage servers
 - 2 or more Sidekiq nodes
 - 2 or more GitLab application nodes (Unicorn, Workhorse)
+- 1 Monitoring node (Prometheus, Grafana)
 
 ## High Availability Architecture Examples
 
@@ -134,6 +140,7 @@ the contention.
 - 3 Consul/Sentinel nodes
 - 2 or more GitLab application nodes (Unicorn, Workhorse, Sidekiq, PGBouncer)
 - 1 NFS/Gitaly server
+- 1 Monitoring node (Prometheus, Grafana)
 
 ![Horizontal architecture diagram](img/horizontal.png)
 
@@ -159,21 +166,21 @@ contention due to certain workloads.
 
 - **Status:** Work-in-progress
 - **Supported Users (approximate):** 10,000
-- **Related Issues:** [gitlab-com/support/support-team-meta#1513](https://gitlab.com/gitlab-com/support/support-team-meta/issues/1513), 
+- **Related Issues:** [gitlab-com/support/support-team-meta#1513](https://gitlab.com/gitlab-com/support/support-team-meta/issues/1513),
  [gitlab-org/quality/team-tasks#110](https://gitlab.com/gitlab-org/quality/team-tasks/issues/110)
 
 The Support and Quality teams are in the process of building and performance testing
 an environment that will support about 10,000 users. The specifications below
-are a work-in-progress representation of the work so far. Quality will be 
-certifying this environment in FY20-Q2. The specifications may be adjusted 
-prior to certification based on performance testing. 
+are a work-in-progress representation of the work so far. Quality will be
+certifying this environment in FY20-Q2. The specifications may be adjusted
+prior to certification based on performance testing.
 
-- 3 PostgreSQL - 4 CPU, 8GB RAM
+- 3 PostgreSQL - 4 CPU, 8GB RAM per node
 - 1 PgBouncer - 2 CPU, 4GB RAM
-- 2 Redis - 2 CPU, 8GB RAM
-- 3 Consul/Sentinel - 2 CPU, 2GB RAM
-- 4 Sidekiq - 4 CPU, 8GB RAM
-- 5 GitLab application nodes - 20 CPU, 64GB RAM
+- 2 Redis - 2 CPU, 8GB RAM per node
+- 3 Consul/Sentinel - 2 CPU, 2GB RAM per node
+- 4 Sidekiq - 4 CPU, 8GB RAM per node
+- 5 GitLab application nodes - 20 CPU, 64GB RAM per node
 - 1 Gitaly - 20 CPU, 64GB RAM
 - 1 Monitoring node - 4 CPU, 8GB RAM
 
@@ -193,6 +200,7 @@ with the added complexity of many more nodes to configure, manage and monitor.
 - 2 or more API nodes (All requests to `/api`)
 - 2 or more Web nodes (All other web requests)
 - 2 or more NFS/Gitaly servers
+- 1 Monitoring node (Prometheus, Grafana)
 
 ![Fully Distributed architecture diagram](img/fully-distributed.png)
 
@@ -206,4 +214,4 @@ separately:
    1. [NFS Client and Host setup](nfs_host_client_setup.md)
 1. [Configure the GitLab application servers](gitlab.md)
 1. [Configure the load balancers](load_balancer.md)
-
+1. [Monitoring node (Prometheus and Grafana)](monitoring_node.md)

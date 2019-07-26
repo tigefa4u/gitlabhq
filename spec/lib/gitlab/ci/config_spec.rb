@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::Ci::Config do
@@ -85,6 +87,27 @@ describe Gitlab::Ci::Config do
           expect { config }.to raise_error(
             described_class::ConfigError,
             /Invalid configuration format/
+          )
+        end
+      end
+    end
+
+    context 'when yml is too big' do
+      let(:yml) do
+        <<~YAML
+          --- &1
+          - hi
+          - *1
+        YAML
+      end
+
+      describe '.new' do
+        it 'raises error' do
+          expect(Gitlab::Sentry).to receive(:track_exception)
+
+          expect { config }.to raise_error(
+            described_class::ConfigError,
+            /The parsed YAML is too big/
           )
         end
       end

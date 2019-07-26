@@ -1,7 +1,3 @@
-/*
- *  Scss to help with bootstrap 3 to 4 migration
- */
-
 $text-color: $gl-text-color;
 
 $brand-primary: $blue-500;
@@ -18,6 +14,9 @@ $input-border: $border-color;
 $padding-base-vertical: $gl-vert-padding;
 $padding-base-horizontal: $gl-padding;
 
+/*
+ *  Scss to help with bootstrap 3 to 4 migration
+ */
 body,
 .form-control,
 .search form {
@@ -145,11 +144,6 @@ table {
 .no-pointer-events {
   // Fix bootstrap4 bug whereby tooltips flicker when they are hovered over their borders
   pointer-events: none;
-}
-
-.popover,
-.popover-header {
-  font-size: 14px;
 }
 
 @each $breakpoint in map-keys($grid-breakpoints) {

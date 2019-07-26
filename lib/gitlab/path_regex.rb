@@ -53,7 +53,6 @@ module Gitlab
       sent_notifications
       slash-command-logo.png
       snippets
-      u
       unsubscribes
       uploads
       users
@@ -174,6 +173,10 @@ module Gitlab
 
     def project_git_route_regex
       @project_git_route_regex ||= /#{project_route_regex}\.git/.freeze
+    end
+
+    def project_wiki_git_route_regex
+      @project_wiki_git_route_regex ||= /#{PATH_REGEX_STR}\.wiki/.freeze
     end
 
     def full_namespace_path_regex

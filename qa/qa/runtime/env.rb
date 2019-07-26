@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'gitlab/qa'
+
 module QA
   module Runtime
     module Env
@@ -7,14 +9,29 @@ module QA
 
       attr_writer :personal_access_token, :ldap_username, :ldap_password
 
+      ENV_VARIABLES = Gitlab::QA::Runtime::Env::ENV_VARIABLES
+
       # The environment variables used to indicate if the environment under test
       # supports the given feature
       SUPPORTED_FEATURES = {
-        git_protocol_v2: 'QA_CAN_TEST_GIT_PROTOCOL_V2'
+        git_protocol_v2: 'QA_CAN_TEST_GIT_PROTOCOL_V2',
+        admin: 'QA_CAN_TEST_ADMIN_FEATURES'
       }.freeze
 
       def supported_features
         SUPPORTED_FEATURES
+      end
+
+      def admin_password
+        ENV['GITLAB_ADMIN_PASSWORD']
+      end
+
+      def admin_username
+        ENV['GITLAB_ADMIN_USERNAME']
+      end
+
+      def admin_personal_access_token
+        ENV['GITLAB_QA_ADMIN_ACCESS_TOKEN']
       end
 
       def debug?
@@ -92,14 +109,6 @@ module QA
         ENV['GITLAB_PASSWORD']
       end
 
-      def admin_username
-        ENV['GITLAB_ADMIN_USERNAME']
-      end
-
-      def admin_password
-        ENV['GITLAB_ADMIN_PASSWORD']
-      end
-
       def github_username
         ENV['GITHUB_USERNAME']
       end
@@ -168,8 +177,8 @@ module QA
         ENV.fetch("GCLOUD_ACCOUNT_EMAIL")
       end
 
-      def gcloud_zone
-        ENV.fetch('GCLOUD_ZONE')
+      def gcloud_region
+        ENV.fetch('GCLOUD_REGION')
       end
 
       def has_gcloud_credentials?
@@ -194,6 +203,10 @@ module QA
         raise ArgumentError, %Q(Unknown feature "#{feature}") unless SUPPORTED_FEATURES.include? feature
 
         enabled?(ENV[SUPPORTED_FEATURES[feature]], default: true)
+      end
+
+      def runtime_scenario_attributes
+        ENV['QA_RUNTIME_SCENARIO_ATTRIBUTES']
       end
 
       private

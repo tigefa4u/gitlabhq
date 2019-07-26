@@ -3,8 +3,9 @@
 module BoardsResponses
   include Gitlab::Utils::StrongMemoize
 
+  # Overridden on EE module
   def board_params
-    params.require(:board).permit(:name, :weight, :milestone_id, :assignee_id, label_ids: [])
+    params.require(:board).permit(:name)
   end
 
   def parent
@@ -69,7 +70,7 @@ module BoardsResponses
   end
 
   def serialize_as_json(resource)
-    resource.as_json(only: [:id])
+    serializer.represent(resource).as_json
   end
 
   def respond_with(resource)
@@ -79,5 +80,9 @@ module BoardsResponses
         render json: serialize_as_json(resource)
       end
     end
+  end
+
+  def serializer
+    BoardSerializer.new
   end
 end

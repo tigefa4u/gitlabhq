@@ -29,20 +29,6 @@ describe('text_utility', () => {
     });
   });
 
-  describe('pluralize', () => {
-    it('should pluralize given string', () => {
-      expect(textUtils.pluralize('test', 2)).toBe('tests');
-    });
-
-    it('should pluralize when count is 0', () => {
-      expect(textUtils.pluralize('test', 0)).toBe('tests');
-    });
-
-    it('should not pluralize when count is 1', () => {
-      expect(textUtils.pluralize('test', 1)).toBe('test');
-    });
-  });
-
   describe('dasherize', () => {
     it('should replace underscores with dashes', () => {
       expect(textUtils.dasherize('foo_bar_foo')).toEqual('foo-bar-foo');
@@ -55,9 +41,24 @@ describe('text_utility', () => {
     });
   });
 
-  describe('slugifyWithHyphens', () => {
+  describe('slugify', () => {
+    it('should remove accents and convert to lower case', () => {
+      expect(textUtils.slugify('João')).toEqual('jo-o');
+    });
     it('should replaces whitespaces with hyphens and convert to lower case', () => {
-      expect(textUtils.slugifyWithHyphens('My Input String')).toEqual('my-input-string');
+      expect(textUtils.slugify('My Input String')).toEqual('my-input-string');
+    });
+    it('should remove trailing whitespace and replace whitespaces within string with a hyphen', () => {
+      expect(textUtils.slugify(' a new project ')).toEqual('a-new-project');
+    });
+    it('should only remove non-allowed special characters', () => {
+      expect(textUtils.slugify('test!_pro-ject~')).toEqual('test-_pro-ject-');
+    });
+    it('should squash multiple hypens', () => {
+      expect(textUtils.slugify('test!!!!_pro-ject~')).toEqual('test-_pro-ject-');
+    });
+    it('should return empty string if only non-allowed characters', () => {
+      expect(textUtils.slugify('здрасти')).toEqual('');
     });
   });
 

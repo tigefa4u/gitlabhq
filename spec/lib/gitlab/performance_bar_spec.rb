@@ -3,16 +3,41 @@ require 'spec_helper'
 describe Gitlab::PerformanceBar do
   shared_examples 'allowed user IDs are cached' do
     before do
-      # Warm the Redis cache
+      # Warm the caches
       described_class.enabled?(user)
     end
 
     it 'caches the allowed user IDs in cache', :use_clean_rails_memory_store_caching do
       expect do
+        expect(described_class.l1_cache_backend).to receive(:fetch).and_call_original
+        expect(described_class.l2_cache_backend).not_to receive(:fetch)
         expect(described_class.enabled?(user)).to be_truthy
       end.not_to exceed_query_limit(0)
     end
+
+    it 'caches the allowed user IDs in L1 cache for 1 minute', :use_clean_rails_memory_store_caching do
+      Timecop.travel 2.minutes do
+        expect do
+          expect(described_class.l1_cache_backend).to receive(:fetch).and_call_original
+          expect(described_class.l2_cache_backend).to receive(:fetch).and_call_original
+          expect(described_class.enabled?(user)).to be_truthy
+        end.not_to exceed_query_limit(0)
+      end
+    end
+
+    it 'caches the allowed user IDs in L2 cache for 5 minutes', :use_clean_rails_memory_store_caching do
+      Timecop.travel 6.minutes do
+        expect do
+          expect(described_class.l1_cache_backend).to receive(:fetch).and_call_original
+          expect(described_class.l2_cache_backend).to receive(:fetch).and_call_original
+          expect(described_class.enabled?(user)).to be_truthy
+        end.not_to exceed_query_limit(2)
+      end
+    end
   end
+
+  it { expect(described_class.l1_cache_backend).to eq(Gitlab::ThreadMemoryCache.cache_backend) }
+  it { expect(described_class.l2_cache_backend).to eq(Rails.cache) }
 
   describe '.enabled?' do
     let(:user) { create(:user) }
@@ -71,7 +96,7 @@ describe Gitlab::PerformanceBar do
       end
     end
 
-    context 'when allowed group is nested', :nested_groups do
+    context 'when allowed group is nested' do
       let!(:nested_my_group) { create(:group, parent: create(:group, path: 'my-org'), path: 'my-group') }
 
       before do
@@ -85,7 +110,7 @@ describe Gitlab::PerformanceBar do
       end
     end
 
-    context 'when a nested group has the same path', :nested_groups do
+    context 'when a nested group has the same path' do
       before do
         create(:group, :nested, path: 'my-group').add_developer(user)
       end

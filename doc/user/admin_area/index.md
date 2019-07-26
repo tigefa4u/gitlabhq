@@ -2,7 +2,7 @@
 type: reference
 ---
 
-# GitLab Admin Area **[CORE ONLY]**
+# GitLab Admin Area **(CORE ONLY)**
 
 The Admin Area provides a web UI for administering some features of GitLab self-managed instances.
 
@@ -18,22 +18,22 @@ Only admin users can access the Admin Area.
 
 The Admin Area is made up of the following sections:
 
-| Section                    | Description                                                                                                                                              |
-|:---------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Overview                   | View your GitLab [Dashboard](#admin-dashboard), and administer [projects](#administer-projects), [users](#administer-users), groups, [jobs](#administer-jobs), [Runners](#administer-runners), and [Gitaly servers](#administer-gitaly-servers).       |
-| Monitoring                 | View GitLab system information, and information on background jobs, logs, [health checks](monitoring/health_check.md), request profiles, and audit logs. |
-| Messages                   | Send and manage [broadcast messages](broadcast_messages.md) for your users.                                                                              |
-| System Hooks               | Configure [system hooks](../../system_hooks/system_hooks.md) for many events.                                                                            |
-| Applications               | Create system [OAuth applications](../../integration/oauth_provider.md) for integrations with other services.                                            |
-| Abuse Reports              | Manage [abuse reports](abuse_reports.md) submitted by your users.                                                                                        |
-| License **[STARTER ONLY]** | Upload, display, and remove [licenses](license.md).                                                                                                      |
-| Push Rules **[STARTER]**   | Configure pre-defined git [push rules](../../push_rules/push_rules.md) for projects.                                              |
-| Geo **[PREMIUM ONLY]**     | Configure and maintain [Geo nodes](geo_nodes.md).                                                                                                        |
-| Deploy Keys                | Create instance-wide [SSH deploy keys](../../ssh/README.md#deploy-keys).                                                                                 |
-| Service Templates          | Create [service templates](../project/integrations/services_templates.md) for projects.                                                                  |
-| Labels                     | Create and maintain [labels](labels.md) for your GitLab instance.                                                                                        |
-| Appearance                 | Customize [GitLab's appearance](../../customization/index.md).                                                                                           |
-| Settings                   | Modify the [settings](settings/index.md) for your GitLab instance.                                                                                       |
+| Section                       | Description                                                                                                                                                                                                                                                                              |
+|:------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Overview](#overview-section) | View your GitLab [Dashboard](#admin-dashboard), and administer [projects](#administering-projects), [users](#administering-users), [groups](#administering-groups), [jobs](#administering-jobs), [Runners](#administering-runners), and [Gitaly servers](#administering-gitaly-servers). |
+| Monitoring                    | View GitLab [system information](#system-info), and information on [background jobs](#background-jobs), [logs](#logs), [health checks](monitoring/health_check.md), [requests profiles](#requests-profiles), and [audit logs](#audit-log-premium-only).                                                                                                                                 |
+| Messages                      | Send and manage [broadcast messages](broadcast_messages.md) for your users.                                                                                                                                                                                                              |
+| System Hooks                  | Configure [system hooks](../../system_hooks/system_hooks.md) for many events.                                                                                                                                                                                                            |
+| Applications                  | Create system [OAuth applications](../../integration/oauth_provider.md) for integrations with other services.                                                                                                                                                                            |
+| Abuse Reports                 | Manage [abuse reports](abuse_reports.md) submitted by your users.                                                                                                                                                                                                                        |
+| License **(STARTER ONLY)**    | Upload, display, and remove [licenses](license.md).                                                                                                                                                                                                                                      |
+| Push Rules **(STARTER)**      | Configure pre-defined git [push rules](../../push_rules/push_rules.md) for projects.                                                                                                                                                                                                     |
+| Geo **(PREMIUM ONLY)**        | Configure and maintain [Geo nodes](geo_nodes.md).                                                                                                                                                                                                                                        |
+| Deploy Keys                   | Create instance-wide [SSH deploy keys](../../ssh/README.md#deploy-keys).                                                                                                                                                                                                                 |
+| Service Templates             | Create [service templates](../project/integrations/services_templates.md) for projects.                                                                                                                                                                                                  |
+| Labels                        | Create and maintain [labels](labels.md) for your GitLab instance.                                                                                                                                                                                                                        |
+| Appearance                    | Customize [GitLab's appearance](../../customization/index.md).                                                                                                                                                                                                                           |
+| Settings                      | Modify the [settings](settings/index.md) for your GitLab instance.                                                                                                                                                                                                                       |
 
 ## Admin Dashboard
 
@@ -46,16 +46,20 @@ To access the Dashboard, either:
 
 The Dashboard is the default view of the Admin Area, and is made up of the following sections:
 
-| Section    | Description   |
-|------------|---------------|
-| Projects   | The total number of projects, up to 10 of the latest projects, and the option of creating a new project. |
-| Users      | The total number of users, up to 10 of the latest users, and the option of creating a new user. |
-| Groups     | The total number of groups, up to 10 of the latest groups, and the option of creating a new group. |
-| Statistics | Totals of all elements of the GitLab instance. |
+| Section    | Description                                                                                                                                              |
+|:-----------|:---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Projects   | The total number of projects, up to 10 of the latest projects, and the option of creating a new project.                                                 |
+| Users      | The total number of users, up to 10 of the latest users, and the option of creating a new user.                                                          |
+| Groups     | The total number of groups, up to 10 of the latest groups, and the option of creating a new group.                                                       |
+| Statistics | Totals of all elements of the GitLab instance.                                                                                                           |
 | Features   | All features available on the GitLab instance. Enabled features are marked with a green circle icon, and disabled features are marked with a power icon. |
-| Components | The major components of GitLab and the version number of each. A link to the Gitaly Servers is also included. |
+| Components | The major components of GitLab and the version number of each. A link to the Gitaly Servers is also included.                                            |
 
-## Administer Projects
+## Overview section
+
+The following topics document the **Overview** section of the Admin Area.
+
+### Administering Projects
 
 You can administer all projects in the GitLab instance from the Admin Area's Projects page.
 
@@ -95,7 +99,7 @@ You can combine the filter options. For example, to list only public projects wi
 1. Click the **Public** tab.
 1. Enter `score` in the **Filter by name...** input box.
 
-## Administer Users
+### Administering Users
 
 You can administer all users in the GitLab instance from the Admin Area's Users page.
 
@@ -120,13 +124,32 @@ To search for users, enter your criteria in the search field. The user search is
 insensitive, and applies partial matching to name and username. To search for an email address,
 you must provide the complete email address.
 
-## Administer Jobs
+### Administering Groups
+
+You can administer all groups in the GitLab instance from the Admin Area's Groups page.
+
+To access the Groups page, go to **Admin Area > Overview > Groups**.
+
+For each group, the page displays their name, description, size, number of projects in the group,
+number of members, and whether the group is private, internal, or public. To edit a group, click
+the **Edit** button in that group's row. To delete the group, click the **Delete** button in
+that group's row.
+
+To change the sort order, click the sort dropdown and select the desired order. The default
+sort order is by **Last created**.
+
+To search for groups by name, enter your criteria in the search field. The group search is case
+insensitive, and applies partial matching.
+
+To [Create a new group](../group/index.md#create-a-new-group) click **New group**.
+
+### Administering Jobs
 
 You can administer all jobs in the GitLab instance from the Admin Area's Jobs page.
 
 To access the Jobs page, go to **Admin Area > Overview > Jobs**.
 
-All jobs are listed, in reverse order of their job ID.
+All jobs are listed, in descending order of job ID.
 
 Click the **All** tab to list all jobs. Click the **Pending**, **Running**, or **Finished** tab to list only jobs of that status.
 
@@ -144,9 +167,9 @@ For each job, the following details are listed:
 | Timing   | Duration of the job, and how long ago the job completed.                |
 | Coverage | Percentage of tests coverage.                                           |
 
-## Administer Runners
+### Administering Runners
 
-You can adminster all Runners in the GitLab instance from the Admin Area's **Runners** page. See
+You can administer all Runners in the GitLab instance from the Admin Area's **Runners** page. See
 [GitLab Runner](https://docs.gitlab.com/runner/) for more information on Runner itself.
 
 To access the **Runners** page, go to **Admin Area > Overview > Runners**.
@@ -163,13 +186,13 @@ the sort order to *Last Contacted* from the dropdown beside the search field.
 To search Runners' descriptions:
 
 1. In the **Search or filter results...** field, type the description of the Runner you want to
-find.
+   find.
 1. Press Enter.
 
 You can also filter Runners by status, type, and tag. To filter:
 
 1. Click in the **Search or filter results...** field.
-1. Select **status:**, **type:**, or **tag:**
+1. Select **status:**, **type:**, or **tag:**.
 1. Select or enter your search criteria.
 
 ![Attributes of a Runner, with the **Search or filter results...** field active](img/index_runners_search_or_filter.png)
@@ -190,7 +213,7 @@ For each Runner, the following attributes are listed:
 
 You can also edit, pause, or remove each Runner.
 
-## Administer Gitaly servers
+### Administering Gitaly servers
 
 You can list all Gitaly servers in the GitLab instance from the Admin Area's **Gitaly Servers**
 page. For more details, see [Gitaly](../../administration/gitaly/index.md).
@@ -206,3 +229,66 @@ For each Gitaly server, the following details are listed:
 | Server version | Gitaly version |
 | Git version    | Version of Git installed on the Gitaly server |
 | Up to date     | Indicates if the Gitaly server version is the latest version available. A green dot indicates the server is up to date. |
+
+## Monitoring section
+
+The following topics document the **Monitoring** section of the Admin Area.
+
+### System Info
+
+The **System Info** page provides the following statistics:
+
+| Field        | Description |
+| :----------- | :---------- |
+| CPU          | Number of CPU cores available |
+| Memory Usage | Memory in use, and total memory available |
+| Disk Usage   | Disk space in use, and total disk space available |
+| Uptime       | Approximate uptime of the GitLab instance |
+
+These statistics are updated only when you navigate to the **System Info** page, or you refresh the page in your browser.
+
+### Background Jobs
+
+The **Background Jobs** page displays the Sidekiq dashboard. Sidekiq is used by GitLab to
+perform processing in the background.
+
+The Sidekiq dashboard consists of the following elements:
+
+- A tab per jobs' status.
+- A breakdown of background job statistics.
+- A live graph of **Processed** and **Failed** jobs, with a selectable polling interval.
+- An historical graph of **Processed** and **Failed** jobs, with a selectable time span.
+- Redis statistics, including:
+  - Version number
+  - Uptime, measured in days
+  - Number of connections
+  - Current memory usage, measured in MB
+  - Peak memory usage, measured in MB
+
+### Logs
+
+The **Logs** page provides access to the following log files:
+
+| Log file                | Contents |
+| :---------------------- | :------- |
+| `application.log`       | GitLab user activity |
+| `githost.log`           | Failed GitLab interaction with Git repositories |
+| `production.log`        | Requests received from Unicorn, and the actions taken to serve those requests |
+| `sidekiq.log`           | Background jobs |
+| `repocheck.log`         | Repository activity |
+| `integrations_json.log` | Activity between GitLab and integrated systems |
+| `kubernetes.log`        | Kubernetes activity |
+
+The contents of these log files can be useful when troubleshooting a problem. Access is available to GitLab admins, without requiring direct access to the log files.
+
+For details of these log files and their contents, see [Log system](../../administration/logs.md).
+
+The content of each log file is listed in chronological order. To minimize performance issues, a maximum 2000 lines of each log file are shown.
+
+### Requests Profiles
+
+The **Requests Profiles** page contains the token required for profiling. For more details, see [Request Profiling](../../administration/monitoring/performance/request_profiling.md).
+
+### Audit Log **(PREMIUM ONLY)**
+
+The **Audit Log** page lists changes made within the GitLab server. With this information you can control, analyze, and track every change.

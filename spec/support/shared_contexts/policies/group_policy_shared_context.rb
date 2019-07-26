@@ -7,7 +7,7 @@ RSpec.shared_context 'GroupPolicy context' do
   let(:maintainer) { create(:user) }
   let(:owner) { create(:user) }
   let(:admin) { create(:admin) }
-  let(:group) { create(:group, :private) }
+  let(:group) { create(:group, :private, :owner_subgroup_creation_only) }
 
   let(:guest_permissions) do
     %i[
@@ -31,7 +31,7 @@ RSpec.shared_context 'GroupPolicy context' do
       :admin_group_member,
       :change_visibility_level,
       :set_note_created_at,
-      (Gitlab::Database.postgresql? ? :create_subgroup : nil)
+      :create_subgroup
     ].compact
   end
 

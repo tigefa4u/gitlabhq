@@ -4,7 +4,7 @@ GitLab has an advanced log system where everything is logged so that you
 can analyze your instance using various system log files. In addition to
 system log files, GitLab Enterprise Edition comes with Audit Events.
 Find more about them [in Audit Events
-documentation](http://docs.gitlab.com/ee/administration/audit_events.html)
+documentation](audit_events.md)
 
 System log files are typically plain text in a standard log file format.
 This guide talks about how to read and use these system log files.
@@ -125,7 +125,7 @@ This file lives in `/var/log/gitlab/gitlab-rails/integrations_json.log` for
 Omnibus GitLab packages or in `/home/git/gitlab/log/integrations_json.log` for
 installations from source.
 
-It contains information about [integrations](../user/project/integrations/project_services.md) activities such as JIRA, Asana and Irker services. It uses JSON format like the example below:
+It contains information about [integrations](../user/project/integrations/project_services.md) activities such as Jira, Asana and Irker services. It uses JSON format like the example below:
 
 ``` json
 {"severity":"ERROR","time":"2018-09-06T14:56:20.439Z","service_class":"JiraService","project_id":8,"project_path":"h5bp/html5-boilerplate","message":"Error sending message","client_url":"http://jira.gitlap.com:8080","error":"execution expired"}
@@ -157,16 +157,22 @@ This file lives in `/var/log/gitlab/gitlab-rails/githost.log` for
 Omnibus GitLab packages or in `/home/git/gitlab/log/githost.log` for
 installations from source.
 
+NOTE: **Note:**
+After 12.2, this file will be stored in JSON format.
+
 GitLab has to interact with Git repositories but in some rare cases
 something can go wrong and in this case you will know what exactly
 happened. This log file contains all failed requests from GitLab to Git
 repositories. In the majority of cases this file will be useful for developers
 only. For example:
 
-```
-December 03, 2014 13:20 -> ERROR -> Command failed [1]: /usr/bin/git --git-dir=/Users/vsizov/gitlab-development-kit/gitlab/tmp/tests/gitlab-satellites/group184/gitlabhq/.git --work-tree=/Users/vsizov/gitlab-development-kit/gitlab/tmp/tests/gitlab-satellites/group184/gitlabhq merge --no-ff -mMerge branch 'feature_conflict' into 'feature' source/feature_conflict
-
-error: failed to push some refs to '/Users/vsizov/gitlab-development-kit/repositories/gitlabhq/gitlab_git.git'
+```json
+{
+   "severity":"ERROR",
+   "time":"2019-07-19T22:16:12.528Z",
+   "correlation_id":"FeGxww5Hj64",
+   "message":"Command failed [1]: /usr/bin/git --git-dir=/Users/vsizov/gitlab-development-kit/gitlab/tmp/tests/gitlab-satellites/group184/gitlabhq/.git --work-tree=/Users/vsizov/gitlab-development-kit/gitlab/tmp/tests/gitlab-satellites/group184/gitlabhq merge --no-ff -mMerge branch 'feature_conflict' into 'feature' source/feature_conflict\n\nerror: failed to push some refs to '/Users/vsizov/gitlab-development-kit/repositories/gitlabhq/gitlab_git.git'"
+}
 ```
 
 ## `audit_json.log`
@@ -236,7 +242,7 @@ I, [2015-02-13T06:17:00.679433 #9291]  INFO -- : Moving existing hooks directory
 
 User clone/fetch activity using ssh transport appears in this log as `executing git command <gitaly-upload-pack...`.
 
-## `unicorn\_stderr.log`
+## `unicorn_stderr.log`
 
 This file lives in `/var/log/gitlab/unicorn/unicorn_stderr.log` for
 Omnibus GitLab packages or in `/home/git/gitlab/log/unicorn_stderr.log` for
@@ -277,9 +283,6 @@ Introduced in GitLab 11.3. This file lives in `/var/log/gitlab/gitlab-rails/impo
 Omnibus GitLab packages or in `/home/git/gitlab/log/importer.log` for
 installations from source.
 
-Currently it logs the progress of project imports from the Bitbucket Server
-importer. Future importers may use this file.
-
 ## `auth.log`
 
 Introduced in GitLab 12.0. This file lives in `/var/log/gitlab/gitlab-rails/auth.log` for
@@ -287,6 +290,9 @@ Omnibus GitLab packages or in `/home/git/gitlab/log/auth.log` for
 installations from source.
 
 It logs information whenever [Rack Attack] registers an abusive request.
+
+NOTE: **Note:**
+From [%12.1](https://gitlab.com/gitlab-org/gitlab-ce/issues/62756), user id and username are available on this log.
 
 ## `graphql_json.log`
 

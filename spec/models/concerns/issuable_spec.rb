@@ -128,7 +128,7 @@ describe Issuable do
       expect(build_issuable(milestone.id).milestone_available?).to be_truthy
     end
 
-    it 'returns true with a milestone from the the parent of the issue project group', :nested_groups do
+    it 'returns true with a milestone from the the parent of the issue project group' do
       parent = create(:group)
       group.update(parent: parent)
       milestone = create(:milestone, group: parent)
@@ -221,6 +221,16 @@ describe Issuable do
 
     it 'returns issues with a matching description for a query shorter than 3 chars' do
       expect(issuable_class.full_search(searchable_issue2.description.downcase)).to eq([searchable_issue2])
+    end
+
+    it 'returns issues with a fuzzy matching description for a query shorter than 3 chars if told to do so' do
+      search = searchable_issue2.description.downcase.scan(/\w+/).sample[-1]
+
+      expect(issuable_class.full_search(search, use_minimum_char_limit: false)).to include(searchable_issue2)
+    end
+
+    it 'returns issues with a fuzzy matching title for a query shorter than 3 chars if told to do so' do
+      expect(issuable_class.full_search('i', use_minimum_char_limit: false)).to include(searchable_issue)
     end
 
     context 'when matching columns is "title"' do
@@ -761,6 +771,27 @@ describe Issuable do
         expect(merged_mr).to be
         expect(first_time_contributor_issue).not_to be_first_contribution
         expect(contributor_issue).not_to be_first_contribution
+      end
+    end
+  end
+
+  describe '#supports_milestone?' do
+    let(:group)   { create(:group) }
+    let(:project) { create(:project, group: group) }
+
+    context "for issues" do
+      let(:issue) { build(:issue, project: project) }
+
+      it 'returns true' do
+        expect(issue.supports_milestone?).to be_truthy
+      end
+    end
+
+    context "for merge requests" do
+      let(:merge_request) { build(:merge_request, target_project: project, source_project: project) }
+
+      it 'returns true' do
+        expect(merge_request.supports_milestone?).to be_truthy
       end
     end
   end

@@ -45,7 +45,7 @@ describe Notify do
 
   context 'for a project' do
     shared_examples 'an assignee email' do
-      let(:test_recipient) { assignee }
+      let(:recipient) { assignee }
 
       it_behaves_like 'an email sent to a user'
 
@@ -55,7 +55,7 @@ describe Notify do
         aggregate_failures do
           expect(sender.display_name).to eq(current_user.name)
           expect(sender.address).to eq(gitlab_sender)
-          expect(subject).to deliver_to(assignee.email)
+          expect(subject).to deliver_to(recipient.notification_email)
         end
       end
     end
@@ -99,15 +99,9 @@ describe Notify do
           end
         end
 
-        context 'when enabled email_author_in_body' do
-          before do
-            stub_application_setting(email_author_in_body: true)
-          end
-
-          it 'contains a link to note author' do
-            is_expected.to have_body_text(issue.author_name)
-            is_expected.to have_body_text 'created an issue:'
-          end
+        it 'contains a link to issue author' do
+          is_expected.to have_body_text(issue.author_name)
+          is_expected.to have_body_text 'created an issue:'
         end
       end
 
@@ -314,15 +308,9 @@ describe Notify do
           end
         end
 
-        context 'when enabled email_author_in_body' do
-          before do
-            stub_application_setting(email_author_in_body: true)
-          end
-
-          it 'contains a link to note author' do
-            is_expected.to have_body_text merge_request.author_name
-            is_expected.to have_body_text 'created a merge request:'
-          end
+        it 'contains a link to merge request author' do
+          is_expected.to have_body_text merge_request.author_name
+          is_expected.to have_body_text 'created a merge request:'
         end
       end
 
@@ -559,12 +547,13 @@ describe Notify do
       let(:host) { Gitlab.config.gitlab.host }
 
       context 'in discussion' do
-        set(:first_note) { create(:discussion_note_on_issue) }
-        set(:second_note) { create(:discussion_note_on_issue, in_reply_to: first_note) }
-        set(:third_note) { create(:discussion_note_on_issue, in_reply_to: second_note) }
+        set(:first_note) { create(:discussion_note_on_issue, project: project) }
+        set(:second_note) { create(:discussion_note_on_issue, in_reply_to: first_note, project: project) }
+        set(:third_note) { create(:discussion_note_on_issue, in_reply_to: second_note, project: project) }
 
         subject { described_class.note_issue_email(recipient.id, third_note.id) }
 
+        it_behaves_like 'an email sent to a user'
         it_behaves_like 'appearance header and footer enabled'
         it_behaves_like 'appearance header and footer not enabled'
 
@@ -584,10 +573,11 @@ describe Notify do
       end
 
       context 'individual issue comments' do
-        set(:note) { create(:note_on_issue) }
+        set(:note) { create(:note_on_issue, project: project) }
 
         subject { described_class.note_issue_email(recipient.id, note.id) }
 
+        it_behaves_like 'an email sent to a user'
         it_behaves_like 'appearance header and footer enabled'
         it_behaves_like 'appearance header and footer not enabled'
 
@@ -622,7 +612,7 @@ describe Notify do
     end
 
     describe 'project was moved' do
-      let(:test_recipient) { user }
+      let(:recipient) { user }
       subject { described_class.project_was_moved_email(project.id, user.id, "gitlab/gitlab") }
 
       it_behaves_like 'an email sent to a user'
@@ -650,7 +640,7 @@ describe Notify do
         project.request_access(user)
         project.requesters.find_by(user_id: user.id)
       end
-      subject { described_class.member_access_requested_email('project', project_member.id, recipient.notification_email) }
+      subject { described_class.member_access_requested_email('project', project_member.id, recipient.id) }
 
       it_behaves_like 'an email sent from GitLab'
       it_behaves_like 'it should not have Gmail Actions links'
@@ -747,9 +737,9 @@ describe Notify do
 
     describe 'project invitation accepted' do
       let(:invited_user) { create(:user, name: 'invited user') }
-      let(:maintainer) { create(:user).tap { |u| project.add_maintainer(u) } }
+      let(:recipient) { create(:user).tap { |u| project.add_maintainer(u) } }
       let(:project_member) do
-        invitee = invite_to_project(project, inviter: maintainer)
+        invitee = invite_to_project(project, inviter: recipient)
         invitee.accept_invite!(invited_user)
         invitee
       end
@@ -757,6 +747,7 @@ describe Notify do
       subject { described_class.member_invite_accepted_email('project', project_member.id) }
 
       it_behaves_like 'an email sent from GitLab'
+      it_behaves_like 'an email sent to a user'
       it_behaves_like 'it should not have Gmail Actions links'
       it_behaves_like "a user cannot unsubscribe through footer link"
       it_behaves_like 'appearance header and footer enabled'
@@ -772,16 +763,17 @@ describe Notify do
     end
 
     describe 'project invitation declined' do
-      let(:maintainer) { create(:user).tap { |u| project.add_maintainer(u) } }
+      let(:recipient) { create(:user).tap { |u| project.add_maintainer(u) } }
       let(:project_member) do
-        invitee = invite_to_project(project, inviter: maintainer)
+        invitee = invite_to_project(project, inviter: recipient)
         invitee.decline_invite!
         invitee
       end
 
-      subject { described_class.member_invite_declined_email('Project', project.id, project_member.invite_email, maintainer.id) }
+      subject { described_class.member_invite_declined_email('Project', project.id, project_member.invite_email, recipient.id) }
 
       it_behaves_like 'an email sent from GitLab'
+      it_behaves_like 'an email sent to a user'
       it_behaves_like 'it should not have Gmail Actions links'
       it_behaves_like "a user cannot unsubscribe through footer link"
       it_behaves_like 'appearance header and footer enabled'
@@ -907,7 +899,9 @@ describe Notify do
         end
 
         it 'contains an introduction' do
-          is_expected.to have_body_text 'started a new discussion'
+          issuable_url = "project_#{note.noteable_type.underscore}_url"
+
+          is_expected.to have_body_text "started a new <a href=\"#{public_send(issuable_url, project, note.noteable, anchor: "note_#{note.id}")}\">discussion</a>"
         end
 
         context 'when a comment on an existing discussion' do
@@ -1095,9 +1089,10 @@ describe Notify do
         group.request_access(user)
         group.requesters.find_by(user_id: user.id)
       end
-      subject { described_class.member_access_requested_email('group', group_member.id, recipient.notification_email) }
+      subject { described_class.member_access_requested_email('group', group_member.id, recipient.id) }
 
       it_behaves_like 'an email sent from GitLab'
+      it_behaves_like 'an email sent to a user'
       it_behaves_like 'it should not have Gmail Actions links'
       it_behaves_like "a user cannot unsubscribe through footer link"
       it_behaves_like 'appearance header and footer enabled'
@@ -1119,9 +1114,11 @@ describe Notify do
         group.request_access(user)
         group.requesters.find_by(user_id: user.id)
       end
+      let(:recipient) { user }
       subject { described_class.member_access_denied_email('group', group.id, user.id) }
 
       it_behaves_like 'an email sent from GitLab'
+      it_behaves_like 'an email sent to a user'
       it_behaves_like 'it should not have Gmail Actions links'
       it_behaves_like "a user cannot unsubscribe through footer link"
       it_behaves_like 'appearance header and footer enabled'
@@ -1136,10 +1133,12 @@ describe Notify do
 
     describe 'group access changed' do
       let(:group_member) { create(:group_member, group: group, user: user) }
+      let(:recipient) { user }
 
       subject { described_class.member_access_granted_email('group', group_member.id) }
 
       it_behaves_like 'an email sent from GitLab'
+      it_behaves_like 'an email sent to a user'
       it_behaves_like 'it should not have Gmail Actions links'
       it_behaves_like "a user cannot unsubscribe through footer link"
       it_behaves_like 'appearance header and footer enabled'

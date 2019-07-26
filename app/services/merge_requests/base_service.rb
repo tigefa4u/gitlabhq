@@ -68,6 +68,10 @@ module MergeRequests
         !merge_request.for_fork?
     end
 
+    def abort_auto_merge(merge_request, reason)
+      AutoMergeService.new(project, current_user).abort(merge_request, reason)
+    end
+
     # Returns all origin and fork merge requests from `@project` satisfying passed arguments.
     # rubocop: disable CodeReuse/ActiveRecord
     def merge_requests_for(source_branch, mr_states: [:opened])

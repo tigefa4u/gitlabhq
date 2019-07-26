@@ -1,31 +1,54 @@
-# How to unlock a locked user
+---
+type: howto
+---
 
-Log into your server with root privileges. Then start a Ruby on Rails console.
+# How to unlock a locked user from the command line
 
-Start the console with this command:
+After six failed login attempts a user gets in a locked state.
 
-```bash
-gitlab-rails console production
-```
+To unlock a locked user:
 
-Wait until the console has loaded.
+1. SSH into your GitLab server.
+1. Start a Ruby on Rails console:
 
-There are multiple ways to find your user. You can search for email or username.
+   ```sh
+   ## For Omnibus GitLab
+   sudo gitlab-rails console production
 
-```bash
-user = User.where(id: 1).first
-```
+   ## For installations from source
+   sudo -u git -H bundle exec rails console RAILS_ENV=production
+   ```
 
-or
+1. Find the user to unlock. You can search by email or ID.
 
-```bash
-user = User.find_by(email: 'admin@local.host')
-```
+   ```ruby
+   user = User.find_by(email: 'admin@local.host')
+   ```
 
-Unlock the user:
+   or
 
-```bash
-user.unlock_access!
-```
+   ```ruby
+   user = User.where(id: 1).first
+   ```
 
-Exit the console, the user should now be able to log in again.
+1. Unlock the user:
+
+   ```ruby
+   user.unlock_access!
+   ```
+
+1. Exit the console with <kbd>Ctrl</kbd>+<kbd>d</kbd>
+
+The user should now be able to log in.
+
+<!-- ## Troubleshooting
+
+Include any troubleshooting steps that you can foresee. If you know beforehand what issues
+one might have when setting this up, or when something is changed, or on upgrading, it's
+important to describe those, too. Think of things that may go wrong and include them here.
+This is important to minimize requests for support, and to avoid doc comments with
+questions that you know someone might ask.
+
+Each scenario can be a third-level heading, e.g. `### Getting error message X`.
+If you have none to add when creating a doc, leave this section in place
+but commented out to help encourage others to add to it in the future. -->

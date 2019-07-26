@@ -28,11 +28,11 @@ Issue Boards** (version introduced in GitLab 8.11 - August 2016).
 ### Advanced features of Issue Boards
 
 With [GitLab Starter](https://about.gitlab.com/pricing/), you can create
-[multiple issue boards](#multiple-issue-boards-starter) for a given project. **[STARTER]**
+[multiple issue boards](#multiple-issue-boards-starter) for a given project. **(STARTER)**
 
 With [GitLab Premium](https://about.gitlab.com/pricing/), you can also create multiple
 issue boards for your groups, and add lists for [assignees](#assignee-lists-premium) and
-[milestones](#milestone-lists-premium). **[PREMIUM]**
+[milestones](#milestone-lists-premium). **(PREMIUM)**
 
 Check all the [advanced features of Issue Boards](#gitlab-enterprise-features-for-issue-boards)
 below.
@@ -143,10 +143,10 @@ Create lists for each of your team members and quickly drag-and-drop issues onto
 
 - **Issue Board** - Each board represents a unique view for your issues. It can have multiple lists with each list consisting of issues represented by cards.
 - **List** - A column on the issue board that displays issues matching certain attributes. In addition to the default lists of 'Open' and 'Closed' issue, each additional list will show issues matching your chosen label or assignee. On the top of that list you can see the number of issues that belong to it.
-   - **Label list**: a list based on a label. It shows all opened issues with that label.
-   - **Assignee list**: a list which includes all issues assigned to a user.
-   - **Open** (default): shows all open issues that do not belong to one of the other lists. Always appears as the leftmost list.
-   - **Closed** (default): shows all closed issues. Always appears as the rightmost list.
+  - **Label list**: a list based on a label. It shows all opened issues with that label.
+  - **Assignee list**: a list which includes all issues assigned to a user.
+  - **Open** (default): shows all open issues that do not belong to one of the other lists. Always appears as the leftmost list.
+  - **Closed** (default): shows all closed issues. Always appears as the rightmost list.
 - **Card** - A box in the list that represents an individual issue. The information you can see on a card consists of the issue number, the issue title, the assignee, and the labels associated with the issue. You can drag cards from one list to another to change their label or assignee from that of the source list to that of the destination list.
 
 ## Permissions
@@ -163,7 +163,7 @@ on the following sections.
 
 For a collection of [features per tier](#summary-of-features-per-tier), check the summary below.
 
-### Multiple Issue Boards **[STARTER]**
+### Multiple Issue Boards **(STARTER)**
 
 > Introduced in [GitLab Enterprise Edition 8.13](https://about.gitlab.com/2016/10/22/gitlab-8-13-released/#multiple-issue-boards-ee).
 
@@ -188,7 +188,7 @@ NOTE: **Note:**
 The Multiple Issue Boards feature is available for
 **projects in GitLab Starter Edition** and for **groups in GitLab Premium Edition**.
 
-### Configurable Issue Boards **[STARTER]**
+### Configurable Issue Boards **(STARTER)**
 
 > Introduced in [GitLab Starter Edition 10.2](https://about.gitlab.com/2017/11/22/gitlab-10-2-released/#issue-boards-configuration).
 
@@ -208,7 +208,7 @@ If you don't have editing permission in a board, you're still able to see the co
 
 ![Viewing board configuration](img/issue_board_view_scope.png)
 
-### Focus mode **[STARTER]**
+### Focus mode **(STARTER)**
 
 > Introduced in [GitLab Starter 9.1](https://about.gitlab.com/2017/04/22/gitlab-9-1-released/#issue-boards-focus-mode-ees-eep).
 
@@ -216,7 +216,7 @@ Click the button at the top right to toggle focus mode on and off. In focus mode
 
 ![Board focus mode](img/issue_board_focus_mode.gif)
 
-### Sum of Issue Weights **[STARTER]**
+### Sum of Issue Weights **(STARTER)**
 
 The top of each list indicates the sum of issue weights for the issues that
 belong to that list. This is useful when using boards for capacity allocation,
@@ -224,7 +224,7 @@ especially in combination with [assignee lists](#assignee-lists-premium).
 
 ![Issue Board summed weights](img/issue_board_summed_weights.png)
 
-### Group Issue Boards **[PREMIUM]**
+### Group Issue Boards **(PREMIUM)**
 
 > Introduced in [GitLab Premium 10.0](https://about.gitlab.com/2017/09/22/gitlab-10-0-released/#group-issue-boards).
 
@@ -240,7 +240,7 @@ one group issue board per group was made available in GitLab 10.6 Core.
 
 ![Group issue board](img/group_issue_board.png)
 
-### Assignee lists **[PREMIUM]**
+### Assignee lists **(PREMIUM)**
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ee/issues/5784) in GitLab 11.0 Premium.
 
@@ -259,7 +259,7 @@ To remove an assignee list, just as with a label list, click the trash icon.
 
 ![Assignee lists](img/issue_board_assignee_lists.png)
 
-### Milestone lists **[PREMIUM]**
+### Milestone lists **(PREMIUM)**
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ee/issues/6469) in GitLab 11.2 Premium.
 
@@ -385,6 +385,10 @@ if issue `A` is drag-and-drop reordered to be above issue `B` by any user in
 a given board inside your GitLab instance, any time those two issues are subsequently
 loaded in any board in the same instance (could be a different project board or a different group board, for example),
 that ordering will be maintained.
+
+This ordering also affects [issue lists](issues/sorting_issue_lists.md).
+Changing the order in an issue board changes the ordering in an issue list,
+and vice versa.
 
 ### Filtering issues
 

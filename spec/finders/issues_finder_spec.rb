@@ -51,7 +51,7 @@ describe IssuesFinder do
           end
         end
 
-        context 'when include_subgroup param is true', :nested_groups do
+        context 'when include_subgroup param is true' do
           before do
             params[:include_subgroups] = true
           end
@@ -235,14 +235,6 @@ describe IssuesFinder do
 
       context 'filtering by no label' do
         let(:params) { { label_name: described_class::FILTER_NONE } }
-
-        it 'returns issues with no labels' do
-          expect(issues).to contain_exactly(issue1, issue3, issue4)
-        end
-      end
-
-      context 'filtering by legacy No+Label' do
-        let(:params) { { label_name: Label::NONE } }
 
         it 'returns issues with no labels' do
           expect(issues).to contain_exactly(issue1, issue3, issue4)

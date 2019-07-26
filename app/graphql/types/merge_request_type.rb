@@ -4,6 +4,8 @@ module Types
   class MergeRequestType < BaseObject
     graphql_name 'MergeRequest'
 
+    implements(Types::Notes::NoteableType)
+
     authorize :read_merge_request
 
     expose_permissions Types::PermissionTypes::MergeRequest
@@ -13,12 +15,15 @@ module Types
     field :id, GraphQL::ID_TYPE, null: false
     field :iid, GraphQL::STRING_TYPE, null: false
     field :title, GraphQL::STRING_TYPE, null: false
+    markdown_field :title_html, null: true
     field :description, GraphQL::STRING_TYPE, null: true
+    markdown_field :description_html, null: true
     field :state, MergeRequestStateEnum, null: false
     field :created_at, Types::TimeType, null: false
     field :updated_at, Types::TimeType, null: false
     field :source_project, Types::ProjectType, null: true
     field :target_project, Types::ProjectType, null: false
+    field :diff_refs, Types::DiffRefsType, null: true
     # Alias for target_project
     field :project, Types::ProjectType, null: false
     field :project_id, GraphQL::INT_TYPE, null: false, method: :target_project_id
@@ -39,7 +44,7 @@ module Types
     field :allow_collaboration, GraphQL::BOOLEAN_TYPE, null: true
     field :should_be_rebased, GraphQL::BOOLEAN_TYPE, method: :should_be_rebased?, null: false
     field :rebase_commit_sha, GraphQL::STRING_TYPE, null: true
-    field :rebase_in_progress, GraphQL::BOOLEAN_TYPE, method: :rebase_in_progress?, null: false
+    field :rebase_in_progress, GraphQL::BOOLEAN_TYPE, method: :rebase_in_progress?, null: false, calls_gitaly: true
     field :merge_commit_message, GraphQL::STRING_TYPE, method: :default_merge_commit_message, null: true, deprecation_reason: "Renamed to defaultMergeCommitMessage"
     field :default_merge_commit_message, GraphQL::STRING_TYPE, null: true
     field :merge_ongoing, GraphQL::BOOLEAN_TYPE, method: :merge_ongoing?, null: false
@@ -53,5 +58,7 @@ module Types
     field :head_pipeline, Types::Ci::PipelineType, null: true, method: :actual_head_pipeline
     field :pipelines, Types::Ci::PipelineType.connection_type,
           resolver: Resolvers::MergeRequestPipelinesResolver
+
+    field :task_completion_status, Types::TaskCompletionStatus, null: false
   end
 end

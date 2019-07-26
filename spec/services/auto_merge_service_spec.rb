@@ -10,8 +10,8 @@ describe AutoMergeService do
   describe '.all_strategies' do
     subject { described_class.all_strategies }
 
-    it 'returns all strategies' do
-      is_expected.to eq(AutoMergeService::STRATEGIES)
+    it 'includes merge when pipeline succeeds' do
+      is_expected.to include(AutoMergeService::STRATEGY_MERGE_WHEN_PIPELINE_SUCCEEDS)
     end
   end
 
@@ -92,6 +92,30 @@ describe AutoMergeService do
     end
   end
 
+  describe '#update' do
+    subject { service.update(merge_request) }
+
+    context 'when auto merge is enabled' do
+      let(:merge_request) { create(:merge_request, :merge_when_pipeline_succeeds) }
+
+      it 'delegates to a relevant service instance' do
+        expect_next_instance_of(AutoMerge::MergeWhenPipelineSucceedsService) do |service|
+          expect(service).to receive(:update).with(merge_request)
+        end
+
+        subject
+      end
+    end
+
+    context 'when auto merge is not enabled' do
+      let(:merge_request) { create(:merge_request) }
+
+      it 'returns failed' do
+        is_expected.to eq(:failed)
+      end
+    end
+  end
+
   describe '#process' do
     subject { service.process(merge_request) }
 
@@ -132,6 +156,31 @@ describe AutoMergeService do
 
       it 'returns error' do
         expect(subject[:message]).to eq("Can't cancel the automatic merge")
+        expect(subject[:status]).to eq(:error)
+        expect(subject[:http_status]).to eq(406)
+      end
+    end
+  end
+
+  describe '#abort' do
+    subject { service.abort(merge_request, error) }
+
+    let(:merge_request) { create(:merge_request, :merge_when_pipeline_succeeds) }
+    let(:error) { 'an error' }
+
+    it 'delegates to a relevant service instance' do
+      expect_next_instance_of(AutoMerge::MergeWhenPipelineSucceedsService) do |service|
+        expect(service).to receive(:abort).with(merge_request, error)
+      end
+
+      subject
+    end
+
+    context 'when auto merge is not enabled' do
+      let(:merge_request) { create(:merge_request) }
+
+      it 'returns error' do
+        expect(subject[:message]).to eq("Can't abort the automatic merge")
         expect(subject[:status]).to eq(:error)
         expect(subject[:http_status]).to eq(406)
       end

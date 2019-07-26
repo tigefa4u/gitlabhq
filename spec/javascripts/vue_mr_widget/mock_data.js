@@ -25,7 +25,6 @@ export default {
   },
   merge_status: 'can_be_merged',
   merge_user_id: null,
-  merge_when_pipeline_succeeds: false,
   source_branch: 'daaaa',
   source_branch_link: 'daaaa',
   source_project_id: 19,
@@ -62,7 +61,6 @@ export default {
     "Merge branch 'daaaa' into 'master'\n\nUpdate README.md\n\nSee merge request !22",
   pipeline: {
     id: 172,
-    iid: 32,
     user: {
       name: 'Administrator',
       username: 'root',
@@ -210,8 +208,7 @@ export default {
   source_branch_path: '/root/acets-app/branches/daaaa',
   conflict_resolution_ui_path: '/root/acets-app/merge_requests/22/conflicts',
   remove_wip_path: '/root/acets-app/merge_requests/22/remove_wip',
-  cancel_merge_when_pipeline_succeeds_path:
-    '/root/acets-app/merge_requests/22/cancel_merge_when_pipeline_succeeds',
+  cancel_auto_merge_path: '/root/acets-app/merge_requests/22/cancel_auto_merge',
   create_issue_to_resolve_discussions_path:
     '/root/acets-app/issues/new?merge_request_to_resolve_discussions_of=22',
   merge_path: '/root/acets-app/merge_requests/22/merge',
@@ -221,7 +218,8 @@ export default {
     '/root/acets-app/forks?continue%5Bnotice%5D=You%27re+not+allowed+to+make+changes+to+this+project+directly.+A+fork+of+this+project+has+been+created+that+you+can+make+changes+in%2C+so+you+can+submit+a+merge+request.+Try+to+cherry-pick+this+commit+again.&continue%5Bnotice_now%5D=You%27re+not+allowed+to+make+changes+to+this+project+directly.+A+fork+of+this+project+is+being+created+that+you+can+make+changes+in%2C+so+you+can+submit+a+merge+request.&continue%5Bto%5D=%2Froot%2Facets-app%2Fmerge_requests%2F22&namespace_key=1',
   email_patches_path: '/root/acets-app/merge_requests/22.patch',
   plain_diff_path: '/root/acets-app/merge_requests/22.diff',
-  status_path: '/root/acets-app/merge_requests/22.json',
+  merge_request_basic_path: '/root/acets-app/merge_requests/22.json?serializer=basic',
+  merge_request_widget_path: '/root/acets-app/merge_requests/22/widget.json',
   merge_check_path: '/root/acets-app/merge_requests/22/merge_check',
   ci_environments_status_url: '/root/acets-app/merge_requests/22/ci_environments_status',
   project_archived: false,
@@ -237,13 +235,14 @@ export default {
   merge_request_pipelines_docs_path: '/help/ci/merge_request_pipelines/index.md',
   squash: true,
   visual_review_app_available: true,
+  merge_trains_enabled: true,
+  merge_trains_count: 3,
+  merge_train_index: 1,
 };
 
 export const mockStore = {
   pipeline: {
     id: 0,
-    iid: 0,
-    path: '/root/acets-app/pipelines/0',
     details: {
       status: {
         details_path: '/root/review-app-tester/pipelines/66',
@@ -261,8 +260,6 @@ export const mockStore = {
   },
   mergePipeline: {
     id: 1,
-    iid: 1,
-    path: '/root/acets-app/pipelines/0',
     details: {
       status: {
         details_path: '/root/review-app-tester/pipelines/66',

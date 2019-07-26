@@ -2,6 +2,7 @@
 
 module ApplicationSettingImplementation
   extend ActiveSupport::Concern
+  include Gitlab::Utils::StrongMemoize
 
   DOMAIN_LIST_SEPARATOR = %r{\s*[,;]\s*     # comma or semicolon, optionally surrounded by whitespace
                             |               # or
@@ -82,6 +83,7 @@ module ApplicationSettingImplementation
         throttle_unauthenticated_enabled: false,
         throttle_unauthenticated_period_in_seconds: 3600,
         throttle_unauthenticated_requests_per_period: 3600,
+        time_tracking_limit_to_hours: false,
         two_factor_grace_period: 48,
         unique_ips_limit_enabled: false,
         unique_ips_limit_per_user: 10,
@@ -95,7 +97,9 @@ module ApplicationSettingImplementation
         diff_max_patch_bytes: Gitlab::Git::Diff::DEFAULT_MAX_PATCH_BYTES,
         commit_email_hostname: default_commit_email_hostname,
         protected_ci_variables: false,
-        local_markdown_version: 0
+        local_markdown_version: 0,
+        outbound_local_requests_whitelist: [],
+        raw_blob_request_limit: 300
       }
     end
 
@@ -130,29 +134,50 @@ module ApplicationSettingImplementation
   end
 
   def domain_whitelist_raw
-    self.domain_whitelist&.join("\n")
+    array_to_string(self.domain_whitelist)
   end
 
   def domain_blacklist_raw
-    self.domain_blacklist&.join("\n")
+    array_to_string(self.domain_blacklist)
   end
 
   def domain_whitelist_raw=(values)
-    self.domain_whitelist = []
-    self.domain_whitelist = values.split(DOMAIN_LIST_SEPARATOR)
-    self.domain_whitelist.reject! { |d| d.empty? }
-    self.domain_whitelist
+    self.domain_whitelist = domain_strings_to_array(values)
   end
 
   def domain_blacklist_raw=(values)
-    self.domain_blacklist = []
-    self.domain_blacklist = values.split(DOMAIN_LIST_SEPARATOR)
-    self.domain_blacklist.reject! { |d| d.empty? }
-    self.domain_blacklist
+    self.domain_blacklist = domain_strings_to_array(values)
   end
 
   def domain_blacklist_file=(file)
     self.domain_blacklist_raw = file.read
+  end
+
+  def outbound_local_requests_whitelist_raw
+    array_to_string(self.outbound_local_requests_whitelist)
+  end
+
+  def outbound_local_requests_whitelist_raw=(values)
+    self.outbound_local_requests_whitelist = domain_strings_to_array(values)
+  end
+
+  def outbound_local_requests_whitelist_arrays
+    strong_memoize(:outbound_local_requests_whitelist_arrays) do
+      ip_whitelist = []
+      domain_whitelist = []
+
+      self.outbound_local_requests_whitelist.each do |str|
+        ip_obj = Gitlab::Utils.string_to_ip_object(str)
+
+        if ip_obj
+          ip_whitelist << ip_obj
+        else
+          domain_whitelist << str
+        end
+      end
+
+      [ip_whitelist, domain_whitelist]
+    end
   end
 
   def repository_storages
@@ -177,27 +202,6 @@ module ApplicationSettingImplementation
 
   def restricted_visibility_levels=(levels)
     super(levels&.map { |level| Gitlab::VisibilityLevel.level_value(level) })
-  end
-
-  def strip_sentry_values
-    sentry_dsn.strip! if sentry_dsn.present?
-    clientside_sentry_dsn.strip! if clientside_sentry_dsn.present?
-  end
-
-  def sentry_enabled
-    Gitlab.config.sentry.enabled || read_attribute(:sentry_enabled)
-  end
-
-  def sentry_dsn
-    Gitlab.config.sentry.dsn || read_attribute(:sentry_dsn)
-  end
-
-  def clientside_sentry_enabled
-    Gitlab.config.sentry.enabled || read_attribute(:clientside_sentry_enabled)
-  end
-
-  def clientside_sentry_dsn
-    Gitlab.config.sentry.clientside_dsn || read_attribute(:clientside_sentry_dsn)
   end
 
   def performance_bar_allowed_group
@@ -274,6 +278,17 @@ module ApplicationSettingImplementation
   end
 
   private
+
+  def array_to_string(arr)
+    arr&.join("\n")
+  end
+
+  def domain_strings_to_array(values)
+    values
+      .split(DOMAIN_LIST_SEPARATOR)
+      .reject(&:empty?)
+      .uniq
+  end
 
   def ensure_uuid!
     return if uuid?

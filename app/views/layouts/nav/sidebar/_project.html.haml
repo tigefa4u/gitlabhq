@@ -9,7 +9,7 @@
           = @project.name
     %ul.sidebar-top-level-items
       = nav_link(path: sidebar_projects_paths, html_options: { class: 'home' }) do
-        = link_to project_path(@project), class: 'shortcuts-project' do
+        = link_to project_path(@project), class: 'shortcuts-project', data: { qa_selector: 'project_link' } do
           .nav-icon-container
             = sprite_icon('home')
           %span.nav-item-name
@@ -26,15 +26,13 @@
               %span= _('Details')
 
           = nav_link(path: 'projects#activity') do
-            = link_to activity_project_path(@project), title: _('Activity'), class: 'shortcuts-project-activity qa-activity-link' do
+            = link_to activity_project_path(@project), title: _('Activity'), class: 'shortcuts-project-activity', data: { qa_selector: 'activity_link' } do
               %span= _('Activity')
 
           - if project_nav_tab?(:releases)
             = nav_link(controller: :releases) do
               = link_to project_releases_path(@project), title: _('Releases'), class: 'shortcuts-project-releases' do
                 %span= _('Releases')
-
-          = render_if_exists 'projects/sidebar/security_dashboard'
 
           - if can?(current_user, :read_cycle_analytics, @project)
             = nav_link(path: 'cycle_analytics#show') do
@@ -48,7 +46,7 @@
           = link_to project_tree_path(@project), class: 'shortcuts-tree qa-project-menu-repo' do
             .nav-icon-container
               = sprite_icon('doc-text')
-            %span.nav-item-name
+            %span.nav-item-name#js-onboarding-repo-link
               = _('Repository')
 
           %ul.sidebar-sub-level-items
@@ -62,11 +60,11 @@
                 = _('Files')
 
             = nav_link(controller: [:commit, :commits]) do
-              = link_to project_commits_path(@project, current_ref) do
+              = link_to project_commits_path(@project, current_ref), id: 'js-onboarding-commits-link' do
                 = _('Commits')
 
             = nav_link(html_options: {class: branches_tab_class}) do
-              = link_to project_branches_path(@project), class: 'qa-branches-link' do
+              = link_to project_branches_path(@project), class: 'qa-branches-link', id: 'js-onboarding-branches-link' do
                 = _('Branches')
 
             = nav_link(controller: [:tags]) do
@@ -96,7 +94,7 @@
           = link_to project_issues_path(@project), class: 'shortcuts-issues qa-issues-item' do
             .nav-icon-container
               = sprite_icon('issues')
-            %span.nav-item-name
+            %span.nav-item-name#js-onboarding-issues-link
               = _('Issues')
             - if @project.issues_enabled?
               %span.badge.badge-pill.count.issue_counter
@@ -148,10 +146,10 @@
 
       - if project_nav_tab? :merge_requests
         = nav_link(controller: @project.issues_enabled? ? :merge_requests : [:merge_requests, :labels, :milestones]) do
-          = link_to project_merge_requests_path(@project), class: 'shortcuts-merge_requests qa-merge-requests-link' do
+          = link_to project_merge_requests_path(@project), class: 'shortcuts-merge_requests', data: { qa_selector: 'merge_requests_link' } do
             .nav-icon-container
               = sprite_icon('git-merge')
-            %span.nav-item-name
+            %span.nav-item-name#js-onboarding-mr-link
               = _('Merge Requests')
             %span.badge.badge-pill.count.merge_counter.js-merge-counter
               = number_with_delimiter(@project.open_merge_requests_count)
@@ -168,7 +166,7 @@
           = link_to project_pipelines_path(@project), class: 'shortcuts-pipelines qa-link-pipelines' do
             .nav-icon-container
               = sprite_icon('rocket')
-            %span.nav-item-name
+            %span.nav-item-name#js-onboarding-pipelines-link
               = _('CI / CD')
 
           %ul.sidebar-sub-level-items
@@ -200,6 +198,8 @@
                 = link_to charts_project_pipelines_path(@project), title: _('Charts'), class: 'shortcuts-pipelines-charts' do
                   %span
                     = _('Charts')
+
+      = render_if_exists 'layouts/nav/sidebar/project_security_link' # EE-specific
 
       - if project_nav_tab? :operations
         = nav_link(controller: sidebar_operations_paths) do
@@ -272,25 +272,12 @@
 
             = render_if_exists 'layouts/nav/sidebar/project_feature_flags_link'
 
-      - if project_nav_tab? :container_registry
-        = nav_link(controller: %w[projects/registry/repositories]) do
-          = link_to project_container_registry_index_path(@project), class: 'shortcuts-container-registry' do
-            .nav-icon-container
-              = sprite_icon('disk')
-            %span.nav-item-name
-              = _('Registry')
-          %ul.sidebar-sub-level-items.is-fly-out-only
-            = nav_link(controller: %w[projects/registry/repositories], html_options: { class: "fly-out-top-item" } ) do
-              = link_to project_container_registry_index_path(@project) do
-                %strong.fly-out-top-item-name
-                  = _('Registry')
-
       = render_if_exists 'layouts/nav/sidebar/project_packages_link'
 
       - if project_nav_tab? :wiki
         - wiki_url = project_wiki_path(@project, :home)
         = nav_link(controller: :wikis) do
-          = link_to wiki_url, class: 'shortcuts-wiki qa-wiki-link' do
+          = link_to wiki_url, class: 'shortcuts-wiki', data: { qa_selector: 'wiki_link' } do
             .nav-icon-container
               = sprite_icon('book')
             %span.nav-item-name
@@ -333,7 +320,7 @@
           = link_to edit_project_path(@project), class: 'shortcuts-tree' do
             .nav-icon-container
               = sprite_icon('settings')
-            %span.nav-item-name.qa-settings-item
+            %span.nav-item-name.qa-settings-item#js-onboarding-settings-link
               = _('Settings')
 
           %ul.sidebar-sub-level-items
@@ -345,11 +332,11 @@
                     = _('Settings')
               %li.divider.fly-out-top-item
               = nav_link(path: %w[projects#edit]) do
-                = link_to edit_project_path(@project), title: _('General') do
+                = link_to edit_project_path(@project), title: _('General'), class: 'qa-general-settings-link' do
                   %span
                     = _('General')
             = nav_link(controller: :project_members) do
-              = link_to project_project_members_path(@project), title: _('Members'), class: 'qa-link-members-settings' do
+              = link_to project_project_members_path(@project), title: _('Members'), class: 'qa-link-members-settings', id: 'js-onboarding-settings-members-link' do
                 %span
                   = _('Members')
             - if can_edit

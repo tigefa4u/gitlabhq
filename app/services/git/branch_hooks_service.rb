@@ -20,8 +20,7 @@ module Git
       strong_memoize(:commits) do
         if creating_default_branch?
           # The most recent PROCESS_COMMIT_LIMIT commits in the default branch
-          offset = [count_commits_in_branch - PROCESS_COMMIT_LIMIT, 0].max
-          project.repository.commits(params[:newrev], offset: offset, limit: PROCESS_COMMIT_LIMIT)
+          project.repository.commits(params[:newrev], limit: PROCESS_COMMIT_LIMIT)
         elsif creating_branch?
           # Use the pushed commits that aren't reachable by the default branch
           # as a heuristic. This may include more commits than are actually
@@ -84,9 +83,6 @@ module Git
 
     # Schedules processing of commit messages
     def enqueue_process_commit_messages
-      # don't process commits for the initial push to the default branch
-      return if creating_default_branch?
-
       limited_commits.each do |commit|
         next unless commit.matches_cross_reference_regex?
 
@@ -109,8 +105,14 @@ module Git
       CreateGpgSignatureWorker.perform_async(signable, project.id)
     end
 
+    # It's not sufficient to just check for a blank SHA as it's possible for the
+    # branch to be pushed, but for the `post-receive` hook to never run:
+    # https://gitlab.com/gitlab-org/gitlab-ce/issues/59257
     def creating_branch?
-      Gitlab::Git.blank_ref?(params[:oldrev])
+      strong_memoize(:creating_branch) do
+        Gitlab::Git.blank_ref?(params[:oldrev]) ||
+          !project.repository.branch_exists?(branch_name)
+      end
     end
 
     def updating_branch?

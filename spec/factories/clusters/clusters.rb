@@ -1,9 +1,13 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :cluster, class: Clusters::Cluster do
     user
     name 'test-cluster'
     cluster_type :project_type
     managed true
+
+    factory :cluster_for_group, traits: [:provided_by_gcp, :group]
 
     trait :instance do
       cluster_type { Clusters::Cluster.cluster_types[:instance_type] }
@@ -13,7 +17,7 @@ FactoryBot.define do
       cluster_type { Clusters::Cluster.cluster_types[:project_type] }
 
       before(:create) do |cluster, evaluator|
-        cluster.projects << create(:project, :repository) unless cluster.projects.present?
+        cluster.projects << create(:project) unless cluster.projects.present?
       end
     end
 

@@ -4,6 +4,7 @@ author: Mehran Rasulian
 author_gitlab: mehranrasulian
 level: intermediate
 article_type: tutorial
+type: tutorial
 date: 2017-08-31
 last_updated: 2019-03-06
 ---
@@ -451,6 +452,7 @@ To start using Container Registry on our machine, we first need to login to the 
 ```bash
 docker login registry.gitlab.com
 ```
+
 Then we can build and push our image to GitLab:
 
 ```bash

@@ -6,19 +6,19 @@ Two different storage layouts can be used
 to store the repositories on disk and their characteristics.
 
 GitLab can be configured to use one or multiple repository shard locations
-that can be: 
+that can be:
 
 - Mounted to the local disk
 - Exposed as an NFS shared volume
 - Acessed via [gitaly] on its own machine.
 
 In GitLab, this is configured in `/etc/gitlab/gitlab.rb` by the `git_data_dirs({})`
-configuration hash. The storage layouts discussed here will apply to any shard 
+configuration hash. The storage layouts discussed here will apply to any shard
 defined in it.
 
 The `default` repository shard that is available in any installations
 that haven't customized it, points to the local folder: `/var/opt/gitlab/git-data`.
-Anything discussed below is expected to be part of that folder. 
+Anything discussed below is expected to be part of that folder.
 
 ## Legacy Storage
 
@@ -47,17 +47,11 @@ Any change in the URL will need to be reflected on disk (when groups / users or
 projects are renamed). This can add a lot of load in big installations,
 especially if using any type of network based filesystem.
 
-CAUTION: **Caution:**
-For Geo in particular: Geo does work with legacy storage, but in some
-edge cases due to race conditions it can lead to errors when a project is
-renamed multiple times in short succession, or a project is deleted and
-recreated under the same name very quickly. We expect these race events to be
-rare, and we have not observed a race condition side-effect happening yet.
-This pattern also exists in other objects stored in GitLab, like issue
-Attachments, GitLab Pages artifacts, Docker Containers for the integrated
-Registry, etc. Hashed storage is a requirement for Geo. 
-
 ## Hashed Storage
+
+CAUTION: **Important:**
+Geo requires Hashed Storage since 12.0. If you haven't migrated yet,
+check the [migration instructions](#how-to-migrate-to-hashed-storage) ASAP.
 
 Hashed Storage is the new storage behavior we rolled out with 10.0. Instead
 of coupling project URL and the folder structure where the repository will be
@@ -86,32 +80,32 @@ by another folder with the next 2 characters. They are both stored in a special
 
 ### Hashed object pools
 
-CAUTION: **Beta:**
-Hashed objects pools are considered beta, and are not ready for production use.
-Follow [gitaly#1548](https://gitlab.com/gitlab-org/gitaly/issues/1548) for
-updates.
+> [Introduced](https://gitlab.com/gitlab-org/gitaly/issues/1606) in GitLab 12.1.
 
-For deduplication of public forks and their parent repository, objects are pooled
-in an object pool. These object pools are a third repository where shared objects
-are stored.
+Forks of public projects are deduplicated by creating a third repository, the object pool, containing the objects from the source project. Using `objects/info/alternates`, the source project and forks use the object pool for shared objects. Objects are moved from the source project to the object pool when housekeeping is run on the source project.
 
 ```ruby
 # object pool paths
 "@pools/#{hash[0..1]}/#{hash[2..3]}/#{hash}.git"
 ```
 
-The object pool feature is behind the `object_pools` feature flag, and can be
-enabled for individual projects by executing
-`Feature.enable(:object_pools, Project.find(<id>))`. Note that the project has to
-be on hashed storage, should not be a fork itself, and hashed storage should be
-enabled for all new projects.
+Object pools can be disabled using the `object_pools` feature flag, and can be
+disabled for individual projects by executing
+`Feature.disable(:object_pools, Project.find(<id>))`. Disabling object pools
+will not change existing deduplicated forks, but will prevent new forks from
+being deduplicated.
+
+DANGER: **Danger:**
+Do not run `git prune` or `git gc` in pool repositories! This can
+cause data loss in "real" repositories that depend on the pool in
+question.
 
 ### How to migrate to Hashed Storage
 
 To start a migration, enable Hashed Storage for new projects:
- 
+
 1. Go to **Admin > Settings > Repository** and expand the **Repository Storage** section.
-2. Select the **Use hashed storage paths for newly created and renamed projects** checkbox.
+1. Select the **Use hashed storage paths for newly created and renamed projects** checkbox.
 
 Check if the change breaks any existing integration you may have that
 either runs on the same machine as your repositories are located, or may login to that machine
@@ -130,7 +124,7 @@ an Omnibus Gitlab installation:
 sudo gitlab-rake gitlab:storage:migrate_to_hashed ID_FROM=50 ID_TO=100
 ```
 
-Check the [documentation][rake/migrate-to-hashed] for additional information and instructions for 
+Check the [documentation][rake/migrate-to-hashed] for additional information and instructions for
 source-based installation.
 
 #### Rollback
@@ -139,14 +133,14 @@ Similar to the migration, to disable Hashed Storage for new
 projects:
 
 1. Go to **Admin > Settings > Repository** and expand the **Repository Storage** section.
-2. Uncheck the **Use hashed storage paths for newly created and renamed projects** checkbox.
+1. Uncheck the **Use hashed storage paths for newly created and renamed projects** checkbox.
 
-To schedule a complete rollback, see the 
+To schedule a complete rollback, see the
 [rake task documentation for storage rollback](raketasks/storage.md#rollback-from-hashed-storage-to-legacy-storage) for instructions.
 
 The rollback task also supports specifying a range of Project IDs. Here is an example
 of limiting the rollout to Project IDs 50 to 100, in an Omnibus Gitlab installation:
- 
+
 ```bash
 sudo gitlab-rake gitlab:storage:rollback_to_legacy ID_FROM=50 ID_TO=100
 ```

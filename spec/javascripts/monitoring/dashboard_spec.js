@@ -10,6 +10,7 @@ import {
   mockApiEndpoint,
   environmentData,
   singleGroupResponse,
+  dashboardGitResponse,
 } from './mock_data';
 
 const propsData = {
@@ -20,7 +21,7 @@ const propsData = {
   tagsPath: '/path/to/tags',
   projectPath: '/path/to/project',
   metricsEndpoint: mockApiEndpoint,
-  deploymentEndpoint: null,
+  deploymentsEndpoint: null,
   emptyGettingStartedSvgPath: '/path/to/getting-started.svg',
   emptyLoadingSvgPath: '/path/to/loading.svg',
   emptyNoDataSvgPath: '/path/to/no-data.svg',
@@ -49,9 +50,6 @@ describe('Dashboard', () => {
     window.gon = {
       ...window.gon,
       ee: false,
-      features: {
-        grafanaDashboardLink: true,
-      },
     };
 
     store = createStore();
@@ -65,15 +63,33 @@ describe('Dashboard', () => {
   });
 
   describe('no metrics are available yet', () => {
-    it('shows a getting started empty state when no metrics are present', () => {
+    beforeEach(() => {
       component = new DashboardComponent({
         el: document.querySelector('.prometheus-graphs'),
         propsData: { ...propsData },
         store,
       });
+    });
 
+    it('shows a getting started empty state when no metrics are present', () => {
       expect(component.$el.querySelector('.prometheus-graphs')).toBe(null);
       expect(component.emptyState).toEqual('gettingStarted');
+    });
+
+    it('shows the environment selector', () => {
+      expect(component.$el.querySelector('.js-environments-dropdown')).toBeTruthy();
+    });
+  });
+
+  describe('no data found', () => {
+    it('shows the environment selector dropdown', () => {
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: { ...propsData, showEmptyState: true },
+        store,
+      });
+
+      expect(component.$el.querySelector('.js-environments-dropdown')).toBeTruthy();
     });
   });
 
@@ -153,14 +169,24 @@ describe('Dashboard', () => {
         singleGroupResponse,
       );
 
-      setTimeout(() => {
-        const dropdownMenuEnvironments = component.$el.querySelectorAll(
-          '.js-environments-dropdown .dropdown-item',
-        );
+      Vue.nextTick()
+        .then(() => {
+          const dropdownMenuEnvironments = component.$el.querySelectorAll(
+            '.js-environments-dropdown .dropdown-item',
+          );
 
-        expect(dropdownMenuEnvironments.length).toEqual(component.environments.length);
-        done();
-      });
+          expect(component.environments.length).toEqual(environmentData.length);
+          expect(dropdownMenuEnvironments.length).toEqual(component.environments.length);
+
+          Array.from(dropdownMenuEnvironments).forEach((value, index) => {
+            if (environmentData[index].metrics_path) {
+              expect(value).toHaveAttr('href', environmentData[index].metrics_path);
+            }
+          });
+
+          done();
+        })
+        .catch(done.fail);
     });
 
     it('hides the environments dropdown list when there is no environments', done => {
@@ -215,7 +241,7 @@ describe('Dashboard', () => {
       Vue.nextTick()
         .then(() => {
           const dropdownItems = component.$el.querySelectorAll(
-            '.js-environments-dropdown .dropdown-item[active="true"]',
+            '.js-environments-dropdown .dropdown-item.active',
           );
 
           expect(dropdownItems.length).toEqual(1);
@@ -284,10 +310,6 @@ describe('Dashboard', () => {
       const getTimeDiffSpy = spyOnDependency(Dashboard, 'getTimeDiff');
 
       component.$store.commit(
-        `monitoringDashboard/${types.SET_ENVIRONMENTS_ENDPOINT}`,
-        '/environments',
-      );
-      component.$store.commit(
         `monitoringDashboard/${types.RECEIVE_ENVIRONMENTS_DATA_SUCCESS}`,
         environmentData,
       );
@@ -314,9 +336,7 @@ describe('Dashboard', () => {
       });
 
       setTimeout(() => {
-        const selectedTimeWindow = component.$el.querySelector(
-          '.js-time-window-dropdown [active="true"]',
-        );
+        const selectedTimeWindow = component.$el.querySelector('.js-time-window-dropdown .active');
 
         expect(selectedTimeWindow.textContent.trim()).toEqual('30 minutes');
         done();
@@ -384,52 +404,71 @@ describe('Dashboard', () => {
   describe('external dashboard link', () => {
     beforeEach(() => {
       mock.onGet(mockApiEndpoint).reply(200, metricsGroupsAPIResponse);
-    });
 
-    describe('with feature flag enabled', () => {
-      beforeEach(() => {
-        component = new DashboardComponent({
-          el: document.querySelector('.prometheus-graphs'),
-          propsData: {
-            ...propsData,
-            hasMetrics: true,
-            showPanels: false,
-            externalDashboardUrl: '/mockUrl',
-          },
-          store,
-        });
-      });
-
-      it('shows the link', done => {
-        setTimeout(() => {
-          expect(component.$el.querySelector('.js-external-dashboard-link').innerText).toContain(
-            'View full dashboard',
-          );
-          done();
-        });
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showPanels: false,
+          showTimeWindowDropdown: false,
+          externalDashboardUrl: '/mockUrl',
+        },
+        store,
       });
     });
 
-    describe('without feature flage enabled', () => {
-      beforeEach(() => {
-        window.gon.features.grafanaDashboardLink = false;
-        component = new DashboardComponent({
-          el: document.querySelector('.prometheus-graphs'),
-          propsData: {
-            ...propsData,
-            hasMetrics: true,
-            showPanels: false,
-            externalDashboardUrl: '',
-          },
-          store,
-        });
+    it('shows the link', done => {
+      setTimeout(() => {
+        expect(component.$el.querySelector('.js-external-dashboard-link').innerText).toContain(
+          'View full dashboard',
+        );
+        done();
+      });
+    });
+  });
+
+  describe('Dashboard dropdown', () => {
+    beforeEach(() => {
+      mock.onGet(mockApiEndpoint).reply(200, metricsGroupsAPIResponse);
+
+      component = new DashboardComponent({
+        el: document.querySelector('.prometheus-graphs'),
+        propsData: {
+          ...propsData,
+          hasMetrics: true,
+          showPanels: false,
+        },
+        store,
       });
 
-      it('does not show the link', done => {
-        setTimeout(() => {
-          expect(component.$el.querySelector('.js-external-dashboard-link')).toBe(null);
-          done();
-        });
+      component.$store.dispatch('monitoringDashboard/setFeatureFlags', {
+        prometheusEndpoint: false,
+        multipleDashboardsEnabled: true,
+      });
+
+      component.$store.commit(
+        `monitoringDashboard/${types.RECEIVE_ENVIRONMENTS_DATA_SUCCESS}`,
+        environmentData,
+      );
+
+      component.$store.commit(
+        `monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`,
+        singleGroupResponse,
+      );
+
+      component.$store.commit(
+        `monitoringDashboard/${types.SET_ALL_DASHBOARDS}`,
+        dashboardGitResponse,
+      );
+    });
+
+    it('shows the dashboard dropdown', done => {
+      setTimeout(() => {
+        const dashboardDropdown = component.$el.querySelector('.js-dashboards-dropdown');
+
+        expect(dashboardDropdown).not.toEqual(null);
+        done();
       });
     });
   });

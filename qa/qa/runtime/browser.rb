@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'rspec/core'
+require 'rspec/expectations'
 require 'capybara/rspec'
 require 'capybara-screenshot/rspec'
 require 'selenium-webdriver'
@@ -11,6 +12,8 @@ module QA
       include QA::Scenario::Actable
 
       NotRespondingError = Class.new(RuntimeError)
+
+      CAPYBARA_MAX_WAIT_TIME = 10
 
       def initialize
         self.class.configure!
@@ -27,13 +30,12 @@ module QA
       # In case of an address that is a symbol we will try to guess address
       # based on `Runtime::Scenario#something_address`.
       #
-      def visit(address, page = nil, &block)
-        Browser::Session.new(address, page).perform(&block)
+      def visit(address, page_class, &block)
+        Browser::Session.new(address, page_class).perform(&block)
       end
 
-      def self.visit(address, page = nil, &block)
-        new.visit(address, page, &block)
-        page.validate_elements_present!
+      def self.visit(address, page_class, &block)
+        new.visit(address, page_class, &block)
       end
 
       def self.configure!
@@ -42,6 +44,8 @@ module QA
             metadata[:type] = :feature
           end
         end
+
+        Capybara.server_port = 9887 + ENV['TEST_ENV_NUMBER'].to_i
 
         return if Capybara.drivers.include?(:chrome)
 
@@ -119,7 +123,7 @@ module QA
         Capybara.configure do |config|
           config.default_driver = QA::Runtime::Env.browser
           config.javascript_driver = QA::Runtime::Env.browser
-          config.default_max_wait_time = 10
+          config.default_max_wait_time = CAPYBARA_MAX_WAIT_TIME
           # https://github.com/mattheworiordan/capybara-screenshot/issues/164
           config.save_path = ::File.expand_path('../../tmp', __dir__)
         end
@@ -128,8 +132,11 @@ module QA
       class Session
         include Capybara::DSL
 
-        def initialize(instance, page = nil)
-          @session_address = Runtime::Address.new(instance, page)
+        attr_reader :page_class
+
+        def initialize(instance, page_class)
+          @session_address = Runtime::Address.new(instance, page_class)
+          @page_class = page_class
         end
 
         def url
@@ -138,6 +145,8 @@ module QA
 
         def perform(&block)
           visit(url)
+
+          page_class.validate_elements_present!
 
           if QA::Runtime::Env.qa_cookies
             browser = Capybara.current_session.driver.browser

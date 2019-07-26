@@ -3,6 +3,7 @@ import VueApollo from 'vue-apollo';
 import { IntrospectionFragmentMatcher } from 'apollo-cache-inmemory';
 import createDefaultClient from '~/lib/graphql';
 import introspectionQueryResultData from './fragmentTypes.json';
+import { fetchLogsTree } from './log_tree';
 
 Vue.use(VueApollo);
 
@@ -13,11 +14,26 @@ const fragmentMatcher = new IntrospectionFragmentMatcher({
 });
 
 const defaultClient = createDefaultClient(
-  {},
+  {
+    Query: {
+      commit(_, { path, fileName, type }) {
+        return new Promise(resolve => {
+          fetchLogsTree(defaultClient, path, '0', {
+            resolve,
+            entry: {
+              name: fileName,
+              type,
+            },
+          });
+        });
+      },
+    },
+  },
   {
     cacheConfig: {
       fragmentMatcher,
       dataIdFromObject: obj => {
+        /* eslint-disable @gitlab/i18n/no-non-i18n-strings */
         // eslint-disable-next-line no-underscore-dangle
         switch (obj.__typename) {
           // We need to create a dynamic ID for each entry
@@ -33,6 +49,7 @@ const defaultClient = createDefaultClient(
             // eslint-disable-next-line no-underscore-dangle
             return obj.id || obj._id;
         }
+        /* eslint-enable @gitlab/i18n/no-non-i18n-strings */
       },
     },
   },

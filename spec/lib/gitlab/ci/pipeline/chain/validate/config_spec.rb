@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::Ci::Pipeline::Chain::Validate::Config do
@@ -77,7 +79,14 @@ describe Gitlab::Ci::Pipeline::Chain::Validate::Config do
   end
 
   context 'when pipeline contains configuration validation errors' do
-    let(:config) { { rspec: {} } }
+    let(:config) do
+      {
+        rspec: {
+          before_script: 10,
+          script: 'ls -al'
+        }
+      }
+    end
 
     let(:pipeline) do
       build(:ci_pipeline, project: project, config: config)
@@ -85,7 +94,7 @@ describe Gitlab::Ci::Pipeline::Chain::Validate::Config do
 
     it 'appends configuration validation errors to pipeline errors' do
       expect(pipeline.errors.to_a)
-        .to include "jobs:rspec config can't be blank"
+        .to include "jobs:rspec:before_script config should be an array of strings"
     end
 
     it 'breaks the chain' do

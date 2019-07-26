@@ -1,5 +1,6 @@
 <script>
 import { GlTooltipDirective, GlLink, GlButton } from '@gitlab/ui';
+import { __, sprintf } from '~/locale';
 import CiIconBadge from './ci_badge_link.vue';
 import TimeagoTooltip from './time_ago_tooltip.vue';
 import UserAvatarImage from './user_avatar/user_avatar_image.vue';
@@ -37,16 +38,6 @@ export default {
       type: Number,
       required: true,
     },
-    itemIid: {
-      type: Number,
-      required: false,
-      default: null,
-    },
-    itemIdTooltip: {
-      type: String,
-      required: false,
-      default: '',
-    },
     time: {
       type: String,
       required: true,
@@ -75,7 +66,7 @@ export default {
 
   computed: {
     userAvatarAltText() {
-      return `${this.user.name}'s avatar`;
+      return sprintf(__(`%{username}'s avatar`), { username: this.user.name });
     },
   },
 
@@ -95,24 +86,16 @@ export default {
     <section class="header-main-content">
       <ci-icon-badge :status="status" />
 
-      <strong v-gl-tooltip :title="itemIdTooltip">
-        {{ itemName }} #{{ itemId }}
-        <template v-if="itemIid"
-          >(#{{ itemIid }})</template
-        >
-      </strong>
+      <strong> {{ itemName }} #{{ itemId }} </strong>
 
-      <template v-if="shouldRenderTriggeredLabel">
-        triggered
-      </template>
-      <template v-else>
-        created
-      </template>
+      <template v-if="shouldRenderTriggeredLabel">{{ __('triggered') }}</template>
+      <template v-else>{{ __('created') }}</template>
 
       <timeago-tooltip :time="time" />
 
+      {{ __('by') }}
+
       <template v-if="user">
-        by
         <gl-link
           v-gl-tooltip
           :href="user.path"

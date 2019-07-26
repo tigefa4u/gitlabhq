@@ -11,6 +11,7 @@ import titleComponent from './title.vue';
 import descriptionComponent from './description.vue';
 import editedComponent from './edited.vue';
 import formComponent from './form.vue';
+import PinnedLinks from './pinned_links.vue';
 import recaptchaModalImplementor from '../../vue_shared/mixins/recaptcha_modal_implementor';
 
 export default {
@@ -19,6 +20,7 @@ export default {
     titleComponent,
     editedComponent,
     formComponent,
+    PinnedLinks,
   },
   mixins: [recaptchaModalImplementor],
   props: {
@@ -52,6 +54,11 @@ export default {
       type: Boolean,
       required: false,
       default: true,
+    },
+    zoomMeetingUrl: {
+      type: String,
+      required: false,
+      default: null,
     },
     issuableRef: {
       type: String,
@@ -340,6 +347,7 @@ export default {
         :title-text="state.titleText"
         :show-inline-edit-button="showInlineEditButton"
       />
+      <pinned-links :zoom-meeting-url="zoomMeetingUrl" />
       <description-component
         v-if="state.descriptionHtml"
         :can-update="canUpdate"

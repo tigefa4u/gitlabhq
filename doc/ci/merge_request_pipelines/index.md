@@ -1,14 +1,9 @@
 ---
-type: reference
+type: reference, index
+last_update: 2019-07-03
 ---
 
-# Pipelines for merge requests
-
-NOTE: **Note**:
-As of GitLab 11.10, pipelines for merge requests require GitLab Runner 11.9
-or higher due to the [recent refspecs
-changes](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/25504).
-Anything lower will cause the pipeline to fail.
+# Pipelines for Merge Requests
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/issues/15310) in GitLab 11.6.
 
@@ -22,6 +17,16 @@ With pipelines for merge requests, you can design a specific pipeline structure
 for when you are running a pipeline in a merge request. This
 could be either adding or removing steps in the pipeline, to make sure that
 your pipelines are as efficient as possible.
+
+## Requirements and limitations
+
+Pipelines for merge requests have the following requirements and limitations:
+
+- As of GitLab 11.10, pipelines for merge requests require GitLab Runner 11.9
+  or higher due to the
+  [recent refspecs changes](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/25504).
+- Pipelines for merge requests are incompatible with
+  [CI/CD for external repositories](../ci_cd_for_external_repos/index.md).
 
 ## Configuring pipelines for merge requests
 
@@ -71,56 +76,13 @@ when a merge request was created or updated. For example:
 
 ![Merge request page](img/merge_request.png)
 
-## Pipelines for Merged Results **[PREMIUM]**
+## Pipelines for Merged Results **(PREMIUM)**
 
-> [Introduced](https://gitlab.com/gitlab-org/gitlab-ee/issues/7380) in [GitLab Premium](https://about.gitlab.com/pricing/) 11.10.
-> This feature is disabled by default until we resolve issues with [contention handling](https://gitlab.com/gitlab-org/gitlab-ee/issues/9186), but [can be enabled manually](#enabling-pipelines-for-merged-results).
+Read the [documentation on Pipelines for Merged Results](pipelines_for_merged_results/index.md).
 
-It's possible for your source and target branches to diverge, which can result
-in the scenario that source branch's pipeline was green, the target's pipeline was green,
-but the combined output fails.
+### Merge Trains **(PREMIUM)**
 
-By having your merge request pipeline automatically
-create a new ref that contains the merge result of the source and target branch
-(then running a pipeline on that ref), we can better test that the combined result
-is also valid.
-
-GitLab can run pipelines for merge requests
-on this merged result. That is, where the source and target branches are combined into a
-new ref and a pipeline for this ref validates the result prior to merging.
-
-![Merge request pipeline as the head pipeline](img/merge_request_pipeline.png)
-
-There are some cases where creating a combined ref is not possible or not wanted.
-For example, a source branch that has conflicts with the target branch
-or a merge request that is still in WIP status. In this case, the merge request pipeline falls back to a "detached" state
-and runs on the source branch ref as if it was a regular pipeline.
-
-The detached state serves to warn you that you are working in a situation
-subjected to merge problems, and helps to highlight that you should
-get out of WIP status or resolve merge conflicts as soon as possible.
-
-### Enabling Pipelines for Merged Results
-
-To enable pipelines on merged results at the project level:
-
-1. Visit your project's **Settings > General** and expand **Merge requests**.
-1. Check **Merge pipelines will try to validate the post-merge result prior to merging**.
-1. Click **Save changes** button.
-
-![Merge request pipeline config](img/merge_request_pipeline_config.png)
-
-CAUTION: **Warning:**
-Make sure your `gitlab-ci.yml` file is [configured properly for pipelines for merge requests](#configuring-pipelines-for-merge-requests),
-otherwise pipelines for merged results won't run and your merge requests will be stuck in an unresolved state.
-
-### Pipelines for Merged Result's limitations
-
-- This feature requires [GitLab Runner](https://gitlab.com/gitlab-org/gitlab-runner) 11.9 or newer.
-- This feature requires [Gitaly](https://gitlab.com/gitlab-org/gitaly) 1.21.0 or newer.
-- After the merge request pipeline succeeds, if the target branch has moved forward, the result of the pipeline is stale and must be retried. In busy repos, this can become a problem as it is highly probable that the target branch will have moved ahead. Improvements are [planned](https://gitlab.com/gitlab-org/gitlab-ee/issues/9186) for future versions of GitLab.
-- Forking/cross-repo workflows are not currently supported. To follow progress, see [#9713](https://gitlab.com/gitlab-org/gitlab-ee/issues/9713).
-- This feature is not available for [fast forward merges](../../user/project/merge_requests/fast_forward_merge.md) yet. To follow progress, see [#58226](https://gitlab.com/gitlab-org/gitlab-ce/issues/58226).
+Read the [documentation on Merge Trains](pipelines_for_merged_results/merge_trains/index.md).
 
 ## Excluding certain jobs
 
@@ -206,3 +168,15 @@ to integrate your job with [GitLab Merge Request API](../../api/merge_requests.m
 
 You can find the list of available variables in [the reference sheet](../variables/predefined_variables.md).
 The variable names begin with the `CI_MERGE_REQUEST_` prefix.
+
+<!-- ## Troubleshooting
+
+Include any troubleshooting steps that you can foresee. If you know beforehand what issues
+one might have when setting this up, or when something is changed, or on upgrading, it's
+important to describe those, too. Think of things that may go wrong and include them here.
+This is important to minimize requests for support, and to avoid doc comments with
+questions that you know someone might ask.
+
+Each scenario can be a third-level heading, e.g. `### Getting error message X`.
+If you have none to add when creating a doc, leave this section in place
+but commented out to help encourage others to add to it in the future. -->

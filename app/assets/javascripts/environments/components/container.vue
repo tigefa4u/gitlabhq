@@ -1,6 +1,6 @@
 <script>
 import { GlLoadingIcon } from '@gitlab/ui';
-import TablePagination from '~/vue_shared/components/table_pagination.vue';
+import TablePagination from '~/vue_shared/components/pagination/table_pagination.vue';
 import containerMixin from 'ee_else_ce/environments/mixins/container_mixin';
 import EnvironmentTable from '../components/environments_table.vue';
 
@@ -57,6 +57,7 @@ export default {
         :user-callouts-path="userCalloutsPath"
         :lock-promotion-svg-path="lockPromotionSvgPath"
         :help-canary-deployments-path="helpCanaryDeploymentsPath"
+        :deploy-boards-help-path="deployBoardsHelpPath"
       />
 
       <table-pagination

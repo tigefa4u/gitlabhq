@@ -72,7 +72,7 @@ module API
         if params[:view] == 'simple'
           options[:with] = Entities::MergeRequestSimple
         else
-          options[:issuable_metadata] = issuable_meta_data(merge_requests, 'MergeRequest')
+          options[:issuable_metadata] = issuable_meta_data(merge_requests, 'MergeRequest', current_user)
         end
 
         options
@@ -401,7 +401,7 @@ module API
       get ':id/merge_requests/:merge_request_iid/merge_ref' do
         merge_request = find_project_merge_request(params[:merge_request_iid])
 
-        result = ::MergeRequests::MergeabilityCheckService.new(merge_request).execute
+        result = ::MergeRequests::MergeabilityCheckService.new(merge_request).execute(recheck: true)
 
         if result.success?
           present :commit_id, result.payload.dig(:merge_ref_head, :commit_id)
@@ -429,9 +429,10 @@ module API
 
         authorize_push_to_merge_request!(merge_request)
 
-        RebaseWorker.perform_async(merge_request.id, current_user.id)
+        merge_request.rebase_async(current_user.id)
 
         status :accepted
+        present rebase_in_progress: merge_request.rebase_in_progress?
       end
 
       desc 'List issues that will be closed on merge' do

@@ -1,7 +1,10 @@
+# frozen_string_literal: true
+
 require 'rspec/mocks'
 require 'toml-rb'
 
 module TestEnv
+  extend ActiveSupport::Concern
   extend self
 
   ComponentFailedToInstallError = Class.new(StandardError)
@@ -64,7 +67,8 @@ module TestEnv
     'with-codeowners'                    => '219560e',
     'submodule_inside_folder'            => 'b491b92',
     'png-lfs'                            => 'fe42f41',
-    'sha-starting-with-large-number'     => '8426165'
+    'sha-starting-with-large-number'     => '8426165',
+    'invalid-utf8-diff-paths'            => '99e4853'
   }.freeze
 
   # gitlab-test-fork is a fork of gitlab-fork, but we don't necessarily
@@ -107,6 +111,12 @@ module TestEnv
     setup_forked_repo
   end
 
+  included do |config|
+    config.append_before do
+      set_current_example_group
+    end
+  end
+
   def disable_mailer
     allow_any_instance_of(NotificationService).to receive(:mailer)
       .and_return(double.as_null_object)
@@ -122,7 +132,7 @@ module TestEnv
   # Keeps gitlab-shell and gitlab-test
   def clean_test_path
     Dir[TMP_TEST_PATH].each do |entry|
-      unless File.basename(entry) =~ /\A(gitaly|gitlab-(shell|test|test_bare|test-fork|test-fork_bare))\z/
+      unless test_dirs.include?(File.basename(entry))
         FileUtils.rm_rf(entry)
       end
     end
@@ -133,32 +143,11 @@ module TestEnv
     FileUtils.mkdir_p(artifacts_path)
   end
 
-  def clean_gitlab_test_path
-    Dir[TMP_TEST_PATH].each do |entry|
-      unless test_dirs.include?(File.basename(entry))
-        FileUtils.rm_rf(entry)
-      end
-    end
-  end
-
   def setup_gitlab_shell
     component_timed_setup('GitLab Shell',
       install_dir: Gitlab.config.gitlab_shell.path,
       version: Gitlab::Shell.version_required,
       task: 'gitlab:shell:install')
-
-    # gitlab-shell hooks don't work in our test environment because they try to make internal API calls
-    sabotage_gitlab_shell_hooks
-  end
-
-  def sabotage_gitlab_shell_hooks
-    create_fake_git_hooks(Gitlab::Shell.new.hooks_path)
-  end
-
-  def create_fake_git_hooks(hooks_dir)
-    %w[pre-receive post-receive update].each do |hook|
-      File.open(File.join(hooks_dir, hook), 'w', 0755) { |f| f.puts '#!/bin/sh' }
-    end
   end
 
   def setup_gitaly
@@ -172,7 +161,6 @@ module TestEnv
       task: "gitlab:gitaly:install[#{install_gitaly_args}]") do
 
         Gitlab::SetupHelper.create_gitaly_configuration(gitaly_dir, { 'default' => repos_path }, force: true)
-        create_fake_git_hooks(File.join(gitaly_dir, 'ruby/git-hooks'))
         start_gitaly(gitaly_dir)
       end
   end
@@ -310,11 +298,27 @@ module TestEnv
     FileUtils.rm_rf(path)
   end
 
+  def current_example_group
+    Thread.current[:current_example_group]
+  end
+
+  # looking for a top-level `describe`
+  def topmost_example_group
+    example_group = current_example_group
+    example_group = example_group[:parent_example_group] until example_group[:parent_example_group].nil?
+    example_group
+  end
+
   private
+
+  def set_current_example_group
+    Thread.current[:current_example_group] = ::RSpec.current_example.metadata[:example_group]
+  end
 
   # These are directories that should be preserved at cleanup time
   def test_dirs
     @test_dirs ||= %w[
+      frontend
       gitaly
       gitlab-shell
       gitlab-test
@@ -359,10 +363,7 @@ module TestEnv
     # Try to reset without fetching to avoid using the network.
     unless reset.call
       raise 'Could not fetch test seed repository.' unless system(*%W(#{Gitlab.config.git.bin_path} -C #{repo_path} fetch origin))
-
-      # Before we used Git clone's --mirror option, bare repos could end up
-      # with missing refs, clearing them and retrying should fix the issue.
-      clean_gitlab_test_path && init unless reset.call
+      raise "Could not update test seed repository, please delete #{repo_path} and try again" unless reset.call
     end
   end
 

@@ -42,7 +42,7 @@ module IssuableCollections
 
     @issuables          = @issuables.page(params[:page])
     @issuables          = per_page_for_relative_position if params[:sort] == 'relative_position'
-    @issuable_meta_data = issuable_meta_data(@issuables, collection_type)
+    @issuable_meta_data = issuable_meta_data(@issuables, collection_type, current_user)
     @total_pages        = issuable_page_count
   end
   # rubocop:enable Gitlab/ModuleWithInstanceVariables
@@ -103,6 +103,12 @@ module IssuableCollections
 
     # Used by view to highlight active option
     @sort = options[:sort]
+
+    # When a user looks for an exact iid, we do not filter by search but only by iid
+    if params[:search] =~ /^#(?<iid>\d+)\z/
+      options[:iids] = Regexp.last_match[:iid]
+      params[:search] = nil
+    end
 
     if @project
       options[:project_id] = @project.id

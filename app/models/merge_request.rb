@@ -7,7 +7,6 @@ class MergeRequest < ApplicationRecord
   include Noteable
   include Referable
   include Presentable
-  include IgnorableColumn
   include TimeTrackable
   include ManualInverseAssociation
   include EachBatch
@@ -23,10 +22,6 @@ class MergeRequest < ApplicationRecord
   self.reactive_cache_lifetime = 10.minutes
 
   SORTING_PREFERENCE_FIELD = :merge_requests_sort
-
-  ignore_column :locked_at,
-                :ref_fetched,
-                :deleted_at
 
   belongs_to :target_project, class_name: "Project"
   belongs_to :source_project, class_name: "Project"
@@ -223,7 +218,13 @@ class MergeRequest < ApplicationRecord
   end
 
   def rebase_in_progress?
-    strong_memoize(:rebase_in_progress) do
+    (rebase_jid.present? && Gitlab::SidekiqStatus.running?(rebase_jid)) ||
+      gitaly_rebase_in_progress?
+  end
+
+  # TODO: remove the Gitaly lookup after v12.1, when rebase_jid will be reliable
+  def gitaly_rebase_in_progress?
+    strong_memoize(:gitaly_rebase_in_progress) do
       # The source project can be deleted
       next false unless source_project
 
@@ -387,6 +388,26 @@ class MergeRequest < ApplicationRecord
   def merge_async(user_id, params)
     jid = MergeWorker.perform_async(id, user_id, params.to_h)
     update_column(:merge_jid, jid)
+  end
+
+  # Set off a rebase asynchronously, atomically updating the `rebase_jid` of
+  # the MR so that the status of the operation can be tracked.
+  def rebase_async(user_id)
+    transaction do
+      lock!
+
+      raise ActiveRecord::StaleObjectError if !open? || rebase_in_progress?
+
+      # Although there is a race between setting rebase_jid here and clearing it
+      # in the RebaseWorker, it can't do any harm since we check both that the
+      # attribute is set *and* that the sidekiq job is still running. So a JID
+      # for a completed RebaseWorker is equivalent to a nil JID.
+      jid = Sidekiq::Worker.skipping_transaction_check do
+        RebaseWorker.perform_async(id, user_id)
+      end
+
+      update_column(:rebase_jid, jid)
+    end
   end
 
   def merge_participants
@@ -562,7 +583,11 @@ class MergeRequest < ApplicationRecord
   end
 
   def diff_refs
-    persisted? ? merge_request_diff.diff_refs : repository_diff_refs
+    if importing? || persisted?
+      merge_request_diff.diff_refs
+    else
+      repository_diff_refs
+    end
   end
 
   # Instead trying to fetch the
@@ -668,7 +693,7 @@ class MergeRequest < ApplicationRecord
 
     # n+1: https://gitlab.com/gitlab-org/gitlab-ce/issues/37435
     Gitlab::GitalyClient.allow_n_plus_1_calls do
-      merge_request_diffs.create
+      merge_request_diffs.create!
       reload_merge_request_diff
     end
   end
@@ -1030,9 +1055,9 @@ class MergeRequest < ApplicationRecord
 
   def mergeable_ci_state?
     return true unless project.only_allow_merge_if_pipeline_succeeds?
-    return true unless head_pipeline
+    return false unless actual_head_pipeline
 
-    actual_head_pipeline&.success? || actual_head_pipeline&.skipped?
+    actual_head_pipeline.success? || actual_head_pipeline.skipped?
   end
 
   def environments_for(current_user)
@@ -1099,6 +1124,19 @@ class MergeRequest < ApplicationRecord
 
   def merge_ref_path
     "refs/#{Repository::REF_MERGE_REQUEST}/#{iid}/merge"
+  end
+
+  def train_ref_path
+    "refs/#{Repository::REF_MERGE_REQUEST}/#{iid}/train"
+  end
+
+  def cleanup_refs(only: :all)
+    target_refs = []
+    target_refs << ref_path       if %i[all head].include?(only)
+    target_refs << merge_ref_path if %i[all merge].include?(only)
+    target_refs << train_ref_path if %i[all train].include?(only)
+
+    project.repository.delete_refs(*target_refs)
   end
 
   def self.merge_request_ref?(ref)
@@ -1353,6 +1391,7 @@ class MergeRequest < ApplicationRecord
   end
 
   # TODO: remove once production database rename completes
+  # https://gitlab.com/gitlab-org/gitlab-ce/issues/47592
   alias_attribute :allow_collaboration, :allow_maintainer_to_push
 
   def allow_collaboration

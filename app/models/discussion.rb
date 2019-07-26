@@ -4,6 +4,7 @@
 #
 # A discussion of this type can be resolvable.
 class Discussion
+  include GlobalID::Identification
   include ResolvableDiscussion
 
   attr_reader :notes, :context_noteable
@@ -11,13 +12,18 @@ class Discussion
   delegate  :created_at,
             :project,
             :author,
-
             :noteable,
             :commit_id,
             :for_commit?,
             :for_merge_request?,
+            :to_ability_name,
+            :editable?,
 
             to: :first_note
+
+  def declarative_policy_delegate
+    first_note
+  end
 
   def project_id
     project&.id
@@ -30,6 +36,17 @@ class Discussion
   def self.build_collection(notes, context_noteable = nil)
     grouped_notes = notes.group_by { |n| n.discussion_id(context_noteable) }
     grouped_notes.values.map { |notes| build(notes, context_noteable) }
+  end
+
+  def self.lazy_find(discussion_id)
+    BatchLoader.for(discussion_id).batch do |discussion_ids, loader|
+      results = Note.where(discussion_id: discussion_ids).fresh.to_a.group_by(&:discussion_id)
+      results.each do |discussion_id, notes|
+        next if notes.empty?
+
+        loader.call(discussion_id, Discussion.build(notes))
+      end
+    end
   end
 
   # Returns an alphanumeric discussion ID based on `build_discussion_id`

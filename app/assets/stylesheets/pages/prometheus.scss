@@ -29,6 +29,11 @@
   padding: $gl-padding / 2;
 }
 
+.prometheus-graph-embed {
+  border: 1px solid $border-color;
+  border-radius: $border-radius-default;
+}
+
 .prometheus-graph-header {
   display: flex;
   align-items: center;
@@ -136,7 +141,6 @@
     > .popover-header,
     > .popover-body {
       padding: 8px;
-      font-size: 12px;
       white-space: nowrap;
       position: relative;
     }

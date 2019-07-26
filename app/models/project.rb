@@ -15,6 +15,7 @@ class Project < ApplicationRecord
   include CaseSensitivity
   include TokenAuthenticatable
   include ValidAttribute
+  include ProjectAPICompatibility
   include ProjectFeaturesCompatibility
   include SelectForProjectAuthorization
   include Presentable
@@ -30,7 +31,6 @@ class Project < ApplicationRecord
   include FeatureGate
   include OptionallySearch
   include FromUnion
-  include IgnorableColumn
   extend Gitlab::Cache::RequestCache
 
   extend Gitlab::ConfigHelper
@@ -55,8 +55,6 @@ class Project < ApplicationRecord
   VALID_MIRROR_PORTS = [22, 80, 443].freeze
   VALID_MIRROR_PROTOCOLS = %w(http https ssh git).freeze
 
-  ignore_column :import_status, :import_jid, :import_error
-
   cache_markdown_field :description, pipeline: :description
 
   delegate :feature_available?, :builds_enabled?, :wiki_enabled?,
@@ -72,7 +70,6 @@ class Project < ApplicationRecord
   delegate :no_import?, to: :import_state, allow_nil: true
 
   default_value_for :archived, false
-  default_value_for(:visibility_level) { Gitlab::CurrentSettings.default_project_visibility }
   default_value_for :resolve_outdated_diff_discussions, false
   default_value_for :container_registry_enabled, gitlab_config_features.container_registry
   default_value_for(:repository_storage) { Gitlab::CurrentSettings.pick_repository_storage }
@@ -223,7 +220,7 @@ class Project < ApplicationRecord
   has_many :starrers, through: :users_star_projects, source: :user
   has_many :releases
   has_many :lfs_objects_projects, dependent: :destroy # rubocop:disable Cop/ActiveRecordDependent
-  has_many :lfs_objects, through: :lfs_objects_projects
+  has_many :lfs_objects, -> { distinct }, through: :lfs_objects_projects
   has_many :lfs_file_locks
   has_many :project_group_links
   has_many :invited_groups, through: :project_group_links, source: :group
@@ -280,7 +277,7 @@ class Project < ApplicationRecord
   has_many :project_deploy_tokens
   has_many :deploy_tokens, through: :project_deploy_tokens
 
-  has_one :auto_devops, class_name: 'ProjectAutoDevops'
+  has_one :auto_devops, class_name: 'ProjectAutoDevops', inverse_of: :project, autosave: true
   has_many :custom_attributes, class_name: 'ProjectCustomAttribute'
 
   has_many :project_badges, class_name: 'ProjectBadge'
@@ -307,11 +304,10 @@ class Project < ApplicationRecord
   delegate :add_guest, :add_reporter, :add_developer, :add_maintainer, :add_role, to: :team
   delegate :add_master, to: :team # @deprecated
   delegate :group_runners_enabled, :group_runners_enabled=, :group_runners_enabled?, to: :ci_cd_settings
-  delegate :group_clusters_enabled?, to: :group, allow_nil: true
   delegate :root_ancestor, to: :namespace, allow_nil: true
   delegate :last_pipeline, to: :commit, allow_nil: true
   delegate :external_dashboard_url, to: :metrics_setting, allow_nil: true, prefix: true
-  delegate :default_git_depth, :default_git_depth=, to: :ci_cd_settings
+  delegate :default_git_depth, :default_git_depth=, to: :ci_cd_settings, prefix: :ci
 
   # Validations
   validates :creator, presence: true, on: :create
@@ -358,9 +354,10 @@ class Project < ApplicationRecord
   scope :with_unmigrated_storage, -> { where('storage_version < :version OR storage_version IS NULL', version: LATEST_STORAGE_VERSION) }
 
   # last_activity_at is throttled every minute, but last_repository_updated_at is updated with every push
-  scope :sorted_by_activity, -> { reorder("GREATEST(COALESCE(last_activity_at, '1970-01-01'), COALESCE(last_repository_updated_at, '1970-01-01')) DESC") }
+  scope :sorted_by_activity, -> { reorder(Arel.sql("GREATEST(COALESCE(last_activity_at, '1970-01-01'), COALESCE(last_repository_updated_at, '1970-01-01')) DESC")) }
   scope :sorted_by_stars_desc, -> { reorder(star_count: :desc) }
   scope :sorted_by_stars_asc, -> { reorder(star_count: :asc) }
+  scope :sorted_by_name_asc_limited, ->(limit) { reorder(name: :asc).limit(limit) }
 
   scope :in_namespace, ->(namespace_ids) { where(namespace_id: namespace_ids) }
   scope :personal, ->(user) { where(namespace_id: user.namespace_id) }
@@ -433,7 +430,7 @@ class Project < ApplicationRecord
                             numericality: { greater_than_or_equal_to: 10.minutes,
                                             less_than: 1.month,
                                             only_integer: true,
-                                            message: _('needs to be beetween 10 minutes and 1 month') }
+                                            message: _('needs to be between 10 minutes and 1 month') }
 
   # Used by Projects::CleanupService to hold a map of rewritten object IDs
   mount_uploader :bfg_object_map, AttachmentUploader
@@ -443,22 +440,6 @@ class Project < ApplicationRecord
   # id - The ID of the project to retrieve.
   def self.find_without_deleted(id)
     without_deleted.find_by_id(id)
-  end
-
-  # Paginates a collection using a `WHERE id < ?` condition.
-  #
-  # before - A project ID to use for filtering out projects with an equal or
-  #      greater ID. If no ID is given, all projects are included.
-  #
-  # limit - The maximum number of rows to include.
-  def self.paginate_in_descending_order_using_id(
-    before: nil,
-    limit: Kaminari.config.default_per_page
-  )
-    relation = order_id_desc.limit(limit)
-    relation = relation.where('projects.id < ?', before) if before
-
-    relation
   end
 
   def self.eager_load_namespace_and_owner
@@ -613,6 +594,25 @@ class Project < ApplicationRecord
     end
   end
 
+  def initialize(attributes = nil)
+    # We can't use default_value_for because the database has a default
+    # value of 0 for visibility_level. If someone attempts to create a
+    # private project, default_value_for will assume that the
+    # visibility_level hasn't changed and will use the application
+    # setting default, which could be internal or public. For projects
+    # inside a private group, those levels are invalid.
+    #
+    # To fix the problem, we assign the actual default in the application if
+    # no explicit visibility has been initialized.
+    attributes ||= {}
+
+    unless visibility_attribute_present?(attributes)
+      attributes[:visibility_level] = Gitlab::CurrentSettings.default_project_visibility
+    end
+
+    super
+  end
+
   def all_pipelines
     if builds_enabled?
       super
@@ -672,10 +672,6 @@ class Project < ApplicationRecord
     { scope: :project, status: auto_devops&.enabled || Feature.enabled?(:force_autodevops_on_by_default, self) }
   end
 
-  def multiple_mr_assignees_enabled?
-    Feature.enabled?(:multiple_merge_request_assignees, self)
-  end
-
   def daily_statistics_enabled?
     Feature.enabled?(:project_daily_statistics, self, default_enabled: true)
   end
@@ -723,16 +719,27 @@ class Project < ApplicationRecord
     repository.commits_by(oids: oids)
   end
 
-  # ref can't be HEAD, can only be branch/tag name or SHA
-  def latest_successful_build_for(job_name, ref = default_branch)
-    latest_pipeline = ci_pipelines.latest_successful_for(ref)
+  # ref can't be HEAD, can only be branch/tag name
+  def latest_successful_build_for_ref(job_name, ref = default_branch)
+    return unless ref
+
+    latest_pipeline = ci_pipelines.latest_successful_for_ref(ref)
     return unless latest_pipeline
 
     latest_pipeline.builds.latest.with_artifacts_archive.find_by(name: job_name)
   end
 
-  def latest_successful_build_for!(job_name, ref = default_branch)
-    latest_successful_build_for(job_name, ref) || raise(ActiveRecord::RecordNotFound.new("Couldn't find job #{job_name}"))
+  def latest_successful_build_for_sha(job_name, sha)
+    return unless sha
+
+    latest_pipeline = ci_pipelines.latest_successful_for_sha(sha)
+    return unless latest_pipeline
+
+    latest_pipeline.builds.latest.with_artifacts_archive.find_by(name: job_name)
+  end
+
+  def latest_successful_build_for_ref!(job_name, ref = default_branch)
+    latest_successful_build_for_ref(job_name, ref) || raise(ActiveRecord::RecordNotFound.new("Couldn't find job #{job_name}"))
   end
 
   def merge_base_commit(first_commit_id, second_commit_id)
@@ -768,6 +775,7 @@ class Project < ApplicationRecord
     job_id
   end
 
+  # rubocop:disable Gitlab/RailsLogger
   def log_import_activity(job_id, type: :import)
     job_type = type.to_s.capitalize
 
@@ -777,6 +785,7 @@ class Project < ApplicationRecord
       Rails.logger.error("#{job_type} job failed to create for #{full_path}.")
     end
   end
+  # rubocop:enable Gitlab/RailsLogger
 
   def reset_cache_and_import_attrs
     run_after_commit do
@@ -1430,11 +1439,6 @@ class Project < ApplicationRecord
   end
 
   def in_fork_network_of?(other_project)
-    # TODO: Remove this in a next release when all fork_networks are populated
-    # This makes sure all MergeRequests remain valid while the projects don't
-    # have a fork_network yet.
-    return true if forked_from?(other_project)
-
     return false if fork_network.nil? || other_project.fork_network.nil?
 
     fork_network == other_project.fork_network
@@ -1488,12 +1492,20 @@ class Project < ApplicationRecord
     !namespace.share_with_group_lock
   end
 
-  def pipeline_for(ref, sha = nil)
+  def pipeline_for(ref, sha = nil, id = nil)
+    if id.present?
+      pipelines_for(ref, sha).find_by(id: id)
+    else
+      pipelines_for(ref, sha).take
+    end
+  end
+
+  def pipelines_for(ref, sha = nil)
     sha ||= commit(ref).try(:sha)
 
     return unless sha
 
-    ci_pipelines.order(id: :desc).find_by(sha: sha, ref: ref)
+    ci_pipelines.order(id: :desc).where(sha: sha, ref: ref)
   end
 
   def latest_successful_pipeline_for_default_branch
@@ -1502,12 +1514,12 @@ class Project < ApplicationRecord
     end
 
     @latest_successful_pipeline_for_default_branch =
-      ci_pipelines.latest_successful_for(default_branch)
+      ci_pipelines.latest_successful_for_ref(default_branch)
   end
 
   def latest_successful_pipeline_for(ref = nil)
     if ref && ref != default_branch
-      ci_pipelines.latest_successful_for(ref)
+      ci_pipelines.latest_successful_for_ref(ref)
     else
       latest_successful_pipeline_for_default_branch
     end
@@ -1544,7 +1556,7 @@ class Project < ApplicationRecord
   end
 
   def valid_runners_token?(token)
-    self.runners_token && ActiveSupport::SecurityUtils.variable_size_secure_compare(token, self.runners_token)
+    self.runners_token && ActiveSupport::SecurityUtils.secure_compare(token, self.runners_token)
   end
 
   # rubocop: disable CodeReuse/ServiceClass
@@ -1654,6 +1666,7 @@ class Project < ApplicationRecord
   end
   # rubocop: enable CodeReuse/ServiceClass
 
+  # rubocop:disable Gitlab/RailsLogger
   def write_repository_config(gl_full_path: full_path)
     # We'd need to keep track of project full path otherwise directory tree
     # created with hashed storage enabled cannot be usefully imported using
@@ -1663,6 +1676,7 @@ class Project < ApplicationRecord
     Rails.logger.error("Error writing to .git/config for project #{full_path} (#{id}): #{e.message}.")
     nil
   end
+  # rubocop:enable Gitlab/RailsLogger
 
   def after_import
     repository.after_import
@@ -1704,6 +1718,7 @@ class Project < ApplicationRecord
     @pipeline_status ||= Gitlab::Cache::Ci::ProjectPipelineStatus.load_for_project(self)
   end
 
+  # rubocop:disable Gitlab/RailsLogger
   def add_export_job(current_user:, after_export_strategy: nil, params: {})
     job_id = ProjectExportWorker.perform_async(current_user.id, self.id, after_export_strategy, params)
 
@@ -1713,6 +1728,7 @@ class Project < ApplicationRecord
       Rails.logger.error "Export job failed to start for project ID #{self.id}"
     end
   end
+  # rubocop:enable Gitlab/RailsLogger
 
   def import_export_shared
     @import_export_shared ||= Gitlab::ImportExport::Shared.new(self)
@@ -1857,16 +1873,24 @@ class Project < ApplicationRecord
   end
 
   def append_or_update_attribute(name, value)
-    old_values = public_send(name.to_s) # rubocop:disable GitlabSecurity/PublicSend
+    if Project.reflect_on_association(name).try(:macro) == :has_many
+      # if this is 1-to-N relation, update the parent object
+      value.each do |item|
+        item.update!(
+          Project.reflect_on_association(name).foreign_key => id)
+      end
 
-    if Project.reflect_on_association(name).try(:macro) == :has_many && old_values.any?
-      update_attribute(name, old_values + value)
+      # force to drop relation cache
+      public_send(name).reset # rubocop:disable GitlabSecurity/PublicSend
+
+      # succeeded
+      true
     else
+      # if this is another relation or attribute, update just object
       update_attribute(name, value)
     end
-
-  rescue ActiveRecord::RecordNotSaved => e
-    handle_update_attribute_error(e, value)
+  rescue ActiveRecord::RecordInvalid => e
+    raise e, "Failed to set #{name}: #{e.message}"
   end
 
   # Tries to set repository as read_only, checking for existing Git transfers in progress beforehand
@@ -1903,9 +1927,8 @@ class Project < ApplicationRecord
     @route_maps_by_commit ||= Hash.new do |h, sha|
       h[sha] = begin
         data = repository.route_map_for(sha)
-        next unless data
 
-        Gitlab::RouteMap.new(data)
+        Gitlab::RouteMap.new(data) if data
       rescue Gitlab::RouteMap::FormatError
         nil
       end
@@ -1933,9 +1956,8 @@ class Project < ApplicationRecord
     end
   end
 
-  # Overridden on EE module
   def multiple_issue_boards_available?
-    false
+    true
   end
 
   def full_path_before_last_save
@@ -2135,7 +2157,7 @@ class Project < ApplicationRecord
       public? &&
       repository_exists? &&
       Gitlab::CurrentSettings.hashed_storage_enabled &&
-      Feature.enabled?(:object_pools, self)
+      Feature.enabled?(:object_pools, self, default_enabled: true)
   end
 
   def leave_pool_repository
@@ -2255,18 +2277,6 @@ class Project < ApplicationRecord
     return false unless Gitlab.config.registry.enabled
 
     ContainerRepository.build_root_repository(self).has_tags?
-  end
-
-  def handle_update_attribute_error(ex, value)
-    if ex.message.start_with?('Failed to replace')
-      if value.respond_to?(:each)
-        invalid = value.detect(&:invalid?)
-
-        raise ex, ([ex.message] + invalid.errors.full_messages).join(' ') if invalid
-      end
-    end
-
-    raise ex
   end
 
   def fetch_branch_allows_collaboration(user, branch_name = nil)

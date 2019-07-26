@@ -1,3 +1,7 @@
+---
+type: index, reference
+---
+
 # Subscription setup and management
 
 This page will help get you started with your new subscription or manage an existing one, whether you have subscribed to GitLab.com or self-managed GitLab.
@@ -10,7 +14,7 @@ Learn how GitLab helps you in the stages of the DevOps lifecycle by learning mor
 
 ### Self-managed: Install GitLab
 
-Take a look at [installing GitLab](https://about.gitlab.com/install/) and our [administrator documentation](../administration/index.md). Then, follow the instructions below under [Your subscription](#your-subscription) to apply your license file. 
+Take a look at [installing GitLab](https://about.gitlab.com/install/) and our [administrator documentation](../administration/index.md). Then, follow the instructions below under [Your subscription](#your-subscription) to apply your license file.
 
 ### GitLab.com: Create a user and group
 
@@ -42,7 +46,8 @@ After purchase, the license file is sent to the email address tied to the Custom
 
 ### Link your GitLab.com account with your Customers Portal account
 
-NOTE: **Note:** This is *required* for GitLab.com subscriptions.
+NOTE: **Note:**
+This is *required* for GitLab.com subscriptions.
 
 Once signed into the customers portal, if your account is not already linked, you should be prompted to link your account with a "Link my GitLab Account" button.
 
@@ -64,16 +69,24 @@ Once your GitLab.com account is linked, you can go to your [Subscriptions](https
 
 Please note that you need to be a group owner to associate a group to your subscription.
 
+### GitLab.com: Upgrade your subscription plan
+
+GitLab.com subscriptions can be upgraded directly through the [Subscriptions portal](https://customers.gitlab.com/subscriptions). 
+
+The Subscriptions portal provides an **Upgrade** button below each GitLab.com
+subscription, which will lead you to a simple
+checkout process.
+
 ### Confirm or upgrade your GitLab.com subscription details within GitLab
 
 To see the status of your GitLab.com subscription, you can click on the Billings
 section of the relevant namespace:
 
-* For individuals, this is located at https://gitlab.com/profile/billings under
-in your Settings,
-* For groups, this is located under the group's Settings dropdown, under Billing.
+- For individuals, this is located at <https://gitlab.com/profile/billings> under
+  in your Settings,
+- For groups, this is located under the group's Settings dropdown, under Billing.
 
-For groups, you can see details of your subscription - including your current 
+For groups, you can see details of your subscription - including your current
 plan - in the included table:
 
 ![Billing table](billing_table.png)
@@ -81,11 +94,19 @@ plan - in the included table:
 | Field | Description |
 | ------ | ------ |
 | Seats in subscription | If this is a paid plan, this represents the number of seats you've paid to support in your group. |
-| Seats currently in use | The number of active seats currently in use. | 
-| Max seats used | The highest number of seats you've used. If this exceeds the seats in subscription, you may owe an additional fee for the additional users. | 
-| Seats owed | If your max seats used exceeds the seats in your subscription, you'll owe an additional fee for the users you've added. | 
-| Subscription start date | The date your subscription started. If this is for a Free plan, this is the date you transitioned off your group's paid plan. | 
-| Subscription end date | The date your current subscription will end. This does not apply to Free plans. | 
+| Seats currently in use | The number of active seats currently in use. |
+| Max seats used | The highest number of seats you've used. If this exceeds the seats in subscription, you may owe an additional fee for the additional users. |
+| Seats owed | If your max seats used exceeds the seats in your subscription, you'll owe an additional fee for the users you've added. |
+| Subscription start date | The date your subscription started. If this is for a Free plan, this is the date you transitioned off your group's paid plan. |
+| Subscription end date | The date your current subscription will end. This does not apply to Free plans. |
+
+### Subscription changes and your data
+
+When your subscription or trial expires, GitLab does not delete your data, however, depending on the tier and feature, it may become inaccessible. Please note that some features may not behave as expected if a graceful fallback is not currently implemented, such as [environment specific variables not being passed](https://gitlab.com/gitlab-org/gitlab-ce/issues/52825).
+
+If you renew or upgrade, your data will again be accessible.
+
+For self-managed customers, there is a two-week grace period when your features will continue to work as-is, after which the entire instance will become read only. However, if you remove the license, you will immediately revert to Core features.
 
 ## Need help?
 
@@ -101,3 +122,15 @@ These issues are the best avenue for getting updates on specific product plans a
 ### Contacting Support
 
 Learn more about the tiers of [GitLab Support](https://about.gitlab.com/support/) or [submit a request via the Support Portal](https://support.gitlab.com/hc/en-us/requests/new).
+
+<!-- ## Troubleshooting
+
+Include any troubleshooting steps that you can foresee. If you know beforehand what issues
+one might have when setting this up, or when something is changed, or on upgrading, it's
+important to describe those, too. Think of things that may go wrong and include them here.
+This is important to minimize requests for support, and to avoid doc comments with
+questions that you know someone might ask.
+
+Each scenario can be a third-level heading, e.g. `### Getting error message X`.
+If you have none to add when creating a doc, leave this section in place
+but commented out to help encourage others to add to it in the future. -->

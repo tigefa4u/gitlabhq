@@ -15,6 +15,8 @@ describe Namespace do
     it { is_expected.to have_many :project_statistics }
     it { is_expected.to belong_to :parent }
     it { is_expected.to have_many :children }
+    it { is_expected.to have_one :root_storage_statistics }
+    it { is_expected.to have_one :aggregation_schedule }
   end
 
   describe 'validations' do
@@ -189,7 +191,7 @@ describe Namespace do
     end
   end
 
-  describe '#ancestors_upto', :nested_groups do
+  describe '#ancestors_upto' do
     let(:parent) { create(:group) }
     let(:child) { create(:group, parent: parent) }
     let(:child2) { create(:group, parent: child) }
@@ -269,7 +271,7 @@ describe Namespace do
         end
       end
 
-      context 'with subgroups', :nested_groups do
+      context 'with subgroups' do
         let(:parent) { create(:group, name: 'parent', path: 'parent') }
         let(:new_parent) { create(:group, name: 'new_parent', path: 'new_parent') }
         let(:child) { create(:group, name: 'child', path: 'child', parent: parent) }
@@ -473,7 +475,7 @@ describe Namespace do
     end
   end
 
-  describe '#self_and_hierarchy', :nested_groups do
+  describe '#self_and_hierarchy' do
     let!(:group) { create(:group, path: 'git_lab') }
     let!(:nested_group) { create(:group, parent: group) }
     let!(:deep_nested_group) { create(:group, parent: nested_group) }
@@ -488,7 +490,7 @@ describe Namespace do
     end
   end
 
-  describe '#ancestors', :nested_groups do
+  describe '#ancestors' do
     let(:group) { create(:group) }
     let(:nested_group) { create(:group, parent: group) }
     let(:deep_nested_group) { create(:group, parent: nested_group) }
@@ -502,7 +504,7 @@ describe Namespace do
     end
   end
 
-  describe '#self_and_ancestors', :nested_groups do
+  describe '#self_and_ancestors' do
     let(:group) { create(:group) }
     let(:nested_group) { create(:group, parent: group) }
     let(:deep_nested_group) { create(:group, parent: nested_group) }
@@ -516,7 +518,7 @@ describe Namespace do
     end
   end
 
-  describe '#descendants', :nested_groups do
+  describe '#descendants' do
     let!(:group) { create(:group, path: 'git_lab') }
     let!(:nested_group) { create(:group, parent: group) }
     let!(:deep_nested_group) { create(:group, parent: nested_group) }
@@ -532,7 +534,7 @@ describe Namespace do
     end
   end
 
-  describe '#self_and_descendants', :nested_groups do
+  describe '#self_and_descendants' do
     let!(:group) { create(:group, path: 'git_lab') }
     let!(:nested_group) { create(:group, parent: group) }
     let!(:deep_nested_group) { create(:group, parent: nested_group) }
@@ -548,7 +550,7 @@ describe Namespace do
     end
   end
 
-  describe '#users_with_descendants', :nested_groups do
+  describe '#users_with_descendants' do
     let(:user_a) { create(:user) }
     let(:user_b) { create(:user) }
 
@@ -595,7 +597,7 @@ describe Namespace do
     it { expect(group.all_pipelines.to_a).to match_array([pipeline1, pipeline2]) }
   end
 
-  describe '#share_with_group_lock with subgroups', :nested_groups do
+  describe '#share_with_group_lock with subgroups' do
     context 'when creating a subgroup' do
       let(:subgroup) { create(:group, parent: root_group )}
 
@@ -736,7 +738,7 @@ describe Namespace do
   end
 
   describe '#root_ancestor' do
-    it 'returns the top most ancestor', :nested_groups do
+    it 'returns the top most ancestor' do
       root_group = create(:group)
       nested_group = create(:group, parent: root_group)
       deep_nested_group = create(:group, parent: nested_group)
@@ -832,6 +834,22 @@ describe Namespace do
     context 'when type is a group' do
       let(:namespace) { create(:group) }
 
+      it { is_expected.to be_falsy }
+    end
+  end
+
+  describe '#aggregation_scheduled?' do
+    let(:namespace) { create(:namespace) }
+
+    subject { namespace.aggregation_scheduled? }
+
+    context 'with an aggregation scheduled association' do
+      let(:namespace) { create(:namespace, :with_aggregation_schedule) }
+
+      it { is_expected.to be_truthy }
+    end
+
+    context 'without an aggregation scheduled association' do
       it { is_expected.to be_falsy }
     end
   end

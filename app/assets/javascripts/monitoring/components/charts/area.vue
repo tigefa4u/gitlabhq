@@ -1,11 +1,14 @@
 <script>
+import { __ } from '~/locale';
+import { GlLink } from '@gitlab/ui';
 import { GlAreaChart, GlChartSeriesLabel } from '@gitlab/ui/dist/charts';
 import dateFormat from 'dateformat';
-import { debounceByAnimationFrame } from '~/lib/utils/common_utils';
+import { debounceByAnimationFrame, roundOffFloat } from '~/lib/utils/common_utils';
 import { getSvgIconPathContent } from '~/lib/utils/icon_utils';
 import Icon from '~/vue_shared/components/icon.vue';
 import { chartHeight, graphTypes, lineTypes } from '../../constants';
 import { makeDataSeries } from '~/helpers/monitor_helper';
+import { graphDataValidatorForValues } from '../../utils';
 
 let debouncedResize;
 
@@ -13,6 +16,7 @@ export default {
   components: {
     GlAreaChart,
     GlChartSeriesLabel,
+    GlLink,
     Icon,
   },
   inheritAttrs: false,
@@ -20,19 +24,7 @@ export default {
     graphData: {
       type: Object,
       required: true,
-      validator(data) {
-        return (
-          Array.isArray(data.queries) &&
-          data.queries.filter(query => {
-            if (Array.isArray(query.result)) {
-              return (
-                query.result.filter(res => Array.isArray(res.values)).length === query.result.length
-              );
-            }
-            return false;
-          }).length === data.queries.length
-        );
-      },
+      validator: graphDataValidatorForValues.bind(null, false),
     },
     containerWidth: {
       type: Number,
@@ -42,6 +34,16 @@ export default {
       type: Array,
       required: false,
       default: () => [],
+    },
+    projectPath: {
+      type: String,
+      required: false,
+      default: () => '',
+    },
+    showBorder: {
+      type: Boolean,
+      required: false,
+      default: () => false,
     },
     thresholds: {
       type: Array,
@@ -54,6 +56,7 @@ export default {
       tooltip: {
         title: '',
         content: [],
+        commitUrl: '',
         isDeployment: false,
         sha: '',
       },
@@ -99,7 +102,7 @@ export default {
     chartOptions() {
       return {
         xAxis: {
-          name: 'Time',
+          name: __('Time'),
           type: 'time',
           axisLabel: {
             formatter: date => dateFormat(date, 'h:MM TT'),
@@ -111,7 +114,7 @@ export default {
         yAxis: {
           name: this.yAxisLabel,
           axisLabel: {
-            formatter: value => value.toFixed(3),
+            formatter: num => roundOffFloat(num, 3).toString(),
           },
         },
         series: this.scatterSeries,
@@ -194,12 +197,13 @@ export default {
       this.tooltip.title = dateFormat(params.value, 'dd mmm yyyy, h:MMTT');
       this.tooltip.content = [];
       params.seriesData.forEach(seriesData => {
-        if (seriesData.componentSubType === graphTypes.deploymentData) {
-          this.tooltip.isDeployment = true;
+        this.tooltip.isDeployment = seriesData.componentSubType === graphTypes.deploymentData;
+        if (this.tooltip.isDeployment) {
           const [deploy] = this.recentDeployments.filter(
             deployment => deployment.createdAt === seriesData.value[0],
           );
           this.tooltip.sha = deploy.sha.substring(0, 8);
+          this.tooltip.commitUrl = deploy.commitUrl;
         } else {
           const { seriesName, color } = seriesData;
           // seriesData.value contains the chart's [x, y] value pair
@@ -227,6 +231,7 @@ export default {
       [this.primaryColor] = chart.getOption().color;
     },
     onResize() {
+      if (!this.$refs.areaChart) return;
       const { width } = this.$refs.areaChart.$el.getBoundingClientRect();
       this.width = width;
     },
@@ -235,52 +240,54 @@ export default {
 </script>
 
 <template>
-  <div class="prometheus-graph col-12 col-lg-6">
-    <div class="prometheus-graph-header">
-      <h5 ref="graphTitle" class="prometheus-graph-title">{{ graphData.title }}</h5>
-      <div ref="graphWidgets" class="prometheus-graph-widgets"><slot></slot></div>
-    </div>
-    <gl-area-chart
-      ref="areaChart"
-      v-bind="$attrs"
-      :data="chartData"
-      :option="chartOptions"
-      :format-tooltip-text="formatTooltipText"
-      :thresholds="thresholds"
-      :width="width"
-      :height="height"
-      @updated="onChartUpdated"
-    >
-      <template v-if="tooltip.isDeployment">
-        <template slot="tooltipTitle">
-          {{ __('Deployed') }}
-        </template>
-        <div slot="tooltipContent" class="d-flex align-items-center">
-          <icon name="commit" class="mr-2" />
-          {{ tooltip.sha }}
-        </div>
-      </template>
-      <template v-else>
-        <template slot="tooltipTitle">
-          <div class="text-nowrap">
-            {{ tooltip.title }}
+  <div class="col-12 col-lg-6" :class="[showBorder ? 'p-2' : 'p-0']">
+    <div class="prometheus-graph" :class="{ 'prometheus-graph-embed w-100 p-3': showBorder }">
+      <div class="prometheus-graph-header">
+        <h5 ref="graphTitle" class="prometheus-graph-title">{{ graphData.title }}</h5>
+        <div ref="graphWidgets" class="prometheus-graph-widgets"><slot></slot></div>
+      </div>
+      <gl-area-chart
+        ref="areaChart"
+        v-bind="$attrs"
+        :data="chartData"
+        :option="chartOptions"
+        :format-tooltip-text="formatTooltipText"
+        :thresholds="thresholds"
+        :width="width"
+        :height="height"
+        @updated="onChartUpdated"
+      >
+        <template v-if="tooltip.isDeployment">
+          <template slot="tooltipTitle">
+            {{ __('Deployed') }}
+          </template>
+          <div slot="tooltipContent" class="d-flex align-items-center">
+            <icon name="commit" class="mr-2" />
+            <gl-link :href="tooltip.commitUrl">{{ tooltip.sha }}</gl-link>
           </div>
         </template>
-        <template slot="tooltipContent">
-          <div
-            v-for="(content, key) in tooltip.content"
-            :key="key"
-            class="d-flex justify-content-between"
-          >
-            <gl-chart-series-label :color="isMultiSeries ? content.color : ''">
-              {{ content.name }}
-            </gl-chart-series-label>
-            <div class="prepend-left-32">
-              {{ content.value }}
+        <template v-else>
+          <template slot="tooltipTitle">
+            <div class="text-nowrap">
+              {{ tooltip.title }}
             </div>
-          </div>
+          </template>
+          <template slot="tooltipContent">
+            <div
+              v-for="(content, key) in tooltip.content"
+              :key="key"
+              class="d-flex justify-content-between"
+            >
+              <gl-chart-series-label :color="isMultiSeries ? content.color : ''">
+                {{ content.name }}
+              </gl-chart-series-label>
+              <div class="prepend-left-32">
+                {{ content.value }}
+              </div>
+            </div>
+          </template>
         </template>
-      </template>
-    </gl-area-chart>
+      </gl-area-chart>
+    </div>
   </div>
 </template>

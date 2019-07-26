@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 shared_examples_for 'group and project boards' do |route_definition, ee = false|
   let(:root_url) { route_definition.gsub(":id", board_parent.id.to_s) }
 
@@ -12,6 +14,16 @@ shared_examples_for 'group and project boards' do |route_definition, ee = false|
     else
       expect(response).to match_response_schema(schema_file)
     end
+  end
+
+  it 'avoids N+1 queries' do
+    pat = create(:personal_access_token, user: user)
+    control = ActiveRecord::QueryRecorder.new { get api(root_url, personal_access_token: pat) }
+
+    create(:milestone, "#{board_parent.class.name.underscore}": board_parent)
+    create(:board, "#{board_parent.class.name.underscore}": board_parent)
+
+    expect { get api(root_url, personal_access_token: pat) }.not_to exceed_query_limit(control)
   end
 
   describe "GET #{route_definition}" do

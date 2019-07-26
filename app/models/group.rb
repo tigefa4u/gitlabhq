@@ -10,7 +10,6 @@ class Group < Namespace
   include Referable
   include SelectForProjectAuthorization
   include LoadedInGroupList
-  include Descendant
   include GroupDescendant
   include TokenAuthenticatable
   include WithUploads
@@ -62,6 +61,8 @@ class Group < Namespace
   after_destroy :post_destroy_hook
   after_save :update_two_factor_requirement
   after_update :path_changed_hook, if: :saved_change_to_path?
+
+  scope :with_users, -> { includes(:users) }
 
   class << self
     def sort_by_attribute(method)
@@ -140,6 +141,12 @@ class Group < Namespace
 
   def notification_settings_for(user, hierarchy_order: nil)
     notification_settings(hierarchy_order: hierarchy_order).where(user: user)
+  end
+
+  def notification_email_for(user)
+    # Finds the closest notification_setting with a `notification_email`
+    notification_settings = notification_settings_for(user, hierarchy_order: :asc)
+    notification_settings.find { |n| n.notification_email.present? }&.notification_email
   end
 
   def to_reference(_from = nil, full: nil)
@@ -380,7 +387,7 @@ class Group < Namespace
     variables = Ci::GroupVariable.where(group: list_of_ids)
     variables = variables.unprotected unless project.protected_for?(ref)
     variables = variables.group_by(&:group_id)
-    list_of_ids.reverse.map { |group| variables[group.id] }.compact.flatten
+    list_of_ids.reverse.flat_map { |group| variables[group.id] }.compact
   end
 
   def group_member(user)
@@ -410,12 +417,12 @@ class Group < Namespace
     ensure_runners_token!
   end
 
-  def group_clusters_enabled?
-    Feature.enabled?(:group_clusters, root_ancestor, default_enabled: true)
-  end
-
   def project_creation_level
     super || ::Gitlab::CurrentSettings.default_project_creation
+  end
+
+  def subgroup_creation_level
+    super || ::Gitlab::Access::OWNER_SUBGROUP_ACCESS
   end
 
   private
@@ -423,7 +430,7 @@ class Group < Namespace
   def update_two_factor_requirement
     return unless saved_change_to_require_two_factor_authentication? || saved_change_to_two_factor_grace_period?
 
-    users.find_each(&:update_two_factor_requirement)
+    members_with_descendants.find_each(&:update_two_factor_requirement)
   end
 
   def path_changed_hook

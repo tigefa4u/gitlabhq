@@ -2,8 +2,7 @@ import $ from 'jquery';
 import _ from 'underscore';
 import timeago from 'timeago.js';
 import dateFormat from 'dateformat';
-import { pluralize } from './text_utility';
-import { languageCode, s__, __ } from '../../locale';
+import { languageCode, s__, __, n__ } from '../../locale';
 
 window.timeago = timeago;
 
@@ -231,14 +230,10 @@ export const timeIntervalInWords = intervalInSeconds => {
   const secondsInteger = parseInt(intervalInSeconds, 10);
   const minutes = Math.floor(secondsInteger / 60);
   const seconds = secondsInteger - minutes * 60;
-  let text = '';
-
-  if (minutes >= 1) {
-    text = `${minutes} ${pluralize('minute', minutes)} ${seconds} ${pluralize('second', seconds)}`;
-  } else {
-    text = `${seconds} ${pluralize('second', seconds)}`;
-  }
-  return text;
+  const secondsText = n__('%d second', '%d seconds', seconds);
+  return minutes >= 1
+    ? [n__('%d minute', '%d minutes', minutes), secondsText].join(' ')
+    : secondsText;
 };
 
 export const dateInWords = (date, abbreviated = false, hideYear = false) => {
@@ -479,9 +474,13 @@ export const pikadayToString = date => {
  * Seconds can be negative or positive, zero or non-zero. Can be configured for any day
  * or week length.
  */
-export const parseSeconds = (seconds, { daysPerWeek = 5, hoursPerDay = 8 } = {}) => {
+export const parseSeconds = (
+  seconds,
+  { daysPerWeek = 5, hoursPerDay = 8, limitToHours = false } = {},
+) => {
   const DAYS_PER_WEEK = daysPerWeek;
   const HOURS_PER_DAY = hoursPerDay;
+  const SECONDS_PER_MINUTE = 60;
   const MINUTES_PER_HOUR = 60;
   const MINUTES_PER_WEEK = DAYS_PER_WEEK * HOURS_PER_DAY * MINUTES_PER_HOUR;
   const MINUTES_PER_DAY = HOURS_PER_DAY * MINUTES_PER_HOUR;
@@ -493,9 +492,18 @@ export const parseSeconds = (seconds, { daysPerWeek = 5, hoursPerDay = 8 } = {})
     minutes: 1,
   };
 
-  let unorderedMinutes = Math.abs(seconds / MINUTES_PER_HOUR);
+  if (limitToHours) {
+    timePeriodConstraints.weeks = 0;
+    timePeriodConstraints.days = 0;
+  }
+
+  let unorderedMinutes = Math.abs(seconds / SECONDS_PER_MINUTE);
 
   return _.mapObject(timePeriodConstraints, minutesPerPeriod => {
+    if (minutesPerPeriod === 0) {
+      return 0;
+    }
+
     const periodCount = Math.floor(unorderedMinutes / minutesPerPeriod);
 
     unorderedMinutes -= periodCount * minutesPerPeriod;

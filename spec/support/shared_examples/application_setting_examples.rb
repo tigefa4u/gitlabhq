@@ -1,62 +1,79 @@
 # frozen_string_literal: true
 
+RSpec.shared_examples 'string of domains' do |attribute|
+  it 'sets single domain' do
+    setting.method("#{attribute}_raw=").call('example.com')
+    expect(setting.method(attribute).call).to eq(['example.com'])
+  end
+
+  it 'sets multiple domains with spaces' do
+    setting.method("#{attribute}_raw=").call('example.com *.example.com')
+    expect(setting.method(attribute).call).to eq(['example.com', '*.example.com'])
+  end
+
+  it 'sets multiple domains with newlines and a space' do
+    setting.method("#{attribute}_raw=").call("example.com\n *.example.com")
+    expect(setting.method(attribute).call).to eq(['example.com', '*.example.com'])
+  end
+
+  it 'sets multiple domains with commas' do
+    setting.method("#{attribute}_raw=").call("example.com, *.example.com")
+    expect(setting.method(attribute).call).to eq(['example.com', '*.example.com'])
+  end
+
+  it 'sets multiple domains with semicolon' do
+    setting.method("#{attribute}_raw=").call("example.com; *.example.com")
+    expect(setting.method(attribute).call).to contain_exactly('example.com', '*.example.com')
+  end
+
+  it 'sets multiple domains with mixture of everything' do
+    setting.method("#{attribute}_raw=").call("example.com; *.example.com\n test.com\sblock.com   yes.com")
+    expect(setting.method(attribute).call).to contain_exactly('example.com', '*.example.com', 'test.com', 'block.com', 'yes.com')
+  end
+
+  it 'removes duplicates' do
+    setting.method("#{attribute}_raw=").call("example.com; example.com; 127.0.0.1; 127.0.0.1")
+    expect(setting.method(attribute).call).to contain_exactly('example.com', '127.0.0.1')
+  end
+
+  it 'does not fail with garbage values' do
+    setting.method("#{attribute}_raw=").call("example;34543:garbage:fdh5654;")
+    expect(setting.method(attribute).call).to contain_exactly('example', '34543:garbage:fdh5654')
+  end
+end
+
 RSpec.shared_examples 'application settings examples' do
   context 'restricted signup domains' do
-    it 'sets single domain' do
-      setting.domain_whitelist_raw = 'example.com'
-      expect(setting.domain_whitelist).to eq(['example.com'])
-    end
-
-    it 'sets multiple domains with spaces' do
-      setting.domain_whitelist_raw = 'example.com *.example.com'
-      expect(setting.domain_whitelist).to eq(['example.com', '*.example.com'])
-    end
-
-    it 'sets multiple domains with newlines and a space' do
-      setting.domain_whitelist_raw = "example.com\n *.example.com"
-      expect(setting.domain_whitelist).to eq(['example.com', '*.example.com'])
-    end
-
-    it 'sets multiple domains with commas' do
-      setting.domain_whitelist_raw = "example.com, *.example.com"
-      expect(setting.domain_whitelist).to eq(['example.com', '*.example.com'])
-    end
+    it_behaves_like 'string of domains', :domain_whitelist
   end
 
   context 'blacklisted signup domains' do
-    it 'sets single domain' do
-      setting.domain_blacklist_raw = 'example.com'
-      expect(setting.domain_blacklist).to contain_exactly('example.com')
-    end
-
-    it 'sets multiple domains with spaces' do
-      setting.domain_blacklist_raw = 'example.com *.example.com'
-      expect(setting.domain_blacklist).to contain_exactly('example.com', '*.example.com')
-    end
-
-    it 'sets multiple domains with newlines and a space' do
-      setting.domain_blacklist_raw = "example.com\n *.example.com"
-      expect(setting.domain_blacklist).to contain_exactly('example.com', '*.example.com')
-    end
-
-    it 'sets multiple domains with commas' do
-      setting.domain_blacklist_raw = "example.com, *.example.com"
-      expect(setting.domain_blacklist).to contain_exactly('example.com', '*.example.com')
-    end
-
-    it 'sets multiple domains with semicolon' do
-      setting.domain_blacklist_raw = "example.com; *.example.com"
-      expect(setting.domain_blacklist).to contain_exactly('example.com', '*.example.com')
-    end
-
-    it 'sets multiple domains with mixture of everything' do
-      setting.domain_blacklist_raw = "example.com; *.example.com\n test.com\sblock.com   yes.com"
-      expect(setting.domain_blacklist).to contain_exactly('example.com', '*.example.com', 'test.com', 'block.com', 'yes.com')
-    end
+    it_behaves_like 'string of domains', :domain_blacklist
 
     it 'sets multiple domain with file' do
       setting.domain_blacklist_file = File.open(Rails.root.join('spec/fixtures/', 'domain_blacklist.txt'))
       expect(setting.domain_blacklist).to contain_exactly('example.com', 'test.com', 'foo.bar')
+    end
+  end
+
+  context 'outbound_local_requests_whitelist' do
+    it_behaves_like 'string of domains', :outbound_local_requests_whitelist
+  end
+
+  context 'outbound_local_requests_whitelist_arrays' do
+    it 'separates the IPs and domains' do
+      setting.outbound_local_requests_whitelist = [
+        '192.168.1.1', '127.0.0.0/28', 'www.example.com', 'example.com',
+        '::ffff:a00:2', '1:0:0:0:0:0:0:0/124', 'subdomain.example.com'
+      ]
+
+      ip_whitelist = [
+        IPAddr.new('192.168.1.1'), IPAddr.new('127.0.0.0/8'),
+        IPAddr.new('::ffff:a00:2'), IPAddr.new('1:0:0:0:0:0:0:0/124')
+      ]
+      domain_whitelist = ['www.example.com', 'example.com', 'subdomain.example.com']
+
+      expect(setting.outbound_local_requests_whitelist_arrays).to contain_exactly(ip_whitelist, domain_whitelist)
     end
   end
 
@@ -248,44 +265,5 @@ RSpec.shared_examples 'application settings examples' do
     setting.password_authentication_enabled_for_web = false
 
     expect(setting.password_authentication_enabled_for_web?).to be_falsey
-  end
-
-  describe 'sentry settings' do
-    context 'when the sentry settings are not set in gitlab.yml' do
-      it 'fallbacks to the settings in the database' do
-        setting.sentry_enabled = true
-        setting.sentry_dsn = 'https://b44a0828b72421a6d8e99efd68d44fa8@example.com/40'
-        setting.clientside_sentry_enabled = true
-        setting.clientside_sentry_dsn = 'https://b44a0828b72421a6d8e99efd68d44fa8@example.com/41'
-
-        allow(Gitlab.config.sentry).to receive(:enabled).and_return(false)
-        allow(Gitlab.config.sentry).to receive(:dsn).and_return(nil)
-        allow(Gitlab.config.sentry).to receive(:clientside_dsn).and_return(nil)
-
-        expect(setting.sentry_enabled).to eq true
-        expect(setting.sentry_dsn).to eq 'https://b44a0828b72421a6d8e99efd68d44fa8@example.com/40'
-        expect(setting.clientside_sentry_enabled).to eq true
-        expect(setting.clientside_sentry_dsn). to eq 'https://b44a0828b72421a6d8e99efd68d44fa8@example.com/41'
-      end
-    end
-
-    context 'when the sentry settings are set in gitlab.yml' do
-      it 'does not fallback to the settings in the database' do
-        setting.sentry_enabled = false
-        setting.sentry_dsn = 'https://b44a0828b72421a6d8e99efd68d44fa8@example.com/40'
-        setting.clientside_sentry_enabled = false
-        setting.clientside_sentry_dsn = 'https://b44a0828b72421a6d8e99efd68d44fa8@example.com/41'
-
-        allow(Gitlab.config.sentry).to receive(:enabled).and_return(true)
-        allow(Gitlab.config.sentry).to receive(:dsn).and_return('https://b44a0828b72421a6d8e99efd68d44fa8@example.com/42')
-        allow(Gitlab.config.sentry).to receive(:clientside_dsn).and_return('https://b44a0828b72421a6d8e99efd68d44fa8@example.com/43')
-
-        expect(setting).not_to receive(:read_attribute)
-        expect(setting.sentry_enabled).to eq true
-        expect(setting.sentry_dsn).to eq 'https://b44a0828b72421a6d8e99efd68d44fa8@example.com/42'
-        expect(setting.clientside_sentry_enabled).to eq true
-        expect(setting.clientside_sentry_dsn). to eq 'https://b44a0828b72421a6d8e99efd68d44fa8@example.com/43'
-      end
-    end
   end
 end

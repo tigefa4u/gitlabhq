@@ -19,6 +19,7 @@ Project.find_by_full_path('group/project').import_state.slice(:jid, :status, :la
 grep JID /var/log/gitlab/sidekiq/current
 grep "Import/Export error" /var/log/gitlab/sidekiq/current
 grep "Import/Export backtrace" /var/log/gitlab/sidekiq/current
+tail /var/log/gitlab/gitlab-rails/importer.log
 ```
 
 ## Troubleshooting performance issues
@@ -147,7 +148,6 @@ The `ModelConfigurationSpec` checks and confirms the addition of new models:
   If you think this model should be included in the export, please add it to `#{Gitlab::ImportExport.config_file}`.
 
   Definitely add it to `#{File.expand_path(ce_models_yml)}`
-  #{"or `#{File.expand_path(ee_models_yml)}` if the model/associations are EE-specific\n" if ee_models_hash.any?}
   to signal that you've handled this error and to prevent it from showing up in the future.
 MSG
 ```
@@ -230,8 +230,8 @@ meaning that we want to bump the version up in the next version (or patch releas
 For example:
 
 1. Add rename to `RelationRenameService` in X.Y
-2. Remove it from `RelationRenameService` in X.Y + 1
-3. Bump Import/Export version in X.Y + 1
+1. Remove it from `RelationRenameService` in X.Y + 1
+1. Bump Import/Export version in X.Y + 1
 
 ```ruby
 module Gitlab
@@ -253,7 +253,7 @@ Model relationships to be included in the project import/export:
 ```yaml
 project_tree:
   - labels:
-      :priorities
+    - :priorities
   - milestones:
     - events:
       - :push_event_payload

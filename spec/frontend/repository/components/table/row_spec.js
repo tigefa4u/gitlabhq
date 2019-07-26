@@ -1,5 +1,9 @@
 import { shallowMount, RouterLinkStub } from '@vue/test-utils';
+import { GlBadge, GlLink } from '@gitlab/ui';
+import { visitUrl } from '~/lib/utils/url_utility';
 import TableRow from '~/repository/components/table/row.vue';
+
+jest.mock('~/lib/utils/url_utility');
 
 let vm;
 let $router;
@@ -10,7 +14,12 @@ function factory(propsData = {}) {
   };
 
   vm = shallowMount(TableRow, {
-    propsData,
+    propsData: {
+      ...propsData,
+      name: propsData.path,
+      projectPath: 'gitlab-org/gitlab-ce',
+      url: `https://test.com`,
+    },
     mocks: {
       $router,
     },
@@ -25,6 +34,7 @@ function factory(propsData = {}) {
 describe('Repository table row component', () => {
   afterEach(() => {
     vm.destroy();
+    jest.clearAllMocks();
   });
 
   it('renders table row', () => {
@@ -76,6 +86,28 @@ describe('Repository table row component', () => {
     }
   });
 
+  it.each`
+    type        | pushes
+    ${'tree'}   | ${true}
+    ${'file'}   | ${false}
+    ${'commit'} | ${false}
+  `('calls visitUrl if $type is not tree', ({ type, pushes }) => {
+    factory({
+      id: '1',
+      path: 'test',
+      type,
+      currentPath: '/',
+    });
+
+    vm.trigger('click');
+
+    if (pushes) {
+      expect(visitUrl).not.toHaveBeenCalled();
+    } else {
+      expect(visitUrl).toHaveBeenCalledWith('https://test.com');
+    }
+  });
+
   it('renders commit ID for submodule', () => {
     factory({
       id: '1',
@@ -97,5 +129,31 @@ describe('Repository table row component', () => {
     });
 
     expect(vm.find('a').attributes('href')).toEqual('https://test.com');
+  });
+
+  it('renders LFS badge', () => {
+    factory({
+      id: '1',
+      path: 'test',
+      type: 'commit',
+      currentPath: '/',
+      lfsOid: '1',
+    });
+
+    expect(vm.find(GlBadge).exists()).toBe(true);
+  });
+
+  it('renders commit and web links with href for submodule', () => {
+    factory({
+      id: '1',
+      path: 'test',
+      type: 'commit',
+      url: 'https://test.com',
+      submoduleTreeUrl: 'https://test.com/commit',
+      currentPath: '/',
+    });
+
+    expect(vm.find('a').attributes('href')).toEqual('https://test.com');
+    expect(vm.find(GlLink).attributes('href')).toEqual('https://test.com/commit');
   });
 });

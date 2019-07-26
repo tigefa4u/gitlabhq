@@ -65,7 +65,7 @@ module API
             next unless collection
 
             targets = collection.map(&:target)
-            options[type] = { issuable_metadata: issuable_meta_data(targets, type) }
+            options[type] = { issuable_metadata: issuable_meta_data(targets, type, current_user) }
           end
         end
       end
@@ -77,7 +77,7 @@ module API
         use :pagination
       end
       get do
-        todos = paginate(find_todos.with_api_entity_associations)
+        todos = paginate(find_todos.with_entity_associations)
         options = { with: Entities::Todo, current_user: current_user }
         batch_load_issuable_metadata(todos, options)
 

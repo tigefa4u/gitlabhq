@@ -15,7 +15,7 @@ To see how GitLab looks please see the [features page on our website](https://ab
 
 - Manage Git repositories with fine grained access controls that keep your code secure
 - Perform code reviews and enhance collaboration with merge requests
-- Complete continuous integration (CI) and CD pipelines to builds, test, and deploy your applications
+- Complete continuous integration (CI) and continuous deployment/delivery (CD) pipelines to build, test, and deploy your applications
 - Each project can also have an issue tracker, issue board, and a wiki
 - Used by more than 100,000 organizations, GitLab is the most popular solution to manage Git repositories on-premises
 - Completely free and open source (MIT Expat license)
@@ -53,8 +53,6 @@ Compared to an installation from source, this is faster and less error prone.
 Just select your operating system, download the respective package (Debian or RPM) and install it using the system's package manager.
 
 There are various other options to install GitLab, please refer to the [installation page on the GitLab website](https://about.gitlab.com/installation/) for more information.
-
-You can access a new installation with the login **`root`** and password **`5iveL!fe`**, after login you are required to set a unique password.
 
 ## Contributing
 
@@ -125,4 +123,3 @@ Please see [Getting help for GitLab](https://about.gitlab.com/getting-help/) on 
 ## Is it awesome?
 
 [These people](https://twitter.com/gitlab/likes) seem to like it.
-

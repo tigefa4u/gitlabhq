@@ -13,7 +13,7 @@ class Projects::EnvironmentsController < Projects::ApplicationController
   before_action only: [:metrics, :additional_metrics, :metrics_dashboard] do
     push_frontend_feature_flag(:environment_metrics_use_prometheus_endpoint)
     push_frontend_feature_flag(:environment_metrics_show_multiple_dashboards)
-    push_frontend_feature_flag(:grafana_dashboard_link)
+    push_frontend_feature_flag(:environment_metrics_additional_panel_types)
     push_frontend_feature_flag(:prometheus_computed_alerts)
   end
 
@@ -160,12 +160,22 @@ class Projects::EnvironmentsController < Projects::ApplicationController
   end
 
   def metrics_dashboard
-    return render_403 unless Feature.enabled?(:environment_metrics_use_prometheus_endpoint, project)
+    if Feature.enabled?(:gfm_embedded_metrics, project) && params[:embedded]
+      result = dashboard_finder.find(
+        project,
+        current_user,
+        environment,
+        embedded: params[:embedded]
+      )
+    elsif Feature.enabled?(:environment_metrics_show_multiple_dashboards, project)
+      result = dashboard_finder.find(
+        project,
+        current_user,
+        environment,
+        dashboard_path: params[:dashboard]
+      )
 
-    if Feature.enabled?(:environment_metrics_show_multiple_dashboards, project)
-      result = dashboard_finder.find(project, current_user, environment, params[:dashboard])
-
-      result[:all_dashboards] = project.repository.metrics_dashboard_paths
+      result[:all_dashboards] = dashboard_finder.find_all_paths(project)
     else
       result = dashboard_finder.find(project, current_user, environment)
     end

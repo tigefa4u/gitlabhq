@@ -1,4 +1,4 @@
-# Epics API **[ULTIMATE]**
+# Epics API **(ULTIMATE)**
 
 Every API call to epic must be authenticated.
 
@@ -10,7 +10,7 @@ If epics feature is not available a `403` status code will be returned.
 
 The [epic issues API](epic_issues.md) allows you to interact with issues associated with an epic.
 
-# Milestone dates integration
+## Milestone dates integration
 
 > [Introduced][ee-6448] in GitLab 11.3.
 
@@ -302,7 +302,7 @@ POST /groups/:id/epics/:epic_iid/todo
 | Attribute   | Type    | Required | Description                          |
 |-------------|---------|----------|--------------------------------------|
 | `id`        | integer/string | yes   | The ID or [URL-encoded path of the group](README.md#namespaced-path-encoding) owned by the authenticated user  |
-| `epic_iid ` | integer | yes          | The internal ID of a group's epic |
+| `epic_iid` | integer | yes          | The internal ID of a group's epic |
 
 ```bash
 curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/groups/1/epics/5/todo

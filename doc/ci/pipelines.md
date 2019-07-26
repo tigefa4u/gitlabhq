@@ -6,6 +6,11 @@ type: reference
 
 > Introduced in GitLab 8.8.
 
+NOTE: **Tip:**
+Watch our
+["Mastering continuous software development"](https://about.gitlab.com/webcast/mastering-ci-cd/)
+webcast to see a comprehensive demo of GitLab CI/CD pipeline.
+
 ## Introduction
 
 Pipelines are the top-level component of continuous integration, delivery, and deployment.
@@ -139,6 +144,20 @@ The union of A, B, and C is (1, 4) and (6, 7). Therefore, the total running time
 (4 - 1) + (7 - 6) => 4
 ```
 
+### Expanding and collapsing job log sections
+
+> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/issues/14664) in GitLab
+> 12.0.
+
+Job logs are divided into sections that can be collapsed or expanded.
+
+In the following example:
+
+- Two sections are expanded and can be collapsed.
+- One section is collapsed and can be expanded.
+
+![Collapsible sections](img/collapsible_log.png)
+
 ## Configuring pipelines
 
 Pipelines, and their component jobs and stages, are defined in the [`.gitlab-ci.yml`](yaml/README.md) file for each project.
@@ -220,7 +239,7 @@ Pipeline status and test coverage report badges are available and configurable f
 
 For information on adding pipeline badges to projects, see [Pipeline badges](../user/project/pipelines/settings.md#pipeline-badges).
 
-## Multi-project pipelines **[PREMIUM]**
+## Multi-project pipelines **(PREMIUM)**
 
 Pipelines for different projects can be combined and visualized together.
 
@@ -331,7 +350,7 @@ GitLab provides API endpoints to:
   - [Triggering pipelines through the API](triggers/README.md).
   - [Pipeline triggers API](../api/pipeline_triggers.md).
 
-### Start multiple manual actions in a stage
+### Start multiple manual actions in a stage
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/27188) in GitLab 11.11.
 

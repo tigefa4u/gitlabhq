@@ -89,7 +89,7 @@ describe GroupsController do
   end
 
   describe 'GET #new' do
-    context 'when creating subgroups', :nested_groups do
+    context 'when creating subgroups' do
       [true, false].each do |can_create_group_status|
         context "and can_create_group is #{can_create_group_status}" do
           before do
@@ -125,11 +125,14 @@ describe GroupsController do
     end
 
     context 'as json' do
-      it 'includes all projects in event feed' do
-        3.times do
+      it 'includes all projects from groups and subgroups in event feed' do
+        2.times do
           project = create(:project, group: group)
           create(:event, project: project)
         end
+        subgroup = create(:group, parent: group)
+        project = create(:project, group: subgroup)
+        create(:event, project: project)
 
         get :activity, params: { id: group.to_param }, format: :json
 
@@ -163,7 +166,7 @@ describe GroupsController do
       end
     end
 
-    context 'when creating subgroups', :nested_groups do
+    context 'when creating subgroups' do
       [true, false].each do |can_create_group_status|
         context "and can_create_group is #{can_create_group_status}" do
           context 'and logged in as Owner' do
@@ -581,7 +584,7 @@ describe GroupsController do
     end
   end
 
-  describe 'PUT transfer', :postgresql do
+  describe 'PUT transfer' do
     before do
       sign_in(user)
     end

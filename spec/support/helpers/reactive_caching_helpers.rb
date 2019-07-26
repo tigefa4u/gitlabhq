@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ReactiveCachingHelpers
   def reactive_cache_key(subject, *qualifiers)
     ([subject.class.reactive_cache_key.call(subject)].flatten + qualifiers).join(':')
@@ -10,7 +12,7 @@ module ReactiveCachingHelpers
   def stub_reactive_cache(subject = nil, data = nil, *qualifiers)
     allow(ReactiveCachingWorker).to receive(:perform_async)
     allow(ReactiveCachingWorker).to receive(:perform_in)
-    write_reactive_cache(subject, data, *qualifiers) unless data.nil?
+    write_reactive_cache(subject, data, *qualifiers) unless subject.nil?
   end
 
   def synchronous_reactive_cache(subject)

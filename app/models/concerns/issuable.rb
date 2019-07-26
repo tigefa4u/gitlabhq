@@ -29,7 +29,11 @@ module Issuable
   # This object is used to gather issuable meta data for displaying
   # upvotes, downvotes, notes and closing merge requests count for issues and merge requests
   # lists avoiding n+1 queries and improving performance.
-  IssuableMeta = Struct.new(:upvotes, :downvotes, :user_notes_count, :merge_requests_count)
+  IssuableMeta = Struct.new(:upvotes, :downvotes, :user_notes_count, :mrs_count) do
+    def merge_requests_count(user = nil)
+      mrs_count
+    end
+  end
 
   included do
     cache_markdown_field :title, pipeline: :single_line
@@ -164,7 +168,7 @@ module Issuable
     # matched_columns - Modify the scope of the query. 'title', 'description' or joining them with a comma.
     #
     # Returns an ActiveRecord::Relation.
-    def full_search(query, matched_columns: 'title,description')
+    def full_search(query, matched_columns: 'title,description', use_minimum_char_limit: true)
       allowed_columns = [:title, :description]
       matched_columns = matched_columns.to_s.split(',').map(&:to_sym)
       matched_columns &= allowed_columns
@@ -172,7 +176,7 @@ module Issuable
       # Matching title or description if the matched_columns did not contain any allowed columns.
       matched_columns = [:title, :description] if matched_columns.empty?
 
-      fuzzy_search(query, matched_columns)
+      fuzzy_search(query, matched_columns, use_minimum_char_limit: use_minimum_char_limit)
     end
 
     def simple_sorts
@@ -422,5 +426,12 @@ module Issuable
   #
   def wipless_title_changed(old_title)
     old_title != title
+  end
+
+  ##
+  # Overridden on EE module
+  #
+  def supports_milestone?
+    respond_to?(:milestone_id)
   end
 end

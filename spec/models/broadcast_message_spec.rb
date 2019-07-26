@@ -48,14 +48,14 @@ describe BroadcastMessage do
       expect(described_class.current).to be_empty
     end
 
-    it 'caches the output of the query' do
+    it 'caches the output of the query for two weeks' do
       create(:broadcast_message)
 
-      expect(described_class).to receive(:current_and_future_messages).and_call_original.once
+      expect(described_class).to receive(:current_and_future_messages).and_call_original.twice
 
       described_class.current
 
-      Timecop.travel(1.year) do
+      Timecop.travel(3.weeks) do
         described_class.current
       end
     end
@@ -86,13 +86,6 @@ describe BroadcastMessage do
       create(:broadcast_message, :future)
 
       expect(Rails.cache).not_to receive(:delete).with(described_class::CACHE_KEY)
-      expect(described_class.current.length).to eq(0)
-    end
-
-    it 'clears the legacy cache key' do
-      create(:broadcast_message, :future)
-
-      expect(Rails.cache).to receive(:delete).with(described_class::LEGACY_CACHE_KEY)
       expect(described_class.current.length).to eq(0)
     end
   end
@@ -164,7 +157,6 @@ describe BroadcastMessage do
       message = create(:broadcast_message)
 
       expect(Rails.cache).to receive(:delete).with(described_class::CACHE_KEY)
-      expect(Rails.cache).to receive(:delete).with(described_class::LEGACY_CACHE_KEY)
 
       message.flush_redis_cache
     end

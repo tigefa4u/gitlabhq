@@ -8,7 +8,9 @@ import FilteredSearchVisualTokens from './filtered_search_visual_tokens';
 
 export default class FilteredSearchDropdownManager {
   constructor({
-    baseEndpoint = '',
+    runnerTagsEndpoint = '',
+    labelsEndpoint = '',
+    milestonesEndpoint = '',
     tokenizer,
     page,
     isGroup,
@@ -17,7 +19,9 @@ export default class FilteredSearchDropdownManager {
     filteredSearchTokenKeys,
   }) {
     this.container = FilteredSearchContainer.container;
-    this.baseEndpoint = baseEndpoint.replace(/\/$/, '');
+    this.runnerTagsEndpoint = runnerTagsEndpoint.replace(/\/$/, '');
+    this.labelsEndpoint = labelsEndpoint.replace(/\/$/, '');
+    this.milestonesEndpoint = milestonesEndpoint.replace(/\/$/, '');
     this.tokenizer = tokenizer;
     this.filteredSearchTokenKeys = filteredSearchTokenKeys || FilteredSearchTokenKeys;
     this.filteredSearchInput = this.container.querySelector('.filtered-search');
@@ -47,7 +51,9 @@ export default class FilteredSearchDropdownManager {
     const supportedTokens = this.filteredSearchTokenKeys.getKeys();
     const availableMappings = new AvailableDropdownMappings(
       this.container,
-      this.baseEndpoint,
+      this.runnerTagsEndpoint,
+      this.labelsEndpoint,
+      this.milestonesEndpoint,
       this.groupsOnly,
       this.includeAncestorGroups,
       this.includeDescendantGroups,

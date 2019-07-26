@@ -1,7 +1,7 @@
 <script>
-import { mapActions } from 'vuex';
+import { n__ } from '~/locale';
 import Icon from '~/vue_shared/components/icon.vue';
-import { pluralize, truncate } from '~/lib/utils/text_utility';
+import { truncate } from '~/lib/utils/text_utility';
 import UserAvatarImage from '~/vue_shared/components/user_avatar/user_avatar_image.vue';
 import { GlTooltipDirective } from '@gitlab/ui';
 import { COUNT_OF_AVATARS_IN_GUTTER, LENGTH_OF_AVATAR_TOOLTIP } from '../constants';
@@ -19,11 +19,13 @@ export default {
       type: Array,
       required: true,
     },
+    discussionsExpanded: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   computed: {
-    discussionsExpanded() {
-      return this.discussions.every(discussion => discussion.expanded);
-    },
     allDiscussions() {
       return this.discussions.reduce((acc, note) => acc.concat(note.notes), []);
     },
@@ -41,29 +43,17 @@ export default {
         return '';
       }
 
-      return pluralize(`${this.moreCount} more comment`, this.moreCount);
+      return n__('%d more comment', '%d more comments', this.moreCount);
     },
   },
   methods: {
-    ...mapActions(['toggleDiscussion']),
     getTooltipText(noteData) {
       let { note } = noteData;
-
       if (note.length > LENGTH_OF_AVATAR_TOOLTIP) {
         note = truncate(note, LENGTH_OF_AVATAR_TOOLTIP);
       }
 
       return `${noteData.author.name}: ${note}`;
-    },
-    toggleDiscussions() {
-      const forceExpanded = this.discussions.some(discussion => !discussion.expanded);
-
-      this.discussions.forEach(discussion => {
-        this.toggleDiscussion({
-          discussionId: discussion.id,
-          forceExpanded,
-        });
-      });
     },
   },
 };
@@ -74,9 +64,9 @@ export default {
     <button
       v-if="discussionsExpanded"
       type="button"
-      aria-label="Show comments"
+      :aria-label="__('Show comments')"
       class="diff-notes-collapse js-diff-comment-avatar js-diff-comment-button"
-      @click="toggleDiscussions"
+      @click="$emit('toggleLineDiscussions')"
     >
       <icon :size="12" name="collapse" />
     </button>
@@ -87,7 +77,7 @@ export default {
         :img-src="note.author.avatar_url"
         :tooltip-text="getTooltipText(note)"
         class="diff-comment-avatar js-diff-comment-avatar"
-        @click.native="toggleDiscussions"
+        @click.native="$emit('toggleLineDiscussions')"
       />
       <span
         v-if="moreText"
@@ -97,7 +87,7 @@ export default {
         data-container="body"
         data-placement="top"
         role="button"
-        @click="toggleDiscussions"
+        @click="$emit('toggleLineDiscussions')"
         >+{{ moreCount }}</span
       >
     </template>

@@ -421,7 +421,7 @@ class ApplicationController < ActionController::Base
   end
 
   def manifest_import_enabled?
-    Group.supports_nested_objects? && Gitlab::CurrentSettings.import_sources.include?('manifest')
+    Gitlab::CurrentSettings.import_sources.include?('manifest')
   end
 
   def phabricator_import_enabled?
@@ -499,14 +499,20 @@ class ApplicationController < ActionController::Base
   end
 
   def stop_impersonation
-    impersonated_user = current_user
-
-    Gitlab::AppLogger.info("User #{impersonator.username} has stopped impersonating #{impersonated_user.username}")
+    log_impersonation_event
 
     warden.set_user(impersonator, scope: :user)
     session[:impersonator_id] = nil
 
     impersonated_user
+  end
+
+  def impersonated_user
+    current_user
+  end
+
+  def log_impersonation_event
+    Gitlab::AppLogger.info("User #{impersonator.username} has stopped impersonating #{impersonated_user.username}")
   end
 
   def impersonator
@@ -515,5 +521,11 @@ class ApplicationController < ActionController::Base
 
   def sentry_context
     Gitlab::Sentry.context(current_user)
+  end
+
+  def allow_gitaly_ref_name_caching
+    ::Gitlab::GitalyClient.allow_ref_name_caching do
+      yield
+    end
   end
 end

@@ -10,8 +10,6 @@
 #    class Foo < ApplicationRecord
 #      include ReactiveCaching
 #
-#      self.reactive_cache_key = ->(thing) { ["foo", thing.id] }
-#
 #      after_save :clear_reactive_cache!
 #
 #      def calculate_reactive_cache
@@ -89,6 +87,8 @@ module ReactiveCaching
     class_attribute :reactive_cache_worker_finder
 
     # defaults
+    self.reactive_cache_key = -> (record) { [model_name.singular, record.id] }
+
     self.reactive_cache_lease_timeout = 2.minutes
 
     self.reactive_cache_refresh_interval = 1.minute
@@ -173,12 +173,16 @@ module ReactiveCaching
     end
 
     def within_reactive_cache_lifetime?(*args)
-      !!Rails.cache.read(alive_reactive_cache_key(*args))
+      if Feature.enabled?(:reactive_caching_check_key_exists, default_enabled: true)
+        Rails.cache.exist?(alive_reactive_cache_key(*args))
+      else
+        !!Rails.cache.read(alive_reactive_cache_key(*args))
+      end
     end
 
     def enqueuing_update(*args)
       yield
-    ensure
+
       ReactiveCachingWorker.perform_in(self.class.reactive_cache_refresh_interval, self.class, id, *args)
     end
   end

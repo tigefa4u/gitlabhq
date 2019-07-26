@@ -16,7 +16,7 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   before_action :authenticate_user!, only: [:assign_related_issues]
   before_action :check_user_can_push_to_source_branch!, only: [:rebase]
 
-  around_action :allow_gitaly_ref_name_caching, only: [:index, :show]
+  around_action :allow_gitaly_ref_name_caching, only: [:index, :show, :discussions]
 
   def index
     @merge_requests = @issuables
@@ -201,7 +201,7 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   end
 
   def rebase
-    RebaseWorker.perform_async(@merge_request.id, current_user.id)
+    @merge_request.rebase_async(current_user.id)
 
     head :ok
   end
@@ -235,12 +235,6 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
     params[:auto_merge_strategy].present? || params[:merge_when_pipeline_succeeds].present?
   end
 
-  def close_merge_request_if_no_source_project
-    if !@merge_request.source_project && @merge_request.open?
-      @merge_request.close
-    end
-  end
-
   private
 
   def ci_environments_status_on_merge_result?
@@ -269,9 +263,15 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
     @merge_request.update(merge_error: nil, squash: merge_params.fetch(:squash, false))
 
     if auto_merge_requested?
-      AutoMergeService.new(project, current_user, merge_params)
-        .execute(merge_request,
-                 params[:auto_merge_strategy] || AutoMergeService::STRATEGY_MERGE_WHEN_PIPELINE_SUCCEEDS)
+      if merge_request.auto_merge_enabled?
+        # TODO: We should have a dedicated endpoint for updating merge params.
+        #       See https://gitlab.com/gitlab-org/gitlab-ce/issues/63130.
+        AutoMergeService.new(project, current_user, merge_params).update(merge_request)
+      else
+        AutoMergeService.new(project, current_user, merge_params)
+          .execute(merge_request,
+                   params[:auto_merge_strategy] || AutoMergeService::STRATEGY_MERGE_WHEN_PIPELINE_SUCCEEDS)
+      end
     else
       @merge_request.merge_async(current_user.id, merge_params)
 

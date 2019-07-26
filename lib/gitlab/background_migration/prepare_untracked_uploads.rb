@@ -55,7 +55,7 @@ module Gitlab
       def ensure_temporary_tracking_table_exists
         table_name = :untracked_files_for_uploads
 
-        unless ActiveRecord::Base.connection.data_source_exists?(table_name)
+        unless ActiveRecord::Base.connection.table_exists?(table_name)
           UntrackedFile.connection.create_table table_name do |t|
             t.string :path, limit: 600, null: false
             t.index :path, unique: true
@@ -111,7 +111,7 @@ module Gitlab
         cmd = %W[#{ionice} -c Idle] + cmd if ionice
 
         log_msg = "PrepareUntrackedUploads find command: \"#{cmd.join(' ')}\""
-        Rails.logger.info log_msg
+        Rails.logger.info log_msg # rubocop:disable Gitlab/RailsLogger
 
         cmd
       end
@@ -133,12 +133,9 @@ module Gitlab
       def insert_sql(file_paths)
         if postgresql_pre_9_5?
           "INSERT INTO #{table_columns_and_values_for_insert(file_paths)};"
-        elsif postgresql?
+        else
           "INSERT INTO #{table_columns_and_values_for_insert(file_paths)}"\
             " ON CONFLICT DO NOTHING;"
-        else # MySQL
-          "INSERT IGNORE INTO"\
-            " #{table_columns_and_values_for_insert(file_paths)};"
         end
       end
 

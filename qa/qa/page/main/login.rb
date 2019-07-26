@@ -6,7 +6,7 @@ module QA
       class Login < Page::Base
         view 'app/views/devise/passwords/edit.html.haml' do
           element :password_field
-          element :password_confirmation
+          element :password_confirmation_field
           element :change_password_button
         end
 
@@ -44,7 +44,7 @@ module QA
 
         def sign_in_using_credentials(user = nil)
           # Don't try to log-in if we're already logged-in
-          return if Page::Main::Menu.act { has_personal_area?(wait: 0) }
+          return if Page::Main::Menu.perform { |menu| menu.has_personal_area?(wait: 0) }
 
           using_wait_time 0 do
             set_initial_password_if_present
@@ -58,7 +58,7 @@ module QA
             end
           end
 
-          Page::Main::Menu.act { has_personal_area? }
+          Page::Main::Menu.perform(&:has_personal_area?)
         end
 
         def sign_in_using_admin_credentials
@@ -73,7 +73,7 @@ module QA
             sign_in_using_gitlab_credentials(admin)
           end
 
-          Page::Main::Menu.act { has_personal_area? }
+          Page::Main::Menu.perform(&:has_personal_area?)
         end
 
         def self.path
@@ -154,7 +154,7 @@ module QA
           return unless has_content?('Change your password')
 
           fill_element :password_field, Runtime::User.password
-          fill_element :password_confirmation, Runtime::User.password
+          fill_element :password_confirmation_field, Runtime::User.password
           click_element :change_password_button
         end
       end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::Ci::Config::Entry::Job do
@@ -14,6 +16,44 @@ describe Gitlab::Ci::Config::Entry::Job do
       end
 
       it { is_expected.to match_array result }
+    end
+  end
+
+  describe '.matching?' do
+    subject { described_class.matching?(name, config) }
+
+    context 'when config is not a hash' do
+      let(:name) { :rspec }
+      let(:config) { 'string' }
+
+      it { is_expected.to be_falsey }
+    end
+
+    context 'when config is a regular job' do
+      let(:name) { :rspec }
+      let(:config) do
+        { script: 'ls -al' }
+      end
+
+      it { is_expected.to be_truthy }
+    end
+
+    context 'when config is a bridge job' do
+      let(:name) { :rspec }
+      let(:config) do
+        { trigger: 'other-project' }
+      end
+
+      it { is_expected.to be_falsey }
+    end
+
+    context 'when config is a hidden job' do
+      let(:name) { '.rspec' }
+      let(:config) do
+        { script: 'ls -al' }
+      end
+
+      it { is_expected.to be_falsey }
     end
   end
 
@@ -195,15 +235,15 @@ describe Gitlab::Ci::Config::Entry::Job do
   end
 
   describe '#compose!' do
-    let(:unspecified) { double('unspecified', 'specified?' => false) }
-
     let(:specified) do
       double('specified', 'specified?' => true, value: 'specified')
     end
 
-    let(:deps) { double('deps', '[]' => unspecified) }
+    let(:unspecified) { double('unspecified', 'specified?' => false) }
+    let(:default) { double('default', '[]' => unspecified) }
+    let(:deps) { double('deps', 'default' => default, '[]' => unspecified) }
 
-    context 'when job config overrides global config' do
+    context 'when job config overrides default config' do
       before do
         entry.compose!(deps)
       end
@@ -212,21 +252,22 @@ describe Gitlab::Ci::Config::Entry::Job do
         { script: 'rspec', image: 'some_image', cache: { key: 'test' } }
       end
 
-      it 'overrides global config' do
+      it 'overrides default config' do
         expect(entry[:image].value).to eq(name: 'some_image')
         expect(entry[:cache].value).to eq(key: 'test', policy: 'pull-push')
       end
     end
 
-    context 'when job config does not override global config' do
+    context 'when job config does not override default config' do
       before do
-        allow(deps).to receive('[]').with(:image).and_return(specified)
+        allow(default).to receive('[]').with(:image).and_return(specified)
+
         entry.compose!(deps)
       end
 
       let(:config) { { script: 'ls', cache: { key: 'test' } } }
 
-      it 'uses config from global entry' do
+      it 'uses config from default entry' do
         expect(entry[:image].value).to eq 'specified'
         expect(entry[:cache].value).to eq(key: 'test', policy: 'pull-push')
       end
@@ -258,7 +299,8 @@ describe Gitlab::Ci::Config::Entry::Job do
                    stage: 'test',
                    ignore: false,
                    after_script: %w[cleanup],
-                   only: { refs: %w[branches tags] })
+                   only: { refs: %w[branches tags] },
+                   variables: {})
         end
       end
     end

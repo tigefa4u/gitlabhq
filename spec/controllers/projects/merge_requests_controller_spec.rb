@@ -242,9 +242,7 @@ describe Projects::MergeRequestsController do
 
         update_merge_request({ assignee_ids: [assignee.id] }, format: :json)
 
-        body = JSON.parse(response.body)
-
-        expect(body['assignees']).to all(include(*%w(name username avatar_url id state web_url)))
+        expect(json_response['assignees']).to all(include(*%w(name username avatar_url id state web_url)))
       end
     end
 
@@ -412,7 +410,7 @@ describe Projects::MergeRequestsController do
         end
       end
 
-      context 'when the pipeline succeeds is passed' do
+      context 'when merge when pipeline succeeds option is passed' do
         let!(:head_pipeline) do
           create(:ci_empty_pipeline, project: project, sha: merge_request.diff_head_sha, ref: merge_request.source_branch, head_pipeline_of: merge_request)
         end
@@ -460,6 +458,30 @@ describe Projects::MergeRequestsController do
             merge_when_pipeline_succeeds
 
             expect(json_response).to eq('status' => 'merge_when_pipeline_succeeds')
+          end
+        end
+
+        context 'when auto merge has not been enabled yet' do
+          it 'calls AutoMergeService#execute' do
+            expect_next_instance_of(AutoMergeService) do |service|
+              expect(service).to receive(:execute).with(merge_request, 'merge_when_pipeline_succeeds')
+            end
+
+            merge_when_pipeline_succeeds
+          end
+        end
+
+        context 'when auto merge has already been enabled' do
+          before do
+            merge_request.update!(auto_merge_enabled: true, merge_user: user)
+          end
+
+          it 'calls AutoMergeService#update' do
+            expect_next_instance_of(AutoMergeService) do |service|
+              expect(service).to receive(:update).with(merge_request)
+            end
+
+            merge_when_pipeline_succeeds
           end
         end
       end
@@ -854,16 +876,78 @@ describe Projects::MergeRequestsController do
         expect(control_count).to be <= 137
       end
 
-      def get_ci_environments_status(extra_params = {})
-        params = {
-          namespace_id: merge_request.project.namespace.to_param,
-          project_id: merge_request.project,
-          id: merge_request.iid,
-          format: 'json'
-        }
+      it 'has no N+1 SQL issues for environments', :request_store, retry: 0 do
+        # First run to insert test data from lets, which does take up some 30 queries
+        get_ci_environments_status
 
-        get :ci_environments_status, params: params.merge(extra_params)
+        control_count = ActiveRecord::QueryRecorder.new(skip_cached: false) { get_ci_environments_status }.count
+
+        environment2 = create(:environment, project: forked)
+        create(:deployment, :succeed, environment: environment2, sha: sha, ref: 'master', deployable: build)
+
+        # TODO address the last 5 queries
+        # See https://gitlab.com/gitlab-org/gitlab-ce/issues/63952 (5 queries)
+        leeway = 5
+        expect { get_ci_environments_status }.not_to exceed_all_query_limit(control_count + leeway)
       end
+    end
+
+    context 'when a merge request has multiple environments with deployments' do
+      let(:sha) { merge_request.diff_head_sha }
+      let(:ref) { merge_request.source_branch }
+
+      let!(:build) { create(:ci_build, pipeline: pipeline) }
+      let!(:pipeline) { create(:ci_pipeline, sha: sha, project: project) }
+      let!(:environment) { create(:environment, name: 'env_a', project: project) }
+      let!(:another_environment) { create(:environment, name: 'env_b', project: project) }
+
+      before do
+        merge_request.update_head_pipeline
+
+        create(:deployment, :succeed, environment: environment, sha: sha, ref: ref, deployable: build)
+        create(:deployment, :succeed, environment: another_environment, sha: sha, ref: ref, deployable: build)
+      end
+
+      it 'exposes multiple environment statuses' do
+        get_ci_environments_status
+
+        expect(json_response.count).to eq 2
+      end
+
+      context 'when route map is not present in the project' do
+        it 'does not have N+1 Gitaly requests for environments', :request_store do
+          expect(merge_request).to be_present
+
+          expect { get_ci_environments_status }
+            .to change { Gitlab::GitalyClient.get_request_count }.by_at_most(1)
+        end
+      end
+
+      context 'when there is route map present in a project' do
+        before do
+          allow_any_instance_of(EnvironmentStatus)
+            .to receive(:has_route_map?)
+            .and_return(true)
+        end
+
+        it 'does not have N+1 Gitaly requests for diff files', :request_store do
+          expect(merge_request.merge_request_diff.merge_request_diff_files).to be_many
+
+          expect { get_ci_environments_status }
+            .to change { Gitlab::GitalyClient.get_request_count }.by_at_most(1)
+        end
+      end
+    end
+
+    def get_ci_environments_status(extra_params = {})
+      params = {
+        namespace_id: merge_request.project.namespace.to_param,
+        project_id: merge_request.project,
+        id: merge_request.iid,
+        format: 'json'
+      }
+
+      get :ci_environments_status, params: params.merge(extra_params)
     end
   end
 
@@ -977,6 +1061,8 @@ describe Projects::MergeRequestsController do
       before do
         project.add_developer(user)
         sign_in(user)
+
+        expect(::Gitlab::GitalyClient).to receive(:allow_ref_name_caching).and_call_original
       end
 
       it 'returns 200' do

@@ -3,7 +3,7 @@
 require 'nokogiri'
 
 module MarkupHelper
-  include ActionView::Helpers::TagHelper
+  include ActionView::Helpers::TextHelper
   include ::Gitlab::ActionViewOutput::Context
 
   def plain?(filename)
@@ -154,9 +154,7 @@ module MarkupHelper
     elsif asciidoc?(file_name)
       asciidoc_unsafe(text, context)
     elsif plain?(file_name)
-      content_tag :pre, class: 'plain-readme' do
-        text
-      end
+      plain_unsafe(text)
     else
       other_markup_unsafe(file_name, text, context)
     end
@@ -263,7 +261,18 @@ module MarkupHelper
   end
 
   def asciidoc_unsafe(text, context = {})
+    context.merge!(
+      commit:         @commit,
+      ref:            @ref,
+      requested_path: @path
+    )
     Gitlab::Asciidoc.render(text, context)
+  end
+
+  def plain_unsafe(text)
+    content_tag :pre, class: 'plain-readme' do
+      text
+    end
   end
 
   def other_markup_unsafe(file_name, text, context = {})
@@ -273,7 +282,7 @@ module MarkupHelper
   def prepare_for_rendering(html, context = {})
     return '' unless html.present?
 
-    context.merge!(
+    context.reverse_merge!(
       current_user: (current_user if defined?(current_user)),
 
       # RelativeLinkFilter

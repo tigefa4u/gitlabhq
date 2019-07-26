@@ -1,5 +1,6 @@
 <script>
-/* global ListLabel */
+import { __ } from '~/locale';
+import ListLabel from '~/boards/models/label';
 import Cookies from 'js-cookie';
 import boardsStore from '../stores/boards_store';
 
@@ -7,8 +8,8 @@ export default {
   data() {
     return {
       predefinedLabels: [
-        new ListLabel({ title: 'To Do', color: '#F0AD4E' }),
-        new ListLabel({ title: 'Doing', color: '#5CB85C' }),
+        new ListLabel({ title: __('To Do'), color: '#F0AD4E' }),
+        new ListLabel({ title: __('Doing'), color: '#5CB85C' }),
       ],
     };
   },
@@ -29,12 +30,16 @@ export default {
       });
 
       // Save the labels
-      gl.boardService
+      boardsStore
         .generateDefaultLists()
         .then(res => res.data)
         .then(data => {
           data.forEach(listObj => {
             const list = boardsStore.findList('title', listObj.title);
+
+            if (!list) {
+              return;
+            }
 
             list.id = listObj.id;
             list.label.id = listObj.label.id;
@@ -58,30 +63,36 @@ export default {
 
 <template>
   <div class="board-blank-state p-3">
-    <p>Add the following default lists to your Issue Board with one click:</p>
+    <p>
+      {{
+        s__('BoardBlankState|Add the following default lists to your Issue Board with one click:')
+      }}
+    </p>
     <ul class="list-unstyled board-blank-state-list">
       <li v-for="(label, index) in predefinedLabels" :key="index">
         <span
           :style="{ backgroundColor: label.color }"
           class="label-color position-relative d-inline-block rounded"
-        >
-        </span>
+        ></span>
         {{ label.title }}
       </li>
     </ul>
     <p>
-      Starting out with the default set of lists will get you right on the way to making the most of
-      your board.
+      {{
+        s__(
+          'BoardBlankState|Starting out with the default set of lists will get you right on the way to making the most of your board.',
+        )
+      }}
     </p>
     <button
       class="btn btn-success btn-inverted btn-block"
       type="button"
       @click.stop="addDefaultLists"
     >
-      Add default lists
+      {{ s__('BoardBlankState|Add default lists') }}
     </button>
     <button class="btn btn-default btn-block" type="button" @click.stop="clearBlankState">
-      Nevermind, I'll use my own
+      {{ s__("BoardBlankState|Nevermind, I'll use my own") }}
     </button>
   </div>
 </template>

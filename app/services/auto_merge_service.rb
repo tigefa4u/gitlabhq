@@ -24,6 +24,12 @@ class AutoMergeService < BaseService
     service.execute(merge_request)
   end
 
+  def update(merge_request)
+    return :failed unless merge_request.auto_merge_enabled?
+
+    get_service_instance(merge_request.auto_merge_strategy).update(merge_request)
+  end
+
   def process(merge_request)
     return unless merge_request.auto_merge_enabled?
 
@@ -34,6 +40,12 @@ class AutoMergeService < BaseService
     return error("Can't cancel the automatic merge", 406) unless merge_request.auto_merge_enabled?
 
     get_service_instance(merge_request.auto_merge_strategy).cancel(merge_request)
+  end
+
+  def abort(merge_request, reason)
+    return error("Can't abort the automatic merge", 406) unless merge_request.auto_merge_enabled?
+
+    get_service_instance(merge_request.auto_merge_strategy).abort(merge_request, reason)
   end
 
   def available_strategies(merge_request)

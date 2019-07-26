@@ -155,10 +155,12 @@ describe('Filtered Search Visual Tokens', () => {
       `);
 
       const filteredSearchInput = document.querySelector('.filtered-search');
-      filteredSearchInput.dataset.baseEndpoint = dummyEndpoint;
+      filteredSearchInput.dataset.runnerTagsEndpoint = `${dummyEndpoint}/admin/runners/tag_list`;
+      filteredSearchInput.dataset.labelsEndpoint = `${dummyEndpoint}/-/labels`;
+      filteredSearchInput.dataset.milestonesEndpoint = `${dummyEndpoint}/-/milestones`;
 
       AjaxCache.internalStorage = {};
-      AjaxCache.internalStorage[`${dummyEndpoint}/labels.json`] = labelData;
+      AjaxCache.internalStorage[`${filteredSearchInput.dataset.labelsEndpoint}.json`] = labelData;
     });
 
     const parseColor = color => {

@@ -1,4 +1,8 @@
-# License Management **[ULTIMATE]**
+---
+type: reference, howto
+---
+
+# License Management **(ULTIMATE)**
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ee/issues/5483)
 in [GitLab Ultimate](https://about.gitlab.com/pricing/) 11.0.
@@ -8,7 +12,7 @@ in [GitLab Ultimate](https://about.gitlab.com/pricing/) 11.0.
 If you are using [GitLab CI/CD](../../../ci/README.md), you can search your project dependencies for their licenses
 using License Management.
 
-You can take advantage of License Management by either [including the job](#configuring-license-management)
+You can take advantage of License Management by either [including the job](#configuration)
 in your existing `.gitlab-ci.yml` file or by implicitly using
 [Auto License Management](../../../topics/autodevops/index.md#auto-license-management-ultimate)
 that is provided by [Auto DevOps](../../../topics/autodevops/index.md).
@@ -44,44 +48,37 @@ library whose license is incompatible with yours.
 
 The following languages and package managers are supported.
 
-| Language   | Package managers                                                  |
-|------------|-------------------------------------------------------------------|
-| JavaScript | [Bower](https://bower.io/), [npm](https://www.npmjs.com/)         |
-| Go         | [Godep](https://github.com/tools/godep), go get                   |
-| Java       | [Gradle](https://gradle.org/), [Maven](https://maven.apache.org/) |
-| .NET       | [Nuget](https://www.nuget.org/)                                   |
-| Python     | [pip](https://pip.pypa.io/en/stable/)                             |
-| Ruby       | [gem](https://rubygems.org/)                                      |
+| Language   | Package managers                                                  | Scan Tool                                                |
+|------------|-------------------------------------------------------------------|----------------------------------------------------------|
+| JavaScript | [Bower](https://bower.io/), [npm](https://www.npmjs.com/), [yarn](https://yarnpkg.com/) ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types)) |[License Finder](https://github.com/pivotal/LicenseFinder)|
+| Go         | [Godep](https://github.com/tools/godep), go get ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types)), gvt ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types)), glide ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types)), dep ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types)), trash ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types))  and govendor ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types)), [go mod](https://github.com/golang/go/wiki/Modules) ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types))   |[License Finder](https://github.com/pivotal/LicenseFinder)|
+| Java       | [Gradle](https://gradle.org/), [Maven](https://maven.apache.org/) |[License Finder](https://github.com/pivotal/LicenseFinder)|
+| .NET       | [Nuget](https://www.nuget.org/)                                   |[License Finder](https://github.com/pivotal/LicenseFinder)|
+| Python     | [pip](https://pip.pypa.io/en/stable/)                             |[License Finder](https://github.com/pivotal/LicenseFinder)|
+| Ruby       | [gem](https://rubygems.org/)                                      |[License Finder](https://github.com/pivotal/LicenseFinder)|
+| Erlang     | [rebar](https://www.rebar3.org/) ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types))|[License Finder](https://github.com/pivotal/LicenseFinder)|
+| Objective-C, Swift | [Carthage](https://github.com/Carthage/Carthage) , [CocoaPods v0.39 and below](https://cocoapods.org/) ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types))  |[License Finder](https://github.com/pivotal/LicenseFinder)|
+| Elixir     | [mix](https://elixir-lang.org/getting-started/mix-otp/introduction-to-mix.html) ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types)) |[License Finder](https://github.com/pivotal/LicenseFinder)|
+| C++/C      | [conan](https://conan.io/) ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types))|[License Finder](https://github.com/pivotal/LicenseFinder)|
+| Scala      | [sbt](https://www.scala-sbt.org/) ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types))|[License Finder](https://github.com/pivotal/LicenseFinder)|
+| Rust       | [cargo](https://crates.io/) ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types))|[License Finder](https://github.com/pivotal/LicenseFinder)|
+| PHP        | [composer](https://getcomposer.org/) ([experimental support](https://github.com/pivotal/LicenseFinder#experimental-project-types))|[License Finder](https://github.com/pivotal/LicenseFinder)|
 
 ## Requirements
 
 To run a License Management scanning job, you need GitLab Runner with the
 [`docker` executor](https://docs.gitlab.com/runner/executors/docker.html).
 
-## Configuring License Management
+## Configuration
 
-To enable License Management in your project, define a job in your `.gitlab-ci.yml`
-file that generates the [License Management report artifact](../../../ci/yaml/README.md#artifactsreportslicense_management-ultimate).
+For GitLab 11.9 and later, to enable License Management, you must
+[include](../../../ci/yaml/README.md#includetemplate) the
+[`License-Management.gitlab-ci.yml` template](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/lib/gitlab/ci/templates/Security/License-Management.gitlab-ci.yml)
+that's provided as a part of your GitLab installation.
+For GitLab versions earlier than 11.9, you can copy and use the job as defined
+that template.
 
-This can be done in two ways:
-
-- For GitLab 11.9 and later, including the provided License Management `.gitlab-ci.yml` template (recommended).
-- Manually specifying the job definition. Not recommended unless using GitLab
-  11.8 and earlier.
-
-### Including the provided template
-
-NOTE: **Note:**
-The CI/CD License Management template is supported on GitLab 11.9 and later versions.
-For earlier versions, use the [manual job definition](#manual-job-definition-for-gitlab-115-and-later).
-
-A CI/CD [License Management template](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/lib/gitlab/ci/templates/Security/License-Management.gitlab-ci.yml)
-with the default License Management job definition is provided as a part of your GitLab
-installation which you can [include](../../../ci/yaml/README.md#includetemplate)
-in your `.gitlab-ci.yml` file.
-
-To enable License Management using the provided template, add the following to
-your `.gitlab-ci.yml` file:
+Add the following to your `.gitlab-ci.yml` file:
 
 ```yaml
 include:
@@ -91,14 +88,17 @@ include:
 The included template will create a `license_management` job in your CI/CD pipeline
 and scan your dependencies to find their licenses.
 
-The report will be saved as a
+The results will be saved as a
 [License Management report artifact](../../../ci/yaml/README.md#artifactsreportslicense_management-ultimate)
 that you can later download and analyze. Due to implementation limitations, we
 always take the latest License Management artifact available. Behind the scenes, the
 [GitLab License Management Docker image](https://gitlab.com/gitlab-org/security-products/license-management)
 is used to detect the languages/frameworks and in turn analyzes the licenses.
 
-#### Installing custom dependencies
+The License Management settings can be changed through environment variables by using the
+[`variables`](../../../ci/yaml/README.md#variables) parameter in `.gitlab-ci.yml`. These variables are documented in the [License Management documentation](https://gitlab.com/gitlab-org/security-products/license-management#settings).
+
+### Installing custom dependencies
 
 > Introduced in [GitLab Ultimate](https://about.gitlab.com/pricing/) 11.4.
 
@@ -126,7 +126,7 @@ variables:
 In this example, `my-custom-install-script.sh` is a shell script at the root
 directory of your project.
 
-#### Overriding the template
+### Overriding the template
 
 If you want to override the job definition (for example, change properties like
 `variables` or `dependencies`), you need to declare a `license_management` job
@@ -141,7 +141,7 @@ license_management:
     CI_DEBUG_TRACE: "true"
 ```
 
-#### Configuring Maven projects
+### Configuring Maven projects
 
 The License Management tool provides a `MAVEN_CLI_OPTS` environment variable which can hold
 the command line arguments to pass to the `mvn install` command which is executed under the hood.
@@ -165,65 +165,21 @@ to explicitly add `-DskipTests` to your options.
 If you still need to run tests during `mvn install`, add `-DskipTests=false` to
 `MAVEN_CLI_OPTS`.
 
-### Manual job definition for GitLab 11.5 and later
+### Selecting the version of Python
 
-For GitLab 11.5 and GitLab Runner 11.5 and later, the following `license_management`
-job can be added:
+> [Introduced](https://gitlab.com/gitlab-org/security-products/license-management/merge_requests/36) in [GitLab Ultimate](https://about.gitlab.com/pricing/) 12.0.
 
-```yaml
-license_management:
-  image:
-    name: "registry.gitlab.com/gitlab-org/security-products/license-management:$CI_SERVER_VERSION_MAJOR-$CI_SERVER_VERSION_MINOR-stable"
-    entrypoint: [""]
-  stage: test
-  allow_failure: true
-  script:
-    - /run.sh analyze .
-  artifacts:
-    reports:
-      license_management: gl-license-management-report.json
-```
-
-If you want to install custom project dependencies via the `SETUP_CMD` variable:
+License Management uses Python 2.7 and pip 10.0 by default.
+If your project requires Python 3, you can switch to Python 3.5 and pip 19.1
+by setting the `LM_PYTHON_VERSION` environment variable to `3`.
 
 ```yaml
+include:
+  template: License-Management.gitlab-ci.yml
+
 license_management:
-  image:
-    name: "registry.gitlab.com/gitlab-org/security-products/license-management:$CI_SERVER_VERSION_MAJOR-$CI_SERVER_VERSION_MINOR-stable"
-    entrypoint: [""]
-  stage: test
   variables:
-    SETUP_CMD: ./my-custom-install-script.sh
-  allow_failure: true
-  script:
-    - /run.sh analyze .
-  artifacts:
-    reports:
-      license_management: gl-license-management-report.json
-```
-
-### Manual job definition for GitLab 11.4 and earlier (deprecated)
-
-CAUTION: **Caution:**
-Before GitLab 11.5, the License Management job and artifact had to be named specifically
-to automatically extract the report data and show it in the merge request widget.
-While these old job definitions are still maintained, they have been deprecated
-and may be removed in the next major release, GitLab 12.0. You are strongly advised
-to update your current `.gitlab-ci.yml` configuration to reflect that change.
-
-For GitLab 11.4 and earlier, the job should look like:
-
-```yaml
-license_management:
-  image:
-    name: "registry.gitlab.com/gitlab-org/security-products/license-management:$CI_SERVER_VERSION_MAJOR-$CI_SERVER_VERSION_MINOR-stable"
-    entrypoint: [""]
-  stage: test
-  allow_failure: true
-  script:
-    - /run.sh analyze .
-  artifacts:
-    paths: [gl-license-management-report.json]
+    LM_PYTHON_VERSION: 3
 ```
 
 ## Project policies for License Management
@@ -242,15 +198,28 @@ To approve or blacklist a license:
    navigate to the project's **Settings > CI/CD** and expand the
    **License Management** section.
 1. Click the **Add a license** button.
+
+   ![License Management Add License](img/license_management_add_license.png)
+
 1. In the **License name** dropdown, either:
-    - Select one of the available licenses. You can search for licenses in the field
-   at the top of the list.
-    - Enter arbitrary text in the field at the top of the list. This will cause the text to be
-    added as a license name to the list.
+   - Select one of the available licenses. You can search for licenses in the field
+     at the top of the list.
+   - Enter arbitrary text in the field at the top of the list. This will cause the text to be
+     added as a license name to the list.
 1. Select the **Approve** or **Blacklist** radio button to approve or blacklist respectively
    the selected license.
 
+To modify an existing license:
+
+1. In the **License Management** list, click the **Approved/Declined** dropdown to change it to the desired status.
+
    ![License Management Settings](img/license_management_settings.png)
+
+Searching for Licenses:
+
+1. Use the **Search** box to search for a specific license.
+
+   ![License Management Search](img/license_management_search.png)
 
 ## License Management report under pipelines
 
@@ -262,3 +231,15 @@ pipeline ID that has a `license_management` job to see the Licenses tab with the
 licenses (if any).
 
 ![License Management Pipeline Tab](img/license_management_pipeline_tab.png)
+
+<!-- ## Troubleshooting
+
+Include any troubleshooting steps that you can foresee. If you know beforehand what issues
+one might have when setting this up, or when something is changed, or on upgrading, it's
+important to describe those, too. Think of things that may go wrong and include them here.
+This is important to minimize requests for support, and to avoid doc comments with
+questions that you know someone might ask.
+
+Each scenario can be a third-level heading, e.g. `### Getting error message X`.
+If you have none to add when creating a doc, leave this section in place
+but commented out to help encourage others to add to it in the future. -->

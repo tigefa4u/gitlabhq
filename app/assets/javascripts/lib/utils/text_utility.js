@@ -29,14 +29,6 @@ export const humanize = string =>
   string.charAt(0).toUpperCase() + string.replace(/_/g, ' ').slice(1);
 
 /**
- * Adds an 's' to the end of the string when count is bigger than 0
- * @param {String} str
- * @param {Number} count
- * @returns {String}
- */
-export const pluralize = (str, count) => str + (count > 1 || count === 0 ? 's' : '');
-
-/**
  * Replaces underscores with dashes
  * @param {*} str
  * @returns {String}
@@ -44,11 +36,18 @@ export const pluralize = (str, count) => str + (count > 1 || count === 0 ? 's' :
 export const dasherize = str => str.replace(/[_\s]+/g, '-');
 
 /**
- * Replaces whitespaces with hyphens and converts to lower case
+ * Replaces whitespaces with hyphens, convert to lower case and remove non-allowed special characters
  * @param {String} str
  * @returns {String}
  */
-export const slugifyWithHyphens = str => str.toLowerCase().replace(/\s+/g, '-');
+export const slugify = str => {
+  const slug = str
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-zA-Z0-9_.-]+/g, '-');
+
+  return slug === '-' ? '' : slug;
+};
 
 /**
  * Replaces whitespaces with underscore and converts to lower case

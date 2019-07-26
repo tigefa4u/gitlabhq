@@ -1,4 +1,5 @@
 <script>
+import { __ } from '~/locale';
 import $ from 'jquery';
 import _ from 'underscore';
 import Icon from '~/vue_shared/components/icon.vue';
@@ -27,7 +28,7 @@ export default {
   },
   computed: {
     selectedProjectName() {
-      return this.selectedProject.name || 'Select a project';
+      return this.selectedProject.name || __('Select a project');
     },
   },
   mounted() {
@@ -67,13 +68,15 @@ export default {
             <li>
               <a href='#' class='dropdown-menu-link' data-project-id="${
                 project.id
-              }" data-project-name="${project.name}">
-                ${_.escape(project.name)}
+              }" data-project-name="${project.name}" data-project-name-with-namespace="${
+          project.name_with_namespace
+        }">
+                ${_.escape(project.name_with_namespace)}
               </a>
             </li>
           `;
       },
-      text: project => project.name,
+      text: project => project.name_with_namespace,
     });
   },
 };
@@ -81,7 +84,7 @@ export default {
 
 <template>
   <div>
-    <label class="label-bold prepend-top-10"> Project </label>
+    <label class="label-bold prepend-top-10">{{ __('Project') }}</label>
     <div ref="projectsDropdown" class="dropdown dropdown-projects">
       <button
         class="dropdown-menu-toggle wide"
@@ -92,9 +95,9 @@ export default {
         {{ selectedProjectName }} <icon name="chevron-down" />
       </button>
       <div class="dropdown-menu dropdown-menu-selectable dropdown-menu-full-width">
-        <div class="dropdown-title">Projects</div>
+        <div class="dropdown-title">{{ __('Projects') }}</div>
         <div class="dropdown-input">
-          <input class="dropdown-input-field" type="search" placeholder="Search projects" />
+          <input class="dropdown-input-field" type="search" :placeholder="__('Search projects')" />
           <icon name="search" class="dropdown-input-search" data-hidden="true" />
         </div>
         <div class="dropdown-content"></div>

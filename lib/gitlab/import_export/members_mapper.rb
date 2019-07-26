@@ -35,7 +35,7 @@ module Gitlab
       end
 
       def include?(old_author_id)
-        map.keys.include?(old_author_id) && map[old_author_id] != default_user_id
+        map.has_key?(old_author_id) && map[old_author_id] != default_user_id
       end
 
       private
@@ -50,6 +50,8 @@ module Gitlab
         @project.project_members.destroy_all # rubocop: disable DestroyAll
 
         ProjectMember.create!(user: @user, access_level: ProjectMember::MAINTAINER, source_id: @project.id, importing: true)
+      rescue => e
+        raise e, "Error adding importer user to project members. #{e.message}"
       end
 
       def add_team_member(member, existing_user = nil)

@@ -92,6 +92,16 @@ describe('Multi-file store utils', () => {
             path: 'deletedFile',
             deleted: true,
           },
+          {
+            ...file('renamedFile'),
+            path: 'renamedFile',
+            prevPath: 'prevPath',
+          },
+          {
+            ...file('replacingFile'),
+            path: 'replacingFile',
+            replaces: true,
+          },
         ],
         currentBranchId: 'master',
       };
@@ -131,8 +141,24 @@ describe('Multi-file store utils', () => {
             last_commit_id: undefined,
             previous_path: undefined,
           },
+          {
+            action: commitActionTypes.move,
+            file_path: 'renamedFile',
+            content: null,
+            encoding: 'text',
+            last_commit_id: undefined,
+            previous_path: 'prevPath',
+          },
+          {
+            action: commitActionTypes.update,
+            file_path: 'replacingFile',
+            content: undefined,
+            encoding: 'text',
+            last_commit_id: undefined,
+            previous_path: undefined,
+          },
         ],
-        start_branch: undefined,
+        start_sha: undefined,
       });
     });
 
@@ -187,7 +213,7 @@ describe('Multi-file store utils', () => {
             previous_path: undefined,
           },
         ],
-        start_branch: undefined,
+        start_sha: undefined,
       });
     });
   });

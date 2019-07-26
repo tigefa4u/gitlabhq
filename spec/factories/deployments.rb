@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :deployment, class: Deployment do
     sha 'b83d6e391c22777fca1ed3012fce84f633d7fed0'
@@ -20,6 +22,10 @@ FactoryBot.define do
     trait :review_app do
       sha { TestEnv::BRANCH_SHA['pages-deploy'] }
       ref 'pages-deploy'
+    end
+
+    trait :on_cluster do
+      cluster factory: %i(cluster provided_by_gcp)
     end
 
     trait :running do

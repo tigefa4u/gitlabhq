@@ -8,7 +8,8 @@ class SnippetsController < ApplicationController
   include RendersBlob
   include PreviewMarkdown
 
-  skip_before_action :verify_authenticity_token, only: [:show], if: :js_request?
+  skip_before_action :verify_authenticity_token,
+    if: -> { action_name == 'show' && js_request? }
 
   before_action :snippet, only: [:show, :edit, :destroy, :update, :raw]
 
@@ -137,7 +138,7 @@ class SnippetsController < ApplicationController
 
   def move_temporary_files
     params[:files].each do |file|
-      FileMover.new(file, @snippet).execute
+      FileMover.new(file, from_model: current_user, to_model: @snippet).execute
     end
   end
 end

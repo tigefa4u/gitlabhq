@@ -1,37 +1,32 @@
 <script>
-import {
-  GlButton,
-  GlDropdown,
-  GlDropdownItem,
-  GlModal,
-  GlModalDirective,
-  GlLink,
-} from '@gitlab/ui';
+import { GlButton, GlDropdown, GlDropdownItem, GlModal, GlModalDirective } from '@gitlab/ui';
 import _ from 'underscore';
 import { mapActions, mapState } from 'vuex';
 import { s__ } from '~/locale';
 import Icon from '~/vue_shared/components/icon.vue';
-import '~/vue_shared/mixins/is_ee';
 import { getParameterValues } from '~/lib/utils/url_utility';
+import invalidUrl from '~/lib/utils/invalid_url';
 import MonitorAreaChart from './charts/area.vue';
+import MonitorSingleStatChart from './charts/single_stat.vue';
+import PanelType from './panel_type.vue';
 import GraphGroup from './graph_group.vue';
 import EmptyState from './empty_state.vue';
-import { timeWindows, timeWindowsKeyNames } from '../constants';
+import { sidebarAnimationDuration, timeWindows, timeWindowsKeyNames } from '../constants';
 import { getTimeDiff } from '../utils';
 
-const sidebarAnimationDuration = 150;
 let sidebarMutationObserver;
 
 export default {
   components: {
     MonitorAreaChart,
+    MonitorSingleStatChart,
+    PanelType,
     GraphGroup,
     EmptyState,
     Icon,
     GlButton,
     GlDropdown,
     GlDropdownItem,
-    GlLink,
     GlModal,
   },
   directives: {
@@ -77,7 +72,7 @@ export default {
       type: String,
       required: true,
     },
-    deploymentEndpoint: {
+    deploymentsEndpoint: {
       type: String,
       required: false,
       default: null,
@@ -113,11 +108,28 @@ export default {
     },
     customMetricsPath: {
       type: String,
-      required: true,
+      required: false,
+      default: invalidUrl,
     },
     validateQueryPath: {
       type: String,
-      required: true,
+      required: false,
+      default: invalidUrl,
+    },
+    dashboardEndpoint: {
+      type: String,
+      required: false,
+      default: invalidUrl,
+    },
+    currentDashboard: {
+      type: String,
+      required: false,
+      default: '',
+    },
+    smallEmptyState: {
+      type: Boolean,
+      required: false,
+      default: false,
     },
   },
   data() {
@@ -139,13 +151,30 @@ export default {
       'showEmptyState',
       'environments',
       'deploymentData',
+      'metricsWithData',
+      'useDashboardEndpoint',
+      'allDashboards',
+      'multipleDashboardsEnabled',
+      'additionalPanelTypesEnabled',
     ]),
+    selectedDashboardText() {
+      return this.currentDashboard || (this.allDashboards[0] && this.allDashboards[0].display_name);
+    },
+    addingMetricsAvailable() {
+      return IS_EE && this.canAddMetrics && !this.showEmptyState;
+    },
+    alertWidgetAvailable() {
+      return IS_EE && this.prometheusAlertsAvailable && this.alertsEndpoint;
+    },
   },
   created() {
     this.setEndpoints({
       metricsEndpoint: this.metricsEndpoint,
       environmentsEndpoint: this.environmentsEndpoint,
-      deploymentsEndpoint: this.deploymentEndpoint,
+      deploymentsEndpoint: this.deploymentsEndpoint,
+      dashboardEndpoint: this.dashboardEndpoint,
+      currentDashboard: this.currentDashboard,
+      projectPath: this.projectPath,
     });
 
     this.timeWindows = timeWindows;
@@ -183,7 +212,18 @@ export default {
       'fetchData',
       'setGettingStartedEmptyState',
       'setEndpoints',
+      'setDashboardEnabled',
     ]),
+    chartsWithData(charts) {
+      if (!this.useDashboardEndpoint) {
+        return charts;
+      }
+      return charts.filter(chart =>
+        chart.metrics.some(metric => this.metricsWithData.includes(metric.metric_id)),
+      );
+    },
+    // TODO: BEGIN, Duplicated code with panel_type until feature flag is removed
+    // Issue number: https://gitlab.com/gitlab-org/gitlab-ce/issues/63845
     getGraphAlerts(queries) {
       if (!this.allAlerts) return {};
       const metricIdsForChart = queries.map(q => q.metricId);
@@ -192,6 +232,7 @@ export default {
     getGraphAlertValues(queries) {
       return Object.values(this.getGraphAlerts(queries));
     },
+    // TODO: END
     hideAddMetricModal() {
       this.$refs.addMetricModal.hide();
     },
@@ -212,6 +253,9 @@ export default {
     setTimeWindowParameter(key) {
       return `?time_window=${key}`;
     },
+    groupHasData(group) {
+      return this.chartsWithData(group.metrics).length > 0;
+    },
   },
   addMetric: {
     title: s__('Metrics|Add metric'),
@@ -221,12 +265,30 @@ export default {
 </script>
 
 <template>
-  <div v-if="!showEmptyState" class="prometheus-graphs">
+  <div class="prometheus-graphs">
     <div class="gl-p-3 border-bottom bg-gray-light d-flex justify-content-between">
       <div
         v-if="environmentsEndpoint"
         class="dropdowns d-flex align-items-center justify-content-between"
       >
+        <div v-if="multipleDashboardsEnabled" class="d-flex align-items-center">
+          <label class="mb-0">{{ __('Dashboard') }}</label>
+          <gl-dropdown
+            class="ml-2 mr-3 js-dashboards-dropdown"
+            toggle-class="dropdown-menu-toggle"
+            :text="selectedDashboardText"
+          >
+            <gl-dropdown-item
+              v-for="dashboard in allDashboards"
+              :key="dashboard.path"
+              :active="dashboard.path === currentDashboard"
+              active-class="is-active"
+              :href="`?dashboard=${dashboard.path}`"
+            >
+              {{ dashboard.display_name || dashboard.path }}
+            </gl-dropdown-item>
+          </gl-dropdown>
+        </div>
         <div class="d-flex align-items-center">
           <strong>{{ s__('Metrics|Environment') }}</strong>
           <gl-dropdown
@@ -240,11 +302,12 @@ export default {
               :key="environment.id"
               :active="environment.name === currentEnvironmentName"
               active-class="is-active"
+              :href="environment.metrics_path"
               >{{ environment.name }}</gl-dropdown-item
             >
           </gl-dropdown>
         </div>
-        <div class="d-flex align-items-center prepend-left-8">
+        <div v-if="!showEmptyState" class="d-flex align-items-center prepend-left-8">
           <strong>{{ s__('Metrics|Show last') }}</strong>
           <gl-dropdown
             class="prepend-left-10 js-time-window-dropdown"
@@ -255,19 +318,20 @@ export default {
               v-for="(value, key) in timeWindows"
               :key="key"
               :active="activeTimeWindow(key)"
-              ><gl-link :href="setTimeWindowParameter(key)">{{ value }}</gl-link></gl-dropdown-item
+              :href="setTimeWindowParameter(key)"
+              active-class="active"
+              >{{ value }}</gl-dropdown-item
             >
           </gl-dropdown>
         </div>
       </div>
       <div class="d-flex">
-        <div v-if="isEE && canAddMetrics">
+        <div v-if="addingMetricsAvailable">
           <gl-button
             v-gl-modal-directive="$options.addMetric.modalId"
             class="js-add-metric-button text-success border-success"
+            >{{ $options.addMetric.title }}</gl-button
           >
-            {{ $options.addMetric.title }}
-          </gl-button>
           <gl-modal
             ref="addMetricModal"
             :modal-id="$options.addMetric.modalId"
@@ -281,16 +345,13 @@ export default {
               />
             </form>
             <div slot="modal-footer">
-              <gl-button @click="hideAddMetricModal">
-                {{ __('Cancel') }}
-              </gl-button>
+              <gl-button @click="hideAddMetricModal">{{ __('Cancel') }}</gl-button>
               <gl-button
                 :disabled="!formIsValid"
                 variant="success"
                 @click="submitCustomMetricsForm"
+                >{{ __('Save changes') }}</gl-button
               >
-                {{ __('Save changes') }}
-              </gl-button>
             </div>
           </gl-modal>
         </div>
@@ -306,40 +367,55 @@ export default {
         </gl-button>
       </div>
     </div>
-    <graph-group
-      v-for="(groupData, index) in groups"
-      :key="index"
-      :name="groupData.group"
-      :show-panels="showPanels"
-    >
-      <monitor-area-chart
-        v-for="(graphData, graphIndex) in groupData.metrics"
-        :key="graphIndex"
-        :graph-data="graphData"
-        :deployment-data="deploymentData"
-        :thresholds="getGraphAlertValues(graphData.queries)"
-        :container-width="elWidth"
-        group-id="monitor-area-chart"
+    <div v-if="!showEmptyState">
+      <graph-group
+        v-for="groupData in groups"
+        :key="`${groupData.group}.${groupData.priority}`"
+        :name="groupData.group"
+        :show-panels="showPanels"
+        :collapse-group="groupHasData(groupData)"
       >
-        <alert-widget
-          v-if="isEE && prometheusAlertsAvailable && alertsEndpoint && graphData"
-          :alerts-endpoint="alertsEndpoint"
-          :relevant-queries="graphData.queries"
-          :alerts-to-manage="getGraphAlerts(graphData.queries)"
-          @setAlerts="setAlerts"
-        />
-      </monitor-area-chart>
-    </graph-group>
+        <template v-if="additionalPanelTypesEnabled">
+          <panel-type
+            v-for="(graphData, graphIndex) in groupData.metrics"
+            :key="`panel-type-${graphIndex}`"
+            :graph-data="graphData"
+            :dashboard-width="elWidth"
+          />
+        </template>
+        <template v-else>
+          <monitor-area-chart
+            v-for="(graphData, graphIndex) in chartsWithData(groupData.metrics)"
+            :key="graphIndex"
+            :graph-data="graphData"
+            :deployment-data="deploymentData"
+            :thresholds="getGraphAlertValues(graphData.queries)"
+            :container-width="elWidth"
+            :project-path="projectPath"
+            group-id="monitor-area-chart"
+          >
+            <alert-widget
+              v-if="alertWidgetAvailable && graphData"
+              :alerts-endpoint="alertsEndpoint"
+              :relevant-queries="graphData.queries"
+              :alerts-to-manage="getGraphAlerts(graphData.queries)"
+              @setAlerts="setAlerts"
+            />
+          </monitor-area-chart>
+        </template>
+      </graph-group>
+    </div>
+    <empty-state
+      v-else
+      :selected-state="emptyState"
+      :documentation-path="documentationPath"
+      :settings-path="settingsPath"
+      :clusters-path="clustersPath"
+      :empty-getting-started-svg-path="emptyGettingStartedSvgPath"
+      :empty-loading-svg-path="emptyLoadingSvgPath"
+      :empty-no-data-svg-path="emptyNoDataSvgPath"
+      :empty-unable-to-connect-svg-path="emptyUnableToConnectSvgPath"
+      :compact="smallEmptyState"
+    />
   </div>
-  <empty-state
-    v-else
-    :selected-state="emptyState"
-    :documentation-path="documentationPath"
-    :settings-path="settingsPath"
-    :clusters-path="clustersPath"
-    :empty-getting-started-svg-path="emptyGettingStartedSvgPath"
-    :empty-loading-svg-path="emptyLoadingSvgPath"
-    :empty-no-data-svg-path="emptyNoDataSvgPath"
-    :empty-unable-to-connect-svg-path="emptyUnableToConnectSvgPath"
-  />
 </template>

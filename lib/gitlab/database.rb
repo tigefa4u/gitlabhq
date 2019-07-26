@@ -2,14 +2,25 @@
 
 module Gitlab
   module Database
-    # The max value of INTEGER type is the same between MySQL and PostgreSQL:
+    include Gitlab::Metrics::Methods
+
     # https://www.postgresql.org/docs/9.2/static/datatype-numeric.html
-    # http://dev.mysql.com/doc/refman/5.7/en/integer-types.html
     MAX_INT_VALUE = 2147483647
+
     # The max value between MySQL's TIMESTAMP and PostgreSQL's timestampz:
     # https://www.postgresql.org/docs/9.1/static/datatype-datetime.html
     # https://dev.mysql.com/doc/refman/5.7/en/datetime.html
+    # FIXME: this should just be the max value of timestampz
     MAX_TIMESTAMP_VALUE = Time.at((1 << 31) - 1).freeze
+
+    # Minimum schema version from which migrations are supported
+    # Migrations before this version may have been removed
+    MIN_SCHEMA_VERSION = 20190506135400
+    MIN_SCHEMA_GITLAB_VERSION = '11.11.0'
+
+    define_histogram :gitlab_database_transaction_seconds do
+      docstring "Time spent in database transactions, in seconds"
+    end
 
     def self.config
       ActiveRecord::Base.configurations[Rails.env]
@@ -28,11 +39,11 @@ module Gitlab
     end
 
     def self.human_adapter_name
-      postgresql? ? 'PostgreSQL' : 'MySQL'
-    end
-
-    def self.mysql?
-      adapter_name.casecmp('mysql2').zero?
+      if postgresql?
+        'PostgreSQL'
+      else
+        'Unknown'
+      end
     end
 
     def self.postgresql?
@@ -49,15 +60,14 @@ module Gitlab
 
     # Check whether the underlying database is in read-only mode
     def self.db_read_only?
-      if postgresql?
-        pg_is_in_recovery =
-          ActiveRecord::Base.connection.execute('SELECT pg_is_in_recovery()')
-            .first.fetch('pg_is_in_recovery')
+      pg_is_in_recovery =
+        ActiveRecord::Base
+          .connection
+          .execute('SELECT pg_is_in_recovery()')
+          .first
+          .fetch('pg_is_in_recovery')
 
-        Gitlab::Utils.to_boolean(pg_is_in_recovery)
-      else
-        false
-      end
+      Gitlab::Utils.to_boolean(pg_is_in_recovery)
     end
 
     def self.db_read_write?
@@ -107,51 +117,23 @@ module Gitlab
     end
 
     def self.nulls_last_order(field, direction = 'ASC')
-      order = "#{field} #{direction}"
-
-      if postgresql?
-        order = "#{order} NULLS LAST"
-      else
-        # `field IS NULL` will be `0` for non-NULL columns and `1` for NULL
-        # columns. In the (default) ascending order, `0` comes first.
-        order = "#{field} IS NULL, #{order}" if direction == 'ASC'
-      end
-
-      order
+      Arel.sql("#{field} #{direction} NULLS LAST")
     end
 
     def self.nulls_first_order(field, direction = 'ASC')
-      order = "#{field} #{direction}"
-
-      if postgresql?
-        order = "#{order} NULLS FIRST"
-      else
-        # `field IS NULL` will be `0` for non-NULL columns and `1` for NULL
-        # columns. In the (default) ascending order, `0` comes first.
-        order = "#{field} IS NULL, #{order}" if direction == 'DESC'
-      end
-
-      order
+      Arel.sql("#{field} #{direction} NULLS FIRST")
     end
 
     def self.random
-      postgresql? ? "RANDOM()" : "RAND()"
+      "RANDOM()"
     end
 
     def self.true_value
-      if postgresql?
-        "'t'"
-      else
-        1
-      end
+      "'t'"
     end
 
     def self.false_value
-      if postgresql?
-        "'f'"
-      else
-        0
-      end
+      "'f'"
     end
 
     def self.with_connection_pool(pool_size)
@@ -171,7 +153,7 @@ module Gitlab
     # rows - An Array of Hash instances, each mapping the columns to their
     #        values.
     # return_ids - When set to true the return value will be an Array of IDs of
-    #              the inserted rows, this only works on PostgreSQL.
+    #              the inserted rows
     # disable_quote - A key or an Array of keys to exclude from quoting (You
     #                 become responsible for protection from SQL injection for
     #                 these keys!)
@@ -180,7 +162,6 @@ module Gitlab
 
       keys = rows.first.keys
       columns = keys.map { |key| connection.quote_column_name(key) }
-      return_ids = false if mysql?
 
       disable_quote = Array(disable_quote).to_set
       tuples = rows.map do |row|
@@ -234,6 +215,7 @@ module Gitlab
     def self.connection
       ActiveRecord::Base.connection
     end
+    private_class_method :connection
 
     def self.cached_column_exists?(table_name, column_name)
       connection.schema_cache.columns_hash(table_name).has_key?(column_name.to_s)
@@ -243,16 +225,10 @@ module Gitlab
       connection.schema_cache.data_source_exists?(table_name)
     end
 
-    private_class_method :connection
-
     def self.database_version
       row = connection.execute("SELECT VERSION()").first
 
-      if postgresql?
-        row['version']
-      else
-        row.first
-      end
+      row['version']
     end
 
     private_class_method :database_version
@@ -270,6 +246,59 @@ module Gitlab
           # path just yet. As such we must also update the following list of paths.
           ActiveRecord::Migrator.migrations_paths << path
         end
+      end
+    end
+
+    # inside_transaction? will return true if the caller is running within a transaction. Handles special cases
+    # when running inside a test environment, where tests may be wrapped in transactions
+    def self.inside_transaction?
+      if Rails.env.test?
+        ActiveRecord::Base.connection.open_transactions > open_transactions_baseline
+      else
+        ActiveRecord::Base.connection.open_transactions > 0
+      end
+    end
+
+    # These methods that access @open_transactions_baseline are not thread-safe.
+    # These are fine though because we only call these in RSpec's main thread. If we decide to run
+    # specs multi-threaded, we would need to use something like ThreadGroup to keep track of this value
+    def self.set_open_transactions_baseline
+      @open_transactions_baseline = ActiveRecord::Base.connection.open_transactions
+    end
+
+    def self.reset_open_transactions_baseline
+      @open_transactions_baseline = 0
+    end
+
+    def self.open_transactions_baseline
+      @open_transactions_baseline ||= 0
+    end
+    private_class_method :open_transactions_baseline
+
+    # Monkeypatch rails with upgraded database observability
+    def self.install_monkey_patches
+      ActiveRecord::Base.prepend(ActiveRecordBaseTransactionMetrics)
+    end
+
+    # observe_transaction_duration is called from ActiveRecordBaseTransactionMetrics.transaction and used to
+    # record transaction durations.
+    def self.observe_transaction_duration(duration_seconds)
+      labels = Gitlab::Metrics::Transaction.current&.labels || {}
+      gitlab_database_transaction_seconds.observe(labels, duration_seconds)
+    rescue Prometheus::Client::LabelSetValidator::LabelSetError => err
+      # Ensure that errors in recording these metrics don't affect the operation of the application
+      Rails.logger.error("Unable to observe database transaction duration: #{err}") # rubocop:disable Gitlab/RailsLogger
+    end
+
+    # MonkeyPatch for ActiveRecord::Base for adding observability
+    module ActiveRecordBaseTransactionMetrics
+      # A monkeypatch over ActiveRecord::Base.transaction.
+      # It provides observability into transactional methods.
+      def transaction(options = {}, &block)
+        start_time = Gitlab::Metrics::System.monotonic_time
+        super(options, &block)
+      ensure
+        Gitlab::Database.observe_transaction_duration(Gitlab::Metrics::System.monotonic_time - start_time)
       end
     end
   end

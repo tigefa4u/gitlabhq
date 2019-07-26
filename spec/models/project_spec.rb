@@ -103,6 +103,20 @@ describe Project do
       expect(described_class.reflect_on_association(:merge_requests).has_inverse?).to eq(:target_project)
     end
 
+    it 'has a distinct has_many :lfs_objects relation through lfs_objects_projects' do
+      project = create(:project)
+      lfs_object = create(:lfs_object)
+      [:project, :design].each do |repository_type|
+        create(:lfs_objects_project, project: project,
+                                     lfs_object: lfs_object,
+                                     repository_type: repository_type)
+      end
+
+      expect(project.lfs_objects_projects.size).to eq(2)
+      expect(project.lfs_objects.size).to eq(1)
+      expect(project.lfs_objects.to_a).to eql([lfs_object])
+    end
+
     context 'after initialized' do
       it "has a project_feature" do
         expect(described_class.new.project_feature).to be_present
@@ -199,7 +213,7 @@ describe Project do
         .only_integer
         .is_greater_than_or_equal_to(10.minutes)
         .is_less_than(1.month)
-        .with_message('needs to be beetween 10 minutes and 1 month')
+        .with_message('needs to be between 10 minutes and 1 month')
     end
 
     it 'does not allow new projects beyond user limits' do
@@ -483,7 +497,6 @@ describe Project do
 
     it { is_expected.to delegate_method(:members).to(:team).with_prefix(true) }
     it { is_expected.to delegate_method(:name).to(:owner).with_prefix(true).with_arguments(allow_nil: true) }
-    it { is_expected.to delegate_method(:group_clusters_enabled?).to(:group).with_arguments(allow_nil: true) }
     it { is_expected.to delegate_method(:root_ancestor).to(:namespace).with_arguments(allow_nil: true) }
     it { is_expected.to delegate_method(:last_pipeline).to(:commit).with_arguments(allow_nil: true) }
   end
@@ -1177,12 +1190,32 @@ describe Project do
       subject { project.pipeline_for('master', pipeline.sha) }
 
       it_behaves_like 'giving the correct pipeline'
+
+      context 'with supplied id' do
+        let!(:other_pipeline) { create_pipeline(project) }
+
+        subject { project.pipeline_for('master', pipeline.sha, other_pipeline.id) }
+
+        it { is_expected.to eq(other_pipeline) }
+      end
     end
 
     context 'with implicit sha' do
       subject { project.pipeline_for('master') }
 
       it_behaves_like 'giving the correct pipeline'
+    end
+  end
+
+  describe '#pipelines_for' do
+    let(:project) { create(:project, :repository) }
+    let!(:pipeline) { create_pipeline(project) }
+    let!(:other_pipeline) { create_pipeline(project) }
+
+    context 'with implicit sha' do
+      subject { project.pipelines_for('master') }
+
+      it { is_expected.to contain_exactly(pipeline, other_pipeline) }
     end
   end
 
@@ -1479,11 +1512,28 @@ describe Project do
     end
 
     context 'when set to INTERNAL in application settings' do
+      using RSpec::Parameterized::TableSyntax
+
       before do
         stub_application_setting(default_project_visibility: Gitlab::VisibilityLevel::INTERNAL)
       end
 
       it { is_expected.to eq(Gitlab::VisibilityLevel::INTERNAL) }
+
+      where(:attribute_name, :value) do
+        :visibility | 'public'
+        :visibility_level | Gitlab::VisibilityLevel::PUBLIC
+        'visibility' | 'public'
+        'visibility_level' | Gitlab::VisibilityLevel::PUBLIC
+      end
+
+      with_them do
+        it 'sets the visibility level' do
+          proj = described_class.new(attribute_name => value, name: 'test', path: 'test')
+
+          expect(proj.visibility_level).to eq(Gitlab::VisibilityLevel::PUBLIC)
+        end
+      end
     end
   end
 
@@ -1642,26 +1692,6 @@ describe Project do
       relation = described_class.where(id: project.id)
 
       expect(relation.optionally_search).to eq(relation)
-    end
-  end
-
-  describe '.paginate_in_descending_order_using_id' do
-    let!(:project1) { create(:project) }
-    let!(:project2) { create(:project) }
-
-    it 'orders the relation in descending order' do
-      expect(described_class.paginate_in_descending_order_using_id)
-        .to eq([project2, project1])
-    end
-
-    it 'applies a limit to the relation' do
-      expect(described_class.paginate_in_descending_order_using_id(limit: 1))
-        .to eq([project2])
-    end
-
-    it 'limits projects by and ID when given' do
-      expect(described_class.paginate_in_descending_order_using_id(before: project2.id))
-        .to eq([project1])
     end
   end
 
@@ -1989,62 +2019,33 @@ describe Project do
     end
   end
 
-  describe '#latest_successful_build_for' do
+  describe '#latest_successful_build_for_ref' do
     let(:project) { create(:project, :repository) }
     let(:pipeline) { create_pipeline(project) }
 
-    context 'with many builds' do
-      it 'gives the latest builds from latest pipeline' do
-        pipeline1 = create_pipeline(project)
-        pipeline2 = create_pipeline(project)
-        create_build(pipeline1, 'test')
-        create_build(pipeline1, 'test2')
-        build1_p2 = create_build(pipeline2, 'test')
-        create_build(pipeline2, 'test2')
+    it_behaves_like 'latest successful build for sha or ref'
 
-        expect(project.latest_successful_build_for(build1_p2.name))
-          .to eq(build1_p2)
-      end
-    end
+    subject { project.latest_successful_build_for_ref(build_name) }
 
-    context 'with succeeded pipeline' do
-      let!(:build) { create_build }
+    context 'with a specified ref' do
+      let(:build) { create_build }
 
-      context 'standalone pipeline' do
-        it 'returns builds for ref for default_branch' do
-          expect(project.latest_successful_build_for(build.name))
-            .to eq(build)
-        end
+      subject { project.latest_successful_build_for_ref(build.name, project.default_branch) }
 
-        it 'returns empty relation if the build cannot be found' do
-          expect(project.latest_successful_build_for('TAIL'))
-            .to be_nil
-        end
-      end
-
-      context 'with some pending pipeline' do
-        before do
-          create_build(create_pipeline(project, 'pending'))
-        end
-
-        it 'gives the latest build from latest pipeline' do
-          expect(project.latest_successful_build_for(build.name))
-            .to eq(build)
-        end
-      end
-    end
-
-    context 'with pending pipeline' do
-      it 'returns empty relation' do
-        pipeline.update(status: 'pending')
-        pending_build = create_build(pipeline)
-
-        expect(project.latest_successful_build_for(pending_build.name)).to be_nil
-      end
+      it { is_expected.to eq(build) }
     end
   end
 
-  describe '#latest_successful_build_for!' do
+  describe '#latest_successful_build_for_sha' do
+    let(:project) { create(:project, :repository) }
+    let(:pipeline) { create_pipeline(project) }
+
+    it_behaves_like 'latest successful build for sha or ref'
+
+    subject { project.latest_successful_build_for_sha(build_name, project.commit.sha) }
+  end
+
+  describe '#latest_successful_build_for_ref!' do
     let(:project) { create(:project, :repository) }
     let(:pipeline) { create_pipeline(project) }
 
@@ -2057,7 +2058,7 @@ describe Project do
         build1_p2 = create_build(pipeline2, 'test')
         create_build(pipeline2, 'test2')
 
-        expect(project.latest_successful_build_for(build1_p2.name))
+        expect(project.latest_successful_build_for_ref!(build1_p2.name))
           .to eq(build1_p2)
       end
     end
@@ -2067,12 +2068,12 @@ describe Project do
 
       context 'standalone pipeline' do
         it 'returns builds for ref for default_branch' do
-          expect(project.latest_successful_build_for!(build.name))
+          expect(project.latest_successful_build_for_ref!(build.name))
             .to eq(build)
         end
 
         it 'returns exception if the build cannot be found' do
-          expect { project.latest_successful_build_for!(build.name, 'TAIL') }
+          expect { project.latest_successful_build_for_ref!(build.name, 'TAIL') }
             .to raise_error(ActiveRecord::RecordNotFound)
         end
       end
@@ -2083,7 +2084,7 @@ describe Project do
         end
 
         it 'gives the latest build from latest pipeline' do
-          expect(project.latest_successful_build_for!(build.name))
+          expect(project.latest_successful_build_for_ref!(build.name))
             .to eq(build)
         end
       end
@@ -2094,7 +2095,7 @@ describe Project do
         pipeline.update(status: 'pending')
         pending_build = create_build(pipeline)
 
-        expect { project.latest_successful_build_for!(pending_build.name) }
+        expect { project.latest_successful_build_for_ref!(pending_build.name) }
           .to raise_error(ActiveRecord::RecordNotFound)
       end
     end
@@ -2262,7 +2263,7 @@ describe Project do
     end
   end
 
-  describe '#ancestors_upto', :nested_groups do
+  describe '#ancestors_upto' do
     let(:parent) { create(:group) }
     let(:child) { create(:group, parent: parent) }
     let(:child2) { create(:group, parent: child) }
@@ -2301,7 +2302,7 @@ describe Project do
       it { is_expected.to eq(group) }
     end
 
-    context 'in a nested group', :nested_groups do
+    context 'in a nested group' do
       let(:root) { create(:group) }
       let(:child) { create(:group, parent: root) }
       let(:project) { create(:project, group: child) }
@@ -2449,7 +2450,7 @@ describe Project do
         expect(forked_project.in_fork_network_of?(project)).to be_truthy
       end
 
-      it 'is true for a fork of a fork', :postgresql do
+      it 'is true for a fork of a fork' do
         other_fork = fork_project(forked_project)
 
         expect(other_fork.in_fork_network_of?(project)).to be_truthy
@@ -2621,25 +2622,15 @@ describe Project do
     end
 
     context 'when project has a deployment service' do
-      shared_examples 'same behavior between KubernetesService and Platform::Kubernetes' do
-        it 'returns variables from this service' do
-          expect(project.deployment_variables).to include(
-            { key: 'KUBE_TOKEN', value: project.deployment_platform.token, public: false, masked: true }
-          )
-        end
-      end
-
-      context 'when user configured kubernetes from Integration > Kubernetes' do
-        let(:project) { create(:kubernetes_project) }
-
-        it_behaves_like 'same behavior between KubernetesService and Platform::Kubernetes'
-      end
-
       context 'when user configured kubernetes from CI/CD > Clusters and KubernetesNamespace migration has not been executed' do
         let!(:cluster) { create(:cluster, :project, :provided_by_gcp) }
         let(:project) { cluster.project }
 
-        it_behaves_like 'same behavior between KubernetesService and Platform::Kubernetes'
+        it 'does not return variables from this service' do
+          expect(project.deployment_variables).not_to include(
+            { key: 'KUBE_TOKEN', value: project.deployment_platform.token, public: false, masked: true }
+          )
+        end
       end
 
       context 'when user configured kubernetes from CI/CD > Clusters and KubernetesNamespace migration has been executed' do
@@ -3097,11 +3088,8 @@ describe Project do
     let(:project) { create(:project) }
 
     it 'shows full error updating an invalid MR' do
-      error_message = 'Failed to replace merge_requests because one or more of the new records could not be saved.'\
-        ' Validate fork Source project is not a fork of the target project'
-
       expect { project.append_or_update_attribute(:merge_requests, [create(:merge_request)]) }
-        .to raise_error(ActiveRecord::RecordNotSaved, error_message)
+        .to raise_error(ActiveRecord::RecordInvalid, /Failed to set merge_requests:/)
     end
 
     it 'updates the project successfully' do
@@ -3447,6 +3435,7 @@ describe Project do
 
     before do
       allow(project).to receive(:gitlab_shell).and_return(gitlab_shell)
+      stub_application_setting(hashed_storage_enabled: false)
     end
 
     describe '#base_dir' do
@@ -3552,10 +3541,6 @@ describe Project do
     let(:hash) { Digest::SHA2.hexdigest(project.id.to_s) }
     let(:hashed_prefix) { File.join('@hashed', hash[0..1], hash[2..3]) }
     let(:hashed_path) { File.join(hashed_prefix, hash) }
-
-    before do
-      stub_application_setting(hashed_storage_enabled: true)
-    end
 
     describe '#legacy_storage?' do
       it 'returns false' do
@@ -3787,7 +3772,7 @@ describe Project do
         end
       end
 
-      context 'when enabled on root parent', :nested_groups do
+      context 'when enabled on root parent' do
         let(:parent_group) { create(:group, parent: create(:group, :auto_devops_enabled)) }
 
         context 'when auto devops instance enabled' do
@@ -3807,7 +3792,7 @@ describe Project do
         end
       end
 
-      context 'when disabled on root parent', :nested_groups do
+      context 'when disabled on root parent' do
         let(:parent_group) { create(:group, parent: create(:group, :auto_devops_disabled)) }
 
         context 'when auto devops instance enabled' do
@@ -4019,7 +4004,7 @@ describe Project do
 
     context 'with a ref that is not the default branch' do
       it 'returns the latest successful pipeline for the given ref' do
-        expect(project.ci_pipelines).to receive(:latest_successful_for).with('foo')
+        expect(project.ci_pipelines).to receive(:latest_successful_for_ref).with('foo')
 
         project.latest_successful_pipeline_for('foo')
       end
@@ -4047,7 +4032,7 @@ describe Project do
     it 'memoizes and returns the latest successful pipeline for the default branch' do
       pipeline = double(:pipeline)
 
-      expect(project.ci_pipelines).to receive(:latest_successful_for)
+      expect(project.ci_pipelines).to receive(:latest_successful_for_ref)
         .with(project.default_branch)
         .and_return(pipeline)
         .once
@@ -4250,18 +4235,16 @@ describe Project do
       expect(project.badges.count).to eq 3
     end
 
-    if Group.supports_nested_objects?
-      context 'with nested_groups' do
-        let(:parent_group) { create(:group) }
+    context 'with nested_groups' do
+      let(:parent_group) { create(:group) }
 
-        before do
-          create_list(:group_badge, 2, group: project_group)
-          project_group.update(parent: parent_group)
-        end
+      before do
+        create_list(:group_badge, 2, group: project_group)
+        project_group.update(parent: parent_group)
+      end
 
-        it 'returns the project and the project nested groups badges' do
-          expect(project.badges.count).to eq 5
-        end
+      it 'returns the project and the project nested groups badges' do
+        expect(project.badges.count).to eq 5
       end
     end
   end
@@ -4698,10 +4681,6 @@ describe Project do
 
     subject { project.object_pool_params }
 
-    before do
-      stub_application_setting(hashed_storage_enabled: true)
-    end
-
     context 'when the objects cannot be pooled' do
       let(:project) { create(:project, :repository, :private) }
 
@@ -4746,10 +4725,6 @@ describe Project do
 
       context 'when objects are poolable' do
         let(:project) { create(:project, :repository, :public) }
-
-        before do
-          stub_application_setting(hashed_storage_enabled: true)
-        end
 
         it { is_expected.to be_git_objects_poolable }
       end

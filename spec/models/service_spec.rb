@@ -6,6 +6,8 @@ describe Service do
   describe "Associations" do
     it { is_expected.to belong_to :project }
     it { is_expected.to have_one :service_hook }
+    it { is_expected.to have_one :jira_tracker_data }
+    it { is_expected.to have_one :issue_tracker_data }
   end
 
   describe 'Validations' do
@@ -80,7 +82,7 @@ describe Service do
       context 'when template is invalid' do
         it 'sets service template to inactive when template is invalid' do
           project = create(:project)
-          template = KubernetesService.new(template: true, active: true)
+          template = build(:prometheus_service, template: true, active: true, properties: {})
           template.save(validate: false)
 
           service = described_class.build_from_template(project.id, template)
@@ -242,7 +244,8 @@ describe Service do
     let(:service) do
       GitlabIssueTrackerService.create(
         project: create(:project),
-        title: 'random title'
+        title: 'random title',
+        project_url: 'http://gitlab.example.com'
       )
     end
 
@@ -250,8 +253,12 @@ describe Service do
       expect { service }.not_to raise_error
     end
 
+    it 'sets title correctly' do
+      expect(service.title).to eq('random title')
+    end
+
     it 'creates the properties' do
-      expect(service.properties).to eq({ "title" => "random title" })
+      expect(service.properties).to eq({ "project_url" => "http://gitlab.example.com" })
     end
   end
 
@@ -307,10 +314,10 @@ describe Service do
   end
 
   describe '.find_by_template' do
-    let!(:kubernetes_service) { create(:kubernetes_service, template: true) }
+    let!(:service) { create(:service, template: true) }
 
     it 'returns service template' do
-      expect(KubernetesService.find_by_template).to eq(kubernetes_service)
+      expect(described_class.find_by_template).to eq(service)
     end
   end
 

@@ -52,6 +52,16 @@ module Gitlab
         args[:strategy_class] = args[:strategy_class].constantize
       end
 
+      # Providers that are known to depend on rack-oauth2, like those using
+      # Omniauth::Strategies::OpenIDConnect, need to be quirked so the
+      # client_auth_method argument value is passed as a symbol.
+      if (args[:strategy_class] == OmniAuth::Strategies::OpenIDConnect ||
+        args[:name] == 'openid_connect') &&
+        args[:client_auth_method].is_a?(String)
+
+        args[:client_auth_method] = args[:client_auth_method].to_sym
+      end
+
       args
     end
 
@@ -63,12 +73,6 @@ module Gitlab
         { remote_sign_out_handler: authentiq_signout_handler }
       when 'shibboleth'
         { fail_with_empty_uid: true }
-      when 'openid_connect'
-        # If a name argument is omitted, OmniAuth will expect that the
-        # matching route is /auth/users/openidconnect instead of
-        # /auth/users/openid_connect because of
-        # https://gitlab.com/gitlab-org/gitlab-ce/issues/62208#note_178780341.
-        { name: 'openid_connect' }
       else
         {}
       end

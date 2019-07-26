@@ -13,17 +13,17 @@ To familiarize yourself with GitLab Pages first:
 - Read an [introduction to GitLab Pages](index.md#overview).
 - Learn [how to get started with Pages](index.md#getting-started).
 - Learn how to enable GitLab Pages
-across your GitLab instance on the [administrator documentation](../../../administration/pages/index.md).
+  across your GitLab instance on the [administrator documentation](../../../administration/pages/index.md).
 
 ## GitLab Pages requirements
 
 In brief, this is what you need to upload your website in GitLab Pages:
 
 1. Domain of the instance: domain name that is used for GitLab Pages
-(ask your administrator).
+   (ask your administrator).
 1. GitLab CI/CD: a `.gitlab-ci.yml` file with a specific job named [`pages`][pages] in the root directory of your repository.
 1. A directory called `public` in your site's repo containing the content
-to be published.
+   to be published.
 1. GitLab Runner enabled for the project.
 
 ## GitLab Pages on GitLab.com
@@ -67,7 +67,7 @@ Some static site generators provide plugins for that functionality so that you
 don't have to create and edit HTML files manually. For example, Jekyll has the
 [redirect-from plugin](https://github.com/jekyll/jekyll-redirect-from).
 
-## GitLab Pages Access Control **[CORE ONLY]**
+## GitLab Pages Access Control **(CORE ONLY)**
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/issues/33422) in GitLab 11.5.
 
@@ -83,23 +83,23 @@ You can enable Pages access control on your project, so that only
 1. Navigate to your project's **Settings > General > Permissions**.
 1. Toggle the **Pages** button to enable the access control.
 
-    NOTE: **Note:**
-    If you don't see the toggle button, that means that it's not enabled.
-    Ask your administrator to [enable it](../../../administration/pages/index.md#access-control).
+   NOTE: **Note:**
+   If you don't see the toggle button, that means that it's not enabled.
+   Ask your administrator to [enable it](../../../administration/pages/index.md#access-control).
 
 1. The Pages access control dropdown allows you to set who can view pages hosted
    with GitLab Pages, depending on your project's visibility:
 
-    - If your project is private:
-      - **Only project members**: Only project members will be able to browse the website.
-      - **Everyone**: Everyone, both logged into and logged out of GitLab, will be able to browse the website, no matter their project membership.
-    - If your project is internal:
-      - **Only project members**: Only project members will be able to browse the website.
-      - **Everyone with access**: Everyone logged into GitLab will be able to browse the website, no matter their project membership.
-      - **Everyone**: Everyone, both logged into and logged out of GitLab, will be able to browse the website, no matter their project membership.
-    - If your project is public:
-      - **Only project members**: Only project members will be able to browse the website.
-      - **Everyone with access**: Everyone, both logged into and logged out of GitLab, will be able to browse the website, no matter their project membership.
+   - If your project is private:
+     - **Only project members**: Only project members will be able to browse the website.
+     - **Everyone**: Everyone, both logged into and logged out of GitLab, will be able to browse the website, no matter their project membership.
+   - If your project is internal:
+     - **Only project members**: Only project members will be able to browse the website.
+     - **Everyone with access**: Everyone logged into GitLab will be able to browse the website, no matter their project membership.
+     - **Everyone**: Everyone, both logged into and logged out of GitLab, will be able to browse the website, no matter their project membership.
+   - If your project is public:
+     - **Only project members**: Only project members will be able to browse the website.
+     - **Everyone with access**: Everyone, both logged into and logged out of GitLab, will be able to browse the website, no matter their project membership.
 
 1. Click **Save changes**.
 

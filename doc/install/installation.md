@@ -167,7 +167,7 @@ cd pcre2-10.33
 chmod +x configure
 ./configure --prefix=/usr --enable-jit
 make
-make install
+sudo make install
 
 # Download and compile from source
 cd /tmp
@@ -250,11 +250,11 @@ page](https://golang.org/dl).
 # Remove former Go installation folder
 sudo rm -rf /usr/local/go
 
-curl --remote-name --progress https://dl.google.com/go/go1.10.3.linux-amd64.tar.gz
-echo 'fa1b0e45d3b647c252f51f5e1204aba049cde4af177ef9f2181f43004f901035  go1.10.3.linux-amd64.tar.gz' | shasum -a256 -c - && \
-  sudo tar -C /usr/local -xzf go1.10.3.linux-amd64.tar.gz
+curl --remote-name --progress https://dl.google.com/go/go1.11.10.linux-amd64.tar.gz
+echo 'aefaa228b68641e266d1f23f1d95dba33f17552ba132878b65bb798ffa37e6d0  go1.11.10.linux-amd64.tar.gz' | shasum -a256 -c - && \
+  sudo tar -C /usr/local -xzf go1.11.10.linux-amd64.tar.gz
 sudo ln -sf /usr/local/go/bin/{go,godoc,gofmt} /usr/local/bin/
-rm go1.10.3.linux-amd64.tar.gz
+rm go1.11.10.linux-amd64.tar.gz
 ```
 
 ## 4. Node
@@ -263,7 +263,7 @@ Since GitLab 8.17, GitLab requires the use of Node to compile JavaScript
 assets, and Yarn to manage JavaScript dependencies. The current minimum
 requirements for these are:
 
-- `node` >= v8.10.0.
+- `node` >= v8.10.0. (We recommend node 12.x as it is faster)
 - `yarn` >= v1.10.0.
 
 In many distros,
@@ -271,8 +271,8 @@ the versions provided by the official package repositories are out of date, so
 we'll need to install through the following commands:
 
 ```sh
-# install node v8.x
-curl --location https://deb.nodesource.com/setup_8.x | sudo bash -
+# install node v12.x
+curl --location https://deb.nodesource.com/setup_12.x | sudo bash -
 sudo apt-get install -y nodejs
 
 curl --silent --show-error https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
@@ -293,64 +293,63 @@ sudo adduser --disabled-login --gecos 'GitLab' git
 
 ## 6. Database
 
-We recommend using a PostgreSQL database. For MySQL, see the [MySQL setup guide](database_mysql.md).
-
 NOTE: **Note:**
-Because we need to make use of extensions and concurrent index removal, you need at least PostgreSQL 9.2.
+Starting from GitLab 12.1, only PostgreSQL is supported. Because we need to make
+use of extensions and concurrent index removal, you need at least PostgreSQL 9.2.
 
 1. Install the database packages:
 
-    ```sh
-    sudo apt-get install -y postgresql postgresql-client libpq-dev postgresql-contrib
-    ```
+   ```sh
+   sudo apt-get install -y postgresql postgresql-client libpq-dev postgresql-contrib
+   ```
 
 1. Create a database user for GitLab:
 
-    ```sh
-    sudo -u postgres psql -d template1 -c "CREATE USER git CREATEDB;"
-    ```
+   ```sh
+   sudo -u postgres psql -d template1 -c "CREATE USER git CREATEDB;"
+   ```
 
 1. Create the `pg_trgm` extension (required for GitLab 8.6+):
 
-    ```sh
-    sudo -u postgres psql -d template1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
-    ```
+   ```sh
+   sudo -u postgres psql -d template1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+   ```
 
 1. Create the GitLab production database and grant all privileges on database:
 
-    ```sh
-    sudo -u postgres psql -d template1 -c "CREATE DATABASE gitlabhq_production OWNER git;"
-    ```
+   ```sh
+   sudo -u postgres psql -d template1 -c "CREATE DATABASE gitlabhq_production OWNER git;"
+   ```
 
 1. Try connecting to the new database with the new user:
 
-    ```sh
-    sudo -u git -H psql -d gitlabhq_production
-    ```
+   ```sh
+   sudo -u git -H psql -d gitlabhq_production
+   ```
 
 1. Check if the `pg_trgm` extension is enabled:
 
-    ```sh
-    SELECT true AS enabled
-    FROM pg_available_extensions
-    WHERE name = 'pg_trgm'
-    AND installed_version IS NOT NULL;
-    ```
+   ```sh
+   SELECT true AS enabled
+   FROM pg_available_extensions
+   WHERE name = 'pg_trgm'
+   AND installed_version IS NOT NULL;
+   ```
 
-    If the extension is enabled this will produce the following output:
+   If the extension is enabled this will produce the following output:
 
-    ```
-    enabled
-    ---------
-     t
-    (1 row)
-    ```
+   ```
+   enabled
+   ---------
+    t
+   (1 row)
+   ```
 
 1. Quit the database session:
 
-    ```sh
-    gitlabhq_production> \q
-    ```
+   ```sh
+   gitlabhq_production> \q
+   ```
 
 ## 7. Redis
 
@@ -493,7 +492,7 @@ sudo -u git -H editor config/resque.yml
 ```
 
 CAUTION: **Caution:**
-Make sure to edit both `gitlab.yml` and `unicorn.rb` to match your setup. 
+Make sure to edit both `gitlab.yml` and `unicorn.rb` to match your setup.
 If you want to use Puma web server, see [Using Puma](#using-puma) for the additional steps.
 
 NOTE: **Note:**
@@ -502,13 +501,8 @@ If you want to use HTTPS, see [Using HTTPS](#using-https) for the additional ste
 ### Configure GitLab DB Settings
 
 ```sh
-# PostgreSQL only:
 sudo -u git cp config/database.yml.postgresql config/database.yml
 
-# MySQL only:
-sudo -u git cp config/database.yml.mysql config/database.yml
-
-# PostgreSQL only:
 # Remove host, username, and password lines from config/database.yml.
 # Once modified, the `production` settings will be as follows:
 #
@@ -520,7 +514,7 @@ sudo -u git cp config/database.yml.mysql config/database.yml
 #
 sudo -u git -H editor config/database.yml
 
-# MySQL and remote PostgreSQL only:
+# Remote PostgreSQL only:
 # Update username/password in config/database.yml.
 # You only need to adapt the production settings (first part).
 # If you followed the database guide then please do as follows:
@@ -528,7 +522,6 @@ sudo -u git -H editor config/database.yml
 # You can keep the double quotes around the password
 sudo -u git -H editor config/database.yml
 
-# PostgreSQL and MySQL:
 # Make config/database.yml readable to git only
 sudo -u git -H chmod o-rwx config/database.yml
 ```
@@ -544,11 +537,7 @@ Make sure you have `bundle` (run `bundle -v`):
 - `< 2.x`.
 
 ```sh
-# For PostgreSQL (note, the option says "without ... mysql")
 sudo -u git -H bundle install --deployment --without development test mysql aws kerberos
-
-# Or if you use MySQL (note, the option says "without ... postgres")
-sudo -u git -H bundle install --deployment --without development test postgres aws kerberos
 ```
 
 NOTE: **Note:**
@@ -571,7 +560,7 @@ NOTE: **Note:**
 If you want to use HTTPS, see [Using HTTPS](#using-https) for the additional steps.
 
 NOTE: **Note:**
-Make sure your hostname can be resolved on the machine itself by either a proper DNS record or an additional line in `/etc/hosts` ("127.0.0.1  hostname"). This might be necessary, for example, if you set up GitLab behind a reverse proxy. If the hostname cannot be resolved, the final installation check will fail with "Check GitLab API access: FAILED. code: 401" and pushing commits will be rejected with "[remote rejected] master -> master (hook declined)".
+Make sure your hostname can be resolved on the machine itself by either a proper DNS record or an additional line in `/etc/hosts` ("127.0.0.1  hostname"). This might be necessary, for example, if you set up GitLab behind a reverse proxy. If the hostname cannot be resolved, the final installation check will fail with `Check GitLab API access: FAILED. code: 401` and pushing commits will be rejected with `[remote rejected] master -> master (hook declined)`.
 
 NOTE: **Note:**
 GitLab Shell application startup time can be greatly reduced by disabling RubyGems. This can be done in several ways:
@@ -645,8 +634,8 @@ Gitaly must be running for the next section.
 gitlab_path=/home/git/gitlab
 gitaly_path=/home/git/gitaly
 
-sudo -u git -H $gitlab_path/bin/daemon_with_pidfile $gitlab_path/tmp/pids/gitaly.pid \
-  $gitaly_path/gitaly $gitaly_path/config.toml >> $gitlab_path/log/gitaly.log 2>&1 &
+sudo -u git -H sh -c "$gitlab_path/bin/daemon_with_pidfile $gitlab_path/tmp/pids/gitaly.pid \
+  $gitaly_path/gitaly $gitaly_path/config.toml >> $gitlab_path/log/gitaly.log 2>&1 &"
 ```
 
 ### Initialize Database and Activate Advanced Features
@@ -842,26 +831,27 @@ how to configure GitLab with a relative URL.
 To use GitLab with HTTPS:
 
 1. In `gitlab.yml`:
-    1. Set the `port` option in section 1 to `443`.
-    1. Set the `https` option in section 1 to `true`.
+   1. Set the `port` option in section 1 to `443`.
+   1. Set the `https` option in section 1 to `true`.
 1. In the `config.yml` of gitlab-shell:
-    1. Set `gitlab_url` option to the HTTPS endpoint of GitLab (e.g. `https://git.example.com`).
-    1. Set the certificates using either the `ca_file` or `ca_path` option.
+   1. Set `gitlab_url` option to the HTTPS endpoint of GitLab (e.g. `https://git.example.com`).
+   1. Set the certificates using either the `ca_file` or `ca_path` option.
 1. Use the `gitlab-ssl` Nginx example config instead of the `gitlab` config.
-    1. Update `YOUR_SERVER_FQDN`.
-    1. Update `ssl_certificate` and `ssl_certificate_key`.
-    1. Review the configuration file and consider applying other security and performance enhancing features.
+   1. Update `YOUR_SERVER_FQDN`.
+   1. Update `ssl_certificate` and `ssl_certificate_key`.
+   1. Review the configuration file and consider applying other security and performance enhancing features.
 
 Using a self-signed certificate is discouraged but if you must use it, follow the normal directions. Then:
 
 1. Generate a self-signed SSL certificate:
 
-    ```sh
-    mkdir -p /etc/nginx/ssl/
-    cd /etc/nginx/ssl/
-    sudo openssl req -newkey rsa:2048 -x509 -nodes -days 3560 -out gitlab.crt -keyout gitlab.key
-    sudo chmod o-r gitlab.key
-    ```
+   ```sh
+   mkdir -p /etc/nginx/ssl/
+   cd /etc/nginx/ssl/
+   sudo openssl req -newkey rsa:2048 -x509 -nodes -days 3560 -out gitlab.crt -keyout gitlab.key
+   sudo chmod o-r gitlab.key
+   ```
+
 1. In the `config.yml` of gitlab-shell set `self_signed_cert` to `true`.
 
 ### Enable Reply by email

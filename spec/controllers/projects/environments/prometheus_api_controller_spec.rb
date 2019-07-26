@@ -85,12 +85,12 @@ describe Projects::Environments::PrometheusApiController do
       context 'with nil result' do
         let(:service_result) { nil }
 
-        it 'returns 202 accepted' do
+        it 'returns 204 no_content' do
           get :proxy, params: environment_params
 
           expect(json_response['status']).to eq('processing')
           expect(json_response['message']).to eq('Not ready yet. Try again later.')
-          expect(response).to have_gitlab_http_status(:accepted)
+          expect(response).to have_gitlab_http_status(:no_content)
         end
       end
 
@@ -176,7 +176,7 @@ describe Projects::Environments::PrometheusApiController do
   def environment_params(params = {})
     {
       id: environment.id.to_s,
-      namespace_id: project.namespace.name,
+      namespace_id: project.namespace.full_path,
       project_id: project.name,
       proxy_path: 'query',
       query: '1'

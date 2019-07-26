@@ -22,10 +22,10 @@ module Gitlab
       expanded_cache_key = [namespace, key].compact
 
       if cache_key_with_version
-        expanded_cache_key << Rails.version
+        expanded_cache_key << [Gitlab::VERSION, Rails.version]
       end
 
-      expanded_cache_key.join(':')
+      expanded_cache_key.flatten.join(':').freeze
     end
 
     def expire(key)
@@ -34,7 +34,7 @@ module Gitlab
 
     def read(key, klass = nil)
       value = backend.read(cache_key(key))
-      value = parse_value(value, klass) if value
+      value = parse_value(value, klass) unless value.nil?
       value
     end
 
@@ -58,7 +58,7 @@ module Gitlab
     private
 
     def parse_value(raw, klass)
-      value = ActiveSupport::JSON.decode(raw)
+      value = ActiveSupport::JSON.decode(raw.to_s)
 
       case value
       when Hash then parse_entry(value, klass)

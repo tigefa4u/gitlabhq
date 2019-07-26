@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::Diff::Position do
@@ -46,6 +48,9 @@ describe Gitlab::Diff::Position do
       )
     end
 
+    it { is_expected.to be_on_text }
+    it { is_expected.not_to be_on_image }
+
     describe "#diff_file" do
       it "returns the correct diff file" do
         diff_file = subject.diff_file(project.repository)
@@ -90,6 +95,9 @@ describe Gitlab::Diff::Position do
         position_type: "image"
       )
     end
+
+    it { is_expected.not_to be_on_text }
+    it { is_expected.to be_on_image }
 
     it "returns the correct diff file" do
       diff_file = subject.diff_file(project.repository)
@@ -602,6 +610,19 @@ describe Gitlab::Diff::Position do
       let(:args) { args_for_img }
 
       it_behaves_like "diff position json"
+    end
+  end
+
+  describe "#file_hash" do
+    subject do
+      described_class.new(
+        old_path: "image.jpg",
+        new_path: "image.jpg"
+      )
+    end
+
+    it "returns SHA1 representation of the file_path" do
+      expect(subject.file_hash).to eq(Digest::SHA1.hexdigest(subject.file_path))
     end
   end
 end

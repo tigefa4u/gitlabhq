@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'sidekiq/testing/inline'
 
 # If Sidekiq::Testing.inline! is used, SQL transactions done inside
@@ -30,6 +32,8 @@ RSpec.configure do |config|
   end
 
   config.after(:each, :sidekiq, :redis) do
-    Sidekiq.redis { |redis| redis.flushdb }
+    Sidekiq.redis do |connection|
+      connection.redis.flushdb
+    end
   end
 end

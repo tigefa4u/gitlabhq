@@ -2,9 +2,13 @@
 
 require 'spec_helper'
 
-describe Environment do
+describe Environment, :use_clean_rails_memory_store_caching do
+  include ReactiveCachingHelpers
+
   let(:project) { create(:project, :stubbed_repository) }
   subject(:environment) { create(:environment, project: project) }
+
+  it { is_expected.to be_kind_of(ReactiveCaching) }
 
   it { is_expected.to belong_to(:project).required }
   it { is_expected.to have_many(:deployments) }
@@ -515,28 +519,18 @@ describe Environment do
 
     context 'when the environment is available' do
       context 'with a deployment service' do
-        shared_examples 'same behavior between KubernetesService and Platform::Kubernetes' do
-          context 'and a deployment' do
-            let!(:deployment) { create(:deployment, :success, environment: environment) }
-            it { is_expected.to be_truthy }
-          end
-
-          context 'but no deployments' do
-            it { is_expected.to be_falsy }
-          end
-        end
-
-        context 'when user configured kubernetes from Integration > Kubernetes' do
-          let(:project) { create(:kubernetes_project) }
-
-          it_behaves_like 'same behavior between KubernetesService and Platform::Kubernetes'
-        end
-
         context 'when user configured kubernetes from CI/CD > Clusters' do
           let!(:cluster) { create(:cluster, :project, :provided_by_gcp) }
           let(:project) { cluster.project }
 
-          it_behaves_like 'same behavior between KubernetesService and Platform::Kubernetes'
+          context 'with deployment' do
+            let!(:deployment) { create(:deployment, :success, environment: environment) }
+            it { is_expected.to be_truthy }
+          end
+
+          context 'without deployments' do
+            it { is_expected.to be_falsy }
+          end
         end
       end
 
@@ -546,8 +540,6 @@ describe Environment do
     end
 
     context 'when the environment is unavailable' do
-      let(:project) { create(:kubernetes_project) }
-
       before do
         environment.stop
       end
@@ -585,38 +577,61 @@ describe Environment do
   describe '#terminals' do
     subject { environment.terminals }
 
-    context 'when the environment has terminals' do
-      before do
-        allow(environment).to receive(:has_terminals?).and_return(true)
-      end
-
-      shared_examples 'same behavior between KubernetesService and Platform::Kubernetes' do
-        it 'returns the terminals from the deployment service' do
-          expect(environment.deployment_platform)
-            .to receive(:terminals).with(environment)
-            .and_return(:fake_terminals)
-
-          is_expected.to eq(:fake_terminals)
-        end
-      end
-
-      context 'when user configured kubernetes from Integration > Kubernetes' do
-        let(:project) { create(:kubernetes_project) }
-
-        it_behaves_like 'same behavior between KubernetesService and Platform::Kubernetes'
-      end
-
-      context 'when user configured kubernetes from CI/CD > Clusters' do
-        let!(:cluster) { create(:cluster, :project, :provided_by_gcp) }
-        let(:project) { cluster.project }
-
-        it_behaves_like 'same behavior between KubernetesService and Platform::Kubernetes'
-      end
+    before do
+      allow(environment).to receive(:deployment_platform).and_return(double)
     end
 
-    context 'when the environment does not have terminals' do
+    context 'reactive cache is empty' do
+      before do
+        stub_reactive_cache(environment, nil)
+      end
+
+      it { is_expected.to be_nil }
+    end
+
+    context 'reactive cache has pod data' do
+      let(:cache_data) { Hash(pods: %w(pod1 pod2)) }
+
+      before do
+        stub_reactive_cache(environment, cache_data)
+      end
+
+      it 'retrieves terminals from the deployment platform' do
+        expect(environment.deployment_platform)
+          .to receive(:terminals).with(environment, cache_data)
+          .and_return(:fake_terminals)
+
+        is_expected.to eq(:fake_terminals)
+      end
+    end
+  end
+
+  describe '#calculate_reactive_cache' do
+    let(:cluster) { create(:cluster, :project, :provided_by_user) }
+    let(:project) { cluster.project }
+    let(:environment) { create(:environment, project: project) }
+    let!(:deployment) { create(:deployment, :success, environment: environment) }
+
+    subject { environment.calculate_reactive_cache }
+
+    it 'returns cache data from the deployment platform' do
+      expect(environment.deployment_platform).to receive(:calculate_reactive_cache_for)
+        .with(environment).and_return(pods: %w(pod1 pod2))
+
+      is_expected.to eq(pods: %w(pod1 pod2))
+    end
+
+    context 'environment does not have terminals available' do
       before do
         allow(environment).to receive(:has_terminals?).and_return(false)
+      end
+
+      it { is_expected.to be_nil }
+    end
+
+    context 'project is pending deletion' do
+      before do
+        allow(environment.project).to receive(:pending_delete?).and_return(true)
       end
 
       it { is_expected.to be_nil }
@@ -744,32 +759,6 @@ describe Environment do
 
       expect(new_slug).not_to be_nil
       expect(environment.slug).to eq(new_slug)
-    end
-  end
-
-  describe '#generate_slug' do
-    SUFFIX = "-[a-z0-9]{6}".freeze
-    {
-      "staging-12345678901234567" => "staging-123456789" + SUFFIX,
-      "9-staging-123456789012345" => "env-9-staging-123" + SUFFIX,
-      "staging-1234567890123456"  => "staging-1234567890123456",
-      "production"                => "production",
-      "PRODUCTION"                => "production" + SUFFIX,
-      "review/1-foo"              => "review-1-foo" + SUFFIX,
-      "1-foo"                     => "env-1-foo" + SUFFIX,
-      "1/foo"                     => "env-1-foo" + SUFFIX,
-      "foo-"                      => "foo" + SUFFIX,
-      "foo--bar"                  => "foo-bar" + SUFFIX,
-      "foo**bar"                  => "foo-bar" + SUFFIX,
-      "*-foo"                     => "env-foo" + SUFFIX,
-      "staging-12345678-"         => "staging-12345678" + SUFFIX,
-      "staging-12345678-01234567" => "staging-12345678" + SUFFIX
-    }.each do |name, matcher|
-      it "returns a slug matching #{matcher}, given #{name}" do
-        slug = described_class.new(name: name).generate_slug
-
-        expect(slug).to match(/\A#{matcher}\z/)
-      end
     end
   end
 

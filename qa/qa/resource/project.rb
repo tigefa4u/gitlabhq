@@ -8,17 +8,24 @@ module QA
       include Events::Project
 
       attr_writer :initialize_with_readme
+      attr_writer :visibility
 
       attribute :id
       attribute :name
+      attribute :add_name_uuid
       attribute :description
+      attribute :standalone
 
       attribute :group do
         Group.fabricate!
       end
 
       attribute :path_with_namespace do
-        "#{group.sandbox.path}/#{group.path}/#{name}" if group
+        "#{sandbox_path}#{group.path}/#{name}" if group
+      end
+
+      def sandbox_path
+        group.respond_to?('sandbox') ? "#{group.sandbox.path}/" : ''
       end
 
       attribute :repository_ssh_location do
@@ -34,24 +41,28 @@ module QA
       end
 
       def initialize
+        @add_name_uuid = true
+        @standalone = false
         @description = 'My awesome project'
         @initialize_with_readme = false
+        @visibility = 'public'
       end
 
       def name=(raw_name)
-        @name = "#{raw_name}-#{SecureRandom.hex(8)}"
+        @name = @add_name_uuid ? "#{raw_name}-#{SecureRandom.hex(8)}" : raw_name
       end
 
       def fabricate!
-        group.visit!
-
-        Page::Group::Show.perform(&:go_to_new_project)
+        unless @standalone
+          group.visit!
+          Page::Group::Show.perform(&:go_to_new_project)
+        end
 
         Page::Project::New.perform do |page|
           page.choose_test_namespace
           page.choose_name(@name)
           page.add_description(@description)
-          page.set_visibility('Public')
+          page.set_visibility(@visibility)
           page.enable_initialize_with_readme if @initialize_with_readme
           page.create_new_project
         end
@@ -67,19 +78,28 @@ module QA
         "/projects/#{CGI.escape(path_with_namespace)}"
       end
 
+      def api_get_archive_path(type = 'tar.gz')
+        "#{api_get_path}/repository/archive.#{type}"
+      end
+
       def api_post_path
         '/projects'
       end
 
       def api_post_body
-        {
-          namespace_id: group.id,
-          path: name,
+        post_body = {
           name: name,
           description: description,
-          visibility: 'public',
+          visibility: @visibility,
           initialize_with_readme: @initialize_with_readme
         }
+
+        unless @standalone
+          post_body[:namespace_id] = group.id
+          post_body[:path] = name
+        end
+
+        post_body
       end
 
       private

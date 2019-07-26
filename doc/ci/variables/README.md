@@ -27,8 +27,7 @@ CI/CD's pipelines. Using variables means no hardcoded values.
 
 ### Predefined environment variables
 
-GitLab CI/CD has a default set of
-[predefined variables](predefined_variables.md)
+GitLab CI/CD has a [default set of predefined variables](predefined_variables.md)
 which can be used without any specification needed.
 You can call issues numbers, user names, branch names,
 pipeline and commit IDs, and much more.
@@ -36,13 +35,16 @@ pipeline and commit IDs, and much more.
 Predefined environment variables are the ones that GitLab
 provides out of the box for the local environment of the Runner.
 
-GitLab reads the .gitlab-ci.yml file, sends the information
+GitLab reads the `.gitlab-ci.yml` file, sends the information
 to the Runner (which runs the script commands), under which
 the variables are exposed.
 
 For example, two jobs under the same pipeline can share the same
 `CI_PIPELINE_ID` variable, but each one has its own `CI_JOB_ID`
 variable.
+
+NOTE: **Note:**
+Find here the full [**predefined variables reference table**](predefined_variables.md).
 
 ### Custom environment variables
 
@@ -271,6 +273,7 @@ export CI_RUNNER_ID="10"
 export CI_RUNNER_DESCRIPTION="my runner"
 export CI_RUNNER_TAGS="docker, linux"
 export CI_SERVER="yes"
+export CI_SERVER_HOST="example.com"
 export CI_SERVER_NAME="GitLab"
 export CI_SERVER_REVISION="70606bf"
 export CI_SERVER_VERSION="8.9.0"
@@ -337,7 +340,7 @@ Group-level variables can be added by:
 
 1. Navigating to your group's **Settings > CI/CD** page.
 1. Inputing variable types, keys, and values in the **Variables** section.
-Any variables of [subgroups](../../user/group/subgroups/index.md) will be inherited recursively.
+   Any variables of [subgroups](../../user/group/subgroups/index.md) will be inherited recursively.
 
 Once you set them, they will be available for all subsequent pipelines.
 
@@ -387,7 +390,7 @@ Protected variables can be added by going to your project's
 
 Once you set them, they will be available for all subsequent pipelines.
 
-### Limiting environment scopes of environment variables **[PREMIUM]**
+### Limiting environment scopes of environment variables **(PREMIUM)**
 
 You can limit the environment scope of a variable by
 [defining which environments][envs] it can be available for.
@@ -480,7 +483,7 @@ Below you can find supported syntax reference:
 
     > Example: `$VARIABLE == "some value"`
 
-    > Example: `$VARIABLE != "some value"` _(added in 11.11)_
+    > Example: `$VARIABLE != "some value"` (introduced in GitLab 11.11)
 
     You can use equality operator `==` or `!=` to compare a variable content to a
     string. We support both, double quotes and single quotes to define a string
@@ -491,7 +494,7 @@ Below you can find supported syntax reference:
 
     > Example: `$VARIABLE == null`
 
-    > Example: `$VARIABLE != null` _(added in 11.11)_
+    > Example: `$VARIABLE != null` (introduced in GitLab 11.11)
 
     It sometimes happens that you want to check whether a variable is defined
     or not. To do that, you can compare a variable to `null` keyword, like
@@ -502,7 +505,7 @@ Below you can find supported syntax reference:
 
     > Example: `$VARIABLE == ""`
 
-    > Example: `$VARIABLE != ""` _(added in 11.11)_
+    > Example: `$VARIABLE != ""` (introduced in GitLab 11.11)
 
     If you want to check whether a variable is defined, but is empty, you can
     simply compare it against an empty string, like `$VAR == ''` or non-empty
@@ -512,7 +515,7 @@ Below you can find supported syntax reference:
 
     > Example: `$VARIABLE_1 == $VARIABLE_2`
 
-    > Example: `$VARIABLE_1 != $VARIABLE_2` _(added in 11.11)_
+    > Example: `$VARIABLE_1 != $VARIABLE_2` (introduced in GitLab 11.11)
 
     It is possible to compare two variables. This is going to compare values
     of these variables.
@@ -528,11 +531,11 @@ Below you can find supported syntax reference:
     `$STAGING` value needs to a string, with length higher than zero.
     Variable that contains only whitespace characters is not an empty variable.
 
-1. Pattern matching  _(added in 11.0)_
+1. Pattern matching (introduced in GitLab 11.0)
 
     > Example: `$VARIABLE =~ /^content.*/`
 
-    > Example: `$VARIABLE_1 !~ /^content.*/` _(added in 11.11)_
+    > Example: `$VARIABLE_1 !~ /^content.*/` (introduced in GitLab 11.11)
 
     It is possible perform pattern matching against a variable and regular
     expression. Expression like this evaluates to truth if matches are found
@@ -541,7 +544,7 @@ Below you can find supported syntax reference:
     Pattern matching is case-sensitive by default. Use `i` flag modifier, like
     `/pattern/i` to make a pattern case-insensitive.
 
-1. Conjunction / Disjunction
+1. Conjunction / Disjunction ([introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/27925) in GitLab 12.0)
 
     > Example: `$VARIABLE1 =~ /^content.*/ && $VARIABLE2 == "something"`
 
@@ -642,6 +645,8 @@ Running on runner-8a2f473d-project-1796893-concurrent-0 via runner-8a2f473d-mach
 ++ CI_PROJECT_DIR=/builds/gitlab-examples/ci-debug-trace
 ++ export CI_SERVER=yes
 ++ CI_SERVER=yes
+++ export 'CI_SERVER_HOST=example.com'
+++ CI_SERVER_HOST='example.com'
 ++ export 'CI_SERVER_NAME=GitLab CI'
 ++ CI_SERVER_NAME='GitLab CI'
 ++ export CI_SERVER_VERSION=
@@ -676,6 +681,8 @@ Running on runner-8a2f473d-project-1796893-concurrent-0 via runner-8a2f473d-mach
 ++ CI_JOB_NAME=debug_trace
 ++ export CI_JOB_STAGE=test
 ++ CI_JOB_STAGE=test
+++ export CI_SERVER_HOST=example.com
+++ CI_SERVER_HOST=example.com
 ++ export CI_SERVER_NAME=GitLab
 ++ CI_SERVER_NAME=GitLab
 ++ export CI_SERVER_VERSION=8.14.3-ee

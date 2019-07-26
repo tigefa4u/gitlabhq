@@ -99,7 +99,7 @@ describe MergeRequests::UpdateService, :mailer do
       it 'sends email to user2 about assign of new merge request and email to user3 about merge request unassignment' do
         deliveries = ActionMailer::Base.deliveries
         email = deliveries.last
-        recipients = deliveries.last(2).map(&:to).flatten
+        recipients = deliveries.last(2).flat_map(&:to)
         expect(recipients).to include(user2.email, user3.email)
         expect(email.subject).to include(merge_request.title)
       end
@@ -406,6 +406,18 @@ describe MergeRequests::UpdateService, :mailer do
           expect(pending_todo.reload).to be_done
         end
       end
+
+      context 'when auto merge is enabled and target branch changed' do
+        before do
+          AutoMergeService.new(project, user).execute(merge_request, AutoMergeService::STRATEGY_MERGE_WHEN_PIPELINE_SUCCEEDS)
+
+          update_merge_request({ target_branch: 'target' })
+        end
+
+        it 'marks pending todos as done' do
+          expect(pending_todo.reload).to be_done
+        end
+      end
     end
 
     context 'when the merge request is relabeled' do
@@ -586,7 +598,7 @@ describe MergeRequests::UpdateService, :mailer do
             feature_visibility_attr = :"#{merge_request.model_name.plural}_access_level"
             project.project_feature.update_attribute(feature_visibility_attr, ProjectFeature::PRIVATE)
 
-            expect { update_merge_request(assignee_ids: [assignee]) }.not_to change { merge_request.reload.assignees }
+            expect { update_merge_request(assignee_ids: [assignee]) }.not_to change(merge_request.assignees, :count)
           end
         end
       end

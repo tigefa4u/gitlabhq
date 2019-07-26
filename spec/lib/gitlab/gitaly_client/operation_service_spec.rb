@@ -78,6 +78,24 @@ describe Gitlab::GitalyClient::OperationService do
       subject
     end
 
+    describe '#user_merge_to_ref' do
+      let(:first_parent_ref) { 'refs/heads/my-branch' }
+      let(:source_sha) { 'cfe32cf61b73a0d5e9f13e774abde7ff789b1660' }
+      let(:ref) { 'refs/merge-requests/x/merge' }
+      let(:message) { 'validación' }
+      let(:response) { Gitaly::UserMergeToRefResponse.new(commit_id: 'new-commit-id') }
+
+      subject { client.user_merge_to_ref(user, source_sha, nil, ref, message, first_parent_ref) }
+
+      it 'sends a user_merge_to_ref message' do
+        expect_any_instance_of(Gitaly::OperationService::Stub)
+          .to receive(:user_merge_to_ref).with(kind_of(Gitaly::UserMergeToRefRequest), kind_of(Hash))
+          .and_return(response)
+
+        subject
+      end
+    end
+
     context "when pre_receive_error is present" do
       let(:response) do
         Gitaly::UserUpdateBranchResponse.new(pre_receive_error: "GitLab: something failed")

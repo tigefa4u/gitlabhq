@@ -1,5 +1,6 @@
 <script>
 import { GlLink } from '@gitlab/ui';
+import { s__, sprintf } from '~/locale';
 
 export default {
   components: {
@@ -22,8 +23,28 @@ export default {
     },
   },
   computed: {
-    hasQuickActionsDocsPath() {
-      return this.quickActionsDocsPath !== '';
+    toolbarHelpHtml() {
+      const mdLinkStart = `<a href="${this.markdownDocsPath}" target="_blank" rel="noopener noreferrer" tabindex="-1">`;
+      const actionsLinkStart = `<a href="${this.quickActionsDocsPath}" target="_blank" rel="noopener noreferrer" tabindex="-1">`;
+      const linkEnd = '</a>';
+
+      if (this.markdownDocsPath && !this.quickActionsDocsPath) {
+        return sprintf(
+          s__('Editor|%{mdLinkStart}Markdown is supported%{mdLinkEnd}'),
+          { mdLinkStart, mdLinkEnd: linkEnd },
+          false,
+        );
+      } else if (this.markdownDocsPath && this.quickActionsDocsPath) {
+        return sprintf(
+          s__(
+            'Editor|%{mdLinkStart}Markdown%{mdLinkEnd} and %{actionsLinkStart}quick actions%{actionsLinkEnd} are supported',
+          ),
+          { mdLinkStart, mdLinkEnd: linkEnd, actionsLinkStart, actionsLinkEnd: linkEnd },
+          false,
+        );
+      }
+
+      return null;
     },
   },
 };
@@ -32,16 +53,7 @@ export default {
 <template>
   <div class="comment-toolbar clearfix">
     <div class="toolbar-text">
-      <template v-if="!hasQuickActionsDocsPath && markdownDocsPath">
-        <gl-link :href="markdownDocsPath" target="_blank" tabindex="-1"
-          >Markdown is supported</gl-link
-        >
-      </template>
-      <template v-if="hasQuickActionsDocsPath && markdownDocsPath">
-        <gl-link :href="markdownDocsPath" target="_blank" tabindex="-1">Markdown</gl-link> and
-        <gl-link :href="quickActionsDocsPath" target="_blank" tabindex="-1">quick actions</gl-link>
-        are supported
-      </template>
+      <span v-html="toolbarHelpHtml"></span>
     </div>
     <span v-if="canAttachFile" class="uploading-container">
       <span class="uploading-progress-container hide">
@@ -57,15 +69,17 @@ export default {
           <i class="fa fa-file-image-o toolbar-button-icon" aria-hidden="true"></i>
         </span>
         <span class="uploading-error-message"></span>
-        <button class="retry-uploading-link" type="button">Try again</button> or
-        <button class="attach-new-file markdown-selector" type="button">attach a new file</button>
+        <button class="retry-uploading-link" type="button">{{ __('Try again') }}</button> or
+        <button class="attach-new-file markdown-selector" type="button">
+          {{ __('attach a new file') }}
+        </button>
       </span>
       <button class="markdown-selector button-attach-file btn-link" tabindex="-1" type="button">
         <i class="fa fa-file-image-o toolbar-button-icon" aria-hidden="true"></i
-        ><span class="text-attach-file">Attach a file</span>
+        ><span class="text-attach-file">{{ __('Attach a file') }}</span>
       </button>
       <button class="btn btn-default btn-sm hide button-cancel-uploading-files" type="button">
-        Cancel
+        {{ __('Cancel') }}
       </button>
     </span>
   </div>

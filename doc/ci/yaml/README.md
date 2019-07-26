@@ -119,6 +119,35 @@ The following table lists available parameters for jobs:
 NOTE: **Note:**
 Parameters `types` and `type` are [deprecated](#deprecated-parameters).
 
+## Setting default parameters
+
+Some parameters can be set globally as the default for all jobs using the
+`default:` keyword. Default parameters can then be overridden by job-specific
+configuration.
+
+The following job parameters can be defined inside a `default:` block:
+
+- [`image`](#image)
+- [`services`](#services)
+- [`before_script`](#before_script-and-after_script)
+- [`after_script`](#before_script-and-after_script)
+- [`cache`](#cache)
+
+In the following example, the `ruby:2.5` image is set as the default for all
+jobs except the `rspec 2.6` job, which uses the `ruby:2.6` image:
+
+```yaml
+default:
+  image: ruby:2.5
+
+rspec:
+  script: bundle exec rspec
+
+rspec 2.6:
+  image: ruby:2.6
+  script: bundle exec rspec
+```
+
 ## Parameter details
 
 The following are detailed explanations for parameters used to configure CI/CD pipelines.
@@ -215,17 +244,33 @@ This can be an array or a multi-line string.
 `after_script` is used to define the command that will be run after all
 jobs, including failed ones. This has to be an array or a multi-line string.
 
-The `before_script` and the main `script` are concatenated and run in a single context/container.
-The `after_script` is run separately. The current working directory is set back to
-default. Depending on the executor, changes done outside of the working tree might
-not be visible, e.g. software installed in the `before_script`.
+Scripts specified in `before_script` are:
+
+- Concatenated with scripts specified in the main `script`. Job-level
+  `before_script` definition override global-level `before_script` definition
+  when concatenated with `script` definition.
+- Executed together with main `script` script as one script in a single shell
+  context.
+
+Scripts specified in `after_script`:
+
+- Have a current working directory set back to the default.
+- Are executed in a shell context separated from `before_script` and `script`
+  scripts.
+- Because of separated context, cannot see changes done by scripts defined
+  in `before_script` or `script` scripts, either:
+  - In shell. For example, command aliases and variables exported in `script`
+    scripts.
+  - Outside of the working tree (depending on the Runner executor). For example,
+    software installed by a `before_script` or `script` scripts.
 
 It's possible to overwrite the globally defined `before_script` and `after_script`
 if you set it per-job:
 
 ```yaml
-before_script:
-  - global before script
+default:
+  before_script:
+    - global before script
 
 job:
   before_script:
@@ -460,7 +505,7 @@ Feature.enable(:allow_unsafe_ruby_regexp)
 ### `only`/`except` (advanced)
 
 CAUTION: **Warning:**
-This an _alpha_ feature, and it is subject to change at any time without
+This is an _alpha_ feature, and it is subject to change at any time without
 prior notice!
 
 GitLab supports both simple and complex strategies, so it's possible to use an
@@ -958,6 +1003,8 @@ review_app:
 
 stop_review_app:
   stage: deploy
+  variables:
+    GIT_STRATEGY: none
   script: make delete-app
   when: manual
   environment:
@@ -971,6 +1018,10 @@ Once the `review_app` job is successfully finished, it will trigger the
 `stop_review_app` job based on what is defined under `when`. In this case we
 set it up to `manual` so it will need a [manual action](#whenmanual) via
 GitLab's web interface in order to run.
+
+Also in the example, `GIT_STRATEGY` is set to `none` so that GitLab Runner won’t
+try to check out the code after the branch is deleted when the `stop_review_app`
+job is [automatically triggered](../environments.md#automatically-stopping-an-environment).
 
 The `stop_review_app` job is **required** to have the following keywords defined:
 
@@ -1036,7 +1087,7 @@ globally and all jobs will use that definition.
 #### `cache:paths`
 
 Use the `paths` directive to choose which files or directories will be cached.
-Wildcards can be used as well.
+Wildcards can be used that follow the [glob](https://en.wikipedia.org/wiki/Glob_(programming)) patterns and [filepath.Match](https://golang.org/pkg/path/filepath/#Match).
 
 Cache all files in `binaries` that end in `.apk` and the `.config` file:
 
@@ -1198,8 +1249,10 @@ be available for download in the GitLab UI.
 
 #### `artifacts:paths`
 
-You can only use paths that are within the project workspace. To pass artifacts
-between different jobs, see [dependencies](#dependencies).
+You can only use paths that are within the project workspace.
+Wildcards can be used that follow the [glob](https://en.wikipedia.org/wiki/Glob_(programming)) patterns and [filepath.Match](https://golang.org/pkg/path/filepath/#Match).
+
+To pass artifacts between different jobs, see [dependencies](#dependencies).
 
 Send all files in `binaries` and `.config`:
 
@@ -1454,82 +1507,82 @@ concatenated into a single file. Use a filename pattern (`junit: rspec-*.xml`),
 an array of filenames (`junit: [rspec-1.xml, rspec-2.xml, rspec-3.xml]`), or a
 combination thereof (`junit: [rspec.xml, test-results/TEST-*.xml]`).
 
-##### `artifacts:reports:codequality` **[STARTER]**
+##### `artifacts:reports:codequality` **(STARTER)**
 
 > Introduced in GitLab 11.5. Requires GitLab Runner 11.5 and above.
 
-The `codequality` report collects [CodeQuality issues](https://docs.gitlab.com/ee/user/project/merge_requests/code_quality.html)
+The `codequality` report collects [CodeQuality issues](../../user/project/merge_requests/code_quality.md)
 as artifacts.
 
 The collected Code Quality report will be uploaded to GitLab as an artifact and will
 be automatically shown in merge requests.
 
-##### `artifacts:reports:sast` **[ULTIMATE]**
+##### `artifacts:reports:sast` **(ULTIMATE)**
 
 > Introduced in GitLab 11.5. Requires GitLab Runner 11.5 and above.
 
-The `sast` report collects [SAST vulnerabilities](https://docs.gitlab.com/ee/user/application_security/sast/index.html)
+The `sast` report collects [SAST vulnerabilities](../../user/application_security/sast/index.md)
 as artifacts.
 
 The collected SAST report will be uploaded to GitLab as an artifact and will
 be automatically shown in merge requests, pipeline view and provide data for security
 dashboards.
 
-##### `artifacts:reports:dependency_scanning` **[ULTIMATE]**
+##### `artifacts:reports:dependency_scanning` **(ULTIMATE)**
 
 > Introduced in GitLab 11.5. Requires GitLab Runner 11.5 and above.
 
-The `dependency_scanning` report collects [Dependency Scanning vulnerabilities](https://docs.gitlab.com/ee/user/application_security/dependency_scanning/index.html)
+The `dependency_scanning` report collects [Dependency Scanning vulnerabilities](../../user/application_security/dependency_scanning/index.md)
 as artifacts.
 
 The collected Dependency Scanning report will be uploaded to GitLab as an artifact and will
 be automatically shown in merge requests, pipeline view and provide data for security
 dashboards.
 
-##### `artifacts:reports:container_scanning` **[ULTIMATE]**
+##### `artifacts:reports:container_scanning` **(ULTIMATE)**
 
 > Introduced in GitLab 11.5. Requires GitLab Runner 11.5 and above.
 
-The `container_scanning` report collects [Container Scanning vulnerabilities](https://docs.gitlab.com/ee/user/application_security/container_scanning/index.html)
+The `container_scanning` report collects [Container Scanning vulnerabilities](../../user/application_security/container_scanning/index.md)
 as artifacts.
 
 The collected Container Scanning report will be uploaded to GitLab as an artifact and will
 be automatically shown in merge requests, pipeline view and provide data for security
 dashboards.
 
-##### `artifacts:reports:dast` **[ULTIMATE]**
+##### `artifacts:reports:dast` **(ULTIMATE)**
 
 > Introduced in GitLab 11.5. Requires GitLab Runner 11.5 and above.
 
-The `dast` report collects [DAST vulnerabilities](https://docs.gitlab.com/ee/user/application_security/dast/index.html)
+The `dast` report collects [DAST vulnerabilities](../../user/application_security/dast/index.md)
 as artifacts.
 
 The collected DAST report will be uploaded to GitLab as an artifact and will
 be automatically shown in merge requests, pipeline view and provide data for security
 dashboards.
 
-##### `artifacts:reports:license_management` **[ULTIMATE]**
+##### `artifacts:reports:license_management` **(ULTIMATE)**
 
 > Introduced in GitLab 11.5. Requires GitLab Runner 11.5 and above.
 
-The `license_management` report collects [Licenses](https://docs.gitlab.com/ee/user/project/merge_requests/license_management.html)
+The `license_management` report collects [Licenses](../../user/project/merge_requests/license_management.md)
 as artifacts.
 
 The collected License Management report will be uploaded to GitLab as an artifact and will
 be automatically shown in merge requests, pipeline view and provide data for security
 dashboards.
 
-##### `artifacts:reports:performance` **[PREMIUM]**
+##### `artifacts:reports:performance` **(PREMIUM)**
 
 > Introduced in GitLab 11.5. Requires GitLab Runner 11.5 and above.
 
-The `performance` report collects [Performance metrics](https://docs.gitlab.com/ee//user/project/merge_requests/browser_performance_testing.html)
+The `performance` report collects [Performance metrics](../../user/project/merge_requests/browser_performance_testing.md)
 as artifacts.
 
 The collected Performance report will be uploaded to GitLab as an artifact and will
 be automatically shown in merge requests.
 
-##### `artifacts:reports:metrics` **[PREMIUM]**
+##### `artifacts:reports:metrics` **(PREMIUM)**
 
 > Introduced in GitLab 11.10.
 
@@ -1716,7 +1769,7 @@ parallel. This value has to be greater than or equal to two (2) and less than or
 This creates N instances of the same job that run in parallel. They're named
 sequentially from `job_name 1/N` to `job_name N/N`.
 
-For every job, `CI_NODE_INDEX` and `CI_NODE_TOTAL` [environment variables](../variables/README.html#predefined-environment-variables) are set.
+For every job, `CI_NODE_INDEX` and `CI_NODE_TOTAL` [environment variables](../variables/README.md#predefined-environment-variables) are set.
 
 A simple example:
 
@@ -1726,7 +1779,11 @@ test:
   parallel: 5
 ```
 
-### `trigger` **[PREMIUM]**
+TIP: **Tip:**
+Parallelize tests suites across parallel jobs.
+Different languages have different tools to facilitate this.
+
+### `trigger` **(PREMIUM)**
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ee/issues/8997) in [GitLab Premium](https://about.gitlab.com/pricing/) 11.8.
 
@@ -2198,10 +2255,10 @@ spinach:
   script: rake spinach
 ```
 
-It's also possible to use multiple parents for `extends`.
-The algorithm used for merge is "closest scope wins", so keys
-from the last member will always shadow anything defined on other levels.
-For example:
+In GitLab 12.0 and later, it's also possible to use multiple parents for
+`extends`.  The algorithm used for merge is "closest scope wins", so
+keys from the last member will always shadow anything defined on other
+levels.  For example:
 
 ```yaml
 .only-important:
@@ -2527,17 +2584,38 @@ You can set it globally or per-job in the [`variables`](#variables) section.
 
 The following parameters are deprecated.
 
-### `types`
+### Globally-defined `types`
 
 CAUTION: **Deprecated:**
 `types` is deprecated, and could be removed in a future release.
 Use [`stages`](#stages) instead.
 
-### `type`
+### Job-defined `type`
 
 CAUTION: **Deprecated:**
 `type` is deprecated, and could be removed in one of the future releases.
 Use [`stage`](#stage) instead.
+
+### Globally-defined `image`, `services`, `cache`, `before_script`, `after_script`
+
+Defining `image`, `services`, `cache`, `before_script`, and
+`after_script` globally is deprecated. Support could be removed
+from a future release.
+
+Use [`default:`](#setting-default-parameters) instead. For example:
+
+```yaml
+default:
+  image: ruby:2.5
+  services:
+    - docker:dind
+  cache:
+    paths: [vendor/]
+  before_script:
+    - bundle install --path vendor/
+  after_script:
+    - rm -rf tmp/
+```
 
 ## Custom build directories
 
@@ -2604,6 +2682,24 @@ test:
   script:
     - pwd
 ```
+
+### Nested paths
+
+The value of `GIT_CLONE_PATH` is expanded once and nesting variables
+within it is not supported.
+
+For example, you define both the variables below in your
+`.gitlab-ci.yml` file:
+
+```yml
+variables:
+  GOPATH: $CI_BUILDS_DIR/go
+  GIT_CLONE_PATH: $GOPATH/src/namespace/project
+```
+
+The value of `GIT_CLONE_PATH` is expanded once into
+`$CI_BUILDS_DIR/go/src/namespace/project`, and results in failure
+because `$CI_BUILDS_DIR` is not expanded.
 
 ## Special YAML features
 
@@ -2788,7 +2884,8 @@ Alternatively, one can pass the `ci.skip` [Git push option][push-option] if
 using Git 2.10 or newer:
 
 ```sh
-git push -o ci.skip
+git push --push-option=ci.skip    # using git 2.10+
+git push -o ci.skip               # using git 2.18+
 ```
 
 <!-- ## Troubleshooting

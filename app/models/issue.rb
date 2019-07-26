@@ -13,10 +13,7 @@ class Issue < ApplicationRecord
   include RelativePositioning
   include TimeTrackable
   include ThrottledTouch
-  include IgnorableColumn
   include LabelEventable
-
-  ignore_column :assignee_id, :branch_name, :deleted_at
 
   DueDateStruct                   = Struct.new(:title, :name).freeze
   NoDueDate                       = DueDateStruct.new('No Due Date', '0').freeze
@@ -94,11 +91,11 @@ class Issue < ApplicationRecord
     end
   end
 
-  class << self
-    alias_method :in_parents, :in_projects
+  def self.relative_positioning_query_base(issue)
+    in_projects(issue.parent_ids)
   end
 
-  def self.parent_column
+  def self.relative_positioning_parent_column
     :project_id
   end
 
@@ -134,7 +131,7 @@ class Issue < ApplicationRecord
     when 'due_date'            then order_due_date_asc
     when 'due_date_asc'        then order_due_date_asc
     when 'due_date_desc'       then order_due_date_desc
-    when 'relative_position'   then order_relative_position_asc
+    when 'relative_position'   then order_relative_position_asc.with_order_id_desc
     else
       super
     end
@@ -250,8 +247,12 @@ class Issue < ApplicationRecord
   end
   # rubocop: enable CodeReuse/ServiceClass
 
-  def merge_requests_count
-    merge_requests_closing_issues.count
+  def merge_requests_count(user = nil)
+    ::MergeRequestsClosingIssues.count_for_issue(self.id, user)
+  end
+
+  def labels_hook_attrs
+    labels.map(&:hook_attrs)
   end
 
   private

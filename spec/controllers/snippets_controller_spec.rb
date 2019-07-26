@@ -209,8 +209,8 @@ describe SnippetsController do
     context 'when the snippet description contains a file' do
       include FileMoverHelpers
 
-      let(:picture_file) { '/-/system/temp/secret56/picture.jpg' }
-      let(:text_file) { '/-/system/temp/secret78/text.txt' }
+      let(:picture_file) { "/-/system/user/#{user.id}/secret56/picture.jpg" }
+      let(:text_file) { "/-/system/user/#{user.id}/secret78/text.txt" }
       let(:description) do
         "Description with picture: ![picture](/uploads#{picture_file}) and "\
         "text: [text.txt](/uploads#{text_file})"
@@ -622,7 +622,7 @@ describe SnippetsController do
 
       post :preview_markdown, params: { id: snippet, text: '*Markdown* text' }
 
-      expect(JSON.parse(response.body).keys).to match_array(%w(body references))
+      expect(json_response.keys).to match_array(%w(body references))
     end
   end
 end

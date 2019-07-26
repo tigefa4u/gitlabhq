@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-describe Postgresql::ReplicationSlot, :postgresql do
+describe Postgresql::ReplicationSlot do
   describe '.in_use?' do
     it 'returns true when replication slots are present' do
       expect(described_class).to receive(:exists?).and_return(true)
@@ -44,6 +44,14 @@ describe Postgresql::ReplicationSlot, :postgresql do
       expect(described_class)
         .to receive(:pluck)
         .and_return([0.megabytes])
+
+      expect(described_class.lag_too_great?).to eq(false)
+    end
+
+    it 'returns false when there is a nil replication lag' do
+      expect(described_class)
+        .to receive(:pluck)
+        .and_return([0.megabytes, nil])
 
       expect(described_class.lag_too_great?).to eq(false)
     end

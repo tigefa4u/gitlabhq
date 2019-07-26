@@ -1,3 +1,7 @@
+---
+type: howto
+---
+
 # Migrate GitLab CI to GitLab CE or EE
 
 Beginning with version 8.0 of GitLab Community Edition (CE) and Enterprise
@@ -177,7 +181,7 @@ sudo -u gitlab_ci -H bundle exec rake backup:show_secrets RAILS_ENV=production
 ### 2. SQL data and build traces
 
 Create your final CI data export. If you are converting from MySQL to
-  PostgreSQL, add ` MYSQL_TO_POSTGRESQL=1` to the end of the rake command. When
+PostgreSQL, add `MYSQL_TO_POSTGRESQL=1` to the end of the rake command. When
 the command finishes it will print the path to your data export archive; you
 will need this file later.
 
@@ -319,11 +323,15 @@ You should also make sure that you can:
 
 ### 2. Check Nginx configuration
 
-    sudo nginx -t
+```sh
+sudo nginx -t
+```
 
 ### 3. Restart Nginx
 
-    sudo /etc/init.d/nginx restart
+```sh
+sudo /etc/init.d/nginx restart
+```
 
 ### Restore from backup
 
@@ -333,7 +341,9 @@ restoration](../raketasks/backup_restore.md) guide.
 ## Troubleshooting
 
 ### show:secrets problem (Omnibus-only)
+
 If you see errors like this:
+
 ```
 Missing `secret_key_base` or `db_key_base` for 'production' environment. The secrets will be generated and stored in `config/secrets.yml`
 rake aborted!
@@ -344,19 +354,24 @@ This can happen if you are updating from versions prior to 7.13 straight to 8.0.
 The fix for this is to update to Omnibus 7.14 first and then update it to 8.0.
 
 ### Permission denied when accessing /var/opt/gitlab/gitlab-ci/builds
+
 To fix that issue you have to change builds/ folder permission before doing final backup:
+
 ```
 sudo chown -R gitlab-ci:gitlab-ci /var/opt/gitlab/gitlab-ci/builds
 ```
 
 Then before executing `ci:migrate` you need to fix builds folder permission:
+
 ```
 sudo chown git:git /var/opt/gitlab/gitlab-ci/builds
 ```
 
 ### Problems when importing CI database to GitLab
+
 If you were migrating CI database from MySQL to PostgreSQL manually you can see errors during import about missing sequences:
-```
+
+```sql
 ALTER SEQUENCE
 ERROR:  relation "ci_builds_id_seq" does not exist
 ERROR:  relation "ci_commits_id_seq" does not exist
@@ -373,9 +388,9 @@ CREATE TABLE
 
 To fix that you need to apply this SQL statement before doing final backup:
 
-```sql
-## Omnibus GitLab
+Omnibus GitLab installations:
 
+```sql
 gitlab-ci-rails dbconsole <<EOF
 -- ALTER TABLES - DROP DEFAULTS
 ALTER TABLE ONLY ci_application_settings ALTER COLUMN id DROP DEFAULT;
@@ -428,9 +443,11 @@ ALTER TABLE ONLY ci_triggers ALTER COLUMN id SET DEFAULT nextval('ci_triggers_id
 ALTER TABLE ONLY ci_variables ALTER COLUMN id SET DEFAULT nextval('ci_variables_id_seq'::regclass);
 ALTER TABLE ONLY ci_web_hooks ALTER COLUMN id SET DEFAULT nextval('ci_web_hooks_id_seq'::regclass);
 EOF
+```
 
-## Source installations
+Source installations:
 
+```
 cd /home/gitlab_ci/gitlab-ci
 sudo -u gitlab_ci -H bundle exec rails dbconsole production <<EOF
 ... COPY SQL STATEMENTS FROM ABOVE ...

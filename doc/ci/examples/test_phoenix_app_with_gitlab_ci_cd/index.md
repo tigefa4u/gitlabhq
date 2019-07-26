@@ -3,6 +3,7 @@ author: Alexandre S Hostert
 author_gitlab: Hostert
 level: beginner
 article_type: tutorial
+type: tutorial
 date: 2018-02-20
 last_updated: 2019-03-06
 ---
@@ -16,11 +17,11 @@ simultaneous users.
 
 That's why we're hearing so much about Phoenix today.
 
-In this tutorial, we'll teach you how to set up GitLab CI/CD to build and test a Phoenix
+In this tutorial, we'll teach you how to set up [GitLab CI/CD](../../README.md) to build and test a Phoenix
 application.
 
-_We assume that you know how to create a Phoenix app, run tests locally, and how to work with Git
-and GitLab UI._
+The tutorial assumes that you know how to create a Phoenix app, run tests locally, and how to work with Git
+and the GitLab UI.
 
 ## Introduction
 
@@ -403,14 +404,14 @@ other reasons][ci-reasons] to keep using GitLab CI/CD. The benefits to our teams
 [phoenix-learning-guide]: https://hexdocs.pm/phoenix/learning.html "Phoenix Learning Guide"
 [phoenix-install]: https://hexdocs.pm/phoenix/installation.html "Phoenix Installation"
 [phoenix-mysql]: https://hexdocs.pm/phoenix/ecto.html#using-mysql "Phoenix with MySQL"
-[elixir-site]: http://elixir-lang.org/ "Elixir"
-[elixir-mix]: http://elixir-lang.org/getting-started/mix-otp/introduction-to-mix.html "Introduction to mix"
-[elixir-docs]: http://elixir-lang.org/getting-started/introduction.html "Elixir Documentation"
+[elixir-site]: https://elixir-lang.org/ "Elixir"
+[elixir-mix]: https://elixir-lang.org/getting-started/mix-otp/introduction-to-mix.html "Introduction to mix"
+[elixir-docs]: https://elixir-lang.org/getting-started/introduction.html "Elixir Documentation"
 [elixir-install]: https://elixir-lang.org/install.html "Elixir Installation"
-[ecto]: http://hexdocs.pm/ecto "Ecto"
+[ecto]: https://hexdocs.pm/ecto/Ecto.html "Ecto"
 [ecto-repo]: https://hexdocs.pm/ecto/Ecto.html#module-repositories "Ecto Repositories"
 [mix-ecto]: https://hexdocs.pm/ecto/Mix.Tasks.Ecto.Create.html "mix and Ecto"
-[iex]: http://elixir-lang.org/getting-started/introduction.html#interactive-mode "Interactive Mode"
+[iex]: https://elixir-lang.org/getting-started/introduction.html#interactive-mode "Interactive Mode"
 [ci-lint]: https://gitlab.com/ci/lint "CI Lint Tool"
 [ci-reasons]: https://about.gitlab.com/2015/02/03/7-reasons-why-you-should-be-using-ci/ "7 Reasons Why You Should Be Using CI"
 [ci-guide]: https://about.gitlab.com/2015/12/14/getting-started-with-gitlab-and-gitlab-ci/ "Getting Started With GitLab And GitLab CI/CD"

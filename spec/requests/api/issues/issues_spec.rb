@@ -4,8 +4,9 @@ require 'spec_helper'
 
 describe API::Issues do
   set(:user) { create(:user) }
-  set(:project) do
-    create(:project, :public, creator_id: user.id, namespace: user.namespace)
+  set(:project) { create(:project, :public, :repository, creator_id: user.id, namespace: user.namespace) }
+  set(:private_mrs_project) do
+    create(:project, :public, :repository, creator_id: user.id, namespace: user.namespace, merge_requests_access_level: ProjectFeature::PRIVATE)
   end
 
   let(:user2)       { create(:user) }
@@ -63,6 +64,8 @@ describe API::Issues do
   before(:all) do
     project.add_reporter(user)
     project.add_guest(guest)
+    private_mrs_project.add_reporter(user)
+    private_mrs_project.add_guest(guest)
   end
 
   before do
@@ -269,14 +272,6 @@ describe API::Issues do
         issue2 = create(:issue, author: user2, assignees: [user2], project: project)
 
         get api('/issues', user), params: { author_id: user2.id, assignee_id: user2.id, scope: 'all' }
-
-        expect_paginated_array_response(issue2.id)
-      end
-
-      it 'returns issues with no assignee' do
-        issue2 = create(:issue, author: user2, project: project)
-
-        get api('/issues', user), params: { assignee_id: 0, scope: 'all' }
 
         expect_paginated_array_response(issue2.id)
       end
@@ -493,18 +488,6 @@ describe API::Issues do
 
         it 'returns an array of issues with no label with labels param as array' do
           get api('/issues', user), params: { labels: [IssuesFinder::FILTER_NONE] }
-
-          expect_paginated_array_response(closed_issue.id)
-        end
-
-        it 'returns an array of issues with no label when using the legacy No+Label filter' do
-          get api('/issues', user), params: { labels: 'No Label' }
-
-          expect_paginated_array_response(closed_issue.id)
-        end
-
-        it 'returns an array of issues with no label when using the legacy No+Label filter with labels param as array' do
-          get api('/issues', user), params: { labels: ['No Label'] }
 
           expect_paginated_array_response(closed_issue.id)
         end
@@ -743,6 +726,30 @@ describe API::Issues do
           expect(response).to have_gitlab_http_status(400)
           expect(json_response["error"]).to include("mutually exclusive")
         end
+      end
+    end
+
+    context "when returns issue merge_requests_count for different access levels" do
+      let!(:merge_request1) do
+        create(:merge_request,
+               :simple,
+               author: user,
+               source_project: private_mrs_project,
+               target_project: private_mrs_project,
+               description: "closes #{issue.to_reference(private_mrs_project)}")
+      end
+      let!(:merge_request2) do
+        create(:merge_request,
+               :simple,
+               author: user,
+               source_project: project,
+               target_project: project,
+               description: "closes #{issue.to_reference}")
+      end
+
+      it_behaves_like 'accessible merge requests count' do
+        let(:api_url) { "/issues" }
+        let(:target_issue) { issue }
       end
     end
   end

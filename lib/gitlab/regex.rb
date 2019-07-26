@@ -4,14 +4,6 @@ module Gitlab
   module Regex
     extend self
 
-    def namespace_name_regex
-      @namespace_name_regex ||= /\A[\p{Alnum}\p{Pd}_\. ]*\z/.freeze
-    end
-
-    def namespace_name_regex_message
-      "can contain only letters, digits, '_', '.', dash and space."
-    end
-
     def project_name_regex
       @project_name_regex ||= /\A[\p{Alnum}\u{00A9}-\u{1f9c0}_][\p{Alnum}\p{Pd}\u{00A9}-\u{1f9c0}_\. ]*\z/.freeze
     end
@@ -100,6 +92,12 @@ module Gitlab
             \n<\/[^>]+?>\ *$
           )
       }mx
+    end
+
+    # Based on Jira's project key format
+    # https://confluence.atlassian.com/adminjiraserver073/changing-the-project-key-format-861253229.html
+    def jira_issue_key_regex
+      @jira_issue_key_regex ||= /[A-Z][A-Z_0-9]+-\d+/
     end
 
     def jira_transition_id_regex

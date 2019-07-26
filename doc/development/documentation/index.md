@@ -18,7 +18,7 @@ In addition to this page, the following resources to help craft and contribute d
 
 ## Source files and rendered web locations
 
-Documentation for GitLab Community Edition (CE) and Enterprise Edition (EE), along with GitLab Runner and Omnibus, is published to [docs.gitlab.com](https://docs.gitlab.com). The documentation for CE and EE is also published within the application at `/help` on the domain of the GitLab instance.
+Documentation for GitLab Community Edition (CE) and Enterprise Edition (EE), along with GitLab Runner and Omnibus, is published to [docs.gitlab.com](https://docs.gitlab.com). The documentation for CE and EE is also published within the application at `/help` on the domain of the GitLab instance, though there are [plans](https://gitlab.com/groups/gitlab-org/-/epics/693) to end this practice and instead link out from the GitLab application to docs.gitlab.com URLs.
 
 At `/help`, only content for your current edition and version is included, whereas multiple versions' content is available at docs.gitlab.com.
 
@@ -43,7 +43,7 @@ Meanwhile, anyone can contribute [documentation improvements](improvement-workfl
 
 ## Markdown and styles
 
-[GitLab docs](https://gitlab.com/gitlab-com/gitlab-docs) uses [GitLab Kramdown](https://gitlab.com/gitlab-org/gitlab_kramdown)
+[GitLab docs](https://gitlab.com/gitlab-org/gitlab-docs) uses [GitLab Kramdown](https://gitlab.com/gitlab-org/gitlab_kramdown)
 as its markdown rendering engine. See the [GitLab Markdown Guide](https://about.gitlab.com/handbook/product/technical-writing/markdown-guide/) for a complete Kramdown reference.
 
 Adhere to the [Documentation Style Guide](styleguide.md). If a style standard is missing, you are welcome to suggest one via a merge request.
@@ -57,35 +57,22 @@ See the [Structure](styleguide.md#structure) section of the [Documentation Style
 We currently maintain two sets of docs: one in the
 [gitlab-ce](https://gitlab.com/gitlab-org/gitlab-ce/tree/master/doc) repo and
 one in [gitlab-ee](https://gitlab.com/gitlab-org/gitlab-ee/tree/master/doc).
-They are similar, and most pages are identical, but they are different repositories.
-With the single codebase effort, we want to make those two sets identical, so when the
-time comes to have only one codebase, we'll be ready.
-
-Here are some links to get you up to speed with the current effort:
-
-- [CE/EE codebases blueprint](https://about.gitlab.com/handbook/engineering/infrastructure/blueprint/ce-ee-codebases/)
-- [CE/EE codebases merge design](https://about.gitlab.com/handbook/engineering/infrastructure/design/merge-ce-ee-codebases/)
-- [Single docs codebase epic](https://gitlab.com/groups/gitlab-org/-/epics/199)
-- [Issue board of related issues](https://gitlab.com/groups/gitlab-org/-/boards/981090?&label_name[]=Documentation&label_name[]=single%20codebase)
-- [Related merge requests](https://gitlab.com/groups/gitlab-org/-/merge_requests?scope=all&utf8=%E2%9C%93&state=all&label_name[]=Documentation&label_name[]=single%20codebase)
-- [Visualize the existing diffs](https://leipert-projects.gitlab.io/is-gitlab-pretty-yet/diff/?search=%5Edoc)
+They are identical, but they are different repositories. When the
+time comes to have only one codebase for the GitLab project, we'll be ready.
 
 ### CE first
 
-After a given documentation path is aligned across CE and EE, all merge requests
-affecting that path must be submitted to CE, regardless of the content it has.
-This means that:
+All merge requests for documentation must be submitted to CE, regardless of the content
+it has. This means that:
 
-* For **EE-only docs changes**, you only have to submit a CE MR.
-* For **EE-only features** that touch both the code and the docs, you have to submit
-an EE MR containing all changes, and a CE MR containing only the docs changes
-and without a changelog entry.
+- For **EE-only docs changes**, you only have to submit an MR in the CE project.
+- For **EE-only features** that touch both the code and the docs, you have to submit
+  an EE MR containing all code changes, and a CE MR containing only the docs changes
+  and without a changelog entry.
 
 This might seem like a duplicate effort, but it's only for the short term.
-A list of the already aligned docs can be found in
-[the epic description](https://gitlab.com/groups/gitlab-org/-/epics/199#ee-specific-lines-check).
 
-Since the docs will be combined, it's crucial to add the relevant
+Since the CE and EE docs are combined, it's crucial to add the relevant
 [product badges](styleguide.md#product-badges) for all EE documentation, so that
 we can discern which features belong to which tier.
 
@@ -94,19 +81,9 @@ we can discern which features belong to which tier.
 There's a special test in place
 ([`ee_specific_check.rb`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/scripts/ee_specific_check/ee_specific_check.rb)),
 which, among others, checks and prevents creating/editing new files and directories
-in EE under `doc/`.
-
-We have a long list of documentation paths that are either whitelisted or not.
-Paths in the whitelist (not commented out) will not be subject to the test,
-which means you are allowed to create/change docs content in EE for the time
-being. The goal is to not have any doc whitelisted.
-
-At the time of this writing, the only items left to be aligned are the API docs:
-
-- `doc/api/*` ([issue](https://gitlab.com/gitlab-org/gitlab-ce/issues/60045) / [merge request](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/27491))
-
-Eventually, once all docs are aligned, we'll remove any doc reference from that
-script, so it catches everything.
+in EE under `doc/`. This should fail when changes to anything in `/doc` are submitted
+in an EE MR. To pass the test, simply remove the docs changes from the EE MR, and
+[submit them in CE](#ce-first).
 
 ## Changing document location
 
@@ -274,8 +251,11 @@ Follow this [method for cherry-picking from CE to EE](../automatic_ce_ee_merge.m
 
 ## GitLab `/help`
 
-Every GitLab instance includes the documentation, which is available from `/help`
-(`http://my-instance.com/help`), e.g., <https://gitlab.com/help>.
+Every GitLab instance includes the documentation, which is available at `/help`
+(`https://gitlab.example.com/help`). For example, <https://gitlab.com/help>.
+
+There are [plans](https://gitlab.com/groups/gitlab-org/-/epics/693) to end this
+practice and instead link out from the GitLab application to docs.gitlab.com URLs.
 
 The documentation available online on docs.gitlab.com is continuously
 deployed every hour from the `master` branch of CE, EE, Omnibus, and Runner. Therefore,
@@ -381,7 +361,7 @@ on how the left-side navigation menu is built and updated.
 
 NOTE: **Note:**
 To preview your changes to documentation locally, follow this
-[development guide](https://gitlab.com/gitlab-com/gitlab-docs/blob/master/README.md#development-when-contributing-to-gitlab-documentation) or [these instructions for GDK](https://gitlab.com/gitlab-org/gitlab-development-kit/blob/master/doc/howto/gitlab_docs.md).
+[development guide](https://gitlab.com/gitlab-org/gitlab-docs/blob/master/README.md#development-when-contributing-to-gitlab-documentation) or [these instructions for GDK](https://gitlab.com/gitlab-org/gitlab-development-kit/blob/master/doc/howto/gitlab_docs.md).
 
 The live preview is currently enabled for the following projects:
 
@@ -405,7 +385,7 @@ You will need to push a branch to those repositories, it doesn't work for forks.
 
 The `review-docs-deploy*` job will:
 
-1. Create a new branch in the [gitlab-docs](https://gitlab.com/gitlab-com/gitlab-docs)
+1. Create a new branch in the [gitlab-docs](https://gitlab.com/gitlab-org/gitlab-docs)
    project named after the scheme: `$DOCS_GITLAB_REPO_SUFFIX-$CI_ENVIRONMENT_SLUG`,
    where `DOCS_GITLAB_REPO_SUFFIX` is the suffix for each product, e.g, `ce` for
    CE, etc.
@@ -461,7 +441,7 @@ If you want to know the in-depth details, here's what's really happening:
    1. The preview URL is shown both at the job output and in the merge request
       widget. You also get the link to the remote pipeline.
 1. In the docs project, the pipeline is created and it
-   [skips the test jobs](https://gitlab.com/gitlab-com/gitlab-docs/blob/8d5d5c750c602a835614b02f9db42ead1c4b2f5e/.gitlab-ci.yml#L50-55)
+   [skips the test jobs](https://gitlab.com/gitlab-org/gitlab-docs/blob/8d5d5c750c602a835614b02f9db42ead1c4b2f5e/.gitlab-ci.yml#L50-55)
    to lower the build time.
 1. Once the docs site is built, the HTML files are uploaded as artifacts.
 1. A specific Runner tied only to the docs project, runs the Review App job
@@ -485,15 +465,17 @@ Currently, the following tests are in place:
    that all cURL examples in API docs use the full switches. It's recommended
    to [check locally](#previewing-the-changes-live) before pushing to GitLab by executing the command
    `bundle exec nanoc check internal_links` on your local
-   [`gitlab-docs`](https://gitlab.com/gitlab-com/gitlab-docs) directory.
+   [`gitlab-docs`](https://gitlab.com/gitlab-org/gitlab-docs) directory. In addition,
+   `docs-lint` also runs [markdownlint](styleguide.md#markdown-rules) to ensure the
+   markdown is consistent across all documentation.
 1. [`ee_compat_check`](../automatic_ce_ee_merge.md#avoiding-ce-ee-merge-conflicts-beforehand) (runs on CE only):
-    When you submit a merge request to GitLab Community Edition (CE),
-    there is this additional job that runs against Enterprise Edition (EE)
-    and checks if your changes can apply cleanly to the EE codebase.
-    If that job fails, read the instructions in the job log for what to do next.
-    As CE is merged into EE once a day, it's important to avoid merge conflicts.
-    Submitting an EE-equivalent merge request cherry-picking all commits from CE to EE is
-    essential to avoid them.
+   When you submit a merge request to GitLab Community Edition (CE),
+   there is this additional job that runs against Enterprise Edition (EE)
+   and checks if your changes can apply cleanly to the EE codebase.
+   If that job fails, read the instructions in the job log for what to do next.
+   As CE is merged into EE once a day, it's important to avoid merge conflicts.
+   Submitting an EE-equivalent merge request cherry-picking all commits from CE to EE is
+   essential to avoid them.
 1. [`ee-files-location-check`/`ee-specific-lines-check`](#ee-specific-lines-check) (runs on EE only):
    This test ensures that no new files/directories are created/changed in EE.
    All docs should be submitted in CE instead, regardless the tier they are on.
@@ -556,15 +538,16 @@ A file with `proselint` configuration must be placed in a
 #### `markdownlint`
 
 `markdownlint` checks that certain rules ([example](https://github.com/DavidAnson/markdownlint/blob/master/README.md#rules--aliases))
- are followed for Markdown syntax.
- Our [Documentation Style Guide](styleguide.md) and [Markdown Guide](https://about.gitlab.com/handbook/product/technical-writing/markdown-guide/)
- elaborate on which choices must be made when selecting Markdown syntax for
- GitLab documentation. This tool helps catch deviations from those guidelines.
+are followed for Markdown syntax. Our [Documentation Style Guide](styleguide.md) and
+[Markdown Guide](https://about.gitlab.com/handbook/product/technical-writing/markdown-guide/)
+elaborate on which choices must be made when selecting Markdown syntax for GitLab
+documentation. This tool helps catch deviations from those guidelines, and matches the
+tests run on the documentation by [`docs-lint`](#testing).
 
 `markdownlint` can be used [on the command line](https://github.com/igorshubovych/markdownlint-cli#markdownlint-cli--),
- either on a single Markdown file or on all Markdown files in a project. For example, to run
- `markdownlint` on all documentation in the [`gitlab-ce` project](https://gitlab.com/gitlab-org/gitlab-ce),
- run the following commands from within the `gitlab-ce` project:
+either on a single Markdown file or on all Markdown files in a project. For example, to run
+`markdownlint` on all documentation in the [`gitlab-ce` project](https://gitlab.com/gitlab-org/gitlab-ce),
+run the following commands from within the `gitlab-ce` project:
 
 ```sh
 cd doc
@@ -594,7 +577,7 @@ The following sample `markdownlint` configuration modifies the available default
   "line-length": false,
   "no-trailing-punctuation": false,
   "ol-prefix": { "style": "one" },
-  "blanks-around-fences": false,
+  "blanks-around-fences": true,
   "no-inline-html": {
     "allowed_elements": [
       "table",
@@ -609,11 +592,15 @@ The following sample `markdownlint` configuration modifies the available default
       "a",
       "strong",
       "i",
-      "div"
+      "div",
+      "b"
     ]
   },
   "hr-style": { "style": "---" },
-  "fenced-code-language": false
+  "code-block-style": { "style": "fenced" },
+  "fenced-code-language": false,
+  "no-duplicate-header": { "allow_different_nesting": true },
+  "commands-show-output": false
 }
 ```
 

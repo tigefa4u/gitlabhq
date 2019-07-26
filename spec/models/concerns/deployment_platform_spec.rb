@@ -8,40 +8,7 @@ describe DeploymentPlatform do
   describe '#deployment_platform' do
     subject { project.deployment_platform }
 
-    context 'with no Kubernetes configuration on CI/CD, no Kubernetes Service and a Kubernetes template configured' do
-      let!(:kubernetes_service) { create(:kubernetes_service, template: true) }
-
-      it 'returns a platform kubernetes' do
-        expect(subject).to be_a_kind_of(Clusters::Platforms::Kubernetes)
-      end
-
-      it 'creates a cluster and a platform kubernetes' do
-        expect { subject }
-          .to change { Clusters::Cluster.count }.by(1)
-          .and change { Clusters::Platforms::Kubernetes.count }.by(1)
-      end
-
-      it 'includes appropriate attributes for Cluster' do
-        cluster = subject.cluster
-        expect(cluster.name).to eq('kubernetes-template')
-        expect(cluster.project).to eq(project)
-        expect(cluster.provider_type).to eq('user')
-        expect(cluster.platform_type).to eq('kubernetes')
-      end
-
-      it 'creates a platform kubernetes' do
-        expect { subject }.to change { Clusters::Platforms::Kubernetes.count }.by(1)
-      end
-
-      it 'copies attributes from Clusters::Platform::Kubernetes template into the new Cluster::Platforms::Kubernetes' do
-        expect(subject.api_url).to eq(kubernetes_service.api_url)
-        expect(subject.ca_pem).to eq(kubernetes_service.ca_pem)
-        expect(subject.token).to eq(kubernetes_service.token)
-        expect(subject.namespace).to eq(kubernetes_service.namespace)
-      end
-    end
-
-    context 'with no Kubernetes configuration on CI/CD, no Kubernetes Service and no Kubernetes template configured' do
+    context 'with no Kubernetes configuration on CI/CD, no Kubernetes Service' do
       it { is_expected.to be_nil }
     end
 
@@ -78,13 +45,12 @@ describe DeploymentPlatform do
         is_expected.to eq(group_cluster.platform_kubernetes)
       end
 
-      context 'when child group has configured kubernetes cluster', :nested_groups do
-        let!(:child_group1_cluster) { create(:cluster, :provided_by_gcp, :group) }
-        let(:child_group1) { child_group1_cluster.group }
+      context 'when child group has configured kubernetes cluster' do
+        let(:child_group1) { create(:group, parent: group) }
+        let!(:child_group1_cluster) { create(:cluster_for_group, groups: [child_group1]) }
 
         before do
           project.update!(group: child_group1)
-          child_group1.update!(parent: group)
         end
 
         it 'returns the Kubernetes platform for the child group' do
@@ -92,11 +58,10 @@ describe DeploymentPlatform do
         end
 
         context 'deeply nested group' do
-          let!(:child_group2_cluster) { create(:cluster, :provided_by_gcp, :group) }
-          let(:child_group2) { child_group2_cluster.group }
+          let(:child_group2) { create(:group, parent: child_group1) }
+          let!(:child_group2_cluster) { create(:cluster_for_group, groups: [child_group2]) }
 
           before do
-            child_group2.update!(parent: child_group1)
             project.update!(group: child_group2)
           end
 
@@ -115,34 +80,6 @@ describe DeploymentPlatform do
           end
         end
       end
-
-      context 'feature flag disabled' do
-        before do
-          stub_feature_flags(group_clusters: false)
-        end
-
-        it 'returns nil' do
-          is_expected.to be_nil
-        end
-      end
-    end
-
-    context 'when user configured kubernetes integration from project services' do
-      let!(:kubernetes_service) { create(:kubernetes_service, project: project) }
-
-      it 'returns the Kubernetes service' do
-        expect(subject).to eq(kubernetes_service)
-      end
-    end
-
-    context 'when the cluster creation fails' do
-      let!(:kubernetes_service) { create(:kubernetes_service, template: true) }
-
-      before do
-        allow_any_instance_of(Clusters::Cluster).to receive(:persisted?).and_return(false)
-      end
-
-      it { is_expected.to be_nil }
     end
   end
 end

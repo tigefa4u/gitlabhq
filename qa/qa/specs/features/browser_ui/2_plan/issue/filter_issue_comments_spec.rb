@@ -5,33 +5,37 @@ module QA
     describe 'filter issue comments activities' do
       let(:issue_title) { 'issue title' }
 
-      it 'user filters comments and activities in an issue' do
+      before do
         Runtime::Browser.visit(:gitlab, Page::Main::Login)
-        Page::Main::Login.act { sign_in_using_credentials }
+        Page::Main::Login.perform(&:sign_in_using_credentials)
 
-        Resource::Issue.fabricate! do |issue|
+        issue = Resource::Issue.fabricate_via_api! do |issue|
           issue.title = issue_title
         end
 
-        expect(page).to have_content(issue_title)
+        issue.visit!
+      end
 
-        Page::Project::Issue::Show.perform do |show_page|
-          show_page.select_comments_only_filter
-          show_page.comment('/confidential')
-          show_page.comment('My own comment')
+      it 'user filters comments and activities in an issue' do
+        Page::Project::Issue::Show.perform do |show|
+          my_own_comment = "My own comment"
+          made_the_issue_confidential = "made the issue confidential"
 
-          expect(show_page).not_to have_content("made the issue confidential")
-          expect(show_page).to have_content("My own comment")
+          show.comment('/confidential', filter: :comments_only)
+          show.comment(my_own_comment, filter: :comments_only)
 
-          show_page.select_all_activities_filter
+          expect(show).not_to have_content(made_the_issue_confidential)
+          expect(show).to have_content(my_own_comment)
 
-          expect(show_page).to have_content("made the issue confidential")
-          expect(show_page).to have_content("My own comment")
+          show.select_all_activities_filter
 
-          show_page.select_history_only_filter
+          expect(show).to have_content(made_the_issue_confidential)
+          expect(show).to have_content(my_own_comment)
 
-          expect(show_page).to have_content("made the issue confidential")
-          expect(show_page).not_to have_content("My own comment")
+          show.select_history_only_filter
+
+          expect(show).to have_content(made_the_issue_confidential)
+          expect(show).not_to have_content(my_own_comment)
         end
       end
     end

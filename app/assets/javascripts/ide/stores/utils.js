@@ -1,4 +1,4 @@
-import { commitActionTypes } from '../constants';
+import { commitActionTypes, FILE_VIEW_MODE_EDITOR } from '../constants';
 
 export const dataStructure = () => ({
   id: '',
@@ -18,6 +18,7 @@ export const dataStructure = () => ({
   active: false,
   changed: false,
   staged: false,
+  replaces: false,
   lastCommitPath: '',
   lastCommitSha: '',
   lastCommit: {
@@ -42,7 +43,7 @@ export const dataStructure = () => ({
   editorColumn: 1,
   fileLanguage: '',
   eol: '',
-  viewMode: 'editor',
+  viewMode: FILE_VIEW_MODE_EDITOR,
   previewMode: null,
   size: 0,
   parentPath: null,
@@ -119,7 +120,7 @@ export const commitActionForFile = file => {
     return commitActionTypes.move;
   } else if (file.deleted) {
     return commitActionTypes.delete;
-  } else if (file.tempFile) {
+  } else if (file.tempFile && !file.replaces) {
     return commitActionTypes.create;
   }
 
@@ -135,22 +136,30 @@ export const getCommitFiles = stagedFiles =>
     });
   }, []);
 
-export const createCommitPayload = ({ branch, getters, newBranch, state, rootState }) => ({
+export const createCommitPayload = ({
+  branch,
+  getters,
+  newBranch,
+  state,
+  rootState,
+  rootGetters,
+}) => ({
   branch,
   commit_message: state.commitMessage || getters.preBuiltCommitMessage,
   actions: getCommitFiles(rootState.stagedFiles).map(f => ({
     action: commitActionForFile(f),
-    file_path: f.path,
+    file_path: f.moved ? f.movedPath : f.path,
     previous_path: f.prevPath === '' ? undefined : f.prevPath,
-    content: f.content || undefined,
+    content: f.prevPath ? null : f.content || undefined,
     encoding: f.base64 ? 'base64' : 'text',
-    last_commit_id: newBranch || f.deleted || f.prevPath ? undefined : f.lastCommitSha,
+    last_commit_id:
+      newBranch || f.deleted || f.prevPath || f.replaces ? undefined : f.lastCommitSha,
   })),
-  start_branch: newBranch ? rootState.currentBranchId : undefined,
+  start_sha: newBranch ? rootGetters.lastCommit.id : undefined,
 });
 
 export const createNewMergeRequestUrl = (projectUrl, source, target) =>
-  `${projectUrl}/merge_requests/new?merge_request[source_branch]=${source}&merge_request[target_branch]=${target}`;
+  `${projectUrl}/merge_requests/new?merge_request[source_branch]=${source}&merge_request[target_branch]=${target}&nav_source=webide`;
 
 const sortTreesByTypeAndName = (a, b) => {
   if (a.type === 'tree' && b.type === 'blob') {

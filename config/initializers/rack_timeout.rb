@@ -14,10 +14,10 @@ if defined?(::Puma) && !Rails.env.test?
 
   Gitlab::Application.configure do |config|
     config.middleware.insert_before(Rack::Runtime, Rack::Timeout,
-                                    service_timeout: 60,
-                                    wait_timeout: 90)
+                                    service_timeout: ENV.fetch('GITLAB_RAILS_RACK_TIMEOUT', 60).to_i,
+                                    wait_timeout: ENV.fetch('GITLAB_RAILS_WAIT_TIMEOUT', 90).to_i)
   end
 
-  observer = Gitlab::RackTimeoutObserver.new
+  observer = Gitlab::Cluster::RackTimeoutObserver.new
   Rack::Timeout.register_state_change_observer(:gitlab_rack_timeout, &observer.callback)
 end

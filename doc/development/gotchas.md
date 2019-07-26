@@ -53,7 +53,7 @@ When run, this spec doesn't do what we might expect:
      (compared using ==)
 ```
 
-That's because FactoryBot sequences are not reseted for each example.
+This is because FactoryBot sequences are not reset for each example.
 
 Please remember that sequence-generated values exist only to avoid having to
 explicitly set attributes that have a uniqueness constraint when using a factory.
@@ -101,10 +101,10 @@ end
   in a prepended module, which is very likely the case in EE. We could see
   error like this:
 
-    ```
-    1.1) Failure/Error: expect_any_instance_of(ApplicationSetting).to receive_messages(messages)
-         Using `any_instance` to stub a method (elasticsearch_indexing) that has been defined on a prepended module (EE::ApplicationSetting) is not supported.
-    ```
+  ```
+  1.1) Failure/Error: expect_any_instance_of(ApplicationSetting).to receive_messages(messages)
+       Using `any_instance` to stub a method (elasticsearch_indexing) that has been defined on a prepended module (EE::ApplicationSetting) is not supported.
+  ```
 
 ### Alternative: `expect_next_instance_of`
 

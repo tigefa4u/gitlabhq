@@ -1,13 +1,17 @@
-# Browser Performance Testing **[PREMIUM]**
+---
+type: reference, howto
+---
+
+# Browser Performance Testing **(PREMIUM)**
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ee/merge_requests/3507)
 in [GitLab Premium](https://about.gitlab.com/pricing/) 10.3.
 
-## Overview
-
 If your application offers a web interface and you are using
 [GitLab CI/CD](../../../ci/README.md), you can quickly determine the performance
 impact of pending code changes.
+
+## Overview
 
 GitLab uses [Sitespeed.io](https://www.sitespeed.io), a free and open source
 tool for measuring the performance of web sites, and has built a simple
@@ -15,7 +19,7 @@ tool for measuring the performance of web sites, and has built a simple
 which outputs the results in a file called `performance.json`. This plugin
 outputs the performance score for each page that is analyzed.
 
-The [Sitespeed.io performance score](http://examples.sitespeed.io/6.0/2017-11-23-23-43-35/help.html)
+The [Sitespeed.io performance score](https://examples.sitespeed.io/6.0/2017-11-23-23-43-35/help.html)
 is a composite value based on best practices, and we will be expanding support
 for [additional metrics](https://gitlab.com/gitlab-org/gitlab-ee/issues/4370)
 in a future release.
@@ -52,3 +56,15 @@ Consecutive merge requests will have something to compare to and the Performance
 report will be shown properly.
 
 ![Performance Widget](img/browser_performance_testing.png)
+
+<!-- ## Troubleshooting
+
+Include any troubleshooting steps that you can foresee. If you know beforehand what issues
+one might have when setting this up, or when something is changed, or on upgrading, it's
+important to describe those, too. Think of things that may go wrong and include them here.
+This is important to minimize requests for support, and to avoid doc comments with
+questions that you know someone might ask.
+
+Each scenario can be a third-level heading, e.g. `### Getting error message X`.
+If you have none to add when creating a doc, leave this section in place
+but commented out to help encourage others to add to it in the future. -->

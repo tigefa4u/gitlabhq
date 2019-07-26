@@ -418,7 +418,9 @@ class NotificationService
       [pipeline.user], :watch,
       custom_action: :"#{pipeline.status}_pipeline",
       target: pipeline
-    ).map(&:notification_email)
+    ).map do |user|
+      user.notification_email_for(pipeline.project.group)
+    end
 
     if recipients.any?
       mailer.public_send(email_template, pipeline, recipients).deliver_later
@@ -593,7 +595,7 @@ class NotificationService
   end
 
   def deliver_access_request_email(recipient, member)
-    mailer.member_access_requested_email(member.real_source_type, member.id, recipient.user.notification_email).deliver_later
+    mailer.member_access_requested_email(member.real_source_type, member.id, recipient.user.id).deliver_later
   end
 
   def fallback_to_group_owners_maintainers?(recipients, member)

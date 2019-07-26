@@ -4,10 +4,16 @@ import { viewerInformationForPath } from '~/vue_shared/components/content_viewer
 import flash from '~/flash';
 import ContentViewer from '~/vue_shared/components/content_viewer/content_viewer.vue';
 import DiffViewer from '~/vue_shared/components/diff_viewer/diff_viewer.vue';
-import { activityBarViews, viewerTypes } from '../constants';
+import {
+  activityBarViews,
+  viewerTypes,
+  FILE_VIEW_MODE_EDITOR,
+  FILE_VIEW_MODE_PREVIEW,
+} from '../constants';
 import Editor from '../lib/editor';
 import ExternalLink from './external_link.vue';
 import FileTemplatesBar from './file_templates/bar.vue';
+import { __ } from '~/locale';
 
 export default {
   components: {
@@ -40,26 +46,35 @@ export default {
     },
     showContentViewer() {
       return (
-        (this.shouldHideEditor || this.file.viewMode === 'preview') &&
+        (this.shouldHideEditor || this.isPreviewViewMode) &&
         (this.viewer !== viewerTypes.mr || !this.file.mrChange)
       );
     },
     showDiffViewer() {
       return this.shouldHideEditor && this.file.mrChange && this.viewer === viewerTypes.mr;
     },
+    isEditorViewMode() {
+      return this.file.viewMode === FILE_VIEW_MODE_EDITOR;
+    },
+    isPreviewViewMode() {
+      return this.file.viewMode === FILE_VIEW_MODE_PREVIEW;
+    },
     editTabCSS() {
       return {
-        active: this.file.viewMode === 'editor',
+        active: this.isEditorViewMode,
       };
     },
     previewTabCSS() {
       return {
-        active: this.file.viewMode === 'preview',
+        active: this.isPreviewViewMode,
       };
     },
     fileType() {
       const info = viewerInformationForPath(this.file.path);
       return (info && info.id) || '';
+    },
+    showEditor() {
+      return !this.shouldHideEditor && this.isEditorViewMode;
     },
   },
   watch: {
@@ -75,7 +90,7 @@ export default {
         if (this.currentActivityView !== activityBarViews.edit) {
           this.setFileViewMode({
             file: this.file,
-            viewMode: 'editor',
+            viewMode: FILE_VIEW_MODE_EDITOR,
           });
         }
       }
@@ -84,12 +99,12 @@ export default {
       if (this.currentActivityView !== activityBarViews.edit) {
         this.setFileViewMode({
           file: this.file,
-          viewMode: 'editor',
+          viewMode: FILE_VIEW_MODE_EDITOR,
         });
       }
     },
     rightPanelCollapsed() {
-      this.editor.updateDimensions();
+      this.refreshEditorDimensions();
     },
     viewer() {
       if (!this.file.pending) {
@@ -98,11 +113,17 @@ export default {
     },
     panelResizing() {
       if (!this.panelResizing) {
-        this.editor.updateDimensions();
+        this.refreshEditorDimensions();
       }
     },
     rightPaneIsOpen() {
-      this.editor.updateDimensions();
+      this.refreshEditorDimensions();
+    },
+    showEditor(val) {
+      if (val) {
+        // We need to wait for the editor to actually be rendered.
+        this.$nextTick(() => this.refreshEditorDimensions());
+      }
     },
   },
   beforeDestroy() {
@@ -128,7 +149,9 @@ export default {
       'triggerFilesChange',
     ]),
     initEditor() {
-      if (this.shouldHideEditor) return;
+      if (this.shouldHideEditor && (this.file.content || this.file.raw)) {
+        return;
+      }
 
       this.editor.clearEditor();
 
@@ -145,7 +168,14 @@ export default {
           this.createEditorInstance();
         })
         .catch(err => {
-          flash('Error setting up editor. Please try again.', 'alert', document, null, false, true);
+          flash(
+            __('Error setting up editor. Please try again.'),
+            'alert',
+            document,
+            null,
+            false,
+            true,
+          );
           throw err;
         });
     },
@@ -212,8 +242,15 @@ export default {
         eol: this.model.eol,
       });
     },
+    refreshEditorDimensions() {
+      if (this.showEditor) {
+        this.editor.updateDimensions();
+      }
+    },
   },
   viewerTypes,
+  FILE_VIEW_MODE_EDITOR,
+  FILE_VIEW_MODE_PREVIEW,
 };
 </script>
 
@@ -225,31 +262,26 @@ export default {
           <a
             href="javascript:void(0);"
             role="button"
-            @click.prevent="setFileViewMode({ file, viewMode: 'editor' })"
+            @click.prevent="setFileViewMode({ file, viewMode: $options.FILE_VIEW_MODE_EDITOR })"
           >
-            <template v-if="viewer === $options.viewerTypes.edit">
-              {{ __('Edit') }}
-            </template>
-            <template v-else>
-              {{ __('Review') }}
-            </template>
+            <template v-if="viewer === $options.viewerTypes.edit">{{ __('Edit') }}</template>
+            <template v-else>{{ __('Review') }}</template>
           </a>
         </li>
         <li v-if="file.previewMode" :class="previewTabCSS">
           <a
             href="javascript:void(0);"
             role="button"
-            @click.prevent="setFileViewMode({ file, viewMode: 'preview' })"
+            @click.prevent="setFileViewMode({ file, viewMode: $options.FILE_VIEW_MODE_PREVIEW })"
+            >{{ file.previewMode.previewTitle }}</a
           >
-            {{ file.previewMode.previewTitle }}
-          </a>
         </li>
       </ul>
       <external-link :file="file" />
     </div>
     <file-templates-bar v-if="showFileTemplatesBar(file.name)" />
     <div
-      v-show="!shouldHideEditor && file.viewMode === 'editor'"
+      v-show="showEditor"
       ref="editor"
       :class="{
         'is-readonly': isCommitModeActive,

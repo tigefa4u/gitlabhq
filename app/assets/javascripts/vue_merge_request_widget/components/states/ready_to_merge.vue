@@ -1,10 +1,12 @@
 <script>
+import _ from 'underscore';
 import successSvg from 'icons/_icon_status_success.svg';
 import warningSvg from 'icons/_icon_status_warning.svg';
 import simplePoll from '~/lib/utils/simple_poll';
 import { __ } from '~/locale';
 import readyToMergeMixin from 'ee_else_ce/vue_merge_request_widget/mixins/ready_to_merge';
 import MergeRequest from '../../../merge_request';
+import { refreshUserMergeRequestCounts } from '~/commons/nav/user_merge_requests';
 import Flash from '../../../flash';
 import statusIcon from '../mr_widget_status_icon.vue';
 import eventHub from '../../event_hub';
@@ -12,6 +14,7 @@ import SquashBeforeMerge from './squash_before_merge.vue';
 import CommitsHeader from './commits_header.vue';
 import CommitEdit from './commit_edit.vue';
 import CommitMessageDropdown from './commit_message_dropdown.vue';
+import { AUTO_MERGE_STRATEGIES } from '../../constants';
 
 export default {
   name: 'ReadyToMerge',
@@ -30,8 +33,6 @@ export default {
   data() {
     return {
       removeSourceBranch: this.mr.shouldRemoveSourceBranch,
-      mergeWhenBuildSucceeds: false,
-      autoMergeStrategy: undefined,
       isMakingRequest: false,
       isMergingImmediately: false,
       commitMessage: this.mr.commitMessage,
@@ -42,18 +43,18 @@ export default {
     };
   },
   computed: {
-    shouldShowAutoMergeText() {
-      return this.mr.isPipelineActive;
+    isAutoMergeAvailable() {
+      return !_.isEmpty(this.mr.availableAutoMergeStrategies);
     },
     status() {
-      const { pipeline, isPipelineActive, isPipelineFailed, hasCI, ciStatus } = this.mr;
+      const { pipeline, isPipelineFailed, hasCI, ciStatus } = this.mr;
 
       if (hasCI && !ciStatus) {
         return 'failed';
+      } else if (this.isAutoMergeAvailable) {
+        return 'pending';
       } else if (!pipeline) {
         return 'success';
-      } else if (isPipelineActive) {
-        return 'pending';
       } else if (isPipelineFailed) {
         return 'failed';
       }
@@ -87,14 +88,14 @@ export default {
     mergeButtonText() {
       if (this.isMergingImmediately) {
         return __('Merge in progress');
-      } else if (this.shouldShowAutoMergeText) {
-        return __('Merge when pipeline succeeds');
+      } else if (this.isAutoMergeAvailable) {
+        return this.autoMergeText;
       }
 
-      return 'Merge';
+      return __('Merge');
     },
     shouldShowMergeOptionsDropdown() {
-      return this.mr.isPipelineActive && !this.mr.onlyAllowMergeIfPipelineSucceeds;
+      return this.isAutoMergeAvailable && !this.mr.onlyAllowMergeIfPipelineSucceeds;
     },
     isRemoveSourceBranchButtonDisabled() {
       return this.isMergeButtonDisabled;
@@ -104,7 +105,7 @@ export default {
       return enableSquashBeforeMerge && commitsCount > 1;
     },
     shouldShowMergeControls() {
-      return this.mr.isMergeAllowed || this.shouldShowAutoMergeText;
+      return this.mr.isMergeAllowed || this.isAutoMergeAvailable;
     },
     shouldShowSquashEdit() {
       return this.squashBeforeMerge && this.shouldShowSquashBeforeMerge;
@@ -118,20 +119,15 @@ export default {
       const { commitMessageWithDescription, commitMessage } = this.mr;
       this.commitMessage = includeDescription ? commitMessageWithDescription : commitMessage;
     },
-    handleMergeButtonClick(mergeWhenBuildSucceeds, mergeImmediately) {
-      // TODO: Remove no-param-reassign
-      if (mergeWhenBuildSucceeds === undefined) {
-        mergeWhenBuildSucceeds = this.mr.isPipelineActive; // eslint-disable-line no-param-reassign
-      } else if (mergeImmediately) {
+    handleMergeButtonClick(useAutoMerge, mergeImmediately = false) {
+      if (mergeImmediately) {
         this.isMergingImmediately = true;
       }
-
-      this.autoMergeStrategy = mergeWhenBuildSucceeds ? 'merge_when_pipeline_succeeds' : undefined;
 
       const options = {
         sha: this.mr.sha,
         commit_message: this.commitMessage,
-        auto_merge_strategy: this.autoMergeStrategy,
+        auto_merge_strategy: useAutoMerge ? this.mr.preferredAutoMergeStrategy : undefined,
         should_remove_source_branch: this.removeSourceBranch === true,
         squash: this.squashBeforeMerge,
         squash_commit_message: this.squashCommitMessage,
@@ -144,7 +140,7 @@ export default {
         .then(data => {
           const hasError = data.status === 'failed' || data.status === 'hook_validation_error';
 
-          if (data.status === 'merge_when_pipeline_succeeds') {
+          if (_.includes(AUTO_MERGE_STRATEGIES, data.status)) {
             eventHub.$emit('MRWidgetUpdateRequested');
           } else if (data.status === 'success') {
             this.initiateMergePolling();
@@ -178,6 +174,8 @@ export default {
             MergeRequest.hideCloseButton();
             MergeRequest.decreaseCounter();
             stopPolling();
+
+            refreshUserMergeRequestCounts();
 
             // If user checked remove source branch and we didn't remove the branch yet
             // we should start another polling for source branch remove process
@@ -242,18 +240,18 @@ export default {
               :class="mergeButtonClass"
               type="button"
               class="qa-merge-button"
-              @click="handleMergeButtonClick()"
+              @click="handleMergeButtonClick(isAutoMergeAvailable)"
             >
               <i v-if="isMakingRequest" class="fa fa-spinner fa-spin" aria-hidden="true"></i>
               {{ mergeButtonText }}
             </button>
             <button
-              v-if="shouldShowMergeOptionsDropdown"
+              v-if="isAutoMergeAvailable"
               :disabled="isMergeButtonDisabled"
               type="button"
               class="btn btn-sm btn-info dropdown-toggle js-merge-moment"
               data-toggle="dropdown"
-              aria-label="Select merge moment"
+              :aria-label="__('Select merge moment')"
             >
               <i class="fa fa-chevron-down qa-merge-moment-dropdown" aria-hidden="true"></i>
             </button>
@@ -264,15 +262,13 @@ export default {
             >
               <li>
                 <a
-                  class="merge_when_pipeline_succeeds qa-merge-when-pipeline-succeeds-option"
+                  class="auto_merge_enabled qa-merge-when-pipeline-succeeds-option"
                   href="#"
                   @click.prevent="handleMergeButtonClick(true)"
                 >
                   <span class="media">
                     <span class="merge-opt-icon" aria-hidden="true" v-html="successSvg"></span>
-                    <span class="media-body merge-opt-title">{{
-                      __('Merge when pipeline succeeds')
-                    }}</span>
+                    <span class="media-body merge-opt-title">{{ autoMergeText }}</span>
                   </span>
                 </a>
               </li>

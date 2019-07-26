@@ -17,7 +17,7 @@ our test design. We can find some helpful heuristics documented in the Handbook 
 
 ## Run tests against MySQL
 
-By default, tests are only run againts PostgreSQL, but you can run them on
+By default, tests are only run against PostgreSQL, but you can run them on
 demand against MySQL by following one of the following conventions:
 
 | Convention           | Valid example                |
@@ -327,7 +327,7 @@ However, if a spec makes direct Redis calls, it should mark itself with the
 `:clean_gitlab_redis_queues` traits as appropriate.
 
 Sidekiq jobs are typically not run in specs, but this behaviour can be altered
-in each spec through the use of `Sidekiq::Testing.inline!` blocks. Any spec that
+in each spec through the use of `perform_enqueued_jobs` blocks. Any spec that
 causes Sidekiq jobs to be pushed to Redis should use the `:sidekiq` trait, to
 ensure that they are removed once the spec completes.
 

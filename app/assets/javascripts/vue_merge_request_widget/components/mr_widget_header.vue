@@ -128,7 +128,7 @@ export default {
             :disabled="mr.sourceBranchRemoved"
             data-target="#modal_merge_info"
             data-toggle="modal"
-            class="btn btn-default js-check-out-branch append-right-default"
+            class="btn btn-default js-check-out-branch append-right-8"
             type="button"
           >
             {{ s__('mrWidget|Check out branch') }}
@@ -139,7 +139,7 @@ export default {
             type="button"
             class="btn dropdown-toggle qa-dropdown-toggle"
             data-toggle="dropdown"
-            aria-label="Download as"
+            :aria-label="__('Download as')"
             aria-haspopup="true"
             aria-expanded="false"
           >

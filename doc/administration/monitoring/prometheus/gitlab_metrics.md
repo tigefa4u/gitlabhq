@@ -34,6 +34,9 @@ The following metrics are available:
 | filesystem_writable               | Gauge     | 9.4   | Whether or not the filesystem is writable |
 | filesystem_read_latency_seconds   | Gauge     | 9.4   | Read latency of a specific filesystem |
 | filesystem_readable               | Gauge     | 9.4   | Whether or not the filesystem is readable |
+| gitlab_cache_misses_total         | Counter   | 10.2  | Cache read miss |
+| gitlab_cache_operation_duration_seconds | Histogram   | 10.2  | Cache access time |
+| gitlab_cache_operations_total     | Counter   | 12.2  | Cache operations by controller/action |
 | http_requests_total               | Counter   | 9.4   | Rack request count |
 | http_request_duration_seconds     | Histogram | 9.4   | HTTP response time from rack middleware |
 | pipelines_created_total           | Counter   | 9.4   | Counter of pipelines created |
@@ -49,7 +52,7 @@ The following metrics are available:
 | unicorn_queued_connections        | Gauge     | 11.0  | The number of queued Unicorn connections |
 | unicorn_workers                   | Gauge     | 12.0  | The number of Unicorn workers |
 
-## Sidekiq Metrics available for Geo **[PREMIUM]**
+## Sidekiq Metrics available for Geo **(PREMIUM)**
 
 Sidekiq jobs may also gather metrics, and these metrics can be accessed if the Sidekiq exporter is enabled (e.g. via
 the `monitoring.sidekiq_exporter` configuration option in `gitlab.yml`.
@@ -104,11 +107,11 @@ Some basic Ruby runtime metrics are available:
 | ruby_process_cpu_seconds_total         | Gauge     | 12.0  | Total amount of CPU time per process |
 | ruby_process_max_fds                   | Gauge     | 12.0  | Maximum number of open file descriptors per process |
 | ruby_process_resident_memory_bytes     | Gauge     | 12.0  | Memory usage by process, measured in bytes |
-| ruby_process_start_time_seconds        | Gauge     | 12.0  | The elapsed time between system boot and the process started, measured in seconds |
+| ruby_process_start_time_seconds        | Gauge     | 12.0  | UNIX timestamp of process start time |
 
 [GC.stat]: https://ruby-doc.org/core-2.3.0/GC.html#method-c-stat
 
-## Puma Metrics **[EXPERIMENTAL]**
+## Puma Metrics **(EXPERIMENTAL)**
 
 When Puma is used instead of Unicorn, following metrics are available:
 
@@ -125,6 +128,7 @@ When Puma is used instead of Unicorn, following metrics are available:
 | puma_max_threads                             | Gauge   | 12.0  | Maximum number of worker threads |
 | puma_idle_threads                            | Gauge   | 12.0  | Number of spawned threads which are not processing a request |
 | rack_state_total                             | Gauge   | 12.0  | Number of requests in a given rack state |
+| puma_killer_terminations_total               | Gauge   | 12.0  | Number of workers terminated by PumaWorkerKiller |
 
 ## Metrics shared directory
 
