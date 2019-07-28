@@ -24,7 +24,7 @@ module Lfs
     attr_reader :project, :repository, :repository_type, :branch_name
 
     def initialize(project, repository, branch_name)
-      @project = project
+      @project = project.lfs_storage_project
       @repository = repository
       @repository_type = repository.repo_type.name
       @branch_name = branch_name
