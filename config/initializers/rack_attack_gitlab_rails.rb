@@ -20,6 +20,13 @@ module Gitlab::Throttle
     period_proc = proc { |req| settings.throttle_authenticated_web_period_in_seconds.seconds }
     { limit: limit_proc, period: period_proc }
   end
+
+  def self.protected_paths_options
+    limit_proc = proc { |req| settings.throttle_protected_paths_requests_per_period }
+    period_proc = proc { |req| settings.throttle_protected_paths_period_in_seconds.seconds }
+
+    { limit: limit_proc, period: period_proc }
+  end
 end
 
 class Rack::Attack
@@ -39,6 +46,28 @@ class Rack::Attack
   throttle('throttle_authenticated_web', Gitlab::Throttle.authenticated_web_options) do |req|
     Gitlab::Throttle.settings.throttle_authenticated_web_enabled &&
       req.web_request? &&
+      req.authenticated_user_id([:api, :rss, :ics])
+  end
+
+  throttle('throttle_unauthenticated_protected_paths', Gitlab::Throttle.protected_paths_options) do |req|
+    Gitlab::Throttle.settings.throttle_protected_paths_enabled &&
+      req.unauthenticated? &&
+      !req.should_be_skipped? &&
+      req.protected_path? &&
+      req.ip
+  end
+
+  throttle('throttle_authenticated_protected_paths_api', Gitlab::Throttle.protected_paths_options) do |req|
+    Gitlab::Throttle.settings.throttle_protected_paths_enabled &&
+      req.api_request? &&
+      req.protected_path? &&
+      req.authenticated_user_id([:api])
+  end
+
+  throttle('throttle_authenticated_protected_paths_web', Gitlab::Throttle.protected_paths_options) do |req|
+    Gitlab::Throttle.settings.throttle_protected_paths_enabled &&
+      req.web_request? &&
+      req.protected_path? &&
       req.authenticated_user_id([:api, :rss, :ics])
   end
 
@@ -65,6 +94,24 @@ class Rack::Attack
 
     def web_request?
       !api_request?
+    end
+
+    def protected_path?
+      !protected_path_regex.nil?
+    end
+
+    def protected_path_regex
+      path =~ protected_paths_regex
+    end
+
+    private
+
+    def protected_paths
+      Gitlab::CurrentSettings.current_application_settings.protected_paths
+    end
+
+    def protected_paths_regex
+      Regexp.union(protected_paths.map { |path| /\A#{Regexp.escape(path)}/ })
     end
   end
 end

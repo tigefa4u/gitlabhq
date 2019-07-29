@@ -210,6 +210,11 @@ class ApplicationSetting < ApplicationRecord
             presence: true,
             if: :static_objects_external_storage_url?
 
+  validates :protected_paths,
+            length: { maximum: 100, message: N_('is too long (maximum is 100 entries)') },
+            allow_nil: false,
+            if: :protected_paths_exists?
+
   SUPPORTED_KEY_TYPES.each do |type|
     validates :"#{type}_key_restriction", presence: true, key_restriction: { type: type }
   end
@@ -313,5 +318,17 @@ class ApplicationSetting < ApplicationRecord
 
   def recaptcha_or_login_protection_enabled
     recaptcha_enabled || login_recaptcha_protection_enabled
+  end
+
+  private
+
+  # On GitLab 12.3, a migration that checks validations of this
+  # model was added. Because 'protected_paths' column is not present
+  # at that point, the validation of protected path fails.
+  # We added this conditional to only execute validation of
+  # 'protected_paths' if the column is present.
+  # https://gitlab.com/gitlab-org/gitlab-ce/issues/66685
+  def protected_paths_exists?
+    ::Gitlab::Database.cached_column_exists?(self.class.table_name, 'protected_paths')
   end
 end

@@ -984,6 +984,9 @@ msgstr ""
 msgid "All merge conflicts were resolved. The merge request can now be merged."
 msgstr ""
 
+msgid "All paths are relative to the GitLab URL. Do not include %{relative_url_link_start}relative URL%{relative_url_link_end}."
+msgstr ""
+
 msgid "All projects"
 msgstr ""
 
@@ -3204,6 +3207,9 @@ msgstr ""
 msgid "Configure limits for web and API requests."
 msgstr ""
 
+msgid "Configure paths to be protected by Rack Attack"
+msgstr ""
+
 msgid "Configure push mirrors."
 msgstr ""
 
@@ -4397,6 +4403,9 @@ msgid "Enable mirror configuration"
 msgstr ""
 
 msgid "Enable or disable version check and usage ping."
+msgstr ""
+
+msgid "Enable protected paths rate limit"
 msgstr ""
 
 msgid "Enable reCAPTCHA or Akismet and set IP limits. For reCAPTCHA, we currently only support %{recaptcha_v2_link_start}v2%{recaptcha_v2_link_end}"
@@ -5791,6 +5800,9 @@ msgid "Helps prevent bots from brute-force attacks."
 msgstr ""
 
 msgid "Helps prevent bots from creating accounts."
+msgstr ""
+
+msgid "Helps reduce request volume for protected paths"
 msgstr ""
 
 msgid "Hide archived projects"
@@ -9353,6 +9365,9 @@ msgid "Protected"
 msgstr ""
 
 msgid "Protected Branch"
+msgstr ""
+
+msgid "Protected Paths"
 msgstr ""
 
 msgid "Protected Tag"
@@ -13908,6 +13923,9 @@ msgid "is not a valid X509 certificate."
 msgstr ""
 
 msgid "is not an email you own"
+msgstr ""
+
+msgid "is too long (maximum is 100 entries)"
 msgstr ""
 
 msgid "is too long (maximum is 1000 entries)"
