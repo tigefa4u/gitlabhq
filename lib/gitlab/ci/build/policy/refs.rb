@@ -27,11 +27,26 @@ module Gitlab
           end
 
           def matches_pattern?(pattern, pipeline)
-            return true if pipeline.tag? && pattern == 'tags'
-            return true if pipeline.branch? && pattern == 'branches'
-            return true if sanitized_source_name(pipeline) == pattern
-            return true if sanitized_source_name(pipeline)&.pluralize == pattern
+            matches_tags_keyword?(pattern, pipeline) ||
+              matches_branches_keyword?(pattern, pipeline) ||
+              matches_pipeline_source?(pattern, pipeline) ||
+              matches_single_ref?(pattern, pipeline)
+          end
 
+          def matches_tags_keyword?(pattern, pipeline)
+            pipeline.tag? && pattern == 'tags'
+          end
+
+          def matches_branches_keyword?(pattern, pipeline)
+            pipeline.branch? && pattern == 'branches'
+          end
+
+          def matches_pipeline_source?(pattern, pipeline)
+            sanitized_source_name(pipeline) == pattern ||
+              sanitized_source_name(pipeline)&.pluralize == pattern
+          end
+
+          def matches_single_ref?(pattern, pipeline)
             # patterns can be matched only when branch or tag is used
             # the pattern matching does not work for merge requests pipelines
             if pipeline.branch? || pipeline.tag?
@@ -44,6 +59,8 @@ module Gitlab
           end
 
           def sanitized_source_name(pipeline)
+            # TODO Memoizing this doesn't seem to make sense with
+            #   pipelines being passed in to #satsified_by? as a param.
             @sanitized_source_name ||= pipeline&.source&.delete_suffix('_event')
           end
         end
