@@ -51,5 +51,30 @@ describe Banzai::Filter::InlineMetricsFilter do
         end
       end
     end
+
+    context 'with dashboard params specified' do
+      let(:params) do
+        [
+          'foo',
+          'bar',
+          12,
+          {
+            embedded: true,
+            dashboard: 'config%2Fprometheus%2Fcommon_metrics.yml',
+            group: 'System+metrics+%28Kubernetes%29',
+            title: 'Core+Usage+%28Pod+Average%29',
+            y_label: 'Cores+per+Pod'
+          }
+        ]
+      end
+
+      it 'appends a metrics charts placeholder with dashboard url after metrics links' do
+        node = doc.at_css('.js-render-metrics')
+        expect(node).to be_present
+
+        dashboard_url = urls.metrics_dashboard_namespace_project_environment_url(*params)
+        expect(node.attribute('data-dashboard-url').to_s).to eq dashboard_url
+      end
+    end
   end
 end
