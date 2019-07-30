@@ -7,7 +7,7 @@ describe Git::ExternalMergeRequestPushService do
   let(:user) { create(:user) }
   let(:oldrev) { Gitlab::Git::BLANK_SHA }
   let(:newrev) { '8a2a6eb295bb170b34c24c76c49ed0e9b2eaf34b' }
-  let(:ref) { 'ref/pull/123' }
+  let(:ref) { 'refs/pull/123' }
 
   let(:service) { described_class.new(project, user, oldrev: oldrev, newrev: newrev, ref: ref) }
 

@@ -29,7 +29,7 @@ describe Git::ExternalMergeRequestHooksService, :service do
       expect_next_instance_of(SystemHooksService) do |system_hooks_service|
         expect(system_hooks_service)
           .to receive(:execute_hooks)
-          .with(push_data, :tag_push_hooks)
+          .with(push_data, :external_merge_request_hooks)
       end
 
       service.execute
@@ -53,7 +53,7 @@ describe Git::ExternalMergeRequestHooksService, :service do
     it "creates a new pipeline" do
       expect { service.execute }.to change { Ci::Pipeline.count }
 
-      expect(Ci::Pipeline.last).to be_external_merge_request?
+      expect(Ci::Pipeline.last).to be_external_merge_request
     end
   end
 
