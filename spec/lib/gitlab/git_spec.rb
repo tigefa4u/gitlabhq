@@ -83,4 +83,79 @@ describe Gitlab::Git do
       end
     end
   end
+
+  describe 'tag_ref?' do
+    using RSpec::Parameterized::TableSyntax
+
+    subject { described_class.tag_ref?(ref) }
+
+    where(:ref, :result) do
+      ''                                         | nil
+      'foobar'                                   | nil
+      '4b825dc'                                  | nil
+      'zzz25dc642cb6eb9a060e54bf8d69288fbee4904' | nil
+      'refs/heads/feature'                       | nil
+      'refs/tags/tag'                            | 0
+      'refs/merge_requests/123'                  | nil
+      Gitlab::Git::TAG_REF_PREFIX                | nil
+      Gitlab::Git::TAG_REF_PREFIX + 'name'       | 0
+      Gitlab::Git::BRANCH_REF_PREFIX             | nil
+      Gitlab::Git::BRANCH_REF_PREFIX + 'name'    | nil
+      Gitlab::Git::BLANK_SHA                     | nil
+    end
+
+    with_them do
+      it { is_expected.to eq(result) }
+    end
+  end
+
+  describe 'branch_ref?' do
+    using RSpec::Parameterized::TableSyntax
+
+    subject { described_class.branch_ref?(ref) }
+
+    where(:ref, :result) do
+      ''                                         | nil
+      'foobar'                                   | nil
+      '4b825dc'                                  | nil
+      'zzz25dc642cb6eb9a060e54bf8d69288fbee4904' | nil
+      'refs/heads/feature'                       | 0
+      'refs/tags/tag'                            | nil
+      'refs/merge_requests/123'                  | nil
+      Gitlab::Git::TAG_REF_PREFIX                | nil
+      Gitlab::Git::TAG_REF_PREFIX + 'name'       | nil
+      Gitlab::Git::BRANCH_REF_PREFIX             | nil
+      Gitlab::Git::BRANCH_REF_PREFIX + 'name'    | 0
+      Gitlab::Git::BLANK_SHA                     | nil
+    end
+
+    with_them do
+      it { is_expected.to eq(result) }
+    end
+  end
+
+  describe 'blank_ref?' do
+    using RSpec::Parameterized::TableSyntax
+
+    subject { described_class.blank_ref?(ref) }
+
+    where(:ref, :result) do
+      ''                                         | false
+      'foobar'                                   | false
+      '4b825dc'                                  | false
+      'zzz25dc642cb6eb9a060e54bf8d69288fbee4904' | false
+      'refs/heads/feature'                       | false
+      'refs/tags/tag'                            | false
+      'refs/merge_requests/123'                  | false
+      Gitlab::Git::TAG_REF_PREFIX                | false
+      Gitlab::Git::TAG_REF_PREFIX + 'name'       | false
+      Gitlab::Git::BRANCH_REF_PREFIX             | false
+      Gitlab::Git::BRANCH_REF_PREFIX + 'name'    | false
+      Gitlab::Git::BLANK_SHA                     | true
+    end
+
+    with_them do
+      it { is_expected.to eq(result) }
+    end
+  end
 end
