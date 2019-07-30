@@ -7,7 +7,7 @@ module QA
         Runtime::Browser.visit(:gitlab, Page::Main::Login)
         Page::Main::Login.perform(&:sign_in_using_credentials)
 
-        expect(false).to eq(true)
+        expect(false).to eq(true) # rubocop:disable RSpec/ExpectActual
 
         @project = Resource::Project.fabricate! do |scenario|
           scenario.name = 'project-with-code'

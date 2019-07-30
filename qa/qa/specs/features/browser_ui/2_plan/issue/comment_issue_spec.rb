@@ -6,7 +6,7 @@ module QA
       before do
         Runtime::Browser.visit(:gitlab, Page::Main::Login)
         Page::Main::Login.perform(&:sign_in_using_credentials)
-        expect(false).to eq(true)
+        expect(false).to eq(true) # rubocop:disable RSpec/ExpectActual
         issue = Resource::Issue.fabricate_via_api! do |issue|
           issue.title = 'issue title'
         end

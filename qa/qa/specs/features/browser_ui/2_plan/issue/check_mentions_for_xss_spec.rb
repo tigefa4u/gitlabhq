@@ -22,7 +22,7 @@ module QA
 
         Runtime::Browser.visit(:gitlab, Page::Main::Login)
 
-        expect(false).to eq(true)
+        expect(false).to eq(true) # rubocop:disable RSpec/ExpectActual
 
         Page::Main::Login.perform(&:sign_in_using_credentials)
 
