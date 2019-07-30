@@ -22,8 +22,23 @@ module Banzai
           params['namespace'],
           params['project'],
           params['environment'],
-          embedded: true
+          embedded: true,
+          **query_params(params)
         )
+      end
+
+      # Parses query params out from full string into hash.
+      # If multiple values are given for a parameter, they
+      # will be captured in an array.
+      # Ex) '?title=Title&group=Group' --> { title: 'Title', group: Group }
+      def query_params(params)
+        return {} unless params['query']
+
+        CGI.parse(params['query'][1..-1]).map do |key, value|
+          target = value.length == 1 ? value.first : value
+
+          [key.to_sym, target]
+        end.to_h
       end
 
       # Search params for selecting metrics links. A few

@@ -9,14 +9,21 @@ describe Gitlab::Metrics::Dashboard::Url do
     end
 
     it 'matches a metrics dashboard link with named params' do
-      url = Gitlab::Routing.url_helpers.metrics_namespace_project_environment_url('foo', 'bar', 1, start: 123345456, anchor: 'title')
+      url = Gitlab::Routing.url_helpers.metrics_namespace_project_environment_url(
+        'foo',
+        'bar',
+        1,
+        start: 123345456,
+        dashboard: 'config%2Fprometheus%2Fcommon_metrics.yml',
+        anchor: 'title'
+      )
 
       expected_params = {
         'url' => url,
         'namespace' => 'foo',
         'project' => 'bar',
         'environment' => '1',
-        'query' => '?start=123345456',
+        'query' => '?dashboard=config%252Fprometheus%252Fcommon_metrics.yml&start=123345456',
         'anchor' => '#title'
       }
 
