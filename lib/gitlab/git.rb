@@ -12,7 +12,7 @@ module Gitlab
     COMMIT_ID = /\A[0-9a-f]{40}\z/.freeze
     TAG_REF_PREFIX = "refs/tags/".freeze
     BRANCH_REF_PREFIX = "refs/heads/".freeze
-    REQUEST_REF_SUBFOLDER_REGEX = %r(^refs/(merge_requests|pull)/.+).freeze
+    REQUEST_REF_SUBFOLDER_REGEX = %r(^refs/(pull|pull-requests)/.+).freeze
 
     BaseError = Class.new(StandardError)
     CommandError = Class.new(BaseError)
