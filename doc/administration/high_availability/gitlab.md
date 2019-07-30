@@ -14,7 +14,8 @@ type: reference
    ```
    # Ubuntu/Debian
    apt-get install nfs-common
-
+   ```
+   ```
    # CentOS/Red Hat
    yum install nfs-utils nfs-utils-lib
    ```
