@@ -21,8 +21,8 @@ module Gitlab
                 \/(?<environment>\d+)
                 \/metrics
                 (?<query>
-                  \?[a-z0-9_=-]+
-                  (&[a-z0-9_=-]+)*
+                  \?[%.+a-zA-Z0-9_=-]+
+                  (&[%.+a-zA-Z0-9_=-]+)*
                 )?
                 (?<anchor>\#[a-z0-9_-]+)?
               )
