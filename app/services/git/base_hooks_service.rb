@@ -57,7 +57,11 @@ module Git
 
       Ci::CreatePipelineService
         .new(project, current_user, push_data)
-        .execute(:push, pipeline_options)
+        .execute(pipeline_source, pipeline_options)
+    end
+
+    def pipeline_source
+      :push
     end
 
     def execute_project_hooks

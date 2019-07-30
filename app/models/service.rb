@@ -46,6 +46,7 @@ class Service < ApplicationRecord
   scope :issue_hooks, -> { where(issues_events: true, active: true) }
   scope :confidential_issue_hooks, -> { where(confidential_issues_events: true, active: true) }
   scope :merge_request_hooks, -> { where(merge_requests_events: true, active: true) }
+  scope :external_merge_request_hooks, -> { push_hooks }
   scope :note_hooks, -> { where(note_events: true, active: true) }
   scope :confidential_note_hooks, -> { where(confidential_note_events: true, active: true) }
   scope :job_hooks, -> { where(job_events: true, active: true) }

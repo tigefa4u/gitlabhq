@@ -9,7 +9,7 @@ module Gitlab
             include Chain::Helpers
 
             def perform!
-              unless @command.branch_exists? || @command.tag_exists? || @command.merge_request_ref_exists?
+              unless ref_exists?
                 return error('Reference not found')
               end
 
@@ -24,6 +24,13 @@ module Gitlab
 
             def break?
               @pipeline.errors.any?
+            end
+
+            def ref_exists?
+              @command.branch_exists? ||
+                @command.tag_exists? ||
+                @command.merge_request_ref_exists? ||
+                @command.external_merge_request_ref_exists?
             end
           end
         end

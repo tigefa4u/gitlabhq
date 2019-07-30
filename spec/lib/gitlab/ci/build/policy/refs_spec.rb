@@ -91,14 +91,7 @@ describe Gitlab::Ci::Build::Policy::Refs do
             .to be_satisfied_by(pipeline)
         end
 
-        # external_merge_request is not (yet?) a configuration option. We aren't
-        # distinguishing between Gitlab and external MR commits in configuration.
-        it 'is not_satisfied with only: merge_request' do
-          expect(described_class.new(%w[external_merge_requests]))
-            .to be_satisfied_by(pipeline)
-        end
-
-        it 'is not satisfied with only: merge_request_event' do
+        it 'is not satisfied with only: merge_request_events' do
           expect(described_class.new(%w[merge_request_events]))
             .not_to be_satisfied_by(pipeline)
         end

@@ -30,7 +30,8 @@ module Gitlab
             matches_tags_keyword?(pattern, pipeline) ||
               matches_branches_keyword?(pattern, pipeline) ||
               matches_pipeline_source?(pattern, pipeline) ||
-              matches_single_ref?(pattern, pipeline)
+              matches_single_ref?(pattern, pipeline) ||
+              matches_external_merge_request_source?(pattern, pipeline)
           end
 
           def matches_tags_keyword?(pattern, pipeline)
@@ -56,6 +57,13 @@ module Gitlab
                 pattern == pipeline.ref
               end
             end
+          end
+
+          # TODO: best would be to support 'only/except: external_merge_requests'
+          # but for now we reuse 'merge_requests'
+          def matches_external_merge_request_source?(pattern, pipeline)
+            sanitized_source_name(pipeline) == 'external_merge_request' &&
+              pattern == 'merge_requests'
           end
 
           def sanitized_source_name(pipeline)

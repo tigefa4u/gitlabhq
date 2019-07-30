@@ -45,6 +45,13 @@ module Gitlab
             end
           end
 
+          def external_merge_request_ref_exists?
+            strong_memoize(:external_merge_request_ref_exists) do
+              Gitlab::Git.external_merge_request_ref?(origin_ref) &&
+              project.repository.ref_exists?(origin_ref)
+            end
+          end
+
           def ref
             strong_memoize(:ref) do
               Gitlab::Git.ref_name(origin_ref)

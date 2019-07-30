@@ -3,9 +3,9 @@
 module Git
   class ExternalMergeRequestPushService < ::BaseService
     def execute
-      return unless Gitlab::Git.tag_ref?(params[:ref])
+      return unless Gitlab::Git.external_merge_request_ref?(params[:ref])
 
-      TagHooksService.new(project, current_user, params).execute
+      ExternalMergeRequestHooksService.new(project, current_user, params).execute
 
       true
     end
