@@ -67,9 +67,7 @@ module Gitlab
           end
 
           def sanitized_source_name(pipeline)
-            # TODO Memoizing this doesn't seem to make sense with
-            #   pipelines being passed in to #satsified_by? as a param.
-            @sanitized_source_name ||= pipeline&.source&.delete_suffix('_event')
+            pipeline&.source&.delete_suffix('_event')
           end
         end
       end
