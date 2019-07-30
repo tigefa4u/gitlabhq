@@ -8,6 +8,8 @@
 module Metrics
   module Dashboard
     class CustomMetricEmbedService < ::Metrics::Dashboard::BaseEmbedService
+      extend ::Gitlab::Utils::Override
+      include Gitlab::Utils::StrongMemoize
       include Gitlab::Metrics::Dashboard::Defaults
 
       # Returns a new dashboard with only the matching
@@ -21,6 +23,7 @@ module Metrics
       # we aren't acting on deleted or out-of-date metrics.
       #
       # @return [Hash]
+      override :raw_dashboard
       def raw_dashboard
         panels_not_found!(identifiers) if panels.empty?
 
@@ -33,7 +36,9 @@ module Metrics
       # matches the provided input.
       # @return [Array<Hash>]
       def panels
-        @panels ||= metrics.map { |metric| panel_for_metric(metric) }
+        strong_memoize(:panels) do
+          metrics.map { |metric| panel_for_metric(metric) }
+        end
       end
 
       # Metrics which match the provided inputs.
@@ -72,7 +77,7 @@ module Metrics
           weight: DEFAULT_PANEL_WEIGHT,
           title: metric.title,
           y_label: metric.y_label,
-          metrics: [metric.queries.first.merge(metric_id: metric.id)]
+          metrics: [metric.to_metric_hash]
         }
       end
     end
