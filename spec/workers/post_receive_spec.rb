@@ -62,12 +62,13 @@ describe PostReceive do
       context "branches" do
         let(:changes) { "123456 789012 refs/heads/tést" }
 
-        it "calls Git::BranchPushService" do
+        it 'only calls Git::BranchPushService' do
+          expect(Git::TagPushService).not_to receive(:new)
+          expect(Git::ExternalMergeRequestPushService).not_to receive(:new)
+
           expect_next_instance_of(Git::BranchPushService) do |service|
             expect(service).to receive(:execute).and_return(true)
           end
-
-          expect(Git::TagPushService).not_to receive(:new)
 
           described_class.new.perform(gl_repository, key_id, base64_changes)
         end
@@ -76,8 +77,9 @@ describe PostReceive do
       context "tags" do
         let(:changes) { "123456 789012 refs/tags/tag" }
 
-        it "calls Git::TagPushService" do
+        it 'only calls Git::TagPushService' do
           expect(Git::BranchPushService).not_to receive(:execute)
+          expect(Git::ExternalMergeRequestPushService).not_to receive(:execute)
 
           expect_next_instance_of(Git::TagPushService) do |service|
             expect(service).to receive(:execute).and_return(true)
@@ -90,9 +92,25 @@ describe PostReceive do
       context "merge-requests" do
         let(:changes) { "123456 789012 refs/merge-requests/123" }
 
-        it "does not call any of the services" do
+        it 'does not call any PushServices' do
           expect(Git::BranchPushService).not_to receive(:new)
           expect(Git::TagPushService).not_to receive(:new)
+          expect(Git::ExternalMergeRequestPushService).not_to receive(:new)
+
+          described_class.new.perform(gl_repository, key_id, base64_changes)
+        end
+      end
+
+      context 'pull requests on a mirror source in GitHub' do
+        let(:changes) { '123456 789012 refs/pull/123' }
+
+        it 'calls Git::ExternalMergeRequestPushService' do
+          expect(Git::BranchPushService).not_to receive(:new)
+          expect(Git::TagPushService).not_to receive(:new)
+
+          expect_next_instance_of(Git::ExternalMergeRequestPushService) do |service|
+            expect(service).to receive(:execute).and_return(true)
+          end
 
           described_class.new.perform(gl_repository, key_id, base64_changes)
         end

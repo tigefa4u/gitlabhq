@@ -48,6 +48,8 @@ class PostReceive
           Git::TagPushService
         elsif Gitlab::Git.branch_ref?(ref)
           Git::BranchPushService
+        elsif Gitlab::Git.external_merge_request_ref?(ref)
+          Git::ExternalMergeRequestPushService
         end
 
       if service_klass

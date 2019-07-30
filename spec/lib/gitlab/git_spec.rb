@@ -134,6 +134,32 @@ describe Gitlab::Git do
     end
   end
 
+  describe 'external_merge_request_ref?' do
+    using RSpec::Parameterized::TableSyntax
+
+    subject { described_class.external_merge_requets_ref?(ref) }
+
+    where(:ref, :result) do
+      ''                                         | nil
+      'foobar'                                   | nil
+      '4b825dc'                                  | nil
+      'zzz25dc642cb6eb9a060e54bf8d69288fbee4904' | nil
+      'refs/heads/feature'                       | nil
+      'refs/tags/tag'                            | nil
+      'refs/merge_requests/123'                  | 0
+      'refs/pull/123'                            | 0
+      Gitlab::Git::TAG_REF_PREFIX                | nil
+      Gitlab::Git::TAG_REF_PREFIX + 'name'       | nil
+      Gitlab::Git::BRANCH_REF_PREFIX             | nil
+      Gitlab::Git::BRANCH_REF_PREFIX + 'name'    | nil
+      Gitlab::Git::BLANK_SHA                     | nil
+    end
+
+    with_them do
+      it { is_expected.to eq(result) }
+    end
+  end
+
   describe 'blank_ref?' do
     using RSpec::Parameterized::TableSyntax
 
