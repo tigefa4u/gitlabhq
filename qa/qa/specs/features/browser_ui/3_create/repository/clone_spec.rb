@@ -7,6 +7,8 @@ module QA
         Runtime::Browser.visit(:gitlab, Page::Main::Login)
         Page::Main::Login.perform(&:sign_in_using_credentials)
 
+        expect(false).to eq(true)
+
         @project = Resource::Project.fabricate! do |scenario|
           scenario.name = 'project-with-code'
           scenario.description = 'project for git clone tests'
