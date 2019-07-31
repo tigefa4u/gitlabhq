@@ -8,6 +8,10 @@ module AuthHelper
     Gitlab::Auth::LDAP::Config.enabled?
   end
 
+  def ldap_sign_in_enabled?
+    Gitlab::Auth::LDAP::Config.sign_in_enabled?
+  end
+
   def omniauth_enabled?
     Gitlab::Auth.omniauth_enabled?
   end

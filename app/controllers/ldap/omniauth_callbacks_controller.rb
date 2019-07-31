@@ -4,7 +4,7 @@ class Ldap::OmniauthCallbacksController < OmniauthCallbacksController
   extend ::Gitlab::Utils::Override
 
   def self.define_providers!
-    return unless Gitlab::Auth::LDAP::Config.enabled?
+    return unless Gitlab::Auth::LDAP::Config.sign_in_enabled?
 
     Gitlab::Auth::LDAP::Config.available_servers.each do |server|
       alias_method server['provider_name'], :ldap
