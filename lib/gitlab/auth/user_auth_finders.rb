@@ -75,7 +75,8 @@ module Gitlab
         end
       end
 
-      def find_user_from_job_token
+      def find_user_from_job_token(request_format)
+        return unless valid_job_token_access_format?(request_format)
         return unless route_authentication_setting[:job_token_allowed]
 
         token = (params[JOB_TOKEN_PARAM] || env[JOB_TOKEN_HEADER]).to_s
@@ -168,6 +169,10 @@ module Gitlab
         when :ics
           ics_request?
         end
+      end
+
+      def valid_job_token_access_format?(request_format)
+        request_format == :api && api_request?
       end
 
       def rss_request?
