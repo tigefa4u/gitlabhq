@@ -17,7 +17,7 @@
       = render "projects/merge_requests/how_to_merge"
 
     -# haml-lint:disable InlineJavaScript
-    :javascript
+    :secure_javascript
       window.gl = window.gl || {};
       window.gl.mrWidgetData = #{serialize_issuable(@merge_request, serializer: 'widget', issues_links: true)}
 

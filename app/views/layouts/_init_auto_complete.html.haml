@@ -5,7 +5,7 @@
 
 - if object
   -# haml-lint:disable InlineJavaScript
-  :javascript
+  :secure_javascript
     gl = window.gl || {};
     gl.GfmAutoComplete = gl.GfmAutoComplete || {};
     gl.GfmAutoComplete.dataSources = #{datasources.to_json};
