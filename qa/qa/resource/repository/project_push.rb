@@ -7,7 +7,7 @@ module QA
         attr_writer :wait_for_push
 
         attribute :project do
-          Project.fabricate! do |resource|
+          Project.fabricate_via_api! do |resource|
             resource.name = 'project-with-code'
             resource.description = 'Project with repository'
           end
@@ -34,6 +34,35 @@ module QA
           super
           project.wait_for_push @commit_message if @wait_for_push
           project.visit!
+        end
+
+        def resource_web_url(resource)
+          super
+        rescue ResourceURLMissingError
+          # this particular resource does not expose a web_url property
+        end
+
+        def api_get_path
+          "/projects/#{project.id}/repository/commits"
+        end
+
+        def api_post_path
+          "/projects/#{project.id}/repository/commits"
+        end
+
+        def api_post_body
+          {
+              branch: @remote_branch,
+              start_branch: @branch_name,
+              commit_message: @commit_message,
+              actions: [
+                  {
+                      action: "create",
+                      file_path: @file_name,
+                      content: @file_content
+                  }
+              ]
+          }
         end
       end
     end

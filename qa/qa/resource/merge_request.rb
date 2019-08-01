@@ -5,7 +5,8 @@ require 'securerandom'
 module QA
   module Resource
     class MergeRequest < Base
-      attr_accessor :title,
+      attr_accessor :id,
+                    :title,
                     :description,
                     :source_branch,
                     :target_branch,
@@ -25,16 +26,16 @@ module QA
       attribute :target do
         project.visit!
 
-        Repository::ProjectPush.fabricate! do |resource|
+        Repository::ProjectPush.fabricate_via_api! do |resource|
           resource.project = project
-          resource.branch_name = 'master'
+          resource.branch_name = target_branch
           resource.new_branch = @target_new_branch
           resource.remote_branch = target_branch
         end
       end
 
       attribute :source do
-        Repository::ProjectPush.fabricate! do |resource|
+        Repository::ProjectPush.fabricate_via_api! do |resource|
           resource.project = project
           resource.branch_name = target_branch
           resource.remote_branch = source_branch
@@ -73,6 +74,28 @@ module QA
 
           page.create_merge_request
         end
+      end
+
+      def fabricate_via_api!
+        populate(:target, :source)
+        super
+      end
+
+      def api_get_path
+        "/projects/#{project.id}/merge_requests/#{id}"
+      end
+
+      def api_post_path
+        "/projects/#{project.id}/merge_requests"
+      end
+
+      def api_post_body
+        {
+            description: @description,
+            source_branch: @source_branch,
+            target_branch: @target_branch,
+            title: @title
+        }
       end
     end
   end
