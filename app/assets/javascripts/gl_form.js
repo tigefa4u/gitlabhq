@@ -165,7 +165,16 @@ export default class GLForm {
       this.indentHelper.newline();
     } else if (keystroke(event, keys.BACKSPACE_KEY_CODE)) {
       // ==== Auto-delete indents at the beginning of the line ====
+      // Event should not be prevented when not backspacing an indent - this is left to the browser
       this.indentHelper.backspace(event);
+    }
+
+    if (event.defaultPrevented) {
+      // Allow the backing vue app to pick up on the changes
+      this.textarea.trigger('input');
+      this.textarea.trigger('change');
+
+      autosize.update(this.textarea[0]);
     }
   }
 

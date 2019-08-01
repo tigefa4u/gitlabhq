@@ -20,7 +20,10 @@ export default class IndentHelper {
   }
 
   getSelection() {
-    return { start: this.element.selectionStart, end: this.element.selectionEnd };
+    return {
+      start: Math.max(0, Math.min(this.element.selectionStart, this.element.value.length)),
+      end: Math.max(0, Math.min(this.element.selectionEnd, this.element.value.length)),
+    };
   }
 
   isRangeSelection() {
