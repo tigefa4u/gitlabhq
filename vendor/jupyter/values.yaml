@@ -60,7 +60,4 @@ ingress:
 
 proxy:
   service:
-    type: NodePort
-    nodePorts:
-      http: 30080
-      https: 30443
+    type: ClusterIP
