@@ -91,10 +91,10 @@ module QA
 
       def api_post_body
         {
-            description: @description,
-            source_branch: @source_branch,
-            target_branch: @target_branch,
-            title: @title
+          description: @description,
+          source_branch: @source_branch,
+          target_branch: @target_branch,
+          title: @title
         }
       end
     end

@@ -52,16 +52,16 @@ module QA
 
         def api_post_body
           {
-              branch: @remote_branch,
-              start_branch: @branch_name,
-              commit_message: @commit_message,
-              actions: [
-                  {
-                      action: "create",
-                      file_path: @file_name,
-                      content: @file_content
-                  }
-              ]
+            branch: @remote_branch,
+            start_branch: @branch_name,
+            commit_message: @commit_message,
+            actions: [
+              {
+                action: "create",
+                file_path: @file_name,
+                content: @file_content
+              }
+            ]
           }
         end
       end
