@@ -1707,7 +1707,7 @@ This example creates three paths of execution:
    as the `linux:build` job finishes, and will not wait for any other jobs
    in prior stages.
 
-1. The Mac: the `mac:rspec` and `mac:rubocop` jobs will be run as soon
+1. The Mac one: the `mac:rspec` and `mac:rubocop` jobs will be run as soon
    as the `mac:build` job finishes, and will not wait for any other jobs
    in prior stages
 
