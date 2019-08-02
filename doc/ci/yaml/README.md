@@ -1721,7 +1721,7 @@ This example creates three paths of execution:
    because of `only/except` rules or otherwise does not exist, it
    will act as if no `needs:` keyword was set (see [gitlab-ce#65446](https://gitlab.com/gitlab-org/gitlab-ce/issues/65446)),
 1. If `needs:` is used with `dependencies:`,
-   `dependencies:` needs to be defined under `needs:`,
+   `dependencies:` needs to be defined under `needs:`.
 1. It is impossible for now to have `needs: []` (empty needs),
    the job always needs to depend on something, unless this is the job
    in the first stage (see [gitlab-ce#65504](https://gitlab.com/gitlab-org/gitlab-ce/issues/65504)),
