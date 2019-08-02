@@ -1724,7 +1724,7 @@ This example creates three paths of execution:
    `dependencies:` needs to be defined under `needs:`.
 1. It is impossible for now to have `needs: []` (empty needs),
    the job always needs to depend on something, unless this is the job
-   in the first stage (see [gitlab-ce#65504](https://gitlab.com/gitlab-org/gitlab-ce/issues/65504)),
+   in the first stage (see [gitlab-ce#65504](https://gitlab.com/gitlab-org/gitlab-ce/issues/65504)).
 1. If `needs:` refers to job that is marked as `parallel:`,
    the current job will depend on all parallel jobs created.
 1. `needs:` similar to `dependencies:` in that needs to use jobs from
