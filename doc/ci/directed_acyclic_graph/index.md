@@ -8,7 +8,7 @@ type: reference
 
 A [directed acyclic graph](https://www.techopedia.com/definition/5739/directed-acyclic-graph-dag) can be
 used in the context of a CI/CD pipeline to build relationships between jobs such that
-execution is performed in the quickest possible manner, regardless of stages that may
+execution is performed in the quickest possible manner, regardless how stages may
 be set up. For example, you may have a specific tool or separate website that is built
 as part of your main project: using a DAG, you can specify the relationship between
 these jobs and GitLab will then execute the jobs as soon as possible instead of waiting
