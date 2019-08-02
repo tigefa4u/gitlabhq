@@ -1668,7 +1668,7 @@ and bring back the old behavior.
 ### `needs`
 
 The `needs:` keyword allows you to execute jobs out-of-order, allowing you to implement
-a [directed acyclic graph](../directed_acyclic_graph/) in your `.gitlab-ci.yml`.
+a [directed acyclic graph](../directed_acyclic_graph/index.md) in your `.gitlab-ci.yml`.
 This allows to run some jobs earlier than other ones, disregarding stage ordering
 such that you can have multiple stages running concurrently.
 
