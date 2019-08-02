@@ -1665,16 +1665,12 @@ You can ask your administrator to
 [flip this switch](../../administration/job_artifacts.md#validation-for-dependencies)
 and bring back the old behavior.
 
-### `needs` the Direct Acyclic Graphs
+### `needs`
 
-The `needs:` allow you to execute jobs out-of-order.
-This makes to run some jobs earlier as other ones that
-the job needs does finish first.
-
-The out-of-order execution allows to run multiple stages concurrently.
-
-The `needs:` is optional syntax that extends the current
-pipeline stages based execution to allow more free-form.
+The `needs:` keyword allow you to execute jobs out-of-order, allowing you to implement
+a [directed acyclic graph](../directed_acyclic_graph/) in your `.gitlab-ci.yml`.
+This allows to run some jobs earlier than other ones, disregarding stage ordering
+such that you can have multiple stages running concurrently.
 
 Let's consider the following example:
 
@@ -1707,33 +1703,36 @@ production:
 
 This example creates three paths of execution:
 
-1. The Linux: the `linux:rspec` and `linux:rubocop` will be run as soon
-   as the `linux:build` finishes, and will not wait for any other jobs
+1. The Linux: the `linux:rspec` and `linux:rubocop` jobs will be run as soon
+   as the `linux:build` job finishes, and will not wait for any other jobs
    in prior stages
 
-1. The Mac: the `mac:rspec` and `mac:rubocop` will be run as soon
-   as the `mac:build` finishes, and will not wait for any other jobs
+1. The Mac: the `mac:rspec` and `mac:rubocop` jobs will be run as soon
+   as the `mac:build` job finishes, and will not wait for any other jobs
    in prior stages
 
-1. The `production` will be executed as soon as all previous jobs
-   did finish, in this case: `linux:build`, `linux:rspec`, `linux:rubocop`,
+1. The `production` job will be executed as soon as all previous jobs
+   finish; in this case: `linux:build`, `linux:rspec`, `linux:rubocop`,
    `mac:build`, `mac:rspec`, `mac:rubocop`.
 
-The requirements of using `needs:`:
+#### Requirements and limitations for using `needs:`:
 
+1. If `needs:` is set to point to a job that is not instantiated
+   because of `only/except` rules or otherwise does not exist, it
+   will act as if no `needs:` keyword was set (see [gitlab-ce#65446](https://gitlab.com/gitlab-org/gitlab-ce/issues/65446)),
 1. If `needs:` is used with `dependencies:`,
-   the `dependencies:` needs to be subset of `needs:`,
-2. It is impossible to have `needs: []` (empty needs),
+   `dependencies:` needs to be defined under `needs:`,
+1. It is impossible for now to have `needs: []` (empty needs),
    the job always needs to depend on something, unless this is the job
-   in the first stage,
-3. If the `needs:` refer to job that is marked as `parallel:`,
+   in the first stage (see [gitlab-ce#65504](https://gitlab.com/gitlab-org/gitlab-ce/issues/65504)),
+1. If `needs:` refers to job that is marked as `parallel:`,
    the current job will depend on all parallel jobs created.
-4. The `needs:` similar to `dependencies:` needs to use jobs from
+1. `needs:` similar to `dependencies:` in that needs to use jobs from
    prior stages, this means that it is impossible to create circular
-   dependencies or depend on jobs in the current stage.
-5. If `needs:` is not defined, the job will run after all jobs from prior
-   stages finished.
-6. The `needs:` behavior is respected only when system-wide feature flag
+   dependencies or depend on jobs in the current stage (see [gitlab-ce#65505](https://gitlab.com/gitlab-org/gitlab-ce/issues/65505)).
+1. If `needs:` is not defined, the job will run after all jobs from prior
+   stages finished (as normal.)
+1. The `needs:` behavior is respected only when system-wide feature flag
    of GitLab is enabled the `ci_dag_support`.
 
 ### `coverage`
