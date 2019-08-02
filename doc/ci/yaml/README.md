@@ -1733,7 +1733,7 @@ This example creates three paths of execution:
 1. If `needs:` is not defined, the job will run after all jobs from prior
    stages finished (as normal.)
 1. The `needs:` behavior is respected only when system-wide feature flag
-   of GitLab is enabled the `ci_dag_support`.
+   of GitLab is enabled (`ci_dag_support`).
 
 ### `coverage`
 
