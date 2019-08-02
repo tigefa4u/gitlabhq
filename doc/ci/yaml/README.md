@@ -1703,7 +1703,7 @@ production:
 
 This example creates three paths of execution:
 
-1. The Linux: the `linux:rspec` and `linux:rubocop` jobs will be run as soon
+1. The Linux one: the `linux:rspec` and `linux:rubocop` jobs will be run as soon
    as the `linux:build` job finishes, and will not wait for any other jobs
    in prior stages
 
