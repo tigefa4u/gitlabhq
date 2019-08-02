@@ -28,7 +28,7 @@ wait for it and will finish as quickly as it can.
 # Usage
 
 Relationships are defined between jobs using the `needs:` keyword. Documentation
-for how to do so can be found in our [pipeline configuration reference](https://docs.gitlab.com/ee/ci/yaml/#stage).
+for how to do so can be found in our [pipeline configuration reference](../yaml/README.md#stage).
 
 # Limitations
 
