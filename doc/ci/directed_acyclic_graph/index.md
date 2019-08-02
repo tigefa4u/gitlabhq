@@ -30,7 +30,7 @@ wait for it and will finish as quickly as it can.
 Relationships are defined between jobs using the `needs:` keyword. Documentation
 for how to do so can be found in our [pipeline configuration reference](../yaml/README.md#stage).
 
-# Limitations
+## Limitations
 
 A directed acyclic graph is a complicated feature and as of the initial MVC there
 are certain use cases that you may need to work around. We are tracking these in the epic
