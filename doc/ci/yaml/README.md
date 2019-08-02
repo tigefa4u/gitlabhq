@@ -1731,9 +1731,9 @@ This example creates three paths of execution:
    prior stages, this means that it is impossible to create circular
    dependencies or depend on jobs in the current stage (see [gitlab-ce#65505](https://gitlab.com/gitlab-org/gitlab-ce/issues/65505)).
 1. If `needs:` is not defined, the job will run after all jobs from prior
-   stages finished (as normal.)
+   stages finished.
 1. The `needs:` behavior is respected only when system-wide feature flag
-   of GitLab is enabled (`ci_dag_support`).
+   of GitLab is enabled the `ci_dag_support`.
 
 ### `coverage`
 
