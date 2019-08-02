@@ -44,14 +44,19 @@ export const isInIssuePage = () => checkPageAndAction('issues', 'show');
 export const isInMRPage = () => checkPageAndAction('merge_requests', 'show');
 export const isInEpicPage = () => checkPageAndAction('epics', 'show');
 
+export const getCspNonce = () => {
+  const meta = document.querySelector('meta[name=csp-nonce]');
+  return meta && meta.content;
+};
+
 export const ajaxGet = url =>
   axios
     .get(url, {
-      params: { format: 'js' },
+      Params: { format: 'js' },
       responseType: 'text',
     })
     .then(({ data }) => {
-      $.globalEval(data);
+      $.globalEval(data, { nonce: getCspNonce() });
     });
 
 export const rstrip = val => {
