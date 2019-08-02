@@ -1715,7 +1715,7 @@ This example creates three paths of execution:
    finish; in this case: `linux:build`, `linux:rspec`, `linux:rubocop`,
    `mac:build`, `mac:rspec`, `mac:rubocop`.
 
-#### Requirements and limitations for using `needs:`:
+#### Requirements and limitations for using `needs:`
 
 1. If `needs:` is set to point to a job that is not instantiated
    because of `only/except` rules or otherwise does not exist, it
