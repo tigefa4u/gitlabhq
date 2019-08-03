@@ -57,6 +57,10 @@ class GitlabSchema < GraphQL::Schema
       object.to_global_id
     end
 
+    def object_from_id_when_present(global_id)
+      object_from_id(global_id) if global_id.present?
+    end
+
     def object_from_id(global_id)
       gid = GlobalID.parse(global_id)
 

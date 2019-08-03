@@ -122,6 +122,31 @@ describe GitlabSchema do
     end
   end
 
+  describe '.object_from_id_when_present' do
+    context 'when the input is nil' do
+      it 'returns nil' do
+        expect(described_class.object_from_id_when_present(nil)).to be_nil
+      end
+    end
+
+    context 'when the input is an empty string' do
+      it 'returns nil' do
+        expect(described_class.object_from_id_when_present('')).to be_nil
+      end
+    end
+
+    context 'when the object is not nil' do
+      it 'behaves as object_from_id' do
+        user = create(:user)
+        gid = user.to_global_id.to_s
+
+        result = described_class.object_from_id_when_present(gid).__sync
+
+        expect(result).to eq(described_class.object_from_id(gid).__sync)
+      end
+    end
+  end
+
   describe '.object_from_id' do
     context 'for subclasses of `ApplicationRecord`' do
       it 'returns the correct record' do
