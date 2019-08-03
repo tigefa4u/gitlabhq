@@ -158,6 +158,14 @@ describe GlobalPolicy do
       it { is_expected.to be_allowed(:access_git) }
     end
 
+    describe 'deactivated user' do
+      before do
+        current_user.deactivate
+      end
+
+      it { is_expected.not_to be_allowed(:access_git) }
+    end
+
     context 'when terms are enforced' do
       before do
         enforce_terms

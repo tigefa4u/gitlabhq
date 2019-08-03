@@ -60,6 +60,8 @@ class User < ApplicationRecord
   BLOCKED_MESSAGE = "Your account has been blocked. Please contact your GitLab " \
                     "administrator if you think this is an error.".freeze
 
+  MINIMUM_INACTIVE_DAYS = 14
+
   # Override Devise::Models::Trackable#update_tracked_fields!
   # to limit database writes to at most once every hour
   # rubocop: disable CodeReuse/ServiceClass
@@ -240,16 +242,23 @@ class User < ApplicationRecord
   state_machine :state, initial: :active do
     event :block do
       transition active: :blocked
+      transition deactivated: :blocked
       transition ldap_blocked: :blocked
     end
 
     event :ldap_block do
       transition active: :ldap_blocked
+      transition deactivated: :ldap_blocked
     end
 
     event :activate do
+      transition deactivated: :active
       transition blocked: :active
       transition ldap_blocked: :active
+    end
+
+    event :deactivate do
+      transition active: :deactivated
     end
 
     state :blocked, :ldap_blocked do
@@ -272,6 +281,7 @@ class User < ApplicationRecord
   scope :blocked, -> { with_states(:blocked, :ldap_blocked) }
   scope :external, -> { where(external: true) }
   scope :active, -> { with_state(:active).non_internal }
+  scope :deactivated, -> { with_state(:deactivated).non_internal }
   scope :without_projects, -> { joins('LEFT JOIN project_authorizations ON users.id = project_authorizations.user_id').where(project_authorizations: { user_id: nil }) }
   scope :order_recent_sign_in, -> { reorder(Gitlab::Database.nulls_last_order('current_sign_in_at', 'DESC')) }
   scope :order_oldest_sign_in, -> { reorder(Gitlab::Database.nulls_last_order('current_sign_in_at', 'ASC')) }
@@ -419,6 +429,8 @@ class User < ApplicationRecord
         without_projects
       when 'external'
         external
+      when 'deactivated'
+        deactivated
       else
         active
       end
@@ -1493,6 +1505,10 @@ class User < ApplicationRecord
     todos.find_by(target: target, state: :pending)
   end
 
+  def can_be_deactivated?
+    active? && no_recent_activity?
+  end
+
   # @deprecated
   alias_method :owned_or_masters_groups, :owned_or_maintainers_groups
 
@@ -1634,5 +1650,16 @@ class User < ApplicationRecord
     developer_groups_hierarchy = ::Gitlab::ObjectHierarchy.new(developer_groups).base_and_descendants
     ::Group.where(id: developer_groups_hierarchy.select(:id),
                   project_creation_level: project_creation_levels)
+  end
+
+  def no_recent_activity?
+    inactivity_threshold = MINIMUM_INACTIVE_DAYS.days.ago.to_i
+
+    last_activity = last_activity_on&.to_time.to_i
+    last_sign_in = current_sign_in_at.to_i
+
+    last_active_on = [last_activity, last_sign_in].max
+
+    last_active_on <= inactivity_threshold
   end
 end

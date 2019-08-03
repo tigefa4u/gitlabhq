@@ -32,6 +32,12 @@
                 = link_to _('Unblock'), unblock_admin_user_path(user), method: :put
               - else
                 = link_to _('Block'), block_admin_user_path(user), data: { confirm: "#{s_('AdminUsers|User will be blocked').upcase}! #{_('Are you sure')}?" }, method: :put
+            - if user.can_be_deactivated?
+              %li
+                = link_to _('Deactivate'), deactivate_admin_user_path(user), method: :put
+            - elsif user.deactivated?
+              %li
+                = link_to _('Activate'), activate_admin_user_path(user), method: :put
             - if user.access_locked?
               %li
                 = link_to _('Unlock'), unlock_admin_user_path(user), method: :put, data: { confirm: _('Are you sure?') }

@@ -1151,6 +1151,37 @@ Parameters:
 Will return `201 OK` on success, `404 User Not Found` is user cannot be found or
 `403 Forbidden` when trying to unblock a user blocked by LDAP synchronization.
 
+## Deactivate user
+
+Deactivates the specified user.  Available only for admin.
+
+```
+POST /users/:id/deactivate
+```
+
+Parameters:
+
+- `id` (required) - id of specified user
+
+Will return `201 OK` on success, `404 User Not Found` if user cannot be found or
+`403 Forbidden` when trying to deactivate a user blocked by admin or by LDAP synchronization.
+Also, a user that has any activity in past 14 days cannot be deactivated and returns `403 Forbidden`.
+
+## Activate user
+
+Activates the specified user.  Available only for admin.
+
+```
+POST /users/:id/activate
+```
+
+Parameters:
+
+- `id` (required) - id of specified user
+
+Will return `201 OK` on success, `404 User Not Found` is user cannot be found or
+`403 Forbidden` when trying to activate a user blocked by admin or by LDAP synchronization.
+
 ### Get user contribution events
 
 Please refer to the [Events API documentation](events.md#get-user-contribution-events)

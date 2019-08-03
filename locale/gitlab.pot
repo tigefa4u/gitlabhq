@@ -607,6 +607,9 @@ msgstr ""
 msgid "Account: %{account}"
 msgstr ""
 
+msgid "Activate"
+msgstr ""
+
 msgid "Active"
 msgstr ""
 
@@ -844,6 +847,9 @@ msgid "AdminUsers|Blocked"
 msgstr ""
 
 msgid "AdminUsers|Cannot unblock LDAP blocked users"
+msgstr ""
+
+msgid "AdminUsers|Deactivated"
 msgstr ""
 
 msgid "AdminUsers|Delete User %{username} and contributions?"
@@ -3600,6 +3606,9 @@ msgstr ""
 msgid "DayTitle|W"
 msgstr ""
 
+msgid "Deactivate"
+msgstr ""
+
 msgid "Debug"
 msgstr ""
 
@@ -4476,6 +4485,12 @@ msgid "Error occurred when saving assignees"
 msgstr ""
 
 msgid "Error occurred when toggling the notification subscription"
+msgstr ""
+
+msgid "Error occurred. A blocked user cannot be deactivated"
+msgstr ""
+
+msgid "Error occurred. A blocked user must be unblocked to be activated"
 msgstr ""
 
 msgid "Error occurred. User was not blocked"
@@ -10556,10 +10571,16 @@ msgstr ""
 msgid "Subtracts"
 msgstr ""
 
+msgid "Successfully activated"
+msgstr ""
+
 msgid "Successfully blocked"
 msgstr ""
 
 msgid "Successfully confirmed"
+msgstr ""
+
+msgid "Successfully deactivated"
 msgstr ""
 
 msgid "Successfully deleted U2F device."
@@ -11084,6 +11105,9 @@ msgid "The user map is a JSON document mapping the Google Code users that partic
 msgstr ""
 
 msgid "The user map is a mapping of the FogBugz users that participated on your projects to the way their email address and usernames will be imported into GitLab. You can change this by populating the table below."
+msgstr ""
+
+msgid "The user you are trying to deactivate has been active in the past %{minimum_inactive_days} days and cannot be deactivated"
 msgstr ""
 
 msgid "The value lying at the midpoint of a series of observed values. E.g., between 3, 5, 9, the median is 5. Between 3, 5, 7, 8, the median is (5+7)/2 = 6."
@@ -12485,6 +12509,9 @@ msgstr ""
 msgid "Wednesday"
 msgstr ""
 
+msgid "Welcome back! Your account had been deactivated due to inactivity and is now reactivated."
+msgstr ""
+
 msgid "Welcome to your Issue Board!"
 msgstr ""
 
@@ -13037,6 +13064,9 @@ msgid "Your U2F device was registered!"
 msgstr ""
 
 msgid "Your access request to the %{source_type} has been withdrawn."
+msgstr ""
+
+msgid "Your account has been deactivated by your administrator. Please log back in to reactivate your account."
 msgstr ""
 
 msgid "Your account uses dedicated credentials for the \"%{group_name}\" group and can only be updated through SSO."

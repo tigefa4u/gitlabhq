@@ -156,6 +156,34 @@
 
       = render_if_exists 'admin/users/user_detail_note'
 
+      - if @user.deactivated?
+        .card.border-info
+          .card-header.bg-info.text-white
+            Reactivate this user
+          .card-body
+            %p Reactivating a user will:
+            %ul
+              %li Restore user access to the account, including web, Git and API.
+              = render_if_exists 'admin/users/user_activation_effects'
+            %br
+            = link_to 'Activate user', activate_admin_user_path(@user), method: :put, class: "btn btn-info", data: { confirm: 'Are you sure?' }
+      - elsif @user.can_be_deactivated?
+        .card.border-warning
+          .card-header.bg-warning.text-white
+            Deactivate this user
+          .card-body
+            %p Deactivating a user has the following effects:
+            %ul
+              %li The user will be logged out
+              %li The user will not be able to access git repositories
+              %li The user will not be able to access the API
+              %li The user will not receive any notifications
+              %li When the user logs back in, their account will reactivate as a fully active account
+              %li Personal projects, group and user history will be left intact
+              = render_if_exists 'admin/users/user_deactivation_effects'
+            %br
+            = link_to 'Deactivate user', deactivate_admin_user_path(@user), data: { confirm: 'USER WILL BE DEACTIVATED! Are you sure?' }, method: :put, class: "btn btn-warning"
+
       - if @user.blocked?
         .card.border-info
           .card-header.bg-info.text-white

@@ -42,6 +42,38 @@ a user can be blocked directly from the Admin area. To do this:
 1. Selecting a user.
 1. Under the **Account** tab, click **Block user**.
 
+### Deactivating a user
+
+A user can be deactivated from the Admin area. Deactivating a user is functionally identical to blocking a user, but does not prohibit the user from logging back in via the UI. Once a deactivated user logs back into the GitLab UI, their account is set to active.
+
+A deactivated user will not be able to access git repositories or the API. They will also not receive any notifications from GitLab.
+Personal projects, group and user history of the deactivated user will be left intact.
+
+A deactivated user does not take up a seat `**(STARTER ONLY)**`
+
+To do this:
+
+1. Navigate to  **Admin Area > Overview > Users**.
+1. Selecting a user.
+1. Under the **Account** tab, click **Deactivate user**.
+
+Please note that for the deactivation option to be visible to an admin, the user must be currently active and should not have any activity in the last 14 days.
+
+
+### Activating a user
+
+A deactivated user can be activated from the Admin area. Activating a user sets their account to active state.
+
+To do this:
+
+1. Navigate to  **Admin Area > Overview > Users**.
+1. Click on the **Deactivated** tab.
+1. Selecting a user.
+1. Under the **Account** tab, click **Activate user**.
+
+A deactivated user can also activate their account by themselves by simply logging back via the UI.
+
+
 ## Associated Records
 
 > - Introduced for issues in

@@ -23,6 +23,7 @@ class ApplicationController < ActionController::Base
   before_action :add_gon_variables, unless: [:peek_request?, :json_request?]
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :require_email, unless: :devise_controller?
+  before_action :active_user_check, unless: :devise_controller?
   before_action :set_usage_stats_consent_flag
   before_action :check_impersonation_availability
 
@@ -285,6 +286,14 @@ class ApplicationController < ActionController::Base
 
     if password_expires_at && password_expires_at < Time.now
       return redirect_to new_profile_password_path
+    end
+  end
+
+  def active_user_check
+    if current_user && current_user.deactivated?
+      sign_out current_user
+      flash[:alert] = _("Your account has been deactivated by your administrator. Please log back in to reactivate your account.")
+      redirect_to new_user_session_path
     end
   end
 
