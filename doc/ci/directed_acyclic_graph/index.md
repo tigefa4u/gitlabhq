@@ -14,25 +14,52 @@ as part of your main project: using a DAG, you can specify the relationship betw
 these jobs and GitLab will then execute the jobs as soon as possible instead of waiting
 for each stage to complete.
 
-Alternatively, consider a monorepo as follows:
+Unlike other DAG solutions for CI/CD, GitLab does not require you to choose one or the
+other; you're allowed to implement a hybrid combination of DAG and traditional
+stage-based operation within a single pipeline. Configuration is kept very simple,
+requiring a single keyword to enable the feature for any job.
+
+Consider a monorepo as follows:
 
 | build | test | deploy |
 | ----- | ---- | ------ |
 | service_a | test_a | deploy_a |
 | service_b | test_b | deploy_b |
+| service_c | test_c | deploy_c | 
+| service_d | test_d | deploy_d |
 
 Using a DAG, you can relate the `_a` jobs to each other separately from the `_b` jobs,
 and even if service `a` takes a very long time to build, service `b` will not
-wait for it and will finish as quickly as it can.
+wait for it and will finish as quickly as it can. In this very same pipeline, `_c` and
+`_d` can be left alone and will run together in staged sequence just like any normal
+GitLab pipeline.
+
+# Use Cases
+
+A DAG can help solve several different kinds of relationships between jobs within
+a CI/CD pipeline. Most typically this would cover when jobs need to fan in or out,
+and/or merge back together (diamond dependencies.) This can happen when you're
+handling multi-platform builds or complex webs of dependencies as in something like
+an operating system build or a complex deployment graph of independently deployable
+but related microservices.
+
+Additionally, a DAG can help with general speediness of pipelines and helping
+to deliver fast feedback. By creating dependency relationships that don't unnecessarily
+block eachother, your pipelines will run as quickly as possible regardless of
+pipeline stages, ensuring output (including errors) is available to developers
+as quickly as possible.
 
 # Usage
 
 Relationships are defined between jobs using the `needs:` keyword. Documentation
 for how to do so can be found in our [pipeline configuration reference](../yaml/README.md#stage).
 
+Note that `needs:` also works with the [parallel](../yaml/README.md#stage) keyword,
+giving your powerful options for parallelization within your pipeline.
+
 ## Limitations
 
-A directed acyclic graph is a complicated feature and as of the initial MVC there
+A directed acyclic graph is a complicated feature, and as of the initial MVC there
 are certain use cases that you may need to work around. We are tracking these in the epic
 [gitlab-org#1716](https://gitlab.com/groups/gitlab-org/-/epics/1716), and they are also
-documented with the usage link above.
+documented at the usage link above.
