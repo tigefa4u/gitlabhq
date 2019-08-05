@@ -1718,22 +1718,20 @@ This example creates three paths of execution:
 #### Requirements and limitations for using `needs:`
 
 1. If `needs:` is set to point to a job that is not instantiated
-   because of `only/except` rules or otherwise does not exist, it
-   will act as if no `needs:` keyword was set (see [gitlab-ce#65446](https://gitlab.com/gitlab-org/gitlab-ce/issues/65446)).
-1. If `needs:` is used with `dependencies:`,
+   because of `only/except` rules or otherwise does not exist, the
+   job will not run.
+2. If `needs:` is used with `dependencies:`,
    `dependencies:` needs to be defined under `needs:`.
-1. It is impossible for now to have `needs: []` (empty needs),
+3. It is impossible for now to have `needs: []` (empty needs),
    the job always needs to depend on something, unless this is the job
    in the first stage (see [gitlab-ce#65504](https://gitlab.com/gitlab-org/gitlab-ce/issues/65504)).
-1. If `needs:` refers to a job that is marked as `parallel:`,
+4. If `needs:` refers to a job that is marked as `parallel:`.
    the current job will depend on all parallel jobs created.
-1. `needs:` similar to `dependencies:` in that needs to use jobs from
+5. `needs:` is similar to `dependencies:` in that needs to use jobs from
    prior stages, this means that it is impossible to create circular
    dependencies or depend on jobs in the current stage (see [gitlab-ce#65505](https://gitlab.com/gitlab-org/gitlab-ce/issues/65505)).
-1. If `needs:` is not defined, the job will run after all jobs from prior
-   stages finished.
-1. The `needs:` behavior is respected only when system-wide feature flag
-   of GitLab is enabled the `ci_dag_support`.
+6. Related to the above, stages must be explicitly defined for all jobs
+   that have the keyword `needs:` or are referred to by one.
 
 ### `coverage`
 
