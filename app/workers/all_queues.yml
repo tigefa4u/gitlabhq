@@ -170,5 +170,6 @@
 - detect_repository_languages
 - repository_cleanup
 - delete_stored_files
+- ci_delete_stored_artifacts
 - import_issues_csv
 - project_daily_statistics

@@ -151,14 +151,19 @@ module Ci
       end
 
       def begin_fast_destroy
-        preload(:project).to_a.group_by(&:project).transform_values { |artifacts| artifacts.map(&:file) }
+        preload(:project).to_a.group_by(&:project)
       end
 
       def finalize_fast_destroy(params)
-        params.each do |project, artifact_files|
-          delta = artifact_files.sum(&:size)
+        params.each do |project, artifacts|
+          delta = artifacts.sum(&:size)
 
-          Ci::DeleteStoredArtifactsWorker.perform_async(artifact_files)
+          local_artifacts, remote_artifacts = artifacts.partition(&:local_store?)
+          artifact_file_paths = {
+            ::JobArtifactUploader::Store::LOCAL => local_artifacts.map { |artifact| artifact.file.store_path },
+            ::JobArtifactUploader::Store::REMOTE => remote_artifacts.map { |artifact| artifact.file.store_path }
+          }
+          Ci::DeleteStoredArtifactsWorker.perform_async(artifact_file_paths)
 
           update_project_statistics!(project, :build_artifacts_size, -delta)
         end

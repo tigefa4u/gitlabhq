@@ -44,12 +44,12 @@ module UpdateProjectStatistics
     # Useful when you want to update project statistics outside of an
     # ActiveRecord model.
     def update_project_statistics!(project, statistics_name, delta)
-      unless project.pending_delete?
-        ProjectStatistics.increment_statistic(project.id, statistics_name, delta)
+      return if project.pending_delete?
 
-        if Feature.enabled?(:update_statistics_namespace, project.root_ancestor)
-          Namespaces::ScheduleAggregationWorker.perform_async(project.namespace_id)
-        end
+      ProjectStatistics.increment_statistic(project.id, statistics_name, delta)
+
+      if Feature.enabled?(:update_statistics_namespace, project.root_ancestor)
+        Namespaces::ScheduleAggregationWorker.perform_async(project.namespace_id)
       end
     end
 

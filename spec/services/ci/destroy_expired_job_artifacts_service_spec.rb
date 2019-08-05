@@ -31,20 +31,6 @@ describe Ci::DestroyExpiredJobArtifactsService, :clean_gitlab_redis_shared_state
       end
     end
 
-    context 'when failed to destroy artifact' do
-      before do
-        stub_const('Ci::DestroyExpiredJobArtifactsService::LOOP_LIMIT', 10)
-
-        allow_any_instance_of(JobArtifactUploader)
-          .to receive(:remove!)
-          .and_raise(StandardError)
-      end
-
-      it 'raises an exception and stop destroying' do
-        expect { subject }.to raise_error(StandardError)
-      end
-    end
-
     context 'when exclusive lease has already been taken by the other instance' do
       before do
         stub_exclusive_lease_taken(described_class::EXCLUSIVE_LOCK_KEY, timeout: described_class::LOCK_TIMEOUT)
