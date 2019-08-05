@@ -364,7 +364,7 @@ module.exports = {
     inline: DEV_SERVER_LIVERELOAD,
   },
 
-  devtool: NO_SOURCEMAPS ? false : devtool,
+  devtool: false, // NO_SOURCEMAPS ? false : devtool,
 
   node: {
     fs: 'empty', // sqljs requires fs
