@@ -1703,34 +1703,33 @@ production:
 
 This example creates three paths of execution:
 
-1. The Linux one: the `linux:rspec` and `linux:rubocop` jobs will be run as soon
+- The Linux one: the `linux:rspec` and `linux:rubocop` jobs will be run as soon
    as the `linux:build` job finishes, and will not wait for any other jobs
    in prior stages.
 
-1. The Mac one: the `mac:rspec` and `mac:rubocop` jobs will be run as soon
+- The Mac one: the `mac:rspec` and `mac:rubocop` jobs will be run as soon
    as the `mac:build` job finishes, and will not wait for any other jobs
    in prior stages.
 
-1. The `production` job will be executed as soon as all previous jobs
-   finish; in this case: `linux:build`, `linux:rspec`, `linux:rubocop`,
-   `mac:build`, `mac:rspec`, `mac:rubocop`.
+- The `production` job will be executed as soon as all previous jobs
+   finish.
 
-#### Requirements and limitations for using `needs:`
+#### Requirements and limitations
 
-1. If `needs:` is set to point to a job that is not instantiated
+- If `needs:` is set to point to a job that is not instantiated
    because of `only/except` rules or otherwise does not exist, the
    job will not run.
-2. If `needs:` is used with `dependencies:`,
+- If `needs:` is used with `dependencies:`,
    `dependencies:` needs to be defined under `needs:`.
-3. It is impossible for now to have `needs: []` (empty needs),
+- It is impossible for now to have `needs: []` (empty needs),
    the job always needs to depend on something, unless this is the job
    in the first stage (see [gitlab-ce#65504](https://gitlab.com/gitlab-org/gitlab-ce/issues/65504)).
-4. If `needs:` refers to a job that is marked as `parallel:`.
+- If `needs:` refers to a job that is marked as `parallel:`.
    the current job will depend on all parallel jobs created.
-5. `needs:` is similar to `dependencies:` in that needs to use jobs from
+- `needs:` is similar to `dependencies:` in that needs to use jobs from
    prior stages, this means that it is impossible to create circular
    dependencies or depend on jobs in the current stage (see [gitlab-ce#65505](https://gitlab.com/gitlab-org/gitlab-ce/issues/65505)).
-6. Related to the above, stages must be explicitly defined for all jobs
+- Related to the above, stages must be explicitly defined for all jobs
    that have the keyword `needs:` or are referred to by one.
 
 ### `coverage`
