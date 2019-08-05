@@ -219,7 +219,7 @@ Do not include the same information in multiple places. [Link to a SSOT instead.
 
 - Use inclusive language and avoid jargon, as well as uncommon
   words. The docs should be clear and easy to understand.
-- Use inclusive pronouns (use "we", "you", "us", "one"). Avoid the
+- Use pronouns that include the reader (use "we", "you", "us", "one"). Avoid the
   first-person-singular ("I", "me", "my").
 - Be clear, concise, and stick to the goal of the doc.
 - Avoid acronyms, and if you do use them, explain them on the first usage.
