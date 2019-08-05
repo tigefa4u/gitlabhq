@@ -219,8 +219,10 @@ Do not include the same information in multiple places. [Link to a SSOT instead.
 
 - Use inclusive language and avoid jargon, as well as uncommon
   words. The docs should be clear and easy to understand.
-- Write in the 3rd person (use "we", "you", "us", "one", instead of "I" or "me").
+- Use inclusive pronouns (use "we", "you", "us", "one"). Avoid the
+  first-person-singular ("I", "me", "my").
 - Be clear, concise, and stick to the goal of the doc.
+- Avoid acronyms, and if you do use them, explain them on the first usage.
 - Write in US English.
 - Capitalize "G" and "L" in GitLab.
 - Use title case when referring to [features](https://about.gitlab.com/features/) or
