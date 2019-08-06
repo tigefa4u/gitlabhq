@@ -34,11 +34,7 @@ module Banzai
       def query_params(params)
         return {} unless params['query']
 
-        CGI.parse(params['query'][1..-1]).map do |key, value|
-          target = value.length == 1 ? value.first : value
-
-          [key.to_sym, target]
-        end.to_h
+        Gitlab::Metrics::Dashboard::Url.parse_query(params['query'][1..-1])
       end
 
       # Search params for selecting metrics links. A few
