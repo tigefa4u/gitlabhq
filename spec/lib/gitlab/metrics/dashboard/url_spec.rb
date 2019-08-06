@@ -13,8 +13,9 @@ describe Gitlab::Metrics::Dashboard::Url do
         'foo',
         'bar',
         1,
-        start: 123345456,
-        dashboard: 'config%2Fprometheus%2Fcommon_metrics.yml',
+        start: '2019-08-02T05:43:09.000Z',
+        dashboard: 'config/prometheus/common_metrics.yml',
+        group: 'awesome group',
         anchor: 'title'
       )
 
@@ -23,7 +24,7 @@ describe Gitlab::Metrics::Dashboard::Url do
         'namespace' => 'foo',
         'project' => 'bar',
         'environment' => '1',
-        'query' => '?dashboard=config%252Fprometheus%252Fcommon_metrics.yml&start=123345456',
+        'query' => '?dashboard=config%2Fprometheus%2Fcommon_metrics.yml&group=awesome+group&start=2019-08-02T05%3A43%3A09.000Z',
         'anchor' => '#title'
       }
 
