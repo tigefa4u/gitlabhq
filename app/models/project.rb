@@ -112,8 +112,6 @@ class Project < ApplicationRecord
   # Storage specific hooks
   after_initialize :use_hashed_storage
   after_create :check_repository_absence!
-  after_create :ensure_storage_path_exists
-  after_save :ensure_storage_path_exists, if: :saved_change_to_namespace_id?
 
   acts_as_ordered_taggable
 

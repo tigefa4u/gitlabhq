@@ -3442,14 +3442,6 @@ describe Project do
       end
     end
 
-    describe '#ensure_storage_path_exists' do
-      it 'delegates to gitlab_shell to ensure namespace is created' do
-        expect(gitlab_shell).to receive(:add_namespace).with(project.repository_storage, project.base_dir)
-
-        project.ensure_storage_path_exists
-      end
-    end
-
     describe '#legacy_storage?' do
       it 'returns true when storage_version is nil' do
         project = build(:project, storage_version: nil)
@@ -3561,16 +3553,6 @@ describe Project do
     describe '#disk_path' do
       it 'returns disk_path based on hash of project id' do
         expect(project.disk_path).to eq(hashed_path)
-      end
-    end
-
-    describe '#ensure_storage_path_exists' do
-      it 'delegates to gitlab_shell to ensure namespace is created' do
-        allow(project).to receive(:gitlab_shell).and_return(gitlab_shell)
-
-        expect(gitlab_shell).to receive(:add_namespace).with(project.repository_storage, hashed_prefix)
-
-        project.ensure_storage_path_exists
       end
     end
 
