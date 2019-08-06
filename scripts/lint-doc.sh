@@ -35,8 +35,8 @@ fi
 
 # Do not use 'README.md', instead use 'index.md'
 # Number of 'README.md's as of 2018-03-26
-NUMBER_READMES_CE=46
-NUMBER_READMES_EE=46
+NUMBER_READMES_CE=34
+NUMBER_READMES_EE=34
 FIND_READMES=$(find doc/ -name "README.md" | wc -l)
 echo '=> Checking for new README.md files...'
 if [ "${CI_PROJECT_NAME}" == 'gitlab-ce' ]
