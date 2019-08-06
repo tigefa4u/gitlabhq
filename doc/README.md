@@ -502,10 +502,10 @@ Learn more about using Git, and using Git with GitLab:
 
 If you are coming to GitLab from another platform, you'll find the following information useful:
 
-| Topic                                                          | Description                                                                            |
-|:---------------------------------------------------------------|:---------------------------------------------------------------------------------------|
-| [Importing to GitLab](user/project/import/index.md)            | Import your projects from GitHub, Bitbucket, GitLab.com, FogBugz, and SVN into GitLab. |
-| [Migrating from SVN](workflow/importing/migrating_from_svn.md) | Convert a SVN repository to Git and GitLab.                                            |
+| Topic                                               | Description                                                                            |
+|:----------------------------------------------------|:---------------------------------------------------------------------------------------|
+| [Importing to GitLab](user/project/import/index.md) | Import your projects from GitHub, Bitbucket, GitLab.com, FogBugz, and SVN into GitLab. |
+| [Migrating from SVN](user/project/import/svn.md)    | Convert a SVN repository to Git and GitLab.                                            |
 
 <div align="right">
   <a type="button" class="btn btn-default" href="#overview">

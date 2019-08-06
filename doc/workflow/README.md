@@ -48,7 +48,7 @@ comments: false
 - [Repository mirroring](repository_mirroring.md) **(STARTER)**
 - [Service Desk](../user/project/service_desk.md) **(PREMIUM)**
 - [Manage large binaries with Git LFS](lfs/manage_large_binaries_with_git_lfs.md)
-- [Importing from SVN, GitHub, Bitbucket, etc](importing/README.md)
+- [Importing from SVN, GitHub, Bitbucket, etc](../user/project/import/index.md)
 - [Todos](todos.md)
 - [Snippets](../user/snippets.md)
 - [Subgroups](../user/group/subgroups/index.md)
