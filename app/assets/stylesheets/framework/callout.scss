@@ -9,6 +9,7 @@
 .bs-callout {
   margin: $gl-padding 0;
   padding: $gl-padding;
+  border: 0;
   border-left: 3px solid $border-color;
   color: $text-color;
   background: $gray-light;
@@ -16,6 +17,7 @@
   h4 {
     margin-top: 0;
     margin-bottom: 5px;
+    color: $blue-700;
   }
 
   p:last-child {
