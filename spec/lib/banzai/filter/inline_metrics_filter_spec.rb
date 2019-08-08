@@ -60,10 +60,10 @@ describe Banzai::Filter::InlineMetricsFilter do
           12,
           {
             embedded: true,
-            dashboard: 'config%2Fprometheus%2Fcommon_metrics.yml',
-            group: 'System+metrics+%28Kubernetes%29',
-            title: 'Core+Usage+%28Pod+Average%29',
-            y_label: 'Cores+per+Pod'
+            dashboard: 'config/prometheus/common_metrics.yml',
+            group: 'System metrics (Kubernetes)',
+            title: 'Core Usage (Pod Average)',
+            y_label: 'Cores per Pod'
           }
         ]
       end

@@ -23,18 +23,15 @@ module Banzai
           params['project'],
           params['environment'],
           embedded: true,
-          **query_params(params)
+          **query_params(params['url'])
         )
       end
 
       # Parses query params out from full string into hash.
-      # If multiple values are given for a parameter, they
-      # will be captured in an array.
-      # Ex) '?title=Title&group=Group' --> { title: 'Title', group: Group }
-      def query_params(params)
-        return {} unless params['query']
-
-        Gitlab::Metrics::Dashboard::Url.parse_query(params['query'][1..-1])
+      #
+      # Ex) '?title=Title&group=Group' --> { title: 'Title', group: 'Group' }
+      def query_params(url)
+        Gitlab::Metrics::Dashboard::Url.parse_query(url)
       end
 
       # Search params for selecting metrics links. A few
