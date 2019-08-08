@@ -87,7 +87,7 @@ export default {
 </script>
 <template>
   <div class="metrics-embed">
-    <div v-if="groupData" :class="[ singleChart ? 'metric' : 'row w-100 m-n2 pb-4' ]">
+    <div v-if="groupData" :class="[ singleChart ? 'test' : 'row w-100 m-n2 pb-4' ]">
       <monitor-area-chart
         v-for="graphData in chartsWithData(groupData.metrics)"
         :key="graphData.title"
