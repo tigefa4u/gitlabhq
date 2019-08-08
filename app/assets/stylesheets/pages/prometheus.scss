@@ -1,3 +1,14 @@
+.metrics-embed p {
+  clear: both;
+}
+.metric {
+  border: 1px solid red;
+  width: 50%;
+  float: left;
+  > div {
+    border: 1px solid blue;
+  }
+}
 .prometheus-graphs {
   .dropdowns {
     .dropdown-menu-toggle {
