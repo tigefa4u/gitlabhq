@@ -91,7 +91,7 @@ module Ci
 
     scope :scoped_project, -> { where('ci_job_artifacts.project_id = projects.id') }
 
-    delegate :filename, :exists?, :open, to: :file
+    delegate :filename, :exists?, :open, :store_path, to: :file
 
     enum file_type: {
       archive: 1,
@@ -160,8 +160,8 @@ module Ci
 
           local_artifacts, remote_artifacts = artifacts.partition(&:local_store?)
           artifact_file_paths = {
-            ::JobArtifactUploader::Store::LOCAL => local_artifacts.map { |artifact| artifact.file.store_path },
-            ::JobArtifactUploader::Store::REMOTE => remote_artifacts.map { |artifact| artifact.file.store_path }
+            ::JobArtifactUploader::Store::LOCAL => local_artifacts.map(&:store_path),
+            ::JobArtifactUploader::Store::REMOTE => remote_artifacts.map(&:store_path)
           }
           Ci::DeleteStoredArtifactsWorker.perform_async(artifact_file_paths)
 

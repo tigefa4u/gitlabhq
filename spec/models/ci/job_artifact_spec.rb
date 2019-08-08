@@ -95,6 +95,46 @@ describe Ci::JobArtifact do
     end
   end
 
+  describe '.finalize_fast_destroy' do
+    let(:project) { create(:project ) }
+    let(:local_artifacts) { create_list(:ci_job_artifact, 2, project: project, size: 100) }
+    let(:remote_artifacts) { create_list(:ci_job_artifact, 2, :remote_store, project: project, size: 100) }
+
+    let(:artifact_list) do
+      {
+        project => local_artifacts + remote_artifacts
+      }
+    end
+    let(:expected_partition) do
+      {
+        ::JobArtifactUploader::Store::LOCAL => local_artifacts.map(&:store_path),
+        ::JobArtifactUploader::Store::REMOTE => remote_artifacts.map(&:store_path)
+      }
+    end
+
+    before do
+      stub_artifacts_object_storage
+    end
+
+    subject { described_class.finalize_fast_destroy(artifact_list) }
+
+    it 'calls the async deletion worker' do
+      expect(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async).with(expected_partition)
+
+      subject
+    end
+
+    it 'updates project statistics' do
+      allow(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async)
+
+      delta = local_artifacts.sum(&:size) + remote_artifacts.sum(&:size)
+
+      expect(described_class).to receive(:update_project_statistics!).with(project, :build_artifacts_size, -delta)
+
+      subject
+    end
+  end
+
   describe 'callbacks' do
     subject { create(:ci_job_artifact, :archive) }
 
