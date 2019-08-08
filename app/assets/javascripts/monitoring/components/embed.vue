@@ -28,17 +28,17 @@ export default {
   },
   computed: {
     ...mapState('monitoringDashboard', ['groups', 'metricsWithData']),
-    groupData() {
-      const groupsWithData = this.groups.filter(group => this.chartsWithData(group.metrics).length);
-      if (groupsWithData.length) {
-        return groupsWithData[0];
-      }
-      return null;
+    charts() {
+      const group = this.groups.find(group => {
+        return group.metrics.find(chart => this.chartHasData(chart));
+      });
+
+      return group && group.metrics.filter(chart => {
+        return this.chartHasData(chart);
+      });
     },
-    singleChart() {
-      return this.groupData && this.groupData.metrics.filter(chart =>
-        chart.metrics.some(metric => this.metricsWithData.includes(metric.metric_id)),
-      ).length === 1;
+    isSingleMetric() {
+      return this.charts && this.charts.length === 1;
     },
   },
   mounted() {
@@ -63,10 +63,8 @@ export default {
       'setFeatureFlags',
       'setShowErrorBanner',
     ]),
-    chartsWithData(charts) {
-      return charts.filter(chart =>
-        chart.metrics.some(metric => this.metricsWithData.includes(metric.metric_id)),
-      );
+    chartHasData(chart) {
+      return chart.metrics.some(metric => this.metricsWithData.includes(metric.metric_id));
     },
     onSidebarMutation() {
       setTimeout(() => {
@@ -87,15 +85,16 @@ export default {
 </script>
 <template>
   <div class="metrics-embed">
-    <div v-if="groupData" :class="[ singleChart ? 'test' : 'row w-100 m-n2 pb-4' ]">
+    <div v-if="charts" :class="[ isSingleMetric ? 'single-metric' : 'row w-100 m-n2 pb-4' ]">
       <monitor-area-chart
-        v-for="graphData in chartsWithData(groupData.metrics)"
+        v-for="graphData in charts"
         :key="graphData.title"
         :graph-data="graphData"
         :container-width="elWidth"
         group-id="monitor-area-chart"
         :project-path="null"
         :show-border="true"
+        :single-metric="isSingleMetric"
       />
     </div>
   </div>
