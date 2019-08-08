@@ -304,8 +304,6 @@ describe Projects::UpdateService do
         end
 
         it 'does not check if new path matches existing repository on disk' do
-          expect(project).not_to receive(:repository_with_same_path_already_exists?)
-
           result = update_project(project, admin, path: 'existing')
 
           expect(result).to include(status: :success)

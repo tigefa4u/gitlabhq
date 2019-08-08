@@ -1322,7 +1322,7 @@ class Project < ApplicationRecord
 
     # Check if repository with same path already exists on disk we can
     # skip this for the hashed storage because the path does not change
-    if legacy_storage? && repository_with_same_path_already_exists?
+    if legacy_storage?
       errors.add(:base, _('There is already a repository with that name on disk'))
       return false
     end
@@ -2204,14 +2204,10 @@ class Project < ApplicationRecord
   def check_repository_absence!
     return if skip_disk_validation
 
-    if repository_storage.blank? || repository_with_same_path_already_exists?
+    if repository_storage.blank?
       errors.add(:base, _('There is already a repository with that name on disk'))
       throw :abort
     end
-  end
-
-  def repository_with_same_path_already_exists?
-    gitlab_shell.exists?(repository_storage, "#{disk_path}.git")
   end
 
   def set_timestamps_for_create
