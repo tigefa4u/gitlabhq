@@ -12,12 +12,14 @@ import {
 import Icon from '~/vue_shared/components/icon.vue';
 import MonitorAreaChart from './charts/area.vue';
 import MonitorSingleStatChart from './charts/single_stat.vue';
+import MonitorStackedColumnChart from './charts/stacked_column.vue';
 import MonitorEmptyChart from './charts/empty_chart.vue';
 
 export default {
   components: {
     MonitorAreaChart,
     MonitorSingleStatChart,
+    MonitorStackedColumnChart,
     MonitorEmptyChart,
     Icon,
     GlDropdown,
@@ -92,6 +94,34 @@ export default {
     v-if="isPanelType('single-stat') && graphDataHasMetrics"
     :graph-data="graphData"
   />
+  <monitor-stacked-column-chart
+    v-else-if="isPanelType('stacked-column') && graphDataHasMetrics"
+    :graph-data="graphData"
+    :container-width="dashboardWidth"
+  >
+    <gl-dropdown
+      v-gl-tooltip
+      class="mx-2"
+      toggle-class="btn btn-transparent border-0"
+      :right="true"
+      :no-caret="true"
+      :title="__('More actions')"
+    >
+      <template slot="button-content">
+        <icon name="ellipsis_v" class="text-secondary" />
+      </template>
+      <gl-dropdown-item :href="downloadCsv" download="chart_metrics.csv">
+        {{ __('Download CSV') }}
+      </gl-dropdown-item>
+      <gl-dropdown-item
+        class="js-chart-link"
+        :data-clipboard-text="clipboardText"
+        @click="showToast"
+      >
+        {{ __('Generate link to chart') }}
+      </gl-dropdown-item>
+    </gl-dropdown>
+  </monitor-stacked-column-chart>
   <monitor-area-chart
     v-else-if="graphDataHasMetrics"
     :graph-data="graphData"
