@@ -1,9 +1,9 @@
-.test {
-  border: 1px solid red;
+.single-metric {
   width: 50%;
   float: left;
-  > div {
-    border: 1px solid blue;
+  @media (max-width: 992px) {
+    float: none;
+    width: 100%;
   }
 }
 
