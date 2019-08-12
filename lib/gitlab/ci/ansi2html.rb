@@ -131,9 +131,9 @@ module Gitlab
 
         def on_109(_) set_bg_color(9, 'l') end
 
-        attr_accessor :offset, :n_open_tags, :fg_color, :bg_color, :style_mask, :sections, :lineno_in_section
+        attr_accessor :offset, :n_open_tags, :fg_color, :bg_color, :style_mask, :sections, :timestamps, :lineno_in_section
 
-        STATE_PARAMS = [:offset, :n_open_tags, :fg_color, :bg_color, :style_mask, :sections, :lineno_in_section].freeze
+        STATE_PARAMS = [:offset, :n_open_tags, :fg_color, :bg_color, :style_mask, :sections, :timestamps, :lineno_in_section].freeze
 
         def convert(stream, new_state)
           reset_state
@@ -218,6 +218,7 @@ module Gitlab
           return if @sections.include?(section)
 
           @sections << section
+          @timestamps[section] = timestamp
           write_raw %{<div class="js-section-start section-start fa fa-caret-down pr-2 cursor-pointer" data-timestamp="#{timestamp}" data-section="#{data_section_names}" role="button"></div>}
           @lineno_in_section = 0
         end
@@ -227,15 +228,23 @@ module Gitlab
 
           # close all sections up to section
           until @sections.empty?
-            write_raw %{<div class="section-end" data-section="#{data_section_names}"></div>}
-
+            open_sections = data_section_names
             last_section = @sections.pop
+            duration = duration_for_section(last_section, timestamp)
+
+            write_raw %{<div class="section-end" data-section="#{open_sections}" data-duration="#{duration}"></div>}
+            @timestamps.delete(last_section)
+
             break if section == last_section
           end
         end
 
         def data_section_names
           @sections.join(" ")
+        end
+
+        def duration_for_section(section, end_timestamp)
+          Time.at(end_timestamp.to_i - @timestamps[section].to_i).utc.strftime("%M:%S")
         end
 
         def handle_sequence(scanner)
@@ -337,6 +346,7 @@ module Gitlab
           @n_open_tags = 0
           @out = +''
           @sections = []
+          @timestamps = {}
           @lineno_in_section = 0
           reset
         end

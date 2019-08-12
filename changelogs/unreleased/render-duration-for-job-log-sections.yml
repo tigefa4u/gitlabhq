@@ -1,0 +1,5 @@
+---
+title: Render section duration in job logs as part of section-end tag
+merge_request: 31720
+author:
+type: added

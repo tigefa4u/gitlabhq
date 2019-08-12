@@ -204,7 +204,7 @@ describe Gitlab::Ci::Ansi2html do
   context "with section markers" do
     let(:section_name) { 'test_section' }
     let(:section_start_time) { Time.new(2017, 9, 20).utc }
-    let(:section_duration) { 3.seconds }
+    let(:section_duration) { 83.seconds }
     let(:section_end_time) { section_start_time + section_duration }
     let(:section_start) { "section_start:#{section_start_time.to_i}:#{section_name}\r\033[0K"}
     let(:section_end) { "section_end:#{section_end_time.to_i}:#{section_name}\r\033[0K"}
@@ -214,7 +214,7 @@ describe Gitlab::Ci::Ansi2html do
       ' role="button"></div>'
     end
     let(:section_end_html) do
-      "<div class=\"section-end\" data-section=\"#{class_name(section_name)}\"></div>"
+      "<div class=\"section-end\" data-section=\"#{class_name(section_name)}\" data-duration=\"01:23\"></div>"
     end
 
     shared_examples 'forbidden char in section_name' do
