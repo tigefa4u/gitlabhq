@@ -16,6 +16,8 @@ Based on your installation, choose a section below that fits your needs.
 - The [Omnibus update guide][omni-update]
   contains the steps needed to update an Omnibus GitLab package.
 
+> **Note:** If you are using the embedded Grafana dashboard with an Omnibus installation, be sure to review [this security notice][grafana-security-notice] before upgrading.
+
 ## Installation from source
 
 - [Upgrading Community Edition and Enterprise Edition from
@@ -154,3 +156,4 @@ possible.
 [omni-docker]: https://docs.gitlab.com/omnibus/docker/README.html
 [omni-update]: https://docs.gitlab.com/omnibus/update/README.html
 [omni-zero-downtime]: https://docs.gitlab.com/omnibus/update/README.html#zero-downtime-updates
+[grafana-security-notice]: https://docs.gitlab.com/ee/administration/monitoring/performance/grafana_configuration.html#security-update
