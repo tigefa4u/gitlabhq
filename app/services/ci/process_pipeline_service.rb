@@ -33,9 +33,9 @@ module Ci
 
       return unless HasStatus::COMPLETED_STATUSES.include?(current_status)
 
-      created_processables_in_stage_without_needs(index).select do |build|
+      created_processables_in_stage_without_needs(index).find_each.select do |build|
         process_build(build, current_status)
-      end
+      end.any?
     end
 
     def process_builds_with_needs(trigger_build_ids)
@@ -72,13 +72,13 @@ module Ci
 
     # rubocop: disable CodeReuse/ActiveRecord
     def status_for_prior_stages(index)
-      pipeline.builds.where('stage_idx < ?', index).latest.status || 'success'
+      pipeline.processables.where('stage_idx < ?', index).latest.status || 'success'
     end
     # rubocop: enable CodeReuse/ActiveRecord
 
     # rubocop: disable CodeReuse/ActiveRecord
     def status_for_build_needs(needs)
-      pipeline.builds.where(name: needs).latest.status || 'success'
+      pipeline.processables.where(name: needs).latest.status || 'success'
     end
     # rubocop: enable CodeReuse/ActiveRecord
 
@@ -92,6 +92,10 @@ module Ci
     # rubocop: disable CodeReuse/ActiveRecord
     def created_processables_in_stage_without_needs(index)
       created_processables_without_needs
+        .preload(:project)
+        .preload(:taggings)
+        .preload(:deployment)
+        .preload(:user)
         .where(stage_idx: index)
     end
     # rubocop: enable CodeReuse/ActiveRecord
