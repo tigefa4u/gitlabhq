@@ -105,12 +105,6 @@ describe Ci::JobArtifact do
         project => local_artifacts + remote_artifacts
       }
     end
-    let(:expected_partition) do
-      {
-        ::JobArtifactUploader::Store::LOCAL => local_artifacts.map(&:store_path),
-        ::JobArtifactUploader::Store::REMOTE => remote_artifacts.map(&:store_path)
-      }
-    end
 
     before do
       stub_artifacts_object_storage
@@ -119,7 +113,8 @@ describe Ci::JobArtifact do
     subject { described_class.finalize_fast_destroy(artifact_list) }
 
     it 'calls the async deletion worker' do
-      expect(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async).with(expected_partition)
+      expect(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async).with(instance_of(String), true).exactly(2).times
+      expect(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async).with(instance_of(String), false).exactly(2).times
 
       subject
     end

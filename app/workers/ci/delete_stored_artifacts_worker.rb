@@ -4,14 +4,8 @@ module Ci
   class DeleteStoredArtifactsWorker
     include ApplicationWorker
 
-    def perform(artifact_file_paths)
-      artifact_file_paths[::JobArtifactUploader::Store::LOCAL.to_s].each do |file_path|
-        delete_local_file(file_path)
-      end
-
-      artifact_file_paths[::JobArtifactUploader::Store::REMOTE.to_s].each do |file_path|
-        delete_remote_file(file_path)
-      end
+    def perform(artifact_store_path, local)
+      local ? delete_local_file(artifact_store_path) : delete_remote_file(artifact_store_path)
     end
 
     private

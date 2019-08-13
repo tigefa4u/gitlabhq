@@ -158,12 +158,9 @@ module Ci
         params.each do |project, artifacts|
           delta = artifacts.sum(&:size)
 
-          local_artifacts, remote_artifacts = artifacts.partition(&:local_store?)
-          artifact_file_paths = {
-            ::JobArtifactUploader::Store::LOCAL => local_artifacts.map(&:store_path),
-            ::JobArtifactUploader::Store::REMOTE => remote_artifacts.map(&:store_path)
-          }
-          Ci::DeleteStoredArtifactsWorker.perform_async(artifact_file_paths)
+          artifacts.each do |artifact|
+            Ci::DeleteStoredArtifactsWorker.perform_async(artifact.store_path, artifact.local_store?)
+          end
 
           update_project_statistics!(project, :build_artifacts_size, -delta)
         end

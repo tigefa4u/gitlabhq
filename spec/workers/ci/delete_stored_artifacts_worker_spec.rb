@@ -6,38 +6,28 @@ describe Ci::DeleteStoredArtifactsWorker do
   describe '#perform' do
     let(:worker) { described_class.new }
 
-    subject { worker.perform(file_paths) }
+    subject { worker.perform(artifact_store_path, local) }
 
     context 'with a local artifact' do
-      let(:path) { File.join(Gitlab.config.artifacts['storage_path'], 'local_file_path') }
-
-      let(:file_paths) do
-        {
-          ::JobArtifactUploader::Store::LOCAL.to_s => ['local_file_path'],
-          ::JobArtifactUploader::Store::REMOTE.to_s => []
-        }
-      end
+      let(:artifact_store_path) { 'local_file_path' }
+      let(:local) { true }
+      let(:full_path) { File.join(Gitlab.config.artifacts['storage_path'], 'local_file_path') }
 
       before do
-        allow(File).to receive(:exist?).with(path).and_return(true)
+        allow(File).to receive(:exist?).with(full_path).and_return(true)
       end
 
       it 'deletes the local artifact' do
-        expect(File).to receive(:delete).with(path)
+        expect(File).to receive(:delete).with(full_path)
 
         subject
       end
     end
 
     context 'with a remote artifact' do
+      let(:artifact_store_path) { 'remote_file_path' }
+      let(:local) { false }
       let(:file_double) { double }
-
-      let(:file_paths) do
-        {
-          ::JobArtifactUploader::Store::LOCAL.to_s => [],
-          ::JobArtifactUploader::Store::REMOTE.to_s => ['remote_file_path']
-        }
-      end
 
       before do
         stub_artifacts_object_storage
@@ -47,22 +37,6 @@ describe Ci::DeleteStoredArtifactsWorker do
 
       it 'deletes the remote artifact' do
         expect(file_double).to receive(:destroy)
-
-        subject
-      end
-    end
-
-    context 'with both local and remote artifacts' do
-      let(:file_paths) do
-        {
-          ::JobArtifactUploader::Store::LOCAL.to_s => ['local_file_path'],
-          ::JobArtifactUploader::Store::REMOTE.to_s => ['remote_file_path']
-        }
-      end
-
-      it 'calls correct delete methods' do
-        expect(worker).to receive(:delete_local_file).with('local_file_path').once
-        expect(worker).to receive(:delete_remote_file).with('remote_file_path').once
 
         subject
       end
