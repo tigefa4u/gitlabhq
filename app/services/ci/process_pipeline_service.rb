@@ -74,13 +74,17 @@ module Ci
 
     # rubocop: disable CodeReuse/ActiveRecord
     def status_for_prior_stages(index)
-      pipeline.processables.where('stage_idx < ?', index).latest.status || 'success'
+      Gitlab::Ci::Status::GroupedStatuses
+        .new(pipeline.processables.where('stage_idx < ?', index).latest)
+        .one[:status] || 'success'
     end
     # rubocop: enable CodeReuse/ActiveRecord
 
     # rubocop: disable CodeReuse/ActiveRecord
     def status_for_build_needs(needs)
-      pipeline.processables.where(name: needs).latest.status || 'success'
+      Gitlab::Ci::Status::GroupedStatuses
+        .new(pipeline.processables.where(name: needs).latest)
+        .one[:status] || 'success'
     end
     # rubocop: enable CodeReuse/ActiveRecord
 

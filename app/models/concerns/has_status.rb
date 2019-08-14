@@ -18,12 +18,6 @@ module HasStatus
   UnknownStatusError = Class.new(StandardError)
 
   class_methods do
-    def status
-      Gitlab::Ci::Status::GroupedStatuses
-        .new(all)
-        .one[:status]
-    end
-
     def started_at
       all.minimum(:started_at)
     end
