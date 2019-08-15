@@ -1,8 +1,13 @@
 # frozen_string_literal: true
 
 class ZoomService < Service
-  prop_accessor :api_key, :api_secret
+  prop_accessor_encrypted :api_key, :api_secret,
+    mode: :per_attribute_iv,
+    key: Settings.attr_encrypted_db_key_base_truncated,
+    algorithm: 'aes-256-gcm'
+
   validates :api_key, :api_secret, presence: true, if: :activated?
+
   def title
     'Zoom'
   end

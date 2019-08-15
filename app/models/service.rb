@@ -202,6 +202,48 @@ class Service < ApplicationRecord
     end
   end
 
+  module PropResolver
+    def new(service)
+      @service = service
+    end
+
+    def method_missing(method, value, *_args)
+      case method
+      when /^encrypted_.*?=$/
+        prop = method.to_s.delete('=')
+        @service.prop_accessor[prop] = value
+      when /^encrypted_/
+        super || @service.prop_accessor[method.to_s]
+      else
+        super
+      end
+    end
+  end
+
+  def self.prop_accessor_encrypted(*attributes, **options)
+    @@_encrypted_props ||= Class.new do
+      extend AttrEncrypted
+      prepend PropResolver
+    end
+    @@_encrypted_props.attr_encrypted(*attributes, **options)
+
+    attributes.each do |attribute|
+      prop_accessor \
+        "encrypted_#{attribute}",
+        "encrypted_#{attribute}_iv",
+        "encrypted_#{attribute}_salt"
+
+      # delegate
+      define_method(attribute) do
+        @@_encrypted_props.public_send(attribute)
+      end
+
+      define_method(:"#{attribute}=") do |value|
+        @@_encrypted_props.public_send(:"#{attribute}=", value)
+      end
+    end
+  end
+
   # Provide convenient boolean accessor methods
   # for each serialized property.
   # Also keep track of updated properties in a similar way as ActiveModel::Dirty
