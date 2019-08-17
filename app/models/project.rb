@@ -1238,14 +1238,6 @@ class Project < ApplicationRecord
     end
   end
 
-  def has_active_hooks?(hooks_scope = :push_hooks)
-    hooks.hooks_for(hooks_scope).any? || SystemHook.hooks_for(hooks_scope).any?
-  end
-
-  def has_active_services?(hooks_scope = :push_hooks)
-    services.public_send(hooks_scope).any? # rubocop:disable GitlabSecurity/PublicSend
-  end
-
   def valid_repo?
     repository.exists?
   rescue

@@ -60,8 +60,7 @@ module Gitlab
       # rubocop:disable Metrics/ParameterLists
       def build(
           project:, user:, ref:, oldrev: nil, newrev: nil,
-          commits: [], commits_count: nil, message: nil, push_options: {},
-          with_changed_files: true)
+          commits: [], commits_count: nil, message: nil, push_options: {})
 
         commits = Array(commits)
 
@@ -76,7 +75,7 @@ module Gitlab
         # n+1: https://gitlab.com/gitlab-org/gitlab-ce/issues/38259
         commit_attrs = Gitlab::GitalyClient.allow_n_plus_1_calls do
           commits_limited.map do |commit|
-            commit.hook_attrs(with_changed_files: with_changed_files)
+            commit.hook_attrs(with_changed_files: true)
           end
         end
 

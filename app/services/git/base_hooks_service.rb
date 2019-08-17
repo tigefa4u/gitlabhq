@@ -17,7 +17,7 @@ module Git
 
       update_remote_mirrors
 
-      success
+      push_data
     end
 
     private
@@ -31,7 +31,7 @@ module Git
     end
 
     def limited_commits
-      @limited_commits ||= commits.last(PROCESS_COMMIT_LIMIT)
+      commits.last(PROCESS_COMMIT_LIMIT)
     end
 
     def commits_count
@@ -46,25 +46,21 @@ module Git
       []
     end
 
-    # Push events in the activity feed only show information for the
-    # last commit.
     def create_events
-      EventCreateService.new.push(project, current_user, event_push_data)
+      EventCreateService.new.push(project, current_user, push_data)
     end
 
     def create_pipelines
       return unless params.fetch(:create_pipelines, true)
 
       Ci::CreatePipelineService
-        .new(project, current_user, base_params)
+        .new(project, current_user, push_data)
         .execute(:push, pipeline_options)
     end
 
     def execute_project_hooks
-      # Creating push_data invokes one CommitDelta RPC per commit. Only
-      # build this data if we actually need it.
-      project.execute_hooks(push_data, hook_name) if project.has_active_hooks?(hook_name)
-      project.execute_services(push_data, hook_name) if project.has_active_services?(hook_name)
+      project.execute_hooks(push_data, hook_name)
+      project.execute_services(push_data, hook_name)
     end
 
     def enqueue_invalidate_cache
@@ -75,35 +71,18 @@ module Git
       ProjectCacheWorker.perform_async(project.id, file_types, [], false)
     end
 
-    def base_params
-      {
+    def push_data
+      @push_data ||= Gitlab::DataBuilder::Push.build(
+        project: project,
+        user: current_user,
         oldrev: params[:oldrev],
         newrev: params[:newrev],
         ref: params[:ref],
-        push_options: params[:push_options] || {}
-      }
-    end
-
-    def push_data_params(commits:, with_changed_files: true)
-      base_params.merge(
-        project: project,
-        user: current_user,
-        commits: commits,
+        commits: limited_commits,
         message: event_message,
         commits_count: commits_count,
-        with_changed_files: with_changed_files
+        push_options: params[:push_options] || {}
       )
-    end
-
-    def event_push_data
-      # We only need the last commit for the event push, and we don't
-      # need the full deltas either.
-      @event_push_data ||= Gitlab::DataBuilder::Push.build(
-        push_data_params(commits: commits.last, with_changed_files: false))
-    end
-
-    def push_data
-      @push_data ||= Gitlab::DataBuilder::Push.build(push_data_params(commits: limited_commits))
 
       # Dependent code may modify the push data, so return a duplicate each time
       @push_data.dup
