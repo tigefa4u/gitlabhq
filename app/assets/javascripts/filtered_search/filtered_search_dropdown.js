@@ -1,3 +1,4 @@
+import $ from "jquery";
 import DropdownUtils from './dropdown_utils';
 import FilteredSearchDropdownManager from './filtered_search_dropdown_manager';
 
@@ -98,7 +99,8 @@ export default class FilteredSearchDropdown {
   dispatchFormSubmitEvent() {
     // dispatchEvent() is necessary as form.submit() does not
     // trigger event handlers
-    this.input.form.dispatchEvent(new Event('submit'));
+    // this.input.form.dispatchEvent(new Event('submit'));
+    $(this.input.form).trigger('submit');
   }
 
   hideDropdown() {
