@@ -152,6 +152,7 @@
 - project_destroy
 - project_export
 - project_service
+- project_update_repository_storage
 - propagate_service_template
 - reactive_caching
 - rebase
