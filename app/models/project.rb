@@ -2188,6 +2188,16 @@ class Project < ApplicationRecord
   def has_pool_repository?
     pool_repository.present?
   end
+  
+  def change_repository_storage(new_repository_storage_key)
+    return if repository_read_only?
+    return if repository_storage == new_repository_storage_key
+
+    raise ArgumentError unless ::Gitlab.config.repositories.storages.key?(new_repository_storage_key)
+
+    run_after_commit { ProjectUpdateRepositoryStorageWorker.perform_async(id, new_repository_storage_key) }
+    self.repository_read_only = true
+  end
 
   private
 
