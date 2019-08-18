@@ -13,6 +13,10 @@ module Projects
       validate!
 
       ensure_wiki_exists if enabling_wiki?
+      
+      if changing_storage_size?
+        project.change_repository_storage(params.delete(:repository_storage))
+      end
 
       yield if block_given?
 
@@ -37,6 +41,13 @@ module Projects
       return false if project.repository.gitlab_ci_yml || !project.auto_devops&.previous_changes&.include?('enabled')
 
       project.auto_devops_enabled?
+    end
+    
+    def changing_storage_size?
+      new_repository_storage = params[:repository_storage]
+
+      new_repository_storage && project.repository.exists? &&
+        can?(current_user, :change_repository_storage, project)
     end
 
     private
