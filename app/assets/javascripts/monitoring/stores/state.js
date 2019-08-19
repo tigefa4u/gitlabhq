@@ -9,7 +9,6 @@ export default () => ({
   dashboardEndpoint: invalidUrl,
   useDashboardEndpoint: false,
   multipleDashboardsEnabled: false,
-  additionalPanelTypesEnabled: false,
   emptyState: 'gettingStarted',
   showEmptyState: true,
   showErrorBanner: true,

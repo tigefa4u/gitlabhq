@@ -8,9 +8,9 @@ import {
   GlModalDirective,
   GlTooltipDirective,
 } from '@gitlab/ui';
-import _ from 'underscore';
 import { mapActions, mapState } from 'vuex';
-import { __, s__ } from '~/locale';
+import _ from 'underscore';
+import { s__ } from '~/locale';
 import Icon from '~/vue_shared/components/icon.vue';
 import { getParameterValues, mergeUrlParams } from '~/lib/utils/url_utility';
 import invalidUrl from '~/lib/utils/invalid_url';
@@ -176,7 +176,6 @@ export default {
       'useDashboardEndpoint',
       'allDashboards',
       'multipleDashboardsEnabled',
-      'additionalPanelTypesEnabled',
     ]),
     firstDashboard() {
       return this.allDashboards[0] || {};
@@ -186,9 +185,6 @@ export default {
     },
     addingMetricsAvailable() {
       return IS_EE && this.canAddMetrics && !this.showEmptyState;
-    },
-    alertWidgetAvailable() {
-      return IS_EE && this.prometheusAlertsAvailable && this.alertsEndpoint;
     },
   },
   created() {
@@ -248,33 +244,6 @@ export default {
         chart.metrics.some(metric => this.metricsWithData.includes(metric.metric_id)),
       );
     },
-    csvText(graphData) {
-      const chartData = graphData.queries[0].result[0].values;
-      const yLabel = graphData.y_label;
-      const header = `timestamp,${yLabel}\r\n`; // eslint-disable-line @gitlab/i18n/no-non-i18n-strings
-      return chartData.reduce((csv, data) => {
-        const row = data.join(',');
-        return `${csv}${row}\r\n`;
-      }, header);
-    },
-    downloadCsv(graphData) {
-      const data = new Blob([this.csvText(graphData)], { type: 'text/plain' });
-      return window.URL.createObjectURL(data);
-    },
-    // TODO: BEGIN, Duplicated code with panel_type until feature flag is removed
-    // Issue number: https://gitlab.com/gitlab-org/gitlab-ce/issues/63845
-    getGraphAlerts(queries) {
-      if (!this.allAlerts) return {};
-      const metricIdsForChart = queries.map(q => q.metricId);
-      return _.pick(this.allAlerts, alert => metricIdsForChart.includes(alert.metricId));
-    },
-    getGraphAlertValues(queries) {
-      return Object.values(this.getGraphAlerts(queries));
-    },
-    showToast() {
-      this.$toast.show(__('Link copied to clipboard'));
-    },
-    // TODO: END
     generateLink(group, title, yLabel) {
       const dashboard = this.currentDashboard || this.firstDashboard.path;
       const params = _.pick({ dashboard, group, title, y_label: yLabel }, value => value != null);
@@ -452,71 +421,14 @@ export default {
         :show-panels="showPanels"
         :collapse-group="groupHasData(groupData)"
       >
-        <template v-if="additionalPanelTypesEnabled">
-          <panel-type
-            v-for="(graphData, graphIndex) in groupData.metrics"
-            :key="`panel-type-${graphIndex}`"
-            :clipboard-text="generateLink(groupData.group, graphData.title, graphData.y_label)"
-            :graph-data="graphData"
-            :dashboard-width="elWidth"
-            :alerts-endpoint="alertsEndpoint"
-            :prometheus-alerts-available="prometheusAlertsAvailable"
-            :index="`${index}-${graphIndex}`"
-          />
-        </template>
-        <template v-else>
-          <monitor-time-series-chart
-            v-for="(graphData, graphIndex) in chartsWithData(groupData.metrics)"
-            :key="graphIndex"
-            :graph-data="graphData"
-            :deployment-data="deploymentData"
-            :thresholds="getGraphAlertValues(graphData.queries)"
-            :container-width="elWidth"
-            :project-path="projectPath"
-            group-id="monitor-time-series-chart"
-          >
-            <div class="d-flex align-items-center">
-              <alert-widget
-                v-if="alertWidgetAvailable && graphData"
-                :modal-id="`alert-modal-${index}-${graphIndex}`"
-                :alerts-endpoint="alertsEndpoint"
-                :relevant-queries="graphData.queries"
-                :alerts-to-manage="getGraphAlerts(graphData.queries)"
-                @setAlerts="setAlerts"
-              />
-              <gl-dropdown
-                v-gl-tooltip
-                class="mx-2"
-                toggle-class="btn btn-transparent border-0"
-                :right="true"
-                :no-caret="true"
-                :title="__('More actions')"
-              >
-                <template slot="button-content">
-                  <icon name="ellipsis_v" class="text-secondary" />
-                </template>
-                <gl-dropdown-item :href="downloadCsv(graphData)" download="chart_metrics.csv">
-                  {{ __('Download CSV') }}
-                </gl-dropdown-item>
-                <gl-dropdown-item
-                  class="js-chart-link"
-                  :data-clipboard-text="
-                    generateLink(groupData.group, graphData.title, graphData.y_label)
-                  "
-                  @click="showToast"
-                >
-                  {{ __('Generate link to chart') }}
-                </gl-dropdown-item>
-                <gl-dropdown-item
-                  v-if="alertWidgetAvailable"
-                  v-gl-modal="`alert-modal-${index}-${graphIndex}`"
-                >
-                  {{ __('Alerts') }}
-                </gl-dropdown-item>
-              </gl-dropdown>
-            </div>
-          </monitor-time-series-chart>
-        </template>
+        <panel-type
+          v-for="(graphData, graphIndex) in groupData.metrics"
+          :key="`panel-type-${graphIndex}`"
+          :clipboard-text="generateLink(groupData.group, graphData.title, graphData.y_label)"
+          :graph-data="graphData"
+          :dashboard-width="elWidth"
+          :index="`${index}-${graphIndex}`"
+        />
       </graph-group>
     </div>
     <empty-state
