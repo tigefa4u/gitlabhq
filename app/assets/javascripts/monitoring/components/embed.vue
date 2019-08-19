@@ -89,7 +89,7 @@ export default {
 };
 </script>
 <template>
-  <div class="metrics-embed">
+  <div class="metrics-embed flex-grow">
     <div v-if="groupData" class="row w-100 m-n2 pb-4">
       <monitor-area-chart
         v-for="graphData in chartsWithData(groupData.metrics)"
