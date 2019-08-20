@@ -2,7 +2,7 @@ import mutations from '~/monitoring/stores/mutations';
 import * as types from '~/monitoring/stores/mutation_types';
 import state from '~/monitoring/stores/state';
 import {
-  metricsNewGroupsAPIResponse,
+  metricsGroupsAPIResponse,
   deploymentData,
   metricsDashboardResponse,
   dashboardGitResponse,
@@ -20,7 +20,7 @@ describe('Monitoring mutations', () => {
 
     beforeEach(() => {
       stateCopy.groups = [];
-      groups = metricsNewGroupsAPIResponse;
+      groups = metricsGroupsAPIResponse;
     });
 
     it('normalizes values', () => {

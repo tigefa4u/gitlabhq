@@ -7,7 +7,7 @@ import * as types from '~/monitoring/stores/mutation_types';
 import { createStore } from '~/monitoring/stores';
 import axios from '~/lib/utils/axios_utils';
 import {
-  metricsNewGroupsAPIResponse,
+  metricsGroupsAPIResponse,
   mockedQueryResultPayload,
   mockApiEndpoint,
   environmentData,
@@ -39,7 +39,7 @@ export default propsData;
 function setupComponentStore(component) {
   component.$store.commit(
     `monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`,
-    metricsNewGroupsAPIResponse,
+    metricsGroupsAPIResponse,
   );
   component.$store.commit(
     `monitoringDashboard/${types.SET_QUERY_RESULT}`,
@@ -113,7 +113,7 @@ describe('Dashboard', () => {
 
   describe('requests information to the server', () => {
     beforeEach(() => {
-      mock.onGet(mockApiEndpoint).reply(200, metricsNewGroupsAPIResponse);
+      mock.onGet(mockApiEndpoint).reply(200, metricsGroupsAPIResponse);
     });
 
     describe('when all the requests have been commited by the store', () => {
@@ -259,7 +259,7 @@ describe('Dashboard', () => {
 
       component.$store.commit(
         `monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`,
-        metricsNewGroupsAPIResponse,
+        metricsGroupsAPIResponse,
       );
       component.$store.commit(
         `monitoringDashboard/${types.SET_QUERY_RESULT}`,
@@ -379,7 +379,7 @@ describe('Dashboard', () => {
 
   describe('when the window resizes', () => {
     beforeEach(() => {
-      mock.onGet(mockApiEndpoint).reply(200, metricsNewGroupsAPIResponse);
+      mock.onGet(mockApiEndpoint).reply(200, metricsGroupsAPIResponse);
       jasmine.clock().install();
     });
 
@@ -418,7 +418,7 @@ describe('Dashboard', () => {
 
   describe('external dashboard link', () => {
     beforeEach(() => {
-      mock.onGet(mockApiEndpoint).reply(200, metricsNewGroupsAPIResponse);
+      mock.onGet(mockApiEndpoint).reply(200, metricsGroupsAPIResponse);
 
       component = new DashboardComponent({
         el: document.querySelector('.prometheus-graphs'),
@@ -445,7 +445,7 @@ describe('Dashboard', () => {
 
   describe('Dashboard dropdown', () => {
     beforeEach(() => {
-      mock.onGet(mockApiEndpoint).reply(200, metricsNewGroupsAPIResponse);
+      mock.onGet(mockApiEndpoint).reply(200, metricsGroupsAPIResponse);
 
       component = new DashboardComponent({
         el: document.querySelector('.prometheus-graphs'),

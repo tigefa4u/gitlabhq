@@ -8,7 +8,7 @@ import * as types from '~/monitoring/stores/mutation_types';
 import { TEST_HOST } from 'spec/test_constants';
 import {
   deploymentData,
-  metricsNewGroupsAPIResponse,
+  metricsGroupsAPIResponse,
   mockedQueryResultPayload,
 } from '../mock_data';
 
@@ -27,7 +27,7 @@ describe('Area component', () => {
 
     store.commit(
       `monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`,
-      metricsNewGroupsAPIResponse,
+      metricsGroupsAPIResponse,
     );
     store.commit(`monitoringDashboard/${types.RECEIVE_DEPLOYMENTS_DATA_SUCCESS}`, deploymentData);
     store.commit(`monitoringDashboard/${types.SET_QUERY_RESULT}`, {
