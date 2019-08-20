@@ -6,11 +6,7 @@ import Area from '~/monitoring/components/charts/area.vue';
 import { createStore } from '~/monitoring/stores';
 import * as types from '~/monitoring/stores/mutation_types';
 import { TEST_HOST } from 'spec/test_constants';
-import {
-  deploymentData,
-  metricsGroupsAPIResponse,
-  mockedQueryResultPayload,
-} from '../mock_data';
+import { deploymentData, metricsGroupsAPIResponse, mockedQueryResultPayload } from '../mock_data';
 
 describe('Area component', () => {
   const mockSha = 'mockSha';

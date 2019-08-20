@@ -1,0 +1,5 @@
+---
+title: Remove feature flags, use_prometheus_endpoint, additional_panel_types
+merge_request: 32033
+author:
+type: changed

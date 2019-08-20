@@ -7062,9 +7062,6 @@ msgstr ""
 msgid "Metrics|Unexpected deployment data response from prometheus endpoint"
 msgstr ""
 
-msgid "Metrics|Unexpected metrics data response from prometheus endpoint"
-msgstr ""
-
 msgid "Migrated %{success_count}/%{total_count} files."
 msgstr ""
 
