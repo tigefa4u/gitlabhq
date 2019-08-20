@@ -13,7 +13,7 @@ module Gitlab
     end
 
     def identify
-      super(identifier)
+      @identify ||= super(identifier)
     end
 
     def changes_refs

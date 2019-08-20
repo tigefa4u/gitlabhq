@@ -18,6 +18,7 @@ class PostReceive
     # time and thread ID's.
     Sidekiq.logger.info "changes: #{changes.inspect}" if ENV['SIDEKIQ_LOG_ARGUMENTS']
     post_received = Gitlab::GitPostReceive.new(project, identifier, changes, push_options)
+    store_job_metadata(project: project, user: post_received.identify, details: { identifier: identifier })
 
     if repo_type.wiki?
       process_wiki_changes(post_received)

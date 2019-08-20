@@ -48,6 +48,7 @@ module Gitlab
       def log_job_done(job, started_at, payload, job_exception = nil)
         payload = payload.dup
         add_instrumentation_keys!(job, payload)
+        payload['metadata'] = job['metadata'] if job['metadata']
         payload['duration'] = elapsed(started_at)
         payload['completed_at'] = Time.now.utc
 
