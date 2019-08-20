@@ -12,7 +12,7 @@ module API
         optional :build_timeout, type: Integer, desc: 'Build timeout'
         optional :auto_cancel_pending_pipelines, type: String, values: %w(disabled enabled), desc: 'Auto-cancel pending pipelines'
         optional :build_coverage_regex, type: String, desc: 'Test coverage parsing'
-        optional :ci_config_path, type: String, desc: 'The path to CI config file. Defaults to `.gitlab-ci.yml
+        optional :ci_config_path, type: String, desc: 'The path to CI config file. Defaults to `.gitlab-ci.yml`'
         optional :repository_storage, type: String, desc: 'Which storage shard the repository is on. Available only to admins'
 
         # TODO: remove in API v5, replaced by *_access_level
