@@ -173,7 +173,6 @@ export default {
       'environments',
       'deploymentData',
       'metricsWithData',
-      'useDashboardEndpoint',
       'allDashboards',
       'multipleDashboardsEnabled',
     ]),
@@ -237,9 +236,6 @@ export default {
       'setDashboardEnabled',
     ]),
     chartsWithData(charts) {
-      if (!this.useDashboardEndpoint) {
-        return charts;
-      }
       return charts.filter(chart =>
         chart.metrics.some(metric => this.metricsWithData.includes(metric.metric_id)),
       );

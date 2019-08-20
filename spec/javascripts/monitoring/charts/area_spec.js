@@ -1,12 +1,16 @@
 import { shallowMount } from '@vue/test-utils';
-import { createStore } from '~/monitoring/stores';
 import { GlLink } from '@gitlab/ui';
 import { GlAreaChart, GlChartSeriesLabel } from '@gitlab/ui/dist/charts';
 import { shallowWrapperContainsSlotText } from 'spec/helpers/vue_test_utils_helper';
 import Area from '~/monitoring/components/charts/area.vue';
+import { createStore } from '~/monitoring/stores';
 import * as types from '~/monitoring/stores/mutation_types';
 import { TEST_HOST } from 'spec/test_constants';
-import MonitoringMock, { deploymentData } from '../mock_data';
+import {
+  deploymentData,
+  metricsNewGroupsAPIResponse,
+  mockedQueryResultPayload,
+} from '../mock_data';
 
 describe('Area component', () => {
   const mockSha = 'mockSha';
@@ -17,12 +21,19 @@ describe('Area component', () => {
   let mockGraphData;
   let areaChart;
   let spriteSpy;
-  let store;
 
   beforeEach(() => {
-    store = createStore();
-    store.commit(`monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`, MonitoringMock.data);
+    const store = createStore();
+
+    store.commit(
+      `monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`,
+      metricsNewGroupsAPIResponse,
+    );
     store.commit(`monitoringDashboard/${types.RECEIVE_DEPLOYMENTS_DATA_SUCCESS}`, deploymentData);
+    store.commit(`monitoringDashboard/${types.SET_QUERY_RESULT}`, {
+      metricId: mockedQueryResultPayload.metricId,
+      result: mockedQueryResultPayload.result,
+    });
 
     [mockGraphData] = store.state.monitoringDashboard.groups[0].metrics;
 
@@ -36,7 +47,6 @@ describe('Area component', () => {
       slots: {
         default: mockWidgets,
       },
-      store,
     });
 
     spriteSpy = spyOnDependency(Area, 'getSvgIconPathContent').and.callFake(
@@ -129,11 +139,11 @@ describe('Area component', () => {
         });
 
         it('formats tooltip title', () => {
-          expect(areaChart.vm.tooltip.title).toBe('31 May 2017, 9:23PM');
+          expect(areaChart.vm.tooltip.title).toBe('16 Jul 2019, 10:14AM');
         });
 
         it('formats tooltip content', () => {
-          const name = 'Core Usage';
+          const name = 'Pod average';
           const value = '5.556';
           const seriesLabel = areaChart.find(GlChartSeriesLabel);
 
@@ -152,7 +162,7 @@ describe('Area component', () => {
         });
 
         it('formats tooltip title', () => {
-          expect(areaChart.vm.tooltip.title).toBe('31 May 2017, 9:23PM');
+          expect(areaChart.vm.tooltip.title).toBe('16 Jul 2019, 10:14AM');
         });
 
         it('formats tooltip sha', () => {
@@ -207,7 +217,7 @@ describe('Area component', () => {
 
       it('utilizes all data points', () => {
         expect(chartData.length).toBe(1);
-        expect(seriesData().data.length).toBe(297);
+        expect(seriesData().data.length).toBe(32);
       });
 
       it('creates valid data', () => {
@@ -249,16 +259,16 @@ describe('Area component', () => {
     describe('scatterSeries', () => {
       it('utilizes deployment data', () => {
         expect(areaChart.vm.scatterSeries.data).toEqual([
-          ['2017-05-31T21:23:37.881Z', 0],
-          ['2017-05-30T20:08:04.629Z', 0],
-          ['2017-05-30T17:42:38.409Z', 0],
+          ['2019-07-16T10:14:25.589Z', 0],
+          ['2019-07-16T11:14:25.589Z', 0],
+          ['2019-07-16T12:14:25.589Z', 0],
         ]);
       });
     });
 
     describe('yAxisLabel', () => {
       it('constructs a label for the chart y-axis', () => {
-        expect(areaChart.vm.yAxisLabel).toBe('CPU');
+        expect(areaChart.vm.yAxisLabel).toBe('Memory Used per Pod');
       });
     });
   });

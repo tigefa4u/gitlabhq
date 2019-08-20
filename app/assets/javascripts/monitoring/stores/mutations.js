@@ -14,12 +14,10 @@ export default {
       // for backwards compatibility, and to limit Vue template changes:
       // for each group alias panels to metrics
       // for each panel alias metrics to queries
-      if (state.useDashboardEndpoint) {
-        metrics = group.panels.map(panel => ({
-          ...panel,
-          queries: panel.metrics,
-        }));
-      }
+      metrics = group.panels.map(panel => ({
+        ...panel,
+        queries: panel.metrics,
+      }));
 
       return {
         ...group,
@@ -29,8 +27,6 @@ export default {
 
     if (!state.groups.length) {
       state.emptyState = 'noData';
-    } else {
-      state.showEmptyState = false;
     }
   },
   [types.RECEIVE_METRICS_DATA_FAILURE](state, error) {
@@ -76,9 +72,6 @@ export default {
     state.dashboardEndpoint = endpoints.dashboardEndpoint;
     state.currentDashboard = endpoints.currentDashboard;
     state.projectPath = endpoints.projectPath;
-  },
-  [types.SET_DASHBOARD_ENABLED](state, enabled) {
-    state.useDashboardEndpoint = enabled;
   },
   [types.SET_MULTIPLE_DASHBOARDS_ENABLED](state, enabled) {
     state.multipleDashboardsEnabled = enabled;

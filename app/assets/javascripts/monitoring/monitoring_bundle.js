@@ -13,7 +13,6 @@ export default (props = {}) => {
   if (el && el.dataset) {
     if (gon.features) {
       store.dispatch('monitoringDashboard/setFeatureFlags', {
-        prometheusEndpointEnabled: gon.features.environmentMetricsUsePrometheusEndpoint,
         multipleDashboardsEnabled: gon.features.environmentMetricsShowMultipleDashboards,
       });
     }

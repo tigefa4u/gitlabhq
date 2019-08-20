@@ -7,7 +7,6 @@ export default () => ({
   environmentsEndpoint: null,
   deploymentsEndpoint: null,
   dashboardEndpoint: invalidUrl,
-  useDashboardEndpoint: false,
   multipleDashboardsEnabled: false,
   emptyState: 'gettingStarted',
   showEmptyState: true,
