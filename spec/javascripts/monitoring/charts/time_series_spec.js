@@ -6,7 +6,12 @@ import { shallowWrapperContainsSlotText } from 'spec/helpers/vue_test_utils_help
 import TimeSeries from '~/monitoring/components/charts/time_series.vue';
 import * as types from '~/monitoring/stores/mutation_types';
 import { TEST_HOST } from 'spec/test_constants';
-import MonitoringMock, { deploymentData, mockProjectPath } from '../mock_data';
+import {
+  deploymentData,
+  metricsGroupsAPIResponse,
+  mockedQueryResultPayload,
+  mockProjectPath,
+} from '../mock_data';
 
 describe('Time series component', () => {
   const mockSha = 'mockSha';
@@ -21,9 +26,16 @@ describe('Time series component', () => {
 
   beforeEach(() => {
     store = createStore();
-    store.commit(`monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`, MonitoringMock.data);
+
+    store.commit(
+      `monitoringDashboard/${types.RECEIVE_METRICS_DATA_SUCCESS}`,
+      metricsGroupsAPIResponse,
+    );
     store.commit(`monitoringDashboard/${types.RECEIVE_DEPLOYMENTS_DATA_SUCCESS}`, deploymentData);
-    store.dispatch('monitoringDashboard/setFeatureFlags', { exportMetricsToCsvEnabled: true });
+    store.commit(`monitoringDashboard/${types.SET_QUERY_RESULT}`, {
+      metricId: mockedQueryResultPayload.metricId,
+      result: mockedQueryResultPayload.result,
+    });
     [mockGraphData] = store.state.monitoringDashboard.groups[0].metrics;
 
     makeTimeSeriesChart = (graphData, type) =>
@@ -97,11 +109,11 @@ describe('Time series component', () => {
           });
 
           it('formats tooltip title', () => {
-            expect(timeSeriesChart.vm.tooltip.title).toBe('31 May 2017, 9:23PM');
+            expect(timeSeriesChart.vm.tooltip.title).toBe('16 Jul 2019, 10:14AM');
           });
 
           it('formats tooltip content', () => {
-            const name = 'Core Usage';
+            const name = 'Pod average';
             const value = '5.556';
             const seriesLabel = timeSeriesChart.find(GlChartSeriesLabel);
 
@@ -124,7 +136,7 @@ describe('Time series component', () => {
           });
 
           it('formats tooltip title', () => {
-            expect(timeSeriesChart.vm.tooltip.title).toBe('31 May 2017, 9:23PM');
+            expect(timeSeriesChart.vm.tooltip.title).toBe('16 Jul 2019, 10:14AM');
           });
 
           it('formats tooltip sha', () => {
@@ -220,9 +232,9 @@ describe('Time series component', () => {
       describe('scatterSeries', () => {
         it('utilizes deployment data', () => {
           expect(timeSeriesChart.vm.scatterSeries.data).toEqual([
-            ['2017-05-31T21:23:37.881Z', 0],
-            ['2017-05-30T20:08:04.629Z', 0],
-            ['2017-05-30T17:42:38.409Z', 0],
+            ['2019-07-16T10:14:25.589Z', 0],
+            ['2019-07-16T11:14:25.589Z', 0],
+            ['2019-07-16T12:14:25.589Z', 0],
           ]);
 
           expect(timeSeriesChart.vm.scatterSeries.symbolSize).toBe(14);
@@ -231,7 +243,7 @@ describe('Time series component', () => {
 
       describe('yAxisLabel', () => {
         it('constructs a label for the chart y-axis', () => {
-          expect(timeSeriesChart.vm.yAxisLabel).toBe('CPU');
+          expect(timeSeriesChart.vm.yAxisLabel).toBe('Memory Used per Pod');
         });
       });
 

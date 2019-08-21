@@ -423,6 +423,8 @@ export default {
           :clipboard-text="generateLink(groupData.group, graphData.title, graphData.y_label)"
           :graph-data="graphData"
           :dashboard-width="elWidth"
+          :alerts-endpoint="alertsEndpoint"
+          :prometheus-alerts-available="prometheusAlertsAvailable"
           :index="`${index}-${graphIndex}`"
         />
       </graph-group>
