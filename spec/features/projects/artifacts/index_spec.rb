@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-feature 'Index artifacts', :js do
+describe 'Index artifacts', :js do
   include SortingHelper
   include FilteredSearchHelpers
 
@@ -37,7 +37,7 @@ feature 'Index artifacts', :js do
 
       with_them do
         before do
-          jobs.each_with_index { |job, index| job.update!(artifacts_size: jobs_values[index][:artifacts_size]) }
+          jobs.each_with_index { |job, index| job.job_artifacts_archive.update!(size: jobs_values[index][:artifacts_size]) }
         end
 
         subject(:names) do

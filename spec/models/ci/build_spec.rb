@@ -272,12 +272,6 @@ describe Ci::Build do
       it { is_expected.to eq 106826.0 }
     end
 
-    context 'when job has a legacy archive' do
-      let!(:job) { create(:ci_build, :legacy_artifacts) }
-
-      it { is_expected.to eq 106365.0 }
-    end
-
     context 'when job has a job artifact archive' do
       let!(:job) { create(:ci_build, :artifacts) }
 
@@ -287,13 +281,13 @@ describe Ci::Build do
     context 'when job has a job artifact trace' do
       let!(:job) { create(:ci_build, :trace_artifact) }
 
-      it { is_expected.to eq 192659.0 }
+      it { is_expected.to eq 192709.0 }
     end
 
-    context 'when job has a job a legacy_artefact, an artiact and an artifact trace' do
-      let!(:job) { create(:ci_build, :trace_artifact, :artifacts, :legacy_artifacts) }
+    context 'when job has a job an artiact and an artifact trace' do
+      let!(:job) { create(:ci_build, :trace_artifact, :artifacts) }
 
-      it { is_expected.to eq 405850.0 }
+      it { is_expected.to eq 299535.0 }
     end
   end
 

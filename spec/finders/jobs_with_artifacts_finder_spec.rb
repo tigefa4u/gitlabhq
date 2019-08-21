@@ -59,7 +59,6 @@ describe JobsWithArtifactsFinder do
 
       context 'deleted is set to true' do
         it 'returns the jobs that belong to a deleted branch' do
-
           jobs = described_class.new(project: project, params: { 'deleted_branches_deleted-branches': 'true' }).execute
 
           expect(jobs).to eq [job1]
@@ -68,7 +67,6 @@ describe JobsWithArtifactsFinder do
 
       context 'deleted is set to false' do
         it 'returns the jobs that belong to an existing branch' do
-
           jobs = described_class.new(project: project, params: { 'deleted_branches_deleted-branches': 'false' }).execute
 
           expect(jobs).to eq [job2]

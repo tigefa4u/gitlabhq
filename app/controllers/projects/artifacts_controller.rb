@@ -11,7 +11,6 @@ class Projects::ArtifactsController < Projects::ApplicationController
   before_action :authorize_destroy_artifacts!, only: [:destroy]
   before_action :extract_ref_name_and_path
   before_action :validate_artifacts!, except: [:index, :download, :destroy]
-  before_action :set_request_format, only: [:file]
   before_action :entry, only: [:file]
 
   def index

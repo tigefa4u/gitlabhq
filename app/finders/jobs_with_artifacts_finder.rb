@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# TODO: This is only temporary so we can get a review app running
+# rubocop:disable CodeReuse/ActiveRecord
+
 class JobsWithArtifactsFinder
   NUMBER_OF_JOBS_PER_PAGE = 30
 

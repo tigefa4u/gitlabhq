@@ -31,7 +31,7 @@ constraints(::Constraints::ProjectUrlConstrainer.new) do
       scope '-' do
         get 'archive/*id', constraints: { format: Gitlab::PathRegex.archive_formats_regex, id: /.+?/ }, to: 'repositories#archive', as: 'archive'
 
-        get 'artifacts',  constraints: { format: Gitlab::PathRegex.archive_formats_regex, id: /.+?/ }, to: 'artifacts#index', as: 'artifacts'
+        get 'artifacts', constraints: { format: Gitlab::PathRegex.archive_formats_regex, id: /.+?/ }, to: 'artifacts#index', as: 'artifacts'
 
         resources :jobs, only: [:index, :show], constraints: { id: /\d+/ } do
           collection do

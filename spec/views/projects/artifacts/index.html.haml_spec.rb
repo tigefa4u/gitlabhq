@@ -6,7 +6,8 @@ RSpec.describe "projects/artifacts/index.html.haml" do
   describe 'delete button' do
     before do
       pipeline = create(:ci_empty_pipeline, project: project)
-      create(:ci_build, pipeline: pipeline, name: 'job1', artifacts_size: 2 * 10**9)
+      build = create(:ci_build, pipeline: pipeline, name: 'job1')
+      create(:ci_job_artifact, job: build, size: 2 * 10**9)
 
       allow(view).to receive(:current_user).and_return(user)
       assign(:project, project)
