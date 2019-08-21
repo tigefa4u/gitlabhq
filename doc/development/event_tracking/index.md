@@ -24,17 +24,17 @@ The following configuration is required:
 
 Now the implemented tracking events can be inspected locally by looking at the network panel of the browser's development tools.
 
-## Tracking strategies
+## Tracking libraries
 
-There's a couple aspect to the tracking strategy. The first utilizes Snowplow, and the second is Pendo.
+There's a couple libraries that we utilize for tracking. The first is Snowplow, and the second is Pendo.
 
 ## Snowplow
 
-Snowplow is being used for all other event tracking. This allows the data team to define analytics and presentations of the event data in ways that may reveal details of user engagement that may not be fully understood or interactions where we can make improvements.
+Snowplow is being used for event tracking. This allows the data team to define analytics and presentations of the event data in ways that may reveal details of user engagement that may not be fully understood or interactions where we can make improvements.
 
 Event tracking can be implemented on either the frontend or the backend layers, and each can be approached slightly differently. 
 
-In GitLab, many actions can be initiated via the web interface, but they can also be initiated via an API client (an iOS applications is a good example of this). Crucially, this means that tracking should be considered holistically for the new feature that's being implemented, or the existing feature that's being instrumented.
+In GitLab, many actions can be initiated via the web interface, but they can also be initiated via an API client (an iOS applications is a good example of this), or via `git` directly. Crucially, this means that tracking should be considered holistically for the new feature that's being implemented, or the existing feature that's being instrumented.
 
 ### Frontend tracking strategies
 
