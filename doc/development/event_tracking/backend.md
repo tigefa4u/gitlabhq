@@ -1,4 +1,4 @@
 # Backend tracking strategies
 
-Todo: Document backend tracking
-{: .alert .alert-danger}
+CAUTION: **Todo:**
+Document backend tracking

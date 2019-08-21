@@ -4,8 +4,8 @@ At GitLab we encourage event tracking so we can iterate on and improve the proje
 
 To enable the Product team to better understand user engagement, usage patterns, and other metrics that can potentially be improved on, we should attempt to add tracking where possible. To enable this, maintain consistency, and not adversely effect performance we have some basic tracking functionality exposed at both the frontend and backend layers that you can utilize while building features.
 
-Todo: Document the process to define new tracking by integrating with the data team.
-{: .alert .alert-danger}
+CAUTION: **Todo:**
+Document the process to define new tracking by integrating with the data team.
 
 ## Enabling tracking
 
