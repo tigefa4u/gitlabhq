@@ -1,13 +1,31 @@
+# Frontend tracking strategies
+
 # Event tracking
 
-GitLab provides `Tracking`, an interface that wraps
-[Snowplow](https://github.com/snowplow/snowplow) for tracking custom events.
-It uses Snowplow's custom event tracking functions.
+GitLab provides `Tracking`, an interface that wraps [Snowplow](https://github.com/snowplow/snowplow) for tracking custom events. It uses Snowplow's custom event tracking functions.
 
-The tracking interface can be imported in JS files as follows:
+## Tracking in raw Javascript
+
+Custom events can be tracked by directly calling the `Tracking.event` static function, which accepts the following arguments:
+
+| argument   | type   | default value              | description |
+|:-----------|:-------|:---------------------------|:------------|
+| `category` | string | document.body.dataset.page | Page or subsection of a page that events are being captured within. |
+| `event`    | string | 'generic'                  | Action the user is taking. Clicks should be `click` and activations should be `activate`, so for example, focusing a form field would be `activate_form_input`, and clicking a button would be `click_button`. |
+| `data`     | object | {}                         | Additional data such as `label`, `property`, and `value` as described [in our Feature Instrumentation taxonomy](https://about.gitlab.com/handbook/product/feature-instrumentation/#taxonomy). These will be set as empty strings if you don't provide them. |
+
+Tracking can be programmatically added to an event of interest in Javascript, and the following example demonstrates tracking a click on a button by calling `Tracking.event` manually.
 
 ```javascript
 import Tracking from `~/tracking`;
+
+document.getElementById('my_button').addEventListener('click', () => {
+  Tracking.event('dashboard:projects:index', 'click_button', {
+    label: 'create_from_template',
+    property: 'template_preview',
+    value: 'rails',
+  });
+})
 ```
 
 ## Tracking in HAML or Vue templates
@@ -45,44 +63,3 @@ Below is a list of supported `data-track-*` attributes:
 | `data-track-label`    | false    | The `label` as described [in our Feature Instrumentation taxonomy](https://about.gitlab.com/handbook/product/feature-instrumentation/#taxonomy). |
 | `data-track-property` | false    | The `property` as described [in our Feature Instrumentation taxonomy](https://about.gitlab.com/handbook/product/feature-instrumentation/#taxonomy). |
 | `data-track-value`    | false    | The `value` as described [in our Feature Instrumentation taxonomy](https://about.gitlab.com/handbook/product/feature-instrumentation/#taxonomy). If omitted, this will be the elements `value` property or an empty string. For checkboxes, the default value will be the element's checked attribute or `false` when unchecked. |
-
-## Tracking in raw Javascript
-
-Custom events can be tracked by directly calling the `Tracking.event` static function, which accepts the following arguments:
-
-| argument   | type   | default value              | description |
-|:-----------|:-------|:---------------------------|:------------|
-| `category` | string | document.body.dataset.page | Page or subsection of a page that events are being captured within. |
-| `event`    | string | 'generic'                  | Action the user is taking. Clicks should be `click` and activations should be `activate`, so for example, focusing a form field would be `activate_form_input`, and clicking a button would be `click_button`. |
-| `data`     | object | {}                         | Additional data such as `label`, `property`, and `value` as described [in our Feature Instrumentation taxonomy](https://about.gitlab.com/handbook/product/feature-instrumentation/#taxonomy). These will be set as empty strings if you don't provide them. |
-
-Tracking can be programmatically added to an event of interest in Javascript, and the following example demonstrates tracking a click on a button by calling `Tracking.event` manually.
-
-```javascript
-import Tracking from `~/tracking`;
-
-document.getElementById('my_button').addEventListener('click', () => {
-  Tracking.event('dashboard:projects:index', 'click_button', {
-    label: 'create_from_template',
-    property: 'template_preview',
-    value: 'rails',
-  });
-})
-```
-
-## Toggling tracking on or off
-
-Snowplow can be enabled by navigating to:
-
-- **Admin area > Settings > Integrations** in the UI.
-- `admin/application_settings/integrations` in your browser.
-
-The following configuration is required:
-
-| Name          | Value                     |
-| ------------- | ------------------------- |
-| Collector     | `snowplow.trx.gitlab.net` |
-| Site ID       | `gitlab`                  |
-| Cookie domain | `.gitlab.com`             |
-
-Now the implemented tracking events can be inspected locally by looking at the network panel of the browser's development tools.

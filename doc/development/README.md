@@ -138,6 +138,13 @@ description: 'Learn how to contribute to GitLab.'
 - [Externalization](i18n/externalization.md)
 - [Translation](i18n/translation.md)
 
+## Event tracking guides
+
+- [Introduction](event_tracking/index.md)
+- [Frontend tracking strategies](event_tracking/frontend.md)
+- [Backend tracking strategies](event_tracking/backend.md)
+- [List of events being tracked](event_tracking/list.md)
+
 ## Build guides
 
 - [Building a package for testing purposes](build_test_package.md)
