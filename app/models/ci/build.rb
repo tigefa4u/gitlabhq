@@ -307,6 +307,12 @@ module Ci
         self.name == 'pages'
     end
 
+    def incement_scheduler_priority!
+      if created? || pending?
+        increment!(:scheduler_priority)
+      end
+    end
+
     def runnable?
       true
     end

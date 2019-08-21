@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_08_15_093949) do
+ActiveRecord::Schema.define(version: 2019_08_21_103353) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
@@ -583,6 +583,7 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.datetime_with_timezone "scheduled_at"
     t.string "token_encrypted"
     t.integer "upstream_pipeline_id"
+    t.integer "scheduler_priority", limit: 2
     t.index ["artifacts_expire_at"], name: "index_ci_builds_on_artifacts_expire_at", where: "(artifacts_file <> ''::text)"
     t.index ["auto_canceled_by_id"], name: "index_ci_builds_on_auto_canceled_by_id"
     t.index ["commit_id", "artifacts_expire_at", "id"], name: "index_ci_builds_on_commit_id_and_artifacts_expireatandidpartial", where: "(((type)::text = 'Ci::Build'::text) AND ((retried = false) OR (retried IS NULL)) AND ((name)::text = ANY (ARRAY[('sast'::character varying)::text, ('dependency_scanning'::character varying)::text, ('sast:container'::character varying)::text, ('container_scanning'::character varying)::text, ('dast'::character varying)::text])))"
