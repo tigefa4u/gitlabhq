@@ -106,18 +106,16 @@ For groups the `--group` flag is available:
 
 ## Cleaning up
 
-Once the change is deemed stable, submit a new merge request to remove the
-feature flag. This ensures the change is available to all users and self-hosted
-instances. Make sure to add the ~"feature flag" label to this merge request so
+Once the change is deemed stable, submit a new merge request that:
+
+- Removes the code using the feature flag
+- Adds a migration that removes the feature setting: `Feature.remove('some_feature')`
+
+This ensures the change is available to all users on GitLab.com and self-hosted
+instances, and there are no non-existing feature flag left behind in the database.
+
+Make sure to add the ~"feature flag" label to this merge request so
 release managers are aware the changes are hidden behind a feature flag. If the
 merge request has to be picked into a stable branch, make sure to also add the
 appropriate "Pick into X" label (e.g. "Pick into XX.X").
 See [the process document](process.md#including-a-feature-behind-feature-flag-in-the-final-release) for further details.
-
-When a feature gate has been removed from the code base, the value still exists
-in the database.
-This can be removed through ChatOps:
-
-```
-/chatops run feature delete some_feature
-```
