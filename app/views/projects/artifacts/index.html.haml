@@ -1,5 +1,7 @@
 - @no_container = true
 - page_title _('Artifacts')
+- hint = '{{hint}}'
+- tag = '{{tag}}'
 
 %div{ class: container_class }
   .row
@@ -34,9 +36,9 @@
                       %svg
                         %use{ 'xlink:href': "#{'{{icon}}'}" }
                       %span.js-filter-hint
-                        {{hint}}
+                        = hint
                       %span.js-filter-tag.dropdown-light-content
-                        {{tag}}
+                        = tag
 
               #js-dropdown-project-artifact-deleted-branches.filtered-search-input-dropdown-menu.dropdown-menu
                 %ul{ data: { dropdown: true } }
