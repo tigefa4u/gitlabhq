@@ -7,7 +7,7 @@ const tokenKeys = [
     param: 'deleted-branches',
     symbol: '',
     icon: 'tag',
-    tag: 'Yes or No',
+    tag: 'Yes or No', // eslint-disable-line @gitlab/i18n/no-non-i18n-strings
     lowercaseValueOnSubmit: true,
     capitalizeTokenValue: true,
   },
