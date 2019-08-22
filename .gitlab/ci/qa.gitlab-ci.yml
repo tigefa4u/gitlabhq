@@ -1,7 +1,8 @@
 .package-and-qa-base:
   image: ruby:2.6-alpine
-  stage: review  # So even if review-deploy failed we can still run this
+  stage: qa
   before_script: []
+  needs: ["build-qa-image", "gitlab:assets:compile pull-cache"]
   dependencies: []
   cache: {}
   variables:
