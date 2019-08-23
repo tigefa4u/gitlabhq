@@ -127,6 +127,8 @@ module Gitlab
 
       json_data = parse_json(response_body) if [200, 400].include?(response_code)
 
+      raise PrometheusClient::Error, "Parsing response failed" unless json_data.is_a?(Hash)
+
       case response_code
       when 200
         json_data['data'] if response['status'] == 'success'

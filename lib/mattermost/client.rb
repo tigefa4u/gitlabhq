@@ -52,7 +52,13 @@ module Mattermost
       json_response = JSON.parse(response.body)
 
       unless response.success?
-        raise Mattermost::ClientError.new(json_response['message'] || 'Undefined error')
+        error =
+          if json_response.is_a?(Hash)
+            json_response['message']
+          else
+            'Undefined error'
+          end
+        raise Mattermost::ClientError.new(error)
       end
 
       json_response
