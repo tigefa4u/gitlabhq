@@ -49,23 +49,65 @@ module EntityDateHelper
       content_tag(:strong, 'Past due')
     elsif start_date&.future?
       content_tag(:strong, 'Upcoming')
+    elsif due_date&.today?
+      content_tag(:strong, 'Today')
     elsif due_date
-      is_upcoming = (due_date - Date.today).to_i > 0
-      time_ago = time_ago_in_words(due_date)
-
-      # https://gitlab.com/gitlab-org/gitlab-ce/issues/49440
-      #
-      # Need to improve the i18n here and do a full translation
-      # of the string instead of piecewise translations.
-      content = time_ago
-        .gsub(/\d+/) { |match| "<strong>#{match}</strong>" }
-        .remove("about ")
-      remaining_or_ago = is_upcoming ? _("remaining") : _("ago")
-
-      "#{content} #{remaining_or_ago}".html_safe
+      if due_date.future?
+        translate_time_remaining(due_date.end_of_day)
+      else
+        translate_time_ago(due_date.end_of_day)
+      end.gsub(/\d+/) { |match| "<strong>#{match}</strong>" }.html_safe
     elsif start_date&.past?
       days = (Date.today - start_date).to_i
       "#{content_tag(:strong, days)} #{'day'.pluralize(days)} elapsed".html_safe
+    end
+  end
+
+  def distance_in_time_for_translation(time)
+    duration = ActiveSupport::Duration.build((time.to_time - Time.now).abs)
+    midday_duration = ActiveSupport::Duration.build((time.midday.to_time - Time.now.midday).abs)
+    if duration < 1.day
+      { unit: :hours, count: (duration / 1.hour).round }
+    elsif midday_duration <= 31.days
+      { unit: :days, count: (midday_duration / 1.day).round }
+    elsif duration < 12.months
+      { unit: :months, count: (duration / 1.months).round }
+    else
+      { unit: :years, count: (duration / 1.year).round }
+    end
+  end
+
+  def translate_time_ago(time)
+    unit, count = distance_in_time_for_translation(time).values_at(:unit, :count)
+
+    # Build translations explicitly for 'rake gettext:find'
+    case unit
+    when :hours
+      n_('%d hour ago', '%d hours ago', count) % count
+    when :days
+      #t(:'datetime.time_ago_in_words.x_days', count: count)
+      n_('%d day ago', '%d days ago', count) % count
+    when :months
+      #t(:'datetime.time_ago_in_words.x_months', count: count)
+      n_('%d month ago', '%d months ago', count) % count
+    when :years
+      n_('%d year ago', '%d years ago', count) % count
+    end
+  end
+
+  def translate_time_remaining(time)
+    unit, count = distance_in_time_for_translation(time).values_at(:unit, :count)
+
+    # Build translations explicitly for 'rake gettext:find'
+    case unit
+    when :hours
+      n_('%d hour remaining', '%d hours remaining', count) % count
+    when :days
+      n_('%d day remaining', '%d days remaining', count) % count
+    when :months
+      n_('%d month remaining', '%d months remaining', count) % count
+    when :years
+      n_('%d year remaining', '%d years remaining', count) % count
     end
   end
 end
