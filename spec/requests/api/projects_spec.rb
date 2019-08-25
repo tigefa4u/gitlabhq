@@ -780,7 +780,7 @@ describe API::Projects do
         expect(json_response['visibility']).to eq('public')
       end
     end
-    
+
     context 'when updating repository storage' do
       let(:unknown_storage) { 'new-storage' }
       let(:new_project) { create(:project, :repository, namespace: user.namespace) }
