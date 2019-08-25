@@ -316,7 +316,7 @@ module API
       expose :auto_devops_deploy_strategy do |project, options|
         project.auto_devops.nil? ? 'continuous' : project.auto_devops.deploy_strategy
       end
-      
+
       expose :repository_storage, if: ->(_project, options) { options[:current_user].try(:admin?) }
 
       # rubocop: disable CodeReuse/ActiveRecord
