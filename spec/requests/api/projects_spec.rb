@@ -1487,7 +1487,7 @@ describe API::Projects do
         end
       end
     end
-    
+
     describe 'repository_storage attribute' do
       context 'when authenticated as an admin' do
         let(:admin) { create(:admin) }
