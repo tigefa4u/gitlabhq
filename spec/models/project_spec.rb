@@ -5003,7 +5003,7 @@ describe Project do
       expect(subject.has_pool_repository?).to be true
     end
   end
-  
+
   describe '#change_repository_storage' do
     let(:project) { create(:project, :repository) }
     let(:read_only_project) { create(:project, :repository, repository_read_only: true) }
