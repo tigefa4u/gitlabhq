@@ -484,7 +484,7 @@ describe Projects::UpdateService do
       end
     end
   end
-  
+
   describe 'repository_storage' do
     let(:admin_user) { create(:user, admin: true) }
     let(:user) { create(:user) }
