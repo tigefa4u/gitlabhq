@@ -13,7 +13,7 @@ module Projects
       validate!
 
       ensure_wiki_exists if enabling_wiki?
-      
+
       if changing_storage_size?
         project.change_repository_storage(params.delete(:repository_storage))
       end
@@ -42,7 +42,7 @@ module Projects
 
       project.auto_devops_enabled?
     end
-    
+
     def changing_storage_size?
       new_repository_storage = params[:repository_storage]
 
