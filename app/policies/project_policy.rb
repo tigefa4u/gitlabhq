@@ -449,7 +449,7 @@ class ProjectPolicy < BasePolicy
   rule { blocked }.policy do
     prevent :create_pipeline
   end
-  
+
   rule { admin }.enable :change_repository_storage
 
   private
