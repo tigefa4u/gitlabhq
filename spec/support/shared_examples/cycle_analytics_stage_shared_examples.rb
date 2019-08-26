@@ -71,4 +71,22 @@ shared_examples_for 'cycle analytics stage' do
       expect(stage.end_event).to be_a_kind_of(Gitlab::Analytics::CycleAnalytics::StageEvents::MergeRequestMerged)
     end
   end
+
+  describe '#matches_with_stage_params?' do
+    let(:params) { Gitlab::Analytics::CycleAnalytics::DefaultStages.params_for_test_stage }
+
+    it 'matches with default stage params' do
+      stage = described_class.new(params)
+
+      expect(stage).to be_default_stage
+      expect(stage).to be_matches_with_stage_params(params)
+    end
+
+    it "mismatches when the stage is custom" do
+      stage = described_class.new(params.merge(custom: true))
+
+      expect(stage).not_to be_default_stage
+      expect(stage).not_to be_matches_with_stage_params(params)
+    end
+  end
 end

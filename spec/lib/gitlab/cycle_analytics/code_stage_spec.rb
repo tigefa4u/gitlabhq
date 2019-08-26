@@ -12,7 +12,8 @@ describe Gitlab::CycleAnalytics::CodeStage do
   let(:issue_3) { create(:issue, project: project, created_at: 60.minutes.ago) }
   let(:mr_1) { create(:merge_request, source_project: project, created_at: 15.minutes.ago) }
   let(:mr_2) { create(:merge_request, source_project: project, created_at: 10.minutes.ago, source_branch: 'A') }
-  let(:stage) { described_class.new(options: { from: 2.days.ago, current_user: project.creator, project: project }) }
+  let(:from) { 2.days.ago }
+  let(:stage) { described_class.new(options: { from: from, current_user: project.creator, project: project }) }
 
   before do
     issue_1.metrics.update!(first_associated_with_milestone_at: 60.minutes.ago, first_mentioned_in_commit_at: 45.minutes.ago)
@@ -24,6 +25,11 @@ describe Gitlab::CycleAnalytics::CodeStage do
   end
 
   it_behaves_like 'base stage'
+
+  it_behaves_like 'using Gitlab::Analytics::CycleAnalytics::DataCollector as backend' do
+    let(:expected_record_count) { 2 }
+    let(:expected_ordered_attribute_values) { [mr_2.title, mr_1.title] }
+  end
 
   describe '#project_median' do
     around do |example|
