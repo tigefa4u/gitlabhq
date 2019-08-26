@@ -130,7 +130,7 @@ class ProjectPolicy < BasePolicy
   features.each do |f|
     # these are scored high because they are unlikely
     desc "Project has #{f} disabled"
-    condition(:"#{f}_disabled", score: 32) { !feature_available?(f.to_sym) }
+    condition(:"#{f}_disabled", score: 32) { !@subject.feature_available?(f.to_sym, @user) }
   end
 
   # `:read_project` may be prevented in EE, but `:read_project_for_iids` should
@@ -499,19 +499,6 @@ class ProjectPolicy < BasePolicy
   def lookup_access_level!
     # NOTE: max_member_access has its own cache
     project.team.max_member_access(@user.id)
-  end
-
-  def feature_available?(feature)
-    return false unless project.project_feature
-
-    case project.project_feature.access_level(feature)
-    when ProjectFeature::DISABLED
-      false
-    when ProjectFeature::PRIVATE
-      admin? || team_access_level >= ProjectFeature.required_minimum_access_level(feature)
-    else
-      true
-    end
   end
 
   def project
