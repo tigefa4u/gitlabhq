@@ -978,7 +978,7 @@ module API
       expose :created_at
 
       def todo_target_class(target_type)
-        ::API::Entities.const_get(target_type)
+        ::API::Entities.const_get(target_type, false)
       end
     end
 
