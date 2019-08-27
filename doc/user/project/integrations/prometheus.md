@@ -387,23 +387,21 @@ The following requirements must be met for the metric to unfurl:
 
 ### Embedding live Grafana charts
 
-It is also possible to embed live [Grafana](../../../omnibus/settings/grafana.html) charts within issues, as a [Direct Linked Rendered Image](https://grafana.com/docs/reference/sharing/#direct-link-rendered-image).
+It is also possible to embed live [Grafana](../../../omnibus/settings/grafana.html) charts within issues, as a [Direct Linked Rendered Image](https://grafana.com/docs/reference/sharing/#direct-link-rendered-image). This will work only when the Grafana instance is available to the user attempting to view the embed, either as a public dashboard or within their internal network.
 
-The sharing panel provides the link, as highlighted below.
+The sharing dialog within Grafana provides the link, as highlighted below.
 
-[Grafana Direct Linked Rendered Image](img/grafana_live_embed.png)
+![Grafana Direct Linked Rendered Image](img/grafana_live_embed.png)
 
-Simply copy the link and add an image element in the dashboard as required:
+Simply copy the link and add an image tag as [inline HTML](../../markdown.html#inline-html) in your markdown. You may tweak the query params as required. For instance, removing the `&from=` and `&to=` params will give you a live chart. Here is example markup for a live chart from GitLab's public dashboard:
 
 ```html
-<img src="https://dashboards.gitlab.com/d/RZmbBr7mk/gitlab-triage?orgId=1&refresh=30s&var-env=gprd&var-environment=gprd&var-prometheus=prometheus-01-inf-gprd&var-prometheus_app=prometheus-app-01-inf-gprd&var-backend=All&var-type=All&var-stage=main&panelId=1197&fullscreen"/>
+<img src="https://dashboards.gitlab.com/render/d-solo/RZmbBr7mk/gitlab-triage?orgId=1&refresh=30s&var-env=gprd&var-environment=gprd&var-prometheus=prometheus-01-inf-gprd&var-prometheus_app=prometheus-app-01-inf-gprd&var-backend=All&var-type=All&var-stage=main&panelId=1247&width=1000&height=300"/>
 ```
 
-This renders as:
+This will render like so:
 
-<img src="https://dashboards.gitlab.com/d/RZmbBr7mk/gitlab-triage?orgId=1&refresh=30s&var-env=gprd&var-environment=gprd&var-prometheus=prometheus-01-inf-gprd&var-prometheus_app=prometheus-app-01-inf-gprd&var-backend=All&var-type=All&var-stage=main&panelId=1197&fullscreen"/>
-
-You may remove the timeframe to get a live chart.
+<img src="https://dashboards.gitlab.com/render/d-solo/RZmbBr7mk/gitlab-triage?orgId=1&refresh=30s&var-env=gprd&var-environment=gprd&var-prometheus=prometheus-01-inf-gprd&var-prometheus_app=prometheus-app-01-inf-gprd&var-backend=All&var-type=All&var-stage=main&panelId=1247&width=1000&height=300"/>
 
 ## Troubleshooting
 
