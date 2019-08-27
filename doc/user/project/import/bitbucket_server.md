@@ -24,15 +24,16 @@ Import your projects from Bitbucket Server to GitLab with minimal effort.
 1. Currently GitLab doesn't allow comments on arbitrary lines of code, so any
    Bitbucket comments out of bounds will be inserted as comments in the merge
    request.
-1. Bitbucket Server allows multiple levels of threading. GitLab
-   import will collapse this into one discussion and quote part of the original
-   comment.
+1. Bitbucket Server allows multiple levels of threading. GitLab import
+   will collapse this into one thread and quote part of the original comment.
 1. Declined pull requests have unreachable commits, which prevents the GitLab
    importer from generating a proper diff. These pull requests will show up as
    empty changes.
 1. Attachments in Markdown are currently not imported.
 1. Task lists are not imported.
 1. Emoji reactions are not imported
+1. Project filtering does not support fuzzy search (only `starts with` or `full
+   match strings` are currently supported)
 
 ## How it works
 
@@ -60,16 +61,16 @@ namespace that started the import process.
 1. Sign in to GitLab and go to your dashboard.
 1. Click on **New project**.
 1. Click on the "Bitbucket Server" button. If the button is not present, enable the importer in
-    **Admin > Application Settings > Visibility and access controls > Import sources**.
+   **Admin > Application Settings > Visibility and access controls > Import sources**.
 
-    ![Bitbucket](img/import_projects_from_new_project_page.png)
+   ![Bitbucket](img/import_projects_from_new_project_page.png)
 
 1. Enter your Bitbucket Server credentials.
 
-    ![Grant access](img/bitbucket_server_import_credentials.png)
+   ![Grant access](img/bitbucket_server_import_credentials.png)
 
 1. Click on the projects that you'd like to import or **Import all projects**.
-   You can also select the namespace under which each project will be
+   You can also filter projects by name and select the namespace under which each project will be
    imported.
 
-    ![Import projects](img/bitbucket_server_import_select_project.png)
+   ![Import projects](img/bitbucket_server_import_select_project_v12_3.png)

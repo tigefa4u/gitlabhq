@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::Ci::Build::Policy::Variables do
@@ -11,7 +13,12 @@ describe Gitlab::Ci::Build::Policy::Variables do
     build(:ci_build, pipeline: pipeline, project: project, ref: 'master')
   end
 
-  let(:seed) { double('build seed', to_resource: ci_build) }
+  let(:seed) do
+    double('build seed',
+      to_resource: ci_build,
+      scoped_variables_hash: ci_build.scoped_variables_hash
+    )
+  end
 
   before do
     pipeline.variables.build(key: 'CI_PROJECT_NAME', value: '')
@@ -81,12 +88,50 @@ describe Gitlab::Ci::Build::Policy::Variables do
         build(:ci_bridge, pipeline: pipeline, project: project, ref: 'master')
       end
 
-      let(:seed) { double('bridge seed', to_resource: bridge) }
+      let(:seed) do
+        double('bridge seed',
+          to_resource: bridge,
+          scoped_variables_hash: ci_build.scoped_variables_hash
+        )
+      end
 
       it 'is satisfied by a matching expression for a bridge job' do
         policy = described_class.new(['$MY_VARIABLE'])
 
         expect(policy).to be_satisfied_by(pipeline, seed)
+      end
+    end
+
+    context 'when using project ci variables in environment scope' do
+      let(:ci_build) do
+        build(:ci_build, pipeline: pipeline,
+                         project: project,
+                         ref: 'master',
+                         stage: 'review',
+                         environment: 'test/$CI_JOB_STAGE/1')
+      end
+
+      before do
+        create(:ci_variable, project: project,
+                             key: 'SCOPED_VARIABLE',
+                             value: 'my-value-1')
+
+        create(:ci_variable, project: project,
+                             key: 'SCOPED_VARIABLE',
+                             value: 'my-value-2',
+                             environment_scope: 'test/review/*')
+      end
+
+      it 'is satisfied by scoped variable match' do
+        policy = described_class.new(['$SCOPED_VARIABLE == "my-value-2"'])
+
+        expect(policy).to be_satisfied_by(pipeline, seed)
+      end
+
+      it 'is not satisfied when matching against overridden variable' do
+        policy = described_class.new(['$SCOPED_VARIABLE == "my-value-1"'])
+
+        expect(policy).not_to be_satisfied_by(pipeline, seed)
       end
     end
   end

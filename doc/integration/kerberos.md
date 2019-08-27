@@ -46,44 +46,40 @@ sudo chmod 0600 /etc/http.keytab
 For source installations, make sure the `kerberos` gem group
 [has been installed](../install/installation.md#install-gems).
 
-1. Edit the kerberos section of [gitlab.yml] to enable Kerberos ticket-based
+1. Edit the `kerberos` section of [`gitlab.yml`](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/gitlab.yml.example) to enable Kerberos ticket-based
    authentication. In most cases, you only need to enable Kerberos and specify
    the location of the keytab:
 
-    ```yaml
-    omniauth:
-      enabled: true
-      allow_single_sign_on: ['kerberos']
+   ```yaml
+   omniauth:
+     enabled: true
+     allow_single_sign_on: ['kerberos']
 
-    kerberos:
-      # Allow the HTTP Negotiate authentication method for Git clients
-      enabled: true
+   kerberos:
+     # Allow the HTTP Negotiate authentication method for Git clients
+     enabled: true
 
-      # Kerberos 5 keytab file. The keytab file must be readable by the GitLab user,
-      # and should be different from other keytabs in the system.
-      # (default: use default keytab from Krb5 config)
-      keytab: /etc/http.keytab
-    ```
+     # Kerberos 5 keytab file. The keytab file must be readable by the GitLab user,
+     # and should be different from other keytabs in the system.
+     # (default: use default keytab from Krb5 config)
+     keytab: /etc/http.keytab
+   ```
 
 1. [Restart GitLab] for the changes to take effect.
-
----
 
 **Omnibus package installations**
 
 1. Edit `/etc/gitlab/gitlab.rb`:
 
-    ```ruby
-    gitlab_rails['omniauth_enabled'] = true
-    gitlab_rails['omniauth_allow_single_sign_on'] = ['kerberos']
+   ```ruby
+   gitlab_rails['omniauth_enabled'] = true
+   gitlab_rails['omniauth_allow_single_sign_on'] = ['kerberos']
 
-    gitlab_rails['kerberos_enabled'] = true
-    gitlab_rails['kerberos_keytab'] = "/etc/http.keytab"
-    ```
+   gitlab_rails['kerberos_enabled'] = true
+   gitlab_rails['kerberos_keytab'] = "/etc/http.keytab"
+   ```
 
 1. [Reconfigure GitLab] for the changes to take effect.
-
----
 
 GitLab will now offer the `negotiate` authentication method for signing in and
 HTTP Git access, enabling Git clients that support this authentication protocol
@@ -149,44 +145,40 @@ keep offering only `basic` authentication.
    (e.g., `/etc/nginx/sites-available/gitlab-ssl`) and configure NGINX to
    listen to port `8443` in addition to the standard HTTPS port:
 
-    ```conf
-    server {
-      listen 0.0.0.0:443 ssl;
-      listen [::]:443 ipv6only=on ssl default_server;
-      listen 0.0.0.0:8443 ssl;
-      listen [::]:8443 ipv6only=on ssl;
-    ```
+   ```conf
+   server {
+     listen 0.0.0.0:443 ssl;
+     listen [::]:443 ipv6only=on ssl default_server;
+     listen 0.0.0.0:8443 ssl;
+     listen [::]:8443 ipv6only=on ssl;
+   ```
 
-1. Update the Kerberos section of [gitlab.yml]:
+1. Update the `kerberos` section of [`gitlab.yml`](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/gitlab.yml.example):
 
-    ```yaml
-    kerberos:
-      # Dedicated port: Git before 2.4 does not fall back to Basic authentication if Negotiate fails.
-      # To support both Basic and Negotiate methods with older versions of Git, configure
-      # nginx to proxy GitLab on an extra port (e.g. 8443) and uncomment the following lines
-      # to dedicate this port to Kerberos authentication. (default: false)
-      use_dedicated_port: true
-      port: 8443
-      https: true
-    ```
+   ```yaml
+   kerberos:
+     # Dedicated port: Git before 2.4 does not fall back to Basic authentication if Negotiate fails.
+     # To support both Basic and Negotiate methods with older versions of Git, configure
+     # nginx to proxy GitLab on an extra port (e.g. 8443) and uncomment the following lines
+     # to dedicate this port to Kerberos authentication. (default: false)
+     use_dedicated_port: true
+     port: 8443
+     https: true
+   ```
 
 1. [Restart GitLab] and NGINX for the changes to take effect.
-
----
 
 **For Omnibus package installations**
 
 1. Edit `/etc/gitlab/gitlab.rb`:
 
-    ```ruby
-    gitlab_rails['kerberos_use_dedicated_port'] = true
-    gitlab_rails['kerberos_port'] = 8443
-    gitlab_rails['kerberos_https'] = true
-    ```
+   ```ruby
+   gitlab_rails['kerberos_use_dedicated_port'] = true
+   gitlab_rails['kerberos_port'] = 8443
+   gitlab_rails['kerberos_https'] = true
+   ```
 
 1. [Reconfigure GitLab] for the changes to take effect.
-
----
 
 After this change, all Git remote URLs will have to be updated to
 `https://gitlab.example.com:8443/mygroup/myproject.git` in order to use
@@ -211,30 +203,28 @@ remove the OmniAuth provider named `kerberos` from your `gitlab.yml` /
 
 **For installations from source**
 
-1. Edit [gitlab.yml] and remove the `- { name: 'kerberos' }` line under omniauth
+1. Edit [`gitlab.yml`](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/gitlab.yml.example) and remove the `- { name: 'kerberos' }` line under omniauth
    providers:
 
-    ```yaml
-    omniauth:
-      # ...
-      providers:
-        - { name: 'kerberos' } # <-- remove this line
-    ```
+   ```yaml
+   omniauth:
+     # ...
+     providers:
+       - { name: 'kerberos' } # <-- remove this line
+   ```
 
 1. [Restart GitLab] for the changes to take effect.
-
----
 
 **For Omnibus installations**
 
 1. Edit `/etc/gitlab/gitlab.rb` and remove the `{ "name" => "kerberos" }` line
    under `gitlab_rails['omniauth_providers']`:
 
-    ```ruby
-    gitlab_rails['omniauth_providers'] = [
-      { "name" => "kerberos" } # <-- remove this entry
-    ]
-    ```
+   ```ruby
+   gitlab_rails['omniauth_providers'] = [
+     { "name" => "kerberos" } # <-- remove this entry
+   ]
+   ```
 
 1. [Reconfigure GitLab] for the changes to take effect.
 
@@ -290,7 +280,7 @@ remote: HTTP Basic: Access denied
 fatal: Authentication failed for '<KRB5 path>'
 ```
 
-If you are using Git v2.11 or newer and see the above error when cloning, you can 
+If you are using Git v2.11 or newer and see the above error when cloning, you can
 set the `http.emptyAuth` Git option to `true` to fix this:
 
 ```
@@ -305,7 +295,6 @@ See also: [Git v2.11 release notes](https://github.com/git/git/blob/master/Docum
 - <http://blog.manula.org/2012/04/setting-up-kerberos-server-with-debian.html>
 - <http://www.roguelynn.com/words/explain-like-im-5-kerberos/>
 
-[gitlab.yml]: https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/gitlab.yml.example
 [restart gitlab]: ../administration/restart_gitlab.md#installations-from-source
 [reconfigure gitlab]: ../administration/restart_gitlab.md#omnibus-gitlab-reconfigure
 [nginx]: http://nginx.org/en/docs/http/ngx_http_core_module.html#large_client_header_buffers

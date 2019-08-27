@@ -6,7 +6,9 @@ module Gitlab
 
     class << self
       def data(force_refresh: false)
-        Rails.cache.fetch('usage_data', force: force_refresh, expires_in: 2.weeks) { uncached_data }
+        Rails.cache.fetch('usage_data', force: force_refresh, expires_in: 2.weeks) do
+          uncached_data
+        end
       end
 
       def uncached_data
@@ -98,9 +100,7 @@ module Gitlab
           .merge(services_usage)
           .merge(approximate_counts)
         }.tap do |data|
-          if Feature.enabled?(:group_overview_security_dashboard)
-            data[:counts][:user_preferences] = user_preferences_usage
-          end
+          data[:counts][:user_preferences] = user_preferences_usage
         end
       end
       # rubocop: enable CodeReuse/ActiveRecord
@@ -128,10 +128,23 @@ module Gitlab
         }
       end
 
+      # @return [Hash<Symbol, Integer>]
       def usage_counters
-        {
-          web_ide_commits: Gitlab::WebIdeCommitsCounter.total_count
-        }
+        usage_data_counters.map(&:totals).reduce({}) { |a, b| a.merge(b) }
+      end
+
+      # @return [Array<#totals>] An array of objects that respond to `#totals`
+      def usage_data_counters
+        [
+         Gitlab::UsageDataCounters::WikiPageCounter,
+         Gitlab::UsageDataCounters::WebIdeCounter,
+         Gitlab::UsageDataCounters::NoteCounter,
+         Gitlab::UsageDataCounters::SnippetCounter,
+         Gitlab::UsageDataCounters::SearchCounter,
+         Gitlab::UsageDataCounters::CycleAnalyticsCounter,
+         Gitlab::UsageDataCounters::SourceCodeCounter,
+         Gitlab::UsageDataCounters::MergeRequestCounter
+        ]
       end
 
       def components_usage_data
@@ -176,8 +189,8 @@ module Gitlab
         {} # augmented in EE
       end
 
-      def count(relation, fallback: -1)
-        relation.count
+      def count(relation, count_by: nil, fallback: -1)
+        count_by ? relation.count(count_by) : relation.count
       rescue ActiveRecord::StatementInvalid
         fallback
       end

@@ -13,10 +13,7 @@ class Issue < ApplicationRecord
   include RelativePositioning
   include TimeTrackable
   include ThrottledTouch
-  include IgnorableColumn
   include LabelEventable
-
-  ignore_column :assignee_id, :branch_name, :deleted_at
 
   DueDateStruct                   = Struct.new(:title, :name).freeze
   NoDueDate                       = DueDateStruct.new('No Due Date', '0').freeze
@@ -46,6 +43,7 @@ class Issue < ApplicationRecord
   validates :project, presence: true
 
   alias_attribute :parent_ids, :project_id
+  alias_method :issuing_parent, :project
 
   scope :in_projects, ->(project_ids) { where(project_id: project_ids) }
 
@@ -66,7 +64,7 @@ class Issue < ApplicationRecord
   scope :public_only, -> { where(confidential: false) }
   scope :confidential_only, -> { where(confidential: true) }
 
-  after_save :expire_etag_cache
+  after_commit :expire_etag_cache
   after_save :ensure_metrics, unless: :imported?
 
   attr_spammable :title, spam_title: true
@@ -94,11 +92,11 @@ class Issue < ApplicationRecord
     end
   end
 
-  class << self
-    alias_method :in_parents, :in_projects
+  def self.relative_positioning_query_base(issue)
+    in_projects(issue.parent_ids)
   end
 
-  def self.parent_column
+  def self.relative_positioning_parent_column
     :project_id
   end
 
@@ -130,11 +128,10 @@ class Issue < ApplicationRecord
 
   def self.sort_by_attribute(method, excluded_labels: [])
     case method.to_s
-    when 'closest_future_date' then order_closest_future_date
-    when 'due_date'            then order_due_date_asc
-    when 'due_date_asc'        then order_due_date_asc
-    when 'due_date_desc'       then order_due_date_desc
-    when 'relative_position'   then order_relative_position_asc
+    when 'closest_future_date', 'closest_future_date_asc' then order_closest_future_date
+    when 'due_date', 'due_date_asc'                       then order_due_date_asc
+    when 'due_date_desc'                                  then order_due_date_desc
+    when 'relative_position', 'relative_position_asc'     then order_relative_position_asc.with_order_id_desc
     else
       super
     end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 
 describe "User creates a merge request", :js do
@@ -78,7 +80,7 @@ describe "User creates a merge request", :js do
 
       click_button("Submit merge request")
 
-      expect(page).to have_content(title).and have_content("Request to merge #{user.namespace.name}:#{source_branch} into master")
+      expect(page).to have_content(title).and have_content("Request to merge #{user.namespace.path}:#{source_branch} into master")
     end
   end
 end

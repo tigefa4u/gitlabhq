@@ -55,14 +55,12 @@ storage2:
 > don't specify the full repository path but the parent path), but not for source
 > installations.
 
----
-
 Now that you've read that big fat warning above, let's edit the configuration
 files and add the full paths of the alternative repository storage paths. In
-the example below, we add two more mountpoints that are named `nfs` and `cephfs`
+the example below, we add two more mountpoints that are named `nfs_1` and `nfs_2`
 respectively.
 
-NOTE: **Note:** This example uses NFS and CephFS. We do not recommend using EFS for storage as it may impact GitLab's performance. See the [relevant documentation](high_availability/nfs.md#avoid-using-awss-elastic-file-system-efs) for more details.
+NOTE: **Note:** This example uses NFS. We do not recommend using EFS for storage as it may impact GitLab's performance. See the [relevant documentation](high_availability/nfs.md#avoid-using-awss-elastic-file-system-efs) for more details.
 
 **For installations from source**
 
@@ -75,10 +73,10 @@ NOTE: **Note:** This example uses NFS and CephFS. We do not recommend using EFS 
      storages: # You must have at least a 'default' storage path.
        default:
          path: /home/git/repositories
-       nfs:
-         path: /mnt/nfs/repositories
-       cephfs:
-         path: /mnt/cephfs/repositories
+       nfs_1:
+         path: /mnt/nfs1/repositories
+       nfs_2:
+         path: /mnt/nfs2/repositories
    ```
 
 1. [Restart GitLab][restart-gitlab] for the changes to take effect.
@@ -90,8 +88,6 @@ are upgrading from a version prior to 8.10, make sure to add the configuration
 as described in the step above. After you make the changes and confirm they are
 working, you can remove the `repos_path` line.
 
----
-
 **For Omnibus installations**
 
 1. Edit `/etc/gitlab/gitlab.rb` by appending the rest of the paths to the
@@ -100,8 +96,8 @@ working, you can remove the `repos_path` line.
    ```ruby
    git_data_dirs({
      "default" => { "path" => "/var/opt/gitlab/git-data" },
-     "nfs" => { "path" => "/mnt/nfs/git-data" },
-     "cephfs" => { "path" => "/mnt/cephfs/git-data" }
+     "nfs_1" => { "path" => "/mnt/nfs1/git-data" },
+     "nfs_2" => { "path" => "/mnt/nfs2/git-data" }
    })
    ```
 

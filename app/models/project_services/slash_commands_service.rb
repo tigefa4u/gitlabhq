@@ -12,7 +12,7 @@ class SlashCommandsService < Service
   def valid_token?(token)
     self.respond_to?(:token) &&
       self.token.present? &&
-      ActiveSupport::SecurityUtils.variable_size_secure_compare(token, self.token)
+      ActiveSupport::SecurityUtils.secure_compare(token, self.token)
   end
 
   def self.supported_events
@@ -35,6 +35,8 @@ class SlashCommandsService < Service
     chat_user = find_chat_user(params)
 
     if chat_user&.user
+      return Gitlab::SlashCommands::Presenters::Access.new.access_denied unless chat_user.user.can?(:use_slash_commands)
+
       Gitlab::SlashCommands::Command.new(project, chat_user, params).execute
     else
       url = authorize_chat_name_url(params)

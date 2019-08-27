@@ -1,3 +1,7 @@
+---
+type: howto
+---
+
 # Two-Factor Authentication
 
 Two-factor Authentication (2FA) provides an additional level of security to your
@@ -15,7 +19,7 @@ When you enable 2FA, don't forget to back up your [recovery codes](#recovery-cod
 
 In addition to time-based one time passwords (TOTP), GitLab supports U2F
 (universal 2nd factor) devices as the second factor of authentication. Once
-enabled, in addition to supplying your username and password to login, you'll
+enabled, in addition to supplying your username and password to log in, you'll
 be prompted to activate your U2F device (usually by pressing a button on it),
 and it will perform secure authentication on your behalf.
 
@@ -44,6 +48,7 @@ To enable 2FA:
       - [andOTP](https://github.com/andOTP/andOTP): feature rich open source app for Android which supports PGP encrypted backups.
       - [FreeOTP](https://freeotp.github.io/): open source app for Android.
       - [Google Authenticator](https://support.google.com/accounts/answer/1066447?hl=en): proprietary app for iOS and Android.
+      - [SailOTP](https://openrepos.net/content/seiichiro0185/sailotp): open source app for SailFish OS.
    1. In the application, add a new entry in one of two ways:
       - Scan the code presented in GitLab with your device's camera to add the
         entry automatically.
@@ -183,29 +188,29 @@ a new set of recovery codes with SSH:
 1. You will then be prompted to confirm that you want to generate new codes.
    Continuing this process invalidates previously saved codes:
 
-    ```sh
-    Are you sure you want to generate new two-factor recovery codes?
-    Any existing recovery codes you saved will be invalidated. (yes/no)
+   ```sh
+   Are you sure you want to generate new two-factor recovery codes?
+   Any existing recovery codes you saved will be invalidated. (yes/no)
 
-    yes
+   yes
 
-    Your two-factor authentication recovery codes are:
+   Your two-factor authentication recovery codes are:
 
-    119135e5a3ebce8e
-    11f6v2a498810dcd
-    3924c7ab2089c902
-    e79a3398bfe4f224
-    34bd7b74adbc8861
-    f061691d5107df1a
-    169bf32a18e63e7f
-    b510e7422e81c947
-    20dbed24c5e74663
-    df9d3b9403b9c9f0
+   119135e5a3ebce8e
+   11f6v2a498810dcd
+   3924c7ab2089c902
+   e79a3398bfe4f224
+   34bd7b74adbc8861
+   f061691d5107df1a
+   169bf32a18e63e7f
+   b510e7422e81c947
+   20dbed24c5e74663
+   df9d3b9403b9c9f0
 
-    During sign in, use one of the codes above when prompted for your
-    two-factor code. Then, visit your Profile Settings and add a new device
-    so you do not lose access to your account again.
-    ```
+   During sign in, use one of the codes above when prompted for your
+   two-factor code. Then, visit your Profile Settings and add a new device
+   so you do not lose access to your account again.
+   ```
 
 1. Go to the GitLab sign-in page and enter your username/email and password.
    When prompted for a two-factor code, enter one of the recovery codes obtained
@@ -238,3 +243,15 @@ Sign in and re-enable two-factor authentication as soon as possible.
   - The user logs out and attempts to log in via `first.host.xyz` - U2F authentication succeeds.
   - The user logs out and attempts to log in via `second.host.xyz` - U2F authentication fails, because
     the U2F key has only been registered on `first.host.xyz`.
+
+<!-- ## Troubleshooting
+
+Include any troubleshooting steps that you can foresee. If you know beforehand what issues
+one might have when setting this up, or when something is changed, or on upgrading, it's
+important to describe those, too. Think of things that may go wrong and include them here.
+This is important to minimize requests for support, and to avoid doc comments with
+questions that you know someone might ask.
+
+Each scenario can be a third-level heading, e.g. `### Getting error message X`.
+If you have none to add when creating a doc, leave this section in place
+but commented out to help encourage others to add to it in the future. -->

@@ -10,14 +10,15 @@ module API
     NAMESPACE_OR_PROJECT_REQUIREMENTS = { id: NO_SLASH_URL_PART_REGEX }.freeze
     COMMIT_ENDPOINT_REQUIREMENTS = NAMESPACE_OR_PROJECT_REQUIREMENTS.merge(sha: NO_SLASH_URL_PART_REGEX).freeze
     USER_REQUIREMENTS = { user_id: NO_SLASH_URL_PART_REGEX }.freeze
+    LOG_FILTERS = ::Rails.application.config.filter_parameters + [/^output$/]
 
     insert_before Grape::Middleware::Error,
                   GrapeLogging::Middleware::RequestLogger,
                   logger: Logger.new(LOG_FILENAME),
                   formatter: Gitlab::GrapeLogging::Formatters::LogrageWithTimestamp.new,
                   include: [
-                    GrapeLogging::Loggers::FilterParameters.new,
-                    GrapeLogging::Loggers::ClientEnv.new,
+                    GrapeLogging::Loggers::FilterParameters.new(LOG_FILTERS),
+                    Gitlab::GrapeLogging::Loggers::ClientEnvLogger.new,
                     Gitlab::GrapeLogging::Loggers::RouteLogger.new,
                     Gitlab::GrapeLogging::Loggers::UserLogger.new,
                     Gitlab::GrapeLogging::Loggers::QueueDurationLogger.new,
@@ -103,7 +104,6 @@ module API
     mount ::API::BroadcastMessages
     mount ::API::Commits
     mount ::API::CommitStatuses
-    mount ::API::ContainerRegistry
     mount ::API::DeployKeys
     mount ::API::Deployments
     mount ::API::Environments
@@ -111,9 +111,11 @@ module API
     mount ::API::Features
     mount ::API::Files
     mount ::API::GroupBoards
+    mount ::API::GroupClusters
     mount ::API::GroupLabels
     mount ::API::GroupMilestones
     mount ::API::Groups
+    mount ::API::GroupContainerRepositories
     mount ::API::GroupVariables
     mount ::API::ImportGithub
     mount ::API::Internal
@@ -136,6 +138,7 @@ module API
     mount ::API::Pipelines
     mount ::API::PipelineSchedules
     mount ::API::ProjectClusters
+    mount ::API::ProjectContainerRepositories
     mount ::API::ProjectEvents
     mount ::API::ProjectExport
     mount ::API::ProjectImport

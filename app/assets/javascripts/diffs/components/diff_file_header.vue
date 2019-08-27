@@ -130,7 +130,7 @@ export default {
       return `\`${this.diffFile.file_path}\``;
     },
     isFileRenamed() {
-      return this.diffFile.viewer.name === diffViewerModes.renamed;
+      return this.diffFile.renamed_file;
     },
     isModeChanged() {
       return this.diffFile.viewer.name === diffViewerModes.mode_changed;
@@ -263,6 +263,7 @@ export default {
               :disabled="!diffHasDiscussions(diffFile)"
               :class="{ active: hasExpandedDiscussions }"
               class="js-btn-vue-toggle-comments btn"
+              data-qa-selector="toggle_comments_button"
               type="button"
               @click="handleToggleDiscussions"
             >

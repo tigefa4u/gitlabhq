@@ -9,6 +9,13 @@ describe API::Discussions do
     project.add_developer(user)
   end
 
+  context 'when discussions have cross-reference system notes' do
+    let(:url) { "/projects/#{project.id}/merge_requests/#{merge_request.iid}/discussions" }
+    let(:notes_in_response) { json_response.first['notes'] }
+
+    it_behaves_like 'with cross-reference system notes'
+  end
+
   context 'when noteable is an Issue' do
     let!(:issue) { create(:issue, project: project, author: user) }
     let!(:issue_note) { create(:discussion_note_on_issue, noteable: issue, project: project, author: user) }

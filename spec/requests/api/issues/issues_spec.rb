@@ -216,6 +216,10 @@ describe API::Issues do
         expect_paginated_array_response([issue.id, closed_issue.id])
         expect(json_response.first['title']).to eq(issue.title)
         expect(json_response.last).to have_key('web_url')
+        # Calculating the value of subscribed field triggers Markdown
+        # processing. We can't do that for multiple issues / merge
+        # requests in a single API request.
+        expect(json_response.last).not_to have_key('subscribed')
       end
 
       it 'returns an array of closed issues' do
@@ -601,6 +605,22 @@ describe API::Issues do
         issue.touch(:updated_at)
 
         expect_paginated_array_response([closed_issue.id, issue.id])
+      end
+
+      context 'with issues list sort options' do
+        it 'accepts only predefined order by params' do
+          API::Helpers::IssuesHelpers.sort_options.each do |sort_opt|
+            get api('/issues', user), params: { order_by: sort_opt, sort: 'asc' }
+            expect(response).to have_gitlab_http_status(200)
+          end
+        end
+
+        it 'fails to sort with non predefined options' do
+          %w(milestone title abracadabra).each do |sort_opt|
+            get api('/issues', user), params: { order_by: sort_opt, sort: 'asc' }
+            expect(response).to have_gitlab_http_status(400)
+          end
+        end
       end
 
       it 'matches V4 response schema' do

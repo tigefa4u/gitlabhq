@@ -1,5 +1,5 @@
 ---
-redirect_from: 'https://docs.gitlab.com/ee/articles/laravel_with_gitlab_and_envoy/index.html'
+disqus_identifier: 'https://docs.gitlab.com/ee/articles/laravel_with_gitlab_and_envoy/index.html'
 author: Mehran Rasulian
 author_gitlab: mehranrasulian
 level: intermediate
@@ -452,6 +452,7 @@ To start using Container Registry on our machine, we first need to login to the 
 ```bash
 docker login registry.gitlab.com
 ```
+
 Then we can build and push our image to GitLab:
 
 ```bash

@@ -165,7 +165,7 @@ export default {
 <template>
   <section class="media-section">
     <div class="media">
-      <status-icon :status="statusIconName" />
+      <status-icon :status="statusIconName" :size="24" />
       <div class="media-body d-flex flex-align-self-center">
         <span class="js-code-text code-text">
           {{ headerText }}

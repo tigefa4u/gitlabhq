@@ -16,7 +16,7 @@ class AutocompleteController < ApplicationController
       .new(params: params, current_user: current_user, project: project, group: group)
       .execute
 
-    render json: UserSerializer.new.represent(users)
+    render json: UserSerializer.new(params).represent(users, project: project)
   end
 
   def user
@@ -36,7 +36,7 @@ class AutocompleteController < ApplicationController
   end
 
   def award_emojis
-    render json: AwardedEmojiFinder.new(current_user).execute
+    render json: AwardEmojis::CollectUserEmojiService.new(current_user).execute
   end
 
   def merge_request_target_branches

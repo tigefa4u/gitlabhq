@@ -17,7 +17,7 @@ Working with our frontend assets requires Node (v8.10.0 or greater) and Yarn
 
 For our currently-supported browsers, see our [requirements][requirements].
 
----
+Use [BrowserStack](https://www.browserstack.com/) to test with our supported browsers. Login to BrowserStack with the credentials saved in GitLab's [shared 1Password account](https://about.gitlab.com/handbook/security/#1password-for-teams).
 
 ## Initiatives
 
@@ -77,8 +77,6 @@ How we use Snowplow to track custom events.
 
 Read the [frontend's FAQ](frontend_faq.md) for common small pieces of helpful information.
 
----
-
 ## Style Guides
 
 ### [JavaScript Style Guide](style_guide_js.md)
@@ -91,19 +89,13 @@ changes.
 
 Our SCSS conventions which are enforced through [scss-lint][scss-lint].
 
----
-
 ## [Performance](performance.md)
 
 Best practices for monitoring and maximizing frontend performance.
 
----
-
 ## [Security](security.md)
 
 Frontend security practices.
-
----
 
 ## [Accessibility](accessibility.md)
 

@@ -35,9 +35,10 @@ Documentation for GitLab instance administrators is under [LFS administration do
 - Git LFS always assumes HTTPS so if you have GitLab server on HTTP you will have
   to add the URL to Git config manually (see [troubleshooting](#troubleshooting))
 
->**Note**: With 8.12 GitLab added LFS support to SSH. The Git LFS communication
- still goes over HTTP, but now the SSH client passes the correct credentials
- to the Git LFS client, so no action is required by the user.
+NOTE: **Note:**
+With 8.12 GitLab added LFS support to SSH. The Git LFS communication
+still goes over HTTP, but now the SSH client passes the correct credentials
+to the Git LFS client, so no action is required by the user.
 
 ## Using Git LFS
 
@@ -61,12 +62,13 @@ git commit -am "Added Debian iso"     # commit the file meta data
 git push origin master                # sync the git repo and large file to the GitLab server
 ```
 
-> **Note**: Make sure that `.gitattributes` is tracked by git. Otherwise Git
-> LFS will not be working properly for people cloning the project.
->
-> ```bash
-> git add .gitattributes
-> ```
+NOTE: **Note:**
+**Make sure** that `.gitattributes` is tracked by Git. Otherwise Git
+LFS will not be working properly for people cloning the project.
+
+```bash
+git add .gitattributes
+```
 
 Cloning the repository works the same as before. Git automatically detects the
 LFS-tracked files and clones them via HTTP. If you performed the git clone
@@ -83,6 +85,10 @@ that are on the remote repository, eg. for a branch from origin:
 ```bash
 git lfs fetch origin master
 ```
+
+### Migrate an existing repo to Git LFS
+
+Read the documentation on how to [migrate an existing Git repo with Git LFS](../../topics/git/migrate_to_git_lfs/index.md).
 
 ## File Locking
 
@@ -212,9 +218,10 @@ git config --add lfs.url "http://gitlab.example.com/group/project.git/info/lfs"
 
 ### Credentials are always required when pushing an object
 
->**Note**: With 8.12 GitLab added LFS support to SSH. The Git LFS communication
- still goes over HTTP, but now the SSH client passes the correct credentials
- to the Git LFS client, so no action is required by the user.
+NOTE: **Note:**
+With 8.12 GitLab added LFS support to SSH. The Git LFS communication
+still goes over HTTP, but now the SSH client passes the correct credentials
+to the Git LFS client, so no action is required by the user.
 
 Given that Git LFS uses HTTP Basic Authentication to authenticate the user pushing
 the LFS object on every push for every object, user HTTPS credentials are required.
@@ -250,7 +257,7 @@ If you are storing LFS files outside of GitLab you can disable LFS on the projec
 
 It is possible to host LFS objects externally by setting a custom LFS url with `git config -f .lfsconfig lfs.url https://example.com/<project>.git/info/lfs`.
 
-You might choose to do this if you are using an appliance like a Sonatype Nexus to store LFS data. If you choose to use an external LFS store, 
+You might choose to do this if you are using an appliance like a Sonatype Nexus to store LFS data. If you choose to use an external LFS store,
 GitLab will not be able to verify LFS objects which means that pushes will fail if you have GitLab LFS support enabled.
 
 To stop push failure, LFS support can be disabled in the [Project settings](../../user/project/settings/index.md). This means you will lose GitLab LFS value-adds (Verifying LFS objects, UI integration for LFS).

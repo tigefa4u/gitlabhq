@@ -98,6 +98,7 @@ describe Project do
     it { is_expected.to have_many(:lfs_file_locks) }
     it { is_expected.to have_many(:project_deploy_tokens) }
     it { is_expected.to have_many(:deploy_tokens).through(:project_deploy_tokens) }
+    it { is_expected.to have_many(:cycle_analytics_stages) }
 
     it 'has an inverse relationship with merge requests' do
       expect(described_class.reflect_on_association(:merge_requests).has_inverse?).to eq(:target_project)
@@ -173,24 +174,6 @@ describe Project do
     it { is_expected.to include_module(Sortable) }
   end
 
-  describe '.missing_kubernetes_namespace' do
-    let!(:project) { create(:project) }
-    let!(:cluster) { create(:cluster, :provided_by_user, :group) }
-    let(:kubernetes_namespaces) { project.kubernetes_namespaces }
-
-    subject { described_class.missing_kubernetes_namespace(kubernetes_namespaces) }
-
-    it { is_expected.to contain_exactly(project) }
-
-    context 'kubernetes namespace exists' do
-      before do
-        create(:cluster_kubernetes_namespace, project: project, cluster: cluster)
-      end
-
-      it { is_expected.to be_empty }
-    end
-  end
-
   describe 'validation' do
     let!(:project) { create(:project) }
 
@@ -213,7 +196,7 @@ describe Project do
         .only_integer
         .is_greater_than_or_equal_to(10.minutes)
         .is_less_than(1.month)
-        .with_message('needs to be beetween 10 minutes and 1 month')
+        .with_message('needs to be between 10 minutes and 1 month')
     end
 
     it 'does not allow new projects beyond user limits' do
@@ -1174,7 +1157,6 @@ describe Project do
 
   describe '#pipeline_for' do
     let(:project) { create(:project, :repository) }
-    let!(:pipeline) { create_pipeline(project) }
 
     shared_examples 'giving the correct pipeline' do
       it { is_expected.to eq(pipeline) }
@@ -1186,17 +1168,45 @@ describe Project do
       end
     end
 
-    context 'with explicit sha' do
-      subject { project.pipeline_for('master', pipeline.sha) }
+    context 'with a matching pipeline' do
+      let!(:pipeline) { create_pipeline(project) }
 
-      it_behaves_like 'giving the correct pipeline'
+      context 'with explicit sha' do
+        subject { project.pipeline_for('master', pipeline.sha) }
+
+        it_behaves_like 'giving the correct pipeline'
+
+        context 'with supplied id' do
+          let!(:other_pipeline) { create_pipeline(project) }
+
+          subject { project.pipeline_for('master', pipeline.sha, other_pipeline.id) }
+
+          it { is_expected.to eq(other_pipeline) }
+        end
+      end
+
+      context 'with implicit sha' do
+        subject { project.pipeline_for('master') }
+
+        it_behaves_like 'giving the correct pipeline'
+      end
     end
 
-    context 'with implicit sha' do
+    context 'when there is no matching pipeline' do
       subject { project.pipeline_for('master') }
 
-      it_behaves_like 'giving the correct pipeline'
+      it { is_expected.to be_nil }
     end
+  end
+
+  describe '#pipelines_for' do
+    let(:project) { create(:project, :repository) }
+    let!(:pipeline) { create_pipeline(project) }
+    let!(:other_pipeline) { create_pipeline(project) }
+
+    subject { project.pipelines_for(project.default_branch, project.commit.sha) }
+
+    it { is_expected.to contain_exactly(pipeline, other_pipeline) }
   end
 
   describe '#builds_enabled' do
@@ -1675,26 +1685,6 @@ describe Project do
     end
   end
 
-  describe '.paginate_in_descending_order_using_id' do
-    let!(:project1) { create(:project) }
-    let!(:project2) { create(:project) }
-
-    it 'orders the relation in descending order' do
-      expect(described_class.paginate_in_descending_order_using_id)
-        .to eq([project2, project1])
-    end
-
-    it 'applies a limit to the relation' do
-      expect(described_class.paginate_in_descending_order_using_id(limit: 1))
-        .to eq([project2])
-    end
-
-    it 'limits projects by and ID when given' do
-      expect(described_class.paginate_in_descending_order_using_id(before: project2.id))
-        .to eq([project1])
-    end
-  end
-
   describe '.including_namespace_and_owner' do
     it 'eager loads the namespace and namespace owner' do
       create(:project)
@@ -2019,62 +2009,33 @@ describe Project do
     end
   end
 
-  describe '#latest_successful_build_for' do
+  describe '#latest_successful_build_for_ref' do
     let(:project) { create(:project, :repository) }
     let(:pipeline) { create_pipeline(project) }
 
-    context 'with many builds' do
-      it 'gives the latest builds from latest pipeline' do
-        pipeline1 = create_pipeline(project)
-        pipeline2 = create_pipeline(project)
-        create_build(pipeline1, 'test')
-        create_build(pipeline1, 'test2')
-        build1_p2 = create_build(pipeline2, 'test')
-        create_build(pipeline2, 'test2')
+    it_behaves_like 'latest successful build for sha or ref'
 
-        expect(project.latest_successful_build_for(build1_p2.name))
-          .to eq(build1_p2)
-      end
-    end
+    subject { project.latest_successful_build_for_ref(build_name) }
 
-    context 'with succeeded pipeline' do
-      let!(:build) { create_build }
+    context 'with a specified ref' do
+      let(:build) { create_build }
 
-      context 'standalone pipeline' do
-        it 'returns builds for ref for default_branch' do
-          expect(project.latest_successful_build_for(build.name))
-            .to eq(build)
-        end
+      subject { project.latest_successful_build_for_ref(build.name, project.default_branch) }
 
-        it 'returns empty relation if the build cannot be found' do
-          expect(project.latest_successful_build_for('TAIL'))
-            .to be_nil
-        end
-      end
-
-      context 'with some pending pipeline' do
-        before do
-          create_build(create_pipeline(project, 'pending'))
-        end
-
-        it 'gives the latest build from latest pipeline' do
-          expect(project.latest_successful_build_for(build.name))
-            .to eq(build)
-        end
-      end
-    end
-
-    context 'with pending pipeline' do
-      it 'returns empty relation' do
-        pipeline.update(status: 'pending')
-        pending_build = create_build(pipeline)
-
-        expect(project.latest_successful_build_for(pending_build.name)).to be_nil
-      end
+      it { is_expected.to eq(build) }
     end
   end
 
-  describe '#latest_successful_build_for!' do
+  describe '#latest_successful_build_for_sha' do
+    let(:project) { create(:project, :repository) }
+    let(:pipeline) { create_pipeline(project) }
+
+    it_behaves_like 'latest successful build for sha or ref'
+
+    subject { project.latest_successful_build_for_sha(build_name, project.commit.sha) }
+  end
+
+  describe '#latest_successful_build_for_ref!' do
     let(:project) { create(:project, :repository) }
     let(:pipeline) { create_pipeline(project) }
 
@@ -2087,7 +2048,7 @@ describe Project do
         build1_p2 = create_build(pipeline2, 'test')
         create_build(pipeline2, 'test2')
 
-        expect(project.latest_successful_build_for(build1_p2.name))
+        expect(project.latest_successful_build_for_ref!(build1_p2.name))
           .to eq(build1_p2)
       end
     end
@@ -2097,12 +2058,12 @@ describe Project do
 
       context 'standalone pipeline' do
         it 'returns builds for ref for default_branch' do
-          expect(project.latest_successful_build_for!(build.name))
+          expect(project.latest_successful_build_for_ref!(build.name))
             .to eq(build)
         end
 
         it 'returns exception if the build cannot be found' do
-          expect { project.latest_successful_build_for!(build.name, 'TAIL') }
+          expect { project.latest_successful_build_for_ref!(build.name, 'TAIL') }
             .to raise_error(ActiveRecord::RecordNotFound)
         end
       end
@@ -2113,7 +2074,7 @@ describe Project do
         end
 
         it 'gives the latest build from latest pipeline' do
-          expect(project.latest_successful_build_for!(build.name))
+          expect(project.latest_successful_build_for_ref!(build.name))
             .to eq(build)
         end
       end
@@ -2124,7 +2085,7 @@ describe Project do
         pipeline.update(status: 'pending')
         pending_build = create_build(pipeline)
 
-        expect { project.latest_successful_build_for!(pending_build.name) }
+        expect { project.latest_successful_build_for_ref!(pending_build.name) }
           .to raise_error(ActiveRecord::RecordNotFound)
       end
     end
@@ -2292,7 +2253,22 @@ describe Project do
     end
   end
 
-  describe '#ancestors_upto', :nested_groups do
+  describe '#mark_stuck_remote_mirrors_as_failed!' do
+    it 'fails stuck remote mirrors' do
+      project = create(:project, :repository, :remote_mirror)
+
+      project.remote_mirrors.first.update(
+        update_status: :started,
+        last_update_started_at: 2.days.ago
+      )
+
+      expect do
+        project.mark_stuck_remote_mirrors_as_failed!
+      end.to change { project.remote_mirrors.stuck.count }.from(1).to(0)
+    end
+  end
+
+  describe '#ancestors_upto' do
     let(:parent) { create(:group) }
     let(:child) { create(:group, parent: parent) }
     let(:child2) { create(:group, parent: child) }
@@ -2331,12 +2307,63 @@ describe Project do
       it { is_expected.to eq(group) }
     end
 
-    context 'in a nested group', :nested_groups do
+    context 'in a nested group' do
       let(:root) { create(:group) }
       let(:child) { create(:group, parent: root) }
       let(:project) { create(:project, group: child) }
 
       it { is_expected.to eq(root) }
+    end
+  end
+
+  describe '#emails_disabled?' do
+    let(:project) { create(:project, emails_disabled: false) }
+
+    context 'emails disabled in group' do
+      it 'returns true' do
+        allow(project.namespace).to receive(:emails_disabled?) { true }
+
+        expect(project.emails_disabled?).to be_truthy
+      end
+    end
+
+    context 'emails enabled in group' do
+      before do
+        allow(project.namespace).to receive(:emails_disabled?) { false }
+      end
+
+      it 'returns false' do
+        expect(project.emails_disabled?).to be_falsey
+      end
+
+      it 'returns true' do
+        project.update_attribute(:emails_disabled, true)
+
+        expect(project.emails_disabled?).to be_truthy
+      end
+    end
+
+    context 'when :emails_disabled feature flag is off' do
+      before do
+        stub_feature_flags(emails_disabled: false)
+      end
+
+      context 'emails disabled in group' do
+        it 'returns false' do
+          allow(project.namespace).to receive(:emails_disabled?) { true }
+
+          expect(project.emails_disabled?).to be_falsey
+        end
+      end
+
+      context 'emails enabled in group' do
+        it 'returns false' do
+          allow(project.namespace).to receive(:emails_disabled?) { false }
+          project.update_attribute(:emails_disabled, true)
+
+          expect(project.emails_disabled?).to be_falsey
+        end
+      end
     end
   end
 
@@ -2479,7 +2506,7 @@ describe Project do
         expect(forked_project.in_fork_network_of?(project)).to be_truthy
       end
 
-      it 'is true for a fork of a fork', :postgresql do
+      it 'is true for a fork of a fork' do
         other_fork = fork_project(forked_project)
 
         expect(other_fork.in_fork_network_of?(project)).to be_truthy
@@ -2634,45 +2661,33 @@ describe Project do
   end
 
   describe '#deployment_variables' do
-    context 'when project has no deployment service' do
-      let(:project) { create(:project) }
+    let(:project) { create(:project) }
+    let(:environment) { 'production' }
 
-      it 'returns an empty array' do
-        expect(project.deployment_variables).to eq []
-      end
+    subject { project.deployment_variables(environment: environment) }
+
+    before do
+      expect(project).to receive(:deployment_platform).with(environment: environment)
+        .and_return(deployment_platform)
     end
 
-    context 'when project uses mock deployment service' do
-      let(:project) { create(:mock_deployment_project) }
+    context 'when project has no deployment platform' do
+      let(:deployment_platform) { nil }
 
-      it 'returns an empty array' do
-        expect(project.deployment_variables).to eq []
-      end
+      it { is_expected.to eq [] }
     end
 
-    context 'when project has a deployment service' do
-      context 'when user configured kubernetes from CI/CD > Clusters and KubernetesNamespace migration has not been executed' do
-        let!(:cluster) { create(:cluster, :project, :provided_by_gcp) }
-        let(:project) { cluster.project }
+    context 'when project has a deployment platform' do
+      let(:platform_variables) { %w(platform variables) }
+      let(:deployment_platform) { double }
 
-        it 'does not return variables from this service' do
-          expect(project.deployment_variables).not_to include(
-            { key: 'KUBE_TOKEN', value: project.deployment_platform.token, public: false, masked: true }
-          )
-        end
+      before do
+        expect(deployment_platform).to receive(:predefined_variables)
+          .with(project: project, environment_name: environment)
+          .and_return(platform_variables)
       end
 
-      context 'when user configured kubernetes from CI/CD > Clusters and KubernetesNamespace migration has been executed' do
-        let!(:kubernetes_namespace) { create(:cluster_kubernetes_namespace, :with_token) }
-        let!(:cluster) { kubernetes_namespace.cluster }
-        let(:project) { kubernetes_namespace.project }
-
-        it 'returns token from kubernetes namespace' do
-          expect(project.deployment_variables).to include(
-            { key: 'KUBE_TOKEN', value: kubernetes_namespace.service_account_token, public: false, masked: true }
-          )
-        end
-      end
+      it { is_expected.to eq platform_variables }
     end
   end
 
@@ -2700,9 +2715,10 @@ describe Project do
 
   describe '#ci_variables_for' do
     let(:project) { create(:project) }
+    let(:environment_scope) { '*' }
 
     let!(:ci_variable) do
-      create(:ci_variable, value: 'secret', project: project)
+      create(:ci_variable, value: 'secret', project: project, environment_scope: environment_scope)
     end
 
     let!(:protected_variable) do
@@ -2746,6 +2762,96 @@ describe Project do
       end
 
       it_behaves_like 'ref is protected'
+    end
+
+    context 'when environment name is specified' do
+      let(:environment) { 'review/name' }
+
+      subject do
+        project.ci_variables_for(ref: 'ref', environment: environment)
+      end
+
+      context 'when environment scope is exactly matched' do
+        let(:environment_scope) { 'review/name' }
+
+        it { is_expected.to contain_exactly(ci_variable) }
+      end
+
+      context 'when environment scope is matched by wildcard' do
+        let(:environment_scope) { 'review/*' }
+
+        it { is_expected.to contain_exactly(ci_variable) }
+      end
+
+      context 'when environment scope does not match' do
+        let(:environment_scope) { 'review/*/special' }
+
+        it { is_expected.not_to contain_exactly(ci_variable) }
+      end
+
+      context 'when environment scope has _' do
+        let(:environment_scope) { '*_*' }
+
+        it 'does not treat it as wildcard' do
+          is_expected.not_to contain_exactly(ci_variable)
+        end
+
+        context 'when environment name contains underscore' do
+          let(:environment) { 'foo_bar/test' }
+          let(:environment_scope) { 'foo_bar/*' }
+
+          it 'matches literally for _' do
+            is_expected.to contain_exactly(ci_variable)
+          end
+        end
+      end
+
+      # The environment name and scope cannot have % at the moment,
+      # but we're considering relaxing it and we should also make sure
+      # it doesn't break in case some data sneaked in somehow as we're
+      # not checking this integrity in database level.
+      context 'when environment scope has %' do
+        it 'does not treat it as wildcard' do
+          ci_variable.update_attribute(:environment_scope, '*%*')
+
+          is_expected.not_to contain_exactly(ci_variable)
+        end
+
+        context 'when environment name contains a percent' do
+          let(:environment) { 'foo%bar/test' }
+
+          it 'matches literally for _' do
+            ci_variable.update(environment_scope: 'foo%bar/*')
+
+            is_expected.to contain_exactly(ci_variable)
+          end
+        end
+      end
+
+      context 'when variables with the same name have different environment scopes' do
+        let!(:partially_matched_variable) do
+          create(:ci_variable,
+                 key: ci_variable.key,
+                 value: 'partial',
+                 environment_scope: 'review/*',
+                 project: project)
+        end
+
+        let!(:perfectly_matched_variable) do
+          create(:ci_variable,
+                 key: ci_variable.key,
+                 value: 'prefect',
+                 environment_scope: 'review/name',
+                 project: project)
+        end
+
+        it 'puts variables matching environment scope more in the end' do
+          is_expected.to eq(
+            [ci_variable,
+             partially_matched_variable,
+             perfectly_matched_variable])
+        end
+      end
     end
   end
 
@@ -2997,6 +3103,16 @@ describe Project do
           expect(project.public_path_for_source_path('file.html', sha)).to be_nil
         end
       end
+
+      it 'returns a public path with a leading slash unmodified' do
+        route_map = Gitlab::RouteMap.new(<<-MAP.strip_heredoc)
+          - source: 'source/file.html'
+            public: '/public/file'
+        MAP
+        allow(project).to receive(:route_map_for).with(sha).and_return(route_map)
+
+        expect(project.public_path_for_source_path('source/file.html', sha)).to eq('/public/file')
+      end
     end
 
     context 'when there is no route map' do
@@ -3117,11 +3233,8 @@ describe Project do
     let(:project) { create(:project) }
 
     it 'shows full error updating an invalid MR' do
-      error_message = 'Failed to replace merge_requests because one or more of the new records could not be saved.'\
-        ' Validate fork Source project is not a fork of the target project'
-
       expect { project.append_or_update_attribute(:merge_requests, [create(:merge_request)]) }
-        .to raise_error(ActiveRecord::RecordNotSaved, error_message)
+        .to raise_error(ActiveRecord::RecordInvalid, /Failed to set merge_requests:/)
     end
 
     it 'updates the project successfully' do
@@ -3804,7 +3917,7 @@ describe Project do
         end
       end
 
-      context 'when enabled on root parent', :nested_groups do
+      context 'when enabled on root parent' do
         let(:parent_group) { create(:group, parent: create(:group, :auto_devops_enabled)) }
 
         context 'when auto devops instance enabled' do
@@ -3824,7 +3937,7 @@ describe Project do
         end
       end
 
-      context 'when disabled on root parent', :nested_groups do
+      context 'when disabled on root parent' do
         let(:parent_group) { create(:group, parent: create(:group, :auto_devops_disabled)) }
 
         context 'when auto devops instance enabled' do
@@ -4036,7 +4149,7 @@ describe Project do
 
     context 'with a ref that is not the default branch' do
       it 'returns the latest successful pipeline for the given ref' do
-        expect(project.ci_pipelines).to receive(:latest_successful_for).with('foo')
+        expect(project.ci_pipelines).to receive(:latest_successful_for_ref).with('foo')
 
         project.latest_successful_pipeline_for('foo')
       end
@@ -4064,7 +4177,7 @@ describe Project do
     it 'memoizes and returns the latest successful pipeline for the default branch' do
       pipeline = double(:pipeline)
 
-      expect(project.ci_pipelines).to receive(:latest_successful_for)
+      expect(project.ci_pipelines).to receive(:latest_successful_for_ref)
         .with(project.default_branch)
         .and_return(pipeline)
         .once
@@ -4251,6 +4364,39 @@ describe Project do
     end
   end
 
+  describe '#has_active_hooks?' do
+    set(:project) { create(:project) }
+
+    it { expect(project.has_active_hooks?).to be_falsey }
+
+    it 'returns true when a matching push hook exists' do
+      create(:project_hook, push_events: true, project: project)
+
+      expect(project.has_active_hooks?(:merge_request_events)).to be_falsey
+      expect(project.has_active_hooks?).to be_truthy
+    end
+
+    it 'returns true when a matching system hook exists' do
+      create(:system_hook, push_events: true)
+
+      expect(project.has_active_hooks?(:merge_request_events)).to be_falsey
+      expect(project.has_active_hooks?).to be_truthy
+    end
+  end
+
+  describe '#has_active_services?' do
+    set(:project) { create(:project) }
+
+    it { expect(project.has_active_services?).to be_falsey }
+
+    it 'returns true when a matching service exists' do
+      create(:custom_issue_tracker_service, push_events: true, merge_requests_events: false, project: project)
+
+      expect(project.has_active_services?(:merge_request_hooks)).to be_falsey
+      expect(project.has_active_services?).to be_truthy
+    end
+  end
+
   describe '#badges' do
     let(:project_group) { create(:group) }
     let(:project) { create(:project, path: 'avatar', namespace: project_group) }
@@ -4267,18 +4413,16 @@ describe Project do
       expect(project.badges.count).to eq 3
     end
 
-    if Group.supports_nested_objects?
-      context 'with nested_groups' do
-        let(:parent_group) { create(:group) }
+    context 'with nested_groups' do
+      let(:parent_group) { create(:group) }
 
-        before do
-          create_list(:group_badge, 2, group: project_group)
-          project_group.update(parent: parent_group)
-        end
+      before do
+        create_list(:group_badge, 2, group: project_group)
+        project_group.update(parent: parent_group)
+      end
 
-        it 'returns the project and the project nested groups badges' do
-          expect(project.badges.count).to eq 5
-        end
+      it 'returns the project and the project nested groups badges' do
+        expect(project.badges.count).to eq 5
       end
     end
   end
@@ -4733,35 +4877,22 @@ describe Project do
 
   describe '#git_objects_poolable?' do
     subject { project }
-
-    context 'when the feature flag is turned off' do
-      before do
-        stub_feature_flags(object_pools: false)
-      end
-
-      let(:project) { create(:project, :repository, :public) }
+    context 'when not using hashed storage' do
+      let(:project) { create(:project, :legacy_storage, :public, :repository) }
 
       it { is_expected.not_to be_git_objects_poolable }
     end
 
-    context 'when the feature flag is enabled' do
-      context 'when not using hashed storage' do
-        let(:project) { create(:project, :legacy_storage, :public, :repository) }
+    context 'when the project is not public' do
+      let(:project) { create(:project, :private) }
 
-        it { is_expected.not_to be_git_objects_poolable }
-      end
+      it { is_expected.not_to be_git_objects_poolable }
+    end
 
-      context 'when the project is not public' do
-        let(:project) { create(:project, :private) }
+    context 'when objects are poolable' do
+      let(:project) { create(:project, :repository, :public) }
 
-        it { is_expected.not_to be_git_objects_poolable }
-      end
-
-      context 'when objects are poolable' do
-        let(:project) { create(:project, :repository, :public) }
-
-        it { is_expected.to be_git_objects_poolable }
-      end
+      it { is_expected.to be_git_objects_poolable }
     end
   end
 

@@ -177,6 +177,7 @@ describe Note do
             pipeline: :note,
             cache_key: [note1, "note"],
             project: note1.project,
+            rendered: note1.note_html,
             author: note1.author
           }
         }]).and_call_original
@@ -189,6 +190,7 @@ describe Note do
             pipeline: :note,
             cache_key: [note2, "note"],
             project: note2.project,
+            rendered: note2.note_html,
             author: note2.author
           }
         }]).and_call_original
@@ -908,6 +910,22 @@ describe Note do
         it { is_expected.to include(comment) }
         it { is_expected.not_to include(system_note) }
       end
+    end
+  end
+
+  describe '#special_role=' do
+    let(:role) { Note::SpecialRole::FIRST_TIME_CONTRIBUTOR }
+
+    it 'assigns role' do
+      subject.special_role = role
+
+      expect(subject.special_role).to eq(role)
+    end
+
+    it 'does not assign unknown role' do
+      expect { subject.special_role = :bogus }.to raise_error(/Role is undefined/)
+
+      expect(subject.special_role).to be_nil
     end
   end
 

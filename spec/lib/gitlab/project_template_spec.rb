@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::ProjectTemplate do
@@ -28,6 +30,18 @@ describe Gitlab::ProjectTemplate do
     end
   end
 
+  describe '#project_path' do
+    subject { described_class.new('name', 'title', 'description', 'https://gitlab.com/some/project/path').project_path }
+
+    it { is_expected.to eq 'some/project/path' }
+  end
+
+  describe '#uri_encoded_project_path' do
+    subject { described_class.new('name', 'title', 'description', 'https://gitlab.com/some/project/path').uri_encoded_project_path }
+
+    it { is_expected.to eq 'some%2Fproject%2Fpath' }
+  end
+
   describe '.find' do
     subject { described_class.find(query) }
 
@@ -42,6 +56,12 @@ describe Gitlab::ProjectTemplate do
 
       it { is_expected.to be(nil) }
     end
+  end
+
+  describe '.archive_directory' do
+    subject { described_class.archive_directory }
+
+    it { is_expected.to be_a Pathname }
   end
 
   describe 'instance methods' do

@@ -161,6 +161,8 @@ class User < ApplicationRecord
   #
   # Note: devise :validatable above adds validations for :email and :password
   validates :name, presence: true, length: { maximum: 128 }
+  validates :first_name, length: { maximum: 255 }
+  validates :last_name, length: { maximum: 255 }
   validates :email, confirmation: true
   validates :notification_email, presence: true
   validates :notification_email, devise_email: true, if: ->(user) { user.notification_email != user.email }
@@ -185,6 +187,7 @@ class User < ApplicationRecord
   before_validation :set_notification_email, if: :new_record?
   before_validation :set_public_email, if: :public_email_changed?
   before_validation :set_commit_email, if: :commit_email_changed?
+  before_save :default_private_profile_to_false
   before_save :set_public_email, if: :public_email_changed? # in case validation is skipped
   before_save :set_commit_email, if: :commit_email_changed? # in case validation is skipped
   before_save :ensure_incoming_email_token
@@ -281,6 +284,17 @@ class User < ApplicationRecord
   scope :for_todos, -> (todos) { where(id: todos.select(:user_id)) }
   scope :with_emails, -> { preload(:emails) }
   scope :with_dashboard, -> (dashboard) { where(dashboard: dashboard) }
+  scope :with_public_profile, -> { where(private_profile: false) }
+
+  def self.with_visible_profile(user)
+    return with_public_profile if user.nil?
+
+    if user.admin?
+      all
+    else
+      with_public_profile.or(where(id: user.id))
+    end
+  end
 
   # Limits the users to those that have TODOs, optionally in the given state.
   #
@@ -426,18 +440,20 @@ class User < ApplicationRecord
 
       order = <<~SQL
         CASE
-          WHEN users.name = %{query} THEN 0
-          WHEN users.username = %{query} THEN 1
-          WHEN users.email = %{query} THEN 2
+          WHEN users.name = :query THEN 0
+          WHEN users.username = :query THEN 1
+          WHEN users.email = :query THEN 2
           ELSE 3
         END
       SQL
+
+      sanitized_order_sql = Arel.sql(sanitize_sql_array([order, query: query]))
 
       where(
         fuzzy_arel_match(:name, query, lower_exact_match: true)
           .or(fuzzy_arel_match(:username, query, lower_exact_match: true))
           .or(arel_table[:email].eq(query))
-      ).reorder(order % { query: ApplicationRecord.connection.quote(query) }, :name)
+      ).reorder(sanitized_order_sql, :name)
     end
 
     # Limits the result set to users _not_ in the given query/list of IDs.
@@ -867,7 +883,15 @@ class User < ApplicationRecord
   end
 
   def first_name
-    name.split.first unless name.blank?
+    read_attribute(:first_name) || begin
+      name.split(' ').first unless name.blank?
+    end
+  end
+
+  def last_name
+    read_attribute(:last_name) || begin
+      name.split(' ').drop(1).join(' ') unless name.blank?
+    end
   end
 
   def projects_limit_left
@@ -932,7 +956,7 @@ class User < ApplicationRecord
   end
 
   def project_deploy_keys
-    DeployKey.unscoped.in_projects(authorized_projects.pluck(:id)).distinct(:id)
+    DeployKey.in_projects(authorized_projects.select(:id)).distinct(:id)
   end
 
   def highest_role
@@ -940,11 +964,10 @@ class User < ApplicationRecord
   end
 
   def accessible_deploy_keys
-    @accessible_deploy_keys ||= begin
-      key_ids = project_deploy_keys.pluck(:id)
-      key_ids.push(*DeployKey.are_public.pluck(:id))
-      DeployKey.where(id: key_ids)
-    end
+    DeployKey.from_union([
+      DeployKey.where(id: project_deploy_keys.select(:deploy_key_id)),
+      DeployKey.are_public
+    ])
   end
 
   def created_by
@@ -1117,9 +1140,10 @@ class User < ApplicationRecord
 
   def ensure_namespace_correct
     if namespace
-      namespace.path = namespace.name = username if username_changed?
+      namespace.path = username if username_changed?
+      namespace.name = name if name_changed?
     else
-      build_namespace(path: username, name: username)
+      build_namespace(path: username, name: name)
     end
   end
 
@@ -1255,6 +1279,11 @@ class User < ApplicationRecord
 
       Ci::Runner.from_union([project_runners, group_runners])
     end
+  end
+
+  def notification_email_for(notification_group)
+    # Return group-specific email address if present, otherwise return global notification email address
+    notification_group&.notification_email_for(self) || notification_email
   end
 
   def notification_settings_for(source)
@@ -1488,7 +1517,20 @@ class User < ApplicationRecord
     super
   end
 
+  # override from Devise::Confirmable
+  def confirmation_period_valid?
+    return false if Feature.disabled?(:soft_email_confirmation)
+
+    super
+  end
+
   private
+
+  def default_private_profile_to_false
+    return unless private_profile_changed? && private_profile.nil?
+
+    self.private_profile = false
+  end
 
   def has_current_license?
     false

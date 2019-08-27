@@ -9,8 +9,9 @@ describe Clusters::Gcp::Kubernetes::CreateOrUpdateNamespaceService, '#execute' d
   let(:platform) { cluster.platform }
   let(:api_url) { 'https://kubernetes.example.com' }
   let(:project) { cluster.project }
+  let(:environment) { create(:environment, project: project) }
   let(:cluster_project) { cluster.cluster_project }
-  let(:namespace) { "#{project.path}-#{project.id}" }
+  let(:namespace) { "#{project.name}-#{project.id}-#{environment.slug}" }
 
   subject do
     described_class.new(
@@ -34,6 +35,8 @@ describe Clusters::Gcp::Kubernetes::CreateOrUpdateNamespaceService, '#execute' d
     stub_kubeclient_create_service_account(api_url, namespace: namespace)
     stub_kubeclient_create_secret(api_url, namespace: namespace)
     stub_kubeclient_put_secret(api_url, "#{namespace}-token", namespace: namespace)
+    stub_kubeclient_put_role(api_url, Clusters::Gcp::Kubernetes::GITLAB_KNATIVE_SERVING_ROLE_NAME, namespace: namespace)
+    stub_kubeclient_put_role_binding(api_url, Clusters::Gcp::Kubernetes::GITLAB_KNATIVE_SERVING_ROLE_BINDING_NAME, namespace: namespace)
 
     stub_kubeclient_get_secret(
       api_url,
@@ -77,7 +80,8 @@ describe Clusters::Gcp::Kubernetes::CreateOrUpdateNamespaceService, '#execute' d
       let(:kubernetes_namespace) do
         build(:cluster_kubernetes_namespace,
               cluster: cluster,
-              project: project)
+              project: project,
+              environment: environment)
       end
 
       it_behaves_like 'successful creation of kubernetes namespace'
@@ -90,20 +94,22 @@ describe Clusters::Gcp::Kubernetes::CreateOrUpdateNamespaceService, '#execute' d
         build(:cluster_kubernetes_namespace,
               cluster: cluster,
               project: cluster_project.project,
-              cluster_project: cluster_project)
+              cluster_project: cluster_project,
+              environment: environment)
       end
 
       it_behaves_like 'successful creation of kubernetes namespace'
     end
 
     context 'when there is a Kubernetes Namespace associated' do
-      let(:namespace) { 'new-namespace' }
+      let(:namespace) { "new-namespace-#{environment.slug}" }
 
       let(:kubernetes_namespace) do
         create(:cluster_kubernetes_namespace,
                cluster: cluster,
                project: cluster_project.project,
-               cluster_project: cluster_project)
+               cluster_project: cluster_project,
+               environment: environment)
       end
 
       before do

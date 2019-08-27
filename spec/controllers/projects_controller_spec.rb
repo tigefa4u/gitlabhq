@@ -318,6 +318,102 @@ describe ProjectsController do
     end
   end
 
+  describe 'POST #archive' do
+    let(:group) { create(:group) }
+    let(:project) { create(:project, group: group) }
+
+    before do
+      sign_in(user)
+    end
+
+    context 'for a user with the ability to archive a project' do
+      before do
+        group.add_owner(user)
+
+        post :archive, params: {
+          namespace_id: project.namespace.path,
+          id: project.path
+        }
+      end
+
+      it 'archives the project' do
+        expect(project.reload.archived?).to be_truthy
+      end
+
+      it 'redirects to projects path' do
+        expect(response).to have_gitlab_http_status(302)
+        expect(response).to redirect_to(project_path(project))
+      end
+    end
+
+    context 'for a user that does not have the ability to archive a project' do
+      before do
+        project.add_maintainer(user)
+
+        post :archive, params: {
+          namespace_id: project.namespace.path,
+          id: project.path
+        }
+      end
+
+      it 'does not archive the project' do
+        expect(project.reload.archived?).to be_falsey
+      end
+
+      it 'returns 404' do
+        expect(response).to have_gitlab_http_status(404)
+      end
+    end
+  end
+
+  describe 'POST #unarchive' do
+    let(:group) { create(:group) }
+    let(:project) { create(:project, :archived, group: group) }
+
+    before do
+      sign_in(user)
+    end
+
+    context 'for a user with the ability to unarchive a project' do
+      before do
+        group.add_owner(user)
+
+        post :unarchive, params: {
+          namespace_id: project.namespace.path,
+          id: project.path
+        }
+      end
+
+      it 'unarchives the project' do
+        expect(project.reload.archived?).to be_falsey
+      end
+
+      it 'redirects to projects path' do
+        expect(response).to have_gitlab_http_status(302)
+        expect(response).to redirect_to(project_path(project))
+      end
+    end
+
+    context 'for a user that does not have the ability to unarchive a project' do
+      before do
+        project.add_maintainer(user)
+
+        post :unarchive, params: {
+          namespace_id: project.namespace.path,
+          id: project.path
+        }
+      end
+
+      it 'does not unarchive the project' do
+        expect(project.reload.archived?).to be_truthy
+      end
+
+      it 'returns 404' do
+        expect(response).to have_gitlab_http_status(404)
+      end
+    end
+  end
+
   describe '#housekeeping' do
     let(:group) { create(:group) }
     let(:project) { create(:project, group: group) }
@@ -740,20 +836,18 @@ describe ProjectsController do
     it 'gets a list of branches and tags' do
       get :refs, params: { namespace_id: project.namespace, id: project, sort: 'updated_desc' }
 
-      parsed_body = JSON.parse(response.body)
-      expect(parsed_body['Branches']).to include('master')
-      expect(parsed_body['Tags'].first).to eq('v1.1.0')
-      expect(parsed_body['Tags'].last).to eq('v1.0.0')
-      expect(parsed_body['Commits']).to be_nil
+      expect(json_response['Branches']).to include('master')
+      expect(json_response['Tags'].first).to eq('v1.1.0')
+      expect(json_response['Tags'].last).to eq('v1.0.0')
+      expect(json_response['Commits']).to be_nil
     end
 
     it "gets a list of branches, tags and commits" do
       get :refs, params: { namespace_id: project.namespace, id: project, ref: "123456" }
 
-      parsed_body = JSON.parse(response.body)
-      expect(parsed_body["Branches"]).to include("master")
-      expect(parsed_body["Tags"]).to include("v1.0.0")
-      expect(parsed_body["Commits"]).to include("123456")
+      expect(json_response["Branches"]).to include("master")
+      expect(json_response["Tags"]).to include("v1.0.0")
+      expect(json_response["Commits"]).to include("123456")
     end
 
     context "when preferred language is Japanese" do
@@ -765,10 +859,9 @@ describe ProjectsController do
       it "gets a list of branches, tags and commits" do
         get :refs, params: { namespace_id: project.namespace, id: project, ref: "123456" }
 
-        parsed_body = JSON.parse(response.body)
-        expect(parsed_body["Branches"]).to include("master")
-        expect(parsed_body["Tags"]).to include("v1.0.0")
-        expect(parsed_body["Commits"]).to include("123456")
+        expect(json_response["Branches"]).to include("master")
+        expect(json_response["Tags"]).to include("v1.0.0")
+        expect(json_response["Commits"]).to include("123456")
       end
     end
 
@@ -797,7 +890,7 @@ describe ProjectsController do
     it 'renders json in a correct format' do
       post :preview_markdown, params: { namespace_id: public_project.namespace, id: public_project, text: '*Markdown* text' }
 
-      expect(JSON.parse(response.body).keys).to match_array(%w(body references))
+      expect(json_response.keys).to match_array(%w(body references))
     end
 
     context 'when not authorized' do
@@ -821,8 +914,6 @@ describe ProjectsController do
                                   text: issue.to_reference
                                 }
 
-        json_response = JSON.parse(response.body)
-
         expect(json_response['body']).to match(/\##{issue.iid} \(closed\)/)
       end
 
@@ -832,8 +923,6 @@ describe ProjectsController do
                                   id: public_project,
                                   text: merge_request.to_reference
                                 }
-
-        json_response = JSON.parse(response.body)
 
         expect(json_response['body']).to match(/\!#{merge_request.iid} \(closed\)/)
       end

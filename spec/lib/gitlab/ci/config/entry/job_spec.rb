@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::Ci::Config::Entry::Job do
@@ -9,7 +11,7 @@ describe Gitlab::Ci::Config::Entry::Job do
 
       let(:result) do
         %i[before_script script stage type after_script cache
-           image services only except variables artifacts
+           image services only except rules variables artifacts
            environment coverage retry]
       end
 
@@ -80,6 +82,31 @@ describe Gitlab::Ci::Config::Entry::Job do
       context 'when delayed job' do
         context 'when start_in is specified' do
           let(:config) { { script: 'echo', when: 'delayed', start_in: '1 day' } }
+
+          it { expect(entry).to be_valid }
+        end
+      end
+
+      context 'when has needs' do
+        let(:config) do
+          {
+            stage: 'test',
+            script: 'echo',
+            needs: ['another-job']
+          }
+        end
+
+        it { expect(entry).to be_valid }
+
+        context 'when has dependencies' do
+          let(:config) do
+            {
+              stage: 'test',
+              script: 'echo',
+              dependencies: ['another-job'],
+              needs: ['another-job']
+            }
+          end
 
           it { expect(entry).to be_valid }
         end
@@ -174,6 +201,21 @@ describe Gitlab::Ci::Config::Entry::Job do
             expect(entry.errors).to include 'job parallel must be an integer'
           end
         end
+
+        context 'when it uses both "when:" and "rules:"' do
+          let(:config) do
+            {
+              script: 'echo',
+              when: 'on_failure',
+              rules: [{ if: '$VARIABLE', when: 'on_success' }]
+            }
+          end
+
+          it 'returns an error about when: being combined with rules' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include 'job config key may not be used with `rules`: when'
+          end
+        end
       end
 
       context 'when delayed job' do
@@ -213,12 +255,166 @@ describe Gitlab::Ci::Config::Entry::Job do
         end
       end
 
+      context 'when only: is used with rules:' do
+        let(:config) { { only: ['merge_requests'], rules: [{ if: '$THIS' }] } }
+
+        it 'returns error about mixing only: with rules:' do
+          expect(entry).not_to be_valid
+          expect(entry.errors).to include /may not be used with `rules`/
+        end
+
+        context 'and only: is blank' do
+          let(:config) { { only: nil, rules: [{ if: '$THIS' }] } }
+
+          it 'returns error about mixing only: with rules:' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include /may not be used with `rules`/
+          end
+        end
+
+        context 'and rules: is blank' do
+          let(:config) { { only: ['merge_requests'], rules: nil } }
+
+          it 'returns error about mixing only: with rules:' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include /may not be used with `rules`/
+          end
+        end
+      end
+
+      context 'when except: is used with rules:' do
+        let(:config) { { except: { refs: %w[master] }, rules: [{ if: '$THIS' }] } }
+
+        it 'returns error about mixing except: with rules:' do
+          expect(entry).not_to be_valid
+          expect(entry.errors).to include /may not be used with `rules`/
+        end
+
+        context 'and except: is blank' do
+          let(:config) { { except: nil, rules: [{ if: '$THIS' }] } }
+
+          it 'returns error about mixing except: with rules:' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include /may not be used with `rules`/
+          end
+        end
+
+        context 'and rules: is blank' do
+          let(:config) { { except: { refs: %w[master] }, rules: nil } }
+
+          it 'returns error about mixing except: with rules:' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include /may not be used with `rules`/
+          end
+        end
+      end
+
+      context 'when only: and except: are both used with rules:' do
+        let(:config) do
+          {
+            only: %w[merge_requests],
+            except: { refs: %w[master] },
+            rules: [{ if: '$THIS' }]
+          }
+        end
+
+        it 'returns errors about mixing both only: and except: with rules:' do
+          expect(entry).not_to be_valid
+          expect(entry.errors).to include /may not be used with `rules`/
+          expect(entry.errors).to include /may not be used with `rules`/
+        end
+
+        context 'when only: and except: as both blank' do
+          let(:config) do
+            { only: nil, except: nil, rules: [{ if: '$THIS' }] }
+          end
+
+          it 'returns errors about mixing both only: and except: with rules:' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include /may not be used with `rules`/
+            expect(entry.errors).to include /may not be used with `rules`/
+          end
+        end
+
+        context 'when rules: is blank' do
+          let(:config) do
+            { only: %w[merge_requests], except: { refs: %w[master] }, rules: nil }
+          end
+
+          it 'returns errors about mixing both only: and except: with rules:' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include /may not be used with `rules`/
+            expect(entry.errors).to include /may not be used with `rules`/
+          end
+        end
+      end
+
       context 'when start_in specified without delayed specification' do
         let(:config) { { start_in: '1 day' } }
 
         it 'returns error about invalid type' do
           expect(entry).not_to be_valid
           expect(entry.errors).to include 'job start in must be blank'
+        end
+      end
+
+      context 'when has dependencies' do
+        context 'that are not a array of strings' do
+          let(:config) do
+            { script: 'echo', dependencies: 'build-job' }
+          end
+
+          it 'returns error about invalid type' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include 'job dependencies should be an array of strings'
+          end
+        end
+      end
+
+      context 'when has needs' do
+        context 'that are not a array of strings' do
+          let(:config) do
+            {
+              stage: 'test',
+              script: 'echo',
+              needs: 'build-job'
+            }
+          end
+
+          it 'returns error about invalid type' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include 'job needs should be an array of strings'
+          end
+        end
+
+        context 'when have dependencies that are not subset of needs' do
+          let(:config) do
+            {
+              stage: 'test',
+              script: 'echo',
+              dependencies: ['another-job'],
+              needs: ['build-job']
+            }
+          end
+
+          it 'returns error about invalid data' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include 'job dependencies the another-job should be part of needs'
+          end
+        end
+
+        context 'when stage: is missing' do
+          let(:config) do
+            {
+              script: 'echo',
+              needs: ['build-job']
+            }
+          end
+
+          it 'returns error about invalid data' do
+            expect(entry).not_to be_valid
+            expect(entry.errors).to include 'job config missing required keys: stage'
+          end
         end
       end
     end

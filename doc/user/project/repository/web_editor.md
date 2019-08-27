@@ -1,3 +1,7 @@
+---
+type: howto
+---
+
 # GitLab Web Editor
 
 Sometimes it's easier to make quick changes directly from the GitLab interface
@@ -12,8 +16,6 @@ From a project's files page, click the '+' button to the right of the branch sel
 Choose **New file** from the dropdown.
 
 ![New file dropdown menu](img/web_editor_new_file_dropdown.png)
-
----
 
 Enter a file name in the **File name** box. Then, add file content in the editor
 area. Add a descriptive commit message and choose a branch. The branch field
@@ -59,8 +61,6 @@ selector. Choose **Upload file** from the dropdown.
 
 ![Upload file dropdown menu](img/web_editor_upload_file_dropdown.png)
 
----
-
 Once the upload dialog pops up there are two ways to upload your file. Either
 drag and drop a file on the pop up or use the **click to upload** link. A file
 preview will appear once you have selected a file to upload.
@@ -79,8 +79,6 @@ From a project's files page, click the '+' button to the right of the branch sel
 Choose **New directory** from the dropdown.
 
 ![New directory dropdown](img/web_editor_new_directory_dropdown.png)
-
----
 
 In the new directory dialog enter a directory name, a commit message and choose
 the target branch. Click **Create directory** to finish.
@@ -107,7 +105,7 @@ Once you click it, a new branch will be created that diverges from the default
 branch of your project, by default `master`. The branch name will be based on
 the title of the issue and as a prefix, it will have its internal ID. Thus, the example
 screenshot above will yield a branch named
-`2-et-cum-et-sed-expedita-repellat-consequatur-ut-assumenda-numquam-rerum`.
+`23177-add-support-for-rich-references-to-referables`.
 
 Since GitLab 9.0, when you click the `New branch` in an empty repository project, GitLab automatically creates the master branch, commits a blank `README.md` file to it and creates and redirects you to a new branch based on the issue title.
 If your [project is already configured with a deployment service][project-services-doc] (e.g. Kubernetes), GitLab takes one step further and prompts you to set up [auto deploy][auto-deploy-doc] by helping you create a `.gitlab-ci.yml` file.
@@ -129,8 +127,6 @@ choose **New branch** from the dropdown.
 
 ![New branch dropdown](img/web_editor_new_branch_dropdown.png)
 
----
-
 Enter a new **Branch name**. Optionally, change the **Create from** field
 to choose which branch, tag or commit SHA this new branch will originate from.
 This field will autocomplete if you start typing an existing branch or tag.
@@ -138,8 +134,6 @@ Click **Create branch** and you will be returned to the file browser on this new
 branch.
 
 ![New branch page](img/web_editor_new_branch_page.png)
-
----
 
 You can now make changes to any files, as needed. When you're ready to merge
 the changes back to master you can use the widget at the top of the screen.
@@ -155,8 +149,6 @@ release candidates, and more. You can create a tag from a branch or a commit
 SHA. From a project's files page, choose **New tag** from the dropdown.
 
 ![New tag dropdown](img/web_editor_new_tag_dropdown.png)
-
----
 
 Give the tag a name such as `v1.0.0`. Choose the branch or SHA from which you
 would like to create this new tag. You can optionally add a message and
@@ -181,3 +173,15 @@ through the web editor, you can choose to use another of your linked email
 addresses from the **User Settings > Edit Profile** page.
 
 [ce-2808]: https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/2808
+
+<!-- ## Troubleshooting
+
+Include any troubleshooting steps that you can foresee. If you know beforehand what issues
+one might have when setting this up, or when something is changed, or on upgrading, it's
+important to describe those, too. Think of things that may go wrong and include them here.
+This is important to minimize requests for support, and to avoid doc comments with
+questions that you know someone might ask.
+
+Each scenario can be a third-level heading, e.g. `### Getting error message X`.
+If you have none to add when creating a doc, leave this section in place
+but commented out to help encourage others to add to it in the future. -->

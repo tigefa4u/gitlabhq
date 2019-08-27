@@ -19,15 +19,22 @@
     }
   }
 
-  // leave enough space for the close icon
   .modal-title {
+    line-height: $gl-line-height-24;
+
+    // leave enough space for the close icon
     &.mw-100,
     &.w-100 {
-      // after upgrading to Bootstrap 4.2 we can use $modal-header-padding-x here
-      // https://github.com/twbs/bootstrap/pull/26976
-      margin-right: -28px;
-      padding-right: 28px;
+      margin-right: -$modal-header-padding-x;
+      padding-right: $modal-header-padding-x;
     }
+  }
+
+  .close {
+    font-weight: $gl-font-weight-normal;
+    line-height: $gl-line-height;
+    color: $gray-900;
+    opacity: 1;
   }
 }
 
@@ -63,6 +70,10 @@
     margin-left: $grid-size;
   }
 
+  .btn-group .btn + .btn {
+    margin-left: -1px;
+  }
+
   @include media-breakpoint-down(xs) {
     flex-direction: column;
 
@@ -71,6 +82,11 @@
     .btn-group + .btn {
       margin-left: 0;
       margin-top: $grid-size;
+    }
+
+    .btn-group .btn + .btn {
+      margin-left: -1px;
+      margin-top: 0;
     }
   }
 }
@@ -89,6 +105,20 @@ body.modal-open {
 
 .modal {
   background-color: $black-transparent;
+
+  .modal-content {
+    border-radius: $modal-border-radius;
+
+    > :first-child {
+      border-top-left-radius: $modal-border-radius;
+      border-top-right-radius: $modal-border-radius;
+    }
+
+    > :last-child {
+      border-bottom-left-radius: $modal-border-radius;
+      border-bottom-right-radius: $modal-border-radius;
+    }
+  }
 
   @include media-breakpoint-up(sm) {
     .modal-dialog {

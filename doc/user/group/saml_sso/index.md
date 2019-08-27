@@ -39,6 +39,25 @@ However, users will not be prompted to log via SSO on each visit. GitLab will ch
 
 We intend to add a similar SSO requirement for [Git and API activity](https://gitlab.com/gitlab-org/gitlab-ee/issues/9152) in the future.
 
+#### Group-managed accounts
+
+[Introduced in GitLab 12.1](https://gitlab.com/groups/gitlab-org/-/epics/709).
+
+When SSO is being enforced, groups can enable an additional level of protection by enforcing the creation of dedicated user accounts to access the group.
+
+Without group-managed accounts, users can link their SAML identity with any existing user on the instance. With group-managed accounts enabled, users are required to create a new, dedicated user linked to the group. The notification email address associated with the user is locked to the email address received from the configured identity provider.
+
+When this option is enabled:
+
+- All existing and new users in the group will be required to log in via the SSO URL associated with the group.
+- On successfully authenticating, GitLab will prompt the user to create a new, dedicated account using the email address received from the configured identity provider.
+- After the group managed account has been created, group activity will require the use of this user account.
+
+Since use of the group managed account requires the use of SSO, users of group managed accounts will lose access to these accounts when they are no longer able to authenticate with the connected identity provider. In the case of an offboarded employee who has been removed from your identity provider:
+
+- The user will be unable to access the group (their credentials will no longer work on the identity provider when prompted to SSO).
+- Contributions in the group (e.g. issues, merge requests) will remain intact.
+
 ### NameID
 
 GitLab.com uses the SAML NameID to identify users. The NameID element:
@@ -71,7 +90,7 @@ Once you've set up your identity provider to work with GitLab, you'll need to co
 1. Navigate to the group's **Settings > SAML SSO**.
 1. Find the SSO URL from your Identity Provider and enter it the **Identity provider single sign on URL** field.
 1. Find and enter the fingerprint for the SAML token signing certificate in the **Certificate** field.
-1. Check the **Enable SAML authentication for this group** checkbox.
+1. Click the **Enable SAML authentication for this group** toggle switch.
 1. Click the **Save changes** button.
 
 ![Group SAML Settings for GitLab.com](img/group_saml_settings.png)

@@ -10,16 +10,31 @@ describe Blobs::UnfoldPresenter do
   let(:subject) { described_class.new(blob, params) }
 
   describe '#initialize' do
+    let(:result) { subject }
+
+    context 'with empty params' do
+      let(:params) { {} }
+
+      it 'sets default attributes' do
+        expect(result.full?).to eq(false)
+        expect(result.since).to eq(1)
+        expect(result.to).to eq(1)
+        expect(result.bottom).to eq(false)
+        expect(result.unfold).to eq(true)
+        expect(result.offset).to eq(0)
+        expect(result.indent).to eq(0)
+      end
+    end
+
     context 'when full is false' do
       let(:params) { { full: false, since: 2, to: 3, bottom: false, offset: 1, indent: 1 } }
 
       it 'sets attributes' do
-        result = subject
-
         expect(result.full?).to eq(false)
         expect(result.since).to eq(2)
         expect(result.to).to eq(3)
         expect(result.bottom).to eq(false)
+        expect(result.unfold).to eq(true)
         expect(result.offset).to eq(1)
         expect(result.indent).to eq(1)
       end
@@ -29,12 +44,25 @@ describe Blobs::UnfoldPresenter do
       let(:params) { { full: true, since: 2, to: 3, bottom: false, offset: 1, indent: 1 } }
 
       it 'sets other attributes' do
-        result = subject
-
         expect(result.full?).to eq(true)
         expect(result.since).to eq(1)
         expect(result.to).to eq(blob.lines.size)
         expect(result.bottom).to eq(false)
+        expect(result.unfold).to eq(false)
+        expect(result.offset).to eq(0)
+        expect(result.indent).to eq(0)
+      end
+    end
+
+    context 'when to is -1' do
+      let(:params) { { full: false, since: 2, to: -1, bottom: true, offset: 1, indent: 1 } }
+
+      it 'sets other attributes' do
+        expect(result.full?).to eq(false)
+        expect(result.since).to eq(2)
+        expect(result.to).to eq(blob.lines.size)
+        expect(result.bottom).to eq(false)
+        expect(result.unfold).to eq(false)
         expect(result.offset).to eq(0)
         expect(result.indent).to eq(0)
       end
@@ -54,8 +82,10 @@ describe Blobs::UnfoldPresenter do
         expect(lines.size).to eq(total_lines)
 
         lines.each.with_index do |line, index|
-          expect(line.text).to include("LC#{index + 1}")
-          expect(line.text).to eq(line.rich_text)
+          line_number = index + 1
+
+          expect(line.text).to eq(line_number.to_s)
+          expect(line.rich_text).to include("LC#{line_number}")
           expect(line.type).to be_nil
         end
       end
@@ -81,8 +111,9 @@ describe Blobs::UnfoldPresenter do
       end
     end
 
-    context 'when since is greater than 1' do
-      let(:params) { { since: 5, to: 10, offset: 10 } }
+    context 'when "since" is greater than 1' do
+      let(:default_params) { { since: 5, to: 10, offset: 10 } }
+      let(:params) { default_params }
 
       it 'adds top match line' do
         line = subject.diff_lines.first
@@ -90,6 +121,38 @@ describe Blobs::UnfoldPresenter do
         expect(line.type).to eq('match')
         expect(line.old_pos).to eq(5)
         expect(line.new_pos).to eq(5)
+      end
+
+      context '"to" is higher than blob size' do
+        let(:params) { default_params.merge(to: total_lines + 10, bottom: true) }
+
+        it 'does not add bottom match line' do
+          line = subject.diff_lines.last
+
+          expect(line.type).to be_nil
+        end
+      end
+
+      context '"to" is equal to blob size' do
+        let(:params) { default_params.merge(to: total_lines, bottom: true) }
+
+        it 'does not add bottom match line' do
+          line = subject.diff_lines.last
+
+          expect(line.type).to be_nil
+        end
+      end
+
+      context '"to" is less than blob size' do
+        let(:params) { default_params.merge(to: total_lines - 3, bottom: true) }
+
+        it 'adds bottom match line' do
+          line = subject.diff_lines.last
+
+          expect(line.type).to eq('match')
+          expect(line.old_pos).to eq(total_lines - 3 - params[:offset])
+          expect(line.new_pos).to eq(total_lines - 3)
+        end
       end
     end
 
@@ -112,6 +175,22 @@ describe Blobs::UnfoldPresenter do
         line = subject.diff_lines.last
 
         expect(line.type).to be_nil
+      end
+    end
+
+    context 'when "to" is "-1"' do
+      let(:params) { { since: 10, to: -1, offset: 10, bottom: true } }
+
+      it 'does not add bottom match line' do
+        line = subject.diff_lines.last
+
+        expect(line.type).to be_nil
+      end
+
+      it 'last line is the latest blob line' do
+        line = subject.diff_lines.last
+
+        expect(line.text).to eq(total_lines.to_s)
       end
     end
   end

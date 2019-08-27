@@ -10,10 +10,7 @@ describe API::Services do
   end
 
   Service.available_services_names.each do |service|
-    # TODO: Remove below `if: (service != "kubernetes")` in the next release
-    # KubernetesService was deprecated and it can't be updated. Right now it's
-    # only readable. It should be completely removed in the next iteration.
-    describe "PUT /projects/:id/services/#{service.dasherize}", if: (service != "kubernetes") do
+    describe "PUT /projects/:id/services/#{service.dasherize}" do
       include_context service
 
       it "updates #{service} settings" do
@@ -62,10 +59,7 @@ describe API::Services do
       end
     end
 
-    # TODO: Remove below `if: (service != "kubernetes")` in the next release
-    # KubernetesService was deprecated and it can't be updated. Right now it's
-    # only readable. It should be completely removed in the next iteration.
-    describe "DELETE /projects/:id/services/#{service.dasherize}", if: (service != "kubernetes") do
+    describe "DELETE /projects/:id/services/#{service.dasherize}" do
       include_context service
 
       before do
@@ -85,9 +79,7 @@ describe API::Services do
       include_context service
 
       # inject some properties into the service
-      before do
-        initialize_service(service)
-      end
+      let!(:initialized_service) { initialize_service(service) }
 
       it 'returns authentication error when unauthenticated' do
         get api("/projects/#{project.id}/services/#{dashed_service}")
@@ -106,6 +98,15 @@ describe API::Services do
 
         expect(response).to have_gitlab_http_status(200)
         expect(json_response['properties'].keys).to match_array(service_instance.api_field_names)
+      end
+
+      it "returns empty hash if properties are empty" do
+        # deprecated services are not valid for update
+        initialized_service.update_attribute(:properties, {})
+        get api("/projects/#{project.id}/services/#{dashed_service}", user)
+
+        expect(response).to have_gitlab_http_status(200)
+        expect(json_response['properties'].keys).to be_empty
       end
 
       it "returns error when authenticated but not a project owner" do

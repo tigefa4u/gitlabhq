@@ -98,7 +98,10 @@ You can view the performance dashboard for an environment by [clicking on the mo
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ee/merge_requests/3799) in [GitLab Premium](https://about.gitlab.com/pricing/) 10.6.
 
-Additional metrics can be monitored by adding them on the Prometheus integration page. Once saved, they will be displayed on the environment performance dashboard.
+Custom metrics can be monitored by adding them on the Prometheus integration page. Once saved, they will be displayed on the environment performance dashboard provided that either:
+
+- A [connected Kubernetes cluster](../clusters/index.md#adding-and-removing-clusters) with the environment scope of `*` is used and [Prometheus installed on the cluster](#enabling-prometheus-integration), or
+- Prometheus is [manually configured](#manual-configuration-of-prometheus).
 
 ![Add New Metric](img/prometheus_add_metric.png)
 
@@ -120,6 +123,157 @@ GitLab supports a limited set of [CI variables](../../../ci/variables/README.htm
 - KUBE_NAMESPACE
 
 To specify a variable in a query, enclose it in curly braces with a leading percent. For example: `%{ci_environment_slug}`.
+
+### Defining custom dashboards per project
+
+> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/issues/59974) in GitLab 12.1.
+
+By default, all projects include a GitLab-defined Prometheus dashboard, which
+includes a few key metrics, but you can also define your own custom dashboards.
+
+NOTE: **Note:**
+The custom metrics as defined below do not support alerts, unlike
+[additional metrics](#adding-additional-metrics-premium).
+
+Dashboards have several components:
+
+- Panel groups, which comprise panels.
+- Panels, which support one or more metrics.
+
+To configure a custom dashboard:
+
+1. Create a YAML file with the `.yml` extension under your repository's root
+   directory inside `.gitlab/dashboards/`. For example, create
+   `.gitlab/dashboards/prom_alerts.yml` with the following contents:
+
+   ```yaml
+   dashboard: 'Dashboard Title'
+   panel_groups:
+     - group: 'Group Title'
+       panels:
+         - type: area-chart
+           title: "Chart Title"
+           y_label: "Y-Axis"
+           metrics:
+             - id: metric_of_ages
+               query_range: 'http_requests_total'
+               label: "Metric of Ages"
+               unit: "count"
+   ```
+
+   The above sample dashboard would display a single area chart. Each file should
+   define the layout of the dashboard and the Prometheus queries used to populate
+   data.
+
+1. Save the file, commit, and push to your repository.
+1. Navigate to your project's **Operations > Metrics** and choose the custom
+   dashboard from the dropdown.
+
+NOTE: **Note:**
+Configuration files nested under subdirectories of `.gitlab/dashboards` are not
+supported and will not be available in the UI.
+
+The following tables outline the details of expected properties.
+
+**Dashboard properties:**
+
+| Property | Type | Required | Description |
+| ------ | ------ | ------ | ------ |
+| `dashboard` | string | yes | Heading for the dashboard. Only one dashboard should be defined per file. |
+| `panel_groups` | array | yes | The panel groups which should be on the dashboard. |
+
+**Panel group (`panel_groups`) properties:**
+
+| Property | Type | Required | Description |
+| ------ | ------ | ------ | ------ |
+| `group` | string | required | Heading for the panel group. |
+| `priority` | number | optional, defaults to order in file | Order to appear on the dashboard. Higher number means higher priority, which will be higher on the page. Numbers do not need to be consecutive. |
+| `panels` | array | required | The panels which should be in the panel group. |
+
+**Panel (`panels`) properties:**
+
+| Property | Type | Required | Description |
+| ------ | ------ | ------ | ------- |
+| `type` | enum | no, defaults to `area-chart` | Specifies the chart type to use, can be `area-chart` or `line-chart` |
+| `title` | string | yes | Heading for the panel. |
+| `y_label` | string | no, but highly encouraged | Y-Axis label for the panel. |
+| `weight` | number | no, defaults to order in file | Order to appear within the grouping. Lower number means higher priority, which will be higher on the page. Numbers do not need to be consecutive. |
+| `metrics` | array | yes | The metrics which should be displayed in the panel. |
+
+**Metrics (`metrics`) properties:**
+
+| Property | Type | Required | Description |
+| ------ | ------ | ------ | ------ |
+| `id` | string | no | Used for associating dashboard metrics with database records. Must be unique across dashboard configuration files. Required for [alerting](#setting-up-alerts-for-prometheus-metrics-ultimate) (support not yet enabled, see [relevant issue](https://gitlab.com/gitlab-org/gitlab-ce/issues/60319)). |
+| `unit` | string | yes | Defines the unit of the query's return data. |
+| `label` | string | no, but highly encouraged | Defines the legend-label for the query. Should be unique within the panel's metrics. |
+| `query` | string | yes if `query_range` is not defined | Defines the Prometheus query to be used to populate the chart/panel. If defined, the `query` endpoint of the [Prometheus API](https://prometheus.io/docs/prometheus/latest/querying/api/) will be utilized. |
+| `query_range` | string | yes if `query` is not defined | Defines the Prometheus query to be used to populate the chart/panel. If defined, the `query_range` endpoint of the [Prometheus API](https://prometheus.io/docs/prometheus/latest/querying/api/) will be utilized. |
+
+#### Panel types for dashboards
+
+The below panel types are supported in monitoring dashboards.
+
+##### Area
+
+To add an area panel type to a dashboard, look at the following sample dashboard file:
+
+```yaml
+dashboard: 'Dashboard Title'
+panel_groups:
+  - group: 'Group Title'
+    panels:
+      - type: area-chart
+        title: "Chart Title"
+        y_label: "Y-Axis"
+        metrics:
+          - id: 10
+            query_range: 'http_requests_total'
+            label: "Metric of Ages"
+            unit: "count"
+```
+
+Note the following properties:
+
+| Property | Type | Required | Description |
+| ------ | ------ | ------ | ------ |
+| type | string | no | Type of panel to be rendered. Optional for area panel types |
+| query_range | yes | required | For area panel types, you must use a [range query](https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries) |
+
+![area panel type](img/prometheus_dashboard_area_panel_type.png)
+
+##### Single Stat
+
+To add a single stat panel type to a dashboard, look at the following sample dashboard file:
+
+```yaml
+dashboard: 'Dashboard Title'
+panel_groups:
+  - group: 'Group Title'
+    panels:
+      - title: "Single Stat"
+        type: "single-stat"
+        metrics:
+        - id: 10
+          query: 'max(go_memstats_alloc_bytes{job="prometheus"})'
+          unit: MB
+          label: "Total"
+```
+
+Note the following properties:
+
+| Property | Type | Required | Description |
+| ------ | ------ | ------ | ------ |
+| type | string | yes | Type of panel to be rendered. For single stat panel types, set to `single-stat` |
+| query | string | yes | For single stat panel types, you must use an [instant query](https://prometheus.io/docs/prometheus/latest/querying/api/#instant-queries) |
+
+![single stat panel type](img/prometheus_dashboard_single_stat_panel_type.png)
+
+### Downloading data as CSV
+
+Data from Prometheus charts on the metrics dashboard can be downloaded as CSV. 
+
+![Downloading as CSV](img/download_as_csv.png)
 
 ### Setting up alerts for Prometheus metrics **(ULTIMATE)**
 
@@ -169,7 +323,20 @@ Alerts can be used to trigger actions, like open an issue automatically (enabled
 1. Optionally, select whether to send an email notification to the developers of the project.
 1. Click **Save changes**.
 
-Once enabled, an issue will be opened automatically when an alert is triggered. The author of the issue will be the GitLab Alert Bot. To further customize the issue, you can add labels, mentions, or any other supported [quick action](../quick_actions.md) in the selected issue template.
+Once enabled, an issue will be opened automatically when an alert is triggered which contains values extracted from [alert's payload](https://prometheus.io/docs/alerting/configuration/#webhook_config
+):
+
+- Issue author: `GitLab Alert Bot`
+- Issue title: Extract from `annotations/title`, `annotations/summary` or `labels/alertname`
+- Alert `Summary`: A list of properties
+  - `starts_at`: Alert start time via `startsAt`
+  - `full_query`: Alert query extracted from `generatorURL`
+  - Optional list of attached annotations extracted from `annotations/*`
+- Alert [GFM](../../markdown.md): GitLab Flavored Markdown from `annotations/gitlab_incident_markdown`
+
+To further customize the issue, you can add labels, mentions, or any other supported [quick action](../quick_actions.md) in the selected issue template, which will apply to all incidents. To limit quick actions or other information to only specific types of alerts, use the `annotations/gitlab_incident_markdown` field.
+
+Since [version 12.2](https://gitlab.com/gitlab-org/gitlab-ce/issues/63373), GitLab will tag each incident issue with the `incident` label automatically. If the label does not yet exist, it will be created automatically as well.
 
 If the metric exceeds the threshold of the alert for over 5 minutes, an email will be sent to all [Maintainers and Owners](../../permissions.md#project-members-permissions) of the project.
 
@@ -193,6 +360,31 @@ Prometheus server.
 
 ![Merge Request with Performance Impact](img/merge_request_performance.png)
 
+## Embedding metric charts within GitLab Flavored Markdown
+
+> [Introduced][ce-29691] in GitLab 12.2.
+> Requires [Kubernetes](prometheus_library/kubernetes.md) metrics.
+
+It is possible to display metrics charts within [GitLab Flavored Markdown](../../markdown.md#gitlab-flavored-markdown-gfm).
+
+To display a metric chart, include a link of the form `https://<root_url>/<project>/environments/<environment_id>/metrics`.
+
+A single chart may also be embedded. You can generate a link to the chart via the dropdown located on the right side of the chart:  
+
+![Generate Link To Chart](img/generate_link_to_chart.png)
+
+The following requirements must be met for the metric to unfurl:
+
+- The `<environment_id>` must correspond to a real environment.
+- Prometheus must be monitoring the environment.
+- The GitLab instance must be configured to receive data from the environment.
+- The user must be allowed access to the monitoring dashboard for the environment ([Reporter or higher](../../permissions.md)).
+- The dashboard must have data within the last 8 hours.
+
+ If all of the above are true, then the metric will unfurl as seen below:
+
+![Embedded Metrics](img/embed_metrics.png)
+
 ## Troubleshooting
 
 If the "No data found" screen continues to appear, it could be due to:
@@ -215,4 +407,5 @@ If the "No data found" screen continues to appear, it could be due to:
 [ci-environment-slug]: ../../../ci/variables/#predefined-environment-variables
 [ce-8935]: https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/8935
 [ce-10408]: https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/10408
+[ce-29691]: https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/29691
 [promgldocs]: ../../../administration/monitoring/prometheus/index.md

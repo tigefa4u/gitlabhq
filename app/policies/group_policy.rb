@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class GroupPolicy < BasePolicy
-  include ClusterableActions
-
   desc "Group is public"
   with_options scope: :subject, score: 0
   condition(:public_group) { @subject.public? }
@@ -18,8 +16,6 @@ class GroupPolicy < BasePolicy
   condition(:maintainer) { access_level >= GroupMember::MAINTAINER }
   condition(:reporter) { access_level >= GroupMember::REPORTER }
 
-  condition(:nested_groups_supported, scope: :global) { Group.supports_nested_objects? }
-
   condition(:has_parent, scope: :subject) { @subject.has_parent? }
   condition(:share_with_group_locked, scope: :subject) { @subject.share_with_group_lock? }
   condition(:parent_share_with_group_locked, scope: :subject) { @subject.parent&.share_with_group_lock? }
@@ -28,9 +24,6 @@ class GroupPolicy < BasePolicy
   condition(:has_projects) do
     GroupProjectsFinder.new(group: @subject, current_user: @user, options: { include_subgroups: true, only_owned: true }).execute.any?
   end
-
-  condition(:has_clusters, scope: :subject) { clusterable_has_clusters? }
-  condition(:can_have_multiple_clusters) { multiple_clusters_available? }
 
   with_options scope: :subject, score: 0
   condition(:request_access_enabled) { @subject.request_access_enabled }
@@ -41,6 +34,10 @@ class GroupPolicy < BasePolicy
 
   condition(:developer_maintainer_access) do
     @subject.project_creation_level == ::Gitlab::Access::DEVELOPER_MAINTAINER_PROJECT_ACCESS
+  end
+
+  condition(:maintainer_can_create_group) do
+    @subject.subgroup_creation_level == ::Gitlab::Access::MAINTAINER_SUBGROUP_ACCESS
   end
 
   rule { public_group }.policy do
@@ -71,6 +68,7 @@ class GroupPolicy < BasePolicy
   rule { developer }.enable :admin_milestone
 
   rule { reporter }.policy do
+    enable :read_container_image
     enable :admin_label
     enable :admin_list
     enable :admin_issue
@@ -94,6 +92,7 @@ class GroupPolicy < BasePolicy
     enable :change_visibility_level
 
     enable :set_note_created_at
+    enable :set_emails_disabled
   end
 
   rule { can?(:read_nested_project_resources) }.policy do
@@ -109,7 +108,8 @@ class GroupPolicy < BasePolicy
     enable :read_nested_project_resources
   end
 
-  rule { owner & nested_groups_supported }.enable :create_subgroup
+  rule { owner }.enable :create_subgroup
+  rule { maintainer & maintainer_can_create_group }.enable :create_subgroup
 
   rule { public_group | logged_in_viewable }.enable :view_globally
 
@@ -121,10 +121,10 @@ class GroupPolicy < BasePolicy
 
   rule { owner & (~share_with_group_locked | ~has_parent | ~parent_share_with_group_locked | can_change_parent_share_with_group_lock) }.enable :change_share_with_group_lock
 
-  rule { ~can_have_multiple_clusters & has_clusters }.prevent :add_cluster
-
   rule { developer & developer_maintainer_access }.enable :create_projects
   rule { create_projects_disabled }.prevent :create_projects
+
+  rule { owner | admin }.enable :read_statistics
 
   def access_level
     return GroupMember::NO_ACCESS if @user.nil?

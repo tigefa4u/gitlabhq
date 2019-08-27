@@ -9,6 +9,10 @@ GitLab University is a great place to start when learning about version control 
 
 If you're looking for a GitLab subscription for _your university_, see our [Education](https://about.gitlab.com/solutions/education/) page.
 
+CAUTION: **Caution:**
+Some of the content in GitLab University may be out of date and we plan to
+[evaluate](https://gitlab.com/gitlab-org/gitlab-ce/issues/41064) it.
+
 The GitLab University curriculum is composed of GitLab videos, screencasts, presentations, projects and external GitLab content hosted on other services and has been organized into the following sections:
 
 1. [GitLab Beginner](#1-gitlab-beginner).
@@ -53,7 +57,7 @@ The GitLab University curriculum is composed of GitLab videos, screencasts, pres
 1. [Migrating from SVN](../user/project/import/svn.md)
 1. [Migrating from Fogbugz](../user/project/import/fogbugz.md)
 
-### 1.6. GitLab Inc.
+### 1.6. The GitLab team
 
 1. [About GitLab](https://about.gitlab.com/about/)
 1. [GitLab Direction](https://about.gitlab.com/direction/)

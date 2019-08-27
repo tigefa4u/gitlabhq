@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe 'Project fork' do
@@ -50,7 +52,7 @@ describe 'Project fork' do
       click_link('New merge request')
     end
 
-    expect(current_path).to have_content(/#{user.namespace.name}/i)
+    expect(current_path).to have_content(/#{user.namespace.path}/i)
   end
 
   it 'shows avatars when Gravatar is disabled' do

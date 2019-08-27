@@ -115,6 +115,22 @@ module API
 
         present_projects load_projects
       end
+
+      desc 'Get projects starred by a user' do
+        success Entities::BasicProjectDetails
+      end
+      params do
+        requires :user_id, type: String, desc: 'The ID or username of the user'
+        use :collection_params
+        use :statistics_params
+      end
+      get ":user_id/starred_projects" do
+        user = find_user(params[:user_id])
+        not_found!('User') unless user
+
+        starred_projects = StarredProjectsFinder.new(user, params: project_finder_params, current_user: current_user).execute
+        present_projects starred_projects
+      end
     end
 
     resource :projects do
@@ -145,6 +161,7 @@ module API
       post do
         attrs = declared_params(include_missing: false)
         attrs = translate_params_for_compatibility(attrs)
+        filter_attributes_using_license!(attrs)
         project = ::Projects::CreateService.new(current_user, attrs).execute
 
         if project.saved?
@@ -179,6 +196,7 @@ module API
 
         attrs = declared_params(include_missing: false)
         attrs = translate_params_for_compatibility(attrs)
+        filter_attributes_using_license!(attrs)
         project = ::Projects::CreateService.new(user, attrs).execute
 
         if project.saved?
@@ -292,7 +310,7 @@ module API
         authorize! :change_visibility_level, user_project if attrs[:visibility].present?
 
         attrs = translate_params_for_compatibility(attrs)
-
+        filter_attributes_using_license!(attrs)
         verify_update_project_attrs!(user_project, attrs)
 
         result = ::Projects::UpdateService.new(user_project, current_user, attrs).execute
@@ -354,6 +372,19 @@ module API
         else
           not_modified!
         end
+      end
+
+      desc 'Get the users who starred a project' do
+        success Entities::UserBasic
+      end
+      params do
+        optional :search, type: String, desc: 'Return list of users matching the search criteria'
+        use :pagination
+      end
+      get ':id/starrers' do
+        starrers = UsersStarProjectsFinder.new(user_project, params, current_user: current_user).execute
+
+        present paginate(starrers), with: Entities::UserStarsProject
       end
 
       desc 'Get languages in project repository'
@@ -458,11 +489,13 @@ module API
       end
       params do
         optional :search, type: String, desc: 'Return list of users matching the search criteria'
+        optional :skip_users, type: Array[Integer], desc: 'Filter out users with the specified IDs'
         use :pagination
       end
       get ':id/users' do
         users = DeclarativePolicy.subject_scope { user_project.team.users }
         users = users.search(params[:search]) if params[:search].present?
+        users = users.where_not_in(params[:skip_users]) if params[:skip_users].present?
 
         present paginate(users), with: Entities::UserBasic
       end

@@ -4,6 +4,7 @@ class IssuableSidebarBasicEntity < Grape::Entity
   include RequestAwareEntity
 
   expose :id
+  expose :iid
   expose :type do |issuable|
     issuable.to_ability_name
   end
@@ -96,6 +97,10 @@ class IssuableSidebarBasicEntity < Grape::Entity
 
   expose :projects_autocomplete_path do |issuable|
     autocomplete_projects_path(project_id: issuable.project.id)
+  end
+
+  expose :project_emails_disabled do |issuable|
+    issuable.project.emails_disabled?
   end
 
   private

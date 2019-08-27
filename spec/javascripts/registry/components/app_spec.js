@@ -84,13 +84,8 @@ describe('Registry List', () => {
 
     it('should render empty message', done => {
       setTimeout(() => {
-        expect(
-          vm.$el
-            .querySelector('p')
-            .textContent.trim()
-            .replace(/[\r\n]+/g, ' '),
-        ).toEqual(
-          'With the Container Registry, every project can have its own space to store its Docker images. Learn more about the Container Registry.',
+        expect(vm.$el.querySelector('.js-no-container-images-text').textContent).toEqual(
+          'With the Container Registry, every project can have its own space to store its Docker images. More Information',
         );
         done();
       }, 0);
@@ -106,7 +101,7 @@ describe('Registry List', () => {
 
     it('should render a loading spinner', done => {
       Vue.nextTick(() => {
-        expect(vm.$el.querySelector('.spinner')).not.toBe(null);
+        expect(vm.$el.querySelector('.gl-spinner')).not.toBe(null);
         done();
       });
     });
@@ -124,7 +119,9 @@ describe('Registry List', () => {
 
     it('should render invalid characters error message', done => {
       setTimeout(() => {
-        expect(vm.$el.querySelector('.container-message')).not.toBe(null);
+        expect(vm.$el.querySelector('p')).not.toContain(
+          'We are having trouble connecting to Docker, which could be due to an issue with your project name or path. More information',
+        );
         done();
       });
     });

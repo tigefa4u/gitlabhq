@@ -543,6 +543,73 @@ describe Notify do
       end
     end
 
+    describe '#mail_thread' do
+      set(:mail_thread_note) { create(:note) }
+
+      let(:headers) do
+        {
+          from: 'someone@test.com',
+          to: 'someone-else@test.com',
+          subject: 'something',
+          template_name: '_note_email' # re-use this for testing
+        }
+      end
+
+      let(:mailer) do
+        mailer = described_class.new
+        mailer.instance_variable_set(:@note, mail_thread_note)
+        mailer
+      end
+
+      context 'the model has no namespace' do
+        class TopLevelThing
+          include Referable
+          include Noteable
+
+          def to_reference(*_args)
+            'tlt-ref'
+          end
+
+          def id
+            'tlt-id'
+          end
+        end
+
+        subject do
+          mailer.send(:mail_thread, TopLevelThing.new, headers)
+        end
+
+        it 'has X-GitLab-Namespaced-Thing-ID header' do
+          expect(subject.header['X-GitLab-TopLevelThing-ID'].value).to eq('tlt-id')
+        end
+      end
+
+      context 'the model has a namespace' do
+        module Namespaced
+          class Thing
+            include Referable
+            include Noteable
+
+            def to_reference(*_args)
+              'some-reference'
+            end
+
+            def id
+              'some-id'
+            end
+          end
+        end
+
+        subject do
+          mailer.send(:mail_thread, Namespaced::Thing.new, headers)
+        end
+
+        it 'has X-GitLab-Namespaced-Thing-ID header' do
+          expect(subject.header['X-GitLab-Namespaced-Thing-ID'].value).to eq('some-id')
+        end
+      end
+    end
+
     context 'for issue notes' do
       let(:host) { Gitlab.config.gitlab.host }
 
@@ -640,7 +707,7 @@ describe Notify do
         project.request_access(user)
         project.requesters.find_by(user_id: user.id)
       end
-      subject { described_class.member_access_requested_email('project', project_member.id, recipient.notification_email) }
+      subject { described_class.member_access_requested_email('project', project_member.id, recipient.id) }
 
       it_behaves_like 'an email sent from GitLab'
       it_behaves_like 'it should not have Gmail Actions links'
@@ -737,9 +804,9 @@ describe Notify do
 
     describe 'project invitation accepted' do
       let(:invited_user) { create(:user, name: 'invited user') }
-      let(:maintainer) { create(:user).tap { |u| project.add_maintainer(u) } }
+      let(:recipient) { create(:user).tap { |u| project.add_maintainer(u) } }
       let(:project_member) do
-        invitee = invite_to_project(project, inviter: maintainer)
+        invitee = invite_to_project(project, inviter: recipient)
         invitee.accept_invite!(invited_user)
         invitee
       end
@@ -747,6 +814,7 @@ describe Notify do
       subject { described_class.member_invite_accepted_email('project', project_member.id) }
 
       it_behaves_like 'an email sent from GitLab'
+      it_behaves_like 'an email sent to a user'
       it_behaves_like 'it should not have Gmail Actions links'
       it_behaves_like "a user cannot unsubscribe through footer link"
       it_behaves_like 'appearance header and footer enabled'
@@ -762,16 +830,17 @@ describe Notify do
     end
 
     describe 'project invitation declined' do
-      let(:maintainer) { create(:user).tap { |u| project.add_maintainer(u) } }
+      let(:recipient) { create(:user).tap { |u| project.add_maintainer(u) } }
       let(:project_member) do
-        invitee = invite_to_project(project, inviter: maintainer)
+        invitee = invite_to_project(project, inviter: recipient)
         invitee.decline_invite!
         invitee
       end
 
-      subject { described_class.member_invite_declined_email('Project', project.id, project_member.invite_email, maintainer.id) }
+      subject { described_class.member_invite_declined_email('Project', project.id, project_member.invite_email, recipient.id) }
 
       it_behaves_like 'an email sent from GitLab'
+      it_behaves_like 'an email sent to a user'
       it_behaves_like 'it should not have Gmail Actions links'
       it_behaves_like "a user cannot unsubscribe through footer link"
       it_behaves_like 'appearance header and footer enabled'
@@ -1087,9 +1156,10 @@ describe Notify do
         group.request_access(user)
         group.requesters.find_by(user_id: user.id)
       end
-      subject { described_class.member_access_requested_email('group', group_member.id, recipient.notification_email) }
+      subject { described_class.member_access_requested_email('group', group_member.id, recipient.id) }
 
       it_behaves_like 'an email sent from GitLab'
+      it_behaves_like 'an email sent to a user'
       it_behaves_like 'it should not have Gmail Actions links'
       it_behaves_like "a user cannot unsubscribe through footer link"
       it_behaves_like 'appearance header and footer enabled'
@@ -1111,9 +1181,11 @@ describe Notify do
         group.request_access(user)
         group.requesters.find_by(user_id: user.id)
       end
+      let(:recipient) { user }
       subject { described_class.member_access_denied_email('group', group.id, user.id) }
 
       it_behaves_like 'an email sent from GitLab'
+      it_behaves_like 'an email sent to a user'
       it_behaves_like 'it should not have Gmail Actions links'
       it_behaves_like "a user cannot unsubscribe through footer link"
       it_behaves_like 'appearance header and footer enabled'
@@ -1128,10 +1200,12 @@ describe Notify do
 
     describe 'group access changed' do
       let(:group_member) { create(:group_member, group: group, user: user) }
+      let(:recipient) { user }
 
       subject { described_class.member_access_granted_email('group', group_member.id) }
 
       it_behaves_like 'an email sent from GitLab'
+      it_behaves_like 'an email sent to a user'
       it_behaves_like 'it should not have Gmail Actions links'
       it_behaves_like "a user cannot unsubscribe through footer link"
       it_behaves_like 'appearance header and footer enabled'

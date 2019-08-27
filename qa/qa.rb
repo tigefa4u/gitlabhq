@@ -4,6 +4,9 @@ $: << File.expand_path(File.dirname(__FILE__))
 
 Encoding.default_external = 'UTF-8'
 
+require_relative '../lib/gitlab'
+require_relative '../config/initializers/0_inject_enterprise_edition_module'
+
 module QA
   ##
   # GitLab QA runtime classes, mostly singletons.
@@ -314,6 +317,10 @@ module QA
       autoload :Login, 'qa/page/mattermost/login'
     end
 
+    module Search
+      autoload :Results, 'qa/page/search/results'
+    end
+
     ##
     # Classes describing components that are used by several pages.
     #
@@ -352,6 +359,13 @@ module QA
     autoload :KubernetesCluster, 'qa/service/kubernetes_cluster'
     autoload :Omnibus, 'qa/service/omnibus'
     autoload :Runner, 'qa/service/runner'
+
+    module ClusterProvider
+      autoload :Base, 'qa/service/cluster_provider/base'
+      autoload :Gcloud, 'qa/service/cluster_provider/gcloud'
+      autoload :Minikube, 'qa/service/cluster_provider/minikube'
+      autoload :K3d, 'qa/service/cluster_provider/k3d'
+    end
   end
 
   ##

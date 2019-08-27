@@ -265,7 +265,6 @@ ul.controls {
   }
 
   .issuable-pipeline-broken a,
-  .issuable-pipeline-status a,
   .author-link {
     display: flex;
   }
@@ -284,5 +283,21 @@ ul.indent-list {
 .namespace-title {
   .tooltip-inner {
     max-width: 350px;
+  }
+}
+
+.horizontal-list {
+  padding-left: 0;
+  list-style: none;
+
+  > li {
+    float: left;
+  }
+
+  &.list-items-separated {
+    > li:not(:last-child)::after {
+      content: '\00b7';
+      margin: 0 $gl-padding-4;
+    }
   }
 }

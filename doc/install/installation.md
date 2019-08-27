@@ -6,7 +6,7 @@ type: howto
 
 This is the official installation guide to set up a production GitLab server
 using the source files. To set up a **development installation** or for many
-other installation options, see the [main installation page](index.md).
+other installation options, see the [main installation page](README.md).
 It was created for and tested on **Debian/Ubuntu** operating systems.
 Read [requirements.md](requirements.md) for hardware and operating system requirements.
 If you want to install on RHEL/CentOS, we recommend using the
@@ -57,18 +57,18 @@ of this page:
 ```
 
 - `/home/git/.ssh` - Contains OpenSSH settings. Specifically the `authorized_keys`
-  file managed by gitlab-shell.
+  file managed by GitLab Shell.
 - `/home/git/gitlab` - GitLab core software.
 - `/home/git/gitlab-shell` - Core add-on component of GitLab. Maintains SSH
   cloning and other functionality.
 - `/home/git/repositories` - Bare repositories for all projects organized by
-  namespace. This is where the git repositories which are pushed/pulled are
+  namespace. This is where the Git repositories which are pushed/pulled are
   maintained for all projects. **This area contains critical data for projects.
   [Keep a backup](../raketasks/backup_restore.md).**
 
 NOTE: **Note:**
 The default locations for repositories can be configured in `config/gitlab.yml`
-of GitLab and `config.yml` of gitlab-shell.
+of GitLab and `config.yml` of GitLab Shell.
 
 For a more in-depth overview, see the [GitLab architecture doc](../development/architecture.md).
 
@@ -134,7 +134,7 @@ Make sure you have the right version of Git installed:
 # Install Git
 sudo apt-get install -y git-core
 
-# Make sure Git is version 2.21.0 or higher
+# Make sure Git is version 2.22.0 or higher
 git --version
 ```
 
@@ -171,9 +171,9 @@ sudo make install
 
 # Download and compile from source
 cd /tmp
-curl --remote-name --location --progress https://www.kernel.org/pub/software/scm/git/git-2.21.0.tar.gz
-echo '85eca51c7404da75e353eba587f87fea9481ba41e162206a6f70ad8118147bee  git-2.21.0.tar.gz' | shasum -a256 -c - && tar -xzf git-2.21.0.tar.gz
-cd git-2.21.0/
+curl --remote-name --location --progress https://www.kernel.org/pub/software/scm/git/git-2.22.0.tar.gz
+echo 'a4b7e4365bee43caa12a38d646d2c93743d755d1cea5eab448ffb40906c9da0b  git-2.22.0.tar.gz' | shasum -a256 -c - && tar -xzf git-2.22.0.tar.gz
+cd git-2.22.0/
 ./configure --with-libpcre
 make prefix=/usr/local all
 
@@ -202,8 +202,8 @@ Then select 'Internet Site' and press enter to confirm the hostname.
 
 The Ruby interpreter is required to run GitLab.
 
-**Note:** The current supported Ruby (MRI) version is 2.5.x. GitLab 11.6
-  dropped support for Ruby 2.4.x.
+**Note:** The current supported Ruby (MRI) version is 2.6.x. GitLab 12.2
+  dropped support for Ruby 2.5.x.
 
 The use of Ruby version managers such as [RVM], [rbenv] or [chruby] with GitLab
 in production, frequently leads to hard to diagnose problems. For example,
@@ -299,57 +299,57 @@ use of extensions and concurrent index removal, you need at least PostgreSQL 9.2
 
 1. Install the database packages:
 
-    ```sh
-    sudo apt-get install -y postgresql postgresql-client libpq-dev postgresql-contrib
-    ```
+   ```sh
+   sudo apt-get install -y postgresql postgresql-client libpq-dev postgresql-contrib
+   ```
 
 1. Create a database user for GitLab:
 
-    ```sh
-    sudo -u postgres psql -d template1 -c "CREATE USER git CREATEDB;"
-    ```
+   ```sh
+   sudo -u postgres psql -d template1 -c "CREATE USER git CREATEDB;"
+   ```
 
 1. Create the `pg_trgm` extension (required for GitLab 8.6+):
 
-    ```sh
-    sudo -u postgres psql -d template1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
-    ```
+   ```sh
+   sudo -u postgres psql -d template1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+   ```
 
 1. Create the GitLab production database and grant all privileges on database:
 
-    ```sh
-    sudo -u postgres psql -d template1 -c "CREATE DATABASE gitlabhq_production OWNER git;"
-    ```
+   ```sh
+   sudo -u postgres psql -d template1 -c "CREATE DATABASE gitlabhq_production OWNER git;"
+   ```
 
 1. Try connecting to the new database with the new user:
 
-    ```sh
-    sudo -u git -H psql -d gitlabhq_production
-    ```
+   ```sh
+   sudo -u git -H psql -d gitlabhq_production
+   ```
 
 1. Check if the `pg_trgm` extension is enabled:
 
-    ```sh
-    SELECT true AS enabled
-    FROM pg_available_extensions
-    WHERE name = 'pg_trgm'
-    AND installed_version IS NOT NULL;
-    ```
+   ```sh
+   SELECT true AS enabled
+   FROM pg_available_extensions
+   WHERE name = 'pg_trgm'
+   AND installed_version IS NOT NULL;
+   ```
 
-    If the extension is enabled this will produce the following output:
+   If the extension is enabled this will produce the following output:
 
-    ```
-    enabled
-    ---------
-     t
-    (1 row)
-    ```
+   ```
+   enabled
+   ---------
+    t
+   (1 row)
+   ```
 
 1. Quit the database session:
 
-    ```sh
-    gitlabhq_production> \q
-    ```
+   ```sh
+   gitlabhq_production> \q
+   ```
 
 ## 7. Redis
 
@@ -569,7 +569,7 @@ GitLab Shell application startup time can be greatly reduced by disabling RubyGe
 - Compile Ruby with `configure --disable-rubygems` to disable RubyGems by default. Not recommended for system-wide Ruby.
 - Omnibus GitLab [replaces the *shebang* line of the `gitlab-shell/bin/*` scripts](https://gitlab.com/gitlab-org/omnibus-gitlab/merge_requests/1707).
 
-### Install gitlab-workhorse
+### Install GitLab Workhorse
 
 GitLab-Workhorse uses [GNU Make](https://www.gnu.org/software/make/). The
 following command-line will install GitLab-Workhorse in `/home/git/gitlab-workhorse`
@@ -789,7 +789,7 @@ nginx: configuration file /etc/nginx/nginx.conf test failed`
 sudo service nginx restart
 ```
 
-## Done!
+## Post-install
 
 ### Double-check Application Status
 
@@ -831,27 +831,28 @@ how to configure GitLab with a relative URL.
 To use GitLab with HTTPS:
 
 1. In `gitlab.yml`:
-    1. Set the `port` option in section 1 to `443`.
-    1. Set the `https` option in section 1 to `true`.
-1. In the `config.yml` of gitlab-shell:
-    1. Set `gitlab_url` option to the HTTPS endpoint of GitLab (e.g. `https://git.example.com`).
-    1. Set the certificates using either the `ca_file` or `ca_path` option.
+   1. Set the `port` option in section 1 to `443`.
+   1. Set the `https` option in section 1 to `true`.
+1. In the `config.yml` of GitLab Shell:
+   1. Set `gitlab_url` option to the HTTPS endpoint of GitLab (e.g. `https://git.example.com`).
+   1. Set the certificates using either the `ca_file` or `ca_path` option.
 1. Use the `gitlab-ssl` Nginx example config instead of the `gitlab` config.
-    1. Update `YOUR_SERVER_FQDN`.
-    1. Update `ssl_certificate` and `ssl_certificate_key`.
-    1. Review the configuration file and consider applying other security and performance enhancing features.
+   1. Update `YOUR_SERVER_FQDN`.
+   1. Update `ssl_certificate` and `ssl_certificate_key`.
+   1. Review the configuration file and consider applying other security and performance enhancing features.
 
 Using a self-signed certificate is discouraged but if you must use it, follow the normal directions. Then:
 
 1. Generate a self-signed SSL certificate:
 
-    ```sh
-    mkdir -p /etc/nginx/ssl/
-    cd /etc/nginx/ssl/
-    sudo openssl req -newkey rsa:2048 -x509 -nodes -days 3560 -out gitlab.crt -keyout gitlab.key
-    sudo chmod o-r gitlab.key
-    ```
-1. In the `config.yml` of gitlab-shell set `self_signed_cert` to `true`.
+   ```sh
+   mkdir -p /etc/nginx/ssl/
+   cd /etc/nginx/ssl/
+   sudo openssl req -newkey rsa:2048 -x509 -nodes -days 3560 -out gitlab.crt -keyout gitlab.key
+   sudo chmod o-r gitlab.key
+   ```
+
+1. In the `config.yml` of GitLab Shell set `self_signed_cert` to `true`.
 
 ### Enable Reply by email
 
@@ -937,7 +938,7 @@ To use GitLab with Puma:
    cd /home/git/gitlab
 
    # Copy config file for the web server
-   sudo -u git -H config/puma.rb.example config/puma.rb
+   sudo -u git -H cp config/puma.rb.example config/puma.rb
    ```
 
 1. Edit the system `init.d` script to use `EXPERIMENTAL_PUMA=1` flag. If you have `/etc/default/gitlab`, then you should edit it instead.
@@ -949,8 +950,8 @@ To use GitLab with Puma:
 
 If you see this message when attempting to clone a repository hosted by GitLab,
 this is likely due to an outdated Nginx or Apache configuration, or a missing or
-misconfigured gitlab-workhorse instance. Double-check that you've
-[installed Go](#3-go), [installed gitlab-workhorse](#install-gitlab-workhorse),
+misconfigured GitLab Workhorse instance. Double-check that you've
+[installed Go](#3-go), [installed GitLab Workhorse](#install-gitlab-workhorse),
 and correctly [configured Nginx](#site-configuration).
 
 ### google-protobuf "LoadError: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.14' not found"

@@ -46,9 +46,9 @@ export const setNotesFetchedState = ({ commit }, state) =>
 
 export const toggleDiscussion = ({ commit }, data) => commit(types.TOGGLE_DISCUSSION, data);
 
-export const fetchDiscussions = ({ commit, dispatch }, { path, filter }) =>
+export const fetchDiscussions = ({ commit, dispatch }, { path, filter, persistFilter }) =>
   service
-    .fetchDiscussions(path, filter)
+    .fetchDiscussions(path, filter, persistFilter)
     .then(res => res.json())
     .then(discussions => {
       commit(types.SET_INITIAL_DISCUSSIONS, discussions);
@@ -61,18 +61,22 @@ export const updateDiscussion = ({ commit, state }, discussion) => {
   return utils.findNoteObjectById(state.discussions, discussion.id);
 };
 
-export const deleteNote = ({ commit, dispatch, state }, note) =>
-  service.deleteNote(note.path).then(() => {
-    const discussion = state.discussions.find(({ id }) => id === note.discussion_id);
+export const removeNote = ({ commit, dispatch, state }, note) => {
+  const discussion = state.discussions.find(({ id }) => id === note.discussion_id);
 
-    commit(types.DELETE_NOTE, note);
+  commit(types.DELETE_NOTE, note);
 
-    dispatch('updateMergeRequestWidget');
-    dispatch('updateResolvableDiscussionsCounts');
+  dispatch('updateMergeRequestWidget');
+  dispatch('updateResolvableDiscussionsCounts');
 
-    if (isInMRPage()) {
-      dispatch('diffs/removeDiscussionsFromDiff', discussion);
-    }
+  if (isInMRPage()) {
+    dispatch('diffs/removeDiscussionsFromDiff', discussion);
+  }
+};
+
+export const deleteNote = ({ dispatch }, note) =>
+  axios.delete(note.path).then(() => {
+    dispatch('removeNote', note);
   });
 
 export const updateNote = ({ commit, dispatch }, { endpoint, note }) =>
@@ -357,11 +361,11 @@ export const poll = ({ commit, state, getters, dispatch }) => {
 };
 
 export const stopPolling = () => {
-  eTagPoll.stop();
+  if (eTagPoll) eTagPoll.stop();
 };
 
 export const restartPolling = () => {
-  eTagPoll.restart();
+  if (eTagPoll) eTagPoll.restart();
 };
 
 export const fetchData = ({ commit, state, getters }) => {
@@ -411,9 +415,9 @@ export const setLoadingState = ({ commit }, data) => {
   commit(types.SET_NOTES_LOADING_STATE, data);
 };
 
-export const filterDiscussion = ({ dispatch }, { path, filter }) => {
+export const filterDiscussion = ({ dispatch }, { path, filter, persistFilter }) => {
   dispatch('setLoadingState', true);
-  dispatch('fetchDiscussions', { path, filter })
+  dispatch('fetchDiscussions', { path, filter, persistFilter })
     .then(() => {
       dispatch('setLoadingState', false);
       dispatch('setNotesFetchedState', true);

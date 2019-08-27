@@ -8,38 +8,33 @@ Review Apps are automatically deployed by each pipeline, both in
 
 ### CI/CD architecture diagram
 
-![Review Apps CI/CD architecture](img/review_apps_cicd_architecture.png)
-
-<details>
-<summary>Show mermaid source</summary>
-<pre>
+```mermaid
 graph TD
     build-qa-image -.->|once the `prepare` stage is done| gitlab:assets:compile
     review-build-cng -->|triggers a CNG-mirror pipeline and wait for it to be done| CNG-mirror
     review-build-cng -.->|once the `test` stage is done| review-deploy
     review-deploy -.->|once the `review` stage is done| review-qa-smoke
 
-subgraph 1. gitlab-ce/ee `prepare` stage
+subgraph "1. gitlab-ce/ee `prepare` stage"
     build-qa-image
     end
 
-subgraph 2. gitlab-ce/ee `test` stage
+subgraph "2. gitlab-ce/ee `test` stage"
     gitlab:assets:compile -->|plays dependent job once done| review-build-cng
     end
 
-subgraph 3. gitlab-ce/ee `review` stage
-    review-deploy["review-deploy<br /><br />Helm deploys the Review App using the Cloud<br/>Native images built by the CNG-mirror pipeline.<br /><br />Cloud Native images are deployed to the `review-apps-ce` or `review-apps-ee`<br />Kubernetes (GKE) cluster, in the GCP `gitlab-review-apps` project."]
+subgraph "3. gitlab-ce/ee `review` stage"
+    review-deploy["review-deploy<br><br>Helm deploys the Review App using the Cloud<br/>Native images built by the CNG-mirror pipeline.<br><br>Cloud Native images are deployed to the `review-apps-ce` or `review-apps-ee`<br>Kubernetes (GKE) cluster, in the GCP `gitlab-review-apps` project."]
     end
 
-subgraph 4. gitlab-ce/ee `qa` stage
-    review-qa-smoke[review-qa-smoke<br /><br />gitlab-qa runs the smoke suite against the Review App.]
+subgraph "4. gitlab-ce/ee `qa` stage"
+    review-qa-smoke[review-qa-smoke<br><br>gitlab-qa runs the smoke suite against the Review App.]
     end
 
-subgraph CNG-mirror pipeline
+subgraph "CNG-mirror pipeline"
     CNG-mirror>Cloud Native images are built];
     end
-</pre>
-</details>
+```
 
 ### Detailed explanation
 
@@ -115,6 +110,28 @@ On every [pipeline][gitlab-pipeline] in the `qa` stage, the
 browser performance testing using a
 [Sitespeed.io Container](../../user/project/merge_requests/browser_performance_testing.md).
 
+## Cluster configuration
+
+### Node pools
+
+Both `review-apps-ce` and `review-apps-ee` clusters are currently set up with
+two node pools:
+
+- a node pool of non-preemptible `n1-standard-2` (2 vCPU, 7.5 GB memory) nodes
+  dedicated to the `tiller` deployment (see below) with a single node.
+- a node pool of preemptible `n1-standard-2` (2 vCPU, 7.5 GB memory) nodes,
+  with a minimum of 1 node and a maximum of 250 nodes.
+
+### Helm/Tiller
+
+The `tiller` deployment (the Helm server) is deployed to a dedicated node pool
+that has the `app=helm` label and a specific
+[taint](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/)
+to prevent other pods from being scheduled on this node pool.
+
+This is to ensure Tiller isn't affected by "noisy" neighbors that could put
+their node under pressure.
+
 ## How to:
 
 ### Log into my Review App
@@ -137,8 +154,8 @@ secure note named **gitlab-{ce,ee} Review App's root password**.
 
 ### Run a Rails console
 
-1. [Filter Workloads by your Review App slug](https://console.cloud.google.com/kubernetes/workload?project=gitlab-review-apps)
-  , e.g. `review-qa-raise-e-12chm0`.
+1. [Filter Workloads by your Review App slug](https://console.cloud.google.com/kubernetes/workload?project=gitlab-review-apps),
+   e.g. `review-qa-raise-e-12chm0`.
 1. Find and open the `task-runner` Deployment, e.g. `review-qa-raise-e-12chm0-task-runner`.
 1. Click on the Pod in the "Managed pods" section, e.g. `review-qa-raise-e-12chm0-task-runner-d5455cc8-2lsvz`.
 1. Click on the `KUBECTL` dropdown, then `Exec` -> `task-runner`.
@@ -196,7 +213,7 @@ For the record, the debugging steps to find out this issue were:
 1. `kubectl describe pod <pod name>` & confirm exact error message
 1. Web search for exact error message, following rabbit hole to [a relevant kubernetes bug report](https://github.com/kubernetes/kubernetes/issues/57345)
 1. Access the node over SSH via the GCP console (**Computer Engine > VM
-  instances** then click the "SSH" button for the node where the `dns-gitlab-review-app-external-dns` pod runs)
+   instances** then click the "SSH" button for the node where the `dns-gitlab-review-app-external-dns` pod runs)
 1. In the node: `systemctl --version` => systemd 232
 1. Gather some more information:
    - `mount | grep kube | wc -l` => e.g. 290
@@ -211,7 +228,7 @@ For the record, the debugging steps to find out this issue were:
 To resolve the problem, we needed to (forcibly) drain some nodes:
 
 1. Try a normal drain on the node where the `dns-gitlab-review-app-external-dns`
-  pod runs so that Kubernetes automatically move it to another node: `kubectl drain NODE_NAME`
+   pod runs so that Kubernetes automatically move it to another node: `kubectl drain NODE_NAME`
 1. If that doesn't work, you can also perform a forcible "drain" the node by removing all pods: `kubectl delete pods --field-selector=spec.nodeName=NODE_NAME`
 1. In the node:
    - Perform `systemctl daemon-reload` to remove the dead/inactive units
@@ -238,17 +255,8 @@ that a machine will hit the "too many mount points" problem in the future.
 thousands of unused Docker images.**
 
   > We have to start somewhere and improve later. Also, we're using the
-  CNG-mirror project to store these Docker images so that we can just wipe out
-  the registry at some point, and use a new fresh, empty one.
-
-**How big are the Kubernetes clusters (`review-apps-ce` and `review-apps-ee`)?**
-
-  > The clusters are currently set up with a single pool of preemptible nodes,
-  with a minimum of 1 node and a maximum of 500 nodes.
-
-**What are the machine running on the cluster?**
-
-  > We're currently using `n1-standard-1` (1 vCPU, 3.75 GB memory) machines.
+  > CNG-mirror project to store these Docker images so that we can just wipe out
+  > the registry at some point, and use a new fresh, empty one.
 
 **How do we secure this from abuse? Apps are open to the world so we need to
 find a way to limit it to only us.**

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module EmailHelpers
   def sent_to_user(user, recipients: email_recipients)
     recipients.count { |to| to == user.notification_email }
@@ -27,6 +29,10 @@ module EmailHelpers
 
   def should_not_email_anyone
     expect(ActionMailer::Base.deliveries).to be_empty
+  end
+
+  def should_email_anyone
+    expect(ActionMailer::Base.deliveries).not_to be_empty
   end
 
   def email_recipients(kind: :to)

@@ -6,7 +6,7 @@ class Projects::NotesController < Projects::ApplicationController
   include NotesHelper
   include ToggleAwardEmoji
 
-  before_action :whitelist_query_limiting, only: [:create]
+  before_action :whitelist_query_limiting, only: [:create, :update]
   before_action :authorize_read_note!
   before_action :authorize_create_note!, only: [:create]
   before_action :authorize_resolve_note!, only: [:resolve, :unresolve]
@@ -68,7 +68,7 @@ class Projects::NotesController < Projects::ApplicationController
   alias_method :awardable, :note
 
   def finder_params
-    params.merge(last_fetched_at: last_fetched_at, notes_filter: notes_filter)
+    params.merge(project: project, last_fetched_at: last_fetched_at, notes_filter: notes_filter)
   end
 
   def authorize_admin_note!

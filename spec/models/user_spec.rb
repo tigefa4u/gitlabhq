@@ -103,6 +103,14 @@ describe User do
       it { is_expected.to validate_length_of(:name).is_at_most(128) }
     end
 
+    describe 'first name' do
+      it { is_expected.to validate_length_of(:first_name).is_at_most(255) }
+    end
+
+    describe 'last name' do
+      it { is_expected.to validate_length_of(:last_name).is_at_most(255) }
+    end
+
     describe 'username' do
       it 'validates presence' do
         expect(subject).to validate_presence_of(:username)
@@ -530,6 +538,17 @@ describe User do
   end
 
   describe 'before save hook' do
+    context '#default_private_profile_to_false' do
+      let(:user) { create(:user, private_profile: true) }
+
+      it 'converts nil to false' do
+        user.private_profile = nil
+        user.save!
+
+        expect(user.private_profile).to eq false
+      end
+    end
+
     context 'when saving an external user' do
       let(:user)          { create(:user) }
       let(:external_user) { create(:user, external: true) }
@@ -667,6 +686,18 @@ describe User do
     end
   end
 
+  describe 'name getters' do
+    let(:user) { create(:user, name: 'Kane Martin William') }
+
+    it 'derives first name from full name, if not present' do
+      expect(user.first_name).to eq('Kane')
+    end
+
+    it 'derives last name from full name, if not present' do
+      expect(user.last_name).to eq('Martin William')
+    end
+  end
+
   describe '#highest_role' do
     let(:user) { create(:user) }
 
@@ -780,6 +811,24 @@ describe User do
         expect(user.keys).to include key
         expect(user.keys).not_to include deploy_key
       end
+    end
+  end
+
+  describe '#accessible_deploy_keys' do
+    let(:user) { create(:user) }
+    let(:project) { create(:project) }
+    let!(:private_deploy_keys_project) { create(:deploy_keys_project) }
+    let!(:public_deploy_keys_project) { create(:deploy_keys_project) }
+    let!(:accessible_deploy_keys_project) { create(:deploy_keys_project, project: project) }
+
+    before do
+      public_deploy_keys_project.deploy_key.update(public: true)
+      project.add_developer(user)
+    end
+
+    it 'user can only see deploy keys accessible to right projects' do
+      expect(user.accessible_deploy_keys).to match_array([public_deploy_keys_project.deploy_key,
+                                                          accessible_deploy_keys_project.deploy_key])
     end
   end
 
@@ -974,7 +1023,7 @@ describe User do
     it { expect(user.namespaces).to contain_exactly(user.namespace, group) }
     it { expect(user.manageable_namespaces).to contain_exactly(user.namespace, group) }
 
-    context 'with child groups', :nested_groups do
+    context 'with child groups' do
       let!(:subgroup) { create(:group, parent: group) }
 
       describe '#manageable_namespaces' do
@@ -1127,6 +1176,7 @@ describe User do
         expect(user.can_create_group).to eq(Gitlab.config.gitlab.default_can_create_group)
         expect(user.theme_id).to eq(Gitlab.config.gitlab.default_theme)
         expect(user.external).to be_falsey
+        expect(user.private_profile).to eq false
       end
     end
 
@@ -2070,11 +2120,7 @@ describe User do
 
     subject { user.membership_groups }
 
-    if Group.supports_nested_objects?
-      it { is_expected.to contain_exactly parent_group, child_group }
-    else
-      it { is_expected.to contain_exactly parent_group }
-    end
+    it { is_expected.to contain_exactly parent_group, child_group }
   end
 
   describe '#authorizations_for_projects' do
@@ -2374,7 +2420,7 @@ describe User do
       it_behaves_like :member
     end
 
-    context 'with subgroup with different owner for project runner', :nested_groups do
+    context 'with subgroup with different owner for project runner' do
       let(:group) { create(:group) }
       let(:another_user) { create(:user) }
       let(:subgroup) { create(:group, parent: group) }
@@ -2478,22 +2524,16 @@ describe User do
         group.add_owner(user)
       end
 
-      if Group.supports_nested_objects?
-        it 'returns all groups' do
-          is_expected.to match_array [
-            group,
-            nested_group_1, nested_group_1_1,
-            nested_group_2, nested_group_2_1
-          ]
-        end
-      else
-        it 'returns the top-level groups' do
-          is_expected.to match_array [group]
-        end
+      it 'returns all groups' do
+        is_expected.to match_array [
+          group,
+          nested_group_1, nested_group_1_1,
+          nested_group_2, nested_group_2_1
+        ]
       end
     end
 
-    context 'user is member of the first child (internal node), branch 1', :nested_groups do
+    context 'user is member of the first child (internal node), branch 1' do
       before do
         nested_group_1.add_owner(user)
       end
@@ -2506,7 +2546,7 @@ describe User do
       end
     end
 
-    context 'user is member of the first child (internal node), branch 2', :nested_groups do
+    context 'user is member of the first child (internal node), branch 2' do
       before do
         nested_group_2.add_owner(user)
       end
@@ -2519,7 +2559,7 @@ describe User do
       end
     end
 
-    context 'user is member of the last child (leaf node)', :nested_groups do
+    context 'user is member of the last child (leaf node)' do
       before do
         nested_group_1_1.add_owner(user)
       end
@@ -2675,7 +2715,7 @@ describe User do
       end
     end
 
-    context 'with 2FA requirement from expanded groups', :nested_groups do
+    context 'with 2FA requirement from expanded groups' do
       let!(:group1) { create :group, require_two_factor_authentication: true }
       let!(:group1a) { create :group, parent: group1 }
 
@@ -2690,7 +2730,7 @@ describe User do
       end
     end
 
-    context 'with 2FA requirement on nested child group', :nested_groups do
+    context 'with 2FA requirement on nested child group' do
       let!(:group1) { create :group, require_two_factor_authentication: false }
       let!(:group1a) { create :group, require_two_factor_authentication: true, parent: group1 }
 
@@ -2931,7 +2971,7 @@ describe User do
       let(:user) { create(:user, username: username) }
 
       context 'when the user is updated' do
-        context 'when the username is changed' do
+        context 'when the username or name is changed' do
           let(:new_username) { 'bar' }
 
           it 'changes the namespace (just to compare to when username is not changed)' do
@@ -2942,16 +2982,24 @@ describe User do
             end.to change { user.namespace.updated_at }
           end
 
-          it 'updates the namespace name' do
-            user.update!(username: new_username)
-
-            expect(user.namespace.name).to eq(new_username)
-          end
-
-          it 'updates the namespace path' do
+          it 'updates the namespace path when the username was changed' do
             user.update!(username: new_username)
 
             expect(user.namespace.path).to eq(new_username)
+          end
+
+          it 'updates the namespace name if the name was changed' do
+            user.update!(name: 'New name')
+
+            expect(user.namespace.name).to eq('New name')
+          end
+
+          it 'updates nested routes for the namespace if the name was changed' do
+            project = create(:project, namespace: user.namespace)
+
+            user.update!(name: 'New name')
+
+            expect(project.route.reload.name).to include('New name')
           end
 
           context 'when there is a validation error (namespace name taken) while updating namespace' do
@@ -3482,6 +3530,39 @@ describe User do
       user2 = create(:user, name: 'B')
 
       expect(described_class.reorder_by_name).to eq([user1, user2])
+    end
+  end
+
+  describe '#notification_email_for' do
+    let(:user) { create(:user) }
+    let(:group) { create(:group) }
+
+    subject { user.notification_email_for(group) }
+
+    context 'when group is nil' do
+      let(:group) { nil }
+
+      it 'returns global notification email' do
+        is_expected.to eq(user.notification_email)
+      end
+    end
+
+    context 'when group has no notification email set' do
+      it 'returns global notification email' do
+        create(:notification_setting, user: user, source: group, notification_email: '')
+
+        is_expected.to eq(user.notification_email)
+      end
+    end
+
+    context 'when group has notification email set' do
+      it 'returns group notification email' do
+        group_notification_email = 'user+group@example.com'
+
+        create(:notification_setting, user: user, source: group, notification_email: group_notification_email)
+
+        is_expected.to eq(group_notification_email)
+      end
     end
   end
 end

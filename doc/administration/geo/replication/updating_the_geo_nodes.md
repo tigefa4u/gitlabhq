@@ -10,9 +10,32 @@ all you need to do is update GitLab itself:
 
 1. Log into each node (**primary** and **secondary** nodes).
 1. [Update GitLab][update].
-1. [Update tracking database on **secondary** node](#update-tracking-database-on-secondary-node) when
-   the tracking database is enabled.
 1. [Test](#check-status-after-updating) **primary** and **secondary** nodes, and check version in each.
+
+### Check status after updating
+
+Now that the update process is complete, you may want to check whether
+everything is working correctly:
+
+1. Run the Geo raketask on all nodes, everything should be green:
+
+   ```sh
+   sudo gitlab-rake gitlab:geo:check
+   ```
+
+1. Check the **primary** node's Geo dashboard for any errors.
+1. Test the data replication by pushing code to the **primary** node and see if it
+   is received by **secondary** nodes.
+
+## Upgrading to GitLab 12.1
+
+By default, GitLab 12.1 will attempt to automatically upgrade the embedded PostgreSQL server to 10.7 from 9.6. Please see [the omnibus documentation](https://docs.gitlab.com/omnibus/settings/database.html#upgrading-a-geo-instance) for the recommended procedure.
+
+This can be temporarily disabled by running the following before ugprading:
+
+```sh
+sudo touch /etc/gitlab/disable-postgresql-upgrade
+```
 
 ## Upgrading to GitLab 10.8
 
@@ -241,7 +264,7 @@ Omnibus is the following:
 1. Check the steps about defining `postgresql['sql_user_password']`, `gitlab_rails['db_password']`.
 1. Make sure `postgresql['max_replication_slots']` matches the number of **secondary** Geo nodes locations.
 1. Install GitLab on the **secondary** server.
-1. Re-run the [database replication process][database-replication].
+1. Re-run the [database replication process](database.md#step-3-initiate-the-replication-process).
 
 ## Special update notes for 9.0.x
 
@@ -409,22 +432,7 @@ is prepended with the relevant node for better clarity:
    sudo gitlab-ctl start
    ```
 
-## Check status after updating
-
-Now that the update process is complete, you may want to check whether
-everything is working correctly:
-
-1. Run the Geo raketask on all nodes, everything should be green:
-
-   ```sh
-   sudo gitlab-rake gitlab:geo:check
-   ```
-
-1. Check the **primary** node's Geo dashboard for any errors.
-1. Test the data replication by pushing code to the **primary** node and see if it
-   is received by **secondary** nodes.
-
-## Update tracking database on **secondary** node
+### Update tracking database on **secondary** node
 
 After updating a **secondary** node, you might need to run migrations on
 the tracking database. The tracking database was added in GitLab 9.1,

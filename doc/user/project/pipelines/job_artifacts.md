@@ -1,23 +1,23 @@
+---
+type: reference, howto
+---
+
 # Introduction to job artifacts
 
-> **Notes:**
->
-> - Since GitLab 8.2 and GitLab Runner 0.7.0, job artifacts that are created by
->   GitLab Runner are uploaded to GitLab and are downloadable as a single archive
->   (`tar.gz`) using the GitLab UI.
-> - Starting with GitLab 8.4 and GitLab Runner 1.0, the artifacts archive format
->   changed to `ZIP`, and it is now possible to browse its contents, with the added
->   ability of downloading the files separately.
-> - Starting with GitLab 8.17, builds are renamed to jobs.
-> - The artifacts browser will be available only for new artifacts that are sent
->   to GitLab using GitLab Runner version 1.0 and up. It will not be possible to
->   browse old artifacts already uploaded to GitLab.
->- This is the user documentation. For the administration guide see
->   [administration/job_artifacts](../../../administration/job_artifacts.md).
+> - Introduced in GitLab 8.2 and GitLab Runner 0.7.0.
+> - Starting with GitLab 8.4 and GitLab Runner 1.0, the artifacts archive format changed to `ZIP`, and it is now possible to browse its contents, with the added ability of downloading the files separately.
+> - In GitLab 8.17, builds were renamed to jobs.
+> - The artifacts browser will be available only for new artifacts that are sent to GitLab using GitLab Runner version 1.0 and up. It will not be possible to browse old artifacts already uploaded to GitLab.
 
-Artifacts is a list of files and directories which are attached to a job
-after it finishes. This feature is enabled by default in all
+Artifacts are a list of files and directories which created by a job
+once it finishes. This feature is [enabled by default](../../../administration/job_artifacts.md) in all
 GitLab installations.
+
+Job artifacts that are created by GitLab Runner are uploaded to GitLab and are downloadable as a single archive using the GitLab UI.
+
+<i class="fa fa-youtube-play youtube" aria-hidden="true"></i>
+For an overview, watch the video [GitLab CI Pipeline, Artifacts, and Environments](https://www.youtube.com/watch?v=PCKDICEe10s).
+Watch also [GitLab CI pipeline tutorial for beginners](https://www.youtube.com/watch?v=Jav4vbUrqII).
 
 ## Defining artifacts in `.gitlab-ci.yml`
 
@@ -50,11 +50,8 @@ For more examples on artifacts, follow the [artifacts reference in
 
 ## Browsing artifacts
 
-> **Note:**
 > With GitLab 9.2, PDFs, images, videos and other formats can be previewed
 > directly in the job artifacts browser without the need to download them.
->
-> **Note:**
 > With [GitLab 10.1][ce-14399], HTML files in a public project can be previewed
 > directly in a new tab without the need to download them when
 > [GitLab Pages](../../../administration/pages/index.md) is enabled.
@@ -67,8 +64,6 @@ artifacts in case you changed your mind and want to keep them.
 
 ![Job artifacts browser button](img/job_artifacts_browser_button.png)
 
----
-
 The archive browser shows the name and the actual file size of each file in the
 archive. If your artifacts contained directories, then you are also able to
 browse inside them.
@@ -80,8 +75,6 @@ one HTML file that you can view directly online when
 
 ![Job artifacts browser](img/job_artifacts_browser.png)
 
----
-
 ## Downloading artifacts
 
 If you need to download the whole archive, there are buttons in various places
@@ -90,29 +83,29 @@ inside GitLab that make that possible.
 1. While on the pipelines page, you can see the download icon for each job's
    artifacts archive in the right corner:
 
-    ![Job artifacts in Pipelines page](img/job_artifacts_pipelines_page.png)
+   ![Job artifacts in Pipelines page](img/job_artifacts_pipelines_page.png)
 
 1. While on the **Jobs** page, you can see the download icon for each job's
    artifacts archive in the right corner:
 
-    ![Job artifacts in Builds page](img/job_artifacts_builds_page.png)
+   ![Job artifacts in Builds page](img/job_artifacts_builds_page.png)
 
 1. While inside a specific job, you are presented with a download button
    along with the one that browses the archive:
 
-    ![Job artifacts browser button](img/job_artifacts_browser_button.png)
+   ![Job artifacts browser button](img/job_artifacts_browser_button.png)
 
 1. And finally, when browsing an archive you can see the download button at
    the top right corner:
 
-    ![Job artifacts browser](img/job_artifacts_browser.png)
+   ![Job artifacts browser](img/job_artifacts_browser.png)
 
 ## Downloading the latest artifacts
 
 It is possible to download the latest artifacts of a job via a well known URL
 so you can use it for scripting purposes.
 
->**Note:**
+NOTE: **Note:**
 The latest artifacts are considered as the artifacts created by jobs in the
 latest pipeline that succeeded for the specific ref.
 Artifacts for other pipelines can be accessed with direct access to them.
@@ -173,9 +166,9 @@ https://gitlab.com/gitlab-org/gitlab-ce/-/jobs/artifacts/master/file/htmlcov/ind
 The latest builds are also exposed in the UI in various places. Specifically,
 look for the download button in:
 
-- the main project's page
-- the branches page
-- the tags page
+- The main project's page
+- The branches page
+- The tags page
 
 If the latest job has failed to upload the artifacts, you can see that
 information in the UI.
@@ -205,3 +198,15 @@ In order to retrieve a job artifact of a different project, you might need to us
 
 [expiry date]: ../../../ci/yaml/README.md#artifactsexpire_in
 [ce-14399]: https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/14399
+
+<!-- ## Troubleshooting
+
+Include any troubleshooting steps that you can foresee. If you know beforehand what issues
+one might have when setting this up, or when something is changed, or on upgrading, it's
+important to describe those, too. Think of things that may go wrong and include them here.
+This is important to minimize requests for support, and to avoid doc comments with
+questions that you know someone might ask.
+
+Each scenario can be a third-level heading, e.g. `### Getting error message X`.
+If you have none to add when creating a doc, leave this section in place
+but commented out to help encourage others to add to it in the future. -->

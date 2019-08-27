@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # rubocop:disable Style/GlobalVars
 require 'capybara/rails'
 require 'capybara/rspec'
@@ -45,6 +47,9 @@ Capybara.register_driver :chrome do |app|
   # Explicitly set user-data-dir to prevent crashes. See https://gitlab.com/gitlab-org/gitlab-ce/issues/58882#note_179811508
   options.add_argument("user-data-dir=/tmp/chrome") if ENV['CI'] || ENV['CI_SERVER']
 
+  # Chrome 75 defaults to W3C mode which doesn't allow console log access
+  options.add_option(:w3c, false)
+
   Capybara::Selenium::Driver.new(
     app,
     browser: :chrome,
@@ -58,6 +63,7 @@ Capybara.javascript_driver = :chrome
 Capybara.default_max_wait_time = timeout
 Capybara.ignore_hidden_elements = true
 Capybara.default_normalize_ws = true
+Capybara.enable_aria_label = true
 
 # Keep only the screenshots generated from the last failing test suite
 Capybara::Screenshot.prune_strategy = :keep_last_run

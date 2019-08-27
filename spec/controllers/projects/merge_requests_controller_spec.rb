@@ -57,7 +57,7 @@ describe Projects::MergeRequestsController do
 
           go(format: :html)
 
-          expect(response).to be_success
+          expect(response).to be_successful
         end
       end
 
@@ -66,7 +66,7 @@ describe Projects::MergeRequestsController do
 
         go(format: :html)
 
-        expect(response).to be_success
+        expect(response).to be_successful
       end
 
       context "that is invalid" do
@@ -75,7 +75,7 @@ describe Projects::MergeRequestsController do
         it "renders merge request page" do
           go(format: :html)
 
-          expect(response).to be_success
+          expect(response).to be_successful
         end
       end
     end
@@ -124,7 +124,7 @@ describe Projects::MergeRequestsController do
         it "renders merge request page" do
           go(format: :json)
 
-          expect(response).to be_success
+          expect(response).to be_successful
         end
       end
     end
@@ -242,9 +242,7 @@ describe Projects::MergeRequestsController do
 
         update_merge_request({ assignee_ids: [assignee.id] }, format: :json)
 
-        body = JSON.parse(response.body)
-
-        expect(body['assignees']).to all(include(*%w(name username avatar_url id state web_url)))
+        expect(json_response['assignees']).to all(include(*%w(name username avatar_url id state web_url)))
       end
     end
 
@@ -623,10 +621,100 @@ describe Projects::MergeRequestsController do
           format: :json
     end
 
-    it 'responds with serialized pipelines' do
-      expect(json_response['pipelines']).not_to be_empty
-      expect(json_response['count']['all']).to eq 1
-      expect(response).to include_pagination_headers
+    context 'with "enabled" builds on a public project' do
+      let(:project) { create(:project, :repository, :public) }
+
+      context 'for a project owner' do
+        it 'responds with serialized pipelines' do
+          expect(json_response['pipelines']).to be_present
+          expect(json_response['count']['all']).to eq(1)
+          expect(response).to include_pagination_headers
+        end
+      end
+
+      context 'for an unassociated user' do
+        let(:user) { create :user }
+
+        it 'responds with no pipelines' do
+          expect(json_response['pipelines']).to be_present
+          expect(json_response['count']['all']).to eq(1)
+          expect(response).to include_pagination_headers
+        end
+      end
+    end
+
+    context 'with private builds on a public project' do
+      let(:project) { create(:project, :repository, :public, :builds_private) }
+
+      context 'for a project owner' do
+        it 'responds with serialized pipelines' do
+          expect(json_response['pipelines']).to be_present
+          expect(json_response['count']['all']).to eq(1)
+          expect(response).to include_pagination_headers
+        end
+      end
+
+      context 'for an unassociated user' do
+        let(:user) { create :user }
+
+        it 'responds with no pipelines' do
+          expect(json_response['pipelines']).to be_empty
+          expect(json_response['count']['all']).to eq(0)
+          expect(response).to include_pagination_headers
+        end
+      end
+
+      context 'from a project fork' do
+        let(:fork_user)      { create :user }
+        let(:forked_project) { fork_project(project, fork_user, repository: true) } # Forked project carries over :builds_private
+        let(:merge_request)  { create(:merge_request_with_diffs, target_project: project, source_project: forked_project) }
+
+        context 'with private builds' do
+          context 'for the target project member' do
+            it 'does not respond with serialized pipelines' do
+              expect(json_response['pipelines']).to be_empty
+              expect(json_response['count']['all']).to eq(0)
+              expect(response).to include_pagination_headers
+            end
+          end
+
+          context 'for the source project member' do
+            let(:user) { fork_user }
+
+            it 'responds with serialized pipelines' do
+              expect(json_response['pipelines']).to be_present
+              expect(json_response['count']['all']).to eq(1)
+              expect(response).to include_pagination_headers
+            end
+          end
+        end
+
+        context 'with public builds' do
+          let(:forked_project) do
+            fork_project(project, fork_user, repository: true).tap do |new_project|
+              new_project.project_feature.update(builds_access_level: ProjectFeature::ENABLED)
+            end
+          end
+
+          context 'for the target project member' do
+            it 'does not respond with serialized pipelines' do
+              expect(json_response['pipelines']).to be_present
+              expect(json_response['count']['all']).to eq(1)
+              expect(response).to include_pagination_headers
+            end
+          end
+
+          context 'for the source project member' do
+            let(:user) { fork_user }
+
+            it 'responds with serialized pipelines' do
+              expect(json_response['pipelines']).to be_present
+              expect(json_response['count']['all']).to eq(1)
+              expect(response).to include_pagination_headers
+            end
+          end
+        end
+      end
     end
   end
 
@@ -878,7 +966,7 @@ describe Projects::MergeRequestsController do
         expect(control_count).to be <= 137
       end
 
-      it 'has no N+1 issues for environments', :request_store, retry: 0 do
+      it 'has no N+1 SQL issues for environments', :request_store, retry: 0 do
         # First run to insert test data from lets, which does take up some 30 queries
         get_ci_environments_status
 
@@ -887,23 +975,69 @@ describe Projects::MergeRequestsController do
         environment2 = create(:environment, project: forked)
         create(:deployment, :succeed, environment: environment2, sha: sha, ref: 'master', deployable: build)
 
-        # TODO address the last 11 queries
+        # TODO address the last 5 queries
         # See https://gitlab.com/gitlab-org/gitlab-ce/issues/63952 (5 queries)
-        # And https://gitlab.com/gitlab-org/gitlab-ce/issues/64105 (6 queries)
-        leeway = 11
+        leeway = 5
         expect { get_ci_environments_status }.not_to exceed_all_query_limit(control_count + leeway)
       end
+    end
 
-      def get_ci_environments_status(extra_params = {})
-        params = {
-          namespace_id: merge_request.project.namespace.to_param,
-          project_id: merge_request.project,
-          id: merge_request.iid,
-          format: 'json'
-        }
+    context 'when a merge request has multiple environments with deployments' do
+      let(:sha) { merge_request.diff_head_sha }
+      let(:ref) { merge_request.source_branch }
 
-        get :ci_environments_status, params: params.merge(extra_params)
+      let!(:build) { create(:ci_build, pipeline: pipeline) }
+      let!(:pipeline) { create(:ci_pipeline, sha: sha, project: project) }
+      let!(:environment) { create(:environment, name: 'env_a', project: project) }
+      let!(:another_environment) { create(:environment, name: 'env_b', project: project) }
+
+      before do
+        merge_request.update_head_pipeline
+
+        create(:deployment, :succeed, environment: environment, sha: sha, ref: ref, deployable: build)
+        create(:deployment, :succeed, environment: another_environment, sha: sha, ref: ref, deployable: build)
       end
+
+      it 'exposes multiple environment statuses' do
+        get_ci_environments_status
+
+        expect(json_response.count).to eq 2
+      end
+
+      context 'when route map is not present in the project' do
+        it 'does not have N+1 Gitaly requests for environments', :request_store do
+          expect(merge_request).to be_present
+
+          expect { get_ci_environments_status }
+            .to change { Gitlab::GitalyClient.get_request_count }.by_at_most(1)
+        end
+      end
+
+      context 'when there is route map present in a project' do
+        before do
+          allow_any_instance_of(EnvironmentStatus)
+            .to receive(:has_route_map?)
+            .and_return(true)
+        end
+
+        it 'does not have N+1 Gitaly requests for diff files', :request_store do
+          expect(merge_request.merge_request_diff.merge_request_diff_files).to be_many
+
+          expect { get_ci_environments_status }
+            .to change { Gitlab::GitalyClient.get_request_count }.by_at_most(1)
+        end
+      end
+    end
+
+    def get_ci_environments_status(extra_params = {})
+      params = {
+        namespace_id: merge_request.project.namespace.to_param,
+        project_id: merge_request.project,
+        id: merge_request.iid,
+        format: 'json'
+      }
+
+      get :ci_environments_status, params: params.merge(extra_params)
     end
   end
 
@@ -1074,6 +1208,22 @@ describe Projects::MergeRequestsController do
             get :discussions, params: { namespace_id: project.namespace, project_id: project, id: merge_request.iid }
           end
         end
+      end
+    end
+
+    context do
+      it_behaves_like 'discussions provider' do
+        let!(:author) { create(:user) }
+        let!(:project) { create(:project) }
+
+        let!(:merge_request) { create(:merge_request, source_project: project) }
+
+        let!(:mr_note1) { create(:discussion_note_on_merge_request, noteable: merge_request, project: project) }
+        let!(:mr_note2) { create(:discussion_note_on_merge_request, noteable: merge_request, project: project) }
+
+        let(:requested_iid) { merge_request.iid }
+        let(:expected_discussion_count) { 2 }
+        let(:expected_discussion_ids) { [mr_note1.discussion_id, mr_note2.discussion_id] }
       end
     end
   end

@@ -2,6 +2,8 @@
 
 We use the [CarrierWave] gem to handle file upload, store and retrieval.
 
+File uploads should be accelerated by workhorse, for details please refer to [uploads development documentation](uploads.md).
+
 There are many places where file uploading is used, according to contexts:
 
 - System
@@ -92,8 +94,8 @@ in your uploader, you need to either 1) include `RecordsUpload::Concern` and pre
 
 The `CarrierWave::Uploader#store_dir` is overridden to
 
- - `GitlabUploader.base_dir` + `GitlabUploader.dynamic_segment` when the store is LOCAL
- - `GitlabUploader.dynamic_segment` when the store is REMOTE (the bucket name is used to namespace)
+- `GitlabUploader.base_dir` + `GitlabUploader.dynamic_segment` when the store is LOCAL
+- `GitlabUploader.dynamic_segment` when the store is REMOTE (the bucket name is used to namespace)
 
 ### Using `ObjectStorage::Extension::RecordsUploads`
 

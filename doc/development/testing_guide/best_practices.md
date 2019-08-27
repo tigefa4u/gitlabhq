@@ -15,16 +15,6 @@ manifest themselves within our code. When designing our tests, take time to revi
 our test design. We can find some helpful heuristics documented in the Handbook in the
 [Test Design](https://about.gitlab.com/handbook/engineering/quality/guidelines/test-engineering/test-design/) section.
 
-## Run tests against MySQL
-
-By default, tests are only run against PostgreSQL, but you can run them on
-demand against MySQL by following one of the following conventions:
-
-| Convention           | Valid example                |
-|:----------------------|:-----------------------------|
-| Include `mysql` in your branch name | `enhance-mysql-support` |
-| Include `[run mysql]` in your commit message   | `Fix MySQL support<br><br>[run mysql]` |
-
 ## Test speed
 
 GitLab has a massive test suite that, without [parallelization], can take hours
@@ -70,6 +60,7 @@ bundle exec rspec spec/[path]/[to]/[spec].rb
 - On `before` and `after` hooks, prefer it scoped to `:context` over `:all`
 - When using `evaluate_script("$('.js-foo').testSomething()")` (or `execute_script`) which acts on a given element,
   use a Capyabara matcher beforehand (e.g. `find('.js-foo')`) to ensure the element actually exists.
+- Use `focus: true` to isolate parts of the specs you want to run.
 
 [four-phase-test]: https://robots.thoughtbot.com/four-phase-test
 
@@ -453,6 +444,19 @@ complexity of RSpec expectations.They should be placed under
 `spec/support/matchers/`. Matchers can be placed in subfolder if they apply to
 a certain type of specs only (e.g. features, requests etc.) but shouldn't be if
 they apply to multiple type of specs.
+
+#### `be_like_time`
+
+Time returned from a database can differ in precision from time objects
+in Ruby, so we need flexible tolerances when comparing in specs. We can
+use `be_like_time` to compare that times are within one second of each
+other.
+
+Example:
+
+```ruby
+expect(metrics.merged_at).to be_like_time(time)
+```
 
 #### `have_gitlab_http_status`
 

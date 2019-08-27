@@ -94,49 +94,6 @@ a group in the **Usage Quotas** page available to the group page settings list.
 
 ![Group pipelines quota](img/group_pipelines_quota.png)
 
-## Extra Shared Runners pipeline minutes quota **[FREE ONLY]**
-
-If you're using GitLab.com, you can purchase additional CI minutes so your
-pipelines will not be blocked after you have used all your CI minutes from your
-main quota.
-
-In order to purchase additional minutes, you should follow these steps:
-
-1. Go to **Group > Settings > Pipelines quota**. Once you are on that page, click on **Buy additional minutes**.
-
-    ![Buy additional minutes](img/buy_btn.png)
-
-1. Locate the subscription card that is linked to your group on GitLab.com,
-   click on **Buy more CI minutes**, and complete the details about the transaction.
-
-    ![Buy additional minutes](img/buy_minutes_card.png)
-
-1. Once we have processed your payment, the extra CI minutes
-   will be synced to your Group and you can visualize it from  the
-   **Group > Settings > Pipelines quota** page:
-
-    ![Additional minutes](img/additional_minutes.png)
-
-Be aware that:
-
-1. If you have purchased extra CI minutes before the purchase of a paid plan,
-   we will calculate a pro-rated charge for your paid plan. That means you may
-   be charged for less than one year since your subscription was previously
-   created with the extra CI minutes.
-1. Once the extra CI minutes has been assigned to a Group they cannot be transferred
-   to a different Group.
-1. If you have some minutes used over your default quota, these minutes will
-   be deducted from your Additional Minutes quota immediately after your purchase of additional
-   minutes.
-
-## What happens when my CI minutes quota run out
-
-When the CI minutes quota run out, an email is sent automatically to notifies the owner(s) of the group/namespace which
-includes a link to [purchase more minutes](https://customers.gitlab.com/plans).
-
-If you are not the owner of the group, you will need to contact them to let them know they need to
-[purchase more minutes](https://customers.gitlab.com/plans).
-
 ## Archive jobs **(CORE ONLY)**
 
 Archiving jobs is useful for reducing the CI/CD footprint on the system by
@@ -164,3 +121,23 @@ questions that you know someone might ask.
 Each scenario can be a third-level heading, e.g. `### Getting error message X`.
 If you have none to add when creating a doc, leave this section in place
 but commented out to help encourage others to add to it in the future. -->
+
+## Required pipeline configuration **(PREMIUM ONLY)**
+
+GitLab administrators can force a pipeline configuration to run on every
+pipeline.
+
+The configuration applies to all pipelines for a GitLab instance and is 
+sourced from:
+
+- The [instance template repository](instance_template_repository.md).
+- GitLab-supplied configuration.
+
+To set required pipeline configuration:
+
+1. Go to **Admin area > Settings > CI/CD**.
+1. Expand the **Required pipeline configuration** section.
+1. Select the required configuration from the provided dropdown.
+1. Click **Save changes**.
+
+![Required pipeline](img/admin_required_pipeline.png)

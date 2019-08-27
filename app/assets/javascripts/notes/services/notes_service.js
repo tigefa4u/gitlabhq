@@ -5,12 +5,12 @@ import * as constants from '../constants';
 Vue.use(VueResource);
 
 export default {
-  fetchDiscussions(endpoint, filter) {
-    const config = filter !== undefined ? { params: { notes_filter: filter } } : null;
+  fetchDiscussions(endpoint, filter, persistFilter = true) {
+    const config =
+      filter !== undefined
+        ? { params: { notes_filter: filter, persist_filter: persistFilter } }
+        : null;
     return Vue.http.get(endpoint, config);
-  },
-  deleteNote(endpoint) {
-    return Vue.http.delete(endpoint);
   },
   replyToDiscussion(endpoint, data) {
     return Vue.http.post(endpoint, data, { emulateJSON: true });

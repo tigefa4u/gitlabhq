@@ -19,9 +19,11 @@ describe Ci::Build do
   it { is_expected.to belong_to(:runner) }
   it { is_expected.to belong_to(:trigger_request) }
   it { is_expected.to belong_to(:erased_by) }
-  it { is_expected.to have_many(:trace_sections)}
+  it { is_expected.to have_many(:trace_sections) }
+  it { is_expected.to have_many(:needs) }
   it { is_expected.to have_one(:deployment) }
-  it { is_expected.to have_one(:runner_session)}
+  it { is_expected.to have_one(:runner_session) }
+  it { is_expected.to have_many(:job_variables) }
   it { is_expected.to validate_presence_of(:ref) }
   it { is_expected.to respond_to(:has_trace?) }
   it { is_expected.to respond_to(:trace) }
@@ -147,6 +149,56 @@ describe Ci::Build do
     end
   end
 
+  describe '.with_stale_live_trace' do
+    subject { described_class.with_stale_live_trace }
+
+    context 'when build has a stale live trace' do
+      let!(:build) { create(:ci_build, :success, :trace_live, finished_at: 1.day.ago) }
+
+      it 'selects the build' do
+        is_expected.to eq([build])
+      end
+    end
+
+    context 'when build does not have a stale live trace' do
+      let!(:build) { create(:ci_build, :success, :trace_live, finished_at: 1.hour.ago) }
+
+      it 'does not select the build' do
+        is_expected.to be_empty
+      end
+    end
+  end
+
+  describe '.finished_before' do
+    subject { described_class.finished_before(date) }
+
+    let(:date) { 1.hour.ago }
+
+    context 'when build has finished one day ago' do
+      let!(:build) { create(:ci_build, :success, finished_at: 1.day.ago) }
+
+      it 'selects the build' do
+        is_expected.to eq([build])
+      end
+    end
+
+    context 'when build has finished 30 minutes ago' do
+      let!(:build) { create(:ci_build, :success, finished_at: 30.minutes.ago) }
+
+      it 'returns an empty array' do
+        is_expected.to be_empty
+      end
+    end
+
+    context 'when build is still running' do
+      let!(:build) { create(:ci_build, :running) }
+
+      it 'returns an empty array' do
+        is_expected.to be_empty
+      end
+    end
+  end
+
   describe '.with_reports' do
     subject { described_class.with_reports(Ci::JobArtifact.test_reports) }
 
@@ -178,6 +230,47 @@ describe Ci::Build do
 
         expect(recorded.count).to eq(2)
       end
+    end
+  end
+
+  describe '.with_needs' do
+    let!(:build) { create(:ci_build) }
+    let!(:build_b) { create(:ci_build) }
+    let!(:build_need_a) { create(:ci_build_need, build: build) }
+    let!(:build_need_b) { create(:ci_build_need, build: build_b) }
+
+    context 'when passing build name' do
+      subject { described_class.with_needs(build_need_a.name) }
+
+      it { is_expected.to contain_exactly(build) }
+    end
+
+    context 'when not passing any build name' do
+      subject { described_class.with_needs }
+
+      it { is_expected.to contain_exactly(build, build_b) }
+    end
+
+    context 'when not matching build name' do
+      subject { described_class.with_needs('undefined') }
+
+      it { is_expected.to be_empty }
+    end
+  end
+
+  describe '.without_needs' do
+    let!(:build) { create(:ci_build) }
+
+    subject { described_class.without_needs }
+
+    context 'when no build_need is created' do
+      it { is_expected.to contain_exactly(build) }
+    end
+
+    context 'when a build_need is created' do
+      let!(:need_a) { create(:ci_build_need, build: build) }
+
+      it { is_expected.to be_empty }
     end
   end
 
@@ -594,6 +687,59 @@ describe Ci::Build do
       expect(staging.depends_on_builds.map(&:id))
         .to contain_exactly(build.id, retried_rspec.id, rubocop_test.id)
     end
+
+    describe '#dependencies' do
+      let(:dependencies) { }
+      let(:needs) { }
+
+      let!(:final) do
+        create(:ci_build,
+          pipeline: pipeline, name: 'final',
+          stage_idx: 3, stage: 'deploy', options: {
+            dependencies: dependencies
+          }
+        )
+      end
+
+      before do
+        needs.to_a.each do |need|
+          create(:ci_build_need, build: final, name: need)
+        end
+      end
+
+      subject { final.dependencies }
+
+      context 'when depedencies are defined' do
+        let(:dependencies) { %w(rspec staging) }
+
+        it { is_expected.to contain_exactly(rspec_test, staging) }
+      end
+
+      context 'when needs are defined' do
+        let(:needs) { %w(build rspec staging) }
+
+        it { is_expected.to contain_exactly(build, rspec_test, staging) }
+
+        context 'when ci_dag_support is disabled' do
+          before do
+            stub_feature_flags(ci_dag_support: false)
+          end
+
+          it { is_expected.to contain_exactly(build, rspec_test, rubocop_test, staging) }
+        end
+      end
+
+      context 'when needs and dependencies are defined' do
+        let(:dependencies) { %w(rspec staging) }
+        let(:needs) { %w(build rspec staging) }
+
+        it { is_expected.to contain_exactly(rspec_test, staging) }
+      end
+
+      context 'when nor dependencies or needs are defined' do
+        it { is_expected.to contain_exactly(build, rspec_test, rubocop_test, staging) }
+      end
+    end
   end
 
   describe '#triggered_by?' do
@@ -689,6 +835,34 @@ describe Ci::Build do
         .and_return(true)
 
       is_expected.to be(true)
+    end
+  end
+
+  describe '#has_live_trace?' do
+    subject { build.has_live_trace? }
+
+    let(:build) { create(:ci_build, :trace_live) }
+
+    it { is_expected.to be_truthy }
+
+    context 'when build does not have live trace' do
+      let(:build) { create(:ci_build) }
+
+      it { is_expected.to be_falsy }
+    end
+  end
+
+  describe '#has_archived_trace?' do
+    subject { build.has_archived_trace? }
+
+    let(:build) { create(:ci_build, :trace_artifact) }
+
+    it { is_expected.to be_truthy }
+
+    context 'when build does not have archived trace' do
+      let(:build) { create(:ci_build) }
+
+      it { is_expected.to be_falsy }
     end
   end
 
@@ -2013,6 +2187,7 @@ describe Ci::Build do
           { key: 'CI', value: 'true', public: true, masked: false },
           { key: 'GITLAB_CI', value: 'true', public: true, masked: false },
           { key: 'GITLAB_FEATURES', value: project.licensed_features.join(','), public: true, masked: false },
+          { key: 'CI_SERVER_HOST', value: Gitlab.config.gitlab.host, public: true, masked: false },
           { key: 'CI_SERVER_NAME', value: 'GitLab', public: true, masked: false },
           { key: 'CI_SERVER_VERSION', value: Gitlab::VERSION, public: true, masked: false },
           { key: 'CI_SERVER_VERSION_MAJOR', value: Gitlab.version_info.major.to_s, public: true, masked: false },
@@ -2215,6 +2390,32 @@ describe Ci::Build do
           it_behaves_like 'containing environment variables'
         end
       end
+
+      context 'when project has an environment specific variable' do
+        let(:environment_specific_variable) do
+          { key: 'MY_STAGING_ONLY_VARIABLE', value: 'environment_specific_variable', public: false, masked: false }
+        end
+
+        before do
+          create(:ci_variable, environment_specific_variable.slice(:key, :value)
+            .merge(project: project, environment_scope: 'stag*'))
+        end
+
+        it_behaves_like 'containing environment variables'
+
+        context 'when environment scope does not match build environment' do
+          it { is_expected.not_to include(environment_specific_variable) }
+        end
+
+        context 'when environment scope matches build environment' do
+          before do
+            create(:environment, name: 'staging', project: project)
+            build.update!(environment: 'staging')
+          end
+
+          it { is_expected.to include(environment_specific_variable) }
+        end
+      end
     end
 
     context 'when build started manually' do
@@ -2227,6 +2428,16 @@ describe Ci::Build do
       end
 
       it { is_expected.to include(manual_variable) }
+    end
+
+    context 'when job variable is defined' do
+      let(:job_variable) { { key: 'first', value: 'first', public: false, masked: false } }
+
+      before do
+        create(:ci_job_variable, job_variable.slice(:key, :value).merge(job: build))
+      end
+
+      it { is_expected.to include(job_variable) }
     end
 
     context 'when build is for tag' do
@@ -3574,6 +3785,7 @@ describe Ci::Build do
 
     before do
       build.ensure_metadata
+      build.needs.create!(name: 'another-job')
     end
 
     it 'drops metadata' do
@@ -3581,6 +3793,7 @@ describe Ci::Build do
 
       expect(build.reload).to be_degenerated
       expect(build.metadata).to be_nil
+      expect(build.needs).to be_empty
     end
   end
 

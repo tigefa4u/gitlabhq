@@ -8,14 +8,15 @@ comments: false
 
 - Create a new repository by instantiating it through:
 
-    ```bash
-    git init
-    ```
+  ```bash
+  git init
+  ```
+
 - Copy an existing project by cloning the repository through:
 
-    ```bash
-    git clone <url>
-    ```
+  ```bash
+  git clone <url>
+  ```
 
 ## Central Repos
 
@@ -23,9 +24,9 @@ comments: false
 - Bare repositories don't allow file editing or committing changes.
 - Create a bare repo with:
 
-    ```bash
-    git init --bare project-name.git
-    ```
+  ```bash
+  git init --bare project-name.git
+  ```
 
 ## Instantiate workflow with clone
 
@@ -33,8 +34,6 @@ comments: false
    - Choose to import from 'Any Repo by URL' and use <https://gitlab.com/gitlab-org/training-examples.git>.
 1. Create a '`Workspace`' directory in your home directory.
 1. Clone the '`training-examples`' project.
-
-## Commands
 
 ```sh
 mkdir ~/workspace
@@ -67,8 +66,6 @@ Modified files that have been marked to go in the next commit.
 1. Commit
 1. Push the commit to the remote
 1. View the git log
-
-## Commands
 
 ```sh
 # Edit `edit_this_file.rb`

@@ -1,8 +1,14 @@
-require File.expand_path('boot', __dir__)
+require_relative 'boot'
 
-require 'rails/all'
+# Based on https://github.com/rails/rails/blob/v5.2.3/railties/lib/rails/all.rb
+# Only load the railties we need instead of loading everything
+require 'active_record/railtie'
+require 'action_controller/railtie'
+require 'action_view/railtie'
+require 'action_mailer/railtie'
+require 'rails/test_unit/railtie'
 
-Bundler.require(:default, Rails.env)
+Bundler.require(*Rails.groups)
 
 module Gitlab
   class Application < Rails::Application
@@ -16,14 +22,11 @@ module Gitlab
     require_dependency Rails.root.join('lib/gitlab/middleware/read_only')
     require_dependency Rails.root.join('lib/gitlab/middleware/basic_health_check')
 
-    # This needs to be loaded before DB connection is made
-    # to make sure that all connections have NO_ZERO_DATE
-    # setting disabled
-    require_dependency Rails.root.join('lib/mysql_zero_date')
-
     # Settings in config/environments/* take precedence over those specified here.
     # Application configuration should go into files in config/initializers
     # -- all .rb files in that directory are automatically loaded.
+
+    config.active_record.sqlite3.represent_boolean_as_integer = true
 
     # Sidekiq uses eager loading, but directories not in the standard Rails
     # directories must be added to the eager load paths:
@@ -38,11 +41,6 @@ module Gitlab
                                      #{config.root}/app/models/hooks
                                      #{config.root}/app/models/members
                                      #{config.root}/app/models/project_services
-                                     #{config.root}/app/workers/concerns
-                                     #{config.root}/app/policies/concerns
-                                     #{config.root}/app/services/concerns
-                                     #{config.root}/app/serializers/concerns
-                                     #{config.root}/app/finders/concerns
                                      #{config.root}/app/graphql/resolvers/concerns
                                      #{config.root}/app/graphql/mutations/concerns])
 
@@ -86,13 +84,6 @@ module Gitlab
     # Configure the default encoding used in templates for Ruby 1.9.
     config.encoding = "utf-8"
 
-    # ActionCable mount point.
-    # The default Rails' mount point is `/cable` which may conflict with existing
-    # namespaces/users.
-    # https://github.com/rails/rails/blob/5-0-stable/actioncable/lib/action_cable.rb#L38
-    # Please change this value when configuring ActionCable for real usage.
-    config.action_cable.mount_path = "/-/cable"
-
     # Configure sensitive parameters which will be filtered from the log file.
     #
     # Parameters filtered:
@@ -109,10 +100,23 @@ module Gitlab
     # - Sentry DSN (:sentry_dsn)
     # - File content from Web Editor (:content)
     # - Jira shared secret (:sharedSecret)
+    # - Titles, bodies, and descriptions for notes, issues, etc.
     #
-    # NOTE: It is **IMPORTANT** to also update gitlab-workhorse's filter when adding parameters here to not
-    #       introduce another security vulnerability: https://gitlab.com/gitlab-org/gitlab-workhorse/issues/182
-    config.filter_parameters += [/token$/, /password/, /secret/, /key$/, /^note$/, /^text$/]
+    # NOTE: It is **IMPORTANT** to also update labkit's filter when
+    #       adding parameters here to not introduce another security
+    #       vulnerability:
+    #       https://gitlab.com/gitlab-org/labkit/blob/master/mask/matchers.go
+    config.filter_parameters += [
+      /token$/,
+      /password/,
+      /secret/,
+      /key$/,
+      /^body$/,
+      /^description$/,
+      /^note$/,
+      /^text$/,
+      /^title$/
+    ]
     config.filter_parameters += %i(
       certificate
       encrypted_key
@@ -167,7 +171,6 @@ module Gitlab
 
     # Import gitlab-svgs directly from vendored directory
     config.assets.paths << "#{config.root}/node_modules/@gitlab/svgs/dist"
-    config.assets.paths << "#{config.root}/node_modules"
     config.assets.precompile << "icons.svg"
     config.assets.precompile << "icons.json"
     config.assets.precompile << "illustrations/*.svg"
@@ -182,8 +185,18 @@ module Gitlab
       config.assets.precompile << "pages/jira_connect.css"
     end
 
+    # Import path for EE specific SCSS entry point
+    # In CE it will import a noop file, in EE a functioning file
+    # Order is important, so that the ee file takes precedence:
+    config.assets.paths << "#{config.root}/ee/app/assets/stylesheets/_ee"
+    config.assets.paths << "#{config.root}/app/assets/stylesheets/_ee"
+
     config.assets.paths << "#{config.root}/vendor/assets/javascripts/"
     config.assets.precompile << "snowplow/sp.js"
+
+    # This path must come last to avoid confusing sprockets
+    # See https://gitlab.com/gitlab-org/gitlab-ce/issues/64091#note_194512508
+    config.assets.paths << "#{config.root}/node_modules"
 
     # Compile non-JS/CSS assets in the ee/app/assets folder by default
     # Mimic sprockets-rails default: https://github.com/rails/sprockets-rails/blob/v3.2.1/lib/sprockets/railtie.rb#L84-L87

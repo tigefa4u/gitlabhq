@@ -30,7 +30,7 @@ and corresponding views / partials / selectors in CE / EE.
 
 Whenever `qa:selectors` job fails in your merge request, you are supposed to
 fix [page objects](../doc/development/testing_guide/end_to_end/page_objects.md). You should also trigger end-to-end tests
-using `package-and-qa` manual action, to test if everything works fine.
+using `package-and-qa-manual` manual action, to test if everything works fine.
 
 ## How can I use it?
 
@@ -38,6 +38,11 @@ You can use GitLab QA to exercise tests on any live instance! If you don't
 have an instance available you can follow the instructions below to use
 the [GitLab Development Kit (GDK)][GDK].
 This is the recommended option if you would like to contribute to the tests.
+
+Note: GitLab QA uses [Selenium WebDriver](https://www.seleniumhq.org/) via
+[Cabybara](http://teamcapybara.github.io/capybara/), and by default it targets Chrome as
+the browser to use. You will need to have Chrome (or Chromium) and
+[chromedriver](https://chromedriver.chromium.org/) installed / in your `$PATH`.
 
 ### Run the end-to-end tests in a local development environment
 
@@ -75,14 +80,14 @@ You can also supply specific tests to run as another parameter. For example, to
 run the repository-related specs, you can execute:
 
 ```
-bundle exec bin/qa Test::Instance::All http://localhost -- qa/specs/features/browser_ui/3_create/repository
+bundle exec bin/qa Test::Instance::All http://localhost:3000 -- qa/specs/features/browser_ui/3_create/repository
 ```
 
 Since the arguments would be passed to `rspec`, you could use all `rspec`
 options there. For example, passing `--backtrace` and also line number:
 
 ```
-bundle exec bin/qa Test::Instance::All http://localhost -- qa/specs/features/browser_ui/3_create/merge_request/create_merge_request_spec.rb:6 --backtrace
+bundle exec bin/qa Test::Instance::All http://localhost:3000 -- qa/specs/features/browser_ui/3_create/merge_request/create_merge_request_spec.rb:6 --backtrace
 ```
 
 Note that the separator `--` is required; all subsequent options will be
@@ -123,10 +128,11 @@ To set multiple cookies, separate them with the `;` character, for example: `QA_
 
 Once you have made changes to the CE/EE repositories, you may want to build a
 Docker image to test locally instead of waiting for the `gitlab-ce-qa` or
-`gitlab-ee-qa` nightly builds. To do that, you can run from this directory:
+`gitlab-ee-qa` nightly builds. To do that, you can run **from the top `gitlab`
+directory** (one level up from this directory):
 
 ```sh
-docker build -t gitlab/gitlab-ce-qa:nightly .
+docker build -t gitlab/gitlab-ce-qa:nightly --file ./qa/Dockerfile ./
 ```
 
 [GDK]: https://gitlab.com/gitlab-org/gitlab-development-kit/
@@ -140,7 +146,7 @@ tests that are expected to fail while a fix is in progress (similar to how
  can be used).
 
 ```
-bundle exec bin/qa Test::Instance::All http://localhost -- --tag quarantine
+bundle exec bin/qa Test::Instance::All http://localhost:3000 -- --tag quarantine
 ```
 
 If `quarantine` is used with other tags, tests will only be run if they have at
@@ -159,7 +165,7 @@ option `--enable-feature FEATURE_FLAG`. For example, to enable the feature flag
 that enforces Gitaly request limits, you would use the command:
 
 ```
-bundle exec bin/qa Test::Instance::All http://localhost --enable-feature gitaly_enforce_requests_limits
+bundle exec bin/qa Test::Instance::All http://localhost:3000 --enable-feature gitaly_enforce_requests_limits
 ```
 
 This will instruct the QA framework to enable the `gitaly_enforce_requests_limits`

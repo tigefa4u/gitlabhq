@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::PerformanceBar do
@@ -96,7 +98,7 @@ describe Gitlab::PerformanceBar do
       end
     end
 
-    context 'when allowed group is nested', :nested_groups do
+    context 'when allowed group is nested' do
       let!(:nested_my_group) { create(:group, parent: create(:group, path: 'my-org'), path: 'my-group') }
 
       before do
@@ -110,7 +112,7 @@ describe Gitlab::PerformanceBar do
       end
     end
 
-    context 'when a nested group has the same path', :nested_groups do
+    context 'when a nested group has the same path' do
       before do
         create(:group, :nested, path: 'my-group').add_developer(user)
       end

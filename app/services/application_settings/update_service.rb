@@ -7,13 +7,15 @@ module ApplicationSettings
     attr_reader :params, :application_setting
 
     def execute
-      validate_classification_label(application_setting, :external_authorization_service_default_label)
+      validate_classification_label(application_setting, :external_authorization_service_default_label) unless bypass_external_auth?
 
       if application_setting.errors.any?
         return false
       end
 
       update_terms(@params.delete(:terms))
+
+      add_to_outbound_local_requests_whitelist(@params.delete(:add_to_outbound_local_requests_whitelist))
 
       if params.key?(:performance_bar_allowed_group_path)
         params[:performance_bar_allowed_group_id] = performance_bar_allowed_group_id
@@ -30,6 +32,13 @@ module ApplicationSettings
 
     def usage_stats_updated?
       params.key?(:usage_ping_enabled) || params.key?(:version_check_enabled)
+    end
+
+    def add_to_outbound_local_requests_whitelist(values)
+      values_array = Array(values).reject(&:empty?)
+      return if values_array.empty?
+
+      @application_setting.add_to_outbound_local_requests_whitelist(values_array)
     end
 
     def update_terms(terms)
@@ -49,6 +58,10 @@ module ApplicationSettings
       return unless Gitlab::Utils.to_boolean(performance_bar_enabled)
 
       Group.find_by_full_path(group_full_path)&.id if group_full_path.present?
+    end
+
+    def bypass_external_auth?
+      params.key?(:external_authorization_service_enabled) && !Gitlab::Utils.to_boolean(params[:external_authorization_service_enabled])
     end
   end
 end

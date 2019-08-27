@@ -21,6 +21,9 @@ module Gitlab
       lib/gitlab/profiler.rb
       lib/gitlab/correlation_id.rb
       lib/gitlab/webpack/dev_server_middleware.rb
+      lib/gitlab/sidekiq_status/
+      lib/gitlab/sidekiq_logging/
+      lib/gitlab/sidekiq_middleware/
     ].freeze
 
     # Takes a URL to profile (can be a fully-qualified URL, or an absolute path)
@@ -94,7 +97,7 @@ module Gitlab
           attr_reader :load_times_by_model, :private_token
 
           def debug(message, *)
-            message.gsub!(private_token, FILTERED_STRING) if private_token
+            message = message.gsub(private_token, FILTERED_STRING) if private_token
 
             _, type, time = *message.match(/(\w+) Load \(([0-9.]+)ms\)/)
 
@@ -166,7 +169,7 @@ module Gitlab
         [model, times.count, times.sum]
       end
 
-      summarised_load_times.sort_by(&:last).reverse.each do |(model, query_count, time)|
+      summarised_load_times.sort_by(&:last).reverse_each do |(model, query_count, time)|
         logger.info("#{model} total (#{query_count}): #{time.round(2)}ms")
       end
     end

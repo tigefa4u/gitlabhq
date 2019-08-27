@@ -59,6 +59,13 @@ module Gitlab
 
       # RBAC methods delegates to the apis/rbac.authorization.k8s.io api
       # group client
+      delegate :create_role,
+      :get_role,
+      :update_role,
+      to: :rbac_client
+
+      # RBAC methods delegates to the apis/rbac.authorization.k8s.io api
+      # group client
       delegate :create_role_binding,
         :get_role_binding,
         :update_role_binding,
@@ -121,7 +128,7 @@ module Gitlab
       private
 
       def validate_url!
-        return if Gitlab::CurrentSettings.allow_local_requests_from_hooks_and_services?
+        return if Gitlab::CurrentSettings.allow_local_requests_from_web_hooks_and_services?
 
         Gitlab::UrlBlocker.validate!(api_prefix, allow_local_network: false)
       end

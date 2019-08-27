@@ -103,8 +103,10 @@ class Admin::ApplicationSettingsController < Admin::ApplicationController
     [
       *::ApplicationSettingsHelper.visible_attributes,
       *::ApplicationSettingsHelper.external_authorization_service_attributes,
-      *lets_encrypt_visible_attributes,
+      :lets_encrypt_notification_email,
+      :lets_encrypt_terms_of_service_accepted,
       :domain_blacklist_file,
+      :raw_blob_request_limit,
       disabled_oauth_sign_in_sources: [],
       import_sources: [],
       repository_storages: [],
@@ -142,14 +144,5 @@ class Admin::ApplicationSettingsController < Admin::ApplicationController
     action = VALID_SETTING_PANELS.include?(action_name) ? action_name : :show
 
     render action
-  end
-
-  def lets_encrypt_visible_attributes
-    return [] unless Feature.enabled?(:pages_auto_ssl)
-
-    [
-      :lets_encrypt_notification_email,
-      :lets_encrypt_terms_of_service_accepted
-    ]
   end
 end

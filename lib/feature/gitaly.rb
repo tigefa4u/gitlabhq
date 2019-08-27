@@ -5,16 +5,15 @@ require 'set'
 class Feature
   class Gitaly
     # Server feature flags should use '_' to separate words.
-    # CATFILE_CACHE sets an incorrect example
-    CATFILE_CACHE = 'catfile-cache'.freeze
-
     SERVER_FEATURE_FLAGS =
-      [
-        CATFILE_CACHE,
-        'get_commit_signatures'.freeze
+      %w[
+        get_commit_signatures
+        cache_invalidator
+        inforef_uploadpack_cache
+        get_all_lfs_pointers_go
       ].freeze
 
-    DEFAULT_ON_FLAGS = Set.new([CATFILE_CACHE]).freeze
+    DEFAULT_ON_FLAGS = Set.new([]).freeze
 
     class << self
       def enabled?(feature_flag)

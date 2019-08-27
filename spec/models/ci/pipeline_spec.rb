@@ -4,6 +4,7 @@ require 'spec_helper'
 
 describe Ci::Pipeline, :mailer do
   include ProjectForksHelper
+  include StubRequests
 
   let(:user) { create(:user) }
   set(:project) { create(:project) }
@@ -1799,7 +1800,7 @@ describe Ci::Pipeline, :mailer do
     end
   end
 
-  describe '.latest_successful_for' do
+  describe '.latest_successful_for_ref' do
     include_context 'with some outdated pipelines'
 
     let!(:latest_successful_pipeline) do
@@ -1807,7 +1808,20 @@ describe Ci::Pipeline, :mailer do
     end
 
     it 'returns the latest successful pipeline' do
-      expect(described_class.latest_successful_for('ref'))
+      expect(described_class.latest_successful_for_ref('ref'))
+        .to eq(latest_successful_pipeline)
+    end
+  end
+
+  describe '.latest_successful_for_sha' do
+    include_context 'with some outdated pipelines'
+
+    let!(:latest_successful_pipeline) do
+      create_pipeline(:success, 'ref', 'awesomesha', project)
+    end
+
+    it 'returns the latest successful pipeline' do
+      expect(described_class.latest_successful_for_sha('awesomesha'))
         .to eq(latest_successful_pipeline)
     end
   end
@@ -1914,6 +1928,13 @@ describe Ci::Pipeline, :mailer do
     subject { described_class.internal_sources }
 
     it { is_expected.to be_an(Array) }
+  end
+
+  describe '.bridgeable_statuses' do
+    subject { described_class.bridgeable_statuses }
+
+    it { is_expected.to be_an(Array) }
+    it { is_expected.not_to include('created', 'preparing', 'pending') }
   end
 
   describe '#status' do
@@ -2484,7 +2505,7 @@ describe Ci::Pipeline, :mailer do
       let(:enabled) { true }
 
       before do
-        WebMock.stub_request(:post, hook.url)
+        stub_full_request(hook.url, method: :post)
       end
 
       context 'with multiple builds' do
@@ -2538,7 +2559,7 @@ describe Ci::Pipeline, :mailer do
         end
 
         def have_requested_pipeline_hook(status)
-          have_requested(:post, hook.url).with do |req|
+          have_requested(:post, stubbed_hostname(hook.url)).with do |req|
             json_body = JSON.parse(req.body)
             json_body['object_attributes']['status'] == status &&
               json_body['builds'].length == 2

@@ -2,7 +2,6 @@
 
 class ProjectPolicy < BasePolicy
   extend ClassMethods
-  include ClusterableActions
 
   READONLY_FEATURES_WHEN_ARCHIVED = %i[
     issue
@@ -114,9 +113,6 @@ class ProjectPolicy < BasePolicy
     @subject.feature_available?(:merge_requests, @user)
   end
 
-  condition(:has_clusters, scope: :subject) { clusterable_has_clusters? }
-  condition(:can_have_multiple_clusters) { multiple_clusters_available? }
-
   condition(:internal_builds_disabled) do
     !@subject.builds_enabled?
   end
@@ -166,6 +162,7 @@ class ProjectPolicy < BasePolicy
     enable :set_issue_created_at
     enable :set_issue_updated_at
     enable :set_note_created_at
+    enable :set_emails_disabled
   end
 
   rule { can?(:guest_access) }.policy do
@@ -430,8 +427,6 @@ class ProjectPolicy < BasePolicy
     (~guest & can?(:read_project_for_iids) & merge_requests_visible_to_user) | can?(:read_merge_request)
   end.enable :read_merge_request_iid
 
-  rule { ~can_have_multiple_clusters & has_clusters }.prevent :add_cluster
-
   rule { ~can?(:read_cross_project) & ~classification_label_authorized }.policy do
     # Preventing access here still allows the projects to be listed. Listing
     # projects doesn't check the `:read_project` ability. But instead counts
@@ -507,6 +502,8 @@ class ProjectPolicy < BasePolicy
   end
 
   def feature_available?(feature)
+    return false unless project.project_feature
+
     case project.project_feature.access_level(feature)
     when ProjectFeature::DISABLED
       false

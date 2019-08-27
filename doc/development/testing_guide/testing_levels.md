@@ -63,10 +63,9 @@ They're useful to test permissions, redirections, what view is rendered etc.
 
 | Code path | Tests path | Testing engine | Notes |
 | --------- | ---------- | -------------- | ----- |
-| `app/controllers/` | `spec/controllers/` | RSpec | |
+| `app/controllers/` | `spec/controllers/` | RSpec | For N+1 tests, use [request specs](../query_recorder.md#use-request-specs-instead-of-controller-specs) |
 | `app/mailers/` | `spec/mailers/` | RSpec | |
 | `lib/api/` | `spec/requests/api/` | RSpec | |
-| `lib/ci/api/` | `spec/requests/ci/api/` | RSpec | |
 | `app/assets/javascripts/` | `spec/javascripts/`, `spec/frontend/` | Karma & Jest | More details in the [Frontend Testing guide](frontend_testing.md) section. |
 
 ### About controller tests

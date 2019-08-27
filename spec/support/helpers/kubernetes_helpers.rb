@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module KubernetesHelpers
   include Gitlab::Kubernetes
 
@@ -196,6 +198,11 @@ module KubernetesHelpers
 
   def stub_kubeclient_get_namespace(api_url, namespace: 'default')
     WebMock.stub_request(:get, api_url + "/api/v1/namespaces/#{namespace}")
+      .to_return(kube_response({}))
+  end
+
+  def stub_kubeclient_put_role(api_url, name, namespace: 'default')
+    WebMock.stub_request(:put, api_url + "/apis/rbac.authorization.k8s.io/v1/namespaces/#{namespace}/roles/#{name}")
       .to_return(kube_response({}))
   end
 

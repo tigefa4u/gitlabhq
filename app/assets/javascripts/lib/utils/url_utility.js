@@ -1,9 +1,15 @@
 import { join as joinPaths } from 'path';
 
+// Returns a decoded url parameter value
+// - Treats '+' as '%20'
+function decodeUrlParameter(val) {
+  return decodeURIComponent(val.replace(/\+/g, '%20'));
+}
+
 // Returns an array containing the value(s) of the
 // of the key passed as an argument
-export function getParameterValues(sParam) {
-  const sPageURL = decodeURIComponent(window.location.search.substring(1));
+export function getParameterValues(sParam, url = window.location) {
+  const sPageURL = decodeURIComponent(new URL(url).search.substring(1));
 
   return sPageURL.split('&').reduce((acc, urlParam) => {
     const sParameterName = urlParam.split('=');
@@ -30,7 +36,7 @@ export function mergeUrlParams(params, url) {
       .forEach(part => {
         if (part.length) {
           const kv = part.split('=');
-          merged[decodeURIComponent(kv[0])] = decodeURIComponent(kv.slice(1).join('='));
+          merged[decodeUrlParameter(kv[0])] = decodeUrlParameter(kv.slice(1).join('='));
         }
       });
   }

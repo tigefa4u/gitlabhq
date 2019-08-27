@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :service do
     project
@@ -14,16 +16,17 @@ FactoryBot.define do
     )
   end
 
-  factory :kubernetes_service do
+  factory :emails_on_push_service do
     project
-    type 'KubernetesService'
+    type 'EmailsOnPushService'
     active true
-    properties({
-      api_url: 'https://kubernetes.example.com',
-      token: 'a' * 40
-    })
-
-    skip_deprecation_validation true
+    push_events true
+    tag_push_events true
+    properties(
+      recipients: 'test@example.com',
+      disable_diffs: true,
+      send_from_committer_email: true
+    )
   end
 
   factory :mock_deployment_service do
@@ -79,14 +82,12 @@ FactoryBot.define do
   trait :issue_tracker do
     properties(
       project_url: 'http://issue-tracker.example.com',
-      issues_url: 'http://issue-tracker.example.com',
+      issues_url: 'http://issue-tracker.example.com/issues/:id',
       new_issue_url: 'http://issue-tracker.example.com'
     )
   end
 
-  factory :jira_cloud_service, class: JiraService do
-    project
-    active true
+  trait :jira_cloud_service do
     properties(
       url: 'https://mysite.atlassian.net',
       username: 'jira_user',
@@ -99,5 +100,17 @@ FactoryBot.define do
     project
     type 'HipchatService'
     token 'test_token'
+  end
+
+  trait :without_properties_callback do
+    after(:build) do |service|
+      allow(service).to receive(:handle_properties)
+    end
+
+    after(:create) do |service|
+      # we have to remove the stub because the behaviour of
+      # handle_properties method is tested after the creation
+      allow(service).to receive(:handle_properties).and_call_original
+    end
   end
 end

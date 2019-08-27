@@ -74,10 +74,10 @@ request is as follows:
    can be found by running `grep css-class ./app -R`.
 1. Be prepared to answer questions and incorporate feedback into your MR with new
    commits. Once you have fully addressed a suggestion from a reviewer, click the
-   "Resolve discussion" button beneath it to mark it resolved.
-   1. The merge request author resolves only the discussions they have fully addressed.
-      If there's an open reply or discussion, a suggestion, a question, or anything else,
-      the discussion should be left to be resolved by the reviewer.
+   "Resolve thread" button beneath it to mark it resolved.
+   1. The merge request author resolves only the threads they have fully addressed.
+      If there's an open reply or thread, a suggestion, a question, or anything else,
+      the thread should be left to be resolved by the reviewer.
 1. If your MR touches code that executes shell commands, reads or opens files, or
    handles paths to files on disk, make sure it adheres to the
    [shell command guidelines](../shell_commands.md)
@@ -103,7 +103,8 @@ If you would like quick feedback on your merge request feel free to mention some
 from the [core team](https://about.gitlab.com/community/core-team/) or one of the
 [merge request coaches](https://about.gitlab.com/team/). When having your code reviewed
 and when reviewing merge requests, please keep the [code review guidelines](../code_review.md)
-in mind.
+in mind. And if your code also makes changes to the database, or does expensive queries,
+check the [database review guidelines](../database_review.md).
 
 ### Keep it simple
 
@@ -141,6 +142,37 @@ When writing commit messages, please follow the guidelines below:
 If the guidelines are not met, the MR will not pass the
 [Danger checks](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/danger/commit_messages/Dangerfile).
 For more information see [How to Write a Git Commit Message](https://chris.beams.io/posts/git-commit/).
+
+Example commit message template that can be used on your machine that embodies the above (guide for [how to apply template](https://codeinthehole.com/tips/a-useful-template-for-commit-messages/)):
+
+```text
+# (If applied, this commit will...) <subject> (Max 50 char)
+# |<----  Using a Maximum Of 50 Characters  ---->|
+
+
+# Explain why this change is being made
+# |<----   Try To Limit Each Line to a Maximum Of 72 Characters   ---->|
+
+# Provide links or keys to any relevant tickets, articles or other resources
+# Use issues and merge requests' full URLs instead of short references,
+# as they are displayed as plain text outside of GitLab
+
+# --- COMMIT END ---
+# --------------------
+# Remember to
+#    Capitalize the subject line
+#    Use the imperative mood in the subject line
+#    Do not end the subject line with a period
+#    Subject must contain at least 3 words
+#    Separate subject from body with a blank line
+#    Commits that change 30 or more lines across at least 3 files must
+#    describe these changes in the commit body
+#    Do not use Emojis
+#    Use the body to explain what and why vs. how
+#    Can use multiple lines with "-" for bullet points in body
+#    For more information: https://chris.beams.io/posts/git-commit/
+# --------------------
+```
 
 ## Contribution acceptance criteria
 

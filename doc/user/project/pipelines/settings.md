@@ -1,9 +1,17 @@
+---
+type: reference, howto
+---
+
 # Pipelines settings
 
 To reach the pipelines settings navigate to your project's
 **Settings > CI/CD**.
 
 The following settings can be configured per project.
+
+<i class="fa fa-youtube-play youtube" aria-hidden="true"></i>
+For an overview, watch the video [GitLab CI Pipeline, Artifacts, and Environments](https://www.youtube.com/watch?v=PCKDICEe10s).
+Watch also [GitLab CI pipeline tutorial for beginners](https://www.youtube.com/watch?v=Jav4vbUrqII).
 
 ## Git strategy
 
@@ -25,10 +33,10 @@ in `.gitlab-ci.yml`.
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/28919) in GitLab 12.0.
 
 NOTE: **Note**:
-As of GitLab 12.0, newly created projects will automatically have a default 
+As of GitLab 12.0, newly created projects will automatically have a default
 `git depth` value of `50`.
 
-It is possible to limit the number of changes that GitLab CI/CD will fetch when cloning 
+It is possible to limit the number of changes that GitLab CI/CD will fetch when cloning
 a repository. Setting a limit to `git depth` can speed up Pipelines execution. Maximum
 allowed value is `1000`.
 
@@ -68,6 +76,13 @@ Here are some valid examples:
 - `my/path/.gitlab-ci.yml`
 - `my/path/.my-custom-file.yml`
 
+The path can be customized at a project level. To customize the path:
+
+1. Go to the project's **Settings > CI / CD**.
+1. Expand the **General pipelines** section.
+1. Provide a value in the **Custom CI config path** field.
+1. Click **Save changes**.
+
 ## Test coverage parsing
 
 If you use test coverage in your code, GitLab can capture its output in the
@@ -88,6 +103,22 @@ in the jobs table.
 
 A few examples of known coverage tools for a variety of languages can be found
 in the pipelines settings page.
+
+### Removing color codes
+
+Some test coverage tools output with ANSI color codes that won't be
+parsed correctly by the regular expression and will cause coverage 
+parsing to fail. 
+
+If your coverage tool doesn't provide an option to disable color
+codes in the output, you can pipe the output of the coverage tool through a 
+small one line script that will strip the color codes off.
+
+For example:
+
+```bash
+lein cloverage | perl -pe 's/\e\[?.*?[\@-~]//g'
+```
 
 ## Visibility of pipelines
 
@@ -200,3 +231,15 @@ https://example.gitlab.com/<namespace>/<project>/badges/<branch>/coverage.svg?st
 ## Environment Variables
 
 [Environment variables](../../../ci/variables/README.html#gitlab-cicd-environment-variables) can be set in an environment to be available to a runner.
+
+<!-- ## Troubleshooting
+
+Include any troubleshooting steps that you can foresee. If you know beforehand what issues
+one might have when setting this up, or when something is changed, or on upgrading, it's
+important to describe those, too. Think of things that may go wrong and include them here.
+This is important to minimize requests for support, and to avoid doc comments with
+questions that you know someone might ask.
+
+Each scenario can be a third-level heading, e.g. `### Getting error message X`.
+If you have none to add when creating a doc, leave this section in place
+but commented out to help encourage others to add to it in the future. -->

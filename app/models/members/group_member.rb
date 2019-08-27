@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class GroupMember < Member
+  include FromUnion
+
   SOURCE_TYPE = 'Namespace'.freeze
 
   belongs_to :group, foreign_key: 'source_id'
@@ -13,8 +15,8 @@ class GroupMember < Member
   default_scope { where(source_type: SOURCE_TYPE) }
 
   scope :of_groups, ->(groups) { where(source_id: groups.select(:id)) }
-
   scope :count_users_by_group_id, -> { joins(:user).group(:source_id).count }
+  scope :of_ldap_type, -> { where(ldap: true) }
 
   after_create :update_two_factor_requirement, unless: :invite?
   after_destroy :update_two_factor_requirement, unless: :invite?

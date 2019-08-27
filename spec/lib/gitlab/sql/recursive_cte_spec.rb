@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
-describe Gitlab::SQL::RecursiveCTE, :postgresql do
+describe Gitlab::SQL::RecursiveCTE do
   let(:cte) { described_class.new(:cte_name) }
 
   describe '#to_arel' do

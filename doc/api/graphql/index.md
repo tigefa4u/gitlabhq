@@ -1,6 +1,8 @@
 # GraphQL API
 
-> [Introduced][ce-19008] in GitLab 11.0.
+> - [Introduced][ce-19008] in GitLab 11.0 (enabled by feature flag `graphql`).
+> - [Always enabled](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/30444)
+  in GitLab 12.1.
 
 [GraphQL](https://graphql.org/) is a query language for APIs that
 allows clients to request exactly the data they need, making it
@@ -29,8 +31,6 @@ There are no plans to deprecate the REST API. To reduce the technical burden of
 supporting two APIs in parallel, they should share implementations as much as
 possible.
 
-As of the 12.1 release, GraphQL is always enabled.
-
 ## Available queries
 
 A first iteration of a GraphQL API includes the following queries
@@ -46,6 +46,12 @@ GitLab supports batching queries into a single request using
 info about multiplexed queries is also available for
 [graphql-ruby](https://graphql-ruby.org/queries/multiplex.html) the
 library GitLab uses on the backend.
+
+## Reference
+
+GitLab's GraphQL reference [is available](reference/index.md).
+
+It is automatically generated from GitLab's GraphQL schema and embedded in a Markdown file.
 
 ## GraphiQL
 

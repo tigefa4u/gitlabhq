@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 shared_examples 'disabled when using an external authorization service' do
@@ -6,7 +8,7 @@ shared_examples 'disabled when using an external authorization service' do
   it 'works when the feature is not enabled' do
     subject
 
-    expect(response).to be_success
+    expect(response).to be_successful
   end
 
   it 'renders a 404 with a message when the feature is enabled' do

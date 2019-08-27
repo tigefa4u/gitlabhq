@@ -51,6 +51,10 @@ Organization like this is suitable for users that belong to different groups but
 same need for being notified for every group they are member of.
 These settings can be configured on group page under the name of the group. It will be the dropdown with the bell icon. They can also be configured on the user profile notifications dropdown.
 
+The group owner can disable email notifications for a group, which also includes
+it's subgroups and projects.  If this is the case, you will not receive any corresponding notifications,
+and the notification button will be disabled with an explanatory tooltip.
+
 ### Project Settings
 
 ![notification settings](img/notification_project_settings.png)
@@ -59,6 +63,10 @@ Project settings are at the top level and any setting placed at this level will 
 other setting.
 This is suitable for users that have different needs for notifications per project basis.
 These settings can be configured on project page under the name of the project. It will be the dropdown with the bell icon. They can also be configured on the user profile notifications dropdown.
+
+The project owner (or it's group owner) can disable email notifications for the project.
+If this is the case, you will not receive any corresponding notifications, and the notification
+button will be disabled with an explanatory tooltip.
 
 ## Notification events
 
@@ -138,7 +146,7 @@ Notification emails include headers that provide extra content about the notific
 | X-GitLab-Project-Id         | The ID of the project                                                   |
 | X-GitLab-Project-Path       | The path of the project                                                 |
 | X-GitLab-(Resource)-ID      | The ID of the resource the notification is for, where resource is `Issue`, `MergeRequest`, `Commit`, etc|
-| X-GitLab-Discussion-ID      | Only in comment emails, the ID of the discussion the comment is from    |
+| X-GitLab-Discussion-ID      | Only in comment emails, the ID of the thread the comment is from    |
 | X-GitLab-Pipeline-Id        | Only in pipeline emails, the ID of the pipeline the notification is for |
 | X-GitLab-Reply-Key          | A unique token to support reply by email                                |
 | X-GitLab-NotificationReason | The reason for being notified. "mentioned", "assigned", etc             |

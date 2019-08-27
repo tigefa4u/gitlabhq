@@ -1,36 +1,30 @@
+---
+type: reference
+---
+
 # LDAP Additions in GitLab EE **(STARTER ONLY)**
 
-This is a continuation of the main [LDAP documentation](ldap.md), detailing LDAP
-features specific to GitLab Enterprise Edition Starter, Premium and Ultimate.
+This section documents LDAP features specific to to GitLab Enterprise Edition
+[Starter](https://about.gitlab.com/pricing/#self-managed) and above.
 
-## Overview
-
-[LDAP](https://en.wikipedia.org/wiki/Lightweight_Directory_Access_Protocol)
-stands for **Lightweight Directory Access Protocol**, which
-is a standard application protocol for
-accessing and maintaining distributed directory information services
-over an Internet Protocol (IP) network.
-
-GitLab integrates with LDAP to support **user authentication**. This integration
-works with most LDAP-compliant directory servers, including Microsoft Active
-Directory, Apple Open Directory, Open LDAP, and 389 Server.
-**GitLab Enterprise Edition** includes enhanced integration, including group
-membership syncing.
+For documentation relevant to both Community Edition and Enterprise Edition,
+see the main [LDAP documentation](ldap.md).
 
 ## Use cases
 
-- User sync: Once a day, GitLab will update users against LDAP
+- User sync: Once a day, GitLab will update users against LDAP.
 - Group sync: Once an hour, GitLab will update group membership
-  based on LDAP group members
+  based on LDAP group members.
 
-## Multiple LDAP servers
+## Multiple LDAP servers **(STARTER ONLY)**
 
 With GitLab Enterprise Edition Starter, you can configure multiple LDAP servers
 that your GitLab instance will connect to.
 
-To add another LDAP server, you can start by duplicating the settings under
-[the main configuration](ldap.md#configuration) and edit them to match the
-additional LDAP server.
+To add another LDAP server:
+
+1. Duplicating the settings under [the main configuration](ldap.md#configuration).
+1. Edit them to match the additional LDAP server.
 
 Be sure to choose a different provider ID made of letters a-z and numbers 0-9.
 This ID will be stored in the database so that GitLab can remember which LDAP
@@ -43,19 +37,19 @@ users against LDAP.
 
 The process will execute the following access checks:
 
-1. Ensure the user is still present in LDAP
-1. If the LDAP server is Active Directory, ensure the user is active (not
-   blocked/disabled state). This will only be checked if
-   `active_directory: true` is set in the LDAP configuration [^1]
+- Ensure the user is still present in LDAP.
+- If the LDAP server is Active Directory, ensure the user is active (not
+  blocked/disabled state). This will only be checked if
+  `active_directory: true` is set in the LDAP configuration. [^1]
 
 The user will be set to `ldap_blocked` state in GitLab if the above conditions
 fail. This means the user will not be able to login or push/pull code.
 
 The process will also update the following user information:
 
-1. Email address
-1. If `sync_ssh_keys` is set, SSH public keys
-1. If Kerberos is enabled, Kerberos identity
+- Email address.
+- If `sync_ssh_keys` is set, SSH public keys.
+- If Kerberos is enabled, Kerberos identity.
 
 NOTE: **Note:**
 The LDAP sync process updates existing users while new users will
@@ -67,9 +61,6 @@ If your LDAP supports the `memberof` property, when the user signs in for the
 first time GitLab will trigger a sync for groups the user should be a member of.
 That way they don't need to wait for the hourly sync to be granted
 access to their groups and projects.
-
-In GitLab Premium, we can also add a GitLab group to sync with one or multiple LDAP groups or we can
-also add a filter. The filter must comply with the syntax defined in [RFC 2254](https://tools.ietf.org/search/rfc2254).
 
 A group sync process will run every hour on the hour, and `group_base` must be set
 in LDAP configuration for LDAP synchronizations based on group CN to work. This allows
@@ -85,19 +76,19 @@ following.
 
 1. Edit `/etc/gitlab/gitlab.rb`:
 
-    ```ruby
-    gitlab_rails['ldap_servers'] = YAML.load <<-EOS
-    main:
-      ## snip...
-      ##
-      ## Base where we can search for groups
-      ##
-      ##   Ex. ou=groups,dc=gitlab,dc=example
-      ##
-      ##
-      group_base: ou=groups,dc=example,dc=com
-    EOS
-    ```
+   ```ruby
+   gitlab_rails['ldap_servers'] = YAML.load <<-EOS
+   main:
+     ## snip...
+     ##
+     ## Base where we can search for groups
+     ##
+     ##   Ex. ou=groups,dc=gitlab,dc=example
+     ##
+     ##
+     group_base: ou=groups,dc=example,dc=com
+   EOS
+   ```
 
 1. [Reconfigure GitLab][reconfigure] for the changes to take effect.
 
@@ -105,24 +96,37 @@ following.
 
 1. Edit `/home/git/gitlab/config/gitlab.yml`:
 
-    ```yaml
-    production:
-      ldap:
-        servers:
-          main:
-            # snip...
-            group_base: ou=groups,dc=example,dc=com
-    ```
+   ```yaml
+   production:
+     ldap:
+       servers:
+         main:
+           # snip...
+           group_base: ou=groups,dc=example,dc=com
+   ```
 
 1. [Restart GitLab][restart] for the changes to take effect.
 
----
-
 To take advantage of group sync, group owners or maintainers will need to create an
-LDAP group link in their group **Settings > LDAP Groups** page. Multiple LDAP
-groups and/or filters can be linked with a single GitLab group. When the link is
-created, an access level/role is specified (Guest, Reporter, Developer, Maintainer,
-or Owner).
+LDAP group link in their group **Settings > LDAP Groups** page.
+
+Multiple LDAP groups and [filters](#filters-premium-only) can be linked with
+a single GitLab group. When the link is created, an access level/role is
+specified (Guest, Reporter, Developer, Maintainer, or Owner).
+
+### Filters **(PREMIUM ONLY)**
+
+In GitLab Premium, you can add an LDAP user filter for group synchronization.
+Filters allow for complex logic without creating a special LDAP group.
+
+To sync GitLab group membership based on an LDAP filter:
+
+1. Open the **LDAP Synchronization** page for the GitLab group.
+1. Select **LDAP user filter** as the **Sync method**.
+1. Enter an LDAP user filter in the **LDAP user filter** field.
+
+The filter must comply with the
+syntax defined in [RFC 2254](https://tools.ietf.org/search/rfc2254).
 
 ## Administrator sync
 
@@ -140,30 +144,30 @@ group, as opposed to the full DN.
 
 1. Edit `/etc/gitlab/gitlab.rb`:
 
-    ```ruby
-    gitlab_rails['ldap_servers'] = YAML.load <<-EOS
-    main:
-      ## snip...
-      ##
-      ## Base where we can search for groups
-      ##
-      ##   Ex. ou=groups,dc=gitlab,dc=example
-      ##
-      ##
-      group_base: ou=groups,dc=example,dc=com
+   ```ruby
+   gitlab_rails['ldap_servers'] = YAML.load <<-EOS
+   main:
+     ## snip...
+     ##
+     ## Base where we can search for groups
+     ##
+     ##   Ex. ou=groups,dc=gitlab,dc=example
+     ##
+     ##
+     group_base: ou=groups,dc=example,dc=com
 
-      ##
-      ## The CN of a group containing GitLab administrators
-      ##
-      ##   Ex. administrators
-      ##
-      ##   Note: Not `cn=administrators` or the full DN
-      ##
-      ##
-      admin_group: my_admin_group
+     ##
+     ## The CN of a group containing GitLab administrators
+     ##
+     ##   Ex. administrators
+     ##
+     ##   Note: Not `cn=administrators` or the full DN
+     ##
+     ##
+     admin_group: my_admin_group
 
-    EOS
-    ```
+   EOS
+   ```
 
 1. [Reconfigure GitLab][reconfigure] for the changes to take effect.
 
@@ -171,26 +175,28 @@ group, as opposed to the full DN.
 
 1. Edit `/home/git/gitlab/config/gitlab.yml`:
 
-    ```yaml
-    production:
-      ldap:
-        servers:
-          main:
-            # snip...
-            group_base: ou=groups,dc=example,dc=com
-            admin_group: my_admin_group
-    ```
+   ```yaml
+   production:
+     ldap:
+       servers:
+         main:
+           # snip...
+           group_base: ou=groups,dc=example,dc=com
+           admin_group: my_admin_group
+   ```
 
 1. [Restart GitLab][restart] for the changes to take effect.
 
 ## Global group memberships lock
 
 "Lock memberships to LDAP synchronization" setting allows instance administrators
-to lock down user abilities to invite new members to a group. When enabled following happens:
+to lock down user abilities to invite new members to a group.
 
-1. Only administrator can manage memberships of any group including access levels.
-2. Users are not allowed to share project with other groups or invite members to a project created in a group.
+When enabled, the following applies:
 
+- Only administrator can manage memberships of any group including access levels.
+- Users are not allowed to share project with other groups or invite members to
+  a project created in a group.
 
 ## Adjusting LDAP user sync schedule
 
@@ -211,9 +217,9 @@ sync to run once every 12 hours at the top of the hour.
 
 1. Edit `/etc/gitlab/gitlab.rb`:
 
-    ```ruby
-    gitlab_rails['ldap_sync_worker_cron'] = "0 */12 * * *"
-    ```
+   ```ruby
+   gitlab_rails['ldap_sync_worker_cron'] = "0 */12 * * *"
+   ```
 
 1. [Reconfigure GitLab](../restart_gitlab.md#omnibus-gitlab-reconfigure) for the changes to take effect.
 
@@ -221,11 +227,11 @@ sync to run once every 12 hours at the top of the hour.
 
 1. Edit `config/gitlab.yaml`:
 
-    ```yaml
-    cron_jobs:
-      ldap_sync_worker_cron:
-        "0 */12 * * *"
-    ```
+   ```yaml
+   cron_jobs:
+     ldap_sync_worker_cron:
+       "0 */12 * * *"
+   ```
 
 1. [Restart GitLab](../restart_gitlab.md#installations-from-source) for the changes to take effect.
 
@@ -252,9 +258,9 @@ sync to run once every 2 hours at the top of the hour.
 
 1. Edit `/etc/gitlab/gitlab.rb`:
 
-    ```ruby
-    gitlab_rails['ldap_group_sync_worker_cron'] = "0 */2 * * * *"
-    ```
+   ```ruby
+   gitlab_rails['ldap_group_sync_worker_cron'] = "0 */2 * * * *"
+   ```
 
 1. [Reconfigure GitLab](../restart_gitlab.md#omnibus-gitlab-reconfigure) for the changes to take effect.
 
@@ -262,11 +268,11 @@ sync to run once every 2 hours at the top of the hour.
 
 1. Edit `config/gitlab.yaml`:
 
-    ```yaml
-    cron_jobs:
-      ldap_group_sync_worker_cron:
-          "*/30 * * * *"
-    ```
+   ```yaml
+   cron_jobs:
+     ldap_group_sync_worker_cron:
+         "*/30 * * * *"
+   ```
 
 1. [Restart GitLab](../restart_gitlab.md#installations-from-source) for the changes to take effect.
 
@@ -283,20 +289,20 @@ task.
 
 1. Edit `/etc/gitlab/gitlab.rb`:
 
-    ```ruby
-    gitlab_rails['ldap_servers'] = YAML.load <<-EOS
-    main:
-      ## snip...
-      ##
-      ## An array of CNs of groups containing users that should be considered external
-      ##
-      ##   Ex. ['interns', 'contractors']
-      ##
-      ##   Note: Not `cn=interns` or the full DN
-      ##
-      external_groups: ['interns', 'contractors']
-    EOS
-    ```
+   ```ruby
+   gitlab_rails['ldap_servers'] = YAML.load <<-EOS
+   main:
+     ## snip...
+     ##
+     ## An array of CNs of groups containing users that should be considered external
+     ##
+     ##   Ex. ['interns', 'contractors']
+     ##
+     ##   Note: Not `cn=interns` or the full DN
+     ##
+     external_groups: ['interns', 'contractors']
+   EOS
+   ```
 
 1. [Reconfigure GitLab][reconfigure] for the changes to take effect.
 
@@ -304,14 +310,14 @@ task.
 
 1. Edit `config/gitlab.yaml`:
 
-    ```yaml
-    production:
-      ldap:
-        servers:
-          main:
-            # snip...
-            external_groups: ['interns', 'contractors']
-    ```
+   ```yaml
+   production:
+     ldap:
+       servers:
+         main:
+           # snip...
+           external_groups: ['interns', 'contractors']
+   ```
 
 1. [Restart GitLab][restart] for the changes to take effect.
 
@@ -330,10 +336,18 @@ administrative duties.
 
 ### Supported LDAP group types/attributes
 
-GitLab supports LDAP groups that use member attributes `member`, `submember`,
-`uniquemember`, `memberof` and `memberuid`. This means group sync supports, at
-least, LDAP groups with object class `groupOfNames`, `posixGroup`, and
-`groupOfUniqueName`. Other object classes should work fine as long as members
+GitLab supports LDAP groups that use member attributes:
+
+- `member`
+- `submember`
+- `uniquemember`
+- `memberof`
+- `memberuid`.
+
+This means group sync supports, at least, LDAP groups with object class:
+`groupOfNames`, `posixGroup`, and `groupOfUniqueName`.
+
+Other object classes should work fine as long as members
 are defined as one of the mentioned attributes. This also means GitLab supports
 Microsoft Active Directory, Apple Open Directory, Open LDAP, and 389 Server.
 Other LDAP servers should work, too.
@@ -341,11 +355,12 @@ Other LDAP servers should work, too.
 Active Directory also supports nested groups. Group sync will recursively
 resolve membership if `active_directory: true` is set in the configuration file.
 
-> **Note:** Nested group membership will only be resolved if the nested group
-  also falls within the configured `group_base`. For example, if GitLab sees a
-  nested group with DN `cn=nested_group,ou=special_groups,dc=example,dc=com` but
-  the configured `group_base` is `ou=groups,dc=example,dc=com`, `cn=nested_group`
-  will be ignored.
+NOTE: **Note:**
+Nested group membership will only be resolved if the nested group
+also falls within the configured `group_base`. For example, if GitLab sees a
+nested group with DN `cn=nested_group,ou=special_groups,dc=example,dc=com` but
+the configured `group_base` is `ou=groups,dc=example,dc=com`, `cn=nested_group`
+will be ignored.
 
 ### Queries
 
@@ -400,7 +415,7 @@ main: # 'main' is the GitLab 'provider ID' of this LDAP server
 
 [^1]: In Active Directory, a user is marked as disabled/blocked if the user
       account control attribute (`userAccountControl:1.2.840.113556.1.4.803`)
-      has bit 2 set. See https://ctogonewild.com/2009/09/03/bitmask-searches-in-ldap/
+      has bit 2 set. See <https://ctogonewild.com/2009/09/03/bitmask-searches-in-ldap/>
       for more information.
 
 ### User DN has changed
@@ -420,10 +435,10 @@ things to check to debug the situation.
 - Ensure LDAP configuration has a `group_base` specified. This configuration is
   required for group sync to work properly.
 - Ensure the correct LDAP group link is added to the GitLab group. Check group
-  links by visiting the GitLab group, then **Settings dropdown -> LDAP groups**.
-- Check that the user has an LDAP identity
+  links by visiting the GitLab group, then **Settings dropdown > LDAP groups**.
+- Check that the user has an LDAP identity:
   1. Sign in to GitLab as an administrator user.
-  1. Navigate to **Admin area -> Users**.
+  1. Navigate to **Admin area > Users**.
   1. Search for the user
   1. Open the user, by clicking on their name. Do not click 'Edit'.
   1. Navigate to the **Identities** tab. There should be an LDAP identity with
@@ -434,68 +449,74 @@ Often, the best way to learn more about why group sync is behaving a certain
 way is to enable debug logging. There is verbose output that details every
 step of the sync.
 
-1. Start a Rails console
+1. Start a Rails console:
 
-    ```bash
-    # For Omnibus installations
-    sudo gitlab-rails console
+   ```bash
+   # For Omnibus installations
+   sudo gitlab-rails console
 
-    # For installations from source
-    sudo -u git -H bundle exec rails console production
-    ```
+   # For installations from source
+   sudo -u git -H bundle exec rails console production
+   ```
+
 1. Set the log level to debug (only for this session):
 
-    ```ruby
-    Rails.logger.level = Logger::DEBUG
-    ```
+   ```ruby
+   Rails.logger.level = Logger::DEBUG
+   ```
+
 1. Choose a GitLab group to test with. This group should have an LDAP group link
    already configured. If the output is `nil`, the group could not be found.
    If a bunch of group attributes are output, your group was found successfully.
 
-    ```ruby
-    group = Group.find_by(name: 'my_group')
+   ```ruby
+   group = Group.find_by(name: 'my_group')
 
-    # Output
-    => #<Group:0x007fe825196558 id: 1234, name: "my_group"...>
-    ```
+   # Output
+   => #<Group:0x007fe825196558 id: 1234, name: "my_group"...>
+   ```
+
 1. Run a group sync for this particular group.
 
-    ```ruby
-    EE::Gitlab::Auth::LDAP::Sync::Group.execute_all_providers(group)
-    ```
+   ```ruby
+   EE::Gitlab::Auth::LDAP::Sync::Group.execute_all_providers(group)
+   ```
+
 1. Look through the output of the sync. See [example log output](#example-log-output)
    below for more information about the output.
 1. If you still aren't able to see why the user isn't being added, query the
    LDAP group directly to see what members are listed. Still in the Rails console,
    run the following query:
 
-    ```ruby
-    adapter = Gitlab::Auth::LDAP::Adapter.new('ldapmain') # If `main` is the LDAP provider
-    ldap_group = EE::Gitlab::Auth::LDAP::Group.find_by_cn('group_cn_here', adapter)
+   ```ruby
+   adapter = Gitlab::Auth::LDAP::Adapter.new('ldapmain') # If `main` is the LDAP provider
+   ldap_group = EE::Gitlab::Auth::LDAP::Group.find_by_cn('group_cn_here', adapter)
 
-    # Output
-    => #<EE::Gitlab::Auth::LDAP::Group:0x007fcbdd0bb6d8
-    ```
+   # Output
+   => #<EE::Gitlab::Auth::LDAP::Group:0x007fcbdd0bb6d8
+   ```
+
 1. Query the LDAP group's member DNs and see if the user's DN is in the list.
    One of the DNs here should match the 'Identifier' from the LDAP identity
    checked earlier. If it doesn't, the user does not appear to be in the LDAP
    group.
 
-    ```ruby
-    ldap_group.member_dns
+   ```ruby
+   ldap_group.member_dns
 
-    # Output
-    => ["uid=john,ou=people,dc=example,dc=com", "uid=mary,ou=people,dc=example,dc=com"]
-    ```
+   # Output
+   => ["uid=john,ou=people,dc=example,dc=com", "uid=mary,ou=people,dc=example,dc=com"]
+   ```
+
 1. Some LDAP servers don't store members by DN. Rather, they use UIDs instead.
    If you didn't see results from the last query, try querying by UIDs instead.
 
-    ```ruby
-    ldap_group.member_uids
+   ```ruby
+   ldap_group.member_uids
 
-    # Output
-    => ['john','mary']
-    ```
+   # Output
+   => ['john','mary']
+   ```
 
 #### Example log output
 
@@ -532,8 +553,9 @@ and more DNs may be added, or existing entries modified, based on additional
 LDAP group lookups. The very last occurrence of this entry should indicate
 exactly which users GitLab believes should be added to the group.
 
-> **Note:** 10 is 'Guest', 20 is 'Reporter', 30 is 'Developer', 40 is 'Maintainer'
-  and 50 is 'Owner'
+NOTE: **Note:**
+10 is 'Guest', 20 is 'Reporter', 30 is 'Developer', 40 is 'Maintainer'
+and 50 is 'Owner'.
 
 ```bash
 Resolved 'my_group' group member access: {"uid=john0,ou=people,dc=example,dc=com"=>30,

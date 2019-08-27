@@ -47,6 +47,29 @@ production: &base
     #
     # relative_url_root: /gitlab
 
+    # Content Security Policy
+    # See https://guides.rubyonrails.org/security.html#content-security-policy
+    content_security_policy:
+      enabled: true
+      report_only: false
+      directives:
+        base_uri:
+        child_src:
+        connect_src: "'self' http://localhost:* ws://localhost:* wss://localhost:*"
+        default_src: "'self'"
+        font_src:
+        form_action:
+        frame_ancestors: "'self'"
+        frame_src: "'self' https://www.google.com/recaptcha/ https://www.recaptcha.net/ https://content.googleapis.com https://content-compute.googleapis.com https://content-cloudbilling.googleapis.com https://content-cloudresourcemanager.googleapis.com"
+        img_src: "* data: blob:"
+        manifest_src:
+        media_src:
+        object_src: "'none'"
+        script_src: "'self' 'unsafe-eval' http://localhost:* https://www.google.com/recaptcha/ https://www.recaptcha.net/ https://www.gstatic.com/recaptcha/ https://apis.google.com"
+        style_src: "'self' 'unsafe-inline'"
+        worker_src: "'self' blob:"
+        report_uri:
+
     # Trusted Proxies
     # Customize if you have GitLab behind a reverse proxy which is running on a different machine.
     # Add the IP address for your reverse proxy to the list, otherwise users will appear signed in from that address.
@@ -72,6 +95,15 @@ production: &base
     email_display_name: GitLab
     email_reply_to: noreply@example.com
     email_subject_suffix: ''
+    email_smime:
+      # Uncomment and set to true if you need to enable email S/MIME signing (default: false)
+      # enabled: false
+      # S/MIME private key file in PEM format, unencrypted
+      # Default is '.gitlab_smime_key' relative to Rails.root (i.e. root of the GitLab app).
+      # key_file: /home/git/gitlab/.gitlab_smime_key
+      # S/MIME public certificate key in PEM format, will be attached to signed messages
+      # Default is '.gitlab_smime_cert' relative to Rails.root (i.e. root of the GitLab app).
+      # cert_file: /home/git/gitlab/.gitlab_smime_cert
 
     # Email server smtp settings are in config/initializers/smtp_settings.rb.sample
 
@@ -400,6 +432,15 @@ production: &base
     # path: shared/registry
     # issuer: gitlab-issuer
 
+    # Add notification settings if you plan to use Geo Replication for the registry
+    # notifications:
+    # - name: geo_event
+    #   url: https://example.com/api/v4/container_registry_event/events
+    #   timeout: 2s
+    #   threshold: 5
+    #   backoff: 1s
+    #   headers:
+    #     Authorization: secret_phrase
 
   ## Error Reporting and Logging with Sentry
   sentry:
@@ -417,6 +458,11 @@ production: &base
     #
     # If it is blank, it defaults to external_url.
     node_name: ''
+
+    registry_replication:
+      # enabled: true
+      # primary_api_url: http://localhost:5000/ # internal address to the primary registry, will be used by GitLab to directly communicate with primary registry API
+
 
   #
   # 2. GitLab CI settings
@@ -734,6 +780,14 @@ production: &base
     # (default: [])
     external_providers: []
 
+    # CAUTION!
+    # This allows users to login with the specified providers without two factor. Define the allowed providers
+    # using an array, e.g. ["twitter", 'google_oauth2'], or as true/false to allow all providers or none.
+    # This option should only be configured for providers which already have two factor. 
+    # This configration dose not apply to SAML.
+    # (default: false)
+    allow_bypass_two_factor: ["twitter", 'google_oauth2']
+
     ## Auth providers
     # Uncomment the following lines and fill in the data of the auth provider you want to use
     # If your favorite auth provider is not listed you can use others:
@@ -952,6 +1006,16 @@ production: &base
     #  address: localhost
     #  port: 3807
 
+  ## Prometheus settings
+  # Do not modify these settings here. They should be modified in /etc/gitlab/gitlab.rb
+  # if you installed GitLab via Omnibus.
+  # If you installed from source, you need to install and configure Prometheus
+  # yourself, and then update the values here.
+  # https://docs.gitlab.com/ee/administration/monitoring/prometheus/
+  prometheus:
+    # enable: true
+    # listen_address: 'localhost:9090'
+
   #
   # 5. Extra customization
   # ==========================
@@ -1042,6 +1106,27 @@ test:
   gitlab:
     host: localhost
     port: 80
+
+    content_security_policy:
+      enabled: true
+      report_only: false
+      directives:
+        base_uri:
+        child_src:
+        connect_src:
+        default_src: "'self'"
+        font_src:
+        form_action:
+        frame_ancestors: "'self'"
+        frame_src: "'self' https://www.google.com/recaptcha/ https://www.recaptcha.net/ https://content.googleapis.com https://content-compute.googleapis.com https://content-cloudbilling.googleapis.com https://content-cloudresourcemanager.googleapis.com"
+        img_src: "* data: blob:"
+        manifest_src:
+        media_src:
+        object_src: "'none'"
+        script_src: "'self' 'unsafe-eval' http://localhost:* https://www.google.com/recaptcha/ https://www.recaptcha.net/ https://www.gstatic.com/recaptcha/ https://apis.google.com"
+        style_src: "'self' 'unsafe-inline'"
+        worker_src: "'self' blob:"
+        report_uri:
 
     # When you run tests we clone and set up gitlab-shell
     # In order to set it up correctly you need to specify
@@ -1158,6 +1243,9 @@ test:
         user_filter: ''
         group_base: 'ou=groups,dc=example,dc=com'
         admin_group: ''
+  prometheus:
+    enable: true
+    listen_address: 'localhost:9090'
 
 staging:
   <<: *base

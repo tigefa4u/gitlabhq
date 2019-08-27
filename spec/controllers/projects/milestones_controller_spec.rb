@@ -115,7 +115,7 @@ describe Projects::MilestonesController do
         end
       end
 
-      context 'with nested groups', :nested_groups do
+      context 'with nested groups' do
         let!(:subgroup) { create(:group, :public, parent: group) }
         let!(:subgroup_milestone) { create(:milestone, group: subgroup) }
 
@@ -139,7 +139,7 @@ describe Projects::MilestonesController do
       expect(issue.milestone_id).to eq(milestone.id)
 
       delete :destroy, params: { namespace_id: project.namespace.id, project_id: project.id, id: milestone.iid }, format: :js
-      expect(response).to be_success
+      expect(response).to be_successful
 
       expect(Event.recent.first.action).to eq(Event::DESTROYED)
 

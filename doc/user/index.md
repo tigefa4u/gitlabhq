@@ -2,7 +2,7 @@
 description: 'Read through the GitLab User documentation to learn how to use, configure, and customize GitLab and GitLab.com to your own needs.'
 ---
 
-# User documentation
+# User Docs
 
 Welcome to GitLab! We're glad to have you here!
 
@@ -53,7 +53,7 @@ With GitLab Enterprise Edition, you can also:
 - Improve collaboration with
   [Merge Request Approvals](project/merge_requests/index.md#merge-request-approvals-starter),
   [Multiple Assignees for Issues](project/issues/multiple_assignees_for_issues.md),
-  and [Multiple Issue Boards](project/issue_board.md#multiple-issue-boards-starter).
+  and [Multiple Issue Boards](project/issue_board.md#multiple-issue-boards).
 - Create formal relationships between issues with [Related Issues](project/issues/related_issues.md).
 - Use [Burndown Charts](project/milestones/burndown_charts.md) to track progress during a sprint or while working on a new version of their software.
 - Leverage [Elasticsearch](../integration/elasticsearch.md) with [Advanced Global Search](search/advanced_global_search.md) and [Advanced Syntax Search](search/advanced_search_syntax.md) for faster, more advanced code search across your entire GitLab instance.
@@ -124,12 +124,12 @@ merge requests, code snippets, and commits.
 
 When performing inline reviews to implementations
 to your codebase through merge requests you can
-gather feedback through [resolvable discussions](discussions/index.md#resolvable-comments-and-discussions).
+gather feedback through [resolvable threads](discussions/index.md#resolvable-comments-and-threads).
 
 ### GitLab Flavored Markdown (GFM)
 
 Read through the [GFM documentation](markdown.md) to learn how to apply
-the best of GitLab Flavored Markdown in your discussions, comments,
+the best of GitLab Flavored Markdown in your threads, comments,
 issues and merge requests descriptions, and everywhere else GMF is
 supported.
 
@@ -148,7 +148,7 @@ requests you're assigned to.
 
 [Snippets](snippets.md) are code blocks that you want to store in GitLab, from which
 you have quick access to. You can also gather feedback on them through
-[discussions](#discussions).
+[Discussions](#Discussions).
 
 ## Integrations
 

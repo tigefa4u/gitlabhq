@@ -597,6 +597,14 @@ module SystemNoteService
     note_text =~ /\A#{cross_reference_note_prefix}/i
   end
 
+  def zoom_link_added(issue, project, author)
+    create_note(NoteSummary.new(issue, project, author, _('added a Zoom call to this issue'), action: 'pinned_embed'))
+  end
+
+  def zoom_link_removed(issue, project, author)
+    create_note(NoteSummary.new(issue, project, author, _('removed a Zoom call from this issue'), action: 'pinned_embed'))
+  end
+
   private
 
   # rubocop: disable CodeReuse/ActiveRecord

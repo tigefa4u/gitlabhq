@@ -28,16 +28,20 @@ if Rails.env.development?
 end
 
 enable_json_logs = Gitlab.config.sidekiq.log_format == 'json'
+enable_sidekiq_monitor = ENV.fetch("SIDEKIQ_MONITOR_WORKER", 0).to_i.nonzero?
 
 Sidekiq.configure_server do |config|
   config.redis = queues_config_hash
 
   config.server_middleware do |chain|
+    chain.add Gitlab::SidekiqMiddleware::Monitor if enable_sidekiq_monitor
+    chain.add Gitlab::SidekiqMiddleware::Metrics if Settings.monitoring.sidekiq_exporter
     chain.add Gitlab::SidekiqMiddleware::ArgumentsLogger if ENV['SIDEKIQ_LOG_ARGUMENTS'] && !enable_json_logs
     chain.add Gitlab::SidekiqMiddleware::MemoryKiller if ENV['SIDEKIQ_MEMORY_KILLER_MAX_RSS']
     chain.add Gitlab::SidekiqMiddleware::RequestStoreMiddleware unless ENV['SIDEKIQ_REQUEST_STORE'] == '0'
     chain.add Gitlab::SidekiqMiddleware::BatchLoader
     chain.add Gitlab::SidekiqMiddleware::CorrelationLogger
+    chain.add Gitlab::SidekiqMiddleware::InstrumentationLogger
     chain.add Gitlab::SidekiqStatus::ServerMiddleware
   end
 
@@ -55,6 +59,8 @@ Sidekiq.configure_server do |config|
     # Clear any connections that might have been obtained before starting
     # Sidekiq (e.g. in an initializer).
     ActiveRecord::Base.clear_all_connections!
+
+    Gitlab::SidekiqMonitor.instance.start if enable_sidekiq_monitor
   end
 
   if enable_reliable_fetch?
@@ -72,7 +78,7 @@ Sidekiq.configure_server do |config|
       cron_jobs[k]['class'] = cron_jobs[k].delete('job_class')
     else
       cron_jobs.delete(k)
-      Rails.logger.error("Invalid cron_jobs config key: '#{k}'. Check your gitlab config file.")
+      Rails.logger.error("Invalid cron_jobs config key: '#{k}'. Check your gitlab config file.") # rubocop:disable Gitlab/RailsLogger
     end
   end
   Sidekiq::Cron::Job.load_from_hash! cron_jobs
@@ -83,7 +89,7 @@ Sidekiq.configure_server do |config|
     Rails.application.config.database_configuration[Rails.env]
   db_config['pool'] = Sidekiq.options[:concurrency]
   ActiveRecord::Base.establish_connection(db_config)
-  Rails.logger.debug("Connection Pool size for Sidekiq Server is now: #{ActiveRecord::Base.connection.pool.instance_variable_get('@size')}")
+  Rails.logger.debug("Connection Pool size for Sidekiq Server is now: #{ActiveRecord::Base.connection.pool.instance_variable_get('@size')}") # rubocop:disable Gitlab/RailsLogger
 
   Gitlab.ee do
     Gitlab::Mirror.configure_cron_job!
@@ -94,7 +100,7 @@ Sidekiq.configure_server do |config|
       Rails.configuration.geo_database['pool'] = Sidekiq.options[:concurrency]
       Geo::TrackingBase.establish_connection(Rails.configuration.geo_database)
 
-      Rails.logger.debug("Connection Pool size for Sidekiq Server is now: #{Geo::TrackingBase.connection_pool.size} (Geo tracking database)")
+      Rails.logger.debug("Connection Pool size for Sidekiq Server is now: #{Geo::TrackingBase.connection_pool.size} (Geo tracking database)") # rubocop:disable Gitlab/RailsLogger
     end
   end
 

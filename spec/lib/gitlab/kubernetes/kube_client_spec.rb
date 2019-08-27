@@ -58,7 +58,7 @@ describe Gitlab::Kubernetes::KubeClient do
 
       context 'when local requests are allowed' do
         before do
-          stub_application_setting(allow_local_requests_from_hooks_and_services: true)
+          stub_application_setting(allow_local_requests_from_web_hooks_and_services: true)
         end
 
         it 'allows local addresses' do
@@ -176,6 +176,9 @@ describe Gitlab::Kubernetes::KubeClient do
     let(:rbac_client) { client.rbac_client }
 
     [
+      :create_role,
+      :get_role,
+      :update_role,
       :create_cluster_role_binding,
       :get_cluster_role_binding,
       :update_cluster_role_binding

@@ -3,6 +3,8 @@
 class ActiveSession
   include ActiveModel::Model
 
+  SESSION_BATCH_SIZE = 200
+
   attr_accessor :created_at, :updated_at,
     :session_id, :ip_address,
     :browser, :os, :device_name, :device_type,
@@ -91,12 +93,12 @@ class ActiveSession
   end
 
   def self.list_sessions(user)
-    sessions_from_ids(session_ids_for_user(user))
+    sessions_from_ids(session_ids_for_user(user.id))
   end
 
-  def self.session_ids_for_user(user)
+  def self.session_ids_for_user(user_id)
     Gitlab::Redis::SharedState.with do |redis|
-      redis.smembers(lookup_key_name(user.id))
+      redis.smembers(lookup_key_name(user_id))
     end
   end
 
@@ -106,10 +108,12 @@ class ActiveSession
     Gitlab::Redis::SharedState.with do |redis|
       session_keys = session_ids.map { |session_id| "#{Gitlab::Redis::SharedState::SESSION_NAMESPACE}:#{session_id}" }
 
-      redis.mget(session_keys).compact.map do |raw_session|
-        # rubocop:disable Security/MarshalLoad
-        Marshal.load(raw_session)
-        # rubocop:enable Security/MarshalLoad
+      session_keys.each_slice(SESSION_BATCH_SIZE).flat_map do |session_keys_batch|
+        redis.mget(session_keys_batch).compact.map do |raw_session|
+          # rubocop:disable Security/MarshalLoad
+          Marshal.load(raw_session)
+          # rubocop:enable Security/MarshalLoad
+        end
       end
     end
   end
@@ -125,15 +129,17 @@ class ActiveSession
   end
 
   def self.cleaned_up_lookup_entries(redis, user)
-    session_ids = session_ids_for_user(user)
+    session_ids = session_ids_for_user(user.id)
     entries = raw_active_session_entries(session_ids, user.id)
 
     # remove expired keys.
     # only the single key entries are automatically expired by redis, the
     # lookup entries in the set need to be removed manually.
     session_ids_and_entries = session_ids.zip(entries)
-    session_ids_and_entries.reject { |_session_id, entry| entry }.each do |session_id, _entry|
-      redis.srem(lookup_key_name(user.id), session_id)
+    redis.pipelined do
+      session_ids_and_entries.reject { |_session_id, entry| entry }.each do |session_id, _entry|
+        redis.srem(lookup_key_name(user.id), session_id)
+      end
     end
 
     entries.compact

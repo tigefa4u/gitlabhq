@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 shared_examples_for 'common trace features' do
   describe '#html' do
     before do
@@ -5,11 +7,11 @@ shared_examples_for 'common trace features' do
     end
 
     it "returns formatted html" do
-      expect(trace.html).to eq("<span class=\"\">12<br/><span class=\"\">34</span></span>")
+      expect(trace.html).to eq("<span>12<br/>34</span>")
     end
 
     it "returns last line of formatted html" do
-      expect(trace.html(last_lines: 1)).to eq("<span class=\"\">34</span>")
+      expect(trace.html(last_lines: 1)).to eq("<span>34</span>")
     end
   end
 
@@ -717,6 +719,58 @@ shared_examples_for 'trace with enabled live trace feature' do
       it "returns live trace data" do
         expect(trace.raw).to eq("abc")
       end
+    end
+  end
+
+  describe '#archived_trace_exist?' do
+    subject { trace.archived_trace_exist? }
+
+    context 'when trace does not exist' do
+      it { is_expected.to be_falsy }
+    end
+
+    context 'when archived trace exists' do
+      before do
+        create(:ci_job_artifact, :trace, job: build)
+      end
+
+      it { is_expected.to be_truthy }
+    end
+
+    context 'when live trace exists' do
+      before do
+        Gitlab::Ci::Trace::ChunkedIO.new(build) do |stream|
+          stream.write('abc')
+        end
+      end
+
+      it { is_expected.to be_falsy }
+    end
+  end
+
+  describe '#live_trace_exist?' do
+    subject { trace.live_trace_exist? }
+
+    context 'when trace does not exist' do
+      it { is_expected.to be_falsy }
+    end
+
+    context 'when archived trace exists' do
+      before do
+        create(:ci_job_artifact, :trace, job: build)
+      end
+
+      it { is_expected.to be_falsy }
+    end
+
+    context 'when live trace exists' do
+      before do
+        Gitlab::Ci::Trace::ChunkedIO.new(build) do |stream|
+          stream.write('abc')
+        end
+      end
+
+      it { is_expected.to be_truthy }
     end
   end
 

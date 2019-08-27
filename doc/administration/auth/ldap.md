@@ -1,30 +1,50 @@
+---
+type: reference
+---
+
 <!-- If the change is EE-specific, put it in `ldap-ee.md`, NOT here. -->
 
 # LDAP
 
 GitLab integrates with LDAP to support user authentication.
-This integration works with most LDAP-compliant directory
-servers, including Microsoft Active Directory, Apple Open Directory, Open LDAP,
-and 389 Server. GitLab Enterprise Editions include enhanced integration,
+
+This integration works with most LDAP-compliant directory servers, including:
+
+- Microsoft Active Directory
+- Apple Open Directory
+- Open LDAP
+- 389 Server.
+
+GitLab Enterprise Editions (EE) include enhanced integration,
 including group membership syncing as well as multiple LDAP servers support.
 
-## GitLab EE
+For more details about EE-specific LDAP features, see the
+[LDAP Enterprise Edition documentation](ldap-ee.md).
 
-The information on this page is relevant for both GitLab CE and EE. For more
-details about EE-specific LDAP features, see the
-[LDAP Enterprise Edition documentation](ldap-ee.md). **(STARTER ONLY)**
+NOTE: **Note:**
+The information on this page is relevant for both GitLab CE and EE.
+
+## Overview
+
+[LDAP](https://en.wikipedia.org/wiki/Lightweight_Directory_Access_Protocol)
+stands for **Lightweight Directory Access Protocol**, which is a standard
+application protocol for accessing and maintaining distributed directory
+information services over an Internet Protocol (IP) network.
 
 ## Security
 
-GitLab assumes that LDAP users are not able to change their LDAP 'mail', 'email'
-or 'userPrincipalName' attribute. An LDAP user who is allowed to change their
-email on the LDAP server can potentially
-[take over any account](#enabling-ldap-sign-in-for-existing-gitlab-users)
-on your GitLab server.
+GitLab assumes that LDAP users:
+
+- Are not able to change their LDAP `mail`, `email`, or `userPrincipalName` attribute.
+  An LDAP user who is allowed to change their email on the LDAP server can potentially
+  [take over any account](#enabling-ldap-sign-in-for-existing-gitlab-users)
+  on your GitLab server.
+- Have unique email addresses, otherwise it is possible for LDAP users with the same
+  email address to share the same GitLab account.
 
 We recommend against using LDAP integration if your LDAP users are
-allowed to change their 'mail', 'email' or 'userPrincipalName'  attribute on
-the LDAP server.
+allowed to change their 'mail', 'email' or 'userPrincipalName' attribute on
+the LDAP server or share email addresses.
 
 ### User deletion
 
@@ -60,9 +80,12 @@ NOTE: **Note**:
 In GitLab Enterprise Edition Starter, you can configure multiple LDAP servers
 to connect to one GitLab server.
 
-For a complete guide on configuring LDAP with GitLab Community Edition, please check
-the admin guide [How to configure LDAP with GitLab CE](how_to_configure_ldap_gitlab_ce/index.md).
-For GitLab Enterprise Editions, see also [How to configure LDAP with GitLab EE](how_to_configure_ldap_gitlab_ee/index.md). **(STARTER ONLY)**
+For a complete guide on configuring LDAP with:
+
+- GitLab Community Edition, see
+  [How to configure LDAP with GitLab CE](how_to_configure_ldap_gitlab_ce/index.md).
+- Enterprise Editions, see
+  [How to configure LDAP with GitLab EE](how_to_configure_ldap_gitlab_ee/index.md). **(STARTER ONLY)**
 
 To enable LDAP integration you need to add your LDAP server settings in
 `/etc/gitlab/gitlab.rb` or `/home/git/gitlab/config/gitlab.yml` for Omnibus
@@ -380,7 +403,7 @@ production:
 Tip: If you want to limit access to the nested members of an Active Directory
 group, you can use the following syntax:
 
-```
+```text
 (memberOf:1.2.840.113556.1.4.1941:=CN=My Group,DC=Example,DC=com)
 ```
 
@@ -398,30 +421,30 @@ The `user_filter` DN can contain special characters. For example:
 
 - A comma:
 
-    ```
-    OU=GitLab, Inc,DC=gitlab,DC=com
-    ```
+  ```text
+  OU=GitLab, Inc,DC=gitlab,DC=com
+  ```
 
 - Open and close brackets:
 
-    ```
-    OU=Gitlab (Inc),DC=gitlab,DC=com
-    ```
+  ```text
+  OU=Gitlab (Inc),DC=gitlab,DC=com
+  ```
 
-    These characters must be escaped as documented in 
-    [RFC 4515](https://tools.ietf.org/search/rfc4515).
+  These characters must be escaped as documented in
+  [RFC 4515](https://tools.ietf.org/search/rfc4515).
 
 - Escape commas with `\2C`. For example:
 
-    ```
-    OU=GitLab\2C Inc,DC=gitlab,DC=com
-    ```
+  ```text
+  OU=GitLab\2C Inc,DC=gitlab,DC=com
+  ```
 
 - Escape open and close brackets with `\28` and `\29`, respectively. For example:
 
-    ```
-    OU=Gitlab \28Inc\29,DC=gitlab,DC=com
-    ```
+  ```text
+  OU=Gitlab \28Inc\29,DC=gitlab,DC=com
+  ```
 
 ## Enabling LDAP sign-in for existing GitLab users
 
@@ -445,13 +468,13 @@ the configuration option `lowercase_usernames`. By default, this configuration o
 
 1. Edit `/etc/gitlab/gitlab.rb`:
 
-    ```ruby
-    gitlab_rails['ldap_servers'] = YAML.load <<-EOS
-    main:
-      # snip...
-      lowercase_usernames: true
-    EOS
-    ```
+   ```ruby
+   gitlab_rails['ldap_servers'] = YAML.load <<-EOS
+   main:
+     # snip...
+     lowercase_usernames: true
+   EOS
+   ```
 
 1. [Reconfigure GitLab](../restart_gitlab.md#omnibus-gitlab-reconfigure) for the changes to take effect.
 
@@ -459,14 +482,14 @@ the configuration option `lowercase_usernames`. By default, this configuration o
 
 1. Edit `config/gitlab.yaml`:
 
-    ```yaml
-    production:
-      ldap:
-        servers:
-          main:
-            # snip...
-            lowercase_usernames: true
-    ```
+   ```yaml
+   production:
+     ldap:
+       servers:
+         main:
+           # snip...
+           lowercase_usernames: true
+   ```
 
 1. [Restart GitLab](../restart_gitlab.md#installations-from-source) for the changes to take effect.
 
@@ -494,13 +517,20 @@ be mandatory and clients cannot be authenticated with the TLS protocol.
 
 ## Troubleshooting
 
+If a user account is blocked or unblocked due to the LDAP configuration, a
+message will be logged to `application.log`.
+
+If there is an unexpected error during an LDAP lookup (configuration error,
+timeout), the login is rejected and a message will be logged to
+`production.log`.
+
 ### Debug LDAP user filter with ldapsearch
 
-This example uses ldapsearch and assumes you are using ActiveDirectory. The
+This example uses `ldapsearch` and assumes you are using ActiveDirectory. The
 following query returns the login names of the users that will be allowed to
 log in to GitLab if you configure your own user_filter.
 
-```
+```sh
 ldapsearch -H ldaps://$host:$port -D "$bind_dn" -y bind_dn_password.txt  -b "$base" "$user_filter" sAMAccountName
 ```
 
@@ -519,26 +549,17 @@ ldapsearch -H ldaps://$host:$port -D "$bind_dn" -y bind_dn_password.txt  -b "$ba
 - Run the following check command to make sure that the LDAP settings are
   correct and GitLab can see your users:
 
-    ```bash
-    # For Omnibus installations
-    sudo gitlab-rake gitlab:ldap:check
+  ```bash
+  # For Omnibus installations
+  sudo gitlab-rake gitlab:ldap:check
 
-    # For installations from source
-    sudo -u git -H bundle exec rake gitlab:ldap:check RAILS_ENV=production
-    ```
+  # For installations from source
+  sudo -u git -H bundle exec rake gitlab:ldap:check RAILS_ENV=production
+  ```
 
-### Connection Refused
+### Connection refused
 
 If you are getting 'Connection Refused' errors when trying to connect to the
 LDAP server please double-check the LDAP `port` and `encryption` settings used by
 GitLab. Common combinations are `encryption: 'plain'` and `port: 389`, OR
 `encryption: 'simple_tls'` and `port: 636`.
-
-### Troubleshooting
-
-If a user account is blocked or unblocked due to the LDAP configuration, a
-message will be logged to `application.log`.
-
-If there is an unexpected error during an LDAP lookup (configuration error,
-timeout), the login is rejected and a message will be logged to
-`production.log`.

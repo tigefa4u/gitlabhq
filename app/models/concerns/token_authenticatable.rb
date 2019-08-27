@@ -3,10 +3,8 @@
 module TokenAuthenticatable
   extend ActiveSupport::Concern
 
-  private
-
   class_methods do
-    private # rubocop:disable Lint/UselessAccessModifier
+    private
 
     def add_authentication_token_field(token_field, options = {})
       if token_authenticatable_fields.include?(token_field)
@@ -52,7 +50,7 @@ module TokenAuthenticatable
 
       mod.define_method("#{token_field}_matches?") do |other_token|
         token = read_attribute(token_field)
-        token.present? && ActiveSupport::SecurityUtils.variable_size_secure_compare(other_token, token)
+        token.present? && ActiveSupport::SecurityUtils.secure_compare(other_token, token)
       end
     end
 

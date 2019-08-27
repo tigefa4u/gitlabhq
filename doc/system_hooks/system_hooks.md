@@ -330,6 +330,7 @@ If the user is blocked via LDAP, `state` will be `ldap_blocked`.
        "user_id": 41
 }
 ```
+
 **Group Member Removed:**
 
 ```json
@@ -642,6 +643,11 @@ X-Gitlab-Event: System Hook
   "refs":["refs/heads/master"]
 }
 ```
+
+## Local requests in system hooks
+
+[Requests to local network by system hooks](../security/webhooks.md) can be allowed
+or blocked by an administrator.
 
 <!-- ## Troubleshooting
 

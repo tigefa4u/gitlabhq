@@ -6,13 +6,13 @@ type: reference
 
 GitLab allows [Owners](../user/permissions.md) to set a projects' visibility as **public**, **internal**
 or **private**. These visibility levels affect who can see the project in the
-public access directory (`/public` under your GitLab instance), like at [https://gitlab.com/public]().
+public access directory (`/public` under your GitLab instance), like at <https://gitlab.com/public>
 
 ## Visibility of projects
 
 ### Public projects
 
-Public projects can be cloned **without any** authentication.
+Public projects can be cloned **without any** authentication over https.
 
 They will be listed in the public access directory (`/public`) for all users.
 
@@ -37,7 +37,7 @@ visibility setting keep this setting. You can read more about the change in the
 
 ### Private projects
 
-Private projects can only be cloned and viewed by project members.
+Private projects can only be cloned and viewed by project members (except for guests).
 
 They will appear in the public access directory (`/public`) for project members only.
 

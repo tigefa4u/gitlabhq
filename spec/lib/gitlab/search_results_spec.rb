@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::SearchResults do
@@ -26,6 +28,43 @@ describe Gitlab::SearchResults do
 
       it 'returns with counts collection when requested' do
         expect(results.objects('projects', 1, false)).not_to be_kind_of(Kaminari::PaginatableWithoutCount)
+      end
+    end
+
+    describe '#formatted_count' do
+      using RSpec::Parameterized::TableSyntax
+
+      where(:scope, :count_method, :expected) do
+        'projects'       | :limited_projects_count       | '1000+'
+        'issues'         | :limited_issues_count         | '1000+'
+        'merge_requests' | :limited_merge_requests_count | '1000+'
+        'milestones'     | :limited_milestones_count     | '1000+'
+        'users'          | :limited_users_count          | '1000+'
+        'unknown'        | nil                           | nil
+      end
+
+      with_them do
+        it 'returns the expected formatted count' do
+          expect(results).to receive(count_method).and_return(1234) if count_method
+          expect(results.formatted_count(scope)).to eq(expected)
+        end
+      end
+    end
+
+    describe '#formatted_limited_count' do
+      using RSpec::Parameterized::TableSyntax
+
+      where(:count, :expected) do
+        23   | '23'
+        1000 | '1000'
+        1001 | '1000+'
+        1234 | '1000+'
+      end
+
+      with_them do
+        it 'returns the expected formatted limited count' do
+          expect(results.formatted_limited_count(count)).to eq(expected)
+        end
       end
     end
 

@@ -7,6 +7,11 @@ module Gitlab
         Gitlab::SafeRequestStore.fetch(:current_application_settings) { ensure_application_settings! }
       end
 
+      def expire_current_application_settings
+        ::ApplicationSetting.expire
+        Gitlab::SafeRequestStore.delete(:current_application_settings)
+      end
+
       def clear_in_memory_application_settings!
         @in_memory_application_settings = nil
       end
@@ -45,7 +50,7 @@ module Gitlab
         # need to be added to the application settings. To prevent Rake tasks
         # and other callers from failing, use any loaded settings and return
         # defaults for missing columns.
-        if ActiveRecord::Migrator.needs_migration?
+        if ActiveRecord::Base.connection.migration_context.needs_migration?
           db_attributes = current_settings&.attributes || {}
           fake_application_settings(db_attributes)
         elsif current_settings.present?

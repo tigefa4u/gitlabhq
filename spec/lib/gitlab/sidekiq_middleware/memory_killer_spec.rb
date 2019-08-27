@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::SidekiqMiddleware::MemoryKiller do
   subject { described_class.new }
   let(:pid) { 999 }
 
-  let(:worker) { double(:worker, class: 'TestWorker') }
+  let(:worker) { double(:worker, class: ProjectCacheWorker) }
   let(:job) { { 'jid' => 123 } }
   let(:queue) { 'test_queue' }
 
@@ -44,6 +46,12 @@ describe Gitlab::SidekiqMiddleware::MemoryKiller do
 
       expect(subject).to receive(:sleep).with(10).ordered
       expect(Process).to receive(:kill).with('SIGKILL', pid).ordered
+
+      expect(Sidekiq.logger)
+          .to receive(:warn).with(class: 'ProjectCacheWorker',
+                                  message: anything,
+                                  pid: pid,
+                                  signal: anything).at_least(:once)
 
       run
     end

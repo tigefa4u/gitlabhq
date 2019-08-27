@@ -14,7 +14,7 @@
       position: -webkit-sticky;
       position: sticky;
       top: $mr-file-header-top;
-      z-index: 220;
+      z-index: 120;
 
       &::before {
         content: '';
@@ -407,6 +407,14 @@ table.code {
   padding: 0;
   table-layout: fixed;
   border-radius: 0 0 $border-radius-default $border-radius-default;
+
+  tr:first-of-type.line_expansion > td {
+    border-top: 0;
+  }
+
+  tr:nth-last-of-type(2).line_expansion > td {
+    border-bottom: 0;
+  }
 
   tr.line_holder td {
     line-height: $code-line-height;
@@ -1024,7 +1032,6 @@ table.code {
   $top-pos: $header-height + $mr-tabs-height + $mr-version-controls-height + 10px;
   top: $header-height + $mr-tabs-height + $mr-version-controls-height + 10px;
   max-height: calc(100vh - #{$top-pos});
-  padding-right: $gl-padding;
   z-index: 202;
 
   .with-performance-bar & {
@@ -1035,7 +1042,7 @@ table.code {
 
   .drag-handle {
     bottom: 16px;
-    transform: translateX(-6px);
+    transform: translateX(10px);
   }
 }
 

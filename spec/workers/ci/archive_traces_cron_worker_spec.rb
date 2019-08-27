@@ -5,6 +5,8 @@ require 'spec_helper'
 describe Ci::ArchiveTracesCronWorker do
   subject { described_class.new.perform }
 
+  let(:finished_at) { 1.day.ago }
+
   before do
     stub_feature_flags(ci_enable_live_trace: true)
   end
@@ -28,20 +30,26 @@ describe Ci::ArchiveTracesCronWorker do
   end
 
   context 'when a job succeeded' do
-    let!(:build) { create(:ci_build, :success, :trace_live) }
+    let!(:build) { create(:ci_build, :success, :trace_live, finished_at: finished_at) }
 
     it_behaves_like 'archives trace'
 
     it 'executes service' do
       expect_any_instance_of(Ci::ArchiveTraceService)
-        .to receive(:execute).with(build)
+        .to receive(:execute).with(build, anything)
 
       subject
     end
 
+    context 'when the job finished recently' do
+      let(:finished_at) { 1.hour.ago }
+
+      it_behaves_like 'does not archive trace'
+    end
+
     context 'when a trace had already been archived' do
       let!(:build) { create(:ci_build, :success, :trace_live, :trace_artifact) }
-      let!(:build2) { create(:ci_build, :success, :trace_live) }
+      let!(:build2) { create(:ci_build, :success, :trace_live, finished_at: finished_at) }
 
       it 'continues to archive live traces' do
         subject
@@ -52,7 +60,7 @@ describe Ci::ArchiveTracesCronWorker do
     end
 
     context 'when an unexpected exception happened during archiving' do
-      let!(:build) { create(:ci_build, :success, :trace_live) }
+      let!(:build) { create(:ci_build, :success, :trace_live, finished_at: finished_at) }
 
       before do
         allow(Gitlab::Sentry).to receive(:track_exception)
@@ -60,7 +68,10 @@ describe Ci::ArchiveTracesCronWorker do
       end
 
       it 'puts a log' do
-        expect(Rails.logger).to receive(:error).with("Failed to archive trace. id: #{build.id} message: Unexpected error")
+        expect(Sidekiq.logger).to receive(:warn).with(
+          class: described_class.name,
+          message: "Failed to archive trace. message: Unexpected error.",
+          job_id: build.id)
 
         subject
       end
@@ -68,7 +79,7 @@ describe Ci::ArchiveTracesCronWorker do
   end
 
   context 'when a job was cancelled' do
-    let!(:build) { create(:ci_build, :canceled, :trace_live) }
+    let!(:build) { create(:ci_build, :canceled, :trace_live, finished_at: finished_at) }
 
     it_behaves_like 'archives trace'
   end

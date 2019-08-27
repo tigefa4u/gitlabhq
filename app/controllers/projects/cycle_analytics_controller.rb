@@ -9,13 +9,19 @@ class Projects::CycleAnalyticsController < Projects::ApplicationController
   before_action :authorize_read_cycle_analytics!
 
   def show
-    @cycle_analytics = ::CycleAnalytics.new(@project, options(cycle_analytics_params))
+    @cycle_analytics = ::CycleAnalytics::ProjectLevel.new(@project, options: options(cycle_analytics_params))
 
     @cycle_analytics_no_data = @cycle_analytics.no_stats?
 
     respond_to do |format|
-      format.html
-      format.json { render json: cycle_analytics_json }
+      format.html do
+        Gitlab::UsageDataCounters::CycleAnalyticsCounter.count(:views)
+
+        render :show
+      end
+      format.json do
+        render json: cycle_analytics_json
+      end
     end
   end
 

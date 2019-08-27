@@ -67,7 +67,7 @@ module Gitlab
         File.read(cert_file).scan(PEM_REGEX).map do |cert|
           OpenSSL::X509::Certificate.new(cert).to_pem
         rescue OpenSSL::OpenSSLError => e
-          Rails.logger.error "Could not load certificate #{cert_file} #{e}"
+          Rails.logger.error "Could not load certificate #{cert_file} #{e}" # rubocop:disable Gitlab/RailsLogger
           Gitlab::Sentry.track_exception(e, extra: { cert_file: cert_file })
           nil
         end.compact
@@ -211,8 +211,7 @@ module Gitlab
       metadata['call_site'] = feature.to_s if feature
       metadata['gitaly-servers'] = address_metadata(remote_storage) if remote_storage
       metadata['x-gitlab-correlation-id'] = Labkit::Correlation::CorrelationId.current_id if Labkit::Correlation::CorrelationId.current_id
-      metadata['gitaly-session-id'] = session_id if Feature::Gitaly.enabled?(Feature::Gitaly::CATFILE_CACHE)
-
+      metadata['gitaly-session-id'] = session_id
       metadata.merge!(Feature::Gitaly.server_feature_flags)
 
       result = { metadata: metadata }
@@ -241,7 +240,7 @@ module Gitlab
 
     # Ensures that Gitaly is not being abuse through n+1 misuse etc
     def self.enforce_gitaly_request_limits(call_site)
-      # Only count limits in request-response environments (not sidekiq for example)
+      # Only count limits in request-response environments
       return unless Gitlab::SafeRequestStore.active?
 
       # This is this actual number of times this call was made. Used for information purposes only
@@ -388,34 +387,34 @@ module Gitlab
     end
 
     def self.can_use_disk?(storage)
-      false
-      # cached_value = MUTEX.synchronize do
-      #   @can_use_disk ||= {}
-      #   @can_use_disk[storage]
-      # end
+      cached_value = MUTEX.synchronize do
+        @can_use_disk ||= {}
+        @can_use_disk[storage]
+      end
 
-      # return cached_value unless cached_value.nil?
+      return cached_value unless cached_value.nil?
 
-      # gitaly_filesystem_id = filesystem_id(storage)
-      # direct_filesystem_id = filesystem_id_from_disk(storage)
+      gitaly_filesystem_id = filesystem_id(storage)
+      direct_filesystem_id = filesystem_id_from_disk(storage)
 
-      # MUTEX.synchronize do
-      #   @can_use_disk[storage] = gitaly_filesystem_id.present? &&
-      #     gitaly_filesystem_id == direct_filesystem_id
-      # end
+      MUTEX.synchronize do
+        @can_use_disk[storage] = gitaly_filesystem_id.present? &&
+          gitaly_filesystem_id == direct_filesystem_id
+      end
     end
 
     def self.filesystem_id(storage)
       response = Gitlab::GitalyClient::ServerService.new(storage).info
       storage_status = response.storage_statuses.find { |status| status.storage_name == storage }
-      storage_status.filesystem_id
+
+      storage_status&.filesystem_id
     end
 
     def self.filesystem_id_from_disk(storage)
       metadata_file = File.read(storage_metadata_file_path(storage))
       metadata_hash = JSON.parse(metadata_file)
       metadata_hash['gitaly_filesystem_id']
-    rescue Errno::ENOENT, JSON::ParserError
+    rescue Errno::ENOENT, Errno::EACCES, JSON::ParserError
       nil
     end
 

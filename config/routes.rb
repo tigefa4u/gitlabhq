@@ -58,6 +58,7 @@ Rails.application.routes.draw do
   # Search
   get 'search' => 'search#show'
   get 'search/autocomplete' => 'search#autocomplete', as: :search_autocomplete
+  get 'search/count' => 'search#count', as: :search_count
 
   # JSON Web Token
   get 'jwt/auth' => 'jwt#auth'
@@ -82,7 +83,11 @@ Rails.application.routes.draw do
         resources :issues, only: [:index, :create, :update]
       end
 
-      resources :issues, module: :boards, only: [:index, :update]
+      resources :issues, module: :boards, only: [:index, :update] do
+        collection do
+          put :bulk_move, format: :json
+        end
+      end
 
       Gitlab.ee do
         resources :users, module: :boards, only: [:index]
@@ -104,13 +109,23 @@ Rails.application.routes.draw do
     Gitlab.ee do
       draw :smartcard
       draw :jira_connect
+      draw :username
     end
 
-    if ENV['GITLAB_ENABLE_CHAOS_ENDPOINTS']
-      get '/chaos/leakmem' => 'chaos#leakmem'
-      get '/chaos/cpuspin' => 'chaos#cpuspin'
-      get '/chaos/sleep' => 'chaos#sleep'
-      get '/chaos/kill' => 'chaos#kill'
+    Gitlab.ee do
+      constraints(::Constraints::FeatureConstrainer.new(:analytics)) do
+        draw :analytics
+      end
+    end
+
+    if ENV['GITLAB_CHAOS_SECRET'] || Rails.env.development? || Rails.env.test?
+      resource :chaos, only: [] do
+        get :leakmem
+        get :cpu_spin
+        get :db_spin
+        get :sleep
+        get :kill
+      end
     end
   end
 

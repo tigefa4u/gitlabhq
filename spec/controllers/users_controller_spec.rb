@@ -19,7 +19,7 @@ describe UsersController do
         it 'renders the show template' do
           get :show, params: { username: user.username }
 
-          expect(response).to be_success
+          expect(response).to be_successful
           expect(response).to render_template('show')
         end
       end
@@ -291,7 +291,7 @@ describe UsersController do
       it 'response with snippets json data' do
         get :snippets, params: { username: user.username }, format: :json
         expect(response).to have_gitlab_http_status(200)
-        expect(JSON.parse(response.body)).to have_key('html')
+        expect(json_response).to have_key('html')
       end
     end
 
@@ -362,7 +362,7 @@ describe UsersController do
             it 'responds with success' do
               get :show, params: { username: user.username }
 
-              expect(response).to be_success
+              expect(response).to be_successful
             end
           end
 
@@ -418,7 +418,7 @@ describe UsersController do
             it 'responds with success' do
               get :projects, params: { username: user.username }
 
-              expect(response).to be_success
+              expect(response).to be_successful
             end
           end
 

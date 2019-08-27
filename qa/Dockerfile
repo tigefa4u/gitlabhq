@@ -47,9 +47,15 @@ RUN export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)" && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
     apt-get update -y && apt-get install google-cloud-sdk kubectl -y
 
-WORKDIR /home/qa
-COPY ./Gemfile* ./
-RUN bundle install
-COPY ./ ./
+WORKDIR /home/gitlab/qa
+COPY ./qa/Gemfile* /home/gitlab/qa/
+COPY ./config/initializers/0_inject_enterprise_edition_module.rb /home/gitlab/config/initializers/
+# Copy VERSION to ensure the COPY succeeds to copy at least one file since ee/app/models/license.rb isn't present in CE
+COPY VERSION ./ee/app/models/license.r[b] /home/gitlab/ee/app/models/
+COPY ./lib/gitlab.rb /home/gitlab/lib/
+COPY ./INSTALLATION_TYPE /home/gitlab/
+COPY ./VERSION /home/gitlab/
+RUN cd /home/gitlab/qa/ && bundle install
+COPY ./qa /home/gitlab/qa
 
 ENTRYPOINT ["bin/test"]

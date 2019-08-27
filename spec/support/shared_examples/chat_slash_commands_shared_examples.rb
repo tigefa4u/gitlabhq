@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.shared_examples 'chat slash commands service' do
   describe "Associations" do
     it { is_expected.to respond_to :token }
@@ -90,6 +92,19 @@ RSpec.shared_examples 'chat slash commands service' do
           expect_any_instance_of(Gitlab::SlashCommands::Command).to receive(:execute)
 
           subject.trigger(params)
+        end
+
+        context 'when user is blocked' do
+          before do
+            chat_name.user.block
+          end
+
+          it 'blocks command execution' do
+            expect_any_instance_of(Gitlab::SlashCommands::Command).not_to receive(:execute)
+
+            result = subject.trigger(params)
+            expect(result).to include(text: /^Whoops! This action is not allowed/)
+          end
         end
       end
     end

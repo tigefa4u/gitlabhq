@@ -101,6 +101,10 @@ pre.code,
   color: $white-code-color;
 }
 
+.line_expansion {
+  @include diff-expansion($gray-light, $border-color, $blue-600);
+}
+
 // Diff line
 .line_holder {
   &.match .line_content,

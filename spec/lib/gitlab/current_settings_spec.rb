@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::CurrentSettings do
@@ -9,6 +11,16 @@ describe Gitlab::CurrentSettings do
     before do
       create(:application_setting)
       described_class.current_application_settings # warm the cache
+    end
+  end
+
+  describe '.expire_current_application_settings', :use_clean_rails_memory_store_caching, :request_store do
+    include_context 'with settings in cache'
+
+    it 'expires the cache' do
+      described_class.expire_current_application_settings
+
+      expect(ActiveRecord::QueryRecorder.new { described_class.current_application_settings }.count).not_to eq(0)
     end
   end
 
@@ -80,7 +92,7 @@ describe Gitlab::CurrentSettings do
           # during the initialization phase of the test suite, so instead let's mock the internals of it
           expect(ActiveRecord::Base.connection).not_to receive(:active?)
           expect(ActiveRecord::Base.connection).not_to receive(:cached_table_exists?)
-          expect(ActiveRecord::Migrator).not_to receive(:needs_migration?)
+          expect_any_instance_of(ActiveRecord::MigrationContext).not_to receive(:needs_migration?)
           expect(ActiveRecord::QueryRecorder.new { described_class.current_application_settings }.count).to eq(0)
         end
       end
@@ -109,7 +121,7 @@ describe Gitlab::CurrentSettings do
 
         context 'with pending migrations' do
           before do
-            expect(ActiveRecord::Migrator).to receive(:needs_migration?).and_return(true)
+            expect_any_instance_of(ActiveRecord::MigrationContext).to receive(:needs_migration?).and_return(true)
           end
 
           shared_examples 'a non-persisted ApplicationSetting object' do

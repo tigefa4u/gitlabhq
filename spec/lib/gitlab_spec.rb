@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'fast_spec_helper'
 
 require_dependency 'gitlab'
@@ -135,6 +137,12 @@ describe Gitlab do
         .and_return(license_path)
 
       expect(described_class.ee?).to eq(false)
+    end
+
+    it 'returns true when the IS_GITLAB_EE variable is not empty' do
+      stub_env('IS_GITLAB_EE', '1')
+
+      expect(described_class.ee?).to eq(true)
     end
   end
 

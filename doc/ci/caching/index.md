@@ -8,7 +8,7 @@ GitLab CI/CD provides a caching mechanism that can be used to save time
 when your jobs are running.
 
 Caching is about speeding the time a job is executed by reusing the same
-content of a previous job. It can be particularly useful when your are
+content of a previous job. It can be particularly useful when you are
 developing software that depends on other libraries which are fetched via the
 internet during build time.
 
@@ -170,6 +170,29 @@ disable it completely, use an empty hash:
 ```yaml
 job:
   cache: {}
+```
+
+### Inherit global config, but override specific settings per job
+
+You can override cache settings without overwriting the global cache by using
+[anchors](../yaml/README.md#anchors). For example, if you want to override the 
+`policy` for one job:
+
+```yaml
+cache: &global_cache
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+      - public/
+      - vendor/
+    policy: pull-push
+
+job:
+  cache:
+    # inherit all global cache settings
+    <<: *global_cache
+    # override the policy
+    policy: pull
 ```
 
 For more fine tuning, read also about the
@@ -378,8 +401,8 @@ Here's what happens behind the scenes:
 1. `script` is executed.
 1. `after_script` is executed.
 1. `cache` runs and the `vendor/` directory is zipped into `cache.zip`.
-    This file is then saved in the directory based on the
-    [Runner's setting](#where-the-caches-are-stored) and the `cache: key`.
+   This file is then saved in the directory based on the
+   [Runner's setting](#where-the-caches-are-stored) and the `cache: key`.
 1. `job B` runs.
 1. The cache is extracted (if found).
 1. `before_script` is executed.
@@ -520,7 +543,7 @@ via GitLab's UI:
 1. Navigate to your project's **CI/CD > Pipelines** page.
 1. Click on the **Clear Runner caches** button to clean up the cache.
 
-    ![Clear Runners cache](img/clear_runners_cache.png)
+   ![Clear Runners cache](img/clear_runners_cache.png)
 
 1. On the next push, your CI/CD job will use a new cache.
 

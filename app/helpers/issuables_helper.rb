@@ -282,6 +282,10 @@ module IssuablesHelper
 
     data[:hasClosingMergeRequest] = issuable.merge_requests_count(current_user) != 0 if issuable.is_a?(Issue)
 
+    zoom_links = Gitlab::ZoomLinkExtractor.new(issuable.description).links
+
+    data[:zoomMeetingUrl] = zoom_links.last if zoom_links.any?
+
     if parent.is_a?(Group)
       data[:groupPath] = parent.path
     else
@@ -401,7 +405,11 @@ module IssuablesHelper
       placement: is_collapsed ? 'left' : nil,
       container: is_collapsed ? 'body' : nil,
       boundary: 'viewport',
-      is_collapsed: is_collapsed
+      is_collapsed: is_collapsed,
+      track_label: "right_sidebar",
+      track_property: "update_todo",
+      track_event: "click_button",
+      track_value: ""
     }
   end
 

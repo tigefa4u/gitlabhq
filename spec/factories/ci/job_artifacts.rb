@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 include ActionDispatch::TestProcess
 
 FactoryBot.define do
@@ -5,6 +7,10 @@ FactoryBot.define do
     job factory: :ci_build
     file_type :archive
     file_format :zip
+
+    trait :expired do
+      expire_at { Date.yesterday }
+    end
 
     trait :remote_store do
       file_store JobArtifactUploader::Store::REMOTE

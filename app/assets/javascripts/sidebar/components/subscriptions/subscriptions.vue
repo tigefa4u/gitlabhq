@@ -4,6 +4,7 @@ import icon from '~/vue_shared/components/icon.vue';
 import toggleButton from '~/vue_shared/components/toggle_button.vue';
 import tooltip from '~/vue_shared/directives/tooltip';
 import eventHub from '../../event_hub';
+import { trackEvent } from 'ee_else_ce/event_tracking/issue_sidebar';
 
 const ICON_ON = 'notifications';
 const ICON_OFF = 'notifications-off';
@@ -63,6 +64,8 @@ export default {
 
       // Component event emission.
       this.$emit('toggleSubscription', this.id);
+
+      trackEvent('toggle_button', 'notifications', this.subscribed ? 0 : 1);
     },
     onClickCollapsedIcon() {
       this.$emit('toggleSidebar');
@@ -73,22 +76,22 @@ export default {
 
 <template>
   <div>
-    <div class="sidebar-collapsed-icon" @click="onClickCollapsedIcon">
-      <span
-        v-tooltip
-        :title="notificationTooltip"
-        data-container="body"
-        data-placement="left"
-        data-boundary="viewport"
-      >
-        <icon
-          :name="notificationIcon"
-          :size="16"
-          aria-hidden="true"
-          class="sidebar-item-icon is-active"
-        />
-      </span>
-    </div>
+    <span
+      v-tooltip
+      class="sidebar-collapsed-icon"
+      :title="notificationTooltip"
+      data-container="body"
+      data-placement="left"
+      data-boundary="viewport"
+      @click="onClickCollapsedIcon"
+    >
+      <icon
+        :name="notificationIcon"
+        :size="16"
+        aria-hidden="true"
+        class="sidebar-item-icon is-active"
+      />
+    </span>
     <span class="issuable-header-text hide-collapsed float-left"> {{ __('Notifications') }} </span>
     <toggle-button
       ref="toggleButton"

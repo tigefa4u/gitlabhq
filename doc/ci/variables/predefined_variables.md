@@ -30,7 +30,7 @@ future GitLab releases.**
 | `CI_BUILDS_DIR`                         | all    | 11.10  | Top-level directory where builds are executed. |
 | `CI_CONCURRENT_ID`                      | all    | 11.10  | Unique ID of build execution within a single executor. |
 | `CI_CONCURRENT_PROJECT_ID`              | all    | 11.10  | Unique ID of build execution within a single executor and project. |
-| `CI_COMMIT_BEFORE_SHA`                  | 11.2   | all    | The previous latest commit present on a branch before a push request. Only populated when there is a merge request associated with the pipeline. |
+| `CI_COMMIT_BEFORE_SHA`                  | 11.2   | all    | The previous latest commit present on a branch before a merge request. Only populated when there is a merge request associated with the pipeline. |
 | `CI_COMMIT_DESCRIPTION`                 | 10.8   | all    | The description of the commit: the message without first line, if the title is shorter than 100 characters; full message in other case. |
 | `CI_COMMIT_MESSAGE`                     | 10.8   | all    | The full commit message. |
 | `CI_COMMIT_REF_NAME`                    | 9.0    | all    | The branch or tag name for which project is built |
@@ -101,6 +101,7 @@ future GitLab releases.**
 | `CI_RUNNER_TAGS`                        | 8.10   | 0.5    | The defined runner tags |
 | `CI_RUNNER_VERSION`                     | all    | 10.6   | GitLab Runner version that is executing the current job |
 | `CI_SERVER`                             | all    | all    | Mark that job is executed in CI environment |
+| `CI_SERVER_HOST`                        | 12.1   | all    | Host component of the GitLab instance URL, without protocol and port (like gitlab.example.com) |
 | `CI_SERVER_NAME`                        | all    | all    | The name of CI server that is used to coordinate jobs |
 | `CI_SERVER_REVISION`                    | all    | all    | GitLab revision that is used to schedule jobs |
 | `CI_SERVER_VERSION`                     | all    | all    | GitLab version that is used to schedule jobs |

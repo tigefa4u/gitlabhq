@@ -12,6 +12,7 @@ special searches:
 - [Advanced Syntax Search](../user/search/advanced_search_syntax.md)
 
 ## Version Requirements
+
 <!-- Please remember to update ee/lib/system_check/app/elasticsearch_check.rb if this changes -->
 
 | GitLab version | Elasticsearch version |
@@ -23,25 +24,32 @@ special searches:
 ## Installing Elasticsearch
 
 Elasticsearch is _not_ included in the Omnibus packages. You will have to
-install it yourself whether you are using the Omnibus package or installed
-GitLab from source. Providing detailed information on installing Elasticsearch
-is out of the scope of this document.
+[install it yourself](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html "Elasticsearch installation documentation")
+whether you are using the Omnibus package or installed GitLab from source.
+Providing detailed information on installing Elasticsearch is out of the scope
+of this document.
+
+NOTE: **Note:**
+Elasticsearch should be installed on a separate server, whether you install
+it yourself or by using the
+[Amazon Elasticsearch](http://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/es-gsg.html)
+service. Running Elasticsearch on the same server as GitLab is not recommended
+and it will likely cause performance degradation on the GitLab installation.
 
 Once the data is added to the database or repository and [Elasticsearch is
 enabled in the admin area](#enabling-elasticsearch) the search index will be
-updated automatically. Elasticsearch can be installed on the same machine as
-GitLab or on a separate server, or you can use the [Amazon Elasticsearch](http://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/es-gsg.html)
-service.
-
-You can follow the steps as described in the [official web site](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html "Elasticsearch installation documentation") or
-use the packages that are available for your OS.
+updated automatically.
 
 ## Elasticsearch repository indexer (beta)
 
 In order to improve elasticsearch indexing performance, GitLab has made available a [new indexer written in Go](https://gitlab.com/gitlab-org/gitlab-elasticsearch-indexer).
 This will replace the included Ruby indexer in the future but should be considered beta software for now, so there may be some bugs.
 
-If you would like to use it, please follow the instructions below.
+The Elasticsearch Go indexer is included in Omnibus for GitLab 11.8 and newer.
+
+To use the new Elasticsearch indexer included in Omnibus, check the box "Use the new repository indexer (beta)"  when [enabling the Elasticsearch integration](#enabling-elasticsearch).
+
+If you would like to use the Elasticsearch Go indexer with a source installation or an older version of GitLab, please follow the instructions below.
 
 ### Installation
 
@@ -115,8 +123,8 @@ production instances, they recommend considerably more resources.
 
 Storage requirements also vary based on the installation side, but as a rule of
 thumb, you should allocate the total size of your production database, **plus**
-two-thirds of the total size of your git repositories. Efforts to reduce this
-total are being tracked in this epic: [gitlab-org&153](https://gitlab.com/groups/gitlab-org/-/epics/153).
+two-thirds of the total size of your Git repositories. Efforts to reduce this
+total are being tracked in [epic &153](https://gitlab.com/groups/gitlab-org/-/epics/153).
 
 ## Enabling Elasticsearch
 
@@ -325,30 +333,36 @@ curl --request PUT localhost:9200/gitlab-production/_settings --data '{
 
 Enable Elasticsearch search in **Admin > Settings > Integrations**. That's it. Enjoy it!
 
+### Index limit
+
+Currently for repository and snippet files, GitLab would only index up to 1 MB of content, in order to avoid indexing timeout.
+
 ## GitLab Elasticsearch Rake Tasks
 
 There are several rake tasks available to you via the command line:
 
-- [sudo gitlab-rake gitlab:elastic:index](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
+- [`sudo gitlab-rake gitlab:elastic:index`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
   - This is a wrapper task. It does the following:
     - `sudo gitlab-rake gitlab:elastic:create_empty_index`
     - `sudo gitlab-rake gitlab:elastic:clear_index_status`
     - `sudo gitlab-rake gitlab:elastic:index_projects`
     - `sudo gitlab-rake gitlab:elastic:index_snippets`
-- [sudo gitlab-rake gitlab:elastic:index_projects](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
+- [`sudo gitlab-rake gitlab:elastic:index_projects`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
   - This iterates over all projects and queues sidekiq jobs to index them in the background.
-- [sudo gitlab-rake gitlab:elastic:index_projects_status](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
+- [`sudo gitlab-rake gitlab:elastic:index_projects_status`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
   - This determines the overall status of the indexing. It is done by counting the total number of indexed projects, dividing by a count of the total number of projects, then multiplying by 100.
-- [sudo gitlab-rake gitlab:elastic:create_empty_index](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
+- [`sudo gitlab-rake gitlab:elastic:create_empty_index`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
   - This generates an empty index on the Elasticsearch side.
-- [sudo gitlab-rake gitlab:elastic:clear_index_status](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
+- [`sudo gitlab-rake gitlab:elastic:clear_index_status`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
   - This deletes all instances of IndexStatus for all projects.
-- [sudo gitlab-rake gitlab:elastic:delete_index](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
+- [`sudo gitlab-rake gitlab:elastic:delete_index`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
   - This removes the GitLab index on the Elasticsearch instance.
-- [sudo gitlab-rake gitlab:elastic:recreate_index](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
+- [`sudo gitlab-rake gitlab:elastic:recreate_index`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
   - Does the same thing as `sudo gitlab-rake gitlab:elastic:create_empty_index`
-- [sudo gitlab-rake gitlab:elastic:index_snippets](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
+- [`sudo gitlab-rake gitlab:elastic:index_snippets`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
   - Performs an Elasticsearch import that indexes the snippets data.
+- [`sudo gitlab-rake gitlab:elastic:projects_not_indexed`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/ee/lib/tasks/gitlab/elastic.rake)
+  - Displays which projects are not indexed.
 
 ### Environment Variables
 
@@ -424,91 +438,94 @@ Here are some common pitfalls and how to overcome them:
 
 - **How can I verify my GitLab instance is using Elasticsearch?**
 
-    The easiest method is via the rails console (`sudo gitlab-rails console`) by running the following:
+  The easiest method is via the rails console (`sudo gitlab-rails console`) by running the following:
 
-    ```ruby
-    u = User.find_by_username('your-username')
-    s = SearchService.new(u, {:search => 'search_term'})
-    pp s.search_objects.class.name
-    ```
+  ```ruby
+  u = User.find_by_username('your-username')
+  s = SearchService.new(u, {:search => 'search_term'})
+  pp s.search_objects.class.name
+  ```
 
-    If you see `Elasticsearch::Model::Response::Records`, you are using Elasticsearch.
+  If you see `Elasticsearch::Model::Response::Records`, you are using Elasticsearch.
 
 - **I updated GitLab and now I can't find anything**
 
-    We continuously make updates to our indexing strategies and aim to support
-    newer versions of Elasticsearch. When indexing changes are made, it may
-    be necessary for you to [reindex](#adding-gitlabs-data-to-the-elasticsearch-index) after updating GitLab.
+  We continuously make updates to our indexing strategies and aim to support
+  newer versions of Elasticsearch. When indexing changes are made, it may
+  be necessary for you to [reindex](#adding-gitlabs-data-to-the-elasticsearch-index) after updating GitLab.
 
 - **I indexed all the repositories but I can't find anything**
 
-    Make sure you indexed all the database data [as stated above](#adding-gitlabs-data-to-the-elasticsearch-index).
+  Make sure you indexed all the database data [as stated above](#adding-gitlabs-data-to-the-elasticsearch-index).
 
-    Beyond that, check via the [Elasticsearch Search API](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-search.html) to see if the data shows up on the Elasticsearch side.
+  Beyond that, check via the [Elasticsearch Search API](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-search.html) to see if the data shows up on the Elasticsearch side.
 
-    If it shows up via the [Elasticsearch Search API](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-search.html), check that it shows up via the rails console (`sudo gitlab-rails console`):
+  If it shows up via the [Elasticsearch Search API](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-search.html), check that it shows up via the rails console (`sudo gitlab-rails console`):
 
-    ```ruby
-    u = User.find_by_username('your-username')
-    s = SearchService.new(u, {:search => 'search_term', :scope => ‘blobs’})
-    pp s.search_objects.to_a
-    ```
+  ```ruby
+  u = User.find_by_username('your-username')
+  s = SearchService.new(u, {:search => 'search_term', :scope => ‘blobs’})
+  pp s.search_objects.to_a
+  ```
 
-    See [Elasticsearch Index Scopes](elasticsearch.md#elasticsearch-index-scopes) for more information on searching for specific types of data.
+  See [Elasticsearch Index Scopes](elasticsearch.md#elasticsearch-index-scopes) for more information on searching for specific types of data.
 
 - **I indexed all the repositories but then switched Elasticsearch servers and now I can't find anything**
 
-    You will need to re-run all the rake tasks to re-index the database, repositories, and wikis.
+  You will need to re-run all the rake tasks to re-index the database, repositories, and wikis.
 
 - **The indexing process is taking a very long time**
 
-    The more data present in your GitLab instance, the longer the indexing process takes.
+  The more data present in your GitLab instance, the longer the indexing process takes.
+
+- **There are some projects that weren't indexed, but we don't know which ones**
+
+  You can run `sudo gitlab-rake gitlab:elastic:projects_not_indexed` to display projects that aren't indexed.
 
 - **No new data is added to the Elasticsearch index when I push code**
 
-    When performing the initial indexing of blobs, we lock all projects until the project finishes indexing. It could
-    happen that an error during the process causes one or multiple projects to remain locked. In order to unlock them,
-    run the `gitlab:elastic:clear_locked_projects` rake task.
+  When performing the initial indexing of blobs, we lock all projects until the project finishes indexing. It could
+  happen that an error during the process causes one or multiple projects to remain locked. In order to unlock them,
+  run the `gitlab:elastic:clear_locked_projects` rake task.
 
 - **"Can't specify parent if no parent field has been configured"**
 
-    If you enabled Elasticsearch before GitLab 8.12 and have not rebuilt indexes you will get
-    exception in lots of different cases:
+  If you enabled Elasticsearch before GitLab 8.12 and have not rebuilt indexes you will get
+  exception in lots of different cases:
 
-    ```text
-    Elasticsearch::Transport::Transport::Errors::BadRequest([400] {
-        "error": {
-            "root_cause": [{
-                "type": "illegal_argument_exception",
-                "reason": "Can't specify parent if no parent field has been configured"
-            }],
-            "type": "illegal_argument_exception",
-            "reason": "Can't specify parent if no parent field has been configured"
-        },
-        "status": 400
-    }):
-    ```
+  ```text
+  Elasticsearch::Transport::Transport::Errors::BadRequest([400] {
+      "error": {
+          "root_cause": [{
+              "type": "illegal_argument_exception",
+              "reason": "Can't specify parent if no parent field has been configured"
+          }],
+          "type": "illegal_argument_exception",
+          "reason": "Can't specify parent if no parent field has been configured"
+      },
+      "status": 400
+  }):
+  ```
 
-    This is because we changed the index mapping in GitLab 8.12 and the old indexes should be removed and built from scratch again,
-    see details in the [8-11-to-8-12 update guide](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/doc/update/8.11-to-8.12.md#11-elasticsearch-index-update-if-you-currently-use-elasticsearch).
+  This is because we changed the index mapping in GitLab 8.12 and the old indexes should be removed and built from scratch again,
+  see details in the [8-11-to-8-12 update guide](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/doc/update/8.11-to-8.12.md#11-elasticsearch-index-update-if-you-currently-use-elasticsearch).
 
 - Exception `Elasticsearch::Transport::Transport::Errors::BadRequest`
 
-    If you have this exception (just like in the case above but the actual message is different) please check if you have the correct Elasticsearch version and you met the other [requirements](#system-requirements).
-    There is also an easy way to check it automatically with `sudo gitlab-rake gitlab:check` command.
+  If you have this exception (just like in the case above but the actual message is different) please check if you have the correct Elasticsearch version and you met the other [requirements](#system-requirements).
+  There is also an easy way to check it automatically with `sudo gitlab-rake gitlab:check` command.
 
 - Exception `Elasticsearch::Transport::Transport::Errors::RequestEntityTooLarge`
 
-    ```text
-    [413] {"Message":"Request size exceeded 10485760 bytes"}
-    ```
+  ```text
+  [413] {"Message":"Request size exceeded 10485760 bytes"}
+  ```
 
-    This exception is seen when your Elasticsearch cluster is configured to reject
-    requests above a certain size (10MiB in this case). This corresponds to the
-    `http.max_content_length` setting in `elasticsearch.yml`. Increase it to a
-    larger size and restart your Elasticsearch cluster.
+  This exception is seen when your Elasticsearch cluster is configured to reject
+  requests above a certain size (10MiB in this case). This corresponds to the
+  `http.max_content_length` setting in `elasticsearch.yml`. Increase it to a
+  larger size and restart your Elasticsearch cluster.
 
-    AWS has [fixed limits](http://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/aes-limits.html)
-    for this setting ("Maximum Size of HTTP Request Payloads"), based on the size of
-    the underlying instance.
-
+  AWS has [fixed limits](http://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/aes-limits.html)
+  for this setting ("Maximum Size of HTTP Request Payloads"), based on the size of
+  the underlying instance.

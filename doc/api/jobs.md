@@ -409,10 +409,10 @@ Possible response status codes:
 > - The use of `CI_JOB_TOKEN` in the artifacts download API was [introduced][ee-2346]
 >   in [GitLab Premium][ee] 9.5.
 
-Download the artifacts zipped archive from the given reference name and job,
-provided the job finished successfully. This is the same as
-[getting the job's artifacts](#get-job-artifacts), but by defining the job's
-name instead of its ID.
+Download the artifacts zipped archive from the latest successful pipeline for
+the given reference name and job, provided the job finished successfully. This
+is the same as [getting the job's artifacts](#get-job-artifacts), but by
+defining the job's name instead of its ID.
 
 ```
 GET /projects/:id/jobs/artifacts/:ref_name/download?job=name
@@ -491,7 +491,7 @@ Parameters
 Example request:
 
 ```sh
-curl --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/1/jobs/5/artifacts/some/release/file.pdf"
+curl --location --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/1/jobs/5/artifacts/some/release/file.pdf"
 ```
 
 Possible response status codes:
@@ -506,9 +506,9 @@ Possible response status codes:
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/23538) in GitLab 11.5.
 
-Download a single artifact file from a specific tag or branch from within the
-job's artifacts archive. The file is extracted from the archive and streamed to
-the client.
+Download a single artifact file for a specific job of the latest successful
+pipeline for the given reference name from within the job's artifacts archive.
+The file is extracted from the archive and streamed to the client.
 
 ```
 GET /projects/:id/jobs/artifacts/:ref_name/raw/*artifact_path?job=name
@@ -526,7 +526,7 @@ Parameters:
 Example request:
 
 ```sh
-curl --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/1/jobs/artifacts/master/raw/some/release/file.pdf?job=pdf"
+curl --location --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/1/jobs/artifacts/master/raw/some/release/file.pdf?job=pdf"
 ```
 
 Possible response status codes:
@@ -551,7 +551,7 @@ GET /projects/:id/jobs/:job_id/trace
 | job_id    | integer        | yes      | ID of a job.                                                                                                 |
 
 ```sh
-curl --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/1/jobs/8/trace"
+curl --location --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/1/jobs/8/trace"
 ```
 
 Possible response status codes:

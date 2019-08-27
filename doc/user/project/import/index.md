@@ -10,7 +10,7 @@
 1. [From Gitea](gitea.md)
 1. [From Perforce](perforce.md)
 1. [From SVN](svn.md)
-1. [From TFS](tfs.md)
+1. [From TFVC](tfvc.md)
 1. [From repo by URL](repo_by_url.md)
 1. [By uploading a manifest file (AOSP)](manifest.md)
 1. [From Gemnasium](gemnasium.md)
@@ -34,7 +34,7 @@ This approach assumes all users from the self-hosted instance have already been 
 If the users haven't been migrated yet, the user conducting the import
 will take the place of all references to the missing user(s).
 
-If you need to migrate all data over, you can leverage our [api](../../../api/README.md) to migrate from self-hosted to GitLab.com. 
+If you need to migrate all data over, you can leverage our [api](../../../api/README.md) to migrate from self-hosted to GitLab.com.
 The order of assets to migrate from a self-hosted instance to GitLab is the following:
 
 1. [Users](../../../api/users.md)
@@ -54,5 +54,5 @@ perhaps from an old server to a new server for example, is to
 [back up the project](../../../raketasks/backup_restore.md),
 then restore it on the new server.
 
-In the event of merging two GitLab instances together (for example, both instances have existing data on them and one can't be wiped), 
+In the event of merging two GitLab instances together (for example, both instances have existing data on them and one can't be wiped),
 refer to the instructions in [Migrating from self-hosted GitLab to GitLab.com](#migrating-from-self-hosted-gitlab-to-gitlabcom).

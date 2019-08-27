@@ -3,9 +3,9 @@ comments: false
 description: 'Learn how to contribute to GitLab.'
 ---
 
-# GitLab development guides
+# Contributor and Development Docs
 
-## Get started!
+## Get started
 
 - Set up GitLab's development environment with [GitLab Development Kit (GDK)](https://gitlab.com/gitlab-org/gitlab-development-kit/blob/master/doc/howto/README.md)
 - [GitLab contributing guide](contributing/index.md)
@@ -17,12 +17,13 @@ description: 'Learn how to contribute to GitLab.'
 - [GitLab core team & GitLab Inc. contribution process](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/PROCESS.md)
 - [Generate a changelog entry with `bin/changelog`](changelog.md)
 - [Code review guidelines](code_review.md) for reviewing code and having code reviewed
+- [Database review guidelines](database_review.md) for reviewing database-related changes and complex SQL queries
 - [Automatic CE->EE merge](automatic_ce_ee_merge.md)
 - [Guidelines for implementing Enterprise Edition features](ee_features.md)
 - [Security process for developers](https://gitlab.com/gitlab-org/release/docs/blob/master/general/security/developer.md#security-releases-critical-non-critical-as-a-developer)
 - [Requesting access to Chatops on GitLab.com](chatops_on_gitlabcom.md#requesting-access) (for GitLabbers)
 
-## UX and frontend guides
+## UX and Frontend guides
 
 - [GitLab Design System](https://design.gitlab.com/) for building GitLab with existing CSS styles and elements
 - [Frontend guidelines](fe_guide/index.md)
@@ -63,6 +64,8 @@ description: 'Learn how to contribute to GitLab.'
 - [Routing](routing.md)
 - [Repository mirroring](repository_mirroring.md)
 - [Git LFS](lfs.md)
+- [Developing against interacting components or features](interacting_components.md)
+- [File uploads](uploads.md)
 
 ## Performance guides
 
@@ -111,6 +114,11 @@ description: 'Learn how to contribute to GitLab.'
 - [Database helper modules](database_helpers.md)
 - [Code comments](code_comments.md)
 
+## Case studies
+
+- [Database case study: Filtering by label](filtering_by_label.md)
+- [Database case study: Namespaces storage statistics](namespaces_storage_statistics.md)
+
 ## Integration guides
 
 - [Jira Connect app](integrations/jira_connect.md)
@@ -143,6 +151,10 @@ description: 'Learn how to contribute to GitLab.'
 ## Go guides
 
 - [Go Guidelines](go_guide/index.md)
+
+## Shell Scripting guides
+
+- [Shell scripting standards and style guidelines](shell_scripting_guide/index.md)
 
 ## Other GitLab Development Kit (GDK) guides
 

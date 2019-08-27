@@ -100,6 +100,7 @@ The following table lists available parameters for jobs:
 | [`stage`](#stage)                                  | Defines a job stage (default: `test`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | [`only`](#onlyexcept-basic)                        | Limit when jobs are created. Also available: [`only:refs`, `only:kubernetes`, `only:variables`, and `only:changes`](#onlyexcept-advanced).                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | [`except`](#onlyexcept-basic)                      | Limit when jobs are not created. Also available: [`except:refs`, `except:kubernetes`, `except:variables`, and `except:changes`](#onlyexcept-advanced).                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| [`rules`](#rules)                                  | List of coniditions to evaluate and determine selected attributes of a build and whether or not it is created. May not be used alongside `only`/`except`.
 | [`tags`](#tags)                                    | List of tags which are used to select Runner.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | [`allow_failure`](#allow_failure)                  | Allow job to fail. Failed job doesn't contribute to commit status.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | [`when`](#when)                                    | When to run job. Also available: `when:manual` and `when:delayed`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -118,6 +119,35 @@ The following table lists available parameters for jobs:
 
 NOTE: **Note:**
 Parameters `types` and `type` are [deprecated](#deprecated-parameters).
+
+## Setting default parameters
+
+Some parameters can be set globally as the default for all jobs using the
+`default:` keyword. Default parameters can then be overridden by job-specific
+configuration.
+
+The following job parameters can be defined inside a `default:` block:
+
+- [`image`](#image)
+- [`services`](#services)
+- [`before_script`](#before_script-and-after_script)
+- [`after_script`](#before_script-and-after_script)
+- [`cache`](#cache)
+
+In the following example, the `ruby:2.5` image is set as the default for all
+jobs except the `rspec 2.6` job, which uses the `ruby:2.6` image:
+
+```yaml
+default:
+  image: ruby:2.5
+
+rspec:
+  script: bundle exec rspec
+
+rspec 2.6:
+  image: ruby:2.6
+  script: bundle exec rspec
+```
 
 ## Parameter details
 
@@ -239,8 +269,9 @@ It's possible to overwrite the globally defined `before_script` and `after_scrip
 if you set it per-job:
 
 ```yaml
-before_script:
-  - global before script
+default:
+  before_script:
+    - global before script
 
 job:
   before_script:
@@ -356,7 +387,7 @@ In addition, `only` and `except` allow the use of special keywords:
 | `triggers`       | For pipelines created using a trigger token. |
 | `web`            | For pipelines created using **Run pipeline** button in GitLab UI (under your project's **Pipelines**). |
 | `merge_requests` | When a merge request is created or updated (See [pipelines for merge requests](../merge_request_pipelines/index.md)). |
-| `chats`          | For jobs created using a [GitLab ChatOps](../chatops/README.md) command. |
+| `chat`          | For jobs created using a [GitLab ChatOps](../chatops/README.md) command. |
 
 In the example below, `job` will run only for refs that start with `issue-`,
 whereas all branches will be skipped:
@@ -475,7 +506,7 @@ Feature.enable(:allow_unsafe_ruby_regexp)
 ### `only`/`except` (advanced)
 
 CAUTION: **Warning:**
-This an _alpha_ feature, and it is subject to change at any time without
+This is an _alpha_ feature, and it is subject to change at any time without
 prior notice!
 
 GitLab supports both simple and complex strategies, so it's possible to use an
@@ -488,9 +519,23 @@ Four keys are available:
 - `changes`
 - `kubernetes`
 
-If you use multiple keys under `only` or `except`, they act as an AND. The logic is:
+If you use multiple keys under `only` or `except`, the keys will be evaluated as a
+single conjoined expression. That is:
+
+- `only:` means "include this job if all of the conditions match".
+- `except:` means "exclude this job if any of the conditions match".
+
+With `only`, individual keys are logically joined by an AND:
 
 > (any of refs) AND (any of variables) AND (any of changes) AND (if kubernetes is active)
+
+`except` is implemented as a negation of this complete expression:
+
+> NOT((any of refs) AND (any of variables) AND (any of changes) AND (if kubernetes is active))
+
+This, more intuitively, means the keys join by an OR. A functionally equivalent expression:
+
+> (any of refs) OR (any of variables) OR (any of changes) OR (if kubernetes is active)
 
 #### `only:refs`/`except:refs`
 
@@ -645,6 +690,125 @@ docker build service one:
 In the scenario above, if a merge request is created or updated that changes
 either files in `service-one` directory or the `Dockerfile`, GitLab creates
 and triggers the `docker build service one` job.
+
+### `rules`
+
+Using `rules` allows for a list of individual rule objects to be evaluated
+*in order*, until one matches and dynamically provides attributes to the job.
+
+Available rule clauses include:
+
+- `if` (similar to [`only:variables`](#onlyvariablesexceptvariables)).
+- `changes` (same as [`only:changes`](#onlychangesexceptchanges)).
+
+For example, using `if`:
+
+```yaml
+job:
+  script: "echo Hello, Rules!"
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH == "master"' # This rule will be evaluated
+      when: always
+    - if: '$VAR =~ /pattern/' # This rule will only be evaluated if the first does not match
+      when: manual
+    - when: on_success # A Rule entry with no conditional clauses evaluates to true. If neither of the first two Rules match, this one will and set job:when to "on_success"
+```
+
+If the first rule does not match, further rules will be evaluated sequentially
+until a match is found. The above configuration will specify that `job` should
+be built and run for every pipeline on merge requests targeting `master`,
+regardless of the status of other builds.
+
+#### `rules:if`
+
+`rules:if` differs slightly from `only:variables` by accepting only a single
+expression string, rather than an array of them. Any set of expressions to be
+evaluated should be conjoined into a single expression using `&&` or `||`. For example:
+
+```yaml
+job:
+  script: "echo Hello, Rules!"
+  rules:
+    - if: '$CI_MERGE_REQUEST_SOURCE_BRANCH =~ /^feature/ && $CI_MERGE_REQUEST_TARGET_BRANCH == "master"' # This rule will be evaluated
+      when: always
+    - if: '$CI_MERGE_REQUEST_SOURCE_BRANCH =~ /^feature/' # This rule will only be evaluated if the target branch is not "master"
+      when: manual
+    - if: '$CI_MERGE_REQUEST_SOURCE_BRANCH' # If neither of the first two match but the simple presence does, we set to "on_success" by default
+```
+
+If none of the provided rules match, the job will be set to `when:never`, and
+not included in the pipeline. If `rules:when` is not included in the configuration
+at all, the behavior defaults to `job:when`, which continues to default to
+`on_success`.
+
+#### `rules:changes`
+
+`changes` works exactly the same way as [`only`/`except`](#onlychangesexceptchanges),
+accepting an array of paths. The following configuration configures a job to be
+run manually if `Dockerfile` has changed OR `$VAR == "string value"`. Otherwise
+it is set to `when:on_success` by the last rule, where 0 clauses evaluate as
+vacuously true.
+
+```yaml
+docker build:
+  script: docker build -t my-image:$CI_COMMIT_REF_SLUG .
+  rules:
+    - changes: # Will include the job and set to when:manual if any of the follow paths match a modified file.
+      - Dockerfile
+      when: manual
+    - if: '$VAR == "string value"'
+      when: manual # Will include the job and set to when:manual if the expression evaluates to true, after the `changes:` rule fails to match.
+    - when: on_success # If neither of the first rules match, set to on_success
+
+```
+
+#### Complex Rule Clauses
+
+To conjoin `if` and `changes` clauses with an AND, use them in the same rule.
+Here we run the job manually if `Dockerfile` or any file in `docker/scripts/`
+has changed AND `$VAR == "string value"`. Otherwise, the job will not be
+included in the pipeline.
+
+```yaml
+docker build:
+  script: docker build -t my-image:$CI_COMMIT_REF_SLUG .
+  rules:
+    - if: '$VAR == "string value"'
+      changes: # Will include the job and set to when:manual if any of the follow paths match a modified file.
+      - Dockerfile
+      - docker/scripts/*
+      when: manual
+  # - when: never would be redundant here, this is implied any time rules are listed.
+```
+
+The only clauses currently available are `if` and `changes`. Keywords such as
+`branches` or `refs` that are currently available for `only`/`except` are not
+yet available in `rules` as they are being individually considered for their
+usage and behavior in the newer context.
+
+#### Permitted attributes
+
+The only job attributes currently set by `rules` are `when` and `start_in`, if
+`when` is set to `delayed`. A job will be included in a pipeline if `when` is
+evaluated to any value except `never`.
+
+Delayed jobs require a `start_in` value, so rule objects do as well. For example:
+
+```yaml
+docker build:
+  script: docker build -t my-image:$CI_COMMIT_REF_SLUG .
+  rules:
+    - changes: # Will include the job and delay 3 hours when the Dockerfile has changed
+      - Dockerfile
+      when: delayed
+      start_in: '3 hours'
+    - when: on_success # Otherwise include the job and set to run normally
+
+```
+
+Additional Job configuration may be added to rules in the future, if something
+useful isn't available, please open an issue on
+[Gitlab CE](https://www.gitlab.com/gitlab-org/gitlab-ce/issues).
 
 ### `tags`
 
@@ -974,7 +1138,7 @@ review_app:
 stop_review_app:
   stage: deploy
   variables:
-    GIT_STRATEGY: none  
+    GIT_STRATEGY: none
   script: make delete-app
   when: manual
   environment:
@@ -1538,7 +1702,7 @@ dashboards.
 The `license_management` report collects [Licenses](../../user/project/merge_requests/license_management.md)
 as artifacts.
 
-The collected License Management report will be uploaded to GitLab as an artifact and will
+The collected License Compliance report will be uploaded to GitLab as an artifact and will
 be automatically shown in merge requests, pipeline view and provide data for security
 dashboards.
 
@@ -1634,6 +1798,84 @@ NOTE: **Note:**
 You can ask your administrator to
 [flip this switch](../../administration/job_artifacts.md#validation-for-dependencies)
 and bring back the old behavior.
+
+### `needs`
+
+> Introduced in GitLab 12.2.
+
+The `needs:` keyword enables executing jobs out-of-order, allowing you to implement
+a [directed acyclic graph](../directed_acyclic_graph/index.md) in your `.gitlab-ci.yml`.
+
+This lets you run some jobs without waiting for other ones, disregarding stage ordering
+so you can have multiple stages running concurrently.
+
+Let's consider the following example:
+
+```yaml
+linux:build:
+  stage: build
+
+mac:build:
+  stage: build
+
+linux:rspec:
+  stage: test
+  needs: ["linux:build"]
+
+linux:rubocop:
+  stage: test
+  needs: ["linux:build"]
+
+mac:rspec:
+  stage: test
+  needs: ["mac:build"]
+
+mac:rubocop:
+  stage: test
+  needs: ["mac:build"]
+
+production:
+  stage: deploy
+```
+
+This example creates three paths of execution:
+
+- Linux path: the `linux:rspec` and `linux:rubocop` jobs will be run as soon
+  as the `linux:build` job finishes without waiting for `mac:build` to finish.
+
+- macOS path: the `mac:rspec` and `mac:rubocop` jobs will be run as soon
+  as the `mac:build` job finishes, without waiting for `linux:build` to finish.
+
+- The `production` job will be executed as soon as all previous jobs
+  finish; in this case: `linux:build`, `linux:rspec`, `linux:rubocop`,
+  `mac:build`, `mac:rspec`, `mac:rubocop`.
+
+#### Requirements and limitations
+
+1. If `needs:` is set to point to a job that is not instantiated
+   because of `only/except` rules or otherwise does not exist, the
+   job will fail.
+1. Note that on day one of the launch, we are temporarily limiting the
+   maximum number of jobs that a single job can need in the `needs:` array. Track
+   our [infrastructure issue](https://gitlab.com/gitlab-com/gl-infra/infrastructure/issues/7541)
+   for details on the current limit.
+1. If you use `dependencies:` with `needs:`, it's important that you
+   do not mark a job as having a dependency on something that won't
+   have been run at the time it needs it. It's better to use both
+   keywords in this case so that GitLab handles the ordering appropriately.
+1. It is impossible for now to have `needs: []` (empty needs),
+   the job always needs to depend on something, unless this is the job
+   in the first stage (see [gitlab-ce#65504](https://gitlab.com/gitlab-org/gitlab-ce/issues/65504)).
+1. If `needs:` refers to a job that is marked as `parallel:`.
+   the current job will depend on all parallel jobs created.
+1. `needs:` is similar to `dependencies:` in that it needs to use jobs from
+   prior stages, meaning it is impossible to create circular
+   dependencies or depend on jobs in the current stage (see [gitlab-ce#65505](https://gitlab.com/gitlab-org/gitlab-ce/issues/65505)).
+1. Related to the above, stages must be explicitly defined for all jobs
+   that have the keyword `needs:` or are referred to by one.
+1. For self-managed users, the feature must be turned on using the `ci_dag_support`
+   feature flag. The `ci_dag_limit_needs` option, if set, will limit the number of
+   jobs that a single job can need to `50`. If unset, the limit is `5`.
 
 ### `coverage`
 
@@ -1741,13 +1983,40 @@ sequentially from `job_name 1/N` to `job_name N/N`.
 
 For every job, `CI_NODE_INDEX` and `CI_NODE_TOTAL` [environment variables](../variables/README.md#predefined-environment-variables) are set.
 
-A simple example:
+Marking a job to be run in parallel requires only a simple addition to your configuration file:
+
+```diff
+ test:
+   script: rspec
++  parallel: 5
+```
+TIP: **Tip:**
+Parallelize tests suites across parallel jobs.
+Different languages have different tools to facilitate this.
+
+A simple example using [Sempahore Test Boosters](https://github.com/renderedtext/test-boosters) and RSpec to run some Ruby tests:
+
+```ruby
+# Gemfile
+source 'https://rubygems.org'
+
+gem 'rspec'
+gem 'semaphore_test_boosters'
+```
 
 ```yaml
 test:
-  script: rspec
-  parallel: 5
+  parallel: 3
+  script:
+    - bundle
+    - bundle exec rspec_booster --job $CI_NODE_INDEX/$CI_NODE_TOTAL
 ```
+
+CAUTION: **Caution:**
+Please be aware that semaphore_test_boosters reports usages statistics to the author.
+
+You can then navigate to the **Jobs** tab of a new pipeline build and see your RSpec
+job split into three separate jobs.
 
 ### `trigger` **(PREMIUM)**
 
@@ -2221,10 +2490,10 @@ spinach:
   script: rake spinach
 ```
 
-It's also possible to use multiple parents for `extends`.
-The algorithm used for merge is "closest scope wins", so keys
-from the last member will always shadow anything defined on other levels.
-For example:
+In GitLab 12.0 and later, it's also possible to use multiple parents for
+`extends`.  The algorithm used for merge is "closest scope wins", so
+keys from the last member will always shadow anything defined on other
+levels.  For example:
 
 ```yaml
 .only-important:
@@ -2411,20 +2680,20 @@ There are three possible values: `none`, `normal`, and `recursive`:
 - `normal` means that only the top-level submodules will be included. It is
   equivalent to:
 
-    ```
-    git submodule sync
-    git submodule update --init
-    ```
+  ```
+  git submodule sync
+  git submodule update --init
+  ```
 
 - `recursive` means that all submodules (including submodules of submodules)
   will be included. This feature needs Git v1.8.1 and later. When using a
   GitLab Runner with an executor not based on Docker, make sure the Git version
   meets that requirement. It is equivalent to:
 
-    ```
-    git submodule sync --recursive
-    git submodule update --init --recursive
-    ```
+  ```
+  git submodule sync --recursive
+  git submodule update --init --recursive
+  ```
 
 Note that for this feature to work correctly, the submodules must be configured
 (in `.gitmodules`) with either:
@@ -2550,17 +2819,38 @@ You can set it globally or per-job in the [`variables`](#variables) section.
 
 The following parameters are deprecated.
 
-### `types`
+### Globally-defined `types`
 
 CAUTION: **Deprecated:**
 `types` is deprecated, and could be removed in a future release.
 Use [`stages`](#stages) instead.
 
-### `type`
+### Job-defined `type`
 
 CAUTION: **Deprecated:**
 `type` is deprecated, and could be removed in one of the future releases.
 Use [`stage`](#stage) instead.
+
+### Globally-defined `image`, `services`, `cache`, `before_script`, `after_script`
+
+Defining `image`, `services`, `cache`, `before_script`, and
+`after_script` globally is deprecated. Support could be removed
+from a future release.
+
+Use [`default:`](#setting-default-parameters) instead. For example:
+
+```yaml
+default:
+  image: ruby:2.5
+  services:
+    - docker:dind
+  cache:
+    paths: [vendor/]
+  before_script:
+    - bundle install --path vendor/
+  after_script:
+    - rm -rf tmp/
+```
 
 ## Custom build directories
 
@@ -2644,7 +2934,7 @@ variables:
 
 The value of `GIT_CLONE_PATH` is expanded once into
 `$CI_BUILDS_DIR/go/src/namespace/project`, and results in failure
-because `$CI_BUILDS_DIR` is not expanded.   
+because `$CI_BUILDS_DIR` is not expanded.
 
 ## Special YAML features
 
@@ -2829,7 +3119,8 @@ Alternatively, one can pass the `ci.skip` [Git push option][push-option] if
 using Git 2.10 or newer:
 
 ```sh
-git push -o ci.skip
+git push --push-option=ci.skip    # using git 2.10+
+git push -o ci.skip               # using git 2.18+
 ```
 
 <!-- ## Troubleshooting

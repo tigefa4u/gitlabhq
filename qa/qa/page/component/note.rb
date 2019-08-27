@@ -10,18 +10,26 @@ module QA
             element :discussion_option
           end
 
+          base.view 'app/assets/javascripts/notes/components/note_actions.vue' do
+            element :note_edit_button
+          end
+
           base.view 'app/assets/javascripts/notes/components/note_form.vue' do
             element :reply_input
             element :reply_comment_button
           end
 
           base.view 'app/assets/javascripts/notes/components/discussion_actions.vue' do
-            element :discussion_reply
+            element :discussion_reply_tab
           end
 
           base.view 'app/assets/javascripts/notes/components/toggle_replies_widget.vue' do
             element :expand_replies
             element :collapse_replies
+          end
+
+          base.view 'app/assets/javascripts/diffs/components/diff_file_header.vue' do
+            element :toggle_comments_button
           end
         end
 
@@ -32,8 +40,12 @@ module QA
           click_element :comment_button
         end
 
+        def toggle_comments
+          all_elements(:toggle_comments_button).last.click
+        end
+
         def type_reply_to_discussion(reply_text)
-          all_elements(:discussion_reply).last.click
+          all_elements(:discussion_reply_tab).last.click
           fill_element :reply_input, reply_text
         end
 
@@ -48,6 +60,12 @@ module QA
 
         def expand_replies
           click_element :expand_replies
+        end
+
+        def edit_comment(text)
+          click_element :note_edit_button
+          fill_element :reply_input, text
+          click_element :reply_comment_button
         end
       end
     end

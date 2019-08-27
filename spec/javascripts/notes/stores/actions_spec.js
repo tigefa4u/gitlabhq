@@ -18,6 +18,8 @@ import {
   noteableDataMock,
   individualNote,
 } from '../mock_data';
+import AxiosMockAdapter from 'axios-mock-adapter';
+import axios from '~/lib/utils/axios_utils';
 
 const TEST_ERROR_MESSAGE = 'Test error message';
 
@@ -334,32 +336,28 @@ describe('Actions Notes Store', () => {
     });
   });
 
-  describe('deleteNote', () => {
-    const interceptor = (request, next) => {
-      next(
-        request.respondWith(JSON.stringify({}), {
-          status: 200,
-        }),
-      );
-    };
+  describe('removeNote', () => {
+    const endpoint = `${TEST_HOST}/note`;
+    let axiosMock;
 
     beforeEach(() => {
-      Vue.http.interceptors.push(interceptor);
+      axiosMock = new AxiosMockAdapter(axios);
+      axiosMock.onDelete(endpoint).replyOnce(200, {});
 
       $('body').attr('data-page', '');
     });
 
     afterEach(() => {
-      Vue.http.interceptors = _.without(Vue.http.interceptors, interceptor);
+      axiosMock.restore();
 
       $('body').attr('data-page', '');
     });
 
     it('commits DELETE_NOTE and dispatches updateMergeRequestWidget', done => {
-      const note = { path: `${gl.TEST_HOST}`, id: 1 };
+      const note = { path: endpoint, id: 1 };
 
       testAction(
-        actions.deleteNote,
+        actions.removeNote,
         note,
         store.state,
         [
@@ -381,12 +379,12 @@ describe('Actions Notes Store', () => {
     });
 
     it('dispatches removeDiscussionsFromDiff on merge request page', done => {
-      const note = { path: `${gl.TEST_HOST}`, id: 1 };
+      const note = { path: endpoint, id: 1 };
 
       $('body').attr('data-page', 'projects:merge_requests:show');
 
       testAction(
-        actions.deleteNote,
+        actions.removeNote,
         note,
         store.state,
         [
@@ -404,6 +402,45 @@ describe('Actions Notes Store', () => {
           },
           {
             type: 'diffs/removeDiscussionsFromDiff',
+          },
+        ],
+        done,
+      );
+    });
+  });
+
+  describe('deleteNote', () => {
+    const endpoint = `${TEST_HOST}/note`;
+    let axiosMock;
+
+    beforeEach(() => {
+      axiosMock = new AxiosMockAdapter(axios);
+      axiosMock.onDelete(endpoint).replyOnce(200, {});
+
+      $('body').attr('data-page', '');
+    });
+
+    afterEach(() => {
+      axiosMock.restore();
+
+      $('body').attr('data-page', '');
+    });
+
+    it('dispatches removeNote', done => {
+      const note = { path: endpoint, id: 1 };
+
+      testAction(
+        actions.deleteNote,
+        note,
+        {},
+        [],
+        [
+          {
+            type: 'removeNote',
+            payload: {
+              id: 1,
+              path: 'http://test.host/note',
+            },
           },
         ],
         done,
@@ -892,6 +929,33 @@ describe('Actions Notes Store', () => {
       testSubmitSuggestion(done, () => {
         expect(flashSpy).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('filterDiscussion', () => {
+    const path = 'some-discussion-path';
+    const filter = 0;
+
+    beforeEach(() => {
+      dispatch.and.returnValue(new Promise(() => {}));
+    });
+
+    it('fetches discussions with filter and persistFilter false', () => {
+      actions.filterDiscussion({ dispatch }, { path, filter, persistFilter: false });
+
+      expect(dispatch.calls.allArgs()).toEqual([
+        ['setLoadingState', true],
+        ['fetchDiscussions', { path, filter, persistFilter: false }],
+      ]);
+    });
+
+    it('fetches discussions with filter and persistFilter true', () => {
+      actions.filterDiscussion({ dispatch }, { path, filter, persistFilter: true });
+
+      expect(dispatch.calls.allArgs()).toEqual([
+        ['setLoadingState', true],
+        ['fetchDiscussions', { path, filter, persistFilter: true }],
+      ]);
     });
   });
 });

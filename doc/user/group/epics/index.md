@@ -97,6 +97,22 @@ have a [start or due date](#start-date-and-due-date), then you can see a
 
 Drag and drop to reorder issues and child epics. New issues and child epics added to an epic appear at the top of the list.
 
+## Updating epics
+
+### Using bulk editing
+
+To apply labels across multiple epics:
+
+1. Go to the Epics list.
+1. Click **Edit epics**.
+    - Checkboxes will appear beside each epic.
+    - A sidebar on the right-hand side will appear, with an editable field for labels.
+1. Check the checkbox beside each epic to be edited.
+1. Select the desired labels.
+1. Click **Update all**.
+
+![bulk editing](img/bulk_editing.png)
+
 ## Deleting an epic
 
 NOTE: **Note:**
@@ -205,12 +221,12 @@ You may also consult the [group permissions table][permissions].
   These text fields also fully support
   [GitLab Flavored Markdown](../../markdown.md#gitlab-flavored-markdown-gfm).
 
-## Comment, or start a discussion
+## Comment, or start a thread
 
 Once you wrote your comment, you can either:
 
 - Click "Comment" and your comment will be published.
-- Click "Start discussion": start a thread within that epic's thread to discuss specific points.
+- Click "Start thread": start a thread within that epic's discussion to discuss specific points.
 
 ## Award emoji
 

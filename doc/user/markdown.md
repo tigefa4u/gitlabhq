@@ -40,7 +40,7 @@ repositories are also processed with CommonMark. As of 11.8, the [Redcarpet Ruby
 has been removed and all issues and comments, including those from pre-11.1, are now processed
 using the [CommonMark Ruby Library](https://github.com/gjtorikian/commonmarker).
 
-The documentation website had its [markdown engine migrated from Redcarpet to Kramdown](https://gitlab.com/gitlab-com/gitlab-docs/merge_requests/108)
+The documentation website had its [markdown engine migrated from Redcarpet to Kramdown](https://gitlab.com/gitlab-org/gitlab-docs/merge_requests/108)
 in October 2018.
 
 You may have older issues, merge requests, or Markdown documents in your
@@ -56,12 +56,6 @@ render incorrectly:
   - dark
   - milk
 ```
-
-1. Chocolate
-  - dark
-  - milk
-
----
 
 Simply add a space to each nested item to align the `-` with the first character of
 the top list item (`C` in this case):
@@ -136,26 +130,26 @@ Supported formats (named colors are not supported):
 Color written inside backticks will be followed by a color "chip":
 
 ```markdown
-`#F00`
-`#F00A`
-`#FF0000`
-`#FF0000AA`
-`RGB(0,255,0)`
-`RGB(0%,100%,0%)`
-`RGBA(0,255,0,0.3)`
-`HSL(540,70%,50%)`
-`HSLA(540,70%,50%,0.3)`
+`#F00`  
+`#F00A`  
+`#FF0000`  
+`#FF0000AA`  
+`RGB(0,255,0)`  
+`RGB(0%,100%,0%)`  
+`RGBA(0,255,0,0.3)`  
+`HSL(540,70%,50%)`  
+`HSLA(540,70%,50%,0.3)`  
 ```
 
-`#F00`
-`#F00A`
-`#FF0000`
-`#FF0000AA`
-`RGB(0,255,0)`
-`RGB(0%,100%,0%)`
-`RGBA(0,255,0,0.3)`
-`HSL(540,70%,50%)`
-`HSLA(540,70%,50%,0.3)`
+`#F00`  
+`#F00A`  
+`#FF0000`  
+`#FF0000AA`  
+`RGB(0,255,0)`  
+`RGB(0%,100%,0%)`  
+`RGBA(0,255,0,0.3)`  
+`HSL(540,70%,50%)`  
+`HSLA(540,70%,50%,0.3)`  
 
 ### Diagrams and flowcharts using Mermaid
 
@@ -183,6 +177,49 @@ graph TD;
   A-->C;
   B-->D;
   C-->D;
+```
+
+#### Subgraphs
+
+NOTE: **Note:** GitLab 12.1 and up now [requires quotes around subgraph
+titles that contain multiple words](https://github.com/knsv/mermaid/pull/845).
+
+Subgraphs can also be included:
+
+~~~
+```mermaid
+graph TB
+
+  SubGraph1 --> SubGraph1Flow
+  subgraph "SubGraph 1 Flow"
+  SubGraph1Flow(SubNode 1)
+  SubGraph1Flow -- Choice1 --> DoChoice1
+  SubGraph1Flow -- Choice2 --> DoChoice2
+  end
+
+  subgraph "Main Graph"
+  Node1[Node 1] --> Node2[Node 2]
+  Node2 --> SubGraph1[Jump to SubGraph1]
+  SubGraph1 --> FinalThing[Final Thing]
+end
+```
+~~~
+
+```mermaid
+graph TB
+
+  SubGraph1 --> SubGraph1Flow
+  subgraph "SubGraph 1 Flow"
+  SubGraph1Flow(SubNode 1)
+  SubGraph1Flow -- Choice1 --> DoChoice1
+  SubGraph1Flow -- Choice2 --> DoChoice2
+  end
+
+  subgraph "Main Graph"
+  Node1[Node 1] --> Node2[Node 2]
+  Node2 --> SubGraph1[Jump to SubGraph1]
+  SubGraph1 --> FinalThing[Final Thing]
+end
 ```
 
 ### Emoji
@@ -222,8 +259,7 @@ this font installed by default.
 
 ### Front matter
 
-> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/23331)
-  in GitLab 11.6.
+> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/23331) in GitLab 11.6.
 
 Front matter is metadata included at the beginning of a markdown document, preceding
 its content. This data can be used by static site generators such as [Jekyll](https://jekyllrb.com/docs/front-matter/),
@@ -397,6 +433,7 @@ unordered or ordered lists:
   - [ ] Sub-task 1
   - [x] Sub-task 2
   - [ ] Sub-task 3
+
 1. [x] Completed task
 1. [ ] Incomplete task
    1. [ ] Sub-task 1
@@ -408,6 +445,7 @@ unordered or ordered lists:
   - [ ] Sub-task 1
   - [x] Sub-task 2
   - [ ] Sub-task 3
+
 1. [x] Completed task
 1. [ ] Incomplete task
    1. [ ] Sub-task 1
@@ -488,6 +526,10 @@ This snippet links to `<wiki_root>/miscellaneous.md`:
 [Link to Related Page](/miscellaneous.md)
 ```
 
+### Embedding metrics in GitLab Flavored Markdown
+
+Metric charts can be embedded within GitLab Flavored Markdown. See [Embedding Metrics within GitLab flavored Markdown](../user/project/integrations/prometheus.md#embedding-metric-charts-within-gitlab-flavored-markdown) for more details.
+
 ## Standard markdown and extensions in GitLab
 
 All standard markdown formatting should work as expected within GitLab. Some standard
@@ -556,7 +598,7 @@ Inline `code` has `back-ticks around` it.
 
 Similarly, a whole block of code can be fenced with triple backticks ```` ``` ````,
 triple tildes (`~~~`), or indended 4 or more spaces to achieve a similar effect for
-a larger body of code. test.
+a larger body of code.
 
 ~~~
 ```
@@ -586,9 +628,11 @@ def function():
     print s
 ```
 
-    Using 4 spaces
-    is like using
-    3-backtick fences.
+```
+Using 4 spaces
+is like using
+3-backtick fences.
+```
 
 ~~~
 Tildes are OK too.
@@ -815,18 +859,6 @@ or underscores
 ___
 ```
 
-Three or more hyphens,
-
----
-
-asterisks,
-
-***
-
-or underscores
-
-___
-
 ### Images
 
 Examples:
@@ -974,7 +1006,7 @@ after the `</summary>` tag and before the `</details>` tag, as shown in the exam
 
 These details _will_ remain **hidden** until expanded.
 
-    PASTE LOGS HERE
+PASTE LOGS HERE
 
 </details>
 ```
@@ -986,7 +1018,7 @@ These details _will_ remain **hidden** until expanded.
 
 These details <em>will</em> remain <b>hidden</b> until expanded.
 
-    PASTE LOGS HERE
+PASTE LOGS HERE
 
 </details>
 
@@ -1045,14 +1077,14 @@ A new line due to the previous backslash.
 
 First paragraph.
 Another line in the same paragraph.
-A third line in the same paragraph, but this time ending with two spaces.
+A third line in the same paragraph, but this time ending with two spaces.  
 A new line directly under the first paragraph.
 
 <!-- (Do *NOT* remove the two ending whitespaces in the second line) -->
 <!-- (They are needed for the Markdown text to render correctly on docs.gitlab.com, the backslash works fine inside GitLab itself) -->
 
 Second paragraph.
-Another line, this time ending with a backslash.
+Another line, this time ending with a backslash.  
 A new line due to the previous backslash.
 
 ### Links
@@ -1133,13 +1165,13 @@ GFM will autolink almost any URL you put into your text:
 ### Lists
 
 Ordered and unordered lists can be easily created. Add the number you want the list
-to start with, like `1. ` (with a space) at the start of each line for ordered lists.
+to start with, like `1.`, followed by a space, at the start of each line for ordered lists.
 After the first number, it does not matter what number you use, ordered lists will be
-numbered automatically by vertical order, so repeating `1. ` for all items in the
-same list is common. If you start with a number other than `1. `, it will use that as the first
+numbered automatically by vertical order, so repeating `1.` for all items in the
+same list is common. If you start with a number other than `1.`, it will use that as the first
 number, and count up from there.
 
-Add a `* `, `- ` or `+ ` (with a space) at the start of each line for unordered lists, but
+Add a `*`, `-` or `+`, followed by a space, at the start of each line for unordered lists, but
 you should not use a mix of them.
 
 Examples:
@@ -1154,21 +1186,27 @@ Examples:
 4. And another item.
 
 * Unordered lists can use asterisks
+
 - Or minuses
+
 + Or pluses
 ```
 
+<!-- The "2." and "4." in the example above are changed to "1." below, only to match the standards on docs.gitlab.com -->
+
 1. First ordered list item
-2. Another item
+1. Another item
    - Unordered sub-list.
 1. Actual numbers don't matter, just that it's a number
    1. Ordered sub-list
    1. Next ordered sub-list item
-4. And another item.
+1. And another item.
 
-* Unordered lists can use asterisks
+- Unordered lists can use asterisks
+
 - Or minuses
-+ Or pluses
+
+- Or pluses
 
 ---
 
@@ -1182,14 +1220,14 @@ Example:
 
    Second paragraph of first item.
 
-2. Another item
+1. Another item
 ```
 
 1. First ordered list item
 
    Second paragraph of first item.
 
-2. Another item
+1. Another item
 
 ---
 
@@ -1203,14 +1241,14 @@ Example:
 
   Paragraph of first item.
 
-2. Another item
+1. Another item
 ```
 
 1. First ordered list item
 
   Paragraph of first item.
 
-2. Another item
+1. Another item
 
 ### Superscripts / Subscripts
 

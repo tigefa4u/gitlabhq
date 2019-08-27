@@ -8,11 +8,7 @@ describe ProjectFeature do
 
   describe '.quoted_access_level_column' do
     it 'returns the table name and quoted column name for a feature' do
-      expected = if Gitlab::Database.postgresql?
-                   '"project_features"."issues_access_level"'
-                 else
-                   '`project_features`.`issues_access_level`'
-                 end
+      expected = '"project_features"."issues_access_level"'
 
       expect(described_class.quoted_access_level_column(:issues)).to eq(expected)
     end
@@ -148,6 +144,34 @@ describe ProjectFeature do
       features.each do |feature|
         expect(project.public_send("#{feature}_enabled?")).to eq(true)
       end
+    end
+  end
+
+  describe 'default pages access level' do
+    subject { project.project_feature.pages_access_level }
+
+    before do
+      # project factory overrides all values in project_feature after creation
+      project.project_feature.destroy!
+      project.build_project_feature.save!
+    end
+
+    context 'when new project is private' do
+      let(:project) { create(:project, :private) }
+
+      it { is_expected.to eq(ProjectFeature::PRIVATE) }
+    end
+
+    context 'when new project is internal' do
+      let(:project) { create(:project, :internal) }
+
+      it { is_expected.to eq(ProjectFeature::PRIVATE) }
+    end
+
+    context 'when new project is public' do
+      let(:project) { create(:project, :public) }
+
+      it { is_expected.to eq(ProjectFeature::ENABLED) }
     end
   end
 end

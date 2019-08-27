@@ -82,7 +82,8 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   end
 
   def pipelines
-    @pipelines = @merge_request.all_pipelines.page(params[:page]).per(30)
+    set_pipeline_variables
+    @pipelines = @pipelines.page(params[:page]).per(30)
 
     Gitlab::PollingInterval.set_header(response, interval: 10_000)
 
@@ -218,7 +219,7 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   alias_method :issuable, :merge_request
   alias_method :awardable, :merge_request
 
-  def issuable_sorting_field
+  def sorting_field
     MergeRequest::SORTING_PREFERENCE_FIELD
   end
 

@@ -1,5 +1,12 @@
 memory-static:
-  extends: .dedicated-no-docs-no-db-pull-cache-job
+  extends:
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
+    - .except-docs
+  variables:
+    SETUP_DB: "false"
   script:
     # Uses two different reports from the 'derailed_benchmars' gem.
 
@@ -23,7 +30,13 @@ memory-static:
 # The application is booted in `production` environment.
 # All tests are run without a webserver (directly using Rack::Mock by default).
 memory-on-boot:
-  extends: .rspec-metadata-pg-10
+  extends:
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
+    - .use-pg-10
+    - .except-docs-qa
   variables:
     NODE_ENV: "production"
     RAILS_ENV: "production"
@@ -33,7 +46,7 @@ memory-on-boot:
     NODE_OPTIONS: --max_old_space_size=3584
   script:
     # Both bootsnap and derailed monkey-patch Kernel#require, which leads to circular dependency
-    - DISABLE_BOOTSNAP=true PATH_TO_HIT="/users/sign_in" CUT_OFF=0.3 bundle exec derailed exec perf:mem >> 'tmp/memory_on_boot.txt'
+    - ENABLE_BOOTSNAP=false PATH_TO_HIT="/users/sign_in" CUT_OFF=0.3 bundle exec derailed exec perf:mem >> 'tmp/memory_on_boot.txt'
     - scripts/generate-memory-metrics-on-boot tmp/memory_on_boot.txt >> 'tmp/memory_on_boot_metrics.txt'
   artifacts:
     paths:
