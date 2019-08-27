@@ -40,9 +40,10 @@ module Gitlab
               AnalyticsBuildSerializer.new.represent(ci_build_records.map { |e| e['build'] })
             else
               records.map do |record|
+                project = record.project
                 attributes = record.attributes.merge({
-                  project_path: record.project.path,
-                  namespace_path: record.project.namespace.path
+                  project_path: project.path,
+                  namespace_path: project.namespace.path
                 })
                 serializer.represent(attributes)
               end
@@ -71,7 +72,7 @@ module Gitlab
         # EE will override this to include Group rules
         def finder_params
           {
-            Project => { project_id: stage.parent.id }
+            Project => { project_id: stage.parent_id }
           }
         end
 

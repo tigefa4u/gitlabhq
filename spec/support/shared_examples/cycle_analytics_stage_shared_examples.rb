@@ -89,4 +89,12 @@ shared_examples_for 'cycle analytics stage' do
       expect(stage).not_to be_matches_with_stage_params(params)
     end
   end
+
+  describe '#parent_id' do
+    it "delegates to 'parent_name'_id attribute" do
+      stage = described_class.new(parent: parent)
+
+      expect(stage.parent_id).to eq(parent.id)
+    end
+  end
 end

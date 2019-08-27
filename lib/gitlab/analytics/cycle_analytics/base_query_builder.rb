@@ -10,12 +10,6 @@ module Gitlab
         delegate :subject_model, to: :stage
 
         # rubocop: disable CodeReuse/ActiveRecord
-        PROJECT_QUERY_RULES = {
-          Project => {
-            Issue => ->(query) { query.where(project_id: stage.parent.id) },
-            MergeRequest => ->(query) { query.where(target_project_id: stage.parent.id) }
-          }
-        }.freeze
 
         def initialize(stage:, params: {})
           @stage = stage
@@ -40,12 +34,24 @@ module Gitlab
         end
 
         def filter_by_parent_model(query)
-          instance_exec(query, &query_rules.fetch(stage.parent.class).fetch(subject_model))
+          parent_class = stage.parent.class
+
+          if parent_class.eql?(Project)
+            if subject_model.eql?(Issue)
+              query.where(project_id: stage.parent_id)
+            elsif subject_model.eql?(MergeRequest)
+              query.where(target_project_id: stage.parent_id)
+            else
+              raise ArgumentError, "unknown subject_model: #{subject_model}"
+            end
+          else
+            raise ArgumentError, "unknown parent_class: #{parent_class}"
+          end
         end
 
         def filter_by_time_range(query)
-          from = params[:from] || 30.days.ago
-          to = params[:to] || nil
+          from = params.fetch(:from, 30.days.ago)
+          to = params[:to]
 
           query = query.where(subject_table[:created_at].gteq(from))
           query = query.where(subject_table[:created_at].lteq(to)) if to
@@ -54,11 +60,6 @@ module Gitlab
 
         def subject_table
           subject_model.arel_table
-        end
-
-        # EE will override this to include Group rules
-        def query_rules
-          PROJECT_QUERY_RULES
         end
       end
     end
