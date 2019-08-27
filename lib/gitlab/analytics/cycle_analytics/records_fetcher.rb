@@ -14,13 +14,13 @@ module Gitlab
           Issue => {
             finder_class: IssuesFinder,
             serializer_class: AnalyticsIssueSerializer,
-            includes_for_query: { project: [:namespace] },
+            includes_for_query: { project: [:namespace], author: [] },
             columns_for_select: %I[title iid id created_at author_id project_id]
           },
           MergeRequest => {
             finder_class: MergeRequestsFinder,
             serializer_class: AnalyticsMergeRequestSerializer,
-            includes_for_query: { target_project: [:namespace] },
+            includes_for_query: { target_project: [:namespace], author: [] },
             columns_for_select: %I[title iid id created_at author_id state target_project_id]
           }
         }.freeze
@@ -40,9 +40,11 @@ module Gitlab
               AnalyticsBuildSerializer.new.represent(ci_build_records.map { |e| e['build'] })
             else
               records.map do |record|
+                project = record.project
                 attributes = record.attributes.merge({
-                  project_path: record.project.path,
-                  namespace_path: record.project.namespace.path
+                  project_path: project.path,
+                  namespace_path: project.namespace.path,
+                  author: record.author
                 })
                 serializer.represent(attributes)
               end
@@ -71,7 +73,7 @@ module Gitlab
         # EE will override this to include Group rules
         def finder_params
           {
-            Project => { project_id: stage.parent.id }
+            Project => { project_id: stage.parent_id }
           }
         end
 

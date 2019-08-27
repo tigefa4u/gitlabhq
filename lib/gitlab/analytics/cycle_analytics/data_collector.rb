@@ -10,17 +10,23 @@ module Gitlab
       #     from: DateTime
       #     to: DateTime
       class DataCollector
-        def initialize(stage, params = {})
+        include Gitlab::Utils::StrongMemoize
+
+        def initialize(stage:, params: {})
           @stage = stage
           @params = params
         end
 
         def records_fetcher
-          RecordsFetcher.new(stage: stage, query: query, params: params)
+          strong_memoize(:records_fetcher) do
+            RecordsFetcher.new(stage: stage, query: query, params: params)
+          end
         end
 
         def median
-          Median.new(stage: stage, query: query)
+          strong_memoize(:median) do
+            Median.new(stage: stage, query: query)
+          end
         end
 
         private

@@ -21,10 +21,10 @@ module Gitlab
         attr_reader :stage, :query
 
         def percentile_cont
-          percentile_disc_ordering = Arel::Nodes::UnaryOperation.new(Arel::Nodes::SqlLiteral.new('ORDER BY'), duration)
+          percentile_cont_ordering = Arel::Nodes::UnaryOperation.new(Arel::Nodes::SqlLiteral.new('ORDER BY'), duration)
           Arel::Nodes::NamedFunction.new(
             'percentile_cont(0.5) WITHIN GROUP',
-            [percentile_disc_ordering]
+            [percentile_cont_ordering]
           )
         end
 

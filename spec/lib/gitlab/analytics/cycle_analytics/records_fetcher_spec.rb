@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'rails_helper'
+require 'spec_helper'
 
 describe Gitlab::Analytics::CycleAnalytics::RecordsFetcher do
   around do |example|
@@ -11,10 +11,13 @@ describe Gitlab::Analytics::CycleAnalytics::RecordsFetcher do
   let(:user) { create(:user) }
 
   subject do
-    Gitlab::Analytics::CycleAnalytics::DataCollector.new(stage, {
-      from: 1.year.ago,
-      current_user: user
-    }).records_fetcher.serialized_records
+    Gitlab::Analytics::CycleAnalytics::DataCollector.new(
+      stage: stage,
+      params: {
+        from: 1.year.ago,
+        current_user: user
+      }
+    ).records_fetcher.serialized_records
   end
 
   describe '#serialized_records' do
