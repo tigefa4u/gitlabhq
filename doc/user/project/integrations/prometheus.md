@@ -271,7 +271,7 @@ Note the following properties:
 
 ### Downloading data as CSV
 
-Data from Prometheus charts on the metrics dashboard can be downloaded as CSV. 
+Data from Prometheus charts on the metrics dashboard can be downloaded as CSV.
 
 ![Downloading as CSV](img/download_as_csv.png)
 
@@ -369,7 +369,7 @@ It is possible to display metrics charts within [GitLab Flavored Markdown](../..
 
 To display a metric chart, include a link of the form `https://<root_url>/<project>/environments/<environment_id>/metrics`.
 
-A single chart may also be embedded. You can generate a link to the chart via the dropdown located on the right side of the chart:  
+A single chart may also be embedded. You can generate a link to the chart via the dropdown located on the right side of the chart:
 
 ![Generate Link To Chart](img/generate_link_to_chart.png)
 
@@ -384,6 +384,26 @@ The following requirements must be met for the metric to unfurl:
  If all of the above are true, then the metric will unfurl as seen below:
 
 ![Embedded Metrics](img/embed_metrics.png)
+
+### Embedding live Grafana charts
+
+It is also possible to embed live [Grafana](../../../omnibus/settings/grafana.html) charts within issues, as a [Direct Linked Rendered Image](https://grafana.com/docs/reference/sharing/#direct-link-rendered-image).
+
+The sharing panel provides the link, as highlighted below.
+
+[Grafana Direct Linked Rendered Image](img/grafana_live_embed.png)
+
+Simply copy the link and add an image element in the dashboard as required:
+
+```html
+<img src="https://dashboards.gitlab.com/d/RZmbBr7mk/gitlab-triage?orgId=1&refresh=30s&var-env=gprd&var-environment=gprd&var-prometheus=prometheus-01-inf-gprd&var-prometheus_app=prometheus-app-01-inf-gprd&var-backend=All&var-type=All&var-stage=main&panelId=1197&fullscreen"/>
+```
+
+This renders as:
+
+<img src="https://dashboards.gitlab.com/d/RZmbBr7mk/gitlab-triage?orgId=1&refresh=30s&var-env=gprd&var-environment=gprd&var-prometheus=prometheus-01-inf-gprd&var-prometheus_app=prometheus-app-01-inf-gprd&var-backend=All&var-type=All&var-stage=main&panelId=1197&fullscreen"/>
+
+You may remove the timeframe to get a live chart.
 
 ## Troubleshooting
 
