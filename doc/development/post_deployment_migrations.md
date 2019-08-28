@@ -73,3 +73,12 @@ Some other examples where these migrations are useful:
 - Cleaning up data generated due to a bug in GitLab
 - Removing tables
 - Migrating jobs from one Sidekiq queue to another
+
+### When not to use post migrations
+
+As described above, post migrations might be useful, however, they are not
+run during a setup of a new GitLab instance.
+
+Some examples where these migration are NOT useful:
+
+- Adding new data to GitLab
