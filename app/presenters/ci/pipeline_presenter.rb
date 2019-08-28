@@ -8,7 +8,10 @@ module Ci
     # We use a class method here instead of a constant, allowing EE to redefine
     # the returned `Hash` more easily.
     def self.failure_reasons
-      { config_error: 'CI/CD YAML configuration error!' }
+      {
+        config_error: 'CI/CD YAML configuration error!',
+        rate_limit_exceeded: 'Pipeline rate limit exceeded!'
+      }
     end
 
     presents :pipeline
