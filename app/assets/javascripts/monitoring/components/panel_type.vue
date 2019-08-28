@@ -12,12 +12,14 @@ import {
 import Icon from '~/vue_shared/components/icon.vue';
 import MonitorTimeSeriesChart from './charts/time_series.vue';
 import MonitorSingleStatChart from './charts/single_stat.vue';
+import MonitorHeatmapChart from './charts/heatmap.vue';
 import MonitorEmptyChart from './charts/empty_chart.vue';
 
 export default {
   components: {
     MonitorSingleStatChart,
     MonitorTimeSeriesChart,
+    MonitorHeatmapChart,
     MonitorEmptyChart,
     Icon,
     GlDropdown,
@@ -91,6 +93,11 @@ export default {
   <monitor-single-stat-chart
     v-if="isPanelType('single-stat') && graphDataHasMetrics"
     :graph-data="graphData"
+  />
+  <monitor-heatmap-chart
+    v-else-if="isPanelType('heatmap') && graphDataHasMetrics"
+    :graph-data="graphData"
+    :container-width="dashboardWidth"
   />
   <monitor-time-series-chart
     v-else-if="graphDataHasMetrics"
