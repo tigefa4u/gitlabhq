@@ -387,7 +387,7 @@ The following requirements must be met for the metric to unfurl:
 
 ### Embedding live Grafana charts
 
-It is also possible to embed live [Grafana](../../../omnibus/settings/grafana.html) charts within issues, as a [Direct Linked Rendered Image](https://grafana.com/docs/reference/sharing/#direct-link-rendered-image). This will work only when the Grafana instance is available to the user attempting to view the embed, either as a public dashboard or within their internal network.
+It is also possible to embed live [Grafana](../../../../omnibus/settings/grafana.html) charts within issues, as a [Direct Linked Rendered Image](https://grafana.com/docs/reference/sharing/#direct-link-rendered-image). This will work only when the Grafana instance is available to the user attempting to view the embed, either as a public dashboard or within their internal network.
 
 The sharing dialog within Grafana provides the link, as highlighted below.
 
