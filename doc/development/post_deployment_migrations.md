@@ -76,7 +76,7 @@ Some other examples where these migrations are useful:
 
 ### When not to use post deployment migrations
 
-As described above, post migrations might be useful, however, they are not
+As described above, post deployment migrations might be useful, however, they are not
 run during setup of a new GitLab instance.
 
 Some examples where these migration are NOT useful:
