@@ -74,7 +74,7 @@ Some other examples where these migrations are useful:
 - Removing tables
 - Migrating jobs from one Sidekiq queue to another
 
-### When not to use post migrations
+### When not to use post deployment migrations
 
 As described above, post migrations might be useful, however, they are not
 run during a setup of a new GitLab instance.
