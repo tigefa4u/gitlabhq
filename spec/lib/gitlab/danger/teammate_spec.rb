@@ -64,9 +64,45 @@ describe Gitlab::Danger::Teammate do
         it '#reviewer? returns false' do
           expect(subject.reviewer?(project, :test, labels)).to be_falsey
         end
-      end
+      end 
     end
   end
+
+    context 'when labels contain Release and the category is UX' do
+      let(:labels) { ['devops::release'] }
+
+      context 'when role is Product Designer, Release' do
+        let(:role) { 'Product Designer, Release' }
+
+        it '#reviewer? returns true' do
+          expect(subject.reviewer?(project, :ux, labels)).to be_truthy
+        end
+
+        context 'when hyperlink is mangled in the role' do
+          let(:role) { '<a href="#">Product Designer</a>, Release' }
+
+          it '#reviewer? returns true' do
+            expect(subject.reviewer?(project, :ux, labels)).to be_truthy
+          end
+        end
+      end
+
+      context 'when role is Product Designer' do
+        let(:role) { 'Product Designer' }
+
+        it '#reviewer? returns false' do
+          expect(subject.reviewer?(project, :ux, labels)).to be_falsey
+        end
+      end
+
+      context 'when role is Product Designer, Release' do
+        let(:role) { 'Product Designer, Release' }
+
+        it '#reviewer? returns false' do
+          expect(subject.reviewer?(project, :ux, labels)).to be_falsey
+        end
+      end
+    end
 
   context 'when having single capability' do
     let(:capabilities) { 'reviewer backend' }

@@ -43,6 +43,11 @@ module Gitlab
 
           area && labels.any?("devops::#{area.downcase}") if kind == :reviewer
         else
+        when :ux
+          area = role[/Product Designer(?:.*?, (\w+))/, 1]
+
+          area && labels.any?("devops::#{area.downcase}") if kind == :reviewer
+        else
           capabilities(project).include?("#{kind} #{category}")
         end
       end
