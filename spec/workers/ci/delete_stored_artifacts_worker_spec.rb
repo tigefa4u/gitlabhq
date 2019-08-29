@@ -4,9 +4,14 @@ require 'spec_helper'
 
 describe Ci::DeleteStoredArtifactsWorker do
   describe '#perform' do
+    let(:project) { create(:project) }
     let(:worker) { described_class.new }
 
-    subject { worker.perform(artifact_store_path, local) }
+    subject { worker.perform(project.id, artifact_store_path, local, 10) }
+
+    before do
+      allow(UpdateProjectStatistics).to receive(:update_project_statistics!)
+    end
 
     context 'with a local artifact' do
       let(:artifact_store_path) { 'local_file_path' }
@@ -19,6 +24,13 @@ describe Ci::DeleteStoredArtifactsWorker do
 
       it 'deletes the local artifact' do
         expect(File).to receive(:delete).with(full_path)
+
+        subject
+      end
+
+      it 'updates the project statistics' do
+        allow(File).to receive(:delete).with(full_path)
+        expect(UpdateProjectStatistics).to receive(:update_project_statistics!)
 
         subject
       end
@@ -37,6 +49,13 @@ describe Ci::DeleteStoredArtifactsWorker do
 
       it 'deletes the remote artifact' do
         expect(file_double).to receive(:destroy)
+
+        subject
+      end
+
+      it 'updates the project statistics' do
+        allow(file_double).to receive(:destroy)
+        expect(UpdateProjectStatistics).to receive(:update_project_statistics!)
 
         subject
       end

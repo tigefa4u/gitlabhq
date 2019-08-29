@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-shared_examples_for 'UpdateProjectStatistics' do
+shared_context 'UpdateProjectStatisticsContext' do
   let(:project) { subject.project }
   let(:project_statistics_name) { described_class.project_statistics_name }
   let(:statistic_attribute) { described_class.statistic_attribute }
@@ -16,6 +16,10 @@ shared_examples_for 'UpdateProjectStatistics' do
   end
 
   it { is_expected.to be_new_record }
+end
+
+shared_examples_for 'UpdateProjectStatisticsAfterCreate' do
+  include_context 'UpdateProjectStatisticsContext'
 
   context 'when creating' do
     it 'updates the project statistics' do
@@ -33,6 +37,10 @@ shared_examples_for 'UpdateProjectStatistics' do
       subject.save!
     end
   end
+end
+
+shared_examples_for 'UpdateProjectStatisticsAfterUpdate' do
+  include_context 'UpdateProjectStatisticsContext'
 
   context 'when updating' do
     let(:delta) { 42 }
@@ -75,6 +83,10 @@ shared_examples_for 'UpdateProjectStatistics' do
       end.not_to exceed_query_limit(control_count)
     end
   end
+end
+
+shared_examples_for 'UpdateProjectStatisticsAfterDestroy' do
+  include_context 'UpdateProjectStatisticsContext'
 
   context 'when destroying' do
     before do
@@ -118,4 +130,12 @@ shared_examples_for 'UpdateProjectStatistics' do
       end
     end
   end
+end
+
+shared_examples_for 'UpdateProjectStatistics' do
+  include_context 'UpdateProjectStatisticsContext'
+
+  it_behaves_like 'UpdateProjectStatisticsAfterCreate'
+  it_behaves_like 'UpdateProjectStatisticsAfterUpdate'
+  it_behaves_like 'UpdateProjectStatisticsAfterDestroy'
 end

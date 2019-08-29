@@ -4,8 +4,10 @@ module Ci
   class DeleteStoredArtifactsWorker
     include ApplicationWorker
 
-    def perform(artifact_store_path, local)
-      local ? delete_local_file(artifact_store_path) : delete_remote_file(artifact_store_path)
+    def perform(project_id, store_path, local_store, size)
+      local_store ? delete_local_file(store_path) : delete_remote_file(store_path)
+
+      UpdateProjectStatistics.update_project_statistics!(Project.find(project_id), :build_artifacts_size, -size)
     end
 
     private

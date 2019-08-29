@@ -60,7 +60,7 @@ module Ci
     validate :valid_file_format?, unless: :trace?, on: :create
     before_save :set_size, if: :file_changed?
 
-    update_project_statistics project_statistics_name: :build_artifacts_size
+    update_project_statistics project_statistics_name: :build_artifacts_size, update_after_destroy: false
 
     after_save :update_file_store, if: :saved_change_to_file?
 
@@ -151,18 +151,19 @@ module Ci
       end
 
       def begin_fast_destroy
-        preload(:project).to_a.group_by(&:project)
+        preload(:project).find_each.map do |artifact|
+          [artifact.project_id, artifact.store_path, artifact.local_store?, artifact.size]
+        end
       end
 
       def finalize_fast_destroy(params)
-        params.each do |project, artifacts|
-          delta = artifacts.sum(&:size)
-
-          artifacts.each do |artifact|
-            Ci::DeleteStoredArtifactsWorker.perform_async(artifact.store_path, artifact.local_store?)
-          end
-
-          update_project_statistics!(project, :build_artifacts_size, -delta)
+        params.each do |artifact_info|
+          Ci::DeleteStoredArtifactsWorker.perform_async(
+            artifact_info[0], # project_id
+            artifact_info[1], # store_path
+            artifact_info[2], # local_store
+            artifact_info[3]  # size
+          )
         end
       end
     end

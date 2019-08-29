@@ -19,8 +19,15 @@ describe Ci::JobArtifact do
 
   it_behaves_like 'having unique enum values'
 
-  it_behaves_like 'UpdateProjectStatistics' do
+  describe 'UpdateProjectStatistics' do
+    before do
+      allow(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async)
+    end
+
     subject { build(:ci_job_artifact, :archive, size: 106365) }
+
+    it_behaves_like 'UpdateProjectStatisticsAfterCreate'
+    it_behaves_like 'UpdateProjectStatisticsAfterUpdate'
   end
 
   describe '.with_reports' do
@@ -95,36 +102,42 @@ describe Ci::JobArtifact do
     end
   end
 
+  describe '.begin_fast_destroy' do
+    before do
+      stub_artifacts_object_storage
+
+      create(:ci_job_artifact, :metadata, size: 100)
+      create(:ci_job_artifact, :codequality, :remote_store, size: 100)
+    end
+
+    subject { described_class.begin_fast_destroy }
+
+    it 'collects all artifacts' do
+      expect(subject.count).to eq(Ci::JobArtifact.count)
+    end
+  end
+
   describe '.finalize_fast_destroy' do
-    let(:project) { create(:project ) }
-    let(:local_artifacts) { create_list(:ci_job_artifact, 2, project: project, size: 100) }
-    let(:remote_artifacts) { create_list(:ci_job_artifact, 2, :remote_store, project: project, size: 100) }
+    let(:project) { create(:project) }
 
     let(:artifact_list) do
-      {
-        project => local_artifacts + remote_artifacts
-      }
+      Ci::JobArtifact.all.map do |artifact|
+        [artifact.project_id, artifact.store_path, artifact.local_store?, artifact.size]
+      end
     end
 
     before do
       stub_artifacts_object_storage
+
+      create_list(:ci_job_artifact, 2, project: project, size: 100)
+      create_list(:ci_job_artifact, 2, :remote_store, project: project, size: 100)
     end
 
     subject { described_class.finalize_fast_destroy(artifact_list) }
 
     it 'calls the async deletion worker' do
-      expect(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async).with(instance_of(String), true).exactly(2).times
-      expect(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async).with(instance_of(String), false).exactly(2).times
-
-      subject
-    end
-
-    it 'updates project statistics' do
-      allow(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async)
-
-      delta = local_artifacts.sum(&:size) + remote_artifacts.sum(&:size)
-
-      expect(described_class).to receive(:update_project_statistics!).with(project, :build_artifacts_size, -delta)
+      expect(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async).with(project.id, instance_of(String), true, instance_of(Integer)).exactly(2).times
+      expect(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async).with(project.id, instance_of(String), false, instance_of(Integer)).exactly(2).times
 
       subject
     end
