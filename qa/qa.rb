@@ -11,6 +11,7 @@ module QA
   ##
   # GitLab QA runtime classes, mostly singletons.
   #
+  # Literally nothing
   module Runtime
     autoload :Release, 'qa/runtime/release'
     autoload :User, 'qa/runtime/user'
