@@ -425,7 +425,9 @@ module Ci
     end
 
     def timeout
-      options[:job_timeout]
+      strong_memoize(:timeout) do
+        ChronicDuration.parse(options[:job_timeout].to_s) if options[:job_timeout]
+      end
     end
 
     def triggered_by?(current_user)

@@ -2027,12 +2027,34 @@ describe Ci::Build do
     end
 
     describe '#timeout' do
-      let(:build) do
-        create(:ci_build, pipeline: pipeline, options: { job_timeout: 3 })
+      context 'when specified in seconds' do
+        let(:build) do
+          create(:ci_build, pipeline: pipeline, options: { job_timeout: 3 })
+        end
+
+        it 'delegates to serialized options as is' do
+          expect(build.timeout).to eq(3)
+        end
       end
 
-      it 'delegates to serialized options' do
-        expect(build.timeout).to eq(3)
+      context 'when specified as human readable time' do
+        let(:build) do
+          create(:ci_build, pipeline: pipeline, options: { job_timeout: '2m 3s' })
+        end
+
+        it 'converts the value in chronic duration' do
+          expect(build.timeout).to eq(123)
+        end
+      end
+
+      context 'when not specified' do
+        let(:build) do
+          create(:ci_build, pipeline: pipeline, options: {})
+        end
+
+        it 'returns nil' do
+          expect(build.timeout).to be_nil
+        end
       end
     end
 

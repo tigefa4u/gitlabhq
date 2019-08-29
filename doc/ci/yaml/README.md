@@ -1997,11 +1997,16 @@ Possible values for `when` are:
 
 ### timeout
 
-`timeout` allows you to configure a timeout (in seconds) for a specific job.
+`timeout` allows you to configure a timeout for a specific job. The value can be either
+numeric (seconds) or human readable.
 
 A simple example:
 
 ```yaml
+build:
+  script: build.sh
+  timeout: 3h 30m
+
 test:
   script: rspec
   timeout: 1800

@@ -39,7 +39,7 @@ describe Gitlab::Ci::Build::Step do
       it_behaves_like 'has correct script'
     end
 
-    context 'when timeout option is specified' do
+    context 'when timeout option is specified in seconds' do
       let(:job) { create(:ci_build, options: { job_timeout: 3, script: ["ls -la\necho aaa", 'date'] }) }
       let(:script) { ["ls -la\necho aaa", 'date'] }
 
@@ -47,6 +47,17 @@ describe Gitlab::Ci::Build::Step do
 
       it 'has job level timeout' do
         expect(subject.timeout).to eq(3)
+      end
+    end
+
+    context 'when timeout option is specified as human readable format' do
+      let(:job) { create(:ci_build, options: { job_timeout: '2m 3s', script: ["ls -la\necho aaa", 'date'] }) }
+      let(:script) { ["ls -la\necho aaa", 'date'] }
+
+      it_behaves_like 'has correct script'
+
+      it 'has job level timeout' do
+        expect(subject.timeout).to eq(123)
       end
     end
   end

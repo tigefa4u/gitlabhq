@@ -4,6 +4,8 @@ module Ci
   # The purpose of this class is to store Build related data that can be disposed.
   # Data that should be persisted forever, should be stored with Ci::Build model.
   class BuildMetadata < ApplicationRecord
+    BuildTimeout = Struct.new(:value, :source)
+
     extend Gitlab::Ci::Model
     include Presentable
     include ChronicDurationAttribute
@@ -33,9 +35,9 @@ module Ci
     def update_timeout_state
       return unless build.runner.present? || build.timeout.present?
 
-      timeout = [(job_timeout || project_timeout), runner_timeout].compact.min_by { |timeout| timeout[:value] }
+      timeout = timeout_with_highest_precedence
 
-      update(timeout: timeout[:value], timeout_source: timeout[:source])
+      update(timeout: timeout.value, timeout_source: timeout.source)
     end
 
     private
@@ -44,21 +46,25 @@ module Ci
       self.project_id ||= self.build.project_id
     end
 
+    def timeout_with_highest_precedence
+      [(job_timeout || project_timeout), runner_timeout].compact.min_by { |timeout| timeout.value }
+    end
+
     def project_timeout
       strong_memoize(:project_timeout) do
-        { value: project&.build_timeout, source: :project_timeout_source }
+        BuildTimeout.new(project&.build_timeout, :project_timeout_source)
       end
     end
 
     def job_timeout
       strong_memoize(:job_timeout) do
-        { value: build.timeout, source: :job_timeout_source } if build.timeout
+        BuildTimeout.new(build.timeout, :job_timeout_source) if build.timeout
       end
     end
 
     def runner_timeout
       strong_memoize(:runner_timeout) do
-        { value: build.runner.maximum_timeout, source: :runner_timeout_source } if runner_timeout_set?
+        BuildTimeout.new(build.runner.maximum_timeout, :runner_timeout_source) if runner_timeout_set?
       end
     end
 
