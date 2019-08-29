@@ -11,7 +11,6 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
   let(:vulnerability_feedback) { table(:vulnerability_feedback) }
   let(:users) { table(:users) }
 
-  let(:job) { jobs.create }
   let(:namespace) { namespaces.create(name: 'gitlab', path: 'gitlab') }
   let(:pipeline) { pipelines.create }
   let(:project) { projects.create(name: 'gitlab', path: 'gitlab', namespace_id: namespace.id) }
@@ -84,6 +83,8 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
   end
 
   def create_artifact(file_type:, report:)
+    job = jobs.create(commit_id: pipeline.id, retried: false)
+
     Artifact.create(
       file: report,
       file_format: 1,
