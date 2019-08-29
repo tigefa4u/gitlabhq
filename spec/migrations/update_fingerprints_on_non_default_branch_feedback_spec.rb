@@ -38,7 +38,7 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
       vulnerability = JSON.parse(artifact.file.read)['vulnerabilities'].first
       old_fingerprint = Digest::SHA1.hexdigest(vulnerability['message'])
       new_fingerprint = Digest::SHA1.hexdigest(vulnerability['cve'])
-      feedback = create_feedback(fingerprint: old_fingerprint)
+      feedback = create_feedback(fingerprint: old_fingerprint, category: 1)
 
       migrate!
 
@@ -56,7 +56,7 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
         ":#{vulnerability['featurename']}:#{vulnerability['featureversion']}"
       )
       new_fingerprint = Digest::SHA1.hexdigest(vulnerability['vulnerability'])
-      feedback = create_feedback(fingerprint: old_fingerprint)
+      feedback = create_feedback(fingerprint: old_fingerprint, category: 2)
 
       migrate!
 
@@ -72,8 +72,8 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
         vulnerability = JSON.parse(artifact.file.read)['vulnerabilities'].first
         old_fingerprint = Digest::SHA1.hexdigest(vulnerability['message'])
         new_fingerprint = Digest::SHA1.hexdigest(vulnerability['cve'])
-        old_feedback = create_feedback(fingerprint: old_fingerprint)
-        _new_feedback = create_feedback(fingerprint: new_fingerprint)
+        old_feedback = create_feedback(fingerprint: old_fingerprint, category: 1)
+        _new_feedback = create_feedback(fingerprint: new_fingerprint, category: 1)
 
         migrate!
 
@@ -95,10 +95,10 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
     )
   end
 
-  def create_feedback(fingerprint:)
+  def create_feedback(category:, fingerprint:)
     vulnerability_feedback.create(
       author_id: user.id,
-      category: 1,
+      category: category,
       feedback_type: 0,
       pipeline_id: pipeline.id,
       project_fingerprint: fingerprint,
