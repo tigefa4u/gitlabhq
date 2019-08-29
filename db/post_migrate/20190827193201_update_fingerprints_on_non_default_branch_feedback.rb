@@ -89,6 +89,7 @@ class UpdateFingerprintsOnNonDefaultBranchFeedback < ActiveRecord::Migration[5.2
     self.table_name = 'vulnerability_feedback'
 
     belongs_to :pipeline
+    has_many :artifacts, through: :pipeline
     has_many :occurrences, through: :pipeline
 
     enum category: { dependency_scanning: 1, container_scanning: 2 }
@@ -97,7 +98,10 @@ class UpdateFingerprintsOnNonDefaultBranchFeedback < ActiveRecord::Migration[5.2
     # by container scanning or dependency scanning jobs run on any branch except
     # the default branch
     def self.where_might_need_update
-      left_outer_joins(:occurrences).where('vulnerability_occurrences IS NULL')
+      left_outer_joins(:occurrences)
+        .joins(:artifacts)
+        .where(ci_job_artifacts: { file_type: [6, 7] })
+        .where('vulnerability_occurrences IS NULL')
     end
   end
   private_constant :Feedback
