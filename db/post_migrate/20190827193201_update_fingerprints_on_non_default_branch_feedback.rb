@@ -12,12 +12,14 @@ class UpdateFingerprintsOnNonDefaultBranchFeedback < ActiveRecord::Migration[5.2
   disable_ddl_transaction!
 
   def up
-    Feedback.where_might_need_update.each do |feedback|
-      if feedback.needs_update?
-        begin
-          feedback.update_fingerprint!
-        rescue ActiveRecord::RecordNotUnique
-          feedback.destroy
+    Feedback.where_might_need_update.find_in_batches(batch_size: 500) do |feedback_batch|
+      feedback_batch.each do |feedback|
+        if feedback.needs_update?
+          begin
+            feedback.update_fingerprint!
+          rescue ActiveRecord::RecordNotUnique
+            feedback.destroy
+          end
         end
       end
     end
