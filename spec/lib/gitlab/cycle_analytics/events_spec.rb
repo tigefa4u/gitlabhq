@@ -98,6 +98,8 @@ describe 'cycle analytics events' do
 
     before do
       create_commit_referencing_issue(context)
+      # Issue mention should happen before MR creation
+      context.metrics.update(first_mentioned_in_commit_at: merge_request.created_at - 1.minute)
     end
 
     it 'has the total time' do
@@ -349,9 +351,13 @@ describe 'cycle analytics events' do
   end
 
   def setup(context)
-    milestone = create(:milestone, project: project)
-    context.update(milestone: milestone)
-    mr = create_merge_request_closing_issue(user, project, context, commit_message: "References #{context.to_reference}")
+    Timecop.travel(2.days.ago) do
+      milestone = create(:milestone, project: project)
+      context.update(milestone: milestone)
+    end
+    mr = Timecop.travel(1.day.ago) do
+      create_merge_request_closing_issue(user, project, context, commit_message: "References #{context.to_reference}")
+    end
 
     ProcessCommitWorker.new.perform(project.id, user.id, mr.commits.last.to_hash)
   end

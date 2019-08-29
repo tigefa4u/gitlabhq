@@ -33,7 +33,14 @@ module CycleAnalyticsHelpers
   end
 
   def create_cycle(user, project, issue, mr, milestone, pipeline)
-    issue.update(milestone: milestone)
+    if Timecop.frozen?
+      issue.update(milestone: milestone)
+    else
+      Timecop.travel(mr.commits.last.committed_date - 1.minute) do
+        issue.update(milestone: milestone)
+      end
+    end
+
     pipeline.run
 
     ci_build = create(:ci_build, pipeline: pipeline, status: :success, author: user)

@@ -1,0 +1,5 @@
+---
+title: Cycle Analytics query backend is reworked to be more performant and support customization.
+merge_request: 31850
+author:
+type: changed

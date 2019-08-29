@@ -22,8 +22,9 @@ describe CycleAnalytics::ProjectLevel do
     end
 
     it 'returns every median for each stage for a specific project' do
-      values = described_class::STAGES.each_with_object({}) do |stage_name, hsh|
-        hsh[stage_name] = subject[stage_name].project_median.presence
+      stage_names = Gitlab::Analytics::CycleAnalytics::DefaultStages.all.map { |s| s[:name] }
+      values = stage_names.each_with_object({}) do |stage_name, hsh|
+        hsh[stage_name.to_sym] = subject[stage_name].project_median.presence
       end
 
       expect(subject.all_medians_by_stage).to eq(values)

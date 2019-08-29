@@ -11,15 +11,32 @@ describe Projects::CycleAnalyticsController do
     project.add_maintainer(user)
   end
 
+  describe "GET 'show'" do
+    it 'provides the list of available stages' do
+      get(:show,
+          format: :json,
+          params: {
+            namespace_id: project.namespace,
+            project_id: project
+          })
+
+      expect(response).to be_successful
+
+      stage_names = json_response["stats"].map { |r| r["title"] }
+      expect(stage_names.size).to eq(Gitlab::Analytics::CycleAnalytics::DefaultStages.all.size)
+      expect(stage_names.first).to eq('Issue')
+    end
+  end
+
   context "counting page views for 'show'" do
     it 'increases the counter' do
       expect(Gitlab::UsageDataCounters::CycleAnalyticsCounter).to receive(:count).with(:views)
 
       get(:show,
           params: {
-            namespace_id: project.namespace,
-            project_id: project
-          })
+        namespace_id: project.namespace,
+        project_id: project
+      })
 
       expect(response).to be_successful
     end
@@ -30,9 +47,9 @@ describe Projects::CycleAnalyticsController do
       it 'is true' do
         get(:show,
             params: {
-              namespace_id: project.namespace,
-              project_id: project
-            })
+          namespace_id: project.namespace,
+          project_id: project
+        })
 
         expect(response).to be_successful
         expect(assigns(:cycle_analytics_no_data)).to eq(true)
@@ -51,9 +68,9 @@ describe Projects::CycleAnalyticsController do
       it 'is false' do
         get(:show,
             params: {
-              namespace_id: project.namespace,
-              project_id: project
-            })
+          namespace_id: project.namespace,
+          project_id: project
+        })
 
         expect(response).to be_successful
         expect(assigns(:cycle_analytics_no_data)).to eq(false)

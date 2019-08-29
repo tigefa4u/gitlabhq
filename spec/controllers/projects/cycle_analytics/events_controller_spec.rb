@@ -58,7 +58,7 @@ describe Projects::CycleAnalytics::EventsController do
   end
 
   def get_issue(additional_params: {})
-    params = additional_params.merge(namespace_id: project.namespace, project_id: project)
-    get(:issue, params: params, format: :json)
+    params = additional_params.merge(namespace_id: project.namespace, project_id: project, stage_id: 'issue')
+    get(:show, params: params, format: :json)
   end
 end

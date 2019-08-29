@@ -45,6 +45,7 @@ describe 'Cycle Analytics', :js do
 
         @build = create_cycle(user, project, issue, mr, milestone, pipeline)
         deploy_master(user, project)
+        pipeline.succeed!
 
         sign_in(user)
         visit project_cycle_analytics_path(project)

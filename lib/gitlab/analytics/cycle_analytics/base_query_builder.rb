@@ -30,7 +30,7 @@ module Gitlab
         attr_reader :stage, :params
 
         def exclude_negative_durations(query)
-          query.where(duration.gt(zero_interval))
+          query.where(duration.gteq(zero_interval))
         end
 
         def filter_by_parent_model(query)

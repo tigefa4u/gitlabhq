@@ -433,18 +433,8 @@ constraints(::Constraints::ProjectUrlConstrainer.new) do
         end
       end
 
-      resource :cycle_analytics, only: [:show]
-
-      namespace :cycle_analytics do
-        scope :events, controller: 'events' do
-          get :issue
-          get :plan
-          get :code
-          get :test
-          get :review
-          get :staging
-          get :production
-        end
+      resource :cycle_analytics, only: [:show] do
+        resources :events, controller: 'cycle_analytics/events', only: [:show], param: :stage_id
       end
 
       namespace :serverless do

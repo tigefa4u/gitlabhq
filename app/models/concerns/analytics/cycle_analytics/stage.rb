@@ -52,6 +52,7 @@ module Analytics
 
       def matches_with_stage_params?(stage_params)
         default_stage? &&
+          name.eql?(stage_params[:name]) &&
           start_event_identifier.to_s.eql?(stage_params[:start_event_identifier].to_s) &&
           end_event_identifier.to_s.eql?(stage_params[:end_event_identifier].to_s)
       end
