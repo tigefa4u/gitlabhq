@@ -83,7 +83,7 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
   end
 
   def create_artifact(file_type:, report:)
-    job = jobs.create(commit_id: pipeline.id, retried: false)
+    job = jobs.create(commit_id: pipeline.id)
 
     Artifact.create(
       file: report,
