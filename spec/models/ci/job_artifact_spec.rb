@@ -113,7 +113,7 @@ describe Ci::JobArtifact do
     subject { described_class.begin_fast_destroy }
 
     it 'collects all artifacts' do
-      expect(subject.count).to eq(Ci::JobArtifact.count)
+      expect(subject.count).to eq(described_class.count)
     end
   end
 
@@ -121,7 +121,7 @@ describe Ci::JobArtifact do
     let(:project) { create(:project) }
 
     let(:artifact_list) do
-      Ci::JobArtifact.all.map do |artifact|
+      described_class.all.map do |artifact|
         [artifact.project_id, artifact.store_path, artifact.local_store?, artifact.size]
       end
     end

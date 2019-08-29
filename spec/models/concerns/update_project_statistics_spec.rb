@@ -7,11 +7,7 @@ describe UpdateProjectStatistics do
     let(:project) { create(:project) }
 
     subject do
-      Class.new(ActiveRecord::Base) do
-        self.table_name = 'ci_job_artifacts'
-
-        include UpdateProjectStatistics
-      end.update_project_statistics!(project, :build_artifacts_size, 100)
+      described_class.update_project_statistics!(project, :build_artifacts_size, 100)
     end
 
     context 'when project is not pending delete' do
