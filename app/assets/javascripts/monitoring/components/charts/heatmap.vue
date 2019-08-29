@@ -2,6 +2,7 @@
 import { GlHeatmap } from '@gitlab/ui/dist/charts';
 import { debounceByAnimationFrame } from '~/lib/utils/common_utils';
 import { chartHeight } from '../../constants';
+import { __ } from '~/locale';
 
 let debouncedResize;
 
@@ -22,6 +23,11 @@ export default {
       type: Boolean,
       required: false,
       default: false,
+    },
+    legendText: {
+      type: Object,
+      required: false,
+      default: () => ({ average: __('Avg'), max: __('Max') }),
     },
   },
   data() {
