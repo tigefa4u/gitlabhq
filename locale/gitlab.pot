@@ -1567,6 +1567,9 @@ msgstr ""
 msgid "Average per day: %{average}"
 msgstr ""
 
+msgid "Avg"
+msgstr ""
+
 msgid "Background Color"
 msgstr ""
 
@@ -6895,6 +6898,9 @@ msgid "MattermostService|Suggestions:"
 msgstr ""
 
 msgid "MattermostService|This service allows users to perform common operations on this project by entering slash commands in Mattermost."
+msgstr ""
+
+msgid "Max"
 msgstr ""
 
 msgid "Max access level"

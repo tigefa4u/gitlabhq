@@ -58,6 +58,11 @@ export default {
       required: false,
       default: () => [],
     },
+    legendText: {
+      type: Object,
+      required: false,
+      default: () => ({ average: __('Avg'), max: __('Max') }),
+    },
   },
   data() {
     return {
@@ -304,6 +309,7 @@ export default {
         :thresholds="thresholds"
         :width="width"
         :height="height"
+        :legend-text="legendText"
         @updated="onChartUpdated"
       >
         <template v-if="tooltip.isDeployment">
