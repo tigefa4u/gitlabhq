@@ -118,11 +118,19 @@ export default Vue.extend({
     },
     toggleExpanded() {
       if (this.list.isExpandable) {
-        this.list.isExpanded = !this.list.isExpanded;
+        debugger
 
-        if (AccessorUtilities.isLocalStorageAccessSafe()) {
-          localStorage.setItem(`${this.uniqueKey}.expanded`, this.list.isExpanded);
-        }
+        // this.list.isExpanded = !this.list.isExpanded;
+
+        // if (AccessorUtilities.isLocalStorageAccessSafe()) {
+        //   localStorage.setItem(`${this.uniqueKey}.expanded`, this.list.isExpanded);
+        // }
+        const self = this;
+        this.list.update()
+          .then(data => {
+            const collapsed = JSON.parse(data.config.data).list.collapsed;
+            self.list.isExpanded = !collapsed;
+          })
 
         // When expanding/collapsing, the tooltip on the caret button sometimes stays open.
         // Close all tooltips manually to prevent dangling tooltips.
