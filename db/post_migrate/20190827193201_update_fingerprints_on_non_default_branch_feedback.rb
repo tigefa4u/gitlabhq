@@ -13,16 +13,9 @@ class UpdateFingerprintsOnNonDefaultBranchFeedback < ActiveRecord::Migration[5.2
 
   def up
     Feedback.where_might_need_update.each do |feedback|
-      artifact = feedback.pipeline.report_for_feedback(feedback)
-      report = JSON.parse(artifact.file.read)
-
-      vulnerability = report['vulnerabilities'].find do |vuln|
-        old_fingerprint(vuln, feedback) == feedback.project_fingerprint
-      end
-
-      if vulnerability.present?
+      if feedback.needs_update?
         begin
-          feedback.update(project_fingerprint: new_fingerprint(vulnerability, feedback))
+          feedback.update_fingerprint!
         rescue ActiveRecord::RecordNotUnique
           feedback.destroy
         end
@@ -43,6 +36,11 @@ class UpdateFingerprintsOnNonDefaultBranchFeedback < ActiveRecord::Migration[5.2
     enum file_location: {
       legacy_path: 1,
       hashed_path: 2
+    }
+
+    enum file_type: {
+      dependency_scanning: 6,
+      container_scanning: 7
     }
   end
 
@@ -100,30 +98,53 @@ class UpdateFingerprintsOnNonDefaultBranchFeedback < ActiveRecord::Migration[5.2
     def self.where_might_need_update
       left_outer_joins(:occurrences)
         .joins(:artifacts)
+        .includes(:artifacts)
         .where(ci_job_artifacts: { file_type: [6, 7] })
         .where('vulnerability_occurrences IS NULL')
     end
+
+    def update_fingerprint!
+      update(project_fingerprint: new_fingerprint)
+    end
+
+    def needs_update?
+      vulnerability.present?
+    end
+
+    private
+
+    def vulnerability
+      @vulnerability ||= report['vulnerabilities'].find do |vuln|
+        old_fingerprint(vuln) == project_fingerprint
+      end
+    end
+
+    def report
+      @report ||= artifact.present? ? JSON.parse(artifact.file.read) : { 'vulnerabilities' => [] }
+    end
+
+    def artifact
+      @artifact ||= artifacts.find { |artifact| artifact.file_type == category }
+    end
+
+    def old_fingerprint(vuln)
+      if dependency_scanning?
+        Digest::SHA1.hexdigest(vuln['message'])
+      elsif container_scanning?
+        Digest::SHA1.hexdigest(
+          "#{vuln['namespace']}:#{vuln['vulnerability']}" \
+          ":#{vuln['featurename']}:#{vuln['featureversion']}"
+        )
+      end
+    end
+
+    def new_fingerprint
+      if dependency_scanning?
+        Digest::SHA1.hexdigest(vulnerability['cve'])
+      elsif container_scanning?
+        Digest::SHA1.hexdigest(vulnerability['vulnerability'])
+      end
+    end
   end
   private_constant :Feedback
-
-  private
-
-  def old_fingerprint(vulnerability, feedback)
-    if feedback.dependency_scanning?
-      Digest::SHA1.hexdigest(vulnerability['message'])
-    elsif feedback.container_scanning?
-      Digest::SHA1.hexdigest(
-        "#{vulnerability['namespace']}:#{vulnerability['vulnerability']}" \
-        ":#{vulnerability['featurename']}:#{vulnerability['featureversion']}"
-      )
-    end
-  end
-
-  def new_fingerprint(vulnerability, feedback)
-    if feedback.dependency_scanning?
-      Digest::SHA1.hexdigest(vulnerability['cve'])
-    elsif feedback.container_scanning?
-      Digest::SHA1.hexdigest(vulnerability['vulnerability'])
-    end
-  end
 end

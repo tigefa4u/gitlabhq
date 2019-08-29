@@ -34,7 +34,7 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
       report = fixture_file_upload(Rails.root.join(
         'spec/fixtures/security_reports/master/gl-dependency-scanning-report.json'
       ), 'text/plain')
-      artifact = create_artifact(file_type: 7, report: report)
+      artifact = create_artifact(file_type: 6, report: report)
       vulnerability = JSON.parse(artifact.file.read)['vulnerabilities'].first
       old_fingerprint = Digest::SHA1.hexdigest(vulnerability['message'])
       new_fingerprint = Digest::SHA1.hexdigest(vulnerability['cve'])
@@ -49,7 +49,7 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
       report = fixture_file_upload(Rails.root.join(
         'spec/fixtures/security_reports/master/gl-container-scanning-report.json'
       ), 'text/plain')
-      artifact = create_artifact(file_type: 6, report: report)
+      artifact = create_artifact(file_type: 7, report: report)
       vulnerability = JSON.parse(artifact.file.read)['vulnerabilities'].first
       old_fingerprint = Digest::SHA1.hexdigest(
         "#{vulnerability['namespace']}:#{vulnerability['vulnerability']}" \
@@ -68,7 +68,7 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
         report = fixture_file_upload(Rails.root.join(
           'spec/fixtures/security_reports/master/gl-dependency-scanning-report.json'
         ), 'text/plain')
-        artifact = create_artifact(file_type: 7, report: report)
+        artifact = create_artifact(file_type: 6, report: report)
         vulnerability = JSON.parse(artifact.file.read)['vulnerabilities'].first
         old_fingerprint = Digest::SHA1.hexdigest(vulnerability['message'])
         new_fingerprint = Digest::SHA1.hexdigest(vulnerability['cve'])
