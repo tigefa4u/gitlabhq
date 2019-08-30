@@ -2,7 +2,7 @@
 
 class FeatureFlagClient
   def self.enabled?(key, user: nil, thing: nil, default_enabled: false)
-    if client
+    if Feature.enabled?(:gitlab_feature_flag_client) && client
       key_string = key.to_s
       unleash_context = Unleash::Context.new
       unleash_context.user_id = user.email if user
