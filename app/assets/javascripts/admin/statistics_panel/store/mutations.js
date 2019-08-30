@@ -7,12 +7,12 @@ export default {
   },
   [types.RECEIVE_STATISTICS_SUCCESS](state, data) {
     state.isLoading = false;
-    state.hasError = false;
+    state.error = null;
 
     Vue.set(state, 'statistics', data);
   },
-  [types.RECEIVE_STATISTICS_ERROR](state) {
+  [types.RECEIVE_STATISTICS_ERROR](state, error) {
     state.isLoading = false;
-    state.hasError = true;
+    state.error = error;
   },
 };

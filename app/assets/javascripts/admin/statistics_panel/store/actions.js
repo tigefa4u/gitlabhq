@@ -13,14 +13,14 @@ export const fetchStatistics = ({ dispatch }) => {
     .then(({ data }) => {
       dispatch('receiveStatisticsSuccess', convertObjectPropsToCamelCase(data, { deep: true }));
     })
-    .catch(() => dispatch('receiveStatisticsError'));
+    .catch(error => dispatch('receiveStatisticsError', error));
 };
 
 export const receiveStatisticsSuccess = ({ commit }, statistics) =>
   commit(types.RECEIVE_STATISTICS_SUCCESS, statistics);
 
-export const receiveStatisticsError = ({ commit }) => {
-  commit(types.RECEIVE_STATISTICS_ERROR);
+export const receiveStatisticsError = ({ commit }, error) => {
+  commit(types.RECEIVE_STATISTICS_ERROR, error);
   createFlash(s__('AdminDashboard|Error loading the statistics. Please try again'));
 };
 

@@ -1,14 +1,20 @@
 <script>
 import { mapState, mapGetters, mapActions } from 'vuex';
 import { GlLoadingIcon } from '@gitlab/ui';
+import statisticsLabels from '../constants';
 
 export default {
   components: {
     GlLoadingIcon,
   },
+  data() {
+    return {
+      statisticsLabels,
+    };
+  },
   computed: {
-    ...mapState(['isLoading']),
-    ...mapGetters(['visibleStatistics']),
+    ...mapState(['isLoading', 'statistics']),
+    ...mapGetters(['getStatisticsData']),
   },
   methods: {
     ...mapActions(['fetchStatistics']),
@@ -25,7 +31,7 @@ export default {
       <h4>{{ __('Statistics') }}</h4>
       <gl-loading-icon v-if="isLoading" size="md" class="my-3" />
       <template v-else>
-        <p v-for="statistic in visibleStatistics" :key="statistic.key">
+        <p v-for="statistic in getStatisticsData(statisticsLabels)" :key="statistic.key">
           {{ statistic.label }}
           <span class="light float-right">{{ statistic.value }}</span>
         </p>
