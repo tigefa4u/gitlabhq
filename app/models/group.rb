@@ -15,6 +15,8 @@ class Group < Namespace
   include WithUploads
   include Gitlab::Utils::StrongMemoize
 
+  ACCESS_REQUEST_APPROVERS_TO_BE_NOTIFIED_LIMIT = 10
+
   has_many :group_members, -> { where(requested_at: nil) }, dependent: :destroy, as: :source # rubocop:disable Cop/ActiveRecordDependent
   alias_method :members, :group_members
   has_many :users, through: :group_members
@@ -365,6 +367,8 @@ class Group < Namespace
   end
 
   def max_member_access_for_user(user)
+    return GroupMember::NO_ACCESS unless user
+
     return GroupMember::OWNER if user.admin?
 
     members_with_parents
@@ -425,6 +429,10 @@ class Group < Namespace
 
   def subgroup_creation_level
     super || ::Gitlab::Access::OWNER_SUBGROUP_ACCESS
+  end
+
+  def access_request_approvers_to_be_notified
+    members.owners.order_recent_sign_in.limit(ACCESS_REQUEST_APPROVERS_TO_BE_NOTIFIED_LIMIT)
   end
 
   private

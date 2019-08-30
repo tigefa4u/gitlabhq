@@ -150,8 +150,11 @@ side of your screen.
 
 ![Request access button](img/request_access_button.png)
 
-Group owners and maintainers will be notified of your request and will be able to approve or
-decline it on the members page.
+Once access is requested:
+
+- Up to ten group owners are notified of your request via email.
+  Email is sent to the most recently active group owners.
+- Any group owner can approve or decline your request on the members page.
 
 ![Manage access requests](img/access_requests_management.png)
 
@@ -346,7 +349,7 @@ Add one or more whitelisted IP subnets using CIDR notation in comma separated fo
 coming from a different IP address won't be able to access the restricted
 content.
 
-Restriction currently applies to UI, API access is not restricted.
+Restriction currently applies to UI and API access, Git actions via ssh are not restricted.
 To avoid accidental lock-out, admins and group owners are are able to access
 the group regardless of the IP restriction.
 
@@ -358,7 +361,7 @@ the group regardless of the IP restriction.
 You can restrict access to groups and their underlying projects by
 allowing only users with email addresses in particular domains to be added to the group.
 
-Add email domains you want to whitelist and users with emails from different 
+Add email domains you want to whitelist and users with emails from different
 domains won't be allowed to be added to this group.
 
 Some domains cannot be restricted. These are the most popular public email domains, such as:
@@ -417,7 +420,7 @@ You can disable all email notifications related to the group, which also include
 it's subgroups and projects.
 
 To enable this feature:
- 
+
 1. Navigate to the group's **Settings > General** page.
 1. Expand the **Permissions, LFS, 2FA** section, and select **Disable email notifications**.
 1. Click **Save changes**.

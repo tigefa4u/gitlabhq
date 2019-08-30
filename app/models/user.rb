@@ -13,7 +13,6 @@ class User < ApplicationRecord
   include Sortable
   include CaseSensitivity
   include TokenAuthenticatable
-  include IgnorableColumn
   include FeatureGate
   include CreatedAtFilterable
   include BulkMemberAccessLoad
@@ -24,9 +23,11 @@ class User < ApplicationRecord
 
   DEFAULT_NOTIFICATION_LEVEL = :participating
 
-  ignore_column :external_email
-  ignore_column :email_provider
-  ignore_column :authentication_token
+  self.ignored_columns += %i[
+    authentication_token
+    email_provider
+    external_email
+  ]
 
   add_authentication_token_field :incoming_email_token, token_generator: -> { SecureRandom.hex.to_i(16).to_s(36) }
   add_authentication_token_field :feed_token
@@ -643,6 +644,13 @@ class User < ApplicationRecord
     if namespace&.any_project_has_container_registry_tags?
       errors.add(:username, _('cannot be changed if a personal project has container registry tags.'))
     end
+  end
+
+  # will_save_change_to_attribute? is used by Devise to check if it is necessary
+  # to clear any existing reset_password_tokens before updating an authentication_key
+  # and login in our case is a virtual attribute to allow login by username or email.
+  def will_save_change_to_login?
+    will_save_change_to_username? || will_save_change_to_email?
   end
 
   def unique_email
