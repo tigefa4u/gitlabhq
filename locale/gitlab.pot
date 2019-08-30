@@ -631,6 +631,9 @@ msgstr ""
 msgid "Active Sessions"
 msgstr ""
 
+msgid "Active Users"
+msgstr ""
+
 msgid "Activity"
 msgstr ""
 
@@ -808,6 +811,9 @@ msgid "AdminArea|Stopping jobs failed"
 msgstr ""
 
 msgid "AdminArea|You’re about to stop all jobs.This will halt all current jobs that are running."
+msgstr ""
+
+msgid "AdminDashboard|Error loading the statistics. Please try again"
 msgstr ""
 
 msgid "AdminProjects| You’re about to permanently delete the project %{projectName}, its repository, and all related resources including issues, merge requests, etc..  Once you confirm and press %{strong_start}Delete project%{strong_end}, it cannot be undone or recovered."
@@ -7646,6 +7652,9 @@ msgstr ""
 msgid "NoteForm|Note"
 msgstr ""
 
+msgid "Notes"
+msgstr ""
+
 msgid "Notes|Are you sure you want to cancel creating this comment?"
 msgstr ""
 
@@ -10964,6 +10973,9 @@ msgid "Starts at (UTC)"
 msgstr ""
 
 msgid "State your message to activate"
+msgstr ""
+
+msgid "Statistics"
 msgstr ""
 
 msgid "Status"

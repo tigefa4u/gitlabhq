@@ -1,4 +1,6 @@
 import Api from '~/api';
+import { s__ } from '~/locale';
+import createFlash from '~/flash';
 import { convertObjectPropsToCamelCase } from '~/lib/utils/common_utils';
 import * as types from './mutation_types';
 
@@ -16,7 +18,11 @@ export const fetchStatistics = ({ dispatch }) => {
 
 export const receiveStatisticsSuccess = ({ commit }, statistics) =>
   commit(types.RECEIVE_STATISTICS_SUCCESS, statistics);
-export const receiveStatisticsError = ({ commit }) => commit(types.RECEIVE_STATISTICS_ERROR);
+
+export const receiveStatisticsError = ({ commit }) => {
+  commit(types.RECEIVE_STATISTICS_ERROR);
+  createFlash(s__('AdminDashboard|Error loading the statistics. Please try again'));
+};
 
 // prevent babel-plugin-rewire from generating an invalid default during karma tests
 export default () => {};
