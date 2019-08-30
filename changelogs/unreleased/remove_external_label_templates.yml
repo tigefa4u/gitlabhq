@@ -1,0 +1,5 @@
+---
+title: Remove empty external_authorization_classification_label from project templates
+merge_request: 31310
+author: wchandler
+type: fixed
