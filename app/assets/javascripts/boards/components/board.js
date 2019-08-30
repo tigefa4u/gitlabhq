@@ -50,6 +50,9 @@ export default Vue.extend({
     };
   },
   computed: {
+    isLoggedIn() {
+      return Boolean(gon.current_user_id);
+    },
     counterTooltip() {
       const { issuesSize } = this.list;
       return `${n__('%d issue', '%d issues', issuesSize)}`;
@@ -106,7 +109,11 @@ export default Vue.extend({
     Sortable.create(this.$el.parentNode, sortableOptions);
   },
   created() {
-    if (this.list.isExpandable && AccessorUtilities.isLocalStorageAccessSafe()) {
+    if (
+      this.list.isExpandable &&
+      AccessorUtilities.isLocalStorageAccessSafe() &&
+      !this.isLoggedIn
+    ) {
       const isCollapsed = localStorage.getItem(`${this.uniqueKey}.expanded`) === 'false';
 
       this.list.isExpanded = !isCollapsed;
@@ -118,19 +125,21 @@ export default Vue.extend({
     },
     toggleExpanded() {
       if (this.list.isExpandable) {
-        debugger
+        if (AccessorUtilities.isLocalStorageAccessSafe() && !this.isLoggedIn) {
+          this.list.isExpanded = !this.list.isExpanded;
 
-        // this.list.isExpanded = !this.list.isExpanded;
+          localStorage.setItem(`${this.uniqueKey}.expanded`, this.list.isExpanded);
+        }
 
-        // if (AccessorUtilities.isLocalStorageAccessSafe()) {
-        //   localStorage.setItem(`${this.uniqueKey}.expanded`, this.list.isExpanded);
-        // }
-        const self = this;
-        this.list.update()
-          .then(data => {
-            const collapsed = JSON.parse(data.config.data).list.collapsed;
-            self.list.isExpanded = !collapsed;
-          })
+        if (this.isLoggedIn) {
+          this.list
+            .update()
+            .then(data => {
+              const { collapsed } = JSON.parse(data.config.data).list;
+              this.list.isExpanded = !collapsed;
+            })
+            .catch(() => {});
+        }
 
         // When expanding/collapsing, the tooltip on the caret button sometimes stays open.
         // Close all tooltips manually to prevent dangling tooltips.

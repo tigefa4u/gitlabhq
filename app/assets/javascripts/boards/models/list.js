@@ -45,7 +45,6 @@ class List {
     const typeInfo = this.getTypeInfo(this.type);
     this.preset = Boolean(typeInfo.isPreset);
     this.isExpandable = Boolean(typeInfo.isExpandable);
-    console.log(obj)
     this.isExpanded = !obj.collapsed;
     this.page = 1;
     this.loading = true;
