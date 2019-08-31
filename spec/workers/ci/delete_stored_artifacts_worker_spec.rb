@@ -7,10 +7,10 @@ describe Ci::DeleteStoredArtifactsWorker do
     let(:project) { create(:project) }
     let(:worker) { described_class.new }
     let(:store_path) { 'file_path' }
-    let(:local_store) { true }
+    let(:file_store) { ObjectStorage::Store::LOCAL }
     let(:size) { 10 }
 
-    subject { worker.perform(project.id, store_path, local_store, size) }
+    subject { worker.perform(project.id, store_path, file_store, size) }
 
     before do
       allow(UpdateProjectStatistics).to receive(:update_project_statistics!)
@@ -18,7 +18,7 @@ describe Ci::DeleteStoredArtifactsWorker do
     end
 
     it 'calls the delete service' do
-      expect(Ci::DeleteStoredArtifactsService).to receive_message_chain(:new, :execute).with(store_path, local_store)
+      expect(Ci::DeleteStoredArtifactsService).to receive_message_chain(:new, :execute).with(store_path, file_store)
 
       subject
     end

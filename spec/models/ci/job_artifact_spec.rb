@@ -122,7 +122,7 @@ describe Ci::JobArtifact do
 
     let(:artifact_list) do
       described_class.all.map do |artifact|
-        [artifact.project_id, artifact.store_path, artifact.local_store?, artifact.size]
+        [artifact.project_id, artifact.store_path, artifact.file_store, artifact.size]
       end
     end
 
@@ -136,8 +136,8 @@ describe Ci::JobArtifact do
     subject { described_class.finalize_fast_destroy(artifact_list) }
 
     it 'calls the async deletion worker' do
-      expect(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async).with(project.id, instance_of(String), true, instance_of(Integer)).exactly(2).times
-      expect(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async).with(project.id, instance_of(String), false, instance_of(Integer)).exactly(2).times
+      expect(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async).with(project.id, instance_of(String), nil, instance_of(Integer)).exactly(2).times
+      expect(Ci::DeleteStoredArtifactsWorker).to receive(:perform_async).with(project.id, instance_of(String), ObjectStorage::Store::REMOTE, instance_of(Integer)).exactly(2).times
 
       subject
     end

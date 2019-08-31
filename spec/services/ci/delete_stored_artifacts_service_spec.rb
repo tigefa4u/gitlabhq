@@ -7,27 +7,40 @@ describe Ci::DeleteStoredArtifactsService do
     let(:project) { create(:project) }
     let(:service) { described_class.new(project) }
 
-    subject { service.execute(artifact_store_path, local) }
+    subject { service.execute(artifact_store_path, file_store) }
 
     context 'with a local artifact' do
       let(:artifact_store_path) { 'local_file_path' }
-      let(:local) { true }
       let(:full_path) { File.join(Gitlab.config.artifacts['storage_path'], 'local_file_path') }
 
       before do
         allow(File).to receive(:exist?).with(full_path).and_return(true)
       end
 
-      it 'deletes the local artifact' do
-        expect(File).to receive(:delete).with(full_path)
+      context 'when store is local' do
+        let(:file_store) { ObjectStorage::Store::LOCAL }
 
-        subject
+        it 'deletes the local artifact' do
+          expect(File).to receive(:delete).with(full_path)
+
+          subject
+        end
+      end
+
+      context 'when store is nil' do
+        let(:file_store) { nil }
+
+        it 'deletes the local artifact' do
+          expect(File).to receive(:delete).with(full_path)
+
+          subject
+        end
       end
     end
 
     context 'with a remote artifact' do
       let(:artifact_store_path) { 'remote_file_path' }
-      let(:local) { false }
+      let(:file_store) { ObjectStorage::Store::REMOTE }
       let(:file_double) { double }
 
       before do
@@ -40,6 +53,15 @@ describe Ci::DeleteStoredArtifactsService do
         expect(file_double).to receive(:destroy)
 
         subject
+      end
+    end
+
+    context 'with an invalid store' do
+      let(:artifact_store_path) { 'file_path' }
+      let(:file_store) { 'notavalidstore' }
+
+      it 'raises an error' do
+        expect { subject }.to raise_error(described_class::InvalidStoreError)
       end
     end
   end

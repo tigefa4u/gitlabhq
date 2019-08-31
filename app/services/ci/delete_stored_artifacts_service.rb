@@ -2,8 +2,17 @@
 
 module Ci
   class DeleteStoredArtifactsService < ::BaseService
-    def execute(store_path, local_store)
-      local_store ? delete_local_file(store_path) : delete_remote_file(store_path)
+    InvalidStoreError = Class.new(StandardError)
+
+    def execute(store_path, file_store)
+      case file_store
+      when nil, ObjectStorage::Store::LOCAL
+        delete_local_file(store_path)
+      when ObjectStorage::Store::REMOTE
+        delete_remote_file(store_path)
+      else
+        raise InvalidStoreError
+      end
     end
 
     def delete_local_file(file_path)

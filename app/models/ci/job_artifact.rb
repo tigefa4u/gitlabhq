@@ -152,7 +152,7 @@ module Ci
 
       def begin_fast_destroy
         preload(:project).find_each.map do |artifact|
-          [artifact.project_id, artifact.store_path, artifact.local_store?, artifact.size]
+          [artifact.project_id, artifact.store_path, artifact.file_store, artifact.size]
         end
       end
 
@@ -161,7 +161,7 @@ module Ci
           Ci::DeleteStoredArtifactsWorker.perform_async(
             artifact_info[0], # project_id
             artifact_info[1], # store_path
-            artifact_info[2], # local_store
+            artifact_info[2], # file_store
             artifact_info[3]  # size
           )
         end
