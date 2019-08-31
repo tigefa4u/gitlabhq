@@ -142,7 +142,8 @@ module Gitlab
          Gitlab::UsageDataCounters::SnippetCounter,
          Gitlab::UsageDataCounters::SearchCounter,
          Gitlab::UsageDataCounters::CycleAnalyticsCounter,
-         Gitlab::UsageDataCounters::SourceCodeCounter
+         Gitlab::UsageDataCounters::SourceCodeCounter,
+         Gitlab::UsageDataCounters::MergeRequestCounter
         ]
       end
 
@@ -188,8 +189,8 @@ module Gitlab
         {} # augmented in EE
       end
 
-      def count(relation, fallback: -1)
-        relation.count
+      def count(relation, count_by: nil, fallback: -1)
+        count_by ? relation.count(count_by) : relation.count
       rescue ActiveRecord::StatementInvalid
         fallback
       end

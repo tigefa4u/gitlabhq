@@ -4,7 +4,6 @@ class ApplicationSetting < ApplicationRecord
   include CacheableAttributes
   include CacheMarkdownField
   include TokenAuthenticatable
-  include IgnorableColumn
   include ChronicDurationAttribute
 
   add_authentication_token_field :runners_registration_token, encrypted: -> { Feature.enabled?(:application_settings_tokens_optional_encryption, default_enabled: true) ? :optional : :required }
@@ -18,19 +17,28 @@ class ApplicationSetting < ApplicationRecord
   # fix a lot of tests using allow_any_instance_of
   include ApplicationSettingImplementation
 
+  attr_encrypted :asset_proxy_secret_key,
+                 mode: :per_attribute_iv,
+                 insecure_mode: true,
+                 key: Settings.attr_encrypted_db_key_base_truncated,
+                 algorithm: 'aes-256-cbc'
+
   serialize :restricted_visibility_levels # rubocop:disable Cop/ActiveRecordSerialize
   serialize :import_sources # rubocop:disable Cop/ActiveRecordSerialize
   serialize :disabled_oauth_sign_in_sources, Array # rubocop:disable Cop/ActiveRecordSerialize
   serialize :domain_whitelist, Array # rubocop:disable Cop/ActiveRecordSerialize
   serialize :domain_blacklist, Array # rubocop:disable Cop/ActiveRecordSerialize
   serialize :repository_storages # rubocop:disable Cop/ActiveRecordSerialize
+  serialize :asset_proxy_whitelist, Array # rubocop:disable Cop/ActiveRecordSerialize
 
-  ignore_column :koding_url
-  ignore_column :koding_enabled
-  ignore_column :sentry_enabled
-  ignore_column :sentry_dsn
-  ignore_column :clientside_sentry_enabled
-  ignore_column :clientside_sentry_dsn
+  self.ignored_columns += %i[
+    clientside_sentry_dsn
+    clientside_sentry_enabled
+    koding_enabled
+    koding_url
+    sentry_dsn
+    sentry_enabled
+  ]
 
   cache_markdown_field :sign_in_text
   cache_markdown_field :help_page_text
@@ -75,11 +83,11 @@ class ApplicationSetting < ApplicationRecord
 
   validates :recaptcha_site_key,
             presence: true,
-            if: :recaptcha_enabled
+            if: :recaptcha_or_login_protection_enabled
 
   validates :recaptcha_private_key,
             presence: true,
-            if: :recaptcha_enabled
+            if: :recaptcha_or_login_protection_enabled
 
   validates :akismet_api_key,
             presence: true,
@@ -192,6 +200,17 @@ class ApplicationSetting < ApplicationRecord
             allow_nil: true,
             numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than: 65536 }
 
+  validates :asset_proxy_url,
+            presence: true,
+            allow_blank: false,
+            url: true,
+            if: :asset_proxy_enabled?
+
+  validates :asset_proxy_secret_key,
+            presence: true,
+            allow_blank: false,
+            if: :asset_proxy_enabled?
+
   SUPPORTED_KEY_TYPES.each do |type|
     validates :"#{type}_key_restriction", presence: true, key_restriction: { type: type }
   end
@@ -291,5 +310,9 @@ class ApplicationSetting < ApplicationRecord
   # memory.
   def self.cache_backend
     Gitlab::ThreadMemoryCache.cache_backend
+  end
+
+  def recaptcha_or_login_protection_enabled
+    recaptcha_enabled || login_recaptcha_protection_enabled
   end
 end

@@ -29,7 +29,7 @@ module NotesActions
     end
 
     notes = prepare_notes_for_rendering(notes)
-    notes = notes.reject { |n| n.cross_reference_not_visible_for?(current_user) }
+    notes = notes.select { |n| n.visible_for?(current_user) }
 
     notes_json[:notes] =
       if use_note_serializer?
@@ -73,6 +73,11 @@ module NotesActions
   # rubocop:disable Gitlab/ModuleWithInstanceVariables
   def update
     @note = Notes::UpdateService.new(project, current_user, update_note_params).execute(note)
+    unless @note
+      head :gone
+      return
+    end
+
     prepare_notes_for_rendering([@note])
 
     respond_to do |format|

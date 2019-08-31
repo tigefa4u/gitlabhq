@@ -43,13 +43,15 @@ Host gitlab.com
 
 Below are the settings for [GitLab Pages].
 
-| Setting                 | GitLab.com        | Default       |
-| ----------------------- | ----------------  | ------------- |
-| Domain name             | `gitlab.io`       | -             |
-| IP address              | `35.185.44.232`   | -             |
-| Custom domains support  | yes               | no            |
-| TLS certificates support| yes               | no            |
+| Setting                     | GitLab.com        | Default       |
+| --------------------------- | ----------------  | ------------- |
+| Domain name                 | `gitlab.io`       | -             |
+| IP address                  | `35.185.44.232`   | -             |
+| Custom domains support      | yes               | no            |
+| TLS certificates support    | yes               | no            |
+| Maximum size (uncompressed) | 1G                | 100M          |
 
+NOTE: **Note:**
 The maximum size of your Pages site is regulated by the artifacts maximum size
 which is part of [GitLab CI/CD](#gitlab-cicd).
 
@@ -59,7 +61,7 @@ Below are the current settings regarding [GitLab CI/CD](../../ci/README.md).
 
 | Setting                 | GitLab.com        | Default       |
 | -----------             | ----------------- | ------------- |
-| Artifacts maximum size  | 1G                | 100M          |
+| Artifacts maximum size (uncompressed) | 1G                | 100M          |
 | Artifacts [expiry time](../../ci/yaml/README.md#artifactsexpire_in)   | kept forever           | deleted after 30 days unless otherwise specified    |
 
 ## Repository size limit
@@ -112,57 +114,6 @@ Below are the shared Runners settings.
 
 The full contents of our `config.toml` are:
 
-**DigitalOcean**
-
-```toml
-concurrent = X
-check_interval = 1
-metrics_server = "X"
-sentry_dsn = "X"
-
-[[runners]]
-  name = "docker-auto-scale"
-  request_concurrency = X
-  url = "https://gitlab.com/"
-  token = "SHARED_RUNNER_TOKEN"
-  executor = "docker+machine"
-  environment = [
-    "DOCKER_DRIVER=overlay2"
-  ]
-  limit = X
-  [runners.docker]
-    image = "ruby:2.5"
-    privileged = true
-  [runners.machine]
-    IdleCount = 20
-    IdleTime = 1800
-    OffPeakPeriods = ["* * * * * sat,sun *"]
-    OffPeakTimezone = "UTC"
-    OffPeakIdleCount = 5
-    OffPeakIdleTime = 1800
-    MaxBuilds = 1
-    MachineName = "srm-%s"
-    MachineDriver = "digitalocean"
-    MachineOptions = [
-      "digitalocean-image=X",
-      "digitalocean-ssh-user=core",
-      "digitalocean-region=nyc1",
-      "digitalocean-size=s-2vcpu-2gb",
-      "digitalocean-private-networking",
-      "digitalocean-tags=shared_runners,gitlab_com",
-      "engine-registry-mirror=http://INTERNAL_IP_OF_OUR_REGISTRY_MIRROR",
-      "digitalocean-access-token=DIGITAL_OCEAN_ACCESS_TOKEN",
-    ]
-  [runners.cache]
-    Type = "s3"
-    BucketName = "runner"
-    Insecure = true
-    Shared = true
-    ServerAddress = "INTERNAL_IP_OF_OUR_CACHE_SERVER"
-    AccessKey = "ACCESS_KEY"
-    SecretKey = "ACCESS_SECRET_KEY"
-```
-
 **Google Cloud Platform**
 
 ```toml
@@ -178,20 +129,25 @@ sentry_dsn = "X"
   token = "SHARED_RUNNER_TOKEN"
   executor = "docker+machine"
   environment = [
-    "DOCKER_DRIVER=overlay2"
+    "DOCKER_DRIVER=overlay2",
+    "DOCKER_TLS_CERTDIR="
   ]
   limit = X
   [runners.docker]
     image = "ruby:2.5"
     privileged = true
+    volumes = [
+      "/certs/client",
+      "/dummy-sys-class-dmi-id:/sys/class/dmi/id:ro" # Make kaniko builds work on GCP.
+    ]
   [runners.machine]
-    IdleCount = 20
-    IdleTime = 1800
+    IdleCount = 50
+    IdleTime = 3600
     OffPeakPeriods = ["* * * * * sat,sun *"]
     OffPeakTimezone = "UTC"
-    OffPeakIdleCount = 5
-    OffPeakIdleTime = 1800
-    MaxBuilds = 1
+    OffPeakIdleCount = 15
+    OffPeakIdleTime = 3600
+    MaxBuilds = 1 # For security reasons we delete the VM after job has finished so it's not reused.
     MachineName = "srm-%s"
     MachineDriver = "google"
     MachineOptions = [
@@ -202,17 +158,18 @@ sentry_dsn = "X"
       "google-tags=gitlab-com,srm",
       "google-use-internal-ip",
       "google-zone=us-east1-d",
+      "engine-opt=mtu=1460", # Set MTU for container interface, for more information check https://gitlab.com/gitlab-org/gitlab-runner/issues/3214#note_82892928
       "google-machine-image=PROJECT/global/images/IMAGE",
-      "engine-registry-mirror=http://INTERNAL_IP_OF_OUR_REGISTRY_MIRROR"
+      "engine-opt=ipv6", # This will create IPv6 interfaces in the containers.
+      "engine-opt=fixed-cidr-v6=fc00::/7",
+      "google-operation-backoff-initial-interval=2" # Custom flag from forked docker-machine, for more information check https://github.com/docker/machine/pull/4600
     ]
   [runners.cache]
-    Type = "s3"
-    BucketName = "runner"
-    Insecure = true
+    Type = "gcs"
     Shared = true
-    ServerAddress = "INTERNAL_IP_OF_OUR_CACHE_SERVER"
-    AccessKey = "ACCESS_KEY"
-    SecretKey = "ACCESS_SECRET_KEY"
+    [runners.cache.gcs]
+      CredentialsFile = "/path/to/file"
+      BucketName = "bucket-name"
 ```
 
 ## Sidekiq
@@ -357,27 +314,34 @@ Source:
 
 #### Git and container registry failed authentication ban
 
-GitLab.com responds with HTTP status code 403 for 1 hour, if 30 failed
+GitLab.com responds with HTTP status code `403` for 1 hour, if 30 failed
 authentication requests were received in a 3-minute period from a single IP address.
 
 This applies only to Git requests and container registry (`/jwt/auth`) requests
 (combined).
 
-This limit is reset by requests that authenticate successfully. For example, 29
-failed authentication requests followed by 1 successful request, followed by 29
-more failed authentication requests would not trigger a ban.
+This limit:
+
+- Is reset by requests that authenticate successfully. For example, 29
+  failed authentication requests followed by 1 successful request, followed by 29
+  more failed authentication requests would not trigger a ban.
+- Does not apply to JWT requests authenticated by `gitlab-ci-token`.
 
 No response headers are provided.
 
 ### Admin Area settings
 
-GitLab.com does not currently use these settings.
+GitLab.com:
+
+- Has [rate limits on raw endpoints](../../user/admin_area/settings/rate_limits_on_raw_endpoints.md)
+  set to the default. 
+- Does not have the user and IP rate limits settings enabled.
 
 ## GitLab.com at scale
 
 In addition to the GitLab Enterprise Edition Omnibus install, GitLab.com uses
 the following applications and settings to achieve scale. All settings are
-located publicly available [chef cookbooks](https://gitlab.com/gitlab-cookbooks).
+publicly available at [chef cookbooks](https://gitlab.com/gitlab-cookbooks).
 
 ### ELK
 

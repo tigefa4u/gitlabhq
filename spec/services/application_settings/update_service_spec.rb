@@ -110,6 +110,39 @@ describe ApplicationSettings::UpdateService do
     end
   end
 
+  describe 'markdown cache invalidators' do
+    shared_examples 'invalidates markdown cache' do |attribute|
+      let(:params) { attribute }
+
+      it 'increments cache' do
+        expect { subject.execute }.to change(application_settings, :local_markdown_version).by(1)
+      end
+    end
+
+    it_behaves_like 'invalidates markdown cache', { asset_proxy_enabled: true }
+    it_behaves_like 'invalidates markdown cache', { asset_proxy_url: 'http://test.com' }
+    it_behaves_like 'invalidates markdown cache', { asset_proxy_secret_key: 'another secret' }
+    it_behaves_like 'invalidates markdown cache', { asset_proxy_whitelist: ['domain.com'] }
+
+    context 'when also setting the local_markdown_version' do
+      let(:params) { { asset_proxy_enabled: true, local_markdown_version: 12 } }
+
+      it 'does not increment' do
+        expect { subject.execute }.to change(application_settings, :local_markdown_version).to(12)
+      end
+    end
+
+    context 'do not invalidate if value does not change' do
+      let(:params) { { asset_proxy_enabled: true, asset_proxy_secret_key: 'secret', asset_proxy_url: 'http://test.com' } }
+
+      it 'does not increment' do
+        described_class.new(application_settings, admin, params).execute
+
+        expect { described_class.new(application_settings, admin, params).execute }.not_to change(application_settings, :local_markdown_version)
+      end
+    end
+  end
+
   describe 'performance bar settings' do
     using RSpec::Parameterized::TableSyntax
 
@@ -199,6 +232,24 @@ describe ApplicationSettings::UpdateService do
   context 'when external authorization is enabled' do
     before do
       enable_external_authorization_service_check
+    end
+
+    it 'does not validate labels if external authorization gets disabled' do
+      expect_any_instance_of(described_class).not_to receive(:validate_classification_label)
+
+      described_class.new(application_settings, admin, { external_authorization_service_enabled: false }).execute
+    end
+
+    it 'does validate labels if external authorization gets enabled ' do
+      expect_any_instance_of(described_class).to receive(:validate_classification_label)
+
+      described_class.new(application_settings, admin, { external_authorization_service_enabled: true }).execute
+    end
+
+    it 'does validate labels if external authorization is left unchanged' do
+      expect_any_instance_of(described_class).to receive(:validate_classification_label)
+
+      described_class.new(application_settings, admin, { external_authorization_service_default_label: 'new-label' }).execute
     end
 
     it 'does not save the settings with an error if the service denies access' do

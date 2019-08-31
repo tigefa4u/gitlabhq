@@ -14,9 +14,9 @@ import { __, s__ } from '~/locale';
 import Icon from '~/vue_shared/components/icon.vue';
 import { getParameterValues, mergeUrlParams } from '~/lib/utils/url_utility';
 import invalidUrl from '~/lib/utils/invalid_url';
-import MonitorAreaChart from './charts/area.vue';
+import PanelType from 'ee_else_ce/monitoring/components/panel_type.vue';
+import MonitorTimeSeriesChart from './charts/time_series.vue';
 import MonitorSingleStatChart from './charts/single_stat.vue';
-import PanelType from './panel_type.vue';
 import GraphGroup from './graph_group.vue';
 import EmptyState from './empty_state.vue';
 import { sidebarAnimationDuration, timeWindows } from '../constants';
@@ -26,7 +26,7 @@ let sidebarMutationObserver;
 
 export default {
   components: {
-    MonitorAreaChart,
+    MonitorTimeSeriesChart,
     MonitorSingleStatChart,
     PanelType,
     GraphGroup,
@@ -137,6 +137,16 @@ export default {
       default: '',
     },
     smallEmptyState: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    alertsEndpoint: {
+      type: String,
+      required: false,
+      default: null,
+    },
+    prometheusAlertsAvailable: {
       type: Boolean,
       required: false,
       default: false,
@@ -264,12 +274,12 @@ export default {
     showToast() {
       this.$toast.show(__('Link copied to clipboard'));
     },
+    // TODO: END
     generateLink(group, title, yLabel) {
       const dashboard = this.currentDashboard || this.firstDashboard.path;
-      const params = { dashboard, group, title, y_label: yLabel };
+      const params = _.pick({ dashboard, group, title, y_label: yLabel }, value => value != null);
       return mergeUrlParams(params, window.location.href);
     },
-    // TODO: END
     hideAddMetricModal() {
       this.$refs.addMetricModal.hide();
     },
@@ -449,11 +459,13 @@ export default {
             :clipboard-text="generateLink(groupData.group, graphData.title, graphData.y_label)"
             :graph-data="graphData"
             :dashboard-width="elWidth"
+            :alerts-endpoint="alertsEndpoint"
+            :prometheus-alerts-available="prometheusAlertsAvailable"
             :index="`${index}-${graphIndex}`"
           />
         </template>
         <template v-else>
-          <monitor-area-chart
+          <monitor-time-series-chart
             v-for="(graphData, graphIndex) in chartsWithData(groupData.metrics)"
             :key="graphIndex"
             :graph-data="graphData"
@@ -461,7 +473,7 @@ export default {
             :thresholds="getGraphAlertValues(graphData.queries)"
             :container-width="elWidth"
             :project-path="projectPath"
-            group-id="monitor-area-chart"
+            group-id="monitor-time-series-chart"
           >
             <div class="d-flex align-items-center">
               <alert-widget
@@ -503,7 +515,7 @@ export default {
                 </gl-dropdown-item>
               </gl-dropdown>
             </div>
-          </monitor-area-chart>
+          </monitor-time-series-chart>
         </template>
       </graph-group>
     </div>

@@ -19,7 +19,7 @@ Once enabled, GitLab will automatically detect metrics from known services in th
 
 ### Managed Prometheus on Kubernetes
 
-> **Note**: [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/issues/28916) in GitLab 10.5
+> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/issues/28916) in GitLab 10.5.
 
 GitLab can seamlessly deploy and manage Prometheus on a [connected Kubernetes cluster](../clusters/index.md), making monitoring of your apps easy.
 
@@ -194,7 +194,7 @@ The following tables outline the details of expected properties.
 
 | Property | Type | Required | Description |
 | ------ | ------ | ------ | ------- |
-| `type` | enum | no, defaults to `area-chart` | Specifies the chart type to use. |
+| `type` | enum | no, defaults to `area-chart` | Specifies the chart type to use, can be `area-chart` or `line-chart` |
 | `title` | string | yes | Heading for the panel. |
 | `y_label` | string | no, but highly encouraged | Y-Axis label for the panel. |
 | `weight` | number | no, defaults to order in file | Order to appear within the grouping. Lower number means higher priority, which will be higher on the page. Numbers do not need to be consecutive. |
@@ -269,6 +269,12 @@ Note the following properties:
 
 ![single stat panel type](img/prometheus_dashboard_single_stat_panel_type.png)
 
+### Downloading data as CSV
+
+Data from Prometheus charts on the metrics dashboard can be downloaded as CSV.
+
+![Downloading as CSV](img/download_as_csv.png)
+
 ### Setting up alerts for Prometheus metrics **(ULTIMATE)**
 
 #### Managed Prometheus instances
@@ -336,15 +342,21 @@ If the metric exceeds the threshold of the alert for over 5 minutes, an email wi
 
 ## Determining the performance impact of a merge
 
-> [Introduced][ce-10408] in GitLab 9.2.
-> GitLab 9.3 added the [numeric comparison](https://gitlab.com/gitlab-org/gitlab-ce/issues/27439) of the 30 minute averages.
-> Requires [Kubernetes](prometheus_library/kubernetes.md) metrics
+> - [Introduced][ce-10408] in GitLab 9.2.
+> - GitLab 9.3 added the [numeric comparison](https://gitlab.com/gitlab-org/gitlab-ce/issues/27439) of the 30 minute averages.
 
 Developers can view the performance impact of their changes within the merge
-request workflow. When a source branch has been deployed to an environment, a sparkline and numeric comparison of the average memory consumption will appear. On the sparkline, a dot
-indicates when the current changes were deployed, with up to 30 minutes of
-performance data displayed before and after. The comparison shows the difference between the 30 minute average before and after the deployment. This information is updated after
-each commit has been deployed.
+request workflow.
+
+NOTE: **Note:**
+Requires [Kubernetes](prometheus_library/kubernetes.md) metrics.
+
+When a source branch has been deployed to an environment, a sparkline and
+numeric comparison of the average memory consumption will appear. On the
+sparkline, a dot indicates when the current changes were deployed, with up to 30 minutes of
+performance data displayed before and after. The comparison shows the difference
+between the 30 minute average before and after the deployment. This information
+is updated after each commit has been deployed.
 
 Once merged and the target branch has been redeployed, the metrics will switch
 to show the new environments this revision has been deployed to.
@@ -354,14 +366,20 @@ Prometheus server.
 
 ![Merge Request with Performance Impact](img/merge_request_performance.png)
 
-## Embedding metric charts within Gitlab Flavored Markdown
+## Embedding metric charts within GitLab Flavored Markdown
 
 > [Introduced][ce-29691] in GitLab 12.2.
-> Requires [Kubernetes](prometheus_library/kubernetes.md) metrics.
 
 It is possible to display metrics charts within [GitLab Flavored Markdown](../../markdown.md#gitlab-flavored-markdown-gfm).
 
+NOTE: **Note:**
+Requires [Kubernetes](prometheus_library/kubernetes.md) metrics.
+
 To display a metric chart, include a link of the form `https://<root_url>/<project>/environments/<environment_id>/metrics`.
+
+A single chart may also be embedded. You can generate a link to the chart via the dropdown located on the right side of the chart:
+
+![Generate Link To Chart](img/generate_link_to_chart.png)
 
 The following requirements must be met for the metric to unfurl:
 
@@ -374,6 +392,27 @@ The following requirements must be met for the metric to unfurl:
  If all of the above are true, then the metric will unfurl as seen below:
 
 ![Embedded Metrics](img/embed_metrics.png)
+
+### Embedding live Grafana charts
+
+It is also possible to embed live [Grafana](https://docs.gitlab.com/omnibus/settings/grafana.html) charts within issues, as a [Direct Linked Rendered Image](https://grafana.com/docs/reference/sharing/#direct-link-rendered-image).
+
+The sharing dialog within Grafana provides the link, as highlighted below.
+
+![Grafana Direct Linked Rendered Image](img/grafana_live_embed.png)
+
+NOTE: **Note:**
+For this embed to display correctly the Grafana instance must be available to the target user, either as a public dashboard or on the same network.
+
+Copy the link and add an image tag as [inline HTML](../../markdown.md#inline-html) in your markdown. You may tweak the query parameters as required. For instance, removing the `&from=` and `&to=` parameters will give you a live chart. Here is example markup for a live chart from GitLab's public dashboard:
+
+```html
+<img src="https://dashboards.gitlab.com/render/d-solo/RZmbBr7mk/gitlab-triage?orgId=1&refresh=30s&var-env=gprd&var-environment=gprd&var-prometheus=prometheus-01-inf-gprd&var-prometheus_app=prometheus-app-01-inf-gprd&var-backend=All&var-type=All&var-stage=main&panelId=1247&width=1000&height=300"/>
+```
+
+This will render like so:
+
+<img src="https://dashboards.gitlab.com/render/d-solo/RZmbBr7mk/gitlab-triage?orgId=1&refresh=30s&var-env=gprd&var-environment=gprd&var-prometheus=prometheus-01-inf-gprd&var-prometheus_app=prometheus-app-01-inf-gprd&var-backend=All&var-type=All&var-stage=main&panelId=1247&width=1000&height=300"/>
 
 ## Troubleshooting
 

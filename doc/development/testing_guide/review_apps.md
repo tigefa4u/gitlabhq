@@ -132,7 +132,7 @@ to prevent other pods from being scheduled on this node pool.
 This is to ensure Tiller isn't affected by "noisy" neighbors that could put
 their node under pressure.
 
-## How to:
+## How to
 
 ### Log into my Review App
 
@@ -255,8 +255,8 @@ that a machine will hit the "too many mount points" problem in the future.
 thousands of unused Docker images.**
 
   > We have to start somewhere and improve later. Also, we're using the
-  CNG-mirror project to store these Docker images so that we can just wipe out
-  the registry at some point, and use a new fresh, empty one.
+  > CNG-mirror project to store these Docker images so that we can just wipe out
+  > the registry at some point, and use a new fresh, empty one.
 
 **How do we secure this from abuse? Apps are open to the world so we need to
 find a way to limit it to only us.**

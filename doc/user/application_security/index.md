@@ -28,7 +28,7 @@ GitLab can scan and report any vulnerabilities found in your project.
 | [Dependency List](dependency_list/index.md) **(ULTIMATE)**                   | View your project's dependencies and their known vulnerabilities.      |
 | [Dependency Scanning](dependency_scanning/index.md) **(ULTIMATE)**           | Analyze your dependencies for known vulnerabilities.                   |
 | [Dynamic Application Security Testing (DAST)](dast/index.md) **(ULTIMATE)**  | Analyze running web applications for known vulnerabilities.            |
-| [License Management](license_management/index.md) **(ULTIMATE)**             | Search your project's dependencies for their licenses.                 |
+| [License Compliance](license_management/index.md) **(ULTIMATE)**             | Search your project's dependencies for their licenses.                 |
 | [Security Dashboard](security_dashboard/index.md) **(ULTIMATE)**             | View vulnerabilities in all your projects and groups.                  |
 | [Static Application Security Testing (SAST)](sast/index.md) **(ULTIMATE)**   | Analyze source code for known vulnerabilities.                         |
 
@@ -153,7 +153,7 @@ Clicking on this button will create a merge request to apply the solution onto t
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ee/issues/9928) in [GitLab Ultimate](https://about.gitlab.com/pricing) 12.2.
 
-Merge Request Approvals can be configured to require approval from a member 
+Merge Request Approvals can be configured to require approval from a member
 of your security team when a vulnerability would be introduced by a merge request.
 
 This threshold is defined as `high`, `critical`, or `unknown`

@@ -5,7 +5,7 @@ description: 'Learn how to contribute to GitLab.'
 
 # Contributor and Development Docs
 
-## Get started!
+## Get started
 
 - Set up GitLab's development environment with [GitLab Development Kit (GDK)](https://gitlab.com/gitlab-org/gitlab-development-kit/blob/master/doc/howto/README.md)
 - [GitLab contributing guide](contributing/index.md)
@@ -65,6 +65,7 @@ description: 'Learn how to contribute to GitLab.'
 - [Repository mirroring](repository_mirroring.md)
 - [Git LFS](lfs.md)
 - [Developing against interacting components or features](interacting_components.md)
+- [File uploads](uploads.md)
 
 ## Performance guides
 
@@ -116,6 +117,7 @@ description: 'Learn how to contribute to GitLab.'
 ## Case studies
 
 - [Database case study: Filtering by label](filtering_by_label.md)
+- [Database case study: Namespaces storage statistics](namespaces_storage_statistics.md)
 
 ## Integration guides
 

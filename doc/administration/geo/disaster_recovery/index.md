@@ -1,4 +1,4 @@
-# Disaster Recovery **(PREMIUM ONLY)**
+# Disaster Recovery (Geo) **(PREMIUM ONLY)**
 
 Geo replicates your database, your Git repositories, and few other assets.
 We will support and replicate more data in the future, that will enable you to
@@ -297,7 +297,7 @@ for another **primary** node. All the old replication settings will be overwritt
 
 ## Troubleshooting
 
-### I followed the disaster recovery instructions and now two-factor auth is broken!
+### I followed the disaster recovery instructions and now two-factor auth is broken
 
 The setup instructions for Geo prior to 10.5 failed to replicate the
 `otp_key_base` secret, which is used to encrypt the two-factor authentication

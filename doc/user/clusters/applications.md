@@ -103,7 +103,7 @@ implications](../project/clusters/index.md#security-implications) before doing s
 
 NOTE: **Note:**
 The
-[runner/gitlab-runner](https://gitlab.com/charts/gitlab-runner)
+[runner/gitlab-runner](https://gitlab.com/gitlab-org/charts/gitlab-runner)
 chart is used to install this application with a
 [`values.yaml`](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/vendor/runner/values.yaml)
 file.
@@ -225,8 +225,7 @@ file.
 
 ## Upgrading applications
 
-> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/24789)
-in GitLab 11.8.
+> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/24789) in GitLab 11.8.
 
 The applications below can be upgraded.
 

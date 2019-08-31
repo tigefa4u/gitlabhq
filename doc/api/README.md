@@ -77,11 +77,12 @@ authentication is not provided. For
 those cases where it is not required, this will be mentioned in the documentation
 for each individual endpoint. For example, the [`/projects/:id` endpoint](projects.md).
 
-There are three ways to authenticate with the GitLab API:
+There are four ways to authenticate with the GitLab API:
 
 1. [OAuth2 tokens](#oauth2-tokens)
 1. [Personal access tokens](#personal-access-tokens)
 1. [Session cookie](#session-cookie)
+1. [GitLab CI job token](#gitlab-ci-job-token-premium) **(PREMIUM)**
 
 For admins who want to authenticate with the API as a specific user, or who want to build applications or scripts that do so, two options are available:
 
@@ -150,6 +151,14 @@ the API to generate a new session cookie is currently not supported.
 The primary user of this authentication method is the web frontend of GitLab itself,
 which can use the API as the authenticated user to get a list of their projects,
 for example, without needing to explicitly pass an access token.
+
+### GitLab CI job token **(PREMIUM)**
+
+With a few API endpoints you can use a [GitLab CI job token](../user/project/new_ci_build_permissions_model.md#job-token)
+to authenticate with the API:
+
+- [Get job artifacts](jobs.md#get-job-artifacts)
+- [Pipeline triggers](pipeline_triggers.md)
 
 ### Impersonation tokens
 
@@ -387,7 +396,7 @@ GET /api/v4/projects/diaspora%2Fdiaspora
 
 NOTE: **Note:**
 A project's **path** is not necessarily the same as its **name**.  A
-project's path can found in the project's URL or in the project's settings
+project's path can be found in the project's URL or in the project's settings
 under **General > Advanced > Change path**.
 
 ## Branches and tags name encoding
@@ -413,7 +422,7 @@ We can call the API with `array` and `hash` types parameters as shown below:
 curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" \
 -d "import_sources[]=github" \
 -d "import_sources[]=bitbucket" \
-"https://gitlab.example.com/api/v4/some_endpoint
+https://gitlab.example.com/api/v4/some_endpoint
 ```
 
 ### `hash`

@@ -109,6 +109,8 @@ Rails.application.routes.draw do
     Gitlab.ee do
       draw :smartcard
       draw :jira_connect
+      draw :username
+      draw :trial_registration
     end
 
     Gitlab.ee do

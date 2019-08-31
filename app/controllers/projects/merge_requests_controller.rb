@@ -12,6 +12,7 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   skip_before_action :merge_request, only: [:index, :bulk_update]
   before_action :whitelist_query_limiting, only: [:assign_related_issues, :update]
   before_action :authorize_update_issuable!, only: [:close, :edit, :update, :remove_wip, :sort]
+  before_action :authorize_test_reports!, only: [:test_reports]
   before_action :set_issuables_index, only: [:index]
   before_action :authenticate_user!, only: [:assign_related_issues]
   before_action :check_user_can_push_to_source_branch!, only: [:rebase]
@@ -46,6 +47,7 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
         @noteable = @merge_request
         @commits_count = @merge_request.commits_count
         @issuable_sidebar = serializer.represent(@merge_request, serializer: 'sidebar')
+        @current_user_data = UserSerializer.new(project: @project).represent(current_user, {}, MergeRequestUserEntity).to_json
 
         set_pipeline_variables
 
@@ -188,7 +190,7 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   def pipeline_status
     render json: PipelineSerializer
       .new(project: @project, current_user: @current_user)
-      .represent_status(@merge_request.head_pipeline)
+      .represent_status(head_pipeline)
   end
 
   def ci_environments_status
@@ -219,7 +221,7 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   alias_method :issuable, :merge_request
   alias_method :awardable, :merge_request
 
-  def issuable_sorting_field
+  def sorting_field
     MergeRequest::SORTING_PREFERENCE_FIELD
   end
 
@@ -237,6 +239,13 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   end
 
   private
+
+  def head_pipeline
+    strong_memoize(:head_pipeline) do
+      pipeline = @merge_request.head_pipeline
+      pipeline if can?(current_user, :read_pipeline, pipeline)
+    end
+  end
 
   def ci_environments_status_on_merge_result?
     params[:environment_target] == 'merge_commit'
@@ -335,5 +344,10 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
     else
       render json: { status_reason: 'Unknown error' }, status: :internal_server_error
     end
+  end
+
+  def authorize_test_reports!
+    # MergeRequest#actual_head_pipeline is the pipeline accessed in MergeRequest#compare_reports.
+    return render_404 unless can?(current_user, :read_build, merge_request.actual_head_pipeline)
   end
 end

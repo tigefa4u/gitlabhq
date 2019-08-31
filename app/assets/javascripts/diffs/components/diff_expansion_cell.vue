@@ -212,19 +212,18 @@ export default {
 </script>
 
 <template>
-  <td :colspan="colspan">
+  <td :colspan="colspan" class="text-center">
     <div class="content js-line-expansion-content">
       <a
         v-if="canExpandUp"
         v-tooltip
-        class="cursor-pointer js-unfold unfold-icon"
+        class="cursor-pointer js-unfold unfold-icon d-inline-block pt-2 pb-2"
         data-placement="top"
         data-container="body"
         :title="__('Expand up')"
         @click="handleExpandLines(EXPAND_UP)"
       >
-        <!-- TODO: remove style & replace with correct icon, waiting for MR https://gitlab.com/gitlab-org/gitlab-design/issues/499 -->
-        <icon :size="12" name="expand-left" aria-hidden="true" style="transform: rotate(270deg);" />
+        <icon :size="12" name="expand-up" aria-hidden="true" />
       </a>
       <a class="mx-2 cursor-pointer js-unfold-all" @click="handleExpandLines()">
         <span>{{ s__('Diffs|Show all lines') }}</span>
@@ -232,14 +231,13 @@ export default {
       <a
         v-if="canExpandDown"
         v-tooltip
-        class="cursor-pointer js-unfold-down has-tooltip unfold-icon"
+        class="cursor-pointer js-unfold-down has-tooltip unfold-icon d-inline-block pt-2 pb-2"
         data-placement="top"
         data-container="body"
         :title="__('Expand down')"
         @click="handleExpandLines(EXPAND_DOWN)"
       >
-        <!-- TODO: remove style & replace with correct icon, waiting for MR https://gitlab.com/gitlab-org/gitlab-design/issues/499 -->
-        <icon :size="12" name="expand-left" aria-hidden="true" style="transform: rotate(90deg);" />
+        <icon :size="12" name="expand-down" aria-hidden="true" />
       </a>
     </div>
   </td>

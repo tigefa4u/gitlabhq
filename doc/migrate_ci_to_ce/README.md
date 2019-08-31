@@ -32,7 +32,7 @@ upgrade to 8.0 until you finish the migration procedure.
 
 ## Before upgrading
 
-If you have GitLab CI installed using omnibus-gitlab packages but **you don't want to migrate your existing data**:
+If you have GitLab CI installed using Omnibus GitLab packages but **you don't want to migrate your existing data**:
 
 ```bash
 mv /var/opt/gitlab/gitlab-ci/builds /var/opt/gitlab/gitlab-ci/builds.$(date +%s)
@@ -227,7 +227,7 @@ sudo mv /path/to/12345_gitlab_ci_backup.tar /var/opt/gitlab/backups/
 sudo mv /path/to/12345_gitlab_ci_backup.tar /home/git/gitlab/tmp/backups/
 ```
 
-### 5. Import the CI data into GitLab.
+### 5. Import the CI data into GitLab
 
 This step will delete any existing CI data on your GitLab server. There should
 be no CI data yet because you turned CI on the GitLab server off earlier.
@@ -353,7 +353,7 @@ Errno::EACCES: Permission denied @ rb_sysopen - config/secrets.yml
 This can happen if you are updating from versions prior to 7.13 straight to 8.0.
 The fix for this is to update to Omnibus 7.14 first and then update it to 8.0.
 
-### Permission denied when accessing /var/opt/gitlab/gitlab-ci/builds
+### Permission denied when accessing `/var/opt/gitlab/gitlab-ci/builds`
 
 To fix that issue you have to change builds/ folder permission before doing final backup:
 

@@ -45,7 +45,7 @@ The following table depicts the various user permission levels in a project.
 | Leave comments                                    | ✓ (*1*) | ✓          | ✓           | ✓        | ✓      |
 | View Insights charts **(ULTIMATE)**               | ✓       | ✓          | ✓           | ✓        | ✓      |
 | View approved/blacklisted licenses **(ULTIMATE)** | ✓       | ✓          | ✓           | ✓        | ✓      |
-| View license management reports **(ULTIMATE)**    | ✓ (*1*) | ✓          | ✓           | ✓        | ✓      |
+| View License Compliance reports **(ULTIMATE)**    | ✓ (*1*) | ✓          | ✓           | ✓        | ✓      |
 | View Security reports **(ULTIMATE)**              | ✓ (*1*) | ✓          | ✓           | ✓        | ✓      |
 | View Dependency list **(ULTIMATE)**               | ✓ (*1*) | ✓          | ✓           | ✓        | ✓      |
 | View [Design Management](project/issues/design_management.md) pages **(PREMIUM)** | ✓ (*1*) | ✓          | ✓           | ✓        | ✓      |
@@ -162,7 +162,7 @@ to learn more.
 ### Cycle Analytics permissions
 
 Find the current permissions on the Cycle Analytics dashboard on
-the [documentation on Cycle Analytics permissions](project/cycle_analytics.md#permissions).
+the [documentation on Cycle Analytics permissions](analytics/cycle_analytics.md#permissions).
 
 ### Issue Board permissions
 
@@ -204,27 +204,29 @@ Any user can remove themselves from a group, unless they are the last Owner of
 the group. The following table depicts the various user permission levels in a
 group.
 
-| Action                                          | Guest | Reporter | Developer | Maintainer | Owner |
-|-------------------------------------------------|-------|----------|-----------|------------|-------|
-| Browse group                                    | ✓     | ✓        | ✓         | ✓          | ✓     |
-| View Insights charts **(ULTIMATE)**             | ✓     | ✓        | ✓         | ✓          | ✓     |
-| View group epic **(ULTIMATE)**                  | ✓     | ✓        | ✓         | ✓          | ✓     |
-| Create/edit group epic **(ULTIMATE)**           |       | ✓        | ✓         | ✓          | ✓     |
-| Manage group labels                             |       | ✓        | ✓         | ✓          | ✓     |
-| Create project in group                         |       |          | ✓         | ✓          | ✓     |
-| Create/edit/delete group milestones             |       |          | ✓         | ✓          | ✓     |
-| Enable/disable a dependency proxy **(PREMIUM)** |       |          | ✓         | ✓          | ✓     |
-| Use security dashboard **(ULTIMATE)**           |       |          | ✓         | ✓          | ✓     |
-| Create subgroup                                 |       |          |           | ✓ (1)      | ✓     |
-| Edit group                                      |       |          |           |            | ✓     |
-| Manage group members                            |       |          |           |            | ✓     |
-| Remove group                                    |       |          |           |            | ✓     |
-| Delete group epic **(ULTIMATE)**                |       |          |           |            | ✓     |
-| View group Audit Events                         |       |          |           |            | ✓     |
-| Disable notification emails                     |       |          |           |            | ✓     |
+| Action                                                 | Guest | Reporter | Developer | Maintainer | Owner |
+|--------------------------------------------------------|-------|----------|-----------|------------|-------|
+| Browse group                                           | ✓     | ✓        | ✓         | ✓          | ✓     |
+| View Insights charts **(ULTIMATE)**                    | ✓     | ✓        | ✓         | ✓          | ✓     |
+| View group epic **(ULTIMATE)**                         | ✓     | ✓        | ✓         | ✓          | ✓     |
+| Create/edit group epic **(ULTIMATE)**                  |       | ✓        | ✓         | ✓          | ✓     |
+| Manage group labels                                    |       | ✓        | ✓         | ✓          | ✓     |
+| Create project in group                                |       |          | ✓         | ✓          | ✓     |
+| Create/edit/delete group milestones                    |       |          | ✓         | ✓          | ✓     |
+| Enable/disable a dependency proxy **(PREMIUM)**        |       |          | ✓         | ✓          | ✓     |
+| Use security dashboard **(ULTIMATE)**                  |       |          | ✓         | ✓          | ✓     |
+| Create subgroup                                        |       |          |           | ✓ (1)      | ✓     |
+| Edit group                                             |       |          |           |            | ✓     |
+| Manage group members                                   |       |          |           |            | ✓     |
+| Remove group                                           |       |          |           |            | ✓     |
+| Delete group epic **(ULTIMATE)**                       |       |          |           |            | ✓     |
+| Edit epic comments (posted by any user) **(ULTIMATE)** |       |          |           | ✓ (2)      | ✓ (2) |
+| View group Audit Events                                |       |          |           |            | ✓     |
+| Disable notification emails                            |       |          |           |            | ✓     |
 
 - (1): Groups can be set to [allow either Owners or Owners and
   Maintainers to create subgroups](group/subgroups/index.md#creating-a-subgroup)
+- (2): Introduced in GitLab 12.2.
 
 ### Subgroup permissions
 
@@ -237,13 +239,16 @@ To learn more, read through the documentation on
 
 ## Guest User
 
-Create a user and assign to a project with a role as `Guest` user, this user 
-will be considered as guest user by GitLab and will not take up the license. 
-There is no specific `Guest` role for newly created users. If this user will 
-be assigned a higher role to any of the projects and groups then this user will 
-take a license seat. If a user creates a project this user becomes a maintainer, 
-therefore, takes up a license seat as well, in order to prevent this you have 
-to go and edit user profile and mark the user as External.
+When a user is given `Guest` permissions on a project and/or group, and holds no
+higher permission level on any other project or group on the instance, the user
+is considered a guest user by GitLab and will not consume a license seat.
+There is no other specific "guest" designation for newly created users.
+
+If the user is assigned a higher role on any projects or groups, the user will
+take a license seat. If a user creates a project, the user becomes a `Maintainer`
+on the project, resulting in the use of a license seat. To prevent a guest user
+from creating projects, you can edit the user profile to mark the user as
+[External](#external-users-permissions).
 
 ## External users permissions
 

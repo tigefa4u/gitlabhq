@@ -55,10 +55,16 @@ class Project < ApplicationRecord
   VALID_MIRROR_PORTS = [22, 80, 443].freeze
   VALID_MIRROR_PROTOCOLS = %w(http https ssh git).freeze
 
+  ACCESS_REQUEST_APPROVERS_TO_BE_NOTIFIED_LIMIT = 10
+
+  SORTING_PREFERENCE_FIELD = :projects_sort
+
   cache_markdown_field :description, pipeline: :description
 
   delegate :feature_available?, :builds_enabled?, :wiki_enabled?,
            :merge_requests_enabled?, :issues_enabled?, :pages_enabled?, :public_pages?,
+           :merge_requests_access_level, :issues_access_level, :wiki_access_level,
+           :snippets_access_level, :builds_access_level, :repository_access_level,
            to: :project_feature, allow_nil: true
 
   delegate :base_dir, :disk_path, :ensure_storage_path_exists, to: :storage
@@ -495,6 +501,7 @@ class Project < ApplicationRecord
   # We require an alias to the project_mirror_data_table in order to use import_state in our queries
   scope :joins_import_state, -> { joins("INNER JOIN project_mirror_data import_state ON import_state.project_id = projects.id") }
   scope :for_group, -> (group) { where(group: group) }
+  scope :for_group_and_its_subgroups, ->(group) { where(namespace_id: group.self_and_descendants.select(:id)) }
 
   class << self
     # Searches for a list of projects based on the query given in `query`.
@@ -2173,8 +2180,7 @@ class Project < ApplicationRecord
     hashed_storage?(:repository) &&
       public? &&
       repository_exists? &&
-      Gitlab::CurrentSettings.hashed_storage_enabled &&
-      Feature.enabled?(:object_pools, self, default_enabled: true)
+      Gitlab::CurrentSettings.hashed_storage_enabled
   end
 
   def leave_pool_repository
@@ -2197,6 +2203,10 @@ class Project < ApplicationRecord
 
     run_after_commit { ProjectUpdateRepositoryStorageWorker.perform_async(id, new_repository_storage_key) }
     self.repository_read_only = true
+  end
+
+  def access_request_approvers_to_be_notified
+    members.maintainers.order_recent_sign_in.limit(ACCESS_REQUEST_APPROVERS_TO_BE_NOTIFIED_LIMIT)
   end
 
   private

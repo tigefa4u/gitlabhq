@@ -83,7 +83,7 @@ request approval rules:
 1. Give the approval rule a name that describes the set of approvers selected.
 1. Click **Add approvers** to submit the new rule.
 
-   ![Approvals premium project edit](img/approvals_premium_project_edit.png)
+   ![Approvals premium project edit](img/approvals_premium_project_edit_v12_3.png)
 
 ## Multiple approval rules **(PREMIUM)**
 
@@ -330,7 +330,7 @@ the dropdown) `approver` and select the user.
 Merge Request Approvals can be configured to require approval from a member
 of your security team when a vulnerability would be introduced by a merge request.
 
-For more information, see 
+For more information, see
 [Security approvals in merge requests](../../application_security/index.md#security-approvals-in-merge-requests-ultimate).
 
 <!-- ## Troubleshooting

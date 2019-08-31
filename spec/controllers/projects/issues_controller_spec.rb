@@ -1084,16 +1084,41 @@ describe Projects::IssuesController do
       end
 
       it "deletes the issue" do
-        delete :destroy, params: { namespace_id: project.namespace, project_id: project, id: issue.iid }
+        delete :destroy, params: { namespace_id: project.namespace, project_id: project, id: issue.iid, destroy_confirm: true }
 
         expect(response).to have_gitlab_http_status(302)
         expect(controller).to set_flash[:notice].to(/The issue was successfully deleted\./)
       end
 
+      it "deletes the issue" do
+        delete :destroy, params: { namespace_id: project.namespace, project_id: project, id: issue.iid, destroy_confirm: true }
+
+        expect(response).to have_gitlab_http_status(302)
+        expect(controller).to set_flash[:notice].to(/The issue was successfully deleted\./)
+      end
+
+      it "prevents deletion if destroy_confirm is not set" do
+        expect(Gitlab::Sentry).to receive(:track_acceptable_exception).and_call_original
+
+        delete :destroy, params: { namespace_id: project.namespace, project_id: project, id: issue.iid }
+
+        expect(response).to have_gitlab_http_status(302)
+        expect(controller).to set_flash[:notice].to('Destroy confirmation not provided for issue')
+      end
+
+      it "prevents deletion in JSON format if destroy_confirm is not set" do
+        expect(Gitlab::Sentry).to receive(:track_acceptable_exception).and_call_original
+
+        delete :destroy, params: { namespace_id: project.namespace, project_id: project, id: issue.iid, format: 'json' }
+
+        expect(response).to have_gitlab_http_status(422)
+        expect(json_response).to eq({ 'errors' => 'Destroy confirmation not provided for issue' })
+      end
+
       it 'delegates the update of the todos count cache to TodoService' do
         expect_any_instance_of(TodoService).to receive(:destroy_target).with(issue).once
 
-        delete :destroy, params: { namespace_id: project.namespace, project_id: project, id: issue.iid }
+        delete :destroy, params: { namespace_id: project.namespace, project_id: project, id: issue.iid, destroy_confirm: true }
       end
     end
   end
@@ -1104,17 +1129,38 @@ describe Projects::IssuesController do
       project.add_developer(user)
     end
 
+    subject do
+      post(:toggle_award_emoji, params: {
+        namespace_id: project.namespace,
+        project_id: project,
+        id: issue.iid,
+        name: emoji_name
+      })
+    end
+    let(:emoji_name) { 'thumbsup' }
+
     it "toggles the award emoji" do
       expect do
-        post(:toggle_award_emoji, params: {
-                                    namespace_id: project.namespace,
-                                    project_id: project,
-                                    id: issue.iid,
-                                    name: "thumbsup"
-                                  })
+        subject
       end.to change { issue.award_emoji.count }.by(1)
 
       expect(response).to have_gitlab_http_status(200)
+    end
+
+    it "removes the already awarded emoji" do
+      create(:award_emoji, awardable: issue, name: emoji_name, user: user)
+
+      expect { subject }.to change { AwardEmoji.count }.by(-1)
+
+      expect(response).to have_gitlab_http_status(200)
+    end
+
+    it 'marks Todos on the Issue as done' do
+      todo = create(:todo, target: issue, project: project, user: user)
+
+      subject
+
+      expect(todo.reload).to be_done
     end
   end
 

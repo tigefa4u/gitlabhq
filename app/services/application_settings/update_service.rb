@@ -6,8 +6,10 @@ module ApplicationSettings
 
     attr_reader :params, :application_setting
 
+    MARKDOWN_CACHE_INVALIDATING_PARAMS = %w(asset_proxy_enabled asset_proxy_url asset_proxy_secret_key asset_proxy_whitelist).freeze
+
     def execute
-      validate_classification_label(application_setting, :external_authorization_service_default_label)
+      validate_classification_label(application_setting, :external_authorization_service_default_label) unless bypass_external_auth?
 
       if application_setting.errors.any?
         return false
@@ -25,7 +27,13 @@ module ApplicationSettings
         params[:usage_stats_set_by_user_id] = current_user.id
       end
 
-      @application_setting.update(@params)
+      @application_setting.assign_attributes(params)
+
+      if invalidate_markdown_cache?
+        @application_setting[:local_markdown_version] = @application_setting.local_markdown_version + 1
+      end
+
+      @application_setting.save
     end
 
     private
@@ -39,6 +47,11 @@ module ApplicationSettings
       return if values_array.empty?
 
       @application_setting.add_to_outbound_local_requests_whitelist(values_array)
+    end
+
+    def invalidate_markdown_cache?
+      !params.key?(:local_markdown_version) &&
+        (@application_setting.changes.keys & MARKDOWN_CACHE_INVALIDATING_PARAMS).any?
     end
 
     def update_terms(terms)
@@ -58,6 +71,10 @@ module ApplicationSettings
       return unless Gitlab::Utils.to_boolean(performance_bar_enabled)
 
       Group.find_by_full_path(group_full_path)&.id if group_full_path.present?
+    end
+
+    def bypass_external_auth?
+      params.key?(:external_authorization_service_enabled) && !Gitlab::Utils.to_boolean(params[:external_authorization_service_enabled])
     end
   end
 end

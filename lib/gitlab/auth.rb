@@ -46,7 +46,7 @@ module Gitlab
           user_with_password_for_git(login, password) ||
           Gitlab::Auth::Result.new
 
-        rate_limit!(ip, success: result.success?, login: login)
+        rate_limit!(ip, success: result.success?, login: login) unless skip_rate_limit?(login: login)
         Gitlab::Auth::UniqueIpsLimiter.limit_user!(result.actor)
 
         return result if result.success? || authenticate_using_internal_or_ldap_password?
@@ -118,6 +118,10 @@ module Gitlab
       # rubocop:enable Gitlab/RailsLogger
 
       private
+
+      def skip_rate_limit?(login:)
+        ::Ci::Build::CI_REGISTRY_USER == login
+      end
 
       def authenticate_using_internal_or_ldap_password?
         Gitlab::CurrentSettings.password_authentication_enabled_for_git? || Gitlab::Auth::LDAP::Config.enabled?
@@ -194,12 +198,10 @@ module Gitlab
         end.uniq
       end
 
-      # rubocop: disable CodeReuse/ActiveRecord
       def deploy_token_check(login, password)
         return unless password.present?
 
-        token =
-          DeployToken.active.find_by(token: password)
+        token = DeployToken.active.find_by_token(password)
 
         return unless token && login
         return if login != token.username
@@ -210,7 +212,6 @@ module Gitlab
           Gitlab::Auth::Result.new(token, token.project, :deploy_token, scopes)
         end
       end
-      # rubocop: enable CodeReuse/ActiveRecord
 
       def lfs_token_check(login, encoded_token, project)
         deploy_key_matches = login.match(/\Alfs\+deploy-key-(\d+)\z/)

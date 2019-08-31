@@ -12,6 +12,9 @@ import { graphDataValidatorForValues } from '../../utils';
 
 let debouncedResize;
 
+// TODO: Remove this component in favor of the more general time_series.vue
+// Please port all changes here to time_series.vue as well.
+
 export default {
   components: {
     GlAreaChart,
@@ -123,7 +126,7 @@ export default {
           },
         },
         series: this.scatterSeries,
-        dataZoom: this.dataZoomConfig,
+        dataZoom: [this.dataZoomConfig],
       };
     },
     dataZoomConfig() {

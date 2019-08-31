@@ -4877,35 +4877,22 @@ describe Project do
 
   describe '#git_objects_poolable?' do
     subject { project }
-
-    context 'when the feature flag is turned off' do
-      before do
-        stub_feature_flags(object_pools: false)
-      end
-
-      let(:project) { create(:project, :repository, :public) }
+    context 'when not using hashed storage' do
+      let(:project) { create(:project, :legacy_storage, :public, :repository) }
 
       it { is_expected.not_to be_git_objects_poolable }
     end
 
-    context 'when the feature flag is enabled' do
-      context 'when not using hashed storage' do
-        let(:project) { create(:project, :legacy_storage, :public, :repository) }
+    context 'when the project is not public' do
+      let(:project) { create(:project, :private) }
 
-        it { is_expected.not_to be_git_objects_poolable }
-      end
+      it { is_expected.not_to be_git_objects_poolable }
+    end
 
-      context 'when the project is not public' do
-        let(:project) { create(:project, :private) }
+    context 'when objects are poolable' do
+      let(:project) { create(:project, :repository, :public) }
 
-        it { is_expected.not_to be_git_objects_poolable }
-      end
-
-      context 'when objects are poolable' do
-        let(:project) { create(:project, :repository, :public) }
-
-        it { is_expected.to be_git_objects_poolable }
-      end
+      it { is_expected.to be_git_objects_poolable }
     end
   end
 
@@ -5044,6 +5031,26 @@ describe Project do
 
     it 'throws an error if an invalid repository storage is provided' do
       expect { project.change_repository_storage('unknown') }.to raise_error(ArgumentError)
+    end
+  end
+
+  describe '#access_request_approvers_to_be_notified' do
+    it 'returns a maximum of ten, active, non_requested maintainers of the project in recent_sign_in descending order' do
+      group = create(:group, :public)
+      project = create(:project, group: group)
+
+      users = create_list(:user, 12, :with_sign_ins)
+      active_maintainers = users.map do |user|
+        create(:project_member, :maintainer, user: user)
+      end
+
+      create(:project_member, :maintainer, :blocked, project: project)
+      create(:project_member, :developer, project: project)
+      create(:project_member, :access_request, :maintainer, project: project)
+
+      active_maintainers_in_recent_sign_in_desc_order = project.members_and_requesters.where(id: active_maintainers).order_recent_sign_in.limit(10)
+
+      expect(project.access_request_approvers_to_be_notified).to eq(active_maintainers_in_recent_sign_in_desc_order)
     end
   end
 

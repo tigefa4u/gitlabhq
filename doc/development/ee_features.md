@@ -910,7 +910,7 @@ import bundle from 'ee_else_ce/protected_branches/protected_branches_bundle.js';
 ```
 
 See the frontend guide [performance section](fe_guide/performance.md) for
-information on managing page-specific javascript within EE.
+information on managing page-specific JavaScript within EE.
 
 ## Vue code in `assets/javascript`
 
@@ -945,7 +945,7 @@ export default {
 - Since we [can't async load a mixin](https://github.com/vuejs/vue-loader/issues/418#issuecomment-254032223) we will use the [`ee_else_ce`](../development/ee_features.md#javascript-code-in-assetsjavascripts) alias we already have for webpack.
   - This means all the EE specific props, computed properties, methods, etc that are EE only should be in a mixin in the `ee/` folder and we need to create a CE counterpart of the mixin
 
-##### Example:
+##### Example
 
 ```javascript
 import mixin from 'ee_else_ce/path/mixin';
@@ -976,7 +976,7 @@ For regular JS files, the approach is similar.
    1. An EE file should be created with the EE only code, and it should extend the CE counterpart.
    1. For code inside functions that can't be extended, the code should be moved into a new file and we should use `ee_else_ce` helper:
 
-#### Example:
+#### Example
 
 ```javascript
   import eeCode from 'ee_else_ce/ee_code';
@@ -1047,8 +1047,6 @@ code base.  Examples of backports include the following:
 
 Here is a workflow to make sure those changes end up backported safely into CE too.
 
-(This approach does not refer to changes introduced via [csslab](https://gitlab.com/gitlab-org/csslab/).)
-
 1. **Make your changes in the EE branch.** If possible, keep a separated commit (to be squashed) to help backporting and review.
 1. **Open merge request to EE project.**
 1. **Apply the changes you made to CE files in a branch of the CE project.** (Tip: Use `patch` with the diff from your commit in EE branch)
@@ -1057,7 +1055,7 @@ Here is a workflow to make sure those changes end up backported safely into CE t
 
 **Note:** regarding SCSS, make sure the files living outside `/ee/` don't diverge between CE and EE projects.
 
-## gitlab-svgs
+## GitLab-svgs
 
 Conflicts in `app/assets/images/icons.json` or `app/assets/images/icons.svg` can
 be resolved simply by regenerating those assets with

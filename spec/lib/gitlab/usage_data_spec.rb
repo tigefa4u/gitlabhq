@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::UsageData do
@@ -34,7 +36,7 @@ describe Gitlab::UsageData do
 
     subject { described_class.data }
 
-    it "gathers usage data" do
+    it 'gathers usage data' do
       expect(subject.keys).to include(*%i(
         active_user_count
         counts
@@ -66,6 +68,9 @@ describe Gitlab::UsageData do
         snippet_create: a_kind_of(Integer),
         snippet_update: a_kind_of(Integer),
         snippet_comment: a_kind_of(Integer),
+        merge_request_comment: a_kind_of(Integer),
+        merge_request_create: a_kind_of(Integer),
+        commit_comment: a_kind_of(Integer),
         wiki_pages_create: a_kind_of(Integer),
         wiki_pages_update: a_kind_of(Integer),
         wiki_pages_delete: a_kind_of(Integer),
@@ -78,7 +83,7 @@ describe Gitlab::UsageData do
       )
     end
 
-    it "gathers usage counts" do
+    it 'gathers usage counts' do
       expected_keys = %i(
         assignee_lists
         boards
@@ -248,7 +253,7 @@ describe Gitlab::UsageData do
   describe '#license_usage_data' do
     subject { described_class.license_usage_data }
 
-    it "gathers license data" do
+    it 'gathers license data' do
       expect(subject[:uuid]).to eq(Gitlab::CurrentSettings.uuid)
       expect(subject[:version]).to eq(Gitlab::VERSION)
       expect(subject[:installation_type]).to eq('gitlab-development-kit')
@@ -264,6 +269,12 @@ describe Gitlab::UsageData do
       allow(relation).to receive(:count).and_return(1)
 
       expect(described_class.count(relation)).to eq(1)
+    end
+
+    it 'returns the count for count_by when provided' do
+      allow(relation).to receive(:count).with(:creator_id).and_return(2)
+
+      expect(described_class.count(relation, count_by: :creator_id)).to eq(2)
     end
 
     it 'returns the fallback value when counting fails' do

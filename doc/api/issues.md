@@ -49,7 +49,7 @@ GET /issues?confidential=true
 | `my_reaction_emoji` | string           | no         | Return issues reacted by the authenticated user by the given `emoji`. `None` returns issues not given a reaction. `Any` returns issues given at least one reaction. _([Introduced][ce-14016] in GitLab 10.0)_ |
 | `weight` **(STARTER)** | integer       | no         | Return issues with the specified `weight`. `None` returns issues with no weight assigned. `Any` returns issues with a weight assigned.              |
 | `iids[]`            | integer array    | no         | Return only the issues having the given `iid`                                                                                                       |
-| `order_by`          | string           | no         | Return issues ordered by `created_at` or `updated_at` fields. Default is `created_at`                                                               |
+| `order_by`          | string           | no         | Return issues ordered by `created_at`, `updated_at`, `priority`, `due_date`, `relative_position`, `label_priority`, `milestone_due`, `popularity`, `weight` fields. Default is `created_at`                                                               |
 | `sort`              | string           | no         | Return issues sorted in `asc` or `desc` order. Default is `desc`                                                                                    |
 | `search`            | string           | no         | Search issues against their `title` and `description`                                                                                               |
 | `in`                | string           | no         | Modify the scope of the `search` attribute. `title`, `description`, or a string joining them with comma. Default is `title,description`             |
@@ -136,7 +136,6 @@ Example response:
          "award_emoji":"http://example.com/api/v4/projects/1/issues/76/award_emoji",
          "project":"http://example.com/api/v4/projects/1"
       },
-      "subscribed": false,
       "task_completion_status":{
          "count":0,
          "completed_count":0
@@ -199,7 +198,7 @@ GET /groups/:id/issues?confidential=true
 | `assignee_username` | string array     | no         | Return issues assigned to the given `username`. Similar to `assignee_id` and mutually exclusive with `assignee_id`. In CE version `assignee_username` array should only contain a single value or an invalid param error will be returned otherwise. |
 | `my_reaction_emoji` | string           | no         | Return issues reacted by the authenticated user by the given `emoji`. `None` returns issues not given a reaction. `Any` returns issues given at least one reaction. _([Introduced][ce-14016] in GitLab 10.0)_ |
 | `weight` **(STARTER)** | integer       | no         | Return issues with the specified `weight`. `None` returns issues with no weight assigned. `Any` returns issues with a weight assigned. |
-| `order_by`          | string           | no         | Return issues ordered by `created_at` or `updated_at` fields. Default is `created_at`                                         |
+| `order_by`          | string           | no         | Return issues ordered by `created_at`, `updated_at`, `priority`, `due_date`, `relative_position`, `label_priority`, `milestone_due`, `popularity`, `weight` fields. Default is `created_at`                                                               |
 | `sort`              | string           | no         | Return issues sorted in `asc` or `desc` order. Default is `desc`                                                              |
 | `search`            | string           | no         | Search group issues against their `title` and `description`                                                                   |
 | `created_after`     | datetime         | no         | Return issues created on or after the given time                                                                              |
@@ -285,7 +284,6 @@ Example response:
          "award_emoji":"http://example.com/api/v4/projects/4/issues/41/award_emoji",
          "project":"http://example.com/api/v4/projects/4"
       },
-      "subscribed": false,
       "task_completion_status":{
          "count":0,
          "completed_count":0
@@ -348,7 +346,7 @@ GET /projects/:id/issues?confidential=true
 | `assignee_username` | string array     | no         | Return issues assigned to the given `username`. Similar to `assignee_id` and mutually exclusive with `assignee_id`. In CE version `assignee_username` array should only contain a single value or an invalid param error will be returned otherwise. |
 | `my_reaction_emoji` | string           | no         | Return issues reacted by the authenticated user by the given `emoji`. `None` returns issues not given a reaction. `Any` returns issues given at least one reaction. _([Introduced][ce-14016] in GitLab 10.0)_ |
 | `weight` **(STARTER)** | integer       | no         | Return issues with the specified `weight`. `None` returns issues with no weight assigned. `Any` returns issues with a weight assigned. |
-| `order_by`          | string           | no         | Return issues ordered by `created_at` or `updated_at` fields. Default is `created_at`                                         |
+| `order_by`          | string           | no         | Return issues ordered by `created_at`, `updated_at`, `priority`, `due_date`, `relative_position`, `label_priority`, `milestone_due`, `popularity`, `weight` fields. Default is `created_at`                                                               |
 | `sort`              | string           | no         | Return issues sorted in `asc` or `desc` order. Default is `desc`                                                              |
 | `search`            | string           | no         | Search project issues against their `title` and `description`                                                                 |
 | `created_after`     | datetime         | no         | Return issues created on or after the given time                                                                              |
@@ -441,7 +439,6 @@ Example response:
          "award_emoji":"http://example.com/api/v4/projects/4/issues/41/award_emoji",
          "project":"http://example.com/api/v4/projects/4"
       },
-      "subscribed": false,
       "task_completion_status":{
          "count":0,
          "completed_count":0
@@ -593,7 +590,7 @@ POST /projects/:id/issues
 | `id`                                      | integer/string | yes      | The ID or [URL-encoded path of the project](README.md#namespaced-path-encoding) owned by the authenticated user |
 | `iid`                                     | integer/string | no       | The internal ID of the project's issue (requires admin or project owner rights) |
 | `title`                                   | string         | yes      | The title of an issue |
-| `description`                             | string         | no       | The description of an issue  |
+| `description`                             | string         | no       | The description of an issue. Limited to 1 000 000 characters. |
 | `confidential`                            | boolean        | no       | Set an issue to be confidential. Default is `false`.  |
 | `assignee_ids`                            | integer array  | no       | The ID of a user to assign issue |
 | `milestone_id`                            | integer        | no       | The global ID of a milestone to assign issue  |
@@ -694,7 +691,7 @@ PUT /projects/:id/issues/:issue_iid
 | `id`           | integer/string | yes | The ID or [URL-encoded path of the project](README.md#namespaced-path-encoding) owned by the authenticated user |
 | `issue_iid`    | integer | yes      | The internal ID of a project's issue                                                                       |
 | `title`        | string  | no       | The title of an issue                                                                                      |
-| `description`  | string  | no       | The description of an issue                                                                                |
+| `description`  | string  | no       | The description of an issue. Limited to 1 000 000 characters.        |
 | `confidential` | boolean | no       | Updates an issue to be confidential                                                                        |
 | `assignee_ids` | integer array | no | The ID of the user(s) to assign the issue to. Set to `0` or provide an empty value to unassign all assignees. |
 | `milestone_id` | integer | no       | The global ID of a milestone to assign the issue to. Set to `0` or provide an empty value to unassign a milestone.|
@@ -790,7 +787,7 @@ the `weight` parameter:
 
 ## Delete an issue
 
-Only for admins and project owners. Soft deletes the issue in question.
+Only for admins and project owners. Deletes the issue in question.
 
 ```
 DELETE /projects/:id/issues/:issue_iid

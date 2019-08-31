@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_08_15_093949) do
+ActiveRecord::Schema.define(version: 2019_08_28_083843) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
@@ -272,12 +272,18 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.boolean "lock_memberships_to_ldap", default: false, null: false
     t.boolean "time_tracking_limit_to_hours", default: false, null: false
     t.string "grafana_url", default: "/-/grafana", null: false
+    t.boolean "login_recaptcha_protection_enabled", default: false, null: false
     t.string "outbound_local_requests_whitelist", limit: 255, default: [], null: false, array: true
     t.integer "raw_blob_request_limit", default: 300, null: false
     t.boolean "allow_local_requests_from_web_hooks_and_services", default: false, null: false
     t.boolean "allow_local_requests_from_system_hooks", default: true, null: false
     t.bigint "instance_administration_project_id"
     t.string "snowplow_collector_hostname"
+    t.boolean "asset_proxy_enabled", default: false, null: false
+    t.string "asset_proxy_url"
+    t.text "asset_proxy_whitelist"
+    t.text "encrypted_asset_proxy_secret_key"
+    t.string "encrypted_asset_proxy_secret_key_iv"
     t.index ["custom_project_templates_group_id"], name: "index_application_settings_on_custom_project_templates_group_id"
     t.index ["file_template_project_id"], name: "index_application_settings_on_file_template_project_id"
     t.index ["instance_administration_project_id"], name: "index_applicationsettings_on_instance_administration_project_id"
@@ -658,6 +664,7 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.index ["file_store"], name: "index_ci_job_artifacts_on_file_store"
     t.index ["job_id", "file_type"], name: "index_ci_job_artifacts_on_job_id_and_file_type", unique: true
     t.index ["project_id"], name: "index_ci_job_artifacts_on_project_id"
+    t.index ["project_id"], name: "index_ci_job_artifacts_on_project_id_for_security_reports", where: "(file_type = ANY (ARRAY[5, 6, 7, 8]))"
   end
 
   create_table "ci_job_variables", force: :cascade do |t|
@@ -928,7 +935,7 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.integer "cluster_type", limit: 2, default: 3, null: false
     t.string "domain"
     t.boolean "managed", default: true, null: false
-    t.boolean "namespace_per_environment", default: false, null: false
+    t.boolean "namespace_per_environment", default: true, null: false
     t.index ["enabled"], name: "index_clusters_on_enabled"
     t.index ["user_id"], name: "index_clusters_on_user_id"
   end
@@ -1121,10 +1128,12 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.datetime_with_timezone "expires_at", null: false
     t.datetime_with_timezone "created_at", null: false
     t.string "name", null: false
-    t.string "token", null: false
+    t.string "token"
     t.string "username"
+    t.string "token_encrypted", limit: 255
     t.index ["token", "expires_at", "id"], name: "index_deploy_tokens_on_token_and_expires_at_and_id", where: "(revoked IS FALSE)"
     t.index ["token"], name: "index_deploy_tokens_on_token", unique: true
+    t.index ["token_encrypted"], name: "index_deploy_tokens_on_token_encrypted", unique: true
   end
 
   create_table "deployments", id: :serial, force: :cascade do |t|
@@ -1143,7 +1152,7 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.integer "status", limit: 2, null: false
     t.datetime_with_timezone "finished_at"
     t.integer "cluster_id"
-    t.index ["cluster_id"], name: "index_deployments_on_cluster_id"
+    t.index ["cluster_id", "status"], name: "index_deployments_on_cluster_id_and_status"
     t.index ["created_at"], name: "index_deployments_on_created_at"
     t.index ["deployable_type", "deployable_id"], name: "index_deployments_on_deployable_type_and_deployable_id"
     t.index ["environment_id", "id"], name: "index_deployments_on_environment_id_and_id"
@@ -1277,11 +1286,11 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.date "due_date_fixed"
     t.boolean "start_date_is_fixed"
     t.boolean "due_date_is_fixed"
-    t.integer "state", limit: 2, default: 1, null: false
     t.integer "closed_by_id"
     t.datetime "closed_at"
     t.integer "parent_id"
     t.integer "relative_position"
+    t.integer "state_id", limit: 2, default: 1, null: false
     t.index ["assignee_id"], name: "index_epics_on_assignee_id"
     t.index ["author_id"], name: "index_epics_on_author_id"
     t.index ["closed_by_id"], name: "index_epics_on_closed_by_id"
@@ -1919,6 +1928,17 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.datetime "updated_at"
   end
 
+  create_table "list_user_preferences", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "list_id", null: false
+    t.datetime_with_timezone "created_at", null: false
+    t.datetime_with_timezone "updated_at", null: false
+    t.boolean "collapsed"
+    t.index ["list_id"], name: "index_list_user_preferences_on_list_id"
+    t.index ["user_id", "list_id"], name: "index_list_user_preferences_on_user_id_and_list_id", unique: true
+    t.index ["user_id"], name: "index_list_user_preferences_on_user_id"
+  end
+
   create_table "lists", id: :serial, force: :cascade do |t|
     t.integer "board_id", null: false
     t.integer "label_id"
@@ -2500,6 +2520,7 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.string "title"
     t.integer "active_pipelines_limit"
     t.integer "pipeline_size_limit"
+    t.integer "active_jobs_limit", default: 0
     t.index ["name"], name: "index_plans_on_name"
   end
 
@@ -3015,7 +3036,6 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.datetime_with_timezone "released_at", null: false
     t.index ["author_id"], name: "index_releases_on_author_id"
     t.index ["project_id", "tag"], name: "index_releases_on_project_id_and_tag"
-    t.index ["project_id"], name: "index_releases_on_project_id"
   end
 
   create_table "remote_mirrors", id: :serial, force: :cascade do |t|
@@ -3411,6 +3431,7 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.string "epics_sort"
     t.integer "roadmap_epics_state"
     t.string "roadmaps_sort"
+    t.string "projects_sort", limit: 64
     t.index ["user_id"], name: "index_user_preferences_on_user_id", unique: true
   end
 
@@ -3497,7 +3518,7 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.integer "theme_id", limit: 2
     t.integer "accepted_term_id"
     t.string "feed_token"
-    t.boolean "private_profile", default: false
+    t.boolean "private_profile", default: false, null: false
     t.boolean "include_private_contributions"
     t.string "commit_email"
     t.boolean "auditor", default: false, null: false
@@ -3511,6 +3532,8 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
     t.text "note"
     t.integer "roadmap_layout", limit: 2
     t.integer "bot_type", limit: 2
+    t.string "first_name", limit: 255
+    t.string "last_name", limit: 255
     t.index ["accepted_term_id"], name: "index_users_on_accepted_term_id"
     t.index ["admin"], name: "index_users_on_admin"
     t.index ["bot_type"], name: "index_users_on_bot_type"
@@ -3875,6 +3898,8 @@ ActiveRecord::Schema.define(version: 2019_08_15_093949) do
   add_foreign_key "labels", "projects", name: "fk_7de4989a69", on_delete: :cascade
   add_foreign_key "lfs_file_locks", "projects", on_delete: :cascade
   add_foreign_key "lfs_file_locks", "users", on_delete: :cascade
+  add_foreign_key "list_user_preferences", "lists", on_delete: :cascade
+  add_foreign_key "list_user_preferences", "users", on_delete: :cascade
   add_foreign_key "lists", "boards", name: "fk_0d3f677137", on_delete: :cascade
   add_foreign_key "lists", "labels", name: "fk_7a5553d60f", on_delete: :cascade
   add_foreign_key "lists", "milestones", on_delete: :cascade

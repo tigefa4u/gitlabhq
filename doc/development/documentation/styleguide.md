@@ -506,15 +506,6 @@ Example:
 For more information, see the [confidential issue](../../user/project/issues/confidential_issues.md) `https://gitlab.com/gitlab-org/gitlab-ce/issues/<issue_number>`.
 ```
 
-### Unlinking emails
-
-By default, all email addresses will render in an email tag on docs.gitlab.com.
-To escape the code block and unlink email addresses, use two backticks:
-
-```md
-`` example@email.com ``
-```
-
 ## Navigation
 
 To indicate the steps of navigation through the UI:
@@ -783,8 +774,6 @@ For multiple paragraphs, use the symbol `>` before every line:
 >
 > - This is a list item
 > - Second item in the list
->
-> ### This is an `h3`
 ```
 
 Which renders to:
@@ -795,9 +784,6 @@ Which renders to:
 >
 > - This is a list item
 > - Second item in the list
->
-> ### This is an `h3`
->{:.no_toc}
 
 ## Terms
 

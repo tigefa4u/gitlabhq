@@ -57,12 +57,6 @@ render incorrectly:
   - milk
 ```
 
-1. Chocolate
-  - dark
-  - milk
-
----
-
 Simply add a space to each nested item to align the `-` with the first character of
 the top list item (`C` in this case):
 
@@ -187,9 +181,6 @@ graph TD;
 
 #### Subgraphs
 
-NOTE: **Note:** GitLab 12.1 and up now [requires quotes around subgraph
-titles that contain multiple words](https://github.com/knsv/mermaid/pull/845).
-
 Subgraphs can also be included:
 
 ~~~
@@ -265,8 +256,7 @@ this font installed by default.
 
 ### Front matter
 
-> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/23331)
-  in GitLab 11.6.
+> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/23331) in GitLab 11.6.
 
 Front matter is metadata included at the beginning of a markdown document, preceding
 its content. This data can be used by static site generators such as [Jekyll](https://jekyllrb.com/docs/front-matter/),
@@ -866,18 +856,6 @@ or underscores
 ___
 ```
 
-Three or more hyphens,
-
----
-
-asterisks,
-
-***
-
-or underscores
-
-___
-
 ### Images
 
 Examples:
@@ -1170,7 +1148,7 @@ GFM will autolink almost any URL you put into your text:
 - https://google.com/
 - ftp://ftp.us.debian.org/debian/
 - smb://foo/bar/baz
-- irc://irc.freenode.net/gitlab
+- irc://irc.freenode.net/
 - http://localhost:3000
 ```
 
@@ -1178,7 +1156,7 @@ GFM will autolink almost any URL you put into your text:
 - <https://google.com/>
 - <ftp://ftp.us.debian.org/debian/>
 - <smb://foo/bar/baz>
-- <irc://irc.freenode.net/gitlab>
+- <irc://irc.freenode.net/>
 - <http://localhost:3000>
 
 ### Lists

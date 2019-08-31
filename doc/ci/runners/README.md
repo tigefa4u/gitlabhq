@@ -88,7 +88,7 @@ visit the project you want to make the Runner work for in GitLab:
 
 ## Registering a group Runner
 
-Creating a group Runner requires Maintainer permissions for the group. To create a
+Creating a group Runner requires Owner permissions for the group. To create a
 group Runner visit the group you want to make the Runner work for in GitLab:
 
 1. Go to **Settings > CI/CD** to obtain the token
@@ -124,9 +124,9 @@ To lock/unlock a Runner:
 
 ## Assigning a Runner to another project
 
-If you are Maintainer on a project where a specific Runner is assigned to, and the
+If you are an Owner on a project where a specific Runner is assigned to, and the
 Runner is not [locked only to that project](#locking-a-specific-runner-from-being-enabled-for-other-projects),
-you can enable the Runner also on any other project where you have Maintainer permissions.
+you can enable the Runner also on any other project where you have Owner permissions.
 
 To enable/disable a Runner in your project:
 
@@ -156,8 +156,7 @@ An admin can enable/disable a specific Runner for projects:
 
 ## Protected Runners
 
-> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/13194)
-> in GitLab 10.0.
+> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/13194) in GitLab 10.0.
 
 You can protect Runners from revealing sensitive information.
 Whenever a Runner is protected, the Runner picks only jobs created on
@@ -250,7 +249,7 @@ When you [register a Runner][register], its default behavior is to **only pick**
 [tagged jobs](../yaml/README.md#tags).
 
 NOTE: **Note:**
-Maintainer [permissions](../../user/permissions.md) are required to change the
+Owner [permissions](../../user/permissions.md) are required to change the
 Runner settings.
 
 To make a Runner pick untagged jobs:

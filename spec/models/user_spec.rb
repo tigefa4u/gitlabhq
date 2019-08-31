@@ -103,6 +103,14 @@ describe User do
       it { is_expected.to validate_length_of(:name).is_at_most(128) }
     end
 
+    describe 'first name' do
+      it { is_expected.to validate_length_of(:first_name).is_at_most(255) }
+    end
+
+    describe 'last name' do
+      it { is_expected.to validate_length_of(:last_name).is_at_most(255) }
+    end
+
     describe 'username' do
       it 'validates presence' do
         expect(subject).to validate_presence_of(:username)
@@ -678,6 +686,18 @@ describe User do
     end
   end
 
+  describe 'name getters' do
+    let(:user) { create(:user, name: 'Kane Martin William') }
+
+    it 'derives first name from full name, if not present' do
+      expect(user.first_name).to eq('Kane')
+    end
+
+    it 'derives last name from full name, if not present' do
+      expect(user.last_name).to eq('Martin William')
+    end
+  end
+
   describe '#highest_role' do
     let(:user) { create(:user) }
 
@@ -1156,7 +1176,7 @@ describe User do
         expect(user.can_create_group).to eq(Gitlab.config.gitlab.default_can_create_group)
         expect(user.theme_id).to eq(Gitlab.config.gitlab.default_theme)
         expect(user.external).to be_falsey
-        expect(user.private_profile).to eq false
+        expect(user.private_profile).to eq(false)
       end
     end
 
@@ -3042,6 +3062,47 @@ describe User do
           user.update!(email: 'asdf@asdf.com')
         end
       end
+    end
+  end
+
+  describe '#will_save_change_to_login?' do
+    let(:user) { create(:user, username: 'old-username', email: 'old-email@example.org') }
+    let(:new_username) { 'new-name' }
+    let(:new_email) { 'new-email@example.org' }
+
+    subject { user.will_save_change_to_login? }
+
+    context 'when the username is changed' do
+      before do
+        user.username = new_username
+      end
+
+      it { is_expected.to be true }
+    end
+
+    context 'when the email is changed' do
+      before do
+        user.email = new_email
+      end
+
+      it { is_expected.to be true }
+    end
+
+    context 'when both email and username are changed' do
+      before do
+        user.username = new_username
+        user.email = new_email
+      end
+
+      it { is_expected.to be true }
+    end
+
+    context 'when email and username aren\'t changed' do
+      before do
+        user.name = 'new_name'
+      end
+
+      it { is_expected.to be_falsy }
     end
   end
 

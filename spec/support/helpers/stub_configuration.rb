@@ -30,6 +30,10 @@ module StubConfiguration
     allow(Gitlab.config.gitlab).to receive_messages(to_settings(messages))
   end
 
+  def stub_config(messages)
+    allow(Gitlab.config).to receive_messages(to_settings(messages))
+  end
+
   def stub_default_url_options(host: "localhost", protocol: "http")
     url_options = { host: host, protocol: protocol }
     allow(Rails.application.routes).to receive(:default_url_options).and_return(url_options)
@@ -99,6 +103,10 @@ module StubConfiguration
 
   def stub_gitlab_shell_setting(messages)
     allow(Gitlab.config.gitlab_shell).to receive_messages(to_settings(messages))
+  end
+
+  def stub_asset_proxy_setting(messages)
+    allow(Gitlab.config.asset_proxy).to receive_messages(to_settings(messages))
   end
 
   def stub_rack_attack_setting(messages)

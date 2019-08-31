@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Gitlab::Workhorse do
@@ -10,6 +12,12 @@ describe Gitlab::Workhorse do
     params = JSON.parse(Base64.urlsafe_decode64(encoded_params))
 
     [key, command, params]
+  end
+
+  before do
+    allow(Feature::Gitaly).to receive(:server_feature_flags).and_return({
+      'gitaly-feature-foobar' => 'true'
+    })
   end
 
   describe ".send_git_archive" do
@@ -39,6 +47,7 @@ describe Gitlab::Workhorse do
         expected_params = metadata.merge(
           'GitalyRepository' => repository.gitaly_repository.to_h,
           'GitalyServer' => {
+            features: { 'gitaly-feature-foobar' => 'true' },
             address: Gitlab::GitalyClient.address(project.repository_storage),
             token: Gitlab::GitalyClient.token(project.repository_storage)
           }
@@ -67,6 +76,7 @@ describe Gitlab::Workhorse do
         expect(command).to eq('git-archive')
         expect(params).to eq({
           'GitalyServer' => {
+            features: { 'gitaly-feature-foobar' => 'true' },
             address: Gitlab::GitalyClient.address(project.repository_storage),
             token: Gitlab::GitalyClient.token(project.repository_storage)
           },
@@ -115,6 +125,7 @@ describe Gitlab::Workhorse do
       expect(command).to eq("git-format-patch")
       expect(params).to eq({
         'GitalyServer' => {
+          features: { 'gitaly-feature-foobar' => 'true' },
           address: Gitlab::GitalyClient.address(project.repository_storage),
           token: Gitlab::GitalyClient.token(project.repository_storage)
         },
@@ -176,6 +187,7 @@ describe Gitlab::Workhorse do
       expect(command).to eq("git-diff")
       expect(params).to eq({
         'GitalyServer' => {
+          features: { 'gitaly-feature-foobar' => 'true' },
           address: Gitlab::GitalyClient.address(project.repository_storage),
           token: Gitlab::GitalyClient.token(project.repository_storage)
         },
@@ -313,6 +325,7 @@ describe Gitlab::Workhorse do
       let(:gitaly_params) do
         {
           GitalyServer: {
+            features: { 'gitaly-feature-foobar' => 'true' },
             address: Gitlab::GitalyClient.address('default'),
             token: Gitlab::GitalyClient.token('default')
           }
@@ -461,6 +474,7 @@ describe Gitlab::Workhorse do
       expect(command).to eq('git-blob')
       expect(params).to eq({
         'GitalyServer' => {
+          features: { 'gitaly-feature-foobar' => 'true' },
           address: Gitlab::GitalyClient.address(project.repository_storage),
           token: Gitlab::GitalyClient.token(project.repository_storage)
         },
@@ -502,6 +516,7 @@ describe Gitlab::Workhorse do
       expect(command).to eq('git-snapshot')
       expect(params).to eq(
         'GitalyServer' => {
+          'features' => { 'gitaly-feature-foobar' => 'true' },
           'address' => Gitlab::GitalyClient.address(project.repository_storage),
           'token' => Gitlab::GitalyClient.token(project.repository_storage)
         },

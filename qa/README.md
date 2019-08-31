@@ -30,7 +30,7 @@ and corresponding views / partials / selectors in CE / EE.
 
 Whenever `qa:selectors` job fails in your merge request, you are supposed to
 fix [page objects](../doc/development/testing_guide/end_to_end/page_objects.md). You should also trigger end-to-end tests
-using `package-and-qa` manual action, to test if everything works fine.
+using `package-and-qa-manual` manual action, to test if everything works fine.
 
 ## How can I use it?
 
@@ -38,6 +38,11 @@ You can use GitLab QA to exercise tests on any live instance! If you don't
 have an instance available you can follow the instructions below to use
 the [GitLab Development Kit (GDK)][GDK].
 This is the recommended option if you would like to contribute to the tests.
+
+Note: GitLab QA uses [Selenium WebDriver](https://www.seleniumhq.org/) via
+[Cabybara](http://teamcapybara.github.io/capybara/), and by default it targets Chrome as
+the browser to use. You will need to have Chrome (or Chromium) and
+[chromedriver](https://chromedriver.chromium.org/) installed / in your `$PATH`.
 
 ### Run the end-to-end tests in a local development environment
 
@@ -100,6 +105,17 @@ If you need to authenticate as a different user, you can provide the
 GITLAB_USERNAME=jsmith GITLAB_PASSWORD=password bundle exec bin/qa Test::Instance::All https://gitlab.example.com
 ```
 
+Some QA tests require logging in as an admin user. By default, the QA
+tests will use the the same `root` user seeded by the GDK.
+
+If you need to authenticate with different admin credentials, you can
+provide the `GITLAB_ADMIN_USERNAME` and `GITLAB_ADMIN_PASSWORD`
+environment variables:
+
+```
+GITLAB_ADMIN_USERNAME=admin GITLAB_ADMIN_PASSWORD=myadminpassword GITLAB_USERNAME=jsmith GITLAB_PASSWORD=password bundle exec bin/qa Test::Instance::All https://gitlab.example.com
+```
+
 If your user doesn't have permission to default sandbox group
 `gitlab-qa-sandbox`, you could also use another sandbox group by giving
 `GITLAB_SANDBOX_NAME`:
@@ -123,10 +139,11 @@ To set multiple cookies, separate them with the `;` character, for example: `QA_
 
 Once you have made changes to the CE/EE repositories, you may want to build a
 Docker image to test locally instead of waiting for the `gitlab-ce-qa` or
-`gitlab-ee-qa` nightly builds. To do that, you can run from this directory:
+`gitlab-ee-qa` nightly builds. To do that, you can run **from the top `gitlab`
+directory** (one level up from this directory):
 
 ```sh
-docker build -t gitlab/gitlab-ce-qa:nightly .
+docker build -t gitlab/gitlab-ce-qa:nightly --file ./qa/Dockerfile ./
 ```
 
 [GDK]: https://gitlab.com/gitlab-org/gitlab-development-kit/

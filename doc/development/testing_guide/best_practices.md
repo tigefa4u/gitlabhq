@@ -13,17 +13,7 @@ a level that is difficult to manage.
 Test heuristics can help solve this problem. They concisely address many of the common ways bugs
 manifest themselves within our code. When designing our tests, take time to review known test heuristics to inform
 our test design. We can find some helpful heuristics documented in the Handbook in the
-[Test Design](https://about.gitlab.com/handbook/engineering/quality/guidelines/test-engineering/test-design/) section.
-
-## Run tests against MySQL
-
-By default, tests are only run against PostgreSQL, but you can run them on
-demand against MySQL by following one of the following conventions:
-
-| Convention           | Valid example                |
-|:----------------------|:-----------------------------|
-| Include `mysql` in your branch name | `enhance-mysql-support` |
-| Include `[run mysql]` in your commit message   | `Fix MySQL support<br><br>[run mysql]` |
+[Test Engineering](https://about.gitlab.com/handbook/engineering/quality/test-engineering/#test-heuristics) section.
 
 ## Test speed
 
@@ -454,6 +444,19 @@ complexity of RSpec expectations.They should be placed under
 `spec/support/matchers/`. Matchers can be placed in subfolder if they apply to
 a certain type of specs only (e.g. features, requests etc.) but shouldn't be if
 they apply to multiple type of specs.
+
+#### `be_like_time`
+
+Time returned from a database can differ in precision from time objects
+in Ruby, so we need flexible tolerances when comparing in specs. We can
+use `be_like_time` to compare that times are within one second of each
+other.
+
+Example:
+
+```ruby
+expect(metrics.merged_at).to be_like_time(time)
+```
 
 #### `have_gitlab_http_status`
 
