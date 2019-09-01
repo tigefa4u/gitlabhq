@@ -4,6 +4,8 @@ class Projects::BranchesController < Projects::ApplicationController
   include ActionView::Helpers::SanitizeHelper
   include SortingHelper
 
+  DIVERGING_COUNT_BRANCH_LIMIT = 20
+
   # Authorize
   before_action :require_non_empty_project, except: :create
   before_action :authorize_download_code!
@@ -11,6 +13,7 @@ class Projects::BranchesController < Projects::ApplicationController
 
   # Support legacy URLs
   before_action :redirect_for_legacy_index_sort_or_search, only: [:index]
+  before_action :limit_diverging_commit_counts!, only: [:diverging_commit_counts]
 
   def index
     respond_to do |format|
@@ -124,6 +127,19 @@ class Projects::BranchesController < Projects::ApplicationController
   end
 
   private
+
+  # It can be expensive to calculate the diverging counts for each
+  # branch. Normally the frontend should be specifying a set of branch
+  # names, but due to frontend bugs this doesn't always happen. To
+  # prevent excessive I/O, we require that a list of names be specified.
+  def limit_diverging_commit_counts!
+    return unless Feature.enabled?(:limit_diverging_commit_counts, enabled: true)
+    # If we don't have many branches in the repository, then go ahead.
+    return false if project.repository.branch_count <= DIVERGING_COUNT_BRANCH_LIMIT
+    return if params[:names].present? && Array(params[:names]).length <= DIVERGING_COUNT_BRANCH_LIMIT
+
+    render json: { error: "Specify at least one and at most #{DIVERGING_COUNT_BRANCH_LIMIT} branch names" }, status: :unprocessable_entity
+  end
 
   def ref
     if params[:ref]
