@@ -10,6 +10,27 @@ shared_examples 'cluster application core specs' do |application_name|
 
       expect(subject.can_uninstall?).to be_truthy
     end
+
+    context 'when neither scheduled or installed' do
+      before do
+        expect(subject.scheduled?).to be_falsey
+        expect(subject.uninstalling?).to be_falsey
+      end
+
+      it { expect(subject.can_uninstall?).to be_truthy }
+    end
+
+    context 'when scheduled or uninstalling' do
+      it 'returns false if scheduled' do
+        application = create(application_name, :scheduled)
+        expect(application.can_uninstall?).to be_falsey
+      end
+
+      it 'returns false if uninstalling' do
+        application = create(application_name, :uninstalling)
+        expect(application.can_uninstall?).to be_falsey
+      end
+    end
   end
 
   describe '#name' do
