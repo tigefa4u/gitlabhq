@@ -21,7 +21,7 @@ class Projects::ArtifactsController < Projects::ApplicationController
   end
 
   def destroy
-    build.erase_erasable_artifacts!
+    artifact.destroy
 
     redirect_to project_artifacts_path(@project), status: :found, notice: _('Artifacts were successfully deleted.')
   end
@@ -97,6 +97,11 @@ class Projects::ArtifactsController < Projects::ApplicationController
       build = build_from_id || build_from_ref
       build&.present(current_user: current_user)
     end
+  end
+
+  def artifact
+    @artifact ||=
+      project.job_artifacts.find(params[:id])
   end
 
   def build_from_id

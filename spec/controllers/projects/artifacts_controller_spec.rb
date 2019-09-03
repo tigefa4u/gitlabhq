@@ -20,6 +20,33 @@ describe Projects::ArtifactsController do
     sign_in(user)
   end
 
+  describe 'GET index' do
+    subject { get :index, params: { namespace_id: project.namespace, project_id: project } }
+
+    it 'sets the artifacts variable' do
+      subject
+
+      expect(assigns(:jobs_with_artifacts)).to eq(project.job_artifacts)
+    end
+  end
+
+  describe 'DELETE destroy' do
+    let!(:artifact) { job.job_artifacts.erasable.first }
+
+    subject { delete :destroy, params: { namespace_id: project.namespace, project_id: project, id: artifact } }
+
+    it 'deletes the artifact' do
+      expect { subject }.to change { Ci::JobArtifact.count }.by(-1)
+      expect(artifact).not_to exist
+    end
+
+    it 'redirects to artifacts index page' do
+      subject
+
+      expect(response).to redirect_to(project_artifacts_path(project))
+    end
+  end
+
   describe 'GET download' do
     def download_artifact(extra_params = {})
       params = { namespace_id: project.namespace, project_id: project, job_id: job }.merge(extra_params)
