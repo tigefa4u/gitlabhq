@@ -5,6 +5,7 @@
 require 'gitlab/current_settings'
 
 Gitlab.ee do
+  require 'elasticsearch/rails/instrumentation'
   require 'elasticsearch/model'
 
   ### Modified from elasticsearch-model/lib/elasticsearch/model.rb
