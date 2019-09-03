@@ -5,6 +5,8 @@ module QA
     module ClusterProvider
       class Gcloud < Base
         def validate_dependencies
+          Runtime::Env.require_gcloud_environment!
+
           find_executable('gcloud') || raise("You must first install `gcloud` executable to run these tests.")
         end
 
@@ -50,7 +52,7 @@ module QA
           gcloud_account_email = Runtime::Env.gcloud_account_email
           shell("gcloud auth activate-service-account #{gcloud_account_email} --key-file #{gcloud_account_key.path}")
         ensure
-          gcloud_account_key && gcloud_account_key.unlink
+          gcloud_account_key.unlink
         end
 
         def auth_options
