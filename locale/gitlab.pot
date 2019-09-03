@@ -1344,6 +1344,9 @@ msgstr ""
 msgid "Artifacts"
 msgstr ""
 
+msgid "Artifacts were successfully deleted."
+msgstr ""
+
 msgid "As U2F devices are only supported by a few browsers, we require that you set up a two-factor authentication app before a U2F device. That way you'll always be able to log in - even when you're using an unsupported browser."
 msgstr ""
 
@@ -10732,6 +10735,9 @@ msgstr ""
 msgid "SortOptions|Largest repository"
 msgstr ""
 
+msgid "SortOptions|Largest size"
+msgstr ""
+
 msgid "SortOptions|Last Contact"
 msgstr ""
 
@@ -10775,6 +10781,9 @@ msgid "SortOptions|Name, descending"
 msgstr ""
 
 msgid "SortOptions|Oldest created"
+msgstr ""
+
+msgid "SortOptions|Oldest expired"
 msgstr ""
 
 msgid "SortOptions|Oldest joined"

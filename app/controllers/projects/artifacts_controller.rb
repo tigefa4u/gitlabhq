@@ -8,9 +8,23 @@ class Projects::ArtifactsController < Projects::ApplicationController
   layout 'project'
   before_action :authorize_read_build!
   before_action :authorize_update_build!, only: [:keep]
+  before_action :authorize_destroy_artifacts!, only: [:destroy]
   before_action :extract_ref_name_and_path
-  before_action :validate_artifacts!, except: [:download]
+  before_action :validate_artifacts!, except: [:index, :download, :destroy]
   before_action :entry, only: [:file]
+
+  def index
+    finder = JobsWithArtifactsFinder.new(project: @project, params: params)
+    @jobs_with_artifacts = finder.execute
+    @total_size = finder.total_size
+    @sort = finder.sort_key
+  end
+
+  def destroy
+    build.erase_erasable_artifacts!
+
+    redirect_to project_artifacts_path(@project), status: :found, notice: _('Artifacts were successfully deleted.')
+  end
 
   def download
     return render_404 unless artifacts_file
