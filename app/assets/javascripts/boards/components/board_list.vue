@@ -1,12 +1,16 @@
 <script>
-/* eslint-disable @gitlab/vue-i18n/no-bare-strings */
-import Sortable from 'sortablejs';
+import { Sortable, MultiDrag } from 'sortablejs';
 import { GlLoadingIcon } from '@gitlab/ui';
 import boardNewIssue from './board_new_issue.vue';
 import boardCard from './board_card.vue';
 import eventHub from '../eventhub';
 import boardsStore from '../stores/boards_store';
+import { sprintf, __ } from '~/locale';
 import { getBoardSortableDefaultOptions, sortableStart } from '../mixins/sortable_default_options';
+
+if (gon.features && gon.features.multiSelectBoard) {
+  Sortable.mount(new MultiDrag());
+}
 
 export default {
   name: 'BoardList',
@@ -54,6 +58,14 @@ export default {
       showIssueForm: false,
     };
   },
+  computed: {
+    paginatedIssueText() {
+      return sprintf(__('Showing %{pageSize} of %{total} issues'), {
+        pageSize: this.list.issues.length,
+        total: this.list.issuesSize,
+      });
+    },
+  },
   watch: {
     filters: {
       handler() {
@@ -87,11 +99,19 @@ export default {
     eventHub.$on(`scroll-board-list-${this.list.id}`, this.scrollToTop);
   },
   mounted() {
+    const multiSelectOpts = {};
+    if (gon.features && gon.features.multiSelectBoard) {
+      multiSelectOpts.multiDrag = true;
+      multiSelectOpts.selectedClass = 'js-multi-select';
+      multiSelectOpts.animation = 500;
+    }
+
     const options = getBoardSortableDefaultOptions({
       scroll: true,
       disabled: this.disabled,
       filter: '.board-list-count, .is-disabled',
       dataIdAttr: 'data-issue-id',
+      ...multiSelectOpts,
       group: {
         name: 'issues',
         /**
@@ -145,25 +165,75 @@ export default {
         card.showDetail = false;
 
         const { list } = card;
-        const issue = list.findIssue(Number(e.item.dataset.issueId));
+
+        let issue = list.findIssue(Number(e.item.dataset.issueId));
+
+        if (e.items && e.items.length) {
+          issue = [];
+          e.items.forEach(item => {
+            issue.push(list.findIssue(Number(item.dataset.issueId)));
+          });
+        }
+
         boardsStore.startMoving(list, issue);
 
         sortableStart();
       },
       onAdd: e => {
-        boardsStore.moveIssueToList(
-          boardsStore.moving.list,
-          this.list,
-          boardsStore.moving.issue,
-          e.newIndex,
-        );
+        if (e.items && e.items.length) {
+          // Not using e.newIndex here instead taking
+          // min of all the newIndicies
+          // Whenever the we select multiple items and drag
+          const newIndex = Math.min(...e.newIndicies.map(obj => obj.index));
+
+          boardsStore.moveMultipleIssuesToList(
+            boardsStore.moving.list,
+            this.list,
+            boardsStore.moving.issue,
+            newIndex,
+          );
+
+          boardsStore.clearMultiSelect();
+
+          e.items.forEach(item => {
+            Sortable.utils.deselect(item);
+          });
+        } else {
+          boardsStore.moveIssueToList(
+            boardsStore.moving.list,
+            this.list,
+            boardsStore.moving.issue,
+            e.newIndex,
+          );
+        }
 
         this.$nextTick(() => {
+          if (e.items && e.items.length) {
+            e.items.forEach(item => {
+              item.remove();
+            });
+            return;
+          }
+
           e.item.remove();
         });
       },
       onUpdate: e => {
         const sortedArray = this.sortable.toArray().filter(id => id !== '-1');
+
+        if (e.items && e.items.length) {
+          const newIndex = Math.min(...e.newIndicies.map(obj => obj.index));
+          boardsStore.moveMultipleIssuesInList(
+            this.list,
+            boardsStore.moving.issue,
+            e.oldIndex,
+            newIndex,
+            sortedArray,
+          );
+          boardsStore.clearMultiSelect();
+          return;
+        }
+
         boardsStore.moveIssueInList(
           this.list,
           boardsStore.moving.issue,
@@ -260,7 +330,7 @@ export default {
       <li v-if="showCount" class="board-list-count text-center" data-issue-id="-1">
         <gl-loading-icon v-show="list.loadingMore" label="Loading more issues" />
         <span v-if="list.issues.length === list.issuesSize">{{ __('Showing all issues') }}</span>
-        <span v-else> Showing {{ list.issues.length }} of {{ list.issuesSize }} issues </span>
+        <span v-else>{{ paginatedIssueText }}</span>
       </li>
     </ul>
   </div>

@@ -10507,6 +10507,9 @@ msgid_plural "Showing %d events"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "Showing %{pageSize} of %{total} issues"
+msgstr ""
+
 msgid "Showing all issues"
 msgstr ""
 

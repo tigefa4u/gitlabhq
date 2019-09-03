@@ -31,6 +31,13 @@ describe('Store', () => {
         }),
     );
 
+    spyOn(gl.boardService, 'moveMultipleIssues').and.callFake(
+      () =>
+        new Promise(resolve => {
+          resolve();
+        }),
+    );
+
     Cookies.set('issue_board_welcome_hidden', 'false', {
       expires: 365 * 10,
       path: '',
@@ -376,6 +383,119 @@ describe('Store', () => {
       boardsStore.setCurrentBoard(dummyBoard);
 
       expect(state.currentBoard).toEqual(dummyBoard);
+    });
+  });
+
+  describe('toggleMultiSelect', () => {
+    afterEach(() => {
+      boardsStore.clearMultiSelect();
+    });
+
+    it('adds issue when not present', () => {
+      const issue = { id: 987654 };
+
+      boardsStore.toggleMultiSelect(issue);
+
+      const selectedIds = boardsStore.multiSelect.list.map(x => x.id);
+
+      expect(selectedIds.includes(issue.id)).toEqual(true);
+    });
+
+    it('removes issue when issue is present', () => {
+      const issue = { id: 987654 };
+
+      boardsStore.toggleMultiSelect(issue);
+      let selectedIds = boardsStore.multiSelect.list.map(x => x.id);
+
+      expect(selectedIds.includes(issue.id)).toEqual(true);
+
+      boardsStore.toggleMultiSelect(issue);
+      selectedIds = boardsStore.multiSelect.list.map(x => x.id);
+
+      expect(selectedIds.includes(issue.id)).toEqual(false);
+    });
+  });
+
+  describe('clearMultiSelect', () => {
+    it('clears all the multi selected issues', () => {
+      const issue1 = { id: 12345 };
+      const issue2 = { id: 12346 };
+
+      boardsStore.toggleMultiSelect(issue1);
+      boardsStore.toggleMultiSelect(issue2);
+
+      expect(boardsStore.multiSelect.list.length).toEqual(2);
+
+      boardsStore.clearMultiSelect();
+
+      expect(boardsStore.multiSelect.list.length).toEqual(0);
+    });
+  });
+
+  describe('moveMultipleIssuesToList', () => {
+    it('move issues on the new index', done => {
+      const listOne = boardsStore.addList(listObj);
+      const listTwo = boardsStore.addList(listObjDuplicate);
+
+      expect(boardsStore.state.lists.length).toBe(2);
+
+      setTimeout(() => {
+        expect(listOne.issues.length).toBe(1);
+        expect(listTwo.issues.length).toBe(1);
+
+        boardsStore.moveMultipleIssuesToList(listOne, listTwo, listOne.issues, 0);
+
+        expect(listOne.issues.length).toBe(0);
+        expect(listTwo.issues.length).toBe(1);
+
+        done();
+      }, 0);
+    });
+  });
+
+  describe('moveMultipleIssuesInList', () => {
+    it('moves multiple issues in list', done => {
+      const issue1 = new ListIssue({
+        title: 'Issue #1',
+        id: 12345,
+        iid: 2,
+        confidential: false,
+        labels: [],
+        assignees: [],
+      });
+
+      const issue2 = new ListIssue({
+        title: 'Issue #2',
+        id: 12346,
+        iid: 2,
+        confidential: false,
+        labels: [],
+        assignees: [],
+      });
+
+      const list = boardsStore.addList(listObj);
+
+      setTimeout(() => {
+        list.addIssue(issue1);
+        list.addIssue(issue2);
+
+        expect(list.issues.length).toBe(3);
+        expect(list.issues[0].id).not.toBe(issue2.id);
+
+        boardsStore.moveMultipleIssuesInList(list, [issue1, issue2], 0, 1, [1, 12345, 12346]);
+
+        expect(list.issues[0].id).toBe(issue2.id);
+
+        expect(gl.boardService.moveMultipleIssues).toHaveBeenCalledWith(
+          [issue1.id, issue2.id],
+          null,
+          null,
+          1,
+          null,
+        );
+
+        done();
+      });
     });
   });
 });

@@ -39,6 +39,7 @@ const boardsStore = {
     issue: {},
     list: {},
   },
+  multiSelect: { list: [] },
 
   setEndpoints({ boardsEndpoint, listsEndpoint, bulkUpdatePath, boardId, recentBoardsEndpoint }) {
     const listsEndpointGenerate = `${listsEndpoint}/generate.json`;
@@ -51,7 +52,6 @@ const boardsStore = {
       recentBoardsEndpoint: `${recentBoardsEndpoint}.json`,
     };
   },
-
   create() {
     this.state.lists = [];
     this.filter.path = getUrlParamsArray().join('&');
@@ -134,6 +134,93 @@ const boardsStore = {
     Object.assign(this.moving, { list, issue });
   },
 
+  moveMultipleIssuesToList(listFrom, listTo, issues, newIndex) {
+    const issueTo = issues.map(issue => listTo.findIssue(issue.id));
+    const issueLists = _.flatten(issues.map(issue => issue.getLists()));
+    const listLabels = issueLists.map(list => list.label);
+
+    const hasMoveableIssues = _.compact(issueTo).length > 0;
+
+    if (!hasMoveableIssues) {
+      // Check if target list assignee is already present in this issue
+      if (
+        listTo.type === 'assignee' &&
+        listFrom.type === 'assignee' &&
+        issues.some(issue => issue.findAssignee(listTo.assignee))
+      ) {
+        const targetIssues = issues.map(issue => listTo.findIssue(issue.id));
+        targetIssues.forEach(targetIssue => targetIssue.removeAssignee(listFrom.assignee));
+      } else if (listTo.type === 'milestone') {
+        const currentMilestones = issues.map(issue => issue.milestone);
+        const currentLists = this.state.lists
+          .filter(list => list.type === 'milestone' && list.id !== listTo.id)
+          .filter(list =>
+            list.issues.some(listIssue => issues.some(issue => listIssue.id === issue.id)),
+          );
+
+        issues.forEach(issue => {
+          currentMilestones.forEach(milestone => {
+            issue.removeMilestone(milestone);
+          });
+        });
+
+        issues.forEach(issue => {
+          issue.addMilestone(listTo.milestone);
+        });
+
+        currentLists.forEach(currentList => {
+          issues.forEach(issue => {
+            currentList.removeIssue(issue);
+          });
+        });
+
+        listTo.addMultipleIssues(issues, listFrom, newIndex);
+      } else {
+        // Add to new lists issues if it doesn't already exist
+        listTo.addMultipleIssues(issues, listFrom, newIndex);
+      }
+    } else {
+      listTo.updateMultipleIssues(issues, listFrom);
+      issues.forEach(issue => {
+        issue.removeLabel(listFrom.label);
+      });
+    }
+
+    if (listTo.type === 'closed' && listFrom.type !== 'backlog') {
+      issueLists.forEach(list => {
+        issues.forEach(issue => {
+          list.removeIssue(issue);
+        });
+      });
+
+      issues.forEach(issue => {
+        issue.removeLabels(listLabels);
+      });
+    } else if (listTo.type === 'backlog' && listFrom.type === 'assignee') {
+      issues.forEach(issue => {
+        issue.removeAssignee(listFrom.assignee);
+      });
+      issueLists.forEach(list => {
+        issues.forEach(issue => {
+          list.removeIssue(issue);
+        });
+      });
+    } else if (listTo.type === 'backlog' && listFrom.type === 'milestone') {
+      issues.forEach(issue => {
+        issue.removeMilestone(listFrom.milestone);
+      });
+      issueLists.forEach(list => {
+        issues.forEach(issue => {
+          list.removeIssue(issue);
+        });
+      });
+    } else if (this.shouldRemoveIssue(listFrom, listTo)) {
+      issues.forEach(issue => {
+        listFrom.removeIssue(issue);
+      });
+    }
+  },
+
   moveIssueToList(listFrom, listTo, issue, newIndex) {
     const issueTo = listTo.findIssue(issue.id);
     const issueLists = issue.getLists();
@@ -194,6 +281,12 @@ const boardsStore = {
     const afterId = parseInt(idArray[newIndex + 1], 10) || null;
 
     list.moveIssue(issue, oldIndex, newIndex, beforeId, afterId);
+  },
+  moveMultipleIssuesInList(list, issues, oldIndex, newIndex, idArray) {
+    const beforeId = parseInt(idArray[newIndex - 1], 10) || null;
+    const afterId = parseInt(idArray[newIndex + issues.length], 10) || null;
+
+    list.moveMultipleIssues(issues, oldIndex, newIndex, beforeId, afterId);
   },
   findList(key, val, type = 'label') {
     const filteredList = this.state.lists.filter(list => {
@@ -260,6 +353,10 @@ const boardsStore = {
     }`;
   },
 
+  generateMultiDragPath(boardId) {
+    return `${gon.relative_url_root}/-/boards/${boardId ? `${boardId}` : ''}/issues/bulk_move`;
+  },
+
   all() {
     return axios.get(this.state.endpoints.listsEndpoint);
   },
@@ -305,6 +402,16 @@ const boardsStore = {
       to_list_id: toListId,
       move_before_id: moveBeforeId,
       move_after_id: moveAfterId,
+    });
+  },
+
+  moveMultipleIssues(ids, fromListId, toListId, moveBeforeId, moveAfterId) {
+    return axios.put(this.generateMultiDragPath(this.state.endpoints.boardId), {
+      from_list_id: fromListId,
+      to_list_id: toListId,
+      move_before_id: moveBeforeId,
+      move_after_id: moveAfterId,
+      ids,
     });
   },
 
@@ -377,6 +484,25 @@ const boardsStore = {
 
   setCurrentBoard(board) {
     this.state.currentBoard = board;
+  },
+
+  toggleMultiSelect(issue) {
+    const selectedIssueIds = this.multiSelect.list.map(issue => issue.id);
+    const index = selectedIssueIds.indexOf(issue.id);
+
+    if (index === -1) {
+      this.multiSelect.list.push(issue);
+      return;
+    }
+
+    this.multiSelect.list = [
+      ...this.multiSelect.list.slice(0, index),
+      ...this.multiSelect.list.slice(index + 1),
+    ];
+  },
+
+  clearMultiSelect() {
+    this.multiSelect.list = [];
   },
 };
 
