@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 Gitlab.ee do
+  require 'gitlab/license'
+
   begin
     public_key_file = File.read(Rails.root.join(".license_encryption_key.pub"))
     public_key = OpenSSL::PKey::RSA.new(public_key_file)
