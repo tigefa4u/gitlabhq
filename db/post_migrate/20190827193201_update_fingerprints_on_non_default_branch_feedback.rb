@@ -1218,7 +1218,7 @@ class UpdateFingerprintsOnNonDefaultBranchFeedback < ActiveRecord::Migration[5.2
         case subject
         when Upload then subject.build_uploader(mount_point)
         else
-          subject.send(mount_point) # rubocop:disable GitlabSecurity/PublicSend
+          subject.send(mount_point)
         end
       end
     end
@@ -1421,7 +1421,6 @@ class UpdateFingerprintsOnNonDefaultBranchFeedback < ActiveRecord::Migration[5.2
     end
   end
 
-
   module Gitlab
     module Redis
       class Wrapper
@@ -1547,7 +1546,7 @@ class UpdateFingerprintsOnNonDefaultBranchFeedback < ActiveRecord::Migration[5.2
         def fetch_config
           return false unless self.class._raw_config
 
-          yaml = YAML.load(self.class._raw_config)
+          yaml = YAML.safe_load(self.class._raw_config)
 
           # If the file has content but it's invalid YAML, `load` returns false
           if yaml

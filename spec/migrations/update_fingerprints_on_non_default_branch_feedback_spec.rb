@@ -31,9 +31,10 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
 
   describe '#up' do
     it 'updates project_fingerprint on feedback for dependency scanning vulnerabilities' do
-      report = fixture_file_upload(Rails.root.join(
-        'spec/fixtures/security_reports/master/gl-dependency-scanning-report.json'
-      ), 'text/plain')
+      report = fixture_file_upload(
+        Rails.root.join('spec/fixtures/security_reports/master/gl-dependency-scanning-report.json'),
+        'text/plain'
+      )
       artifact = create_artifact(file_type: 6, report: report)
       vulnerability = JSON.parse(artifact.file.read)['vulnerabilities'].first
       old_fingerprint = Digest::SHA1.hexdigest(vulnerability['message'])
@@ -46,9 +47,10 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
     end
 
     it 'updates project_fingerprint on feedback for container scanning vulnerabilities' do
-      report = fixture_file_upload(Rails.root.join(
-        'spec/fixtures/security_reports/master/gl-container-scanning-report.json'
-      ), 'text/plain')
+      report = fixture_file_upload(
+        Rails.root.join('spec/fixtures/security_reports/master/gl-container-scanning-report.json'),
+        'text/plain'
+      )
       artifact = create_artifact(file_type: 7, report: report)
       vulnerability = JSON.parse(artifact.file.read)['vulnerabilities'].first
       old_fingerprint = Digest::SHA1.hexdigest(
@@ -65,9 +67,10 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
 
     context 'when a feedback of the same type with a new fingerprint exists' do
       it 'deletes the old feedback' do
-        report = fixture_file_upload(Rails.root.join(
-          'spec/fixtures/security_reports/master/gl-dependency-scanning-report.json'
-        ), 'text/plain')
+        report = fixture_file_upload(
+          Rails.root.join('spec/fixtures/security_reports/master/gl-dependency-scanning-report.json'),
+          'text/plain'
+        )
         artifact = create_artifact(file_type: 6, report: report)
         vulnerability = JSON.parse(artifact.file.read)['vulnerabilities'].first
         old_fingerprint = Digest::SHA1.hexdigest(vulnerability['message'])
@@ -106,4 +109,3 @@ describe UpdateFingerprintsOnNonDefaultBranchFeedback, :migration do
     )
   end
 end
-
