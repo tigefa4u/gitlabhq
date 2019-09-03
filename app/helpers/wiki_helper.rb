@@ -74,11 +74,13 @@ module WikiHelper
     end
   end
 
-  def wiki_show_children_title(show_children)
+  # Render the sprite icon given the current show_children state
+  def wiki_show_children_title(nesting)
     icon_name, icon_text =
-      if show_children == ProjectWiki::NESTING_TREE
+      case nesting
+      when ProjectWiki::NESTING_TREE
         ['folder-open', s_("Wiki|Show folder contents")]
-      elsif show_children == ProjectWiki::NESTING_CLOSED
+      when ProjectWiki::NESTING_CLOSED
         ['folder-o', s_("Wiki|Hide folder contents")]
       else
         ['list-bulleted', s_("Wiki|Show files separately")]
@@ -99,7 +101,7 @@ module WikiHelper
       end
 
       tags << wiki_page_link
-      tags.join('').html_safe
+      tags.join.html_safe
     else
       wiki_page_link
     end

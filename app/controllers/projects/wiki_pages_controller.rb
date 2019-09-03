@@ -5,7 +5,6 @@ class Projects::WikiPagesController < Projects::ApplicationController
   include SendsBlob
   include PreviewMarkdown
   include Gitlab::Utils::StrongMemoize
-  include RedirectWhen
 
   # Share the templates from the wikis controller.
   def self.local_prefixes
@@ -20,10 +19,6 @@ class Projects::WikiPagesController < Projects::ApplicationController
     if: -> { %w[show edit update].include?(action_name) && load_page }
   before_action only: [:edit, :update], unless: :valid_encoding? do
     redirect_to(project_wiki_path(@project, @page))
-  end
-
-  redirect_when(:created, :updated) do
-    [project_wiki_path(@project, @page), { notice: _('Wiki was successfully updated.') }]
   end
 
   def new
@@ -58,7 +53,7 @@ class Projects::WikiPagesController < Projects::ApplicationController
       .new(@project, current_user, wiki_params)
       .execute(@page)
 
-    return updated! if @page.valid?
+    return saved('updated') if @page.valid?
 
     render 'edit'
   rescue WikiPage::PageChangedError, WikiPage::PageRenameError, Gitlab::Git::Wiki::OperationError => e
@@ -71,7 +66,7 @@ class Projects::WikiPagesController < Projects::ApplicationController
       .new(@project, current_user, wiki_params)
       .execute
 
-    return created! if @page.persisted?
+    return saved('created') if @page.persisted?
 
     render action: "edit"
   rescue Gitlab::Git::Wiki::OperationError => e
@@ -172,5 +167,10 @@ class Projects::WikiPagesController < Projects::ApplicationController
 
       @project_wiki.repository.blob_at(commit.id, params[:id])
     end
+  end
+
+  def saved(action)
+    msg = _('Wiki was successfully %{action}', action: action)
+    redirect_to(project_wiki_path(@project, @page), notice: msg)
   end
 end

@@ -69,7 +69,7 @@ class ProjectWiki
   end
 
   def wiki_page_path
-    wiki_base_path + '/page'
+    [Gitlab.config.gitlab.relative_url_root, @project.full_path, 'wiki_page'].join('/')
   end
 
   # Returns the Gitlab::Git::Wiki object.
