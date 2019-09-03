@@ -1,0 +1,5 @@
+---
+title: Add allowFilter and allowAnySHA1InWant for partial clones
+merge_request: 32606
+author:
+type: added
