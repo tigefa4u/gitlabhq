@@ -1,7 +1,8 @@
 import $ from 'jquery';
 import ShortcutsWiki from '~/behaviors/shortcuts/shortcuts_wiki';
+import GLForm from '~/gl_form';
+
 import Wikis from './wikis';
-import GLForm from '../../../gl_form';
 
 document.addEventListener('DOMContentLoaded', () => {
   new Wikis(); // eslint-disable-line no-new

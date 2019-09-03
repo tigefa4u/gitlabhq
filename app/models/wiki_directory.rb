@@ -38,7 +38,7 @@ class WikiDirectory
       new(k).tap { |dir| grouped << (h[k] = dir) }
     end
 
-    (pages.presence || []).each_with_object(grouped) do |page, top_level|
+    Array.wrap(pages).each_with_object(grouped) do |page, top_level|
       group = page.directory.present? ? dirs[page.directory] : top_level
 
       group << page

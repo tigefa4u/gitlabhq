@@ -1,12 +1,14 @@
 import $ from 'jquery';
 import Vue from 'vue';
+
 import Translate from '~/vue_shared/translate';
 import csrf from '~/lib/utils/csrf';
 import ShortcutsWiki from '~/behaviors/shortcuts/shortcuts_wiki';
-import Wikis from '../wikis/wikis';
-import ZenMode from '../../../zen_mode';
-import GLForm from '../../../gl_form';
+import ZenMode from '~/zen_mode';
+import GLForm from '~/gl_form';
+
 import deleteWikiModal from '../wikis/components/delete_wiki_modal.vue';
+import Wikis from '../wikis/wikis';
 
 document.addEventListener('DOMContentLoaded', () => {
   new Wikis(); // eslint-disable-line no-new
