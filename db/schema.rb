@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_09_05_223900) do
+ActiveRecord::Schema.define(version: 2019_09_06_113417) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
@@ -2271,6 +2271,8 @@ ActiveRecord::Schema.define(version: 2019_09_05_223900) do
     t.integer "last_ci_minutes_usage_notification_level"
     t.integer "subgroup_creation_level", default: 1
     t.boolean "emails_disabled"
+    t.bigint "pages_size_limit"
+    t.bigint "artifacts_size_limit"
     t.index ["created_at"], name: "index_namespaces_on_created_at"
     t.index ["custom_project_templates_group_id", "type"], name: "index_namespaces_on_custom_project_templates_group_id_and_type", where: "(custom_project_templates_group_id IS NOT NULL)"
     t.index ["file_template_project_id"], name: "index_namespaces_on_file_template_project_id"
@@ -2843,6 +2845,8 @@ ActiveRecord::Schema.define(version: 2019_09_05_223900) do
     t.boolean "service_desk_enabled", default: true
     t.integer "approvals_before_merge", default: 0, null: false
     t.boolean "emails_disabled"
+    t.bigint "pages_size_limit"
+    t.bigint "artifacts_size_limit"
     t.index ["archived", "pending_delete", "merge_requests_require_code_owner_approval"], name: "projects_requiring_code_owner_approval", where: "((pending_delete = false) AND (archived = false) AND (merge_requests_require_code_owner_approval = true))"
     t.index ["created_at"], name: "index_projects_on_created_at"
     t.index ["creator_id"], name: "index_projects_on_creator_id"
