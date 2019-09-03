@@ -1,5 +1,5 @@
 ---
 title: Fix disappearing vulnerability feedback on non-default branch vulnerabilities
-merge_request: 32292
+merge_request: 32293
 author:
 type: fixed
