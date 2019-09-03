@@ -73,16 +73,6 @@ class UpdateFingerprintsOnNonDefaultBranchFeedback < ActiveRecord::Migration[5.2
     has_many :artifacts, through: :builds
     has_many :occurrence_pipelines
     has_many :occurrences, through: :occurrence_pipelines
-
-    def report_for_feedback(feedback)
-      report_type = if feedback.dependency_scanning?
-                      7
-                    elsif feedback.container_scanning?
-                      6
-                    end
-
-      artifacts.where('ci_job_artifacts.file_type = ?', report_type).first
-    end
   end
   private_constant :Pipeline
 
@@ -152,6 +142,7 @@ class UpdateFingerprintsOnNonDefaultBranchFeedback < ActiveRecord::Migration[5.2
   private_constant :Feedback
 
   # EVERYTHING BELOW THIS COMMENT IS A DIRECT COPY FROM THE ORIGINAL GITLAB CLASSES
+  # (except ObjectStorage, from which I removed some unneeded submodules)
 
   require 'carrierwave/storage/fog'
   require 'fog/aws'
