@@ -20,7 +20,7 @@ export default {
         <stage-column-component
           v-for="(stage, index) in graph"
           :key="stage.name"
-            :class="{
+          :class="{
             'append-right-48': shouldAddRightMargin(index),
           }"
           :title="capitalizeStageName(stage.name)"
