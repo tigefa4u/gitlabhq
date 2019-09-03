@@ -27,6 +27,7 @@ description: 'Learn how to contribute to GitLab.'
 ## UX and Frontend guides
 
 - [GitLab Design System](https://design.gitlab.com/) for building GitLab with existing CSS styles and elements
+- [gitlab-ui](https://gitlab.com/gitlab-org/gitlab-ui/blob/master/README.md) for the Vue implementation of the Design System
 - [Frontend guidelines](fe_guide/index.md)
 - [Emoji guide](fe_guide/emojis.md)
 
