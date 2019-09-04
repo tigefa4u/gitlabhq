@@ -1,12 +1,12 @@
 <script>
-import requestWarning from './request_warning.vue';
+import RequestWarning from './request_warning.vue';
 
 import GlModal from '~/vue_shared/components/gl_modal.vue';
 import Icon from '~/vue_shared/components/icon.vue';
 
 export default {
   components: {
-    requestWarning,
+    RequestWarning,
     GlModal,
     Icon,
   },
