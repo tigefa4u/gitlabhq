@@ -1,13 +1,14 @@
 import Vue from 'vue';
 import AssigneeTitle from '~/sidebar/components/assignees/assignee_title.vue';
+import Tracking, { mockTracking, triggerEvent } from 'spec/helpers/tracking_helper';
+
+Vue.use(Tracking);
 
 describe('AssigneeTitle component', () => {
   let component;
   let AssigneeTitleComponent;
-  let statsSpy;
 
   beforeEach(() => {
-    statsSpy = spyOnDependency(AssigneeTitle, 'trackEvent');
     AssigneeTitleComponent = Vue.extend(AssigneeTitle);
   });
 
@@ -105,15 +106,17 @@ describe('AssigneeTitle component', () => {
     expect(component.$el.querySelector('.edit-link')).not.toBeNull();
   });
 
-  it('calls trackEvent when edit is clicked', () => {
+  it('tracks the event when edit is clicked', () => {
     component = new AssigneeTitleComponent({
       propsData: {
         numberOfAssignees: 0,
         editable: true,
       },
     }).$mount();
-    component.$el.querySelector('.js-sidebar-dropdown-toggle').click();
 
-    expect(statsSpy).toHaveBeenCalled();
+    const spy = mockTracking('_category_', component.$el, spyOn);
+    triggerEvent('.js-sidebar-dropdown-toggle');
+
+    expect(spy).toHaveBeenCalled();
   });
 });

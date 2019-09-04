@@ -4,7 +4,6 @@ import icon from '~/vue_shared/components/icon.vue';
 import toggleButton from '~/vue_shared/components/toggle_button.vue';
 import tooltip from '~/vue_shared/directives/tooltip';
 import eventHub from '../../event_hub';
-import { trackEvent } from 'ee_else_ce/event_tracking/issue_sidebar';
 
 const ICON_ON = 'notifications';
 const ICON_OFF = 'notifications-off';
@@ -65,7 +64,10 @@ export default {
       // Component event emission.
       this.$emit('toggleSubscription', this.id);
 
-      trackEvent('toggle_button', 'notifications', this.subscribed ? 0 : 1);
+      this.track('toggle_button', {
+        property: 'notifications',
+        value: this.subscribed ? 0 : 1,
+      });
     },
     onClickCollapsedIcon() {
       this.$emit('toggleSidebar');

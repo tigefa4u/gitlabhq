@@ -8,8 +8,10 @@ import LockIssueSidebar from './components/lock/lock_issue_sidebar.vue';
 import sidebarParticipants from './components/participants/sidebar_participants.vue';
 import sidebarSubscriptions from './components/subscriptions/sidebar_subscriptions.vue';
 import Translate from '../vue_shared/translate';
+import Tracking from '~/tracking';
 
 Vue.use(Translate);
+Vue.use(Tracking, { label: 'right_sidebar' });
 
 function mountAssigneesComponent(mediator) {
   const el = document.getElementById('js-vue-sidebar-assignees');
