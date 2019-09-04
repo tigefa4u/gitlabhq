@@ -3,11 +3,12 @@ pages:
     - .default-tags
     - .default-retry
     - .default-cache
-    - .except-docs
+    - .default-only
   only:
     refs:
-      - master@gitlab-org/gitlab-ce
-      - master@gitlab-org/gitlab-ee
+      - master
+    variables:
+      - $CI_PROJECT_NAMESPACE == "gitlab-org"
   stage: pages
   dependencies: ["coverage", "karma", "gitlab:assets:compile"]
   script:

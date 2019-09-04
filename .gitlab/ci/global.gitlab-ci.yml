@@ -27,40 +27,83 @@
       - vendor/gitaly-ruby
     policy: pull
 
-.except-docs:
-  except:
-    refs:
-      - /(^docs[\/-].+|.+-docs$)/
-
-.except-qa:
-  except:
-    refs:
-      - /(^qa[\/-].*|.*-qa$)/
-
-.except-docs-qa:
-  except:
-    refs:
-      - /(^docs[\/-].+|.+-docs$)/
-      - /(^qa[\/-].*|.*-qa$)/
-
-.except-docs-qa-geo:
-  except:
-    refs:
-      - /(^docs[\/-].+|.+-docs$)/
-      - /(^qa[\/-].*|.*-qa$)/
-      - /(^geo[\/-].*|.*-geo$)/
-
-.review-only:
+.default-only:
   only:
     refs:
-      - branches@gitlab-org/gitlab-ce
-      - branches@gitlab-org/gitlab-ee
+      - master
+      - /^[\d-]+-stable(-ee)?$/
+      - /^\d+-\d+-auto-deploy-\d+$/
+      - merge_requests
+      - tags@gitlab-org/gitlab-ce
+      - tags@gitlab-org/gitlab-foss  # New name of gitlab-ce after the single codebase migration
+      - tags@gitlab-org/gitlab-ee
+      - tags@gitlab-org/gitlab  # New name of gitlab-ee after the single codebase migration
+      - tags@gitlab/gitlabhq
+      - tags@gitlab/gitlab-foss  # New name of gitlab-ce after the single codebase migration
+      - tags@gitlab/gitlab-ee
+      - tags@gitlab/gitlab  # New name of gitlab-ee after the single codebase migration
+
+.only-code-changes:
+  only:
+    changes:
+      - "{app,bin,config,danger,db,ee,fixtures,lib,public,rubocop,spec,symbol,vendor}/**/*"
+      - ".gitlab/ci/**/*"
+      - ".gitlab-ci.yml"
+      - "*_VERSION"
+      - "Gemfile"
+      - "Rakefile"
+
+.only-qa-changes:
+  only:
+    changes:
+      - "qa/**/*"
+
+.only-docs-changes:
+  only:
+    changes:
+      - "doc/**/*"
+      - "**/*.{png,jpg,md}"
+
+.only-code-qa-changes:
+  only:
+    changes:
+      - "{app,bin,config,danger,db,ee,fixtures,lib,public,rubocop,spec,symbol,vendor}/**/*"
+      - ".gitlab/ci/**/*"
+      - ".gitlab-ci.yml"
+      - "*_VERSION"
+      - "Gemfile"
+      - "Rakefile"
+      - "qa/**/*"
+
+.only-code-docs-changes:
+  only:
+    changes:
+      - "{app,bin,config,danger,db,ee,fixtures,lib,public,rubocop,spec,symbol,vendor}/**/*"
+      - ".gitlab/ci/**/*"
+      - ".gitlab-ci.yml"
+      - "*_VERSION"
+      - "Gemfile"
+      - "Rakefile"
+      - "doc/**/*"
+      - "**/*.{png,jpg,md}"
+
+.only-review:
+  only:
+    variables:
+      - $CI_PROJECT_NAMESPACE == "gitlab-org"
     kubernetes: active
   except:
     refs:
       - master
       - /^\d+-\d+-auto-deploy-\d+$/
-      - /(^docs[\/-].+|.+-docs$)/
+
+.only-review-schedules:
+  only:
+    refs:
+      - schedules
+    variables:
+      - $REVIEW_APP_CLEANUP && $CI_PROJECT_NAMESPACE == "gitlab-org"
+    kubernetes: active
 
 .use-pg:
   services:
@@ -74,3 +117,9 @@
     - name: postgres:10.9
       command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off"]
     - name: redis:alpine
+
+.only-ee:
+  only:
+    variables:
+      - $CI_PROJECT_NAME == "gitlab-ee"
+      - $CI_PROJECT_NAME == "gitlab"  # New name of gitlab-ee after the single codebase migration

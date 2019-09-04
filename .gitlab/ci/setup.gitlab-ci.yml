@@ -6,7 +6,6 @@ cache gems:
     - .default-retry
     - .default-cache
     - .default-before_script
-    - .except-docs
   stage: test
   dependencies: ["setup-test-env"]
   needs: ["setup-test-env"]
@@ -19,15 +18,17 @@ cache gems:
       - vendor/cache
   only:
     refs:
-      - master@gitlab-org/gitlab-ce
-      - master@gitlab-org/gitlab-ee
+      - master
       - tags
+    variables:
+      - $CI_PROJECT_NAMESPACE == "gitlab-org"
 
 .minimal-job:
   extends:
     - .default-tags
     - .default-retry
-    - .except-docs-qa
+    - .default-only
+    - .only-code-changes
   dependencies: []
 
 gitlab_git_test:
@@ -40,5 +41,7 @@ no_ee_check:
   script:
     - scripts/no-ee-check
   only:
-    refs:
-      - branches@gitlab-org/gitlab-ce
+    variables:
+      - $CI_PROJECT_NAME == "gitlab-ce"
+      - $CI_PROJECT_NAME == "gitlab-foss"  # New name of gitlab-ce after the single codebase migration
+      - $CI_PROJECT_NAME == "gitlabhq"  # `dev.gitlab.org` project name

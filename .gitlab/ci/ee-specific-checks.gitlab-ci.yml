@@ -1,15 +1,13 @@
 .ee-specific-check:
-  extends: .default-tags
+  extends:
+    - .default-tags
   dependencies: []
   only:
-    - branches@gitlab-org/gitlab-ee
-  except:
-    - master
-    - tags
-    - /[\d-]+-stable(-ee)?/
-    - /[\d-]+-auto-deploy-\d{7}/
-    - /^security-/
-    - /\bce\-to\-ee\b/
+    refs:
+      - merge_requests
+    variables:
+      - $CI_PROJECT_PATH == "gitlab-org/gitlab-ee"
+      - $CI_PROJECT_PATH == "gitlab-org/gitlab"  # New name of gitlab-ee after the single codebase migration
 
 ee-files-location-check:
   extends: .ee-specific-check
