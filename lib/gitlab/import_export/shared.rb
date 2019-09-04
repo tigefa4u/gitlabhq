@@ -43,11 +43,11 @@ module Gitlab
       private
 
       def relative_path
-        File.join(relative_archive_path, SecureRandom.hex)
+        @relative_path ||= File.join(relative_archive_path, SecureRandom.hex)
       end
 
       def relative_archive_path
-        @project.disk_path
+        @relative_archive_path ||= File.join(@project.disk_path, SecureRandom.hex)
       end
 
       def log_error(details)

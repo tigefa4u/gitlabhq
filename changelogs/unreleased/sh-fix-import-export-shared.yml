@@ -1,0 +1,5 @@
+---
+title: Fix project exports clobbering concurrent export paths
+merge_request: 32677
+author:
+type: fixed
