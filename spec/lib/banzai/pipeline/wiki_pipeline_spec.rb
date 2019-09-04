@@ -7,7 +7,7 @@ describe Banzai::Pipeline::WikiPipeline do
   set(:project) { create(:project, :public, name: "wiki_link_project", namespace: namespace) }
   let(:project_wiki) { ProjectWiki.new(project, double(:user)) }
   let(:page) { build(:wiki_page, wiki: project_wiki, page: OpenStruct.new(url_path: 'nested/twice/start-page')) }
-  let(:prefix) { "#{namespace.path}/#{project.name}/wikis/page" }
+  let(:prefix) { project_wiki.wiki_page_path }
 
   describe 'TableOfContents' do
     it 'replaces the tag with the TableOfContentsFilter result' do
@@ -69,7 +69,7 @@ describe Banzai::Pipeline::WikiPipeline do
     end
 
     shared_examples 'link examples' do |test_name|
-      let(:page_href) { "#{relative_url_root}/#{prefix}/#{expected_page_path}" }
+      let(:page_href) { "#{prefix}/#{expected_page_path}" }
 
       context "when GitLab is hosted at a #{test_name} URL" do
         before do
@@ -275,7 +275,7 @@ describe Banzai::Pipeline::WikiPipeline do
   describe 'videos' do
     shared_examples 'correct video rewrite' do
       let(:markdown) { "![video_file](#{file_name})" }
-      let(:video_fragment) { "<video src=\"/#{prefix}/#{expected_file_path}\"" }
+      let(:video_fragment) { "<video src=\"#{prefix}/#{expected_file_path}\"" }
       let(:options) do
         {
           project: project,

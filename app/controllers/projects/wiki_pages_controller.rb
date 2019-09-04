@@ -53,7 +53,7 @@ class Projects::WikiPagesController < Projects::ApplicationController
       .new(@project, current_user, wiki_params)
       .execute(@page)
 
-    return saved('updated') if @page.valid?
+    return saved(:updated) if @page.valid?
 
     render 'edit'
   rescue WikiPage::PageChangedError, WikiPage::PageRenameError, Gitlab::Git::Wiki::OperationError => e
@@ -66,7 +66,7 @@ class Projects::WikiPagesController < Projects::ApplicationController
       .new(@project, current_user, wiki_params)
       .execute
 
-    return saved('created') if @page.persisted?
+    return saved(:created) if @page.persisted?
 
     render action: "edit"
   rescue Gitlab::Git::Wiki::OperationError => e
@@ -170,7 +170,13 @@ class Projects::WikiPagesController < Projects::ApplicationController
   end
 
   def saved(action)
-    msg = _('Wiki was successfully %{action}', action: action)
+    msg = case action
+          when :updated
+            _('Wiki was successfully updated')
+          when :created
+            _('Wiki was successfully created')
+          end
+
     redirect_to(project_wiki_path(@project, @page), notice: msg)
   end
 end

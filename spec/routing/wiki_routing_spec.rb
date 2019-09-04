@@ -39,6 +39,18 @@ describe 'Wiki path generation assumptions' do
     end
   end
 
+  describe 'project_wiki_pages_new_path', 'routing' do
+    describe 'GET' do
+      it 'routes to the :new action' do
+        path = project_wiki_pages_new_path(project)
+
+        expect(get('/' + path)).to route_to('projects/wiki_pages#new',
+                                            namespace_id: project.namespace.to_param,
+                                            project_id: project.to_param)
+      end
+    end
+  end
+
   # Early versions of the wiki paths routed all wiki pages at
   # /wikis/:id - this test exists to guarantee that we support
   # old URIs that may be out there, saved in bookmarks, on other wikis, etc.
@@ -46,7 +58,7 @@ describe 'Wiki path generation assumptions' do
     let(:path) { ::File.join(project_wikis_path(project), some_page_name) }
 
     before do
-      get('/' + path)
+      get(path)
     end
 
     it 'routes to new wiki paths' do
@@ -61,6 +73,28 @@ describe 'Wiki path generation assumptions' do
 
       it 'still routes correctly' do
         dest = project_wiki_path(project, wiki_page)
+
+        expect(response).to redirect_to(dest)
+      end
+    end
+
+    context 'the user requested the old history path' do
+      let(:some_page_name) { 'some-dir/some-deep-dir/some-page' }
+      let(:path) { ::File.join(project_wikis_path(project), some_page_name, 'history') }
+
+      it 'redirects to the new history path' do
+        dest = project_wiki_history_path(project, wiki_page)
+
+        expect(response).to redirect_to(dest)
+      end
+    end
+
+    context 'the user requested the old edit path' do
+      let(:some_page_name) { 'some-dir/some-deep-dir/some-page' }
+      let(:path) { ::File.join(project_wikis_path(project), some_page_name, 'edit') }
+
+      it 'redirects to the new history path' do
+        dest = project_wiki_edit_path(project, wiki_page)
 
         expect(response).to redirect_to(dest)
       end

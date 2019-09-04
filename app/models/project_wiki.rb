@@ -65,11 +65,11 @@ class ProjectWiki
   end
 
   def wiki_base_path
-    [Gitlab.config.gitlab.relative_url_root, @project.full_path, 'wikis'].join('/')
+    ::File.join(project_base_path, 'wikis')
   end
 
   def wiki_page_path
-    [Gitlab.config.gitlab.relative_url_root, @project.full_path, 'wiki_page'].join('/')
+    ::File.join(project_base_path, '-', 'wiki_pages')
   end
 
   # Returns the Gitlab::Git::Wiki object.
@@ -212,7 +212,7 @@ class ProjectWiki
 
     title_array = title.split("/")
     title = title_array.pop
-    [title, title_array.join("/")]
+    [title, ::File.join(title_array)]
   end
 
   def repository
@@ -238,6 +238,10 @@ class ProjectWiki
   end
 
   private
+
+  def project_base_path
+    ::File.join(Gitlab.config.gitlab.relative_url_root, @project.full_path)
+  end
 
   def create_repo!(raw_repository)
     gitlab_shell.create_wiki_repository(project)

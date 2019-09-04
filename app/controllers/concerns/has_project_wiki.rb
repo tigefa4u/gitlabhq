@@ -17,7 +17,7 @@ module HasProjectWiki
     self.project_wiki = load_wiki
 
     # Call #wiki to make sure the Wiki Repo is initialized
-    self.project_wiki.wiki
+    project_wiki.wiki
 
     self.sidebar_page = project_wiki.find_sidebar(params[:version_id])
 

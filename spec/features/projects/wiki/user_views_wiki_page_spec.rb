@@ -99,11 +99,13 @@ describe 'User views a wiki page' do
     end
 
     it 'shows the creation page if file does not exist' do
-      expect(page).to have_link('image', href: project_wiki_path(project, path))
+      href = project_wiki_path(project, path)
+
+      expect(page).to have_link('image', href: href)
 
       click_on('image')
 
-      expect(current_path).to match("wikis/page/#{path}")
+      expect(current_path).to match(href)
       expect(page).to have_content('Create New Page')
     end
   end
