@@ -43,13 +43,6 @@
       - /(^docs[\/-].+|.+-docs$)/
       - /(^qa[\/-].*|.*-qa$)/
 
-.except-docs-qa-geo:
-  except:
-    refs:
-      - /(^docs[\/-].+|.+-docs$)/
-      - /(^qa[\/-].*|.*-qa$)/
-      - /(^geo[\/-].*|.*-geo$)/
-
 .review-only:
   only:
     refs:
