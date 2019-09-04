@@ -74,14 +74,16 @@ describe('Board component', () => {
     });
   });
 
-  it('collapses when clicking the collapse icon', done => {
+  fit('collapses when clicking the collapse icon', done => {
     vm.list.isExpanded = true;
+    global.gon.current_user_id = undefined;
 
     Vue.nextTick()
       .then(() => {
         vm.$el.querySelector('.board-title-caret').click();
       })
       .then(() => {
+        console.log(localStorage)
         expect(vm.$el.classList.contains('is-collapsed')).toBe(true);
         done();
       })
@@ -102,6 +104,13 @@ describe('Board component', () => {
       .catch(done.fail);
   });
 
+  describe('when logged out', () => {
+    it('controls the board state through localStorage', () => {
+      
+    })
+  })
+
+  // based on whats coming from the server.
   it('is expanded when created', () => {
     expect(vm.list.isExpanded).toBe(true);
     expect(vm.$el.classList.contains('is-collapsed')).toBe(false);
