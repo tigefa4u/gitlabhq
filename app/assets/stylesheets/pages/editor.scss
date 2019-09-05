@@ -36,6 +36,7 @@
     padding-top: 7px;
     padding-bottom: 7px;
     display: flex;
+    align-items: center;
   }
 
   .editor-ref {
@@ -49,7 +50,7 @@
 
   .new-file-name {
     display: inline-block;
-    max-width: 420px;
+    max-width: 200px;
     float: left;
 
     @media(max-width: map-get($grid-breakpoints, lg)-1) {
@@ -153,11 +154,9 @@
 }
 
 .template-selectors-menu {
-  display: inline-block;
+  display: flex;
   vertical-align: top;
-  margin: 14px 0 0 16px;
   padding: 0 0 0 14px;
-  border-left: 1px solid $border-color;
 
   @media(max-width: map-get($grid-breakpoints, md)-1) {
     display: block;
@@ -182,7 +181,7 @@
 
 .template-selector-dropdowns-wrap {
   display: inline-block;
-  margin: 5px 0 0 8px;
+  margin: 10px 0 0 8px;
   vertical-align: top;
 
   @media(max-width: map-get($grid-breakpoints, md)-1) {
@@ -226,8 +225,9 @@
 }
 
 .template-selectors-undo-menu {
-  display: inline-block;
-  margin: 7px 0 0 10px;
+  display: flex;
+  align-items: center;
+  margin: 0 0 0 10px;
 
   @media(max-width: map-get($grid-breakpoints, md)-1) {
     display: block;
@@ -236,6 +236,6 @@
   }
 
   button {
-    margin: -4px 0 0 15px;
+    margin: 0 0 0 15px;
   }
 }
