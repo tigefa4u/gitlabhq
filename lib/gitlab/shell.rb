@@ -117,16 +117,26 @@ module Gitlab
     # mv_namespace. Given the underlying implementation is a move action,
     # indescriminate of what the folders might be.
     #
-    # storage - project's storage path
+    # storage - project's storage name
     # path - project disk path
     # new_path - new project disk path
     #
     # Ex.
-    #   mv_repository("/path/to/storage", "gitlab/gitlab-ci", "randx/gitlab-ci-new")
+    #   mv_repository("default", "gitlab/gitlab-ci", "randx/gitlab-ci-new")
     def mv_repository(storage, path, new_path)
       return false if path.empty? || new_path.empty?
 
-      !!mv_directory(storage, "#{path}.git", "#{new_path}.git")
+      Gitlab::Git::Repository.new(storage, "#{path}.git", nil, nil).rename("#{new_path}.git")
+    rescue => e
+      Gitlab::Sentry.track_acceptable_exception(e, extra: { path: path, new_path: new_path, storage: storage })
+
+      false
+    end
+
+    def mv_wiki(storage, path, new_path)
+      return false if path.empty? || new_path.empty?
+
+      Gitlab::Git::Repository.new(storage, "#{path}.wiki.git", nil, nil).rename("#{new_path}.wiki.git")
     end
 
     # Fork repository to new path

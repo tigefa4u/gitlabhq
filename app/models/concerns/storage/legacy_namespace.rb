@@ -54,23 +54,17 @@ module Storage
     private
 
     def move_repositories
-      # Move the namespace directory in all storages used by member projects
-      repository_storages.each do |repository_storage|
-        # Ensure old directory exists before moving it
-        gitlab_shell.add_namespace(repository_storage, full_path_before_last_save)
+      all_projects.each do |project|
+        next unless project.legacy_storage?
 
-        # Ensure new directory exists before moving it (if there's a parent)
-        gitlab_shell.add_namespace(repository_storage, parent.full_path) if parent
-
-        unless gitlab_shell.mv_namespace(repository_storage, full_path_before_last_save, full_path)
-
-          Rails.logger.error "Exception moving path #{repository_storage} from #{full_path_before_last_save} to #{full_path}" # rubocop:disable Gitlab/RailsLogger
-
-          # if we cannot move namespace directory we should rollback
-          # db changes in order to prevent out of sync between db and fs
+        unless gitlab_shell.mv_repository(project.repository_storage, full_repo_path_before_last_save(project), project.disk_path )
           raise Gitlab::UpdatePathError.new('namespace directory cannot be moved')
         end
       end
+    end
+
+    def full_repo_path_before_last_save(project)
+      project.disk_path.gsub(full_path, full_path_before_last_save)
     end
 
     def old_repository_storages

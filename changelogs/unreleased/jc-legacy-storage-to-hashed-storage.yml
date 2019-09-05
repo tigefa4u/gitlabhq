@@ -1,0 +1,5 @@
+---
+title: Call RenameRepository instead of RenameNamespace
+merge_request: 32684
+author:
+type: deprecated

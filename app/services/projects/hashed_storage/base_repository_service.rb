@@ -29,20 +29,12 @@ module Projects
       # rubocop: disable CodeReuse/ActiveRecord
       def move_repository(from_name, to_name)
         from_exists = gitlab_shell.exists?(project.repository_storage, "#{from_name}.git")
-        to_exists = gitlab_shell.exists?(project.repository_storage, "#{to_name}.git")
 
         # If we don't find the repository on either original or target we should log that as it could be an issue if the
         # project was not originally empty.
-        if !from_exists && !to_exists
-          logger.warn "Can't find a repository on either source or target paths for #{project.full_path} (ID=#{project.id}) ..."
 
-          # We return true so we still reflect the change in the database.
-          # Next time the repository is (re)created it will be under the new storage layout
-          return true
-        elsif !from_exists
-          # Repository have been moved already.
-          return true
-        end
+        # Repository have been moved already.
+        return true unless from_exists
 
         gitlab_shell.mv_repository(project.repository_storage, from_name, to_name)
       end

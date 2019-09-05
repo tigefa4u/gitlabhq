@@ -38,7 +38,7 @@ module Storage
         # However we cannot allow rollback since we moved repository
         # So we basically we mute exceptions in next actions
         begin
-          gitlab_shell.mv_repository(repository_storage, "#{old_full_path}.wiki", "#{new_full_path}.wiki")
+          gitlab_shell.mv_wiki(repository_storage, old_full_path, new_full_path) if project.wiki.exists?
           return true
         rescue => e
           Rails.logger.error "Exception renaming #{old_full_path} -> #{new_full_path}: #{e}" # rubocop:disable Gitlab/RailsLogger

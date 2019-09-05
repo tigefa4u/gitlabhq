@@ -21,6 +21,8 @@ describe Gitlab::Database::RenameReservedPathsMigration::V1::RenameProjects, :de
     it 'searches using nested paths' do
       namespace = create(:namespace, path: 'hello')
       project = create(:project, :legacy_storage, path: 'THE-path', namespace: namespace)
+      project.create_repository
+      project.create_wiki
 
       result_ids = described_class.new(['Hello/the-path'], migration)
                      .projects_for_paths.map(&:id)
@@ -30,6 +32,9 @@ describe Gitlab::Database::RenameReservedPathsMigration::V1::RenameProjects, :de
 
     it 'includes the correct projects' do
       project = create(:project, :legacy_storage, path: 'THE-path')
+      project.create_repository
+      project.create_wiki
+
       _other_project = create(:project, :legacy_storage)
 
       result_ids = subject.projects_for_paths.map(&:id)
@@ -40,6 +45,13 @@ describe Gitlab::Database::RenameReservedPathsMigration::V1::RenameProjects, :de
 
   describe '#rename_projects' do
     let!(:projects) { create_list(:project, 2, :legacy_storage, path: 'the-path') }
+
+    before do
+      projects.each do |p|
+        p.create_repository
+        p.create_wiki
+      end
+    end
 
     it 'renames each project' do
       expect(subject).to receive(:rename_project).twice
@@ -56,6 +68,10 @@ describe Gitlab::Database::RenameReservedPathsMigration::V1::RenameProjects, :de
   end
 
   describe '#rename_project' do
+    before do
+      project.create_repository
+      project.create_wiki
+    end
     it 'renames path & route for the project' do
       expect(subject).to receive(:rename_path_for_routable)
                            .with(project)
@@ -81,6 +97,11 @@ describe Gitlab::Database::RenameReservedPathsMigration::V1::RenameProjects, :de
   end
 
   describe '#move_project_folders' do
+    before do
+      project.create_repository
+      project.create_wiki
+    end
+
     it 'moves the wiki & the repo' do
       expect(subject).to receive(:move_repository)
                            .with(project, 'known-parent/the-path.wiki', 'known-parent/the-path0.wiki')
@@ -125,6 +146,11 @@ describe Gitlab::Database::RenameReservedPathsMigration::V1::RenameProjects, :de
     let(:known_parent) { create(:namespace, path: 'known-parent') }
     let(:project) { create(:project, :repository, :legacy_storage, path: 'the-path', namespace: known_parent) }
 
+    before do
+      project.create_repository
+      project.create_wiki
+    end
+
     it 'moves the repository for a project' do
       expected_path = File.join(TestEnv.repos_path, 'known-parent', 'new-repo.git')
 
@@ -135,6 +161,11 @@ describe Gitlab::Database::RenameReservedPathsMigration::V1::RenameProjects, :de
   end
 
   describe '#revert_renames', :redis do
+    before do
+      project.create_repository
+      project.create_wiki
+    end
+
     it 'renames the routes back to the previous values' do
       subject.rename_project(project)
 
@@ -152,7 +183,6 @@ describe Gitlab::Database::RenameReservedPathsMigration::V1::RenameProjects, :de
     end
 
     it 'moves the repositories back to their original place' do
-      project.create_repository
       subject.rename_project(project)
 
       expected_path = File.join(TestEnv.repos_path, 'known-parent', 'the-path.git')
