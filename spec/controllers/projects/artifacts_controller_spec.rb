@@ -26,7 +26,7 @@ describe Projects::ArtifactsController do
     it 'sets the artifacts variable' do
       subject
 
-      expect(assigns(:jobs_with_artifacts)).to eq(project.job_artifacts)
+      expect(assigns(:artifacts)).to eq(project.job_artifacts)
     end
   end
 

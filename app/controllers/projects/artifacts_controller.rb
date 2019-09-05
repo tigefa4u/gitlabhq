@@ -14,10 +14,9 @@ class Projects::ArtifactsController < Projects::ApplicationController
   before_action :entry, only: [:file]
 
   def index
-    finder = JobsWithArtifactsFinder.new(project: @project, params: params)
-    @jobs_with_artifacts = finder.execute
+    finder = ArtifactsFinder.new(@project, artifact_params)
+    @artifacts = finder.execute.page(params[:page]).per(30)
     @total_size = finder.total_size
-    @sort = finder.sort_key
   end
 
   def destroy
@@ -86,6 +85,10 @@ class Projects::ArtifactsController < Projects::ApplicationController
     return unless params[:ref_name_and_path]
 
     @ref_name, @path = extract_ref(params[:ref_name_and_path])
+  end
+
+  def artifact_params
+    params.permit(:sort_key)
   end
 
   def validate_artifacts!
