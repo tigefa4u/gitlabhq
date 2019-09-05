@@ -12,7 +12,7 @@ module Gitlab
       end
 
       def active_export_count
-        Dir[File.join(archive_path, '*')].count { |name| File.directory?(name) }
+        Dir[File.join(base_path, '*')].count { |name| File.directory?(name) }
       end
 
       def export_path
@@ -21,6 +21,14 @@ module Gitlab
 
       def archive_path
         @archive_path ||= Gitlab::ImportExport.export_path(relative_path: relative_archive_path)
+      end
+
+      def base_path
+        @base_path ||= Gitlab::ImportExport.export_path(relative_path: relative_base_path)
+      end
+
+      def lock_path
+        base_path
       end
 
       def error(error)
@@ -48,6 +56,10 @@ module Gitlab
 
       def relative_archive_path
         @relative_archive_path ||= File.join(@project.disk_path, SecureRandom.hex)
+      end
+
+      def relative_base_path
+        @project.disk_path
       end
 
       def log_error(details)

@@ -57,7 +57,7 @@ module Gitlab
         def self.lock_file_path(project)
           return unless project.export_path || export_file_exists?
 
-          lock_path = project.import_export_shared.archive_path
+          lock_path = project.import_export_shared.lock_path
 
           mkdir_p(lock_path)
           File.join(lock_path, AFTER_EXPORT_LOCK_FILE_NAME)
