@@ -14,7 +14,7 @@ class Projects::ArtifactsController < Projects::ApplicationController
   before_action :entry, only: [:file]
 
   def index
-    finder = ArtifactsFinder.new(@project, artifact_params)
+    finder = ArtifactsFinder.new(@project, artifacts_params)
     @artifacts = finder.execute.page(params[:page]).per(30)
     @total_size = finder.total_size
   end
@@ -87,8 +87,8 @@ class Projects::ArtifactsController < Projects::ApplicationController
     @ref_name, @path = extract_ref(params[:ref_name_and_path])
   end
 
-  def artifact_params
-    params.permit(:sort_key)
+  def artifacts_params
+    params.permit(:sort, :search)
   end
 
   def validate_artifacts!

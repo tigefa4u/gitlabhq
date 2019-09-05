@@ -148,6 +148,10 @@ module Ci
       self.where(project: project).sum(:size)
     end
 
+    def self.search_by_job_name(job_name)
+      includes(:job).where(ci_builds: { name: job_name })
+    end
+
     def local_store?
       [nil, ::JobArtifactUploader::Store::LOCAL].include?(self.file_store)
     end

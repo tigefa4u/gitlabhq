@@ -95,6 +95,17 @@ describe Ci::JobArtifact do
     end
   end
 
+  describe '.search_by_job_name' do
+    let!(:matching_build) { create(:ci_build, :artifacts, name: 'unique_name') }
+    let!(:non_matching_build) { create(:ci_build, :artifacts) }
+
+    subject { described_class.search_by_job_name('unique_name') }
+
+    it 'returns only artifacts for specified job name' do
+      expect(subject).to eq(matching_build.job_artifacts)
+    end
+  end
+
   describe 'callbacks' do
     subject { create(:ci_job_artifact, :archive) }
 

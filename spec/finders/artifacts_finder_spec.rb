@@ -20,11 +20,20 @@ describe ArtifactsFinder do
       end
     end
 
-    context 'with sort params' do
-      let(:params) { { sort_key: 'size_desc' } }
+    context 'with sort param' do
+      let(:params) { { sort: 'size_desc' } }
 
       it 'sorts the artifacts' do
         expect(subject).to eq(project.job_artifacts.order_by('size_desc'))
+      end
+    end
+
+    context 'with job_name param' do
+      let(:params) { { search: 'unique_name' } }
+      let!(:build) { create(:ci_build, :artifacts, project: project, name: 'unique_name') }
+
+      it 'filters the artifacts by job name' do
+        expect(subject).to eq(build.job_artifacts)
       end
     end
   end
