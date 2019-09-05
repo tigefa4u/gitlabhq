@@ -2,12 +2,12 @@
 
 require 'fast_spec_helper'
 
-describe Gitlab::Ci::Config::Normalizer do
+describe Gitlab::Ci::Config::Normalize::Parallelizer do
   let(:job_name) { :rspec }
   let(:job_config) { { script: 'rspec', parallel: 5, name: 'rspec' } }
   let(:config) { { job_name => job_config } }
 
-  describe '.normalize_jobs' do
+  describe '#normalize_jobs' do
     subject { described_class.new(config).normalize_jobs }
 
     it 'does not have original job' do

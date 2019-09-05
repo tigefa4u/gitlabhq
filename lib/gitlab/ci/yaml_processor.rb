@@ -104,7 +104,7 @@ module Gitlab
         ##
         # Jobs
         #
-        @jobs = Ci::Config::Normalizer.new(@ci_config.jobs).normalize_jobs
+        @jobs = Ci::Config::Normalizer::Parallelizer.new(@ci_config.jobs).normalize_jobs
 
         @jobs.each do |name, job|
           # logical validation for job
