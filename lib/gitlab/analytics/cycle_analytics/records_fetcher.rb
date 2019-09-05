@@ -101,9 +101,9 @@ module Gitlab
             .joins(ci_build_join)
             .select(build_table[:id], round_duration_to_seconds.as('total_time'))
 
-          result = execute_query(q).to_a
+          results = execute_query(q).to_a
 
-          Gitlab::CycleAnalytics::Updater.update!(result, from: 'id', to: 'build', klass: ::Ci::Build)
+          Gitlab::CycleAnalytics::Updater.update!(results, from: 'id', to: 'build', klass: ::Ci::Build.includes({ project: [:namespace], user: [], pipeline: [] }))
         end
 
         def ordered_and_limited_query

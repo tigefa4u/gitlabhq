@@ -78,8 +78,8 @@ describe Gitlab::Analytics::CycleAnalytics::RecordsFetcher do
     end
 
     describe 'special case' do
-      let(:mr1) { create(:merge_request, source_project: project, allow_broken: true) }
-      let(:mr2) { create(:merge_request, source_project: project, allow_broken: true) }
+      let(:mr1) { create(:merge_request, source_project: project, allow_broken: true, created_at: 20.days.ago) }
+      let(:mr2) { create(:merge_request, source_project: project, allow_broken: true, created_at: 20.days.ago) }
       let(:ci_build1) { create(:ci_build) }
       let(:ci_build2) { create(:ci_build) }
       let(:default_stages) { Gitlab::Analytics::CycleAnalytics::DefaultStages }

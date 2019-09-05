@@ -5,7 +5,6 @@ module Gitlab
     module CycleAnalytics
       class BaseQueryBuilder
         include Gitlab::CycleAnalytics::MetricsTables
-        include StageQueryHelpers
 
         delegate :subject_model, to: :stage
 
@@ -14,6 +13,7 @@ module Gitlab
         def initialize(stage:, params: {})
           @stage = stage
           @params = params
+          @duration_filter = DurationFilter.new(stage: stage)
         end
 
         def run
@@ -22,16 +22,12 @@ module Gitlab
           query = filter_by_time_range(query)
           query = stage.start_event.apply_query_customization(query)
           query = stage.end_event.apply_query_customization(query)
-          exclude_negative_durations(query)
+          duration_filter.apply(query)
         end
 
         private
 
-        attr_reader :stage, :params
-
-        def exclude_negative_durations(query)
-          query.where(duration.gt(zero_interval))
-        end
+        attr_reader :stage, :params, :duration_filter
 
         def filter_by_parent_model(query)
           parent_class = stage.parent.class

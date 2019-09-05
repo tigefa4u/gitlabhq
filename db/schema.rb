@@ -1736,6 +1736,7 @@ ActiveRecord::Schema.define(version: 2019_09_05_223900) do
     t.datetime "first_added_to_board_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["issue_id", "first_mentioned_in_commit_at", "first_associated_with_milestone_at", "first_added_to_board_at"], name: "index_issue_metrics_on_issue_id_and_timestamps"
     t.index ["issue_id"], name: "index_issue_metrics"
   end
 

@@ -23,7 +23,7 @@ module Gitlab
 
           # rubocop: disable CodeReuse/ActiveRecord
           def apply_query_customization(query)
-            query.joins(merge_requests_closing_issues: { merge_request: [:metrics] })
+            query.joins(merge_requests_closing_issues: { merge_request: [:metrics] }).where(mr_metrics_table[:first_deployed_to_production_at].gteq(mr_table[:created_at]))
           end
           # rubocop: enable CodeReuse/ActiveRecord
         end
