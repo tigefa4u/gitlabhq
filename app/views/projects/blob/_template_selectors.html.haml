@@ -1,9 +1,5 @@
 .template-selectors-menu
-  .templates-selectors-label
-    Template
   .template-selector-dropdowns-wrap
-    .template-type-selector.js-template-type-selector-wrap.hidden
-      = dropdown_tag("Choose type", options: { toggle_class: 'js-template-type-selector qa-template-type-dropdown', title: "Choose a template type" } )
     .license-selector.js-license-selector-wrap.js-template-selector-wrap.hidden
       = dropdown_tag("Apply a license template", options: { toggle_class: 'js-license-selector qa-license-dropdown', title: "Apply a license", filter: true, placeholder: "Filter", data: { data: licenses_for_select(@project), project: @project.name, fullname: @project.namespace.human_name } } )
     .gitignore-selector.js-gitignore-selector-wrap.js-template-selector-wrap.hidden
