@@ -26,7 +26,7 @@ class ArtifactsFinder
   private
 
   def sort_key
-    @params[:sort].presence || 'created_asc'
+    @params[:sort] || 'created_asc'
   end
 
   def sort(artifacts)

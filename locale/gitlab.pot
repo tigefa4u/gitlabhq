@@ -1341,10 +1341,13 @@ msgstr ""
 msgid "Are you sure? This will invalidate your registered applications and U2F devices."
 msgstr ""
 
-msgid "Artifacts"
+msgid "Artifact could not be deleted."
 msgstr ""
 
-msgid "Artifacts were successfully deleted."
+msgid "Artifact was successfully deleted."
+msgstr ""
+
+msgid "Artifacts"
 msgstr ""
 
 msgid "As U2F devices are only supported by a few browsers, we require that you set up a two-factor authentication app before a U2F device. That way you'll always be able to log in - even when you're using an unsupported browser."

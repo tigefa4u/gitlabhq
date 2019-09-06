@@ -45,6 +45,30 @@ describe Projects::ArtifactsController do
 
       expect(response).to redirect_to(project_artifacts_path(project))
     end
+
+    it 'sets the notice' do
+      subject
+
+      expect(flash[:notice]).to eq('Artifact was successfully deleted.')
+    end
+
+    context 'when artifact deletion fails' do
+      before do
+        allow_any_instance_of(Ci::JobArtifact).to receive(:destroy).and_return(false)
+      end
+
+      it 'redirects to artifacts index page' do
+        subject
+
+        expect(response).to redirect_to(project_artifacts_path(project))
+      end
+
+      it 'sets the notice' do
+        subject
+
+        expect(flash[:notice]).to eq('Artifact could not be deleted.')
+      end
+    end
   end
 
   describe 'GET download' do

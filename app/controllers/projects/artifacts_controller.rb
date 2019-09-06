@@ -20,9 +20,13 @@ class Projects::ArtifactsController < Projects::ApplicationController
   end
 
   def destroy
-    artifact.destroy
+    if artifact.destroy
+      notice = _('Artifact was successfully deleted.')
+    else
+      notice = _('Artifact could not be deleted.')
+    end
 
-    redirect_to project_artifacts_path(@project), status: :found, notice: _('Artifacts were successfully deleted.')
+    redirect_to project_artifacts_path(@project), status: :found, notice: notice
   end
 
   def download
