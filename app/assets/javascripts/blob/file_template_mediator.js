@@ -175,7 +175,8 @@ export default class FileTemplateMediator {
   showUndoMenu() {
     this.$undoMenu.removeClass('hidden');
 
-    this.$undoBtn.on('click', () => {
+    this.$undoBtn.on('click', e => {
+      e.preventDefault()
       this.restoreFromCache();
       this.destroyUndoMenu();
     });
