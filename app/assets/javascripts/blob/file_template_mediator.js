@@ -19,6 +19,7 @@ export default class FileTemplateMediator {
     this.initDomElements();
     this.initDropdowns();
     this.initPageEvents();
+    this.initDefaultContent();
   }
 
   initTemplateSelectors() {
@@ -74,6 +75,18 @@ export default class FileTemplateMediator {
     this.listenForFilenameInput();
     this.prepFileContentForSubmit();
     this.listenForPreviewMode();
+  }
+
+  initDefaultContent() {
+    const { config } = this.templateSelectors[1]
+    
+    this.fetchFileTemplate(config.type, "Docker")
+      .then(file => {
+        this.setEditorContent(file)
+      })
+    
+    this.setFilename(config.name)
+    this.displayMatchedTemplateSelector();
   }
 
   listenForFilenameInput() {
@@ -144,6 +157,8 @@ export default class FileTemplateMediator {
         this.typeSelector.show();
         this.selectTemplateType(selector.config);
         this.showTemplateSelectorMenu();
+      } else {
+        this.clearEditorContent()
       }
     });
   }
@@ -151,9 +166,13 @@ export default class FileTemplateMediator {
   fetchFileTemplate(type, query, data = {}) {
     return new Promise(resolve => {
       const resolveFile = file => resolve(file);
-
+     
       Api.projectTemplate(this.projectId, type, query, data, resolveFile);
     });
+  }
+
+  clearEditorContent() {
+    this.editor.setValue("")
   }
 
   setEditorContent(file) {
@@ -229,6 +248,10 @@ export default class FileTemplateMediator {
 
   getFilename() {
     return this.$filenameInput.val();
+  }
+
+  setFilename(filename) {
+    this.$filenameInput.val(filename)
   }
 
   getSelected() {

@@ -16,8 +16,7 @@
       %span.pull-left.append-right-10
         \/
       = text_field_tag 'file_name', params[:file_name], placeholder: "File name",
-        required: true, class: 'form-control new-file-name js-file-path-name-input',
-        value: '.gitlab-ci.yml'
+        required: true, class: 'form-control new-file-name js-file-path-name-input'
       = render 'template_selectors'
 
     .file-buttons
