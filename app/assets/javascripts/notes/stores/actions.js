@@ -6,6 +6,7 @@ import TaskList from '../../task_list';
 import Flash from '../../flash';
 import Poll from '../../lib/utils/poll';
 import * as types from './mutation_types';
+import { EXPAND_DISCUSSION } from './mutations';
 import * as utils from './utils';
 import * as constants from '../constants';
 import service from '../services/notes_service';
@@ -23,7 +24,7 @@ export const expandDiscussion = ({ commit, dispatch }, data) => {
     dispatch('diffs/renderFileForDiscussionId', data.discussionId, { root: true });
   }
 
-  commit(types.EXPAND_DISCUSSION, data);
+  commit(EXPAND_DISCUSSION.name, data);
 };
 
 export const collapseDiscussion = ({ commit }, data) => commit(types.COLLAPSE_DISCUSSION, data);

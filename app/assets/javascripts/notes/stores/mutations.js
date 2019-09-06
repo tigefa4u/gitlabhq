@@ -3,6 +3,11 @@ import * as types from './mutation_types';
 import * as constants from '../constants';
 import { isInMRPage } from '../../lib/utils/common_utils';
 
+export const EXPAND_DISCUSSION = (state, { discussionId }) => {
+  const discussion = utils.findNoteObjectById(state.discussions, discussionId);
+  Object.assign(discussion, { expanded: true });
+};
+
 export default {
   [types.ADD_NEW_NOTE](state, data) {
     const note = data.discussion ? data.discussion.notes[0] : data;
@@ -55,10 +60,7 @@ export default {
     }
   },
 
-  [types.EXPAND_DISCUSSION](state, { discussionId }) {
-    const discussion = utils.findNoteObjectById(state.discussions, discussionId);
-    Object.assign(discussion, { expanded: true });
-  },
+  EXPAND_DISCUSSION,
 
   [types.COLLAPSE_DISCUSSION](state, { discussionId }) {
     const discussion = utils.findNoteObjectById(state.discussions, discussionId);
