@@ -46,7 +46,7 @@ export default class Tracking {
           let category = defaults.category || data.category;
           // eslint-disable-next-line no-underscore-dangle
           category = category || this.$options.name || this.$options._componentTag;
-          Tracking.event(category || 'unspecified', action, Object.assign({}, defaults, data));
+          Tracking.event(category || 'unspecified', action, { ...defaults, ...data });
         },
       },
     });
@@ -64,7 +64,7 @@ export default class Tracking {
   }
 
   static eventHandlers(category) {
-    const handler = opts => e => this.handleEvent(e, Object.assign({ category }, opts));
+    const handler = opts => e => this.handleEvent(e, { ...{ category }, ...opts });
     const handlers = [];
     handlers.push({ name: 'click', func: handler() });
     handlers.push({ name: 'show.bs.dropdown', func: handler({ suffix: '_show' }) });
@@ -97,7 +97,7 @@ export default class Tracking {
 export function initUserTracking() {
   if (!Tracking.enabled()) return;
 
-  const opts = Object.assign({}, DEFAULT_SNOWPLOW_OPTIONS, window.snowplowOptions);
+  const opts = { ...DEFAULT_SNOWPLOW_OPTIONS, ...window.snowplowOptions };
   window.snowplow('newTracker', opts.namespace, opts.hostname, opts);
 
   if (opts.activityTrackingEnabled) window.snowplow('enableActivityTracking', 30, 30);
