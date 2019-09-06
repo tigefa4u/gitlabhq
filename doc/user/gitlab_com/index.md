@@ -286,9 +286,7 @@ RateLimit-Reset: 1563325137
 RateLimit-ResetTime: Wed, 17 Jul 2019 00:58:57 GMT
 ```
 
-Source:
-
-- Search for `rate_limit_http_rate_per_minute` and `rate_limit_sessions_per_second` in [GitLab.com's current HAProxy settings](https://gitlab.com/gitlab-cookbooks/gitlab-haproxy/blob/master/attributes/default.rb).
+See [Protected Paths](../admin_area/settings/protected_paths.md) for more details.
 
 ### Rack Attack initializer
 

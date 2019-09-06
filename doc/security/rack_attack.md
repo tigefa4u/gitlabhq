@@ -36,38 +36,10 @@ will be enabled:
 
 ### Protected paths throttle
 
-GitLab responds with HTTP status code `429` to POST requests at protected paths
-that exceed 10 requests per minute per IP address.
+Starting with GitLab 12.3:
 
-By default, protected paths are:
-
-```ruby
-default['gitlab']['gitlab-rails']['rack_attack_protected_paths'] = [
-  '/users/password',
-  '/users/sign_in',
-  '/api/#{API::API.version}/session.json',
-  '/api/#{API::API.version}/session',
-  '/users',
-  '/users/confirmation',
-  '/unsubscribes/',
-  '/import/github/personal_access_token'
-]
-```
-
-This header is included in responses to blocked requests:
-
-```
-Retry-After: 60
-```
-
-For example, the following are limited to a maximum 10 requests per minute:
-
-- User sign-in
-- User sign-up (if enabled)
-- User password reset
-
-After 10 requests, the client must wait a minute before it can
-try again.
+- [Protected Paths](../user/admin_area/settings/protected_paths.md) are configured on the GitLab admin UI area. Please see that section for more details.
+- [Omnibus Protected Paths](https://docs.gitlab.com/omnibus/settings/configuration.html#setting-up-paths-to-be-protected-by-rack-attack) are considered deprecated, and will be removed in an upcoming release.
 
 ### Git and container registry failed authentication ban
 
@@ -135,8 +107,6 @@ taken in order to enable protection for your GitLab instance:
    ```
 
 1. Copy `config/initializers/rack_attack.rb.example` to `config/initializers/rack_attack.rb`
-1. Open `config/initializers/rack_attack.rb`, review the
-   `paths_to_be_protected`, and add any other path you need protecting
 1. Restart GitLab:
 
    ```sh
