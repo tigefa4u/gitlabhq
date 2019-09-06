@@ -4,11 +4,7 @@ require 'spec_helper'
 require 'set'
 
 RSpec.describe WikiDirectory do
-  # The smallest number of seconds we must sleep for in order to get git
-  # commits to record deterministically ordered timestamps (tested with
-  # fractional values, but no dice).
-  # This is not a good approach, but timecop does not work across RPC boundaries
-  MIN_POSSIBLE_SLEEP = 1
+  include GitHelpers
 
   let(:project) { create(:project, :wiki_repo) }
   let(:user) { project.owner }
@@ -159,10 +155,9 @@ RSpec.describe WikiDirectory do
 
     context 'there are a few pages, each with a single version' do
       before do
-        Timecop.scale(10000) do
-          page_paths.each_with_index do |path, n|
+        page_paths.each_with_index do |path, n|
+          Timecop.freeze(Time.local(1990) + n.minutes) do
             create_page(path, "this is page #{n}")
-            sleep_for_rpc!
           end
         end
       end
@@ -174,13 +169,14 @@ RSpec.describe WikiDirectory do
 
     context 'there are a few pages, each with a few versions' do
       before do
-        Timecop.scale(10000) do
-          page_paths.each_with_index do |path, n|
+        page_paths.each_with_index do |path, n|
+          t = Time.local(1990) + n.minutes
+          Timecop.freeze(t) do
             create_page(path, "This is page #{n}")
-            sleep_for_rpc!
             (2..3).each do |v|
-              update_page(path, "Now at version #{v}")
-              sleep_for_rpc!
+              Timecop.freeze(t + v.seconds) do
+                update_page(path, "Now at version #{v}")
+              end
             end
           end
         end
@@ -192,18 +188,32 @@ RSpec.describe WikiDirectory do
 
   private
 
-  # Sleep for the smallest possible time that will allow our commits to have
-  # deterministically ordered timestamps.
-  def sleep_for_rpc!
-    sleep(MIN_POSSIBLE_SLEEP)
-  end
-
   def create_page(name, content)
     wiki.wiki.write_page(name, :markdown, content, commit_details)
+    set_time(name)
   end
 
   def update_page(name, content)
     wiki.wiki.update_page(name, name, :markdown, content, update_commit_details)
+    set_time(name)
+  end
+
+  def set_time(name)
+    return unless Timecop.frozen?
+
+    new_date = Time.now
+    p = wiki.find_page(name)
+    commit = p.page.version.commit
+    repo = commit.instance_variable_get(:@repository)
+
+    rug_commit = rugged_repo_at_path(repo.relative_path).lookup(commit.id)
+    rug_commit.amend(
+      message: rug_commit.message,
+      tree: rug_commit.tree,
+      author: rug_commit.author.merge(time: new_date),
+      committer: rug_commit.committer.merge(time: new_date),
+      update_ref: 'HEAD'
+    )
   end
 
   def commit_details
