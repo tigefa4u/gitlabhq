@@ -15,16 +15,16 @@ class Projects::ArtifactsController < Projects::ApplicationController
 
   def index
     finder = ArtifactsFinder.new(@project, artifacts_params)
-    @artifacts = finder.execute.page(params[:page]).per(30)
+    @artifacts = finder.execute.page(params[:page])
     @total_size = finder.total_size
   end
 
   def destroy
-    if artifact.destroy
-      notice = _('Artifact was successfully deleted.')
-    else
-      notice = _('Artifact could not be deleted.')
-    end
+    notice = if artifact.destroy
+               _('Artifact was successfully deleted.')
+             else
+               _('Artifact could not be deleted.')
+             end
 
     redirect_to project_artifacts_path(@project), status: :found, notice: notice
   end

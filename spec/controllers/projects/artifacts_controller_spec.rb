@@ -14,7 +14,7 @@ describe Projects::ArtifactsController do
             status: 'success')
   end
 
-  let(:job) { create(:ci_build, :success, :artifacts, pipeline: pipeline) }
+  let!(:job) { create(:ci_build, :success, :artifacts, pipeline: pipeline) }
 
   before do
     sign_in(user)
@@ -27,6 +27,18 @@ describe Projects::ArtifactsController do
       subject
 
       expect(assigns(:artifacts)).to eq(project.job_artifacts)
+    end
+
+    describe 'pagination' do
+      before do
+        allow(Kaminari.config).to receive(:default_per_page).and_return(1)
+      end
+
+      it 'paginates artifacts' do
+        subject
+
+        expect(assigns(:artifacts)).to contain_exactly(project.job_artifacts.first)
+      end
     end
   end
 
