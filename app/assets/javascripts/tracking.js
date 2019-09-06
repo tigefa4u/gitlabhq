@@ -18,6 +18,33 @@ const DEFAULT_SNOWPLOW_OPTIONS = {
   activityTrackingEnabled: false,
 };
 
+const eventHandler = (e, func, opts = {}) => {
+  const el = e.target.closest('[data-track-event]');
+  const action = el && el.dataset.trackEvent;
+  if (!action) return;
+
+  let value = el.dataset.trackValue || el.value || undefined;
+  if (el.type === 'checkbox' && !el.checked) value = false;
+
+  const data = {
+    label: el.dataset.trackLabel,
+    property: el.dataset.trackProperty,
+    value,
+    context: el.dataset.trackContext,
+  };
+
+  func(opts.category, action + (opts.suffix || ''), _.omit(data, _.isUndefined));
+};
+
+const eventHandlers = (category, func) => {
+  const handler = opts => e => eventHandler(e, func, { ...{ category }, ...opts });
+  const handlers = [];
+  handlers.push({ name: 'click', func: handler() });
+  handlers.push({ name: 'show.bs.dropdown', func: handler({ suffix: '_show' }) });
+  handlers.push({ name: 'hide.bs.dropdown', func: handler({ suffix: '_hide' }) });
+  return handlers;
+};
+
 export default class Tracking {
   static trackable() {
     return !['1', 'yes'].includes(
@@ -39,58 +66,34 @@ export default class Tracking {
     return window.snowplow('trackStructEvent', category, action, label, property, value, contexts);
   }
 
-  static install(Vue, defaults = {}) {
-    Vue.mixin({
-      methods: {
-        track(action, data) {
-          let category = defaults.category || data.category;
-          // eslint-disable-next-line no-underscore-dangle
-          category = category || this.$options.name || this.$options._componentTag;
-          Tracking.event(category || 'unspecified', action, { ...defaults, ...data });
-        },
-      },
-    });
-  }
-
   static bindDocument(category = document.body.dataset.page, documentOverride = null) {
     const el = documentOverride || document;
     if (!this.enabled() || el.trackingBound) return [];
 
     el.trackingBound = true;
 
-    const handlers = this.eventHandlers(category);
+    const handlers = eventHandlers(category, (...args) => this.event(...args));
     handlers.forEach(event => el.addEventListener(event.name, event.func));
     return handlers;
   }
 
-  static eventHandlers(category) {
-    const handler = opts => e => this.handleEvent(e, { ...{ category }, ...opts });
-    const handlers = [];
-    handlers.push({ name: 'click', func: handler() });
-    handlers.push({ name: 'show.bs.dropdown', func: handler({ suffix: '_show' }) });
-    handlers.push({ name: 'hide.bs.dropdown', func: handler({ suffix: '_hide' }) });
-    return handlers;
-  }
-
-  static handleEvent(e, opts = {}) {
-    const el = e.target.closest('[data-track-event]');
-    const action = el && el.dataset.trackEvent;
-    if (!action) return;
-
-    const data = {
-      label: el.dataset.trackLabel,
-      property: el.dataset.trackProperty,
-      value: this.elementValue(el),
-      context: el.dataset.trackContext,
+  static mixin(opts) {
+    return {
+      data() {
+        return {
+          tracking: {
+            // eslint-disable-next-line no-underscore-dangle
+            category: this.$options.name || this.$options._componentTag,
+          },
+        };
+      },
+      methods: {
+        track(action, data) {
+          const category = opts.category || data.category || this.tracking.category;
+          Tracking.event(category || 'unspecified', action, { ...opts, ...this.tracking, ...data });
+        },
+      },
     };
-
-    this.event(opts.category, action + (opts.suffix || ''), _.omit(data, _.isUndefined));
-  }
-
-  static elementValue(el) {
-    let value = el.dataset.trackValue || el.value || undefined;
-    if (el.type === 'checkbox' && !el.checked) value = false;
-    return value;
   }
 }
 

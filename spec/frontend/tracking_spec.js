@@ -1,5 +1,4 @@
 import { setHTMLFixture } from './helpers/fixtures';
-import Vue from 'vue';
 import Tracking, { initUserTracking } from '~/tracking';
 
 describe('Tracking', () => {
@@ -106,27 +105,6 @@ describe('Tracking', () => {
       Tracking.event('_category_', '_eventName_');
 
       expect(snowplowSpy).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('.install', () => {
-    let eventSpy;
-
-    Vue.use(Tracking, { category: '_category_', context: { foo: 'bar' } });
-
-    beforeEach(() => {
-      eventSpy = jest.spyOn(Tracking, 'event');
-    });
-
-    it('installs a track method', () => {
-      const component = new (Vue.extend({}))();
-      component.track('_action_', { label: '_label_' });
-
-      expect(eventSpy).toHaveBeenCalledWith('_category_', '_action_', {
-        category: '_category_', // disregarded within Tracking.event
-        label: '_label_',
-        context: { foo: 'bar' },
-      });
     });
   });
 

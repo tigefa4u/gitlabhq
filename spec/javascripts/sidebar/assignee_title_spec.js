@@ -1,8 +1,6 @@
 import Vue from 'vue';
 import AssigneeTitle from '~/sidebar/components/assignees/assignee_title.vue';
-import Tracking, { mockTracking, triggerEvent } from 'spec/helpers/tracking_helper';
-
-Vue.use(Tracking);
+import { mockTracking, triggerEvent } from 'spec/helpers/tracking_helper';
 
 describe('AssigneeTitle component', () => {
   let component;
@@ -117,6 +115,10 @@ describe('AssigneeTitle component', () => {
     const spy = mockTracking('_category_', component.$el, spyOn);
     triggerEvent('.js-sidebar-dropdown-toggle');
 
-    expect(spy).toHaveBeenCalled();
+    expect(spy).toHaveBeenCalledWith('AssigneeTitle', 'click_edit_button', {
+      label: 'right_sidebar',
+      category: 'AssigneeTitle',
+      property: 'assignee',
+    });
   });
 });

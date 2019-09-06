@@ -1,8 +1,10 @@
 <script>
 import { n__ } from '~/locale';
+import Tracking from '~/tracking';
 
 export default {
   name: 'AssigneeTitle',
+  mixins: [Tracking.mixin({ label: 'right_sidebar' })],
   props: {
     loading: {
       type: Boolean,

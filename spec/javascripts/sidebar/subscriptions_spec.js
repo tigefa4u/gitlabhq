@@ -60,7 +60,7 @@ describe('Subscriptions', function() {
     expect(vm.$emit).toHaveBeenCalledWith('toggleSubscription', jasmine.any(Object));
   });
 
-  it('calls trackEvent when toggled', () => {
+  it('tracks the event when toggled', () => {
     vm = mountComponent(Subscriptions, { subscribed: true });
     const spy = mockTracking('_category_', vm.$el, spyOn);
     vm.toggleSubscription();
