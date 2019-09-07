@@ -5,6 +5,8 @@ module Gitlab
     class Shared
       attr_reader :errors, :project
 
+      LOCKS_DIRECTORY = 'locks'
+
       def initialize(project)
         @project = project
         @errors = []
@@ -12,7 +14,7 @@ module Gitlab
       end
 
       def active_export_count
-        Dir[File.join(base_path, '*')].count { |name| File.directory?(name) }
+        Dir[File.join(base_path, '*')].count { |name| File.basename(name) != LOCKS_DIRECTORY && File.directory?(name) }
       end
 
       def export_path
@@ -27,8 +29,8 @@ module Gitlab
         @base_path ||= Gitlab::ImportExport.export_path(relative_path: relative_base_path)
       end
 
-      def lock_path
-        base_path
+      def lock_files_path
+        @locks_files_path ||= File.join(base_path, LOCKS_DIRECTORY)
       end
 
       def error(error)
@@ -45,7 +47,11 @@ module Gitlab
       end
 
       def after_export_in_progress?
-        File.exist?(after_export_lock_file)
+        locks_present?
+      end
+
+      def locks_present?
+        Dir.exist?(lock_files_path) && !Dir.empty?(lock_files_path)
       end
 
       private
@@ -81,10 +87,6 @@ module Gitlab
 
       def filtered_error_message(message)
         Projects::ImportErrorFilter.filter_message(message)
-      end
-
-      def after_export_lock_file
-        AfterExportStrategies::BaseAfterExportStrategy.lock_file_path(project)
       end
     end
   end

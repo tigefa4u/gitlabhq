@@ -10,11 +10,9 @@ module Gitlab
 
         StrategyError = Class.new(StandardError)
 
-        AFTER_EXPORT_LOCK_FILE_NAME = '.after_export_action'
-
         private
 
-        attr_reader :project, :current_user
+        attr_reader :project, :current_user, :lock_file
 
         public
 
@@ -28,6 +26,10 @@ module Gitlab
 
         def execute(current_user, project)
           @project = project
+
+          ensure_export_ready!
+          ensure_lock_files_path!
+          @lock_file = File.join(lock_files_path, SecureRandom.hex)
 
           return unless @project.export_status == :finished
 
@@ -54,13 +56,20 @@ module Gitlab
           @options.to_h.merge!(klass: self.class.name).to_json
         end
 
-        def self.lock_file_path(project)
-          return unless project.export_path || export_file_exists?
+        def ensure_export_ready!
+          raise StrategyError unless project.export_path || export_file_exists?
+        end
 
-          lock_path = project.import_export_shared.lock_path
+        def ensure_lock_files_path!
+          FileUtils.mkdir_p(lock_files_path) unless Dir.exist?(lock_files_path)
+        end
 
-          mkdir_p(lock_path)
-          File.join(lock_path, AFTER_EXPORT_LOCK_FILE_NAME)
+        def lock_files_path
+          project.import_export_shared.lock_files_path
+        end
+
+        def locks_present?
+          project.import_export_shared.locks_present?
         end
 
         protected
@@ -72,12 +81,10 @@ module Gitlab
         private
 
         def create_or_update_after_export_lock
-          FileUtils.touch(self.class.lock_file_path(project))
+          FileUtils.touch(lock_file)
         end
 
         def delete_after_export_lock
-          lock_file = self.class.lock_file_path(project)
-
           FileUtils.rm(lock_file) if lock_file.present? && File.exist?(lock_file)
         end
 

@@ -49,9 +49,7 @@ describe 'Import/Export - project export integration test', :js do
 
       expect(page).to have_content('Download export')
 
-      # Ensure lock file path exists
-      expect(file_permissions(project.import_export_shared.lock_path)).to eq(0700)
-
+      expect(project.export_status).to eq(:finished)
       expect(project.export_file.path).to include('tar.gz')
 
       in_directory_with_expanded_export(project) do |exit_status, tmpdir|
