@@ -35,12 +35,12 @@ module Gitlab
 
           def merge_external_files!
             @external_files.each do |file|
-              @content = Gitlab::Ci::Config::Normalize::StagesMerger.new(@content, file.to_hash).normalize_stages
+              @content = Gitlab::Ci::Config::Normalize::ConfigMerger.new(@content, file.to_hash).merge
             end
           end
 
           def append_inline_content!
-            @content = Gitlab::Ci::Config::Normalize::StagesMerger.new(@content, @values).normalize_stages
+            @content = Gitlab::Ci::Config::Normalize::ConfigMerger.new(@content, @values).merge
           end
 
           def remove_include_keyword!
