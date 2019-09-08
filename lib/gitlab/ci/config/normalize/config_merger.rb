@@ -5,6 +5,8 @@ module Gitlab
     class Config
       module Normalize
         class ConfigMerger
+          StageMergeError = Class.new(StandardError)
+
           def initialize(base_config, additional_config)
             @base_config = base_config
             @additional_config = additional_config
@@ -12,7 +14,7 @@ module Gitlab
 
           def merge
             @base_config.deep_merge(@additional_config).tap do |config|
-              config[:stages] = normalize_stages if both_configs_have_stages? && Feature.enabled?(:merge_stages_accross_includes)
+              config[:stages] = normalize_stages if both_configs_have_stages? && Feature.enabled?(:merge_stages_across_includes)
             end
           end
 
@@ -40,6 +42,8 @@ module Gitlab
             Gitlab::Utils::TopologicalSort.new.tap do |thash|
               all_stages.each { |stages| graph_stages(stages, thash) }
             end.tsort
+          rescue TSort::Cyclic => e
+            raise StageMergeError, e.message
           end
         end
       end

@@ -11,7 +11,8 @@ module Gitlab
       RESCUE_ERRORS = [
         Gitlab::Config::Loader::FormatError,
         Extendable::ExtensionError,
-        External::Processor::IncludeError
+        External::Processor::IncludeError,
+        Normalize::ConfigMerger::StageMergeError
       ].freeze
 
       attr_reader :root
