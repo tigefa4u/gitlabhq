@@ -21,7 +21,7 @@ entry.
 
 ## 12.2.3
 
-### Security (22 changes)
+### Security (22 changesxx)
 
 - Ensure only authorised users can create notes on Merge Requests and Issues.
 - Gitaly: ignore git redirects.
