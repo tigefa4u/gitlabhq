@@ -5,7 +5,7 @@
     .gitignore-selector.js-gitignore-selector-wrap.js-template-selector-wrap.hidden
       = dropdown_tag("Apply a .gitignore template", options: { toggle_class: 'js-gitignore-selector qa-gitignore-dropdown', title: "Apply a template", filter: true, placeholder: "Filter", data: { data: gitignore_names(@project) } } )
     .gitlab-ci-yml-selector.js-gitlab-ci-yml-selector-wrap.js-template-selector-wrap.hidden
-      = dropdown_tag("Docker", options: { toggle_class: 'js-gitlab-ci-yml-selector qa-gitlab-ci-yml-dropdown', title: "Apply a template", filter: true, placeholder: "Filter", data: { data: gitlab_ci_ymls(@project) } } )
+      = dropdown_tag("Apply a GitLab CI Yaml template", options: { toggle_class: 'js-gitlab-ci-yml-selector qa-gitlab-ci-yml-dropdown', title: "Apply a template", filter: true, placeholder: "Filter", data: { data: gitlab_ci_ymls(@project) } } )
     .dockerfile-selector.js-dockerfile-selector-wrap.js-template-selector-wrap.hidden
       = dropdown_tag("Apply a Dockerfile template", options: { toggle_class: 'js-dockerfile-selector qa-dockerfile-dropdown', title: "Apply a template", filter: true, placeholder: "Filter", data: { data: dockerfile_names(@project) } } )
   .template-selectors-undo-menu.hidden

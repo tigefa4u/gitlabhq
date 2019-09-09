@@ -197,6 +197,7 @@ export default class FileTemplateMediator {
     this.$undoBtn.on('click', e => {
       e.preventDefault()
       this.restoreFromCache();
+      this.clearEditorContent();
       this.destroyUndoMenu();
     });
   }
