@@ -45,6 +45,28 @@ entry.
 - Fix project import restricted visibility bypass via API.
 - Fix weak session management by clearing password reset tokens after login (username/email) are updated.
 - Fix SSRF via DNS rebinding in Kubernetes Integration.
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 
 
 ## 12.2.2
@@ -110,6 +132,28 @@ entry.
 - Respect group notification email when sending group access notifications. !31089
 - Default dependency job stage index to Infinity, and correctly report it as undefined in prior stages. !31116
 - Fix incorrect use of message interpolation. !31121
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Moved labels out of fields on Search page. !31137
 - Ensure Warden triggers after_authentication callback. !31138
 - Fix admin area user access level radio button labels. !31154
@@ -218,6 +262,28 @@ entry.
 - Improve pipeline status Slack notifications. !27683
 - Add links to relevant configuration areas in admin area overview. !29306
 - Display project id on project admin page. !29734 (Zsolt Kovari)
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Display group id on group admin page. !29735 (Zsolt Kovari)
 - Resolve Keyboard shortcut for jump to NEXT unresolved discussion. !30144
 - Personal access tokens are accepted using OAuth2 header format. !30277
@@ -283,6 +349,28 @@ entry.
 - add color selector to broadcast messages form. !30988
 - Harmonize selections in user settings. !31110 (Marc Schwede)
 - Update rouge to v3.7.0. !31254
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Update 'Ruby on Rails' project template. !31310
 - Fix mirroring help text. !31348 (jramsay)
 - Enhance style of the shared runners limit. !31386
@@ -434,6 +522,28 @@ entry.
 - Correct link to docs for External Dashboard. !30019
 - Fix Jupyter-Git integration. !30020 (Amit Rathi)
 - Update Mermaid to 8.1.0. !30036
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Fix background migrations failing with unused replication slot. !30042
 - Disable Rails SQL query cache when applying service templates. !30060
 - Set higher TTL for write lock of trace to prevent concurrent archiving. !30064
@@ -542,6 +652,28 @@ entry.
 - Avoid loading pipeline status in search results. !30111
 - Improve performance of MergeRequestsController#ci_environment_status endpoint. !30224
 - Add a memory cache local to the thread to reduce Redis load. !30233
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Cache Flipper persisted names directly to local memory storage. !30265
 - Limit amount of JUnit tests returned. !30274
 - Cache Flipper feature flags in L1 and L2 caches. !30276
@@ -650,6 +782,28 @@ entry.
 - Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
 - Limit the size of issuable description and comments.
 - Send TODOs for comments on commits correctly.
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
 - Added image proxy to mitigate potential stealing of IP addresses.
 - Filter out old system notes for epics in notes api endpoint response.
@@ -715,6 +869,28 @@ entry.
 ### Security (10 changes)
 
 - Hide confidential issue title on unsubscribe for anonymous users.
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Fix url redaction for issue links.
 - Fix confidential issue label disclosure on milestone view.
 - Filter relative links in wiki for XSS.
@@ -780,6 +956,28 @@ entry.
 - Fix milestone references containing &, <, or >. !28667
 - Add hover and focus to Attach a file. !28682
 - Correctly word-wrapping project descriptions with very long words. !28695 (Erik van der Gaag)
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Prevent icons from shrinking in User popover when contents exceed container. !28696
 - Allow removal of empty lines via suggestions. !28703
 - Throw an error when formatDate's input is invalid. !28713
@@ -845,6 +1043,28 @@ entry.
 - Revert concurrent pipeline creation for pipeline schedules. !29794
 - Fix layout of group milestone header.
 - Fix remote mirrors not updating after tag push.
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Fix padding of unclickable pipeline dropdown items to match links.
 - Change resolve button text to mark comment as resolved.
 - Align system note within discussion with other notes.
@@ -910,6 +1130,28 @@ entry.
 - Add ability to define notification email addresses for groups you belong to. !25299
 - Add wiki size to project statistics. !25321 (Peter Marko)
 - 58404 - setup max depth for GraphQL. !25737 (Ken Ding)
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Add auto SSL toggle option to Pages domain settings page. !26438
 - Empty project state for Web IDE. !26556
 - Add support for multiple job parents in GitLab CI YAML. !26801 (Wolphin (Nikita))
@@ -975,6 +1217,28 @@ entry.
 - Resolve Snippet icon button is misaligned. !28522
 - Bumps Kubernetes in Auto DevOps to 1.11.10. !28525
 - Bump Helm version in Auto-DevOps.gitlab-ci.yml to 2.14.0. !28527
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Migrate the monitoring dashboard store to vuex. !28555
 - Give New Snippet button green outline. !28559
 - Removes project_auto_devops#domain column. !28574
@@ -1040,6 +1304,28 @@ entry.
 - Do not allow localhost url redirection in GitHub Integration.
 - Do not show moved issue id for users that cannot read issue.
 - Use source project as permissions reference for MergeRequestsController#pipelines.
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Drop feature to take ownership of trigger token.
 
 
@@ -1105,6 +1391,28 @@ entry.
 - Fix api group visibility. !26896
 - Require all templates to use default stages. !26954
 - Remove a "reopen merge request button" on a "merged" merge request. !26965 (Hiroyuki Sato)
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Fix misaligned image diff swipe view. !26969 (ftab)
 - Add badge-pill class on group member count. !27019
 - Remove leading / trailing spaces from heading when generating header ids. !27025 (Willian Balmant)
@@ -1170,6 +1478,28 @@ entry.
 - Allow extra arguments in helm commands when deploying the application in Auto-DevOps.gitlab-ci.yml. !26171 (tortuetorche)
 - Switch to sassc-rails for faster stylesheet compilation. !26224
 - Reorganize project merge request settings. !26834
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Display a toast message when the Kubernetes runner has successfully upgraded. !27206
 - Allow guests users to access project releases. !27247
 - Add help texts to K8 form fields. !27274
@@ -1235,6 +1565,28 @@ entry.
 ### Other (29 changes, 8 of them are from the community)
 
 - Validate refs used in controllers don't have spaces. !24037
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Migrate correlation and tracing code to LabKit. !25379
 - Update node.js to 10.15.3 in CI template for Hexo. !25943 (Takuya Noguchi)
 - Improve icons and button order in project overview. !26796
@@ -1386,6 +1738,28 @@ entry.
 - Display draft when toggling replies. !25563
 - Fix markdown table header and table content borders. !25666
 - Fix authorized application count. !25715 (moyuru)
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Added "Add List" checkbox to create label dropdown to make creation of list optional. !25716 (Tucker Chapman)
 - Makes emoji picker full width on mobile. !25883 (Jacopo Beschi @jacopo-beschi)
 - Don't cutoff letters in MR and Issue links. !25910 (gfyoung)
@@ -1451,6 +1825,28 @@ entry.
 - Fix remove_source_branch merge request API handling. !27392
 - Fixed bug with hashes in urls in WebIDE. !54376 (Kieran Andrews)
 - Fix bug where MR popover doesn't go away on mouse leave.
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Only consider active milestones when using the special Started milestone filter.
 - Scroll to diff file content when clicking on file header name and it is not a link to other page.
 - Remove non-functional add issue button on welcome list.
@@ -1516,6 +1912,28 @@ entry.
 - Fix and expand Gitaly FindCommit caching. !27018
 - Enable FindCommit caching for project and commits pages. !27048
 - Expand FindCommit caching to blob and refs. !27084
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Enable Gitaly FindCommit caching for TreeController. !27100
 - Improve performance of PR import. !27121
 - Process at most 4 pipelines during push. !27205
@@ -1581,6 +1999,50 @@ entry.
 - Upgrade bootstrap_form Gem. !26568
 - Add API access check to Graphql. !26570
 - Change project avatar remove button to a link. !26589
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Log Gitaly RPC duration to api_json.log and production_json.log. !26652
 - Add cluster domain to Project Cluster API. !26735
 - Move project tags to separate line. !26797
@@ -1711,6 +2173,28 @@ entry.
 - Fix issue that caused the "Show all activity" button to appear on top of the mini pipeline status dropdown on the merge request page. !26274
 - Fix duplicated bottom match line on merge request parallel diff view. !26402
 - Allow users who can push to protected branches to create protected branches via CLI. !26413
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Add missing .gitlab-ci.yml to Android template. !26415
 - Refresh commit count after repository head changes. !26473
 - Set proper default-branch for repository on GitHub Import. !26476
@@ -1819,6 +2303,28 @@ entry.
 - Make merge to refs/merge-requests/:iid/merge not raise when FF-only enabled. !25653
 - Fixed "Copying comment with ordered list includes extraneous newlines". !25695
 - Fix bridge jobs only/except variables policy. !25710
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Allow GraphQL requests without CSRF token. !25719
 - Skip Project validation during Hashed Storage migration or rollback. !25753
 - Resolve showing squash commit edit issue when only single commit is present. !25807
@@ -1841,6 +2347,28 @@ entry.
 - Fix inconsistent pagination styles.
 - Fixed blob editor deleting file content for certain file paths.
 - Fix upcoming milestone when there are milestones with far-future due dates.
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Fixed alignment of changed icon in Web IDE.
 
 ### Changed (31 changes, 10 of them are from the community)
@@ -1863,6 +2391,28 @@ entry.
 - Make emoji picker bigger. !25187 (Jacopo Beschi @jacopo-beschi)
 - API: Sort tie breaker with id DESC. !25311 (Nermin Vehabovic)
 - Add iOS-fastlane template for .gitlab-ci.yml. !25395
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Move language setting to preferences. !25427 (Fabian Schneider @fabsrc)
 - Resolve Create Project Template for Netlify. !25453
 - Sort labels alphabetically on issues and merge requests list. !25470
@@ -1885,6 +2435,28 @@ entry.
 - Improve label select rendering. !25281
 - Enable persisted pipeline stages by default. !25347
 - Speed up group issue search counts. !25411
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Load repository language from the database if detected before. !25518
 - Remove N+1 query for tags in /admin/runners page. !25572
 - Eliminate most N+1 queries loading UserController#calendar_activities. !25697
@@ -1907,6 +2479,50 @@ entry.
 - Ability to filter confidential issues. !24960 (Robert Schilling)
 - Allow creation of branches that match a wildcard protection, except directly through git. !24969
 - Add related merge request count to api response. !24974
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Add realtime validation for user fullname and username on validation. !25017 (Ehsan Abdulqader @EhsanZ)
 - Allow setting feature flags per GitLab group through the API. !25022
 - Add API endpoint to get a commit's GPG signature. !25032
@@ -1951,6 +2567,28 @@ entry.
 
 ### Other (28 changes, 6 of them are from the community)
 
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Improve GitHub and Gitea project import table UI. !24606
 - Externalize strings from `/app/views/projects/commit`. !24668 (George Tsiolis)
 - Correct non-standard unicode spaces to regular unicode. !24795 (Marcel Amirault)
@@ -2059,6 +2697,72 @@ entry.
 - Fix Bitbucket Server import not allowing personal projects. !23601
 - Fix bug causing repository mirror settings UI to break. !23712
 - Fix foreground color for labels to ensure consistency of label appearance. !23873 (Nathan Friend)
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Ensure only authorised users can create notes on Merge Requests and Issues.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
+- Gitaly: ignore git redirects.
+- Add :login_recaptcha_protection_enabled setting to prevent bots from brute-force attacks.
+- Speed up regexp in namespace format by failing fast after reaching maximum namespace depth.
+- Limit the size of issuable description and comments.
+- Send TODOs for comments on commits correctly.
+- Restrict MergeRequests#test_reports to authenticated users with read-access on Builds.
+- Added image proxy to mitigate potential stealing of IP addresses.
+- Filter out old system notes for epics in notes api endpoint response.
+- Avoid exposing unaccessible repo data upon GFM post processing.
+- Fix HTML injection for label description.
+- Make sure HTML text is always escaped when replacing label/milestone references.
+- Prevent DNS rebind on JIRA service integration.
+- Use admin_group authorization in Groups::RunnersController.
+- Prevent disclosure of merge request ID via email.
+- Show cross-referenced MR-id in issues' activities only to authorized users.
+- Enforce max chars and max render time in markdown math.
+- Check permissions before responding in MergeController#pipeline_status.
+- Remove EXIF from users/personal snippet uploads.
+- Fix project import restricted visibility bypass via API.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Resolve In Merge Request diff screen, master is not a hyperlink. !23874
 - Show the correct error page when access is denied. !23932
 - Increase reliability and performance of toggling task items. !23938
