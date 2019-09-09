@@ -230,6 +230,44 @@ describe QA::Runtime::Env do
     end
   end
 
+  describe '.require_gcloud_environment!' do
+    it 'raises ArgumentError if required credential variables are not defined' do
+      stub_env('GCLOUD_ACCOUNT_KEY', nil)
+      stub_env('GCLOUD_ACCOUNT_EMAIL', nil)
+
+      expect { described_class.require_gcloud_environment! }.to raise_error(ArgumentError)
+    end
+
+    it 'raises ArgumentError if other required gcloud variables are not defined' do
+      stub_env('GCLOUD_ACCOUNT_KEY', 'foo')
+      stub_env('GCLOUD_ACCOUNT_EMAIL', 'bar')
+      stub_env('CLOUDSDK_CORE_PROJECT', nil)
+      stub_env('GCLOUD_REGION', nil)
+
+      expect { described_class.require_gcloud_environment! }.to raise_error(ArgumentError)
+    end
+
+    it 'doesnt raise error when all required variables are set' do
+      stub_env('GCLOUD_ACCOUNT_KEY', 'foo')
+      stub_env('GCLOUD_ACCOUNT_EMAIL', 'bar')
+      stub_env('CLOUDSDK_CORE_PROJECT', 'baz')
+      stub_env('GCLOUD_REGION', 'bag')
+
+      expect { described_class.require_gcloud_environment! }.not_to raise_error
+    end
+  end
+
+  describe '.has_gcloud_credentials?' do
+    it 'has gcloud credentials only when GCLOUD_ACCOUNT_KEY,GCLOUD_ACCOUNT_EMAIL are set' do
+      expect(described_class.has_gcloud_credentials?).to be_falsey
+
+      stub_env('GCLOUD_ACCOUNT_KEY', 'foo')
+      stub_env('GCLOUD_ACCOUNT_EMAIL', 'bar')
+
+      expect(described_class.has_gcloud_credentials?).to be_truthy
+    end
+  end
+
   describe '.log_destination' do
     it 'returns $stdout if QA_LOG_PATH is not defined' do
       stub_env('QA_LOG_PATH', nil)

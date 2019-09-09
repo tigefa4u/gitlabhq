@@ -204,7 +204,8 @@ module QA
       end
 
       def require_gcloud_environment!
-        missing_keys = (GCLOUD_CREDENTIAL_VARIABLES + GCLOUD_REQUIRED_VARIABLES) - ENV.keys
+        required_keys = (GCLOUD_CREDENTIAL_VARIABLES + GCLOUD_REQUIRED_VARIABLES)
+        missing_keys = required_keys - ENV.keys
 
         if missing_keys.any?
           raise ArgumentError, "Environment variables #{required_keys.join(',')} must be set to run kubernetes specs. Missing: #{missing_keys.join(',')}"
