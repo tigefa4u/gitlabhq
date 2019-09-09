@@ -113,7 +113,8 @@ class List {
   }
 
   update() {
-    return gl.boardService.updateList(this.id, this.position, this.isExpanded).catch(() => {
+    const collapsed = !this.isExpanded;
+    return gl.boardService.updateList(this.id, this.position, collapsed).catch(() => {
       // TODO: handle request error
     });
   }
