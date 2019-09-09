@@ -10,6 +10,7 @@ export default class BlobCiYamlSelector extends FileTemplateSelector {
       type: 'gitlab_ci_ymls',
       dropdown: '.js-gitlab-ci-yml-selector',
       wrapper: '.js-gitlab-ci-yml-selector-wrap',
+      defaultTemplate: 'Docker'
     };
   }
 

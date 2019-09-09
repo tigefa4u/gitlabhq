@@ -80,7 +80,7 @@ export default class FileTemplateMediator {
   initDefaultContent() {
     const { config } = this.templateSelectors[1]
     
-    this.fetchFileTemplate(config.type, "Docker")
+    this.fetchFileTemplate(config.type, config.defaultTemplate)
       .then(file => {
         this.setEditorContent(file)
       })
@@ -237,7 +237,7 @@ export default class FileTemplateMediator {
   }
 
   setTemplateSelectorToggleText() {
-    return this.$templateSelectors
+      return this.$templateSelectors
       .find('.js-template-selector-wrap:visible .dropdown-toggle-text')
       .text(this.cachedToggleText);
   }
