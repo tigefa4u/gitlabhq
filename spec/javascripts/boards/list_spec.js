@@ -174,6 +174,9 @@ describe('List model', () => {
         Promise.resolve({
           data: {
             id: 42,
+            subscribed: false,
+            assignable_labels_endpoint: '/issue/42/labels',
+            toggle_subscription_endpoint: '/issue/42/subscriptions',
           },
         }),
       );
@@ -195,6 +198,9 @@ describe('List model', () => {
         confidential: false,
         labels: [list.label],
         assignees: [],
+        subscribed: false,
+        assignable_labels_endpoint: '/issue/42/labels',
+        toggle_subscription_endpoint: '/issue/42/subscriptions',
       });
 
       list
@@ -202,6 +208,9 @@ describe('List model', () => {
         .then(() => {
           expect(list.issues.length).toBe(2);
           expect(list.issues[0]).toBe(dummyIssue);
+          expect(list.issues[0].subscribed).toBe(false);
+          expect(list.issues[0].assignableLabelsEndpoint).toBe('/issue/42/labels');
+          expect(list.issues[0].toggleSubscriptionEndpoint).toBe('/issue/42/subscriptions');
         })
         .then(done)
         .catch(done.fail);

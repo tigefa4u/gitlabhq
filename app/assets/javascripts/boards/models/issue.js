@@ -11,12 +11,21 @@ import boardsStore from '../stores/boards_store';
 
 class ListIssue {
   constructor(obj, defaultAvatar) {
+    this.refreshData(obj, defaultAvatar);
+  }
+
+  refreshData(obj, defaultAvatar) {
     this.id = obj.id;
     this.iid = obj.iid;
     this.title = obj.title;
     this.confidential = obj.confidential;
     this.dueDate = obj.due_date;
-    this.subscribed = obj.subscribed;
+
+    // PUT /boards/:id/issues/:iid may not return a definition here
+    if (obj.subscribed !== null) {
+      this.subscribed = obj.subscribed;
+    }
+
     this.labels = [];
     this.assignees = [];
     this.selected = false;
@@ -42,11 +51,15 @@ class ListIssue {
       this.milestone_id = obj.milestone.id;
     }
 
-    obj.labels.forEach(label => {
-      this.labels.push(new ListLabel(label));
-    });
+    if (obj.labels) {
+      obj.labels.forEach(label => {
+        this.labels.push(new ListLabel(label));
+      });
+    }
 
-    this.assignees = obj.assignees.map(a => new ListAssignee(a, defaultAvatar));
+    if (obj.assignees) {
+      this.assignees = obj.assignees.map(a => new ListAssignee(a, defaultAvatar));
+    }
   }
 
   addLabel(label) {
