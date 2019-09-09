@@ -28,6 +28,12 @@ describe Gitlab::ImportExport::AfterExportStrategies::BaseAfterExportStrategy do
     end
 
     context 'when the method succeeds' do
+      it 'removes the export file' do
+        expect(project).to receive(:remove_exports)
+
+        service.execute(user, project)
+      end
+
       it 'removes the lock file' do
         service.execute(user, project)
 

@@ -50,6 +50,7 @@ module Gitlab
           false
         ensure
           delete_after_export_lock
+          delete_export_file
         end
 
         def to_json(options = {})
@@ -78,7 +79,17 @@ module Gitlab
           raise NotImplementedError
         end
 
+        def delete_export?
+          true
+        end
+
         private
+
+        def delete_export_file
+          return if locks_present? || !delete_export?
+
+          project.remove_exports
+        end
 
         def create_or_update_after_export_lock
           FileUtils.touch(lock_file)

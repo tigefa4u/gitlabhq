@@ -4,6 +4,10 @@ module Gitlab
   module ImportExport
     module AfterExportStrategies
       class DownloadNotificationStrategy < BaseAfterExportStrategy
+        def delete_export?
+          false
+        end
+
         private
 
         def strategy_execute
