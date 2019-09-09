@@ -10,6 +10,8 @@ The source of GitLab Enterprise Edition is [hosted on GitLab.com](https://gitlab
 
 You can request a free trial of GitLab Ultimate [on our website](https://about.gitlab.com/free-trial/).
 
+test
+
 ## Open source software to collaborate on code
 
 To see how GitLab looks please see the [features page on our website](https://about.gitlab.com/features/).
