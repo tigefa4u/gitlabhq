@@ -43,7 +43,7 @@ entry.
 - Check permissions before responding in MergeController#pipeline_status.
 - Remove EXIF from users/personal snippet uploads.
 - Fix project import restricted visibility bypass via API.
-- Fix weak session management by clearing password reset tokens after login (username/email) are updated.
+- Fix weak session management by clearing password reset tokens after login (username/email) are updatedx.
 - Fix SSRF via DNS rebinding in Kubernetes Integration.
 - Ensure only authorised users can create notes on Merge Requests and Issues.
 - Gitaly: ignore git redirects.
