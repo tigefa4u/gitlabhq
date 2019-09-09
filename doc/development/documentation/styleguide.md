@@ -85,7 +85,7 @@ The more we reflexively add useful information to the docs, the more (and more s
 
 If you have questions when considering, authoring, or editing docs, ask the Technical Writing team on Slack in `#docs` or in GitLab by mentioning the writer for the applicable [DevOps stage](https://about.gitlab.com/handbook/product/categories/#devops-stages). Otherwise, forge ahead with your best effort. It does not need to be perfect; the team is happy to review and improve upon your content. Please review the [Documentation guidelines](index.md) before you begin your first documentation MR.
 
-Having a knowledge base is any form that is separate from the documentation would be against the docs-first methodology because the content would overlap with the documentation.
+Having a knowledge base in any form that is separate from the documentation would be against the docs-first methodology because the content would overlap with the documentation.
 
 ## Markdown
 
@@ -110,18 +110,11 @@ Hard-coded HTML is valid, although it's discouraged to be used while we have `/h
 ### Markdown Rules
 
 GitLab ensures that the Markdown used across all documentation is consistent, as
-well as easy to review and maintain, by testing documentation changes with
-[Markdownlint (mdl)](https://github.com/markdownlint/markdownlint). This lint test
-checks many common problems with Markdown, and fails when any document has an issue
+well as easy to review and maintain, by [testing documentation changes](index.md#testing) with
+[`markdownlint`](index.md#markdownlint). This lint test fails when any document has an issue
 with Markdown formatting that may cause the page to render incorrectly within GitLab.
 It will also fail when a document is using non-standard Markdown (which may render
-correctly, but is not the current standard in GitLab documentation).
-
-Each formatting issue that mdl checks has an associated [rule](https://github.com/markdownlint/markdownlint/blob/master/docs/RULES.md),
-and the rules that are currently enabled for GitLab documentation are listed in the
-[`.mdlrc.style`](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/.mdlrc.style) file.
-Configuration options are set in the [`.mdlrc`](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/.mdlrc.style)
-file.
+correctly, but is not the current standard for GitLab documentation).
 
 ## Structure
 
@@ -460,7 +453,7 @@ For other punctuation rules, please refer to the
   This is to ensure that no document with wrong heading is going
   live without an audit, thus preventing dead links and redirection issues when
   corrected.
-- Leave exactly one new line after a heading.
+- Leave exactly one blank line before and after a heading.
 - Do not use links in headings.
 - Add the corresponding [product badge](#product-badges) according to the tier the feature belongs.
 

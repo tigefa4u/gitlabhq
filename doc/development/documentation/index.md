@@ -4,9 +4,9 @@ description: Learn how to contribute to GitLab Documentation.
 
 # GitLab Documentation guidelines
 
-GitLab's documentation is [intended as the single source of truth (SSOT)](https://about.gitlab.com/handbook/documentation/) for information about how to configure, use, and troubleshoot GitLab. The documentation contains use cases and usage instructions covering every GitLab feature, organized by product area and subject. This includes topics and workflows that span multiple GitLab features, as well as the use of GitLab with other applications.
+GitLab's documentation is [intended as the single source of truth (SSOT)](https://about.gitlab.com/handbook/documentation/) for information about how to configure, use, and troubleshoot GitLab. The documentation contains use cases and usage instructions for every GitLab feature, organized by product area and subject. This includes topics and workflows that span multiple GitLab features, and the use of GitLab with other applications.
 
-In addition to this page, the following resources to help craft and contribute documentation are available:
+In addition to this page, the following resources can help you craft and contribute documentation:
 
 - [Style Guide](styleguide.md) - What belongs in the docs, language guidelines, and more.
 - [Structure and template](structure.md) - Learn the typical parts of a doc page and how to write each one.
@@ -18,9 +18,9 @@ In addition to this page, the following resources to help craft and contribute d
 
 ## Source files and rendered web locations
 
-Documentation for GitLab Community Edition (CE) and Enterprise Edition (EE), along with GitLab Runner and Omnibus, is published to [docs.gitlab.com](https://docs.gitlab.com). The documentation for CE and EE is also published within the application at `/help` on the domain of the GitLab instance, though there are [plans](https://gitlab.com/groups/gitlab-org/-/epics/693) to end this practice and instead link out from the GitLab application to docs.gitlab.com URLs.
+Documentation for GitLab Community Edition (CE), Enterprise Edition (EE), GitLab Runner, and Omnibus is published to [docs.gitlab.com](https://docs.gitlab.com). Documentation for CE and EE is also published within the application at `/help` on the domain of the GitLab instance.
 
-At `/help`, only content for your current edition and version is included, whereas multiple versions' content is available at docs.gitlab.com.
+At `/help`, only help for your current edition and version is included. Help for other versions is available at docs.gitlab.com.
 
 The source of the documentation exists within the codebase of each GitLab application in the following repository locations:
 
@@ -37,9 +37,9 @@ Documentation issues and merge requests are part of their respective repositorie
 
 [Contributions to GitLab docs](workflow.md) are welcome from the entire GitLab community.
 
-To ensure that GitLab docs keep up with changes to the product, special processes and responsibilities are in place concerning all [feature changes](feature-change-workflow.md)—i.e. development work that impacts the appearance, usage, or administration of a feature.
+To ensure that GitLab docs are current, there are special processes and responsibilities for all [feature changes](feature-change-workflow.md)—i.e. development work that impacts the appearance, usage, or administration of a feature.
 
-Meanwhile, anyone can contribute [documentation improvements](improvement-workflow.md) large or small that are not associated with a feature change. For example, adding a new doc on how to accomplish a use case that's already possible with GitLab or with third-party tools and GitLab.
+However, anyone can contribute [documentation improvements](improvement-workflow.md) that are not associated with a feature change. For example, adding a new doc on how to accomplish a use case that's already possible with GitLab or with third-party tools and GitLab.
 
 ## Markdown and styles
 
@@ -54,16 +54,14 @@ See the [Structure](styleguide.md#structure) section of the [Documentation Style
 
 ## Single codebase
 
-We currently maintain two sets of docs: one in the
+We maintain two sets of docs: one in the
 [gitlab-ce](https://gitlab.com/gitlab-org/gitlab-ce/tree/master/doc) repo and
 one in [gitlab-ee](https://gitlab.com/gitlab-org/gitlab-ee/tree/master/doc).
-They are identical, but they are different repositories. When the
-time comes to have only one codebase for the GitLab project, we'll be ready.
+These are identical, but they are different repositories.
 
 ### CE first
 
-All merge requests for documentation must be submitted to CE, regardless of the content
-it has. This means that:
+All merge requests for documentation must be submitted to CE. This means that:
 
 - For **EE-only docs changes**, you only have to submit an MR in the CE project.
 - For **EE-only features** that touch both the code and the docs, you have to submit
@@ -74,20 +72,20 @@ This might seem like a duplicate effort, but it's only for the short term.
 
 Since the CE and EE docs are combined, it's crucial to add the relevant
 [product badges](styleguide.md#product-badges) for all EE documentation, so that
-we can discern which features belong to which tier.
+we can determine which features belong to which tier.
 
 ### EE specific lines check
 
 There's a special test in place
 ([`ee_specific_check.rb`](https://gitlab.com/gitlab-org/gitlab-ee/blob/master/scripts/ee_specific_check/ee_specific_check.rb)),
-which, among others, checks and prevents creating/editing new files and directories
+which checks and prevents creating or editing new files or directories
 in EE under `doc/`. This should fail when changes to anything in `/doc` are submitted
 in an EE MR. To pass the test, simply remove the docs changes from the EE MR, and
 [submit them in CE](#ce-first).
 
 ## Changing document location
 
-Changing a document's location requires specific steps to be followed to ensure that
+Changing a document's location requires specific steps to ensure that
 users can seamlessly access the new doc page, whether they are accessing content
 on a GitLab instance domain at `/help` or at docs.gitlab.com. Be sure to ping a
 GitLab technical writer if you have any questions during the process (such as
@@ -95,7 +93,7 @@ whether the move is necessary), and ensure that a technical writer reviews this
 change prior to merging.
 
 If you indeed need to change a document's location, do not remove the old
-document, but rather replace all of its content with a new line:
+document, but instead replace all of its content with a new line:
 
 ```md
 This document was moved to [another location](path/to/new_doc.md).
@@ -105,7 +103,7 @@ where `path/to/new_doc.md` is the relative path to the root directory `doc/`.
 
 ---
 
-For example, if you were to move `doc/workflow/lfs/lfs_administration.md` to
+For example, if you move `doc/workflow/lfs/lfs_administration.md` to
 `doc/administration/lfs.md`, then the steps would be:
 
 1. Copy `doc/workflow/lfs/lfs_administration.md` to `doc/administration/lfs.md`
@@ -145,7 +143,7 @@ Things to note:
 
 ### Alternative redirection method
 
-Alternatively to the method described above, you can simply replace the content
+You can also replace the content
 of the old file with a frontmatter containing a redirect link:
 
 ```yaml
@@ -163,7 +161,7 @@ land on the doc via `/help`.
 
 ### Redirections for pages with Disqus comments
 
-If the documentation page being relocated already has any Disqus comments,
+If the documentation page being relocated already has Disqus comments,
 we need to preserve the Disqus thread.
 
 Disqus uses an identifier per page, and for docs.gitlab.com, the page identifier
@@ -189,8 +187,7 @@ even if it's `index.html` or `README.html`.
 ## Branch naming
 
 If your contribution contains **only** documentation changes, you can speed up
-the CI process by following some branch naming conventions. You have three
-choices:
+the CI process by following these branch naming conventions:
 
 | Branch name           | Valid example                |
 |:----------------------|:-----------------------------|
@@ -199,7 +196,7 @@ choices:
 | Ending in `-docs`     | `123-update-api-issues-docs` |
 
 If your branch name matches any of the above, it will run only the docs
-tests. If it does not, the whole application test suite will run (including docs tests).
+tests. If not, the whole application test suite will run (including docs tests).
 
 ## Merge requests for GitLab documentation
 
@@ -399,8 +396,8 @@ preview the changes. The docs URL can be found in two places:
   triggered pipeline so that you can investigate whether something went wrong
 
 TIP: **Tip:**
-Someone that has no merge rights to the CE/EE projects (think of forks from
-contributors) will not be able to run the manual job. In that case, you can
+Someone with no merge rights to the CE/EE projects (think of forks from
+contributors) cannot run the manual job. In that case, you can
 ask someone from the GitLab team who has the permissions to do that for you.
 
 NOTE: **Note:**
@@ -458,15 +455,15 @@ The following GitLab features are used among others:
 
 ## Testing
 
-We treat documentation as code, thus have implemented some testing.
-Currently, the following tests are in place:
+We treat documentation as code, and so use tests to maintain the standards and quality of the docs.
+The current tests are:
 
 1. `docs lint`: Check that all internal (relative) links work correctly and
    that all cURL examples in API docs use the full switches. It's recommended
    to [check locally](#previewing-the-changes-live) before pushing to GitLab by executing the command
    `bundle exec nanoc check internal_links` on your local
    [`gitlab-docs`](https://gitlab.com/gitlab-org/gitlab-docs) directory. In addition,
-   `docs-lint` also runs [markdownlint](styleguide.md#markdown-rules) to ensure the
+   `docs-lint` also runs [`markdownlint`](#markdownlint) to ensure the
    markdown is consistent across all documentation.
 1. [`ee_compat_check`](../automatic_ce_ee_merge.md#avoiding-ce-ee-merge-conflicts-beforehand) (runs on CE only):
    When you submit a merge request to GitLab Community Edition (CE),
@@ -484,14 +481,14 @@ Currently, the following tests are in place:
 
 ### Linting
 
-To help adhere to the [documentation style guidelines](styleguide.md), and to improve the content
+To help adhere to the [documentation style guidelines](styleguide.md), and improve the content
 added to documentation, consider locally installing and running documentation linters. This will
 help you catch common issues before raising merge requests for review of documentation.
 
 The following are some suggested linters you can install locally and sample configuration:
 
 - [`proselint`](#proselint)
-- [`markdownlint`](#markdownlint)
+- [`markdownlint`](#markdownlint), which is the same as the test run in [`docs-lint`](#testing)
 
 NOTE: **Note:**
 This list does not limit what other linters you can add to your local documentation writing toolchain.
@@ -537,76 +534,56 @@ A file with `proselint` configuration must be placed in a
 
 #### `markdownlint`
 
-`markdownlint` checks that certain rules ([example](https://github.com/DavidAnson/markdownlint/blob/master/README.md#rules--aliases))
-are followed for Markdown syntax. Our [Documentation Style Guide](styleguide.md) and
-[Markdown Guide](https://about.gitlab.com/handbook/product/technical-writing/markdown-guide/)
+[`markdownlint`](https://github.com/DavidAnson/markdownlint) checks that markdown
+syntax follows [certain rules](https://github.com/DavidAnson/markdownlint/blob/master/doc/Rules.md#rules),
+and is used by the [`docs-lint` test](#testing) with a [configuration file](#markdownlint-configuration).
+Our [Documentation Style Guide](styleguide.md#markdown) and [Markdown Guide](https://about.gitlab.com/handbook/product/technical-writing/markdown-guide/)
 elaborate on which choices must be made when selecting Markdown syntax for GitLab
-documentation. This tool helps catch deviations from those guidelines, and matches the
-tests run on the documentation by [`docs-lint`](#testing).
+documentation. This tool helps catch deviations from those guidelines.
 
 `markdownlint` can be used [on the command line](https://github.com/igorshubovych/markdownlint-cli#markdownlint-cli--),
 either on a single Markdown file or on all Markdown files in a project. For example, to run
 `markdownlint` on all documentation in the [`gitlab-ce` project](https://gitlab.com/gitlab-org/gitlab-ce),
-run the following commands from within the `gitlab-ce` project:
+run the following commands from within your `gitlab-ce` project root directory, which will
+automatically detect the [`.markdownlint.json`](#markdownlint-configuration) config
+file in the root of the project, and test all files in `/doc` and its subdirectories:
 
 ```sh
-cd doc
-markdownlint **/*.md
+markdownlint 'doc/**/*.md'
 ```
 
-`markdownlint` can also be run from within editors using plugins. For example, the following plugins
- are available:
+If you wish to use a different config file, use the `-c` flag:
+
+```sh
+markdownlint -c <config-file-name> 'doc/**/*.md'
+```
+
+`markdownlint` can also be run from within text editors using [plugins/extensions](https://github.com/DavidAnson/markdownlint#related),
+such as:
 
 - [Sublime Text](https://packagecontrol.io/packages/SublimeLinter-contrib-markdownlint)
 - [Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=DavidAnson.vscode-markdownlint)
-- [Others](https://github.com/DavidAnson/markdownlint#related)
+- [Atom](https://atom.io/packages/linter-node-markdownlint)
 
-##### Sample `markdownlint` configuration
+It is best to use the [same configuration file](#markdownlint-configuration) as what
+is in use in the four repos that are the sources for <https://docs.gitlab.com>. Each
+plugin/extension has different requirements regarding the configuration file, which
+is explained in each editor's docs.
 
-The following sample `markdownlint` configuration modifies the available default rules to:
+##### `markdownlint` configuration
 
-- Adhere to the [Documentation Style Guide](styleguide.md).
-- Apply conventions found in the GitLab documentation.
-- Allow the flexibility of using some inline HTML.
+Each formatting issue that `markdownlint` checks has an associated
+[rule](https://github.com/DavidAnson/markdownlint/blob/master/doc/Rules.md#rules).
+These rules are configured in the `.markdownlint.json` files located in the root of
+four repos that are the sources for <https://docs.gitlab.com>:
 
-```json
-{
-  "default": true,
-  "header-style": { "style": "atx" },
-  "ul-style": { "style": "dash" },
-  "line-length": false,
-  "no-trailing-punctuation": false,
-  "ol-prefix": { "style": "one" },
-  "blanks-around-fences": true,
-  "no-inline-html": {
-    "allowed_elements": [
-      "table",
-      "tbody",
-      "tr",
-      "td",
-      "ul",
-      "ol",
-      "li",
-      "br",
-      "img",
-      "a",
-      "strong",
-      "i",
-      "div",
-      "b"
-    ]
-  },
-  "hr-style": { "style": "---" },
-  "code-block-style": { "style": "fenced" },
-  "fenced-code-language": false,
-  "no-duplicate-header": { "allow_different_nesting": true },
-  "commands-show-output": false
-}
-```
+- <https://gitlab.com/gitlab-org/gitlab-ce/blob/master/.markdownlint.json>
+- <https://gitlab.com/gitlab-org/gitlab-runner/blob/master/.markdownlint.json>
+- <https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/.markdownlint.json>
+- <https://gitlab.com/charts/gitlab/blob/master/.markdownlint.json>
 
-For [`markdownlint`](https://github.com/DavidAnson/markdownlint/), this configuration must be
-placed in a [valid location](https://github.com/igorshubovych/markdownlint-cli#configuration). For
-example, `~/.markdownlintrc`.
+By default all rules are enabled, so the configuration file is used to disable unwanted
+rules, and also to configure optional parameters for enabled rules as needed.
 
 ## Danger Bot
 

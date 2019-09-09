@@ -83,7 +83,7 @@ gem 'grape-entity', '~> 0.7.1'
 gem 'rack-cors', '~> 1.0.0', require: 'rack/cors'
 
 # GraphQL API
-gem 'graphql', '= 1.8.4'
+gem 'graphql', '~> 1.9.11'
 gem 'graphiql-rails', '~> 1.4.10'
 gem 'apollo_upload_server', '~> 2.0.0.beta3'
 gem 'graphql-docs', '~> 1.6.0', group: [:development, :test]
@@ -106,7 +106,7 @@ gem 'fog-aws', '~> 3.5'
 # Locked until fog-google resolves https://github.com/fog/fog-google/issues/421.
 # Also see config/initializers/fog_core_patch.rb.
 gem 'fog-core', '= 2.1.0'
-gem 'fog-google', '~> 1.8'
+gem 'fog-google', '~> 1.9'
 gem 'fog-local', '~> 0.6'
 gem 'fog-openstack', '~> 1.0'
 gem 'fog-rackspace', '~> 0.1.1'
@@ -135,7 +135,7 @@ gem 'wikicloth', '0.8.1'
 gem 'asciidoctor', '~> 2.0.10'
 gem 'asciidoctor-include-ext', '~> 0.3.1', require: false
 gem 'asciidoctor-plantuml', '0.0.9'
-gem 'rouge', '~> 3.7'
+gem 'rouge', '~> 3.10'
 gem 'truncato', '~> 0.7.11'
 gem 'bootstrap_form', '~> 4.2.0'
 gem 'nokogiri', '~> 1.10.4'
@@ -171,7 +171,7 @@ gem 'acts-as-taggable-on', '~> 6.0'
 gem 'sidekiq', '~> 5.2.7'
 gem 'sidekiq-cron', '~> 1.0'
 gem 'redis-namespace', '~> 1.6.0'
-gem 'gitlab-sidekiq-fetcher', '0.5.1', require: 'sidekiq-reliable-fetch'
+gem 'gitlab-sidekiq-fetcher', '0.5.2', require: 'sidekiq-reliable-fetch'
 
 # Cron Parser
 gem 'fugit', '~> 1.2.1'
@@ -215,7 +215,8 @@ gem 'discordrb-webhooks-blackst0ne', '~> 3.3', require: false
 gem 'hipchat', '~> 1.5.0'
 
 # Jira integration
-gem 'jira-ruby', '~> 1.4'
+gem 'jira-ruby', '~> 1.7'
+gem 'atlassian-jwt', '~> 0.2.0'
 
 # Flowdock integration
 gem 'flowdock', '~> 0.7'
@@ -233,7 +234,7 @@ gem 'asana', '~> 0.8.1'
 gem 'ruby-fogbugz', '~> 0.2.1'
 
 # Kubernetes integration
-gem 'kubeclient', '~> 4.2.2'
+gem 'kubeclient', '~> 4.4.0'
 
 # Sanitize user input
 gem 'sanitize', '~> 4.6'
@@ -295,7 +296,8 @@ gem 'gettext', '~> 3.2.2', require: false, group: :development
 gem 'batch-loader', '~> 1.4.0'
 
 # Perf bar
-gem 'peek', '~> 1.0.1'
+# https://gitlab.com/gitlab-org/gitlab-ee/issues/13996
+gem 'gitlab-peek', '~> 0.0.1', require: 'peek'
 
 # Snowplow events tracking
 gem 'snowplow-tracker', '~> 0.6.1'
@@ -309,13 +311,14 @@ group :metrics do
   gem 'influxdb', '~> 0.2', require: false
 
   # Prometheus
-  gem 'prometheus-client-mmap', '~> 0.9.8'
+  gem 'prometheus-client-mmap', '~> 0.9.9'
   gem 'raindrops', '~> 0.18'
 end
 
 group :development do
   gem 'foreman', '~> 0.84.0'
   gem 'brakeman', '~> 4.2', require: false
+  gem 'danger', '~> 6.0', require: false
 
   gem 'letter_opener_web', '~> 1.3.4'
   gem 'rblineprof', '~> 0.3.6', platform: :mri, require: false

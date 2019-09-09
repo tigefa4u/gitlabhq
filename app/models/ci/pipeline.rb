@@ -23,6 +23,7 @@ module Ci
     belongs_to :auto_canceled_by, class_name: 'Ci::Pipeline'
     belongs_to :pipeline_schedule, class_name: 'Ci::PipelineSchedule'
     belongs_to :merge_request, class_name: 'MergeRequest'
+    belongs_to :external_pull_request
 
     has_internal_id :iid, scope: :project, presence: false, init: ->(s) do
       s&.project&.all_pipelines&.maximum(:iid) || s&.project&.all_pipelines&.count
@@ -64,6 +65,11 @@ module Ci
     validates :merge_request, presence: { if: :merge_request_event? }
     validates :merge_request, absence: { unless: :merge_request_event? }
     validates :tag, inclusion: { in: [false], if: :merge_request_event? }
+
+    validates :external_pull_request, presence: { if: :external_pull_request_event? }
+    validates :external_pull_request, absence: { unless: :external_pull_request_event? }
+    validates :tag, inclusion: { in: [false], if: :external_pull_request_event? }
+
     validates :status, presence: { unless: :importing? }
     validate :valid_commit_sha, unless: :importing?
     validates :source, exclusion: { in: %w(unknown), unless: :importing? }, on: :create
@@ -223,6 +229,14 @@ module Ci
 
     scope :with_reports, -> (reports_scope) do
       where('EXISTS (?)', ::Ci::Build.latest.with_reports(reports_scope).where('ci_pipelines.id=ci_builds.commit_id').select(1))
+    end
+
+    scope :without_interruptible_builds, -> do
+      where('NOT EXISTS (?)',
+        Ci::Build.where('ci_builds.commit_id = ci_pipelines.id')
+                 .with_status(:running, :success, :failed)
+                 .not_interruptible
+      )
     end
 
     # Returns the pipelines in descending order (= newest first), optionally
@@ -460,8 +474,8 @@ module Ci
       canceled? && auto_canceled_by_id?
     end
 
-    def cancel_running
-      retry_optimistic_lock(cancelable_statuses) do |cancelable|
+    def cancel_running(retries: nil)
+      retry_optimistic_lock(cancelable_statuses, retries) do |cancelable|
         cancelable.find_each do |job|
           yield(job) if block_given?
           job.cancel
@@ -469,10 +483,10 @@ module Ci
       end
     end
 
-    def auto_cancel_running(pipeline)
+    def auto_cancel_running(pipeline, retries: nil)
       update(auto_canceled_by: pipeline)
 
-      cancel_running do |job|
+      cancel_running(retries: retries) do |job|
         job.auto_canceled_by = pipeline
       end
     end
@@ -670,9 +684,14 @@ module Ci
         variables.append(key: 'CI_COMMIT_REF_PROTECTED', value: (!!protected_ref?).to_s)
 
         if merge_request_event? && merge_request
+          variables.append(key: 'CI_MERGE_REQUEST_EVENT_TYPE', value: merge_request_event_type.to_s)
           variables.append(key: 'CI_MERGE_REQUEST_SOURCE_BRANCH_SHA', value: source_sha.to_s)
           variables.append(key: 'CI_MERGE_REQUEST_TARGET_BRANCH_SHA', value: target_sha.to_s)
           variables.concat(merge_request.predefined_variables)
+        end
+
+        if external_pull_request_event? && external_pull_request
+          variables.concat(external_pull_request.predefined_variables)
         end
       end
     end
@@ -772,8 +791,16 @@ module Ci
       triggered_by_merge_request? && target_sha.present?
     end
 
+    def merge_train_pipeline?
+      merge_request_pipeline? && merge_train_ref?
+    end
+
     def merge_request_ref?
       MergeRequest.merge_request_ref?(ref)
+    end
+
+    def merge_train_ref?
+      MergeRequest.merge_train_ref?(ref)
     end
 
     def matches_sha_or_source_sha?(sha)
@@ -802,6 +829,20 @@ module Ci
 
     def error_messages
       errors ? errors.full_messages.to_sentence : ""
+    end
+
+    def merge_request_event_type
+      return unless merge_request_event?
+
+      strong_memoize(:merge_request_event_type) do
+        if detached_merge_request_pipeline?
+          :detached
+        elsif merge_request_pipeline?
+          :merged_result
+        elsif merge_train_pipeline?
+          :merge_train
+        end
+      end
     end
 
     private

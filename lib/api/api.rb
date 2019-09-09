@@ -118,7 +118,8 @@ module API
     mount ::API::GroupContainerRepositories
     mount ::API::GroupVariables
     mount ::API::ImportGithub
-    mount ::API::Internal
+    mount ::API::Internal::Base
+    mount ::API::Internal::Pages
     mount ::API::Issues
     mount ::API::JobArtifacts
     mount ::API::Jobs
@@ -161,6 +162,7 @@ module API
     mount ::API::Settings
     mount ::API::SidekiqMetrics
     mount ::API::Snippets
+    mount ::API::Statistics
     mount ::API::Submodules
     mount ::API::Subscriptions
     mount ::API::Suggestions

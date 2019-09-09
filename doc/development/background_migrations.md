@@ -61,8 +61,8 @@ migration classes must be defined in the namespace
 
 ## Scheduling
 
-Scheduling a migration can be done in either a regular migration or a
-post-deployment migration. To do so, simply use the following code while
+Scheduling a background migration should be done in a post-deployment migration.
+To do so, simply use the following code while
 replacing the class name and arguments with whatever values are necessary for
 your migration:
 
@@ -283,10 +283,13 @@ the `services.properties` column.
 
 ## Testing
 
-It is required to write tests for background migrations' scheduling migration
-(either a regular migration or a post deployment migration), background
-migration itself and a cleanup migration. You can use the `:migration` RSpec
-tag when testing a regular / post deployment migration.
+It is required to write tests for:
+
+- The background migrations' scheduling migration.
+- The background migration itself.
+- A cleanup migration.
+
+You can use the `:migration` RSpec tag when testing the migrations.
 See [README][migrations-readme].
 
 When you do that, keep in mind that `before` and `after` RSpec hooks are going
@@ -299,18 +302,18 @@ for more details.
 
 ## Best practices
 
-1. Make sure to know how much data you're dealing with
+1. Make sure to know how much data you're dealing with.
 1. Make sure that background migration jobs are idempotent.
 1. Make sure that tests you write are not false positives.
 1. Make sure that if the data being migrated is critical and cannot be lost, the
    clean-up migration also checks the final state of the data before completing.
-1. Make sure to know how much time it'll take to run all scheduled migrations
+1. Make sure to know how much time it'll take to run all scheduled migrations.
 1. When migrating many columns, make sure it won't generate too many
    dead tuples in the process (you may need to directly query the number of dead tuples
-   and adjust the scheduling according to this piece of data)
+   and adjust the scheduling according to this piece of data).
 1. Make sure to discuss the numbers with a database specialist, the migration may add
    more pressure on DB than you expect (measure on staging,
-   or ask someone to measure on production)
+   or ask someone to measure on production).
 
 [migrations-readme]: https://gitlab.com/gitlab-org/gitlab-ce/blob/master/spec/migrations/README.md
 [issue-rspec-hooks]: https://gitlab.com/gitlab-org/gitlab-ce/issues/35351

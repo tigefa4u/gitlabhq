@@ -164,6 +164,26 @@ you hide threads that are no longer relevant.
 
 [Read more about resolving threads in merge requests reviews.](../../discussions/index.md)
 
+## View changes between file versions
+
+The **Changes** tab of a merge request shows the changes to files between branches or
+commits. This view of changes to a file is also known as a **diff**. By default, the diff view
+compares the file in the merge request branch and the file in the target branch.
+
+The diff view includes the following:
+
+- The file's name and path.
+- The number of lines added and deleted.
+- Buttons for the following options:
+  - Toggle comments for this file; useful for inline reviews.
+  - Edit the file in the merge request's branch.
+  - Show full file, in case you want to look at the changes in context with the rest of the file.
+  - View file at the current commit.
+  - Preview the changes with [Review Apps](../../../ci/review_apps/index.md).
+- The changed lines, with the specific changes highlighted.
+
+![Example screenshot of a source code diff](img/merge_request_diff_v12_2.png)
+
 ## Commenting on any file line in merge requests
 
 > [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/issues/13950) in GitLab 11.5.
@@ -218,7 +238,7 @@ Similarly, assignees are removed by deselecting them from the same dropdown menu
 It's also possible to manage multiple assignees:
 
 - When creating a merge request.
-- Using [quick actions](../quick_actions.md#quick-actions-for-issues-and-merge-requests).
+- Using [quick actions](../quick_actions.md#quick-actions-for-issues-merge-requests-and-epics).
 
 ## Resolve conflicts
 
@@ -289,6 +309,7 @@ as pushing changes:
 - Set the merge request to remove the source branch when it's merged.
 - Set the title of the merge request to a particular title.
 - Set the description of the merge request to a particular description.
+- Add or remove labels from the merge request.
 
 ### Create a new merge request using git push options
 
@@ -374,6 +395,35 @@ git push -o merge_request.description="The description I want"
 
 You can also use this push option in addition to the
 `merge_request.create` push option.
+
+### Add or remove labels using git push options
+
+> [Introduced](https://gitlab.com/gitlab-org/gitlab-ce/merge_requests/31831) in GitLab 12.3.
+
+You can add or remove labels from merge requests using push options.
+
+For example, to add two labels to an existing merge request, use the
+`merge_request.label` push option:
+
+```sh
+git push -o merge_request.label="label1" -o merge_request.label="label2"
+```
+
+To remove two labels from an existing merge request, use
+the `merge_request.unlabel` push option:
+
+```sh
+git push -o merge_request.unlabel="label1" -o merge_request.unlabel="label2"
+```
+
+You can also use these push options in addition to the
+`merge_request.create` push option.
+
+To create a merge request and add two labels to it, use:
+
+```sh
+git push -o merge_request.create -o merge_request.label="label1" -o merge_request.label="label2"
+```
 
 ## Find the merge request that introduced a change
 

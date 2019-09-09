@@ -7,9 +7,9 @@ installations from source you'll have to configure it yourself.
 To enable the GitLab Prometheus metrics:
 
 1. Log into GitLab as an administrator, and go to the Admin area.
-1. Click on the gear, then click on Settings.
-1. Find the `Metrics - Prometheus` section, and click `Enable Prometheus Metrics`
-1. [Restart GitLab](../../restart_gitlab.md#omnibus-gitlab-restart) for the changes to take effect
+1. Navigate to GitLab's **Settings > Metrics and profiling**.
+1. Find the **Metrics - Prometheus** section, and click **Enable Prometheus Metrics**.
+1. [Restart GitLab](../../restart_gitlab.md#omnibus-gitlab-restart) for the changes to take effect.
 
 ## Collecting the metrics
 
@@ -91,33 +91,6 @@ The following metrics can be controlled by feature flags:
 |:---------------------------------------------------------------|:-------------------------------------------------------------------|
 | `gitlab_method_call_duration_seconds`                          | `prometheus_metrics_method_instrumentation`                        |
 | `gitlab_transaction_allocated_memory_bytes`                    | `prometheus_metrics_transaction_allocated_memory`                  |
-| `gitlab_transaction_event_build_found_total`                   | `prometheus_transaction_event_build_found_total`                   |
-| `gitlab_transaction_event_build_invalid_total`                 | `prometheus_transaction_event_build_invalid_total`                 |
-| `gitlab_transaction_event_build_not_found_cached_total`        | `prometheus_transaction_event_build_not_found_cached_total`        |
-| `gitlab_transaction_event_build_not_found_total`               | `prometheus_transaction_event_build_not_found_total`               |
-| `gitlab_transaction_event_change_default_branch_total`         | `prometheus_transaction_event_change_default_branch_total`         |
-| `gitlab_transaction_event_create_repository_total`             | `prometheus_transaction_event_create_repository_total`             |
-| `gitlab_transaction_event_etag_caching_cache_hit_total`        | `prometheus_transaction_event_etag_caching_cache_hit_total`        |
-| `gitlab_transaction_event_etag_caching_header_missing_total`   | `prometheus_transaction_event_etag_caching_header_missing_total`   |
-| `gitlab_transaction_event_etag_caching_key_not_found_total`    | `prometheus_transaction_event_etag_caching_key_not_found_total`    |
-| `gitlab_transaction_event_etag_caching_middleware_used_total`  | `prometheus_transaction_event_etag_caching_middleware_used_total`  |
-| `gitlab_transaction_event_etag_caching_resource_changed_total` | `prometheus_transaction_event_etag_caching_resource_changed_total` |
-| `gitlab_transaction_event_fork_repository_total`               | `prometheus_transaction_event_fork_repository_total`               |
-| `gitlab_transaction_event_import_repository_total`             | `prometheus_transaction_event_import_repository_total`             |
-| `gitlab_transaction_event_push_branch_total`                   | `prometheus_transaction_event_push_branch_total`                   |
-| `gitlab_transaction_event_push_commit_total`                   | `prometheus_transaction_event_push_commit_total`                   |
-| `gitlab_transaction_event_push_tag_total`                      | `prometheus_transaction_event_push_tag_total`                      |
-| `gitlab_transaction_event_rails_exception_total`               | `prometheus_transaction_event_rails_exception_total`               |
-| `gitlab_transaction_event_receive_email_total`                 | `prometheus_transaction_event_receive_email_total`                 |
-| `gitlab_transaction_event_remote_mirrors_failed_total`         | `prometheus_transaction_event_remote_mirrors_failed_total`         |
-| `gitlab_transaction_event_remote_mirrors_finished_total`       | `prometheus_transaction_event_remote_mirrors_finished_total`       |
-| `gitlab_transaction_event_remote_mirrors_running_total`        | `prometheus_transaction_event_remote_mirrors_running_total`        |
-| `gitlab_transaction_event_remove_branch_total`                 | `prometheus_transaction_event_remove_branch_total`                 |
-| `gitlab_transaction_event_remove_repository_total`             | `prometheus_transaction_event_remove_repository_total`             |
-| `gitlab_transaction_event_remove_tag_total`                    | `prometheus_transaction_event_remove_tag_total`                    |
-| `gitlab_transaction_event_sidekiq_exception_total`             | `prometheus_transaction_event_sidekiq_exception_total`             |
-| `gitlab_transaction_event_stuck_import_jobs_total`             | `prometheus_transaction_event_stuck_import_jobs_total`             |
-| `gitlab_transaction_event_update_build_total`                  | `prometheus_transaction_event_update_build_total`                  |
 | `gitlab_view_rendering_duration_seconds`                       | `prometheus_metrics_view_instrumentation`                          |
 
 ## Sidekiq Metrics available for Geo **(PREMIUM)**

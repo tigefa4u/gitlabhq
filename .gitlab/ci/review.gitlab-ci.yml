@@ -22,7 +22,9 @@
     - source scripts/utils.sh
 
 .review-docker:
-  extends: .review-base
+  extends:
+    - .default-tags
+    - .default-retry
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-qa-alpine
   services:
     - docker:19.03.0-dind
@@ -36,7 +38,13 @@
     QA_IMAGE: "${CI_REGISTRY}/${CI_PROJECT_PATH}/gitlab/${CI_PROJECT_NAME}-qa:${CI_COMMIT_REF_SLUG}"
 
 build-qa-image:
-  extends: .review-docker
+  extends:
+    - .review-docker
+    - .except-docs
+  only:
+    refs:
+      - branches@gitlab-org/gitlab-ce
+      - branches@gitlab-org/gitlab-ee
   stage: test
   script:
     - time docker build --cache-from ${LATEST_QA_IMAGE} --tag ${QA_IMAGE} --file ./qa/Dockerfile ./
@@ -45,8 +53,7 @@ build-qa-image:
 
 .review-build-cng-base:
   image: ruby:2.6-alpine
-  stage: test
-  when: manual
+  stage: review-prepare
   before_script:
     - source scripts/utils.sh
     - install_api_client_dependencies_with_apk
@@ -59,17 +66,20 @@ review-build-cng:
   extends:
     - .review-build-cng-base
     - .review-only
+  needs: ["gitlab:assets:compile pull-cache"]
 
 schedule:review-build-cng:
   extends:
     - .review-build-cng-base
     - .review-schedules-only
+  needs: ["gitlab:assets:compile"]
 
 review-deploy:
   extends: .review-base
   allow_failure: true
   retry: 1
   stage: review
+  needs: ["review-build-cng"]
   variables:
     HOST_SUFFIX: "${CI_ENVIRONMENT_SLUG}"
     DOMAIN: "-${CI_ENVIRONMENT_SLUG}.${REVIEW_APPS_DOMAIN}"
@@ -120,11 +130,14 @@ review-stop:
     - source utils.sh
     - source review-apps.sh
   script:
-    - delete
-  artifacts: {}
+    - delete_release
+  artifacts:
+    paths: []
 
 .review-qa-base:
-  extends: .review-docker
+  extends:
+    - .review-docker
+    - .review-only
   retry: 2
   stage: qa
   variables:

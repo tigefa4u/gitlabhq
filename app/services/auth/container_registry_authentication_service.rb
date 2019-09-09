@@ -2,7 +2,7 @@
 
 module Auth
   class ContainerRegistryAuthenticationService < BaseService
-    AUDIENCE = 'container_registry'.freeze
+    AUDIENCE = 'container_registry'
 
     def execute(authentication_abilities:)
       @authentication_abilities = authentication_abilities
@@ -124,11 +124,19 @@ module Auth
         build_can_pull?(requested_project) || user_can_pull?(requested_project) || deploy_token_can_pull?(requested_project)
       when 'push'
         build_can_push?(requested_project) || user_can_push?(requested_project)
-      when '*', 'delete'
+      when 'delete'
+        build_can_delete?(requested_project) || user_can_admin?(requested_project)
+      when '*'
         user_can_admin?(requested_project)
       else
         false
       end
+    end
+
+    def build_can_delete?(requested_project)
+      # Build can delete only from the project from which it originates
+      has_authentication_ability?(:build_destroy_container_image) &&
+        requested_project == project
     end
 
     def registry

@@ -3,9 +3,9 @@
 require 'securerandom'
 
 class Repository
-  REF_MERGE_REQUEST = 'merge-requests'.freeze
-  REF_KEEP_AROUND = 'keep-around'.freeze
-  REF_ENVIRONMENTS = 'environments'.freeze
+  REF_MERGE_REQUEST = 'merge-requests'
+  REF_KEEP_AROUND = 'keep-around'
+  REF_ENVIRONMENTS = 'environments'
 
   ARCHIVE_CACHE_TIME = 60 # Cache archives referred to by a (mutable) ref for 1 minute
   ARCHIVE_CACHE_TIME_IMMUTABLE = 3600 # Cache archives referred to by an immutable reference for 1 hour
@@ -456,6 +456,10 @@ class Repository
   def after_import
     expire_content_cache
 
+    # This call is stubbed in tests due to being an expensive operation
+    # It can be reenabled for specific tests via:
+    #
+    # allow(DetectRepositoryLanguagesWorker).to receive(:perform_async).and_call_original
     DetectRepositoryLanguagesWorker.perform_async(project.id)
   end
 

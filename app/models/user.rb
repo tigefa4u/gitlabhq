@@ -59,7 +59,7 @@ class User < ApplicationRecord
          :validatable, :omniauthable, :confirmable, :registerable
 
   BLOCKED_MESSAGE = "Your account has been blocked. Please contact your GitLab " \
-                    "administrator if you think this is an error.".freeze
+                    "administrator if you think this is an error."
 
   # Override Devise::Models::Trackable#update_tracked_fields!
   # to limit database writes to at most once every hour
@@ -131,7 +131,7 @@ class User < ApplicationRecord
   has_many :notes,                    dependent: :destroy, foreign_key: :author_id # rubocop:disable Cop/ActiveRecordDependent
   has_many :issues,                   dependent: :destroy, foreign_key: :author_id # rubocop:disable Cop/ActiveRecordDependent
   has_many :merge_requests,           dependent: :destroy, foreign_key: :author_id # rubocop:disable Cop/ActiveRecordDependent
-  has_many :events,                   dependent: :destroy, foreign_key: :author_id # rubocop:disable Cop/ActiveRecordDependent
+  has_many :events,                   dependent: :delete_all, foreign_key: :author_id # rubocop:disable Cop/ActiveRecordDependent
   has_many :releases,                 dependent: :nullify, foreign_key: :author_id # rubocop:disable Cop/ActiveRecordDependent
   has_many :subscriptions,            dependent: :destroy # rubocop:disable Cop/ActiveRecordDependent
   has_many :oauth_applications, class_name: 'Doorkeeper::Application', as: :owner, dependent: :destroy # rubocop:disable Cop/ActiveRecordDependent
@@ -494,7 +494,7 @@ class User < ApplicationRecord
     def by_login(login)
       return unless login
 
-      if login.include?('@'.freeze)
+      if login.include?('@')
         unscoped.iwhere(email: login).take
       else
         unscoped.iwhere(username: login).take

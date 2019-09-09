@@ -54,7 +54,7 @@ class MergeRequest < ApplicationRecord
 
   belongs_to :head_pipeline, foreign_key: "head_pipeline_id", class_name: "Ci::Pipeline"
 
-  has_many :events, as: :target, dependent: :destroy # rubocop:disable Cop/ActiveRecordDependent
+  has_many :events, as: :target, dependent: :delete_all # rubocop:disable Cop/ActiveRecordDependent
 
   has_many :merge_requests_closing_issues,
     class_name: 'MergeRequestsClosingIssues',
@@ -174,6 +174,7 @@ class MergeRequest < ApplicationRecord
   scope :from_project, ->(project) { where(source_project_id: project.id) }
   scope :merged, -> { with_state(:merged) }
   scope :closed_and_merged, -> { with_states(:closed, :merged) }
+  scope :open_and_closed, -> { with_states(:opened, :closed) }
   scope :from_source_branches, ->(branches) { where(source_branch: branches) }
   scope :by_commit_sha, ->(sha) do
     where('EXISTS (?)', MergeRequestDiff.select(1).where('merge_requests.latest_merge_request_diff_id = merge_request_diffs.id').by_commit_sha(sha)).reorder(nil)
@@ -187,6 +188,11 @@ class MergeRequest < ApplicationRecord
             target_project: [:route, { namespace: :route }],
             source_project: [:route, { namespace: :route }])
   }
+  scope :by_target_branch_wildcard, ->(wildcard_branch_name) do
+    where("target_branch LIKE ?", ApplicationRecord.sanitize_sql_like(wildcard_branch_name).tr('*', '%'))
+  end
+  scope :by_target_branch, ->(branch_name) { where(target_branch: branch_name) }
+  scope :preload_source_project, -> { preload(:source_project) }
 
   after_save :keep_around_commit
 
@@ -1142,6 +1148,10 @@ class MergeRequest < ApplicationRecord
     ref.start_with?("refs/#{Repository::REF_MERGE_REQUEST}/")
   end
 
+  def self.merge_train_ref?(ref)
+    %r{\Arefs/#{Repository::REF_MERGE_REQUEST}/\d+/train\z}.match?(ref)
+  end
+
   def in_locked_state
     begin
       lock_mr
@@ -1228,9 +1238,9 @@ class MergeRequest < ApplicationRecord
     compare_reports(Ci::CompareTestReportsService)
   end
 
-  def compare_reports(service_class)
+  def compare_reports(service_class, current_user = nil)
     with_reactive_cache(service_class.name) do |data|
-      unless service_class.new(project)
+      unless service_class.new(project, current_user)
         .latest?(base_pipeline, actual_head_pipeline, data)
         raise InvalidateReactiveCache
       end

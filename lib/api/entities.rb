@@ -978,7 +978,9 @@ module API
       expose :created_at
 
       def todo_target_class(target_type)
-        ::API::Entities.const_get(target_type)
+        # false as second argument prevents looking up in module hierarchy
+        # see also https://gitlab.com/gitlab-org/gitlab-ce/issues/59719
+        ::API::Entities.const_get(target_type, false)
       end
     end
 
@@ -1167,6 +1169,55 @@ module API
       expose :message, :starts_at, :ends_at, :color, :font
     end
 
+    class ApplicationStatistics < Grape::Entity
+      include ActionView::Helpers::NumberHelper
+      include CountHelper
+
+      expose :forks do |counts|
+        approximate_fork_count_with_delimiters(counts)
+      end
+
+      expose :issues do |counts|
+        approximate_count_with_delimiters(counts, ::Issue)
+      end
+
+      expose :merge_requests do |counts|
+        approximate_count_with_delimiters(counts, ::MergeRequest)
+      end
+
+      expose :notes do |counts|
+        approximate_count_with_delimiters(counts, ::Note)
+      end
+
+      expose :snippets do |counts|
+        approximate_count_with_delimiters(counts, ::Snippet)
+      end
+
+      expose :ssh_keys do |counts|
+        approximate_count_with_delimiters(counts, ::Key)
+      end
+
+      expose :milestones do |counts|
+        approximate_count_with_delimiters(counts, ::Milestone)
+      end
+
+      expose :users do |counts|
+        approximate_count_with_delimiters(counts, ::User)
+      end
+
+      expose :projects do |counts|
+        approximate_count_with_delimiters(counts, ::Project)
+      end
+
+      expose :groups do |counts|
+        approximate_count_with_delimiters(counts, ::Group)
+      end
+
+      expose :active_users do |_|
+        number_with_delimiter(::User.active.count)
+      end
+    end
+
     class ApplicationSetting < Grape::Entity
       def self.exposed_attributes
         attributes = ::ApplicationSettingsHelper.visible_attributes
@@ -1229,6 +1280,7 @@ module API
       expose :author, using: Entities::UserBasic, if: -> (release, _) { release.author.present? }
       expose :commit, using: Entities::Commit, if: lambda { |_, _| can_download_code? }
       expose :upcoming_release?, as: :upcoming_release
+      expose :milestone, using: Entities::Milestone, if: -> (release, _) { release.milestone.present? }
 
       expose :assets do
         expose :assets_count, as: :count do |release, _|
@@ -1730,6 +1782,7 @@ API::Entities.prepend_if_ee('EE::API::Entities::Entities')
 ::API::Entities::Group.prepend_if_ee('EE::API::Entities::Group', with_descendants: true)
 ::API::Entities::GroupDetail.prepend_if_ee('EE::API::Entities::GroupDetail')
 ::API::Entities::IssueBasic.prepend_if_ee('EE::API::Entities::IssueBasic', with_descendants: true)
+::API::Entities::Issue.prepend_if_ee('EE::API::Entities::Issue')
 ::API::Entities::List.prepend_if_ee('EE::API::Entities::List')
 ::API::Entities::MergeRequestBasic.prepend_if_ee('EE::API::Entities::MergeRequestBasic', with_descendants: true)
 ::API::Entities::Namespace.prepend_if_ee('EE::API::Entities::Namespace')

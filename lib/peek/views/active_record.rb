@@ -5,15 +5,15 @@ module Peek
     class ActiveRecord < DetailedView
       DEFAULT_THRESHOLDS = {
         calls: 100,
-        duration: 3,
-        individual_call: 1
+        duration: 3000,
+        individual_call: 1000
       }.freeze
 
       THRESHOLDS = {
         production: {
           calls: 100,
-          duration: 15,
-          individual_call: 5
+          duration: 15000,
+          individual_call: 5000
         }
       }.freeze
 
@@ -27,7 +27,7 @@ module Peek
         super
 
         subscribe('sql.active_record') do |_, start, finish, _, data|
-          if Gitlab::SafeRequestStore.store[:peek_enabled]
+          if Gitlab::PerformanceBar.enabled_for_request?
             unless data[:cached]
               detail_store << {
                 duration: finish - start,

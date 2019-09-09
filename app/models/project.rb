@@ -37,8 +37,8 @@ class Project < ApplicationRecord
 
   BoardLimitExceeded = Class.new(StandardError)
 
-  STATISTICS_ATTRIBUTE = 'repositories_count'.freeze
-  UNKNOWN_IMPORT_URL = 'http://unknown.git'.freeze
+  STATISTICS_ATTRIBUTE = 'repositories_count'
+  UNKNOWN_IMPORT_URL = 'http://unknown.git'
   # Hashed Storage versions handle rolling out new storage to project and dependents models:
   # nil: legacy
   # 1: repository
@@ -290,6 +290,8 @@ class Project < ApplicationRecord
 
   has_many :remote_mirrors, inverse_of: :project
   has_many :cycle_analytics_stages, class_name: 'Analytics::CycleAnalytics::ProjectStage'
+
+  has_many :external_pull_requests, inverse_of: :project
 
   accepts_nested_attributes_for :variables, allow_destroy: true
   accepts_nested_attributes_for :project_feature, update_only: true

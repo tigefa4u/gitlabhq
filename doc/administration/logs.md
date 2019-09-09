@@ -339,11 +339,12 @@ installations from source.
 [Rack Attack]: ../security/rack_attack.md
 [Rate Limit]: ../user/admin_area/settings/rate_limits_on_raw_endpoints.md
 
-## `database_load_balancing.log`
+## `database_load_balancing.log` **(PREMIUM ONLY)**
 
-Introduced in GitLab 12.3 for observability of [Database Load
-Balancing](https://docs.gitlab.com/ee/administration/database_load_balancing.html)
-when enabled. This file lives in
-`/var/log/gitlab/gitlab-rails/database_load_balancing.log` for Omnibus GitLab
-packages or in `/home/git/gitlab/log/database_load_balancing.log` for
-installations from source.
+> [Introduced](https://gitlab.com/gitlab-org/gitlab-ee/merge_requests/15442) in GitLab 12.3.
+
+Contains details of GitLab's [Database Load Balancing](database_load_balancing.md).
+It is stored at:
+
+- `/var/log/gitlab/gitlab-rails/database_load_balancing.log` for Omnibus GitLab packages.
+- `/home/git/gitlab/log/database_load_balancing.log` for installations from source.

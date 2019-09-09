@@ -36,7 +36,7 @@ function previous_deploy_failed() {
   return $status
 }
 
-function delete() {
+function delete_release() {
   if [ -z "$CI_ENVIRONMENT_SLUG" ]; then
     echoerr "No release given, aborting the delete!"
     return
@@ -164,7 +164,7 @@ function create_application_secret() {
 function download_chart() {
   echoinfo "Downloading the GitLab chart..." true
 
-  curl -o gitlab.tar.bz2 "https://gitlab.com/charts/gitlab/-/archive/${GITLAB_HELM_CHART_REF}/gitlab-${GITLAB_HELM_CHART_REF}.tar.bz2"
+  curl --location -o gitlab.tar.bz2 "https://gitlab.com/gitlab-org/charts/gitlab/-/archive/${GITLAB_HELM_CHART_REF}/gitlab-${GITLAB_HELM_CHART_REF}.tar.bz2"
   tar -xjf gitlab.tar.bz2
   cd "gitlab-${GITLAB_HELM_CHART_REF}"
 
@@ -193,7 +193,8 @@ function deploy() {
 
 HELM_CMD=$(cat << EOF
   helm upgrade --install \
-    --atomic \
+    --force \
+    --wait \
     --timeout 900 \
     --set releaseOverride="$CI_ENVIRONMENT_SLUG" \
     --set global.appConfig.enableUsagePing=false \

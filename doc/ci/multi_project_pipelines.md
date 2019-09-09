@@ -176,6 +176,20 @@ Upstream pipelines take precedence over downstream ones. If there are two
 variables with the same name defined in both upstream and downstream projects,
 the ones defined in the upstream project will take precedence.
 
+### Mirroring status from triggered pipeline
+
+> [Introduced](https://gitlab.com/gitlab-org/gitlab-ee/issues/11238) in [GitLab Premium](https://about.gitlab.com/pricing/) 12.3.
+
+You can mirror the pipeline status from the triggered pipeline to the source
+bridge job by using `strategy: depend`. For example:
+
+```yaml
+trigger_job:
+  trigger:
+    project: my/project
+    strategy: depend
+```
+
 ### Mirroring status from upstream pipeline
 
 You can mirror the pipeline status from an upstream pipeline to a bridge job by

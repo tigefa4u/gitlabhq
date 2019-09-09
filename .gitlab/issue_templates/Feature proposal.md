@@ -5,7 +5,17 @@
 ### Intended users
 
 <!-- Who will use this feature? If known, include any of the following: types of users (e.g. Developer), personas, or specific company roles (e.g. Release Manager). It's okay to write "Unknown" and fill this field in later.
-Personas can be found at https://about.gitlab.com/handbook/marketing/product-marketing/roles-personas/ -->
+
+* [Parker (Product Manager)](https://about.gitlab.com/handbook/marketing/product-marketing/roles-personas/#parker-product-manager)
+* [Delaney (Development Team Lead)](https://about.gitlab.com/handbook/marketing/product-marketing/roles-personas/#delaney-development-team-lead)
+* [Sasha (Software Developer)](https://about.gitlab.com/handbook/marketing/product-marketing/roles-personas/#sasha-software-developer)
+* [Presley (Product Designer)](https://about.gitlab.com/handbook/marketing/product-marketing/roles-personas/#presley-product-designer)
+* [Devon (DevOps Engineer)](https://about.gitlab.com/handbook/marketing/product-marketing/roles-personas/#devon-devops-engineer)
+* [Sidney (Systems Administrator)](https://about.gitlab.com/handbook/marketing/product-marketing/roles-personas/#sidney-systems-administrator)
+* [Sam (Security Analyst)](https://about.gitlab.com/handbook/marketing/product-marketing/roles-personas/#sam-security-analyst)
+* [Dana (Data Analyst)](https://about.gitlab.com/handbook/marketing/product-marketing/roles-personas/#dana-data-analyst)
+
+Personas are described at https://about.gitlab.com/handbook/marketing/product-marketing/roles-personas/ -->
 
 ### Further details
 
@@ -17,12 +27,13 @@ Personas can be found at https://about.gitlab.com/handbook/marketing/product-mar
 
 ### Permissions and Security
 
-<!-- What permissions are required to perform the described actions? Are they consistent with the existing permissions as documented for users, groups, and projects as appropriate? Is the proposed behavior consistent between the UI, API, and other access methods (e.g. email replies)? -->
+<!-- What permissions are required to perform the described actions? Are they consistent with the existing permissions as documented for users, groups, and projects as appropriate? Is the proposed behavior consistent between the UI, API, and other access methods (e.g. email replies)?-->
 
 ### Documentation
 
 <!-- See the Feature Change Documentation Workflow https://docs.gitlab.com/ee/development/documentation/feature-change-workflow.html
-Add all known Documentation Requirements here, per https://docs.gitlab.com/ee/development/documentation/feature-change-workflow.html#documentation-requirements -->
+Add all known Documentation Requirements here, per https://docs.gitlab.com/ee/development/documentation/feature-change-workflow.html#documentation-requirements
+If this feature requires changing permissions, this document https://docs.gitlab.com/ee/user/permissions.html must be updated accordingly. -->
 
 ### Testing
 
