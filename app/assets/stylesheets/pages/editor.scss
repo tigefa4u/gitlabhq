@@ -33,8 +33,8 @@
   .file-title {
     @extend .monospace;
     line-height: 35px;
-    padding-top: 2px;
-    padding-bottom: 2px;
+    padding-top: 7px;
+    padding-bottom: 7px;
     display: flex;
     align-items: center;
   }
@@ -182,7 +182,6 @@
 
 .template-selector-dropdowns-wrap {
   display: inline-block;
-  margin: 10px 0 0 8px;
   vertical-align: top;
 
   @media(max-width: map-get($grid-breakpoints, md)-1) {
@@ -199,7 +198,6 @@
     display: inline-block;
     vertical-align: top;
     font-family: $regular_font;
-    margin-top: -5px;
 
     @media(max-width: map-get($grid-breakpoints, md)-1) {
       display: block;

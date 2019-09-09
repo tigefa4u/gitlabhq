@@ -91,7 +91,12 @@ export default class FileTemplateMediator {
 
   listenForFilenameInput() {
     this.$filenameInput.on('keyup blur', () => {
-      this.displayMatchedTemplateSelector();
+      if(this.isFilenameEmpty()) {
+        this.clearEditorContent()
+        this.hideTemplateSelectorMenu()
+      } else {
+        this.displayMatchedTemplateSelector();
+      }
     });
   }
 
@@ -253,6 +258,10 @@ export default class FileTemplateMediator {
 
   setFilename(filename) {
     this.$filenameInput.val(filename)
+  }
+
+  isFilenameEmpty() {
+    return this.getFilename() === ""
   }
 
   getSelected() {
