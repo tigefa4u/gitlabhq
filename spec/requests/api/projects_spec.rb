@@ -631,6 +631,25 @@ describe API::Projects do
       expect(project.project_feature.wiki_access_level).to eq(ProjectFeature::DISABLED)
     end
 
+    it 'creates a project using a template' do
+      expect { post api('/projects', user), params: { template_name: 'rails', name: 'rails-test' } }
+        .to change { Project.count }.by(1)
+
+      expect(response).to have_gitlab_http_status(201)
+
+      project = Project.last
+      expect(project).to be_saved
+      expect(project.import_type).to eq('gitlab_project')
+    end
+
+    it 'disallows creating a project with an import_url and template' do
+      project_params = { import_url: 'http://example.com', template_name: 'rails', name: 'rails-test' }
+      expect { post api('/projects', user), params: project_params }
+        .not_to change {  Project.count }
+
+      expect(response).to have_gitlab_http_status(400)
+    end
+
     it 'sets a project as public' do
       project = attributes_for(:project, visibility: 'public')
 

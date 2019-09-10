@@ -991,6 +991,10 @@ POST /projects/user/:user_id
 | `external_authorization_classification_label` | string | no | **(PREMIUM)** The classification label for the project |
 | `mirror` | boolean | no | **(STARTER)** Enables pull mirroring in a project |
 | `mirror_trigger_builds` | boolean | no | **(STARTER)** Pull mirroring triggers builds |
+| `template_name` | string | no | Name of built-in project template (e.g. rails, spring, express, iosswift, etc.). When used with `use_custom_template`, specifies the name of the project |
+ |
+| `use_custom_template` | boolean | no | **(PREMIUM)** Use instance-level or group project templates. Specify `group_with_project_templates_id` for group templates |
+| `group_with_project_templates_id` | integer | no | **(PREMIUM)** Specifies which group ID where all the custom project templates are sourced. Requires `use_custom_template` to be true. Leave empty for instance-level templates |
 
 NOTE: **Note:** If your HTTP repository is not publicly accessible,
 add authentication information to the URL: `https://username:password@gitlab.company.com/group/project.git`
