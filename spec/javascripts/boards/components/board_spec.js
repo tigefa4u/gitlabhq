@@ -30,7 +30,7 @@ describe('Board component', () => {
         }),
       },
     }).$mount(el);
-  }
+  };
 
   const cleanUpTests = () => {
     vm.$destroy();
@@ -76,7 +76,7 @@ describe('Board component', () => {
       });
 
       createComponent();
-      
+
       Vue.nextTick(done);
     });
 
@@ -151,7 +151,7 @@ describe('Board component', () => {
 
     it('expands', done => {
       vm.list.isExpanded = false;
-  
+
       Vue.nextTick()
         .then(() => {
           vm.$el.querySelector('.board-title-caret').click();
@@ -188,7 +188,7 @@ describe('Board component', () => {
       expect(vm.list.isExpanded).toBe(true);
       expect(vm.$el.classList.contains('is-collapsed')).toBe(false);
     });
-  })
+  });
 
   describe('when list type is blank', () => {
     beforeEach(done => {
@@ -217,7 +217,7 @@ describe('Board component', () => {
         done();
       });
     });
-  })
+  });
 
   describe('when list type is backlog', () => {
     beforeEach(done => {
@@ -245,7 +245,7 @@ describe('Board component', () => {
   });
 
   describe('when logged in', () => {
-    beforeEach((done) => {
+    beforeEach(done => {
       spyOn(List.prototype, 'update');
       loadFixtures('boards/show.html');
 
@@ -270,7 +270,7 @@ describe('Board component', () => {
       vm.$destroy();
     });
 
-    it('calls list update', (done) => {
+    it('calls list update', done => {
       Vue.nextTick()
         .then(() => {
           vm.$el.querySelector('.board-title-caret').click();
@@ -280,11 +280,11 @@ describe('Board component', () => {
           done();
         })
         .catch(done.fail);
-    })
-  })
+    });
+  });
 
   describe('when logged out', () => {
-    beforeEach((done) => {
+    beforeEach(done => {
       spyOn(List.prototype, 'update');
       loadFixtures('boards/show.html');
 
@@ -310,7 +310,7 @@ describe('Board component', () => {
     });
 
     // can only be one or the other cant toggle window.gon.current_user_id states.
-    it('clicking on the caret does not call list update', (done) => {
+    it('clicking on the caret does not call list update', done => {
       Vue.nextTick()
         .then(() => {
           vm.$el.querySelector('.board-title-caret').click();
@@ -322,7 +322,7 @@ describe('Board component', () => {
         .catch(done.fail);
     });
 
-    it('sets expanded to be the opposite of its value when toggleExpanded is called', (done) => {
+    it('sets expanded to be the opposite of its value when toggleExpanded is called', done => {
       const expanded = true;
       vm.list.isExpanded = expanded;
       vm.toggleExpanded();
