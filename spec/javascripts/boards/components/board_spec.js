@@ -74,16 +74,12 @@ describe('Board component', () => {
     });
   });
 
-  fit('collapses when clicking the collapse icon', done => {
-    vm.list.isExpanded = true;
-    global.gon.current_user_id = undefined;
-
+  it('collapses when clicking the collapse icon', done => {
     Vue.nextTick()
       .then(() => {
         vm.$el.querySelector('.board-title-caret').click();
       })
       .then(() => {
-        console.log(localStorage)
         expect(vm.$el.classList.contains('is-collapsed')).toBe(true);
         done();
       })
@@ -104,9 +100,44 @@ describe('Board component', () => {
       .catch(done.fail);
   });
 
-  describe('when logged out', () => {
-    it('controls the board state through localStorage', () => {
-      
+  fdescribe('when logged in', () => {    
+    beforeEach(() => {
+      global.window.gon.current_user_id = 1;
+    });
+
+    afterEach(() => {
+      global.window,gon = {};
+    });
+
+    it('calls list update', (done) => {
+      spyOn(List.prototype, 'update');
+      Vue.nextTick()
+        .then(() => {
+          console.log('before click')
+          vm.$el.querySelector('.board-title-caret').click();
+          console.log('after click')
+        })
+        .then(() => {
+          expect(vm.list.update).toHaveBeenCalledTimes(1);
+          done();
+        })
+        .catch(done.fail);
+    })
+  })
+
+  fdescribe('when logged out', () => {
+    // can only be one or the other cant toggle window.gon.current_user_id states.
+    it('does not call list update', (done) => {
+      spyOn(List.prototype, 'update');
+      Vue.nextTick()
+      .then(() => {
+          vm.$el.querySelector('.board-title-caret').click();
+        })
+        .then(() => {
+          expect(vm.list.update).toHaveBeenCalledTimes(0);
+          done();
+        })
+        .catch(done.fail);
     })
   })
 
