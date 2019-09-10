@@ -447,22 +447,23 @@ gem 'lograge', '~> 0.5'
 gem 'grape_logging', '~> 1.7'
 
 # Gems used by EE-only functionality
-group :ee do
-  gem "gitlab-license", '~> 1.0', require: false
+#
+# Gems below must set `require: false` and then be manually required before use
+# -----------------------------------------------------------------------------
+gem 'gitlab-license', '~> 1.0', require: false
 
-  # Search
-  gem 'aws-sdk', '~> 2', require: false
-  gem 'elasticsearch-api', '5.0.3', require: false
-  gem 'elasticsearch-model', '~> 0.1.9', require: false
-  gem 'elasticsearch-rails', '~> 0.1.9', require: false
-  gem 'faraday_middleware-aws-signers-v4', require: false
+# Search
+gem 'aws-sdk', '~> 2', require: false
+gem 'elasticsearch-api', '5.0.3', require: false
+gem 'elasticsearch-model', '~> 0.1.9', require: false
+gem 'elasticsearch-rails', '~> 0.1.9', require: false
+gem 'faraday_middleware-aws-signers-v4', require: false
 
-  # Kerberos authentication
-  gem 'gssapi', group: :kerberos, require: false
+# Kerberos authentication
+gem 'gssapi', group: :kerberos, require: false
 
-  # DNS Lookup
-  gem 'net-dns', '~> 0.9.0', require: false
+# DNS Lookup
+gem 'net-dns', '~> 0.9.0', require: false
 
-  # NTP client
-  gem 'net-ntp', '~> 2.1.0', require: false
-end
+# NTP client
+gem 'net-ntp', '~> 2.1.0', require: false
