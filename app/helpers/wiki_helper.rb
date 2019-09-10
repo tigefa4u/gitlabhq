@@ -51,17 +51,20 @@ module WikiHelper
   WIKI_SORT_CSS_CLASSES = 'btn btn-default has-tooltip reverse-sort-btn qa-reverse-sort rspec-reverse-sort'
 
   def wiki_sort_controls(sort_params = {}, &block)
-    sort = sort_params[:sort] || ProjectWiki::TITLE_ORDER
-    currently_desc = sort_params[:direction] == 'desc'
-    reversed_direction = currently_desc ? 'asc' : 'desc'
-    icon_class = currently_desc ? 'highest' : 'lowest'
+    current_sort = sort_params[:sort] || ProjectWiki::TITLE_ORDER
+    current_direction = (sort_params[:direction] || 'asc').inquiry
+
+    reversed_direction = current_direction.desc? ? 'asc' : 'desc'
+    icon_class = current_direction.desc? ? 'highest' : 'lowest'
+
+    sorting = sort_params.merge(sort: current_sort, direction: reversed_direction)
     opts = {
       type: 'button',
       class: WIKI_SORT_CSS_CLASSES,
       title: _('Sort direction')
     }
 
-    link_to(yield(sort_params.merge(sort: sort, direction: reversed_direction)), opts) do
+    link_to(yield(sorting), opts) do
       sprite_icon("sort-#{icon_class}", size: 16)
     end
   end
@@ -75,7 +78,7 @@ module WikiHelper
   end
 
   # Render the sprite icon given the current show_children state
-  def wiki_show_children_title(nesting)
+  def wiki_show_children_icon(nesting)
     icon_name, icon_text =
       case nesting
       when ProjectWiki::NESTING_TREE
@@ -89,8 +92,11 @@ module WikiHelper
     sprite_icon_with_text(icon_name, icon_text, size: 16)
   end
 
-  def wiki_pages_wiki_page_link(wiki_page, nesting, project)
-    wiki_page_link = link_to wiki_page.title, project_wiki_path(project, wiki_page), class: 'wiki-page-title'
+  def wiki_page_link(wiki_page, nesting, project)
+    link = link_to(wiki_page.title,
+                   project_wiki_path(project, wiki_page),
+                   class: 'wiki-page-title')
+
     case nesting
     when ProjectWiki::NESTING_FLAT
       tags = []
@@ -100,10 +106,56 @@ module WikiHelper
         tags << content_tag(:span, '/', class: 'wiki-page-name-separator')
       end
 
-      tags << wiki_page_link
+      tags << link
       tags.join.html_safe
     else
-      wiki_page_link
+      link
     end
+  end
+
+  def sort_params_config
+    {
+      keys: [:sort, :direction],
+      defaults: {
+        sort: ProjectWiki::TITLE_ORDER, direction: ProjectWiki::DIRECTION_ASC
+      },
+      allowed: {
+        sort: ProjectWiki::SORT_ORDERS, direction: ProjectWiki::SORT_DIRECTIONS
+      }
+    }
+  end
+
+  def nesting_params_config(sort_key)
+    default_val = case sort_key
+                  when ProjectWiki::CREATED_AT_ORDER
+                    ProjectWiki::NESTING_FLAT
+                  else
+                    ProjectWiki::NESTING_CLOSED
+                  end
+    {
+      keys: [:show_children],
+      defaults: { show_children: default_val },
+      allowed: { show_children: ProjectWiki::NESTINGS }
+    }
+  end
+
+  def process_params(config)
+    unprocessed = params.permit(*config[:keys])
+
+    processed = unprocessed
+      .with_defaults(config[:defaults])
+      .allow(config[:allowed])
+      .to_hash
+      .transform_keys(&:to_sym)
+
+    if processed.keys == config[:keys]
+      processed.size == 1 ? processed.values.first : processed
+    else
+      raise ActionController::BadRequest, "illegal parameters: #{unprocessed}"
+    end
+  end
+
+  def home_page?
+    params[:id] == 'home'
   end
 end

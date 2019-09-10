@@ -5,6 +5,7 @@ require 'spec_helper'
 describe Projects::WikisController do
   set(:project) { create(:project, :public, :repository) }
   set(:user) { project.owner }
+
   let(:project_wiki) { ProjectWiki.new(project, user) }
   let(:wiki) { project_wiki.wiki }
   let(:wiki_title) { 'page title test' }
@@ -23,11 +24,11 @@ describe Projects::WikisController do
     subject do
       get :pages, params: { namespace_id: project.namespace, project_id: project, id: wiki_title }.merge(extra_params)
     end
+
     let(:extra_params) { {} }
 
     it 'does not load the pages content' do
       expect(controller).to receive(:load_wiki).and_return(project_wiki)
-
       expect(project_wiki).to receive(:list_pages).twice.and_call_original
 
       subject
@@ -64,6 +65,7 @@ describe Projects::WikisController do
         let(:extra_params) { sort_params.merge(nesting_params) }
         let(:sort_params) { { sort: sort_key } }
         let(:nesting_params) { {} }
+
         before do
           subject
         end

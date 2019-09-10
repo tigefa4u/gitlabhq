@@ -25,6 +25,6 @@ scope(controller: :wikis) do
   end
 
   scope(path: '-/wiki_dirs/*id', as: :wiki_dir, format: false, controller: :wiki_directories) do
-    get '/', action: :show_dir
+    get '/', action: :show
   end
 end

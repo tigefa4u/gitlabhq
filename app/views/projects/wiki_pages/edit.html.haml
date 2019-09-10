@@ -17,10 +17,7 @@
   .nav-text
     %h2.wiki-page-title
       - if @page.persisted?
-        = link_to @page.human_title, project_wiki_path(@project, @page)
-        %span.light
-          &middot;
-          = s_("Wiki|Edit Page")
+        = render partial: 'page_title', locals: { subtitle: s_("Wiki|Edit Page") }
       - else
         = s_("Wiki|Create New Page")
 

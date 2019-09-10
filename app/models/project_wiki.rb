@@ -121,13 +121,6 @@ class ProjectWiki
     end
   end
 
-  def sort_params_config
-    {
-      defaults: { sort: TITLE_ORDER, direction: DIRECTION_ASC },
-      allowed: { sort: SORT_ORDERS, direction: SORT_DIRECTIONS }
-    }
-  end
-
   # Finds a page within the repository based on a tile
   # or slug.
   #

@@ -241,10 +241,10 @@ class WikiPage
     end
   end
 
-  # Relative path to the partial to be used when rendering collections
-  # of this object.
-  def to_partial_path
-    'projects/wikis/wiki_page'
+  def to_partial_path(context = nil)
+    name = [context, 'wiki_page'].compact.join('_')
+
+    "projects/wiki_pages/#{name}"
   end
 
   def id

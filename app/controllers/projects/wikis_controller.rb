@@ -2,6 +2,11 @@
 
 class Projects::WikisController < Projects::ApplicationController
   include HasProjectWiki
+  include WikiHelper
+
+  def self.local_prefixes
+    [controller_path, 'shared/wiki']
+  end
 
   def pages
     @nesting = show_children_param
@@ -16,6 +21,8 @@ class Projects::WikisController < Projects::ApplicationController
                     else
                       WikiDirectory.group_by_directory(@wiki_pages)
                     end
+
+    render 'show'
   end
 
   def git_access
@@ -24,33 +31,12 @@ class Projects::WikisController < Projects::ApplicationController
   private
 
   def sort_params
-    config = project_wiki.sort_params_config
-    base_params = params.permit(:sort, :direction)
-
-    ps = base_params
-          .with_defaults(config[:defaults])
-          .allow(config[:allowed])
-          .to_hash
-          .transform_keys(&:to_sym)
-
-    raise ActionController::BadRequest, "illegal sort parameters: #{base_params}" unless ps.size == 2
-
-    ps
+    process_params(sort_params_config)
   end
 
-  # One of ProjectWiki::NESTINGS
   def show_children_param
-    default_val = case params[:sort]
-                  when ProjectWiki::CREATED_AT_ORDER
-                    ProjectWiki::NESTING_FLAT
-                  else
-                    ProjectWiki::NESTING_CLOSED
-                  end
+    config = nesting_params_config(params[:sort])
 
-    params
-      .with_defaults(show_children: default_val)
-      .permit(:show_children)
-      .allow(show_children: ProjectWiki::NESTINGS)
-      .fetch(:show_children) { raise ActionController::BadRequest, 'illegal value for show_children' }
+    process_params(config)
   end
 end

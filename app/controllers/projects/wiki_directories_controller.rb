@@ -2,31 +2,30 @@
 
 class Projects::WikiDirectoriesController < Projects::ApplicationController
   include HasProjectWiki
+  include Gitlab::Utils::StrongMemoize
 
-  before_action :load_dir, only: [:show_dir]
+  before_action :load_dir, only: [:show]
 
-  # Share the templates from the wikis controller.
   def self.local_prefixes
-    [controller_path, 'projects/wikis']
+    [controller_path, 'shared/wiki']
   end
 
-  def show_dir
-    @show_children = true # or false, it doesn't matter, since we only support one-level
-    if @wiki_dir
-      @wiki_pages = Kaminari
-        .paginate_array(@wiki_dir.pages)
-        .page(params[:page])
-      @wiki_entries = @wiki_pages
-      render 'show_dir'
-    else
-      render 'empty'
-    end
+  def show
+    return render('empty') if @wiki_dir.empty?
+
+    @wiki_entries = @wiki_pages = Kaminari
+      .paginate_array(@wiki_dir.pages)
+      .page(params[:page])
+
+    render 'show'
   end
 
   private
 
   def load_dir
-    @wiki_dir ||= project_wiki.find_dir(*dir_params)
+    strong_memoize(:wiki_dir) do
+      project_wiki.find_dir(*dir_params) || WikiDirectory.new(params[:id])
+    end
   end
 
   def dir_params

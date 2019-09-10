@@ -1,5 +1,0 @@
-- add_to_breadcrumbs "Wiki", project_wiki_path(@project, :home)
-- breadcrumb_title s_("Wiki|Pages")
-- page_title s_("Wiki|Contents"), _("Wiki")
-
-= render 'page_listing', { allow_change_nesting: ::Feature.enabled?(:wikis_allow_change_nesting), wiki_page_title: page_title, page_path: ->(opts) { project_wikis_pages_path(@project, opts) } }

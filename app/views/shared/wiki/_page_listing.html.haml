@@ -22,11 +22,11 @@
         .dropdown.inline.wiki-nesting-dropdown
           .btn-group{ role: 'group' }
             %button.dropdown-toggle{ type: 'button', data: { toggle: 'dropdown', display: 'static' }, class: 'btn btn-default' }
-              = wiki_show_children_title(@nesting)
+              = wiki_show_children_icon(@nesting)
               = sprite_icon('chevron-down', size: 16)
             %ul.dropdown-menu.dropdown-menu-right.dropdown-menu-selectable.dropdown-menu-sort
               - ProjectWiki::NESTINGS.each do |choice|
-                %li= link_to wiki_show_children_title(choice), page_path.call(current_sorting.merge(show_children: choice)), class: @nesting == choice ? 'is-active' : ''
+                %li= link_to wiki_show_children_icon(choice), page_path.call(current_sorting.merge(show_children: choice)), class: @nesting == choice ? 'is-active' : ''
 
       .dropdown.inline.wiki-sort-dropdown
         .btn-group{ role: 'group' }

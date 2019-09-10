@@ -63,9 +63,13 @@ class WikiDirectory
     @pages.size
   end
 
-  # Relative path to the partial to be used when rendering collections
-  # of this object.
-  def to_partial_path
-    'projects/wikis/wiki_directory'
+  def empty?
+    page_count.zero?
+  end
+
+  def to_partial_path(context = nil)
+    name = [context, 'wiki_directory'].compact.join('_')
+
+    "projects/wiki_directories/#{name}"
   end
 end

@@ -6,9 +6,8 @@ class Projects::WikiPagesController < Projects::ApplicationController
   include PreviewMarkdown
   include Gitlab::Utils::StrongMemoize
 
-  # Share the templates from the wikis controller.
   def self.local_prefixes
-    [controller_path, 'projects/wikis']
+    [controller_path, 'shared/wiki']
   end
 
   before_action :authorize_create_wiki!, only: [:edit, :create, :update]
@@ -40,11 +39,10 @@ class Projects::WikiPagesController < Projects::ApplicationController
     elsif should_create_missing_page?
       create_missing_page
     else
-      render 'empty'
+      render 'missing_page'
     end
   end
 
-  # Empty action
   def edit
   end
 
@@ -122,7 +120,7 @@ class Projects::WikiPagesController < Projects::ApplicationController
 
   def should_create_missing_page?
     view_param = @project_wiki.exists? ? 'create' : params[:view]
-    can?(current_user, :create_wiki, @project) && view_param == 'create'
+    view_param == 'create' && can?(current_user, :create_wiki, @project)
   end
 
   def create_missing_page

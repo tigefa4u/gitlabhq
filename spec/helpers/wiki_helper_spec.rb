@@ -22,7 +22,8 @@ describe WikiHelper do
   describe '#wiki_sort_controls' do
     let(:project) { create(:project) }
     let(:classes) { described_class::WIKI_SORT_CSS_CLASSES }
-    let(:wiki_link) do
+
+    subject(:wiki_link) do
       helper.wiki_sort_controls(sort: sort, direction: direction) do |opts|
         project_wikis_pages_path(project, opts)
       end
@@ -64,10 +65,10 @@ describe WikiHelper do
     end
   end
 
-  describe '#wiki_show_children_title' do
+  describe '#wiki_show_children_icon' do
     ProjectWiki::NESTINGS.each do |nesting|
       context "When the nesting parameter is `#{nesting}`" do
-        let(:element) { helper.wiki_show_children_title(nesting) }
+        let(:element) { helper.wiki_show_children_icon(nesting) }
 
         it 'produces something that contains an SVG' do
           expect(element).to match(/svg/)

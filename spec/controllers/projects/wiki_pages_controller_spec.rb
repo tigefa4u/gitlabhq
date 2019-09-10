@@ -143,7 +143,7 @@ describe Projects::WikiPagesController do
         before do
           forbid_controller_ability! :create_wiki
         end
-        it { is_expected.to render_template('empty') }
+        it { is_expected.to render_template('missing_page') }
       end
     end
 
