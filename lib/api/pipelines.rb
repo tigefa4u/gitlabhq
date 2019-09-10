@@ -95,6 +95,19 @@ module API
         present pipeline.variables, with: Entities::Variable
       end
 
+      desc 'Gets the test reports from all jobs of a given pipeline' do
+        # TODO: detail 'This feature was introduced in GitLab 42'
+        success Entities::TestSuite
+      end
+      params do
+        requires :pipeline_id, type: Integer, desc: 'The pipeline ID'
+      end
+      get ':id/pipelines/:pipeline_id/test_reports' do
+        authorize! :read_pipeline_variable, pipeline
+
+        present pipeline.test_reports.test_suites.values, with: Entities::TestSuite
+      end
+
       desc 'Deletes a pipeline' do
         detail 'This feature was introduced in GitLab 11.6'
         http_codes [[204, 'Pipeline was deleted'], [403, 'Forbidden']]
