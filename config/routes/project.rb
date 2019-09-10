@@ -1,5 +1,11 @@
 resources :projects, only: [:index, :new, :create]
 
+Gitlab.ee do
+  scope "/-/geo-node-referrer/:geo_node_referrer_id" do
+    draw :git_http
+  end
+end
+
 draw :git_http
 
 get '/projects/:id' => 'projects#resolve'
