@@ -5,20 +5,15 @@ import { mockBoardService } from '../mock_data';
 
 describe('Board component', () => {
   let vm;
-  let el;
 
-  beforeEach(done => {
-    loadFixtures('boards/show.html');
-
-    el = document.createElement('div');
+  const createComponent = ({ gon = {}, collapsed = false, listType = 'backlog' } = {}) => {
+    if (Object.prototype.hasOwnProperty.call(gon, 'current_user_id')) {
+      window.gon = gon;
+    } else {
+      window.gon = {};
+    }
+    const el = document.createElement('div');
     document.body.appendChild(el);
-
-    gl.boardService = mockBoardService({
-      boardsEndpoint: '/',
-      listsEndpoint: '/',
-      bulkUpdatePath: '/',
-      boardId: 1,
-    });
 
     vm = new Board({
       propsData: {
@@ -30,92 +25,255 @@ describe('Board component', () => {
           id: 1,
           position: 0,
           title: 'test',
-          list_type: 'backlog',
+          list_type: listType,
+          collapsed,
         }),
       },
     }).$mount(el);
+  }
 
-    Vue.nextTick(done);
-  });
-
-  afterEach(() => {
+  const cleanUpTests = () => {
     vm.$destroy();
 
     // remove the component from the DOM
     document.querySelector('.board').remove();
 
-    localStorage.removeItem(`boards.${vm.boardId}.${vm.list.type}.expanded`);
-  });
+    localStorage.removeItem(`${vm.uniqueKey}.expanded`);
+  };
 
-  it('board is expandable when list type is backlog', () => {
-    expect(vm.$el.classList.contains('is-expandable')).toBe(true);
-  });
+  describe('List', () => {
+    beforeEach(() => {
+      gl.boardService = mockBoardService({
+        boardsEndpoint: '/',
+        listsEndpoint: '/',
+        bulkUpdatePath: '/',
+        boardId: 1,
+      });
+    });
 
-  it('board is expandable when list type is closed', () => {
-    expect(new List({ id: 1, list_type: 'closed' }).isExpandable).toBe(true);
-  });
+    it('board is expandable when list type is closed', () => {
+      expect(new List({ id: 1, list_type: 'closed' }).isExpandable).toBe(true);
+    });
 
-  it('board is expandable when list type is label', () => {
-    expect(new List({ id: 1, list_type: 'closed' }).isExpandable).toBe(true);
-  });
+    it('board is expandable when list type is label', () => {
+      expect(new List({ id: 1, list_type: 'closed' }).isExpandable).toBe(true);
+    });
 
-  it('board is not expandable when list type is blank', () => {
-    expect(new List({ id: 1, list_type: 'blank' }).isExpandable).toBe(false);
-  });
-
-  it('does not collapse when clicking header', done => {
-    vm.list.isExpanded = true;
-    vm.$el.querySelector('.board-header').click();
-
-    Vue.nextTick(() => {
-      expect(vm.$el.classList.contains('is-collapsed')).toBe(false);
-
-      done();
+    it('board is not expandable when list type is blank', () => {
+      expect(new List({ id: 1, list_type: 'blank' }).isExpandable).toBe(false);
     });
   });
 
-  it('collapses when clicking the collapse icon', done => {
-    Vue.nextTick()
-      .then(() => {
-        vm.$el.querySelector('.board-title-caret').click();
-      })
-      .then(() => {
-        expect(vm.$el.classList.contains('is-collapsed')).toBe(true);
-        done();
-      })
-      .catch(done.fail);
-  });
+  describe('when clicking the header', () => {
+    beforeEach(done => {
+      loadFixtures('boards/show.html');
 
-  it('expands when clicking the expand icon', done => {
-    vm.list.isExpanded = false;
+      gl.boardService = mockBoardService({
+        boardsEndpoint: '/',
+        listsEndpoint: '/',
+        bulkUpdatePath: '/',
+        boardId: 1,
+      });
 
-    Vue.nextTick()
-      .then(() => {
-        vm.$el.querySelector('.board-title-caret').click();
-      })
-      .then(() => {
-        expect(vm.$el.classList.contains('is-collapsed')).toBe(false);
-        done();
-      })
-      .catch(done.fail);
-  });
-
-  fdescribe('when logged in', () => {    
-    beforeEach(() => {
-      global.window.gon.current_user_id = 1;
+      createComponent();
+      
+      Vue.nextTick(done);
     });
 
     afterEach(() => {
-      global.window,gon = {};
+      cleanUpTests();
+    });
+
+    it('does not collapse', done => {
+      vm.list.isExpanded = true;
+      vm.$el.querySelector('.board-header').click();
+
+      Vue.nextTick(() => {
+        expect(vm.$el.classList.contains('is-collapsed')).toBe(false);
+
+        done();
+      });
+    });
+  });
+
+  describe('when clicking the collapse icon', () => {
+    beforeEach(done => {
+      loadFixtures('boards/show.html');
+
+      gl.boardService = mockBoardService({
+        boardsEndpoint: '/',
+        listsEndpoint: '/',
+        bulkUpdatePath: '/',
+        boardId: 1,
+      });
+
+      createComponent();
+
+      Vue.nextTick(done);
+    });
+
+    afterEach(() => {
+      cleanUpTests();
+    });
+
+    it('collapses', done => {
+      Vue.nextTick()
+        .then(() => {
+          vm.$el.querySelector('.board-title-caret').click();
+        })
+        .then(() => {
+          expect(vm.$el.classList.contains('is-collapsed')).toBe(true);
+          done();
+        })
+        .catch(done.fail);
+    });
+  });
+
+  describe('when clicking the expand icon', () => {
+    beforeEach(done => {
+      loadFixtures('boards/show.html');
+
+      gl.boardService = mockBoardService({
+        boardsEndpoint: '/',
+        listsEndpoint: '/',
+        bulkUpdatePath: '/',
+        boardId: 1,
+      });
+
+      createComponent();
+
+      Vue.nextTick(done);
+    });
+
+    afterEach(() => {
+      cleanUpTests();
+    });
+
+    it('expands', done => {
+      vm.list.isExpanded = false;
+  
+      Vue.nextTick()
+        .then(() => {
+          vm.$el.querySelector('.board-title-caret').click();
+        })
+        .then(() => {
+          expect(vm.$el.classList.contains('is-collapsed')).toBe(false);
+          done();
+        })
+        .catch(done.fail);
+    });
+  });
+
+  describe('when collapsed is false', () => {
+    beforeEach(done => {
+      loadFixtures('boards/show.html');
+
+      gl.boardService = mockBoardService({
+        boardsEndpoint: '/',
+        listsEndpoint: '/',
+        bulkUpdatePath: '/',
+        boardId: 1,
+      });
+
+      createComponent();
+
+      Vue.nextTick(done);
+    });
+
+    afterEach(() => {
+      cleanUpTests();
+    });
+
+    it('is expanded when collapsed is false', () => {
+      expect(vm.list.isExpanded).toBe(true);
+      expect(vm.$el.classList.contains('is-collapsed')).toBe(false);
+    });
+  })
+
+  describe('when list type is blank', () => {
+    beforeEach(done => {
+      loadFixtures('boards/show.html');
+
+      gl.boardService = mockBoardService({
+        boardsEndpoint: '/',
+        listsEndpoint: '/',
+        bulkUpdatePath: '/',
+        boardId: 1,
+      });
+
+      createComponent({ listType: 'blank' });
+
+      Vue.nextTick(done);
+    });
+
+    afterEach(() => {
+      cleanUpTests();
+    });
+
+    it('does not render add issue button when list type is blank', done => {
+      Vue.nextTick(() => {
+        expect(vm.$el.querySelector('.issue-count-badge-add-button')).toBeNull();
+
+        done();
+      });
+    });
+  })
+
+  describe('when list type is backlog', () => {
+    beforeEach(done => {
+      loadFixtures('boards/show.html');
+
+      gl.boardService = mockBoardService({
+        boardsEndpoint: '/',
+        listsEndpoint: '/',
+        bulkUpdatePath: '/',
+        boardId: 1,
+      });
+
+      createComponent();
+
+      Vue.nextTick(done);
+    });
+
+    afterEach(() => {
+      cleanUpTests();
+    });
+
+    it('board is expandable', () => {
+      expect(vm.$el.classList.contains('is-expandable')).toBe(true);
+    });
+  });
+
+  describe('when logged in', () => {
+    beforeEach((done) => {
+      spyOn(List.prototype, 'update');
+      loadFixtures('boards/show.html');
+
+      gl.boardService = mockBoardService({
+        boardsEndpoint: '/',
+        listsEndpoint: '/',
+        bulkUpdatePath: '/',
+        boardId: 1,
+      });
+
+      createComponent({ gon: { current_user_id: 1 } });
+
+      Vue.nextTick(done);
+    });
+
+    afterEach(() => {
+      // remove the component from the DOM
+      document.querySelector('.board').remove();
+
+      localStorage.removeItem(`${vm.uniqueKey}.expanded`);
+
+      vm.$destroy();
     });
 
     it('calls list update', (done) => {
-      spyOn(List.prototype, 'update');
       Vue.nextTick()
         .then(() => {
-          console.log('before click')
           vm.$el.querySelector('.board-title-caret').click();
-          console.log('after click')
         })
         .then(() => {
           expect(vm.list.update).toHaveBeenCalledTimes(1);
@@ -125,12 +283,36 @@ describe('Board component', () => {
     })
   })
 
-  fdescribe('when logged out', () => {
-    // can only be one or the other cant toggle window.gon.current_user_id states.
-    it('does not call list update', (done) => {
+  describe('when logged out', () => {
+    beforeEach((done) => {
       spyOn(List.prototype, 'update');
+      loadFixtures('boards/show.html');
+
+      gl.boardService = mockBoardService({
+        boardsEndpoint: '/',
+        listsEndpoint: '/',
+        bulkUpdatePath: '/',
+        boardId: 1,
+      });
+
+      createComponent({ collapsed: false });
+
+      Vue.nextTick(done);
+    });
+
+    afterEach(() => {
+      // remove the component from the DOM
+      document.querySelector('.board').remove();
+
+      localStorage.removeItem(`${vm.uniqueKey}.expanded`);
+
+      vm.$destroy();
+    });
+
+    // can only be one or the other cant toggle window.gon.current_user_id states.
+    it('clicking on the caret does not call list update', (done) => {
       Vue.nextTick()
-      .then(() => {
+        .then(() => {
           vm.$el.querySelector('.board-title-caret').click();
         })
         .then(() => {
@@ -138,26 +320,25 @@ describe('Board component', () => {
           done();
         })
         .catch(done.fail);
-    })
-  })
+    });
 
-  // based on whats coming from the server.
-  it('is expanded when created', () => {
-    expect(vm.list.isExpanded).toBe(true);
-    expect(vm.$el.classList.contains('is-collapsed')).toBe(false);
-  });
+    it('sets expanded to be the opposite of its value when toggleExpanded is called', (done) => {
+      const expanded = true;
+      vm.list.isExpanded = expanded;
+      vm.toggleExpanded();
 
-  it('does render add issue button', () => {
-    expect(vm.$el.querySelector('.issue-count-badge-add-button')).not.toBeNull();
-  });
+      Vue.nextTick()
+        .then(() => {
+          expect(vm.list.isExpanded).toBe(!expanded);
+          expect(localStorage.getItem(`${vm.uniqueKey}.expanded`)).toBe(String(!expanded));
 
-  it('does not render add issue button when list type is blank', done => {
-    vm.list.type = 'blank';
+          done();
+        })
+        .catch(done.fail);
+    });
 
-    Vue.nextTick(() => {
-      expect(vm.$el.querySelector('.issue-count-badge-add-button')).toBeNull();
-
-      done();
+    it('does render add issue button', () => {
+      expect(vm.$el.querySelector('.issue-count-badge-add-button')).not.toBeNull();
     });
   });
 });
