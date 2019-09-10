@@ -10729,6 +10729,9 @@ msgstr ""
 msgid "SortOptions|Due soon"
 msgstr ""
 
+msgid "SortOptions|Expired date"
+msgstr ""
+
 msgid "SortOptions|Label priority"
 msgstr ""
 
@@ -10736,9 +10739,6 @@ msgid "SortOptions|Largest group"
 msgstr ""
 
 msgid "SortOptions|Largest repository"
-msgstr ""
-
-msgid "SortOptions|Largest size"
 msgstr ""
 
 msgid "SortOptions|Last Contact"
@@ -10786,9 +10786,6 @@ msgstr ""
 msgid "SortOptions|Oldest created"
 msgstr ""
 
-msgid "SortOptions|Oldest expired"
-msgstr ""
-
 msgid "SortOptions|Oldest joined"
 msgstr ""
 
@@ -10817,6 +10814,9 @@ msgid "SortOptions|Recent sign in"
 msgstr ""
 
 msgid "SortOptions|Recently starred"
+msgstr ""
+
+msgid "SortOptions|Size"
 msgstr ""
 
 msgid "SortOptions|Sort direction"

@@ -407,11 +407,11 @@ module SortingHelper
   end
 
   def sort_title_size
-    s_('SortOptions|Largest size')
+    s_('SortOptions|Size')
   end
 
   def sort_title_expire_date
-    s_('SortOptions|Oldest expired')
+    s_('SortOptions|Expired date')
   end
 
   # Values.
