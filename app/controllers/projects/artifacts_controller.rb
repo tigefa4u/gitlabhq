@@ -13,10 +13,12 @@ class Projects::ArtifactsController < Projects::ApplicationController
   before_action :validate_artifacts!, except: [:index, :download, :destroy]
   before_action :entry, only: [:file]
 
+  MAX_PER_PAGE = 20
+
   def index
     finder = ArtifactsFinder.new(@project, artifacts_params)
-    @artifacts = finder.execute.page(params[:page])
-    @total_size = finder.total_size
+    @artifacts = finder.execute.page(params[:page]).per(MAX_PER_PAGE)
+    @total_size = @artifacts.total_size
   end
 
   def destroy
@@ -26,7 +28,7 @@ class Projects::ArtifactsController < Projects::ApplicationController
                _('Artifact could not be deleted.')
              end
 
-    redirect_to project_artifacts_path(@project), status: :found, notice: notice
+    redirect_to project_artifacts_path(@project), status: :see_other, notice: notice
   end
 
   def download

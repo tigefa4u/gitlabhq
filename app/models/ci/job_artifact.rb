@@ -144,12 +144,16 @@ module Ci
       self.update_column(:file_store, file.object_store)
     end
 
+    def self.total_size
+      self.sum(:size)
+    end
+
     def self.artifacts_size_for(project)
       self.where(project: project).sum(:size)
     end
 
     def self.search_by_job_name(job_name)
-      includes(:job).where(ci_builds: { name: job_name })
+      joins(:job).where(ci_builds: { name: job_name })
     end
 
     def local_store?

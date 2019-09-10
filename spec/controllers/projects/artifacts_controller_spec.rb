@@ -6,7 +6,7 @@ describe Projects::ArtifactsController do
   let(:user) { project.owner }
   set(:project) { create(:project, :repository, :public) }
 
-  let(:pipeline) do
+  set(:pipeline) do
     create(:ci_pipeline,
             project: project,
             sha: project.commit.sha,
@@ -26,18 +26,18 @@ describe Projects::ArtifactsController do
     it 'sets the artifacts variable' do
       subject
 
-      expect(assigns(:artifacts)).to eq(project.job_artifacts)
+      expect(assigns(:artifacts)).to contain_exactly(*project.job_artifacts)
     end
 
     describe 'pagination' do
       before do
-        allow(Kaminari.config).to receive(:default_per_page).and_return(1)
+        stub_const("#{described_class}::MAX_PER_PAGE", 1)
       end
 
       it 'paginates artifacts' do
         subject
 
-        expect(assigns(:artifacts)).to contain_exactly(project.job_artifacts.first)
+        expect(assigns(:artifacts)).to contain_exactly(project.job_artifacts.last)
       end
     end
   end

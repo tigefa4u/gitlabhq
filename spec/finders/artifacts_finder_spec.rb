@@ -30,10 +30,11 @@ describe ArtifactsFinder do
 
     context 'with job_name param' do
       let(:params) { { search: 'unique_name' } }
-      let!(:build) { create(:ci_build, :artifacts, project: project, name: 'unique_name') }
 
       it 'filters the artifacts by job name' do
-        expect(subject).to eq(build.job_artifacts)
+        build = create(:ci_build, :artifacts, project: project, name: 'unique_name')
+
+        expect(subject).to contain_exactly(*build.job_artifacts)
       end
     end
   end

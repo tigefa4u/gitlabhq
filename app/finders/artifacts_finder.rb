@@ -19,14 +19,10 @@ class ArtifactsFinder
     artifacts.search_by_job_name(@params[:search])
   end
 
-  def total_size
-    Ci::JobArtifact.artifacts_size_for(@project)
-  end
-
   private
 
   def sort_key
-    @params[:sort] || 'created_asc'
+    @params[:sort] || 'created_desc'
   end
 
   def sort(artifacts)
