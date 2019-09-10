@@ -262,12 +262,7 @@ describe('Board component', () => {
     });
 
     afterEach(() => {
-      // remove the component from the DOM
-      document.querySelector('.board').remove();
-
-      localStorage.removeItem(`${vm.uniqueKey}.expanded`);
-
-      vm.$destroy();
+      cleanUpTests();
     });
 
     it('calls list update', done => {
@@ -301,12 +296,7 @@ describe('Board component', () => {
     });
 
     afterEach(() => {
-      // remove the component from the DOM
-      document.querySelector('.board').remove();
-
-      localStorage.removeItem(`${vm.uniqueKey}.expanded`);
-
-      vm.$destroy();
+      cleanUpTests();
     });
 
     // can only be one or the other cant toggle window.gon.current_user_id states.
