@@ -51,11 +51,11 @@ describe Clusters::Applications::DestroyService, '#execute' do
         create(:clusters_applications_prometheus, :updating, cluster: cluster)
       end
 
-      it 'raises StateMachines::InvalidTransition' do
+      it 'raises described_class::ApplicationCantBeUninstalled' do
         expect(worker_class).not_to receive(:perform_async)
 
         expect { subject }
-          .to raise_exception { StateMachines::InvalidTransition }
+          .to raise_exception { described_class::ApplicationCantBeUninstalled }
           .and not_change { Clusters::Applications::Prometheus.with_status(:scheduled).count }
       end
     end

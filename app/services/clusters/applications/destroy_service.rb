@@ -3,9 +3,11 @@
 module Clusters
   module Applications
     class DestroyService < ::Clusters::Applications::BaseService
+      ApplicationCantBeUninstalled = StandardError.new("This application can't be uninstalled")
+
       def execute(_request)
         instantiate_application.tap do |application|
-          break unless application.can_uninstall?
+          raise ApplicationCantBeUninstalled unless application.can_uninstall?
 
           application.make_scheduled!
 
