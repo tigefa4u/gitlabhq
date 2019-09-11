@@ -18,8 +18,8 @@ describe Clusters::Applications::Ingress do
     allow(ClusterWaitForIngressIpAddressWorker).to receive(:perform_async)
   end
 
-  describe '#can_uninstall?' do
-    subject { ingress.can_uninstall? }
+  describe '#allowed_to_uninstall?' do
+    subject { ingress.allowed_to_uninstall? }
 
     it 'returns true if application_jupyter_nil_or_installable? AND external_ip_or_hostname? are true' do
       ingress.external_ip = 'IP'

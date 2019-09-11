@@ -9,6 +9,7 @@ describe Clusters::Applications::Prometheus do
   include_examples 'cluster application status specs', :clusters_applications_prometheus
   include_examples 'cluster application version specs', :clusters_applications_prometheus
   include_examples 'cluster application helm specs', :clusters_applications_prometheus
+  include_examples 'cluster application allowed to uninstall true', :clusters_applications_prometheus
   include_examples 'cluster application initial status specs'
 
   describe 'after_destroy' do
@@ -42,14 +43,6 @@ describe Clusters::Applications::Prometheus do
 
       subject.make_installed
     end
-  end
-
-  describe '#can_uninstall?' do
-    let(:prometheus) { create(:clusters_applications_prometheus) }
-
-    subject { prometheus.can_uninstall? }
-
-    it { is_expected.to be_truthy }
   end
 
   describe '#prometheus_client' do

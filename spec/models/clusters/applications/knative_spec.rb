@@ -9,6 +9,7 @@ describe Clusters::Applications::Knative do
   include_examples 'cluster application status specs', :clusters_applications_knative
   include_examples 'cluster application helm specs', :clusters_applications_knative
   include_examples 'cluster application version specs', :clusters_applications_knative
+  include_examples 'cluster application allowed to uninstall true', :clusters_applications_knative
   include_examples 'cluster application initial status specs'
 
   before do
@@ -34,12 +35,6 @@ describe Clusters::Applications::Knative do
       expect(ClusterWaitForIngressIpAddressWorker).to have_received(:perform_in)
         .with(Clusters::Applications::Knative::FETCH_IP_ADDRESS_DELAY, 'knative', application.id)
     end
-  end
-
-  describe '#can_uninstall?' do
-    subject { knative.can_uninstall? }
-
-    it { is_expected.to be_truthy }
   end
 
   describe '#schedule_status_update with external_ip' do

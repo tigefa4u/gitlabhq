@@ -7,7 +7,9 @@ shared_examples 'cluster application core specs' do |application_name|
   describe '#can_uninstall?' do
     using RSpec::Parameterized::TableSyntax
 
-    before { allow(application).to receive(:allowed_to_uninstall?).and_return(allowed_to_uninstall_result) }
+    before do
+      allow(application).to receive(:allowed_to_uninstall?).and_return(allowed_to_uninstall_result)
+    end
 
     let(:application) { create(application_name, status) }
     let(:status) { status_name }

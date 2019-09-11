@@ -9,17 +9,10 @@ describe Clusters::Applications::Runner do
   include_examples 'cluster application status specs', :clusters_applications_runner
   include_examples 'cluster application version specs', :clusters_applications_runner
   include_examples 'cluster application helm specs', :clusters_applications_runner
+  include_examples 'cluster application allowed to uninstall true', :clusters_applications_runner
   include_examples 'cluster application initial status specs'
 
   it { is_expected.to belong_to(:runner) }
-
-  describe '#can_uninstall?' do
-    let(:gitlab_runner) { create(:clusters_applications_runner, runner: ci_runner) }
-
-    subject { gitlab_runner.can_uninstall? }
-
-    it { is_expected.to be_truthy }
-  end
 
   describe '#install_command' do
     let(:kubeclient) { double('kubernetes client') }

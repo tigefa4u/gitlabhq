@@ -7,17 +7,9 @@ describe Clusters::Applications::Jupyter do
   include_examples 'cluster application status specs', :clusters_applications_jupyter
   include_examples 'cluster application version specs', :clusters_applications_jupyter
   include_examples 'cluster application helm specs', :clusters_applications_jupyter
+  include_examples 'cluster application allowed to uninstall true', :clusters_applications_jupyter
 
   it { is_expected.to belong_to(:oauth_application) }
-
-  describe '#can_uninstall?' do
-    let(:ingress) { create(:clusters_applications_ingress, :installed, external_hostname: 'localhost.localdomain') }
-    let(:jupyter) { create(:clusters_applications_jupyter, cluster: ingress.cluster) }
-
-    subject { jupyter.can_uninstall? }
-
-    it { is_expected.to be_truthy }
-  end
 
   describe '#set_initial_status' do
     before do
