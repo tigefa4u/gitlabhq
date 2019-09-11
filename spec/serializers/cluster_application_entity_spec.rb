@@ -22,7 +22,7 @@ describe ClusterApplicationEntity do
     end
 
     it 'has can_uninstall' do
-      expect(subject[:can_uninstall]).to be_truthy
+      expect(subject[:can_uninstall]).to be false
     end
 
     context 'non-helm application' do
