@@ -18,7 +18,7 @@ module QA
       def fabricate!
         Page::Main::Menu.perform(&:go_to_groups)
 
-        Page::Dashboard::Groups.perform do |page|
+        Page::Dashboard::Groups.perform do |page| # rubocop:disable QA/AmbiguousPageObjectName
           if page.has_group?(path)
             page.click_group(path)
           else
