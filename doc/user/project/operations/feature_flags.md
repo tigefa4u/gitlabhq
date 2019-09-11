@@ -247,3 +247,19 @@ else
   puts "hello, world!"
 end
 ```
+
+## Enable a feature flag in development
+
+In the terminal, go to `gitlab` folder and run:
+
+```bash
+rails console
+```
+
+Then add:
+
+```ruby
+Feature.enable(:feature_name)
+```
+
+Replace `feature_name` with the feature that you want to enable.
