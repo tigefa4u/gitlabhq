@@ -103,6 +103,32 @@ describe Gitlab::Ci::Config::Entry::Rules::Rule do
       end
     end
 
+    context 'when using a local: clause' do
+      let(:config) { { local: %w[app/ lib/ spec/ other/* paths/**/*.rb] } }
+
+      it { is_expected.to be_valid }
+    end
+
+    context 'when using a string as an invalid local: clause' do
+      let(:config) { { local: 'a regular string' } }
+
+      it { is_expected.not_to be_valid }
+
+      it 'reports an error about invalid policy' do
+        expect(subject.errors).to include(/should be an array of strings/)
+      end
+    end
+
+    context 'when using a list as an invalid local: clause' do
+      let(:config) { { local: [1, 2] } }
+
+      it { is_expected.not_to be_valid }
+
+      it 'returns errors' do
+        expect(subject.errors).to include(/local should be an array of strings/)
+      end
+    end
+
     context 'specifying a delayed job' do
       let(:config) { { if: '$THIS || $THAT', when: 'delayed', start_in: '15 minutes' } }
 
@@ -197,6 +223,12 @@ describe Gitlab::Ci::Config::Entry::Rules::Rule do
       it 'does not add to provided configuration' do
         expect(entry.value).to eq(config)
       end
+    end
+
+    context 'when using a local: clause' do
+      let(:config) { { local: %w[app/ lib/ spec/ other/* paths/**/*.rb] } }
+
+      it { is_expected.to eq(config) }
     end
   end
 
