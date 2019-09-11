@@ -14,9 +14,7 @@ export default () => {
     render(createElement) {
       return createElement('app', {
         props: {
-          projectId: element.dataset.projectId,
-          documentationLink: element.dataset.documentationPath,
-          illustrationPath: element.dataset.illustrationPath,
+          ...element.dataset,
         },
       });
     },

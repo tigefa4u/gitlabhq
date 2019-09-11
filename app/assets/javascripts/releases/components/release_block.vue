@@ -6,6 +6,7 @@ import Icon from '~/vue_shared/components/icon.vue';
 import UserAvatarLink from '~/vue_shared/components/user_avatar/user_avatar_link.vue';
 import timeagoMixin from '~/vue_shared/mixins/timeago';
 import { __, sprintf } from '../../locale';
+import IssueMergeRequestLinks from './issue_merge_request_links.vue';
 
 export default {
   name: 'ReleaseBlock',
@@ -14,6 +15,7 @@ export default {
     GlBadge,
     Icon,
     UserAvatarLink,
+    IssueMergeRequestLinks,
   },
   directives: {
     GlTooltip: GlTooltipDirective,
@@ -24,6 +26,14 @@ export default {
       type: Object,
       required: true,
       default: () => ({}),
+    },
+    issuesUrl: {
+      type: String,
+      required: true,
+    },
+    mergeRequestsUrl: {
+      type: String,
+      required: true,
     },
   },
   computed: {
@@ -45,6 +55,9 @@ export default {
     },
     author() {
       return this.release.author || {};
+    },
+    shouldRenderIssueMergeRequestLinks() {
+      return Boolean(this.release.milestone);
     },
     hasAuthor() {
       return !_.isEmpty(this.author);
@@ -135,6 +148,14 @@ export default {
       <div class="card-text prepend-top-default">
         <div v-html="release.description_html"></div>
       </div>
+    </div>
+
+    <div v-if="shouldRenderIssueMergeRequestLinks" class="card-footer">
+      <issue-merge-request-links
+        :milestone="release.milestone"
+        :issues-url="issuesUrl"
+        :merge-requests-url="mergeRequestsUrl"
+      />
     </div>
   </div>
 </template>

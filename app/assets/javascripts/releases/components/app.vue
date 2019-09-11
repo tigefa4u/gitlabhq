@@ -15,11 +15,19 @@ export default {
       type: String,
       required: true,
     },
-    documentationLink: {
+    documentationPath: {
       type: String,
       required: true,
     },
     illustrationPath: {
+      type: String,
+      required: true,
+    },
+    issuesUrl: {
+      type: String,
+      required: true,
+    },
+    mergeRequestsUrl: {
       type: String,
       required: true,
     },
@@ -55,7 +63,7 @@ export default {
           'Releases mark specific points in a project\'s development history, communicate information about the type of change, and deliver on prepared, often compiled, versions of the software to be reused elsewhere. Currently, releases can only be created through the API.',
         )
       "
-      :primary-button-link="documentationLink"
+      :primary-button-link="documentationPath"
       :primary-button-text="__('Open Documentation')"
     />
 
@@ -65,6 +73,8 @@ export default {
         :key="release.tag_name"
         :release="release"
         :class="{ 'linked-card': releases.length > 1 && index !== releases.length - 1 }"
+        :issues-url="issuesUrl"
+        :merge-requests-url="mergeRequestsUrl"
       />
     </div>
   </div>

@@ -5439,7 +5439,6 @@ msgstr ""
 msgid "Go to file (MRs only)"
 msgstr ""
 
-
 msgid "Go to file permalink (while viewing a file)"
 msgstr ""
 
@@ -9533,6 +9532,9 @@ msgid "Releases"
 msgstr ""
 
 msgid "Releases mark specific points in a project's development history, communicate information about the type of change, and deliver on prepared, often compiled, versions of the software to be reused elsewhere. Currently, releases can only be created through the API."
+msgstr ""
+
+msgid "Releases|View %{issuesLinkStart}Issues%{linkEnd} or %{mrsLinkStart}Merge Requests%{linkEnd} in this release"
 msgstr ""
 
 msgid "Remind later"
