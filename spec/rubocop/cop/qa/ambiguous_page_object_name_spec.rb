@@ -38,10 +38,16 @@ describe RuboCop::Cop::QA::AmbiguousPageObjectName do
     end
   end
 
-  context 'outside of a migration spec file' do
+  context 'outside of a QA file' do
+    before do
+      allow(cop).to receive(:in_qa_file?).and_return(false)
+    end
+
     it "does not register an offense" do
       expect_no_offenses(<<-RUBY)
         Page::Object.perform do |page|
+          page.do_something
+        end
       RUBY
     end
   end
