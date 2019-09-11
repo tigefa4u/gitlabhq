@@ -19,11 +19,11 @@ module Clusters
         end
 
         def can_uninstall?
-          allowed_to_uninstall? && !scheduled_or_uninstalling?
+          allowed_to_uninstall? && uninstall_errored_or_installed?
         end
 
-        def scheduled_or_uninstalling?
-          scheduled? || uninstalling?
+        def uninstall_errored_or_installed?
+          uninstall_errored? || installed?
         end
 
         # All new applications should uninstall by default

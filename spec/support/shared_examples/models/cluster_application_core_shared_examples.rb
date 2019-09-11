@@ -5,30 +5,40 @@ shared_examples 'cluster application core specs' do |application_name|
   it { is_expected.to validate_presence_of(:cluster) }
 
   describe '#can_uninstall?' do
-    it 'calls allowed_to_uninstall?' do
-      expect(subject).to receive(:allowed_to_uninstall?).and_return(true)
+    using RSpec::Parameterized::TableSyntax
 
-      expect(subject.can_uninstall?).to be_truthy
-    end
+    before { allow(application).to receive(:allowed_to_uninstall?).and_return(allowed_to_uninstall_result) }
 
-    context 'when neither scheduled or installed' do
-      before do
-        expect(subject.scheduled?).to be_falsey
-        expect(subject.uninstalling?).to be_falsey
+    let(:application) { create(application_name, status) }
+    let(:status) { status_name }
+
+    context "when allowed_to_uninstall? is true" do
+      let(:allowed_to_uninstall_result) { true }
+
+      where(:expected_value, :status_name) do
+        true  | :uninstall_errored
+        true  | :installed
+        false | :scheduled
+        false | :uninstalling
       end
 
-      it { expect(subject.can_uninstall?).to be_truthy }
+      with_them do
+        it { expect(application.can_uninstall?).to eq expected_value }
+      end
     end
 
-    context 'when scheduled or uninstalling' do
-      it 'returns false if scheduled' do
-        application = create(application_name, :scheduled)
-        expect(application.can_uninstall?).to be_falsey
+    context "when allowed_to_uninstall is false" do
+      let(:allowed_to_uninstall_result) { false }
+
+      where(:expected_value, :status_name) do
+        false | :uninstall_errored
+        false | :installed
+        false | :scheduled
+        false | :uninstalling
       end
 
-      it 'returns false if uninstalling' do
-        application = create(application_name, :uninstalling)
-        expect(application.can_uninstall?).to be_falsey
+      with_them do
+        it { expect(application.can_uninstall?).to eq expected_value }
       end
     end
   end
