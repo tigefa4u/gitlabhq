@@ -25,6 +25,31 @@ axios.interceptors.response.use(
   },
 );
 
+if (window.gon && window.gon.features && window.gon.features.suppressAjaxNavigationErrors) {
+  let isUserNavigating = false;
+  window.addEventListener('beforeunload', () => {
+    isUserNavigating = true;
+  });
+
+  // Ignore AJAX errors caused by requests
+  // being cancelled due to browser navigation
+  axios.interceptors.response.use(
+    response => response,
+    err => {
+      if (isUserNavigating && err.code === 'ECONNABORTED') {
+        // If the user is navigating away from the current page,
+        // prevent .catch() handlers from being called by
+        // returning a Promise that never resolves
+        return new Promise(() => {});
+      }
+
+      // The error is not related to browser navigation,
+      // so propagate the error
+      return Promise.reject(err);
+    },
+  );
+}
+
 export default axios;
 
 /**
