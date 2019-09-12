@@ -11,7 +11,7 @@ shared_examples 'cluster application core specs' do |application_name|
       allow(application).to receive(:allowed_to_uninstall?).and_return(allowed_to_uninstall_result)
     end
 
-    let(:application) { create(application_name, status) }
+    let(:application) { build(application_name, status) }
     let(:status) { status_name }
 
     context "when allowed_to_uninstall? is true" do
