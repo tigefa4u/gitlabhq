@@ -29,6 +29,12 @@ describe Projects::ArtifactsController do
       expect(assigns(:artifacts)).to contain_exactly(*project.job_artifacts)
     end
 
+    it 'sets the total size variable' do
+      subject
+
+      expect(assigns(:total_size)).to eq(project.job_artifacts.total_size)
+    end
+
     describe 'pagination' do
       before do
         stub_const("#{described_class}::MAX_PER_PAGE", 1)

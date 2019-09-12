@@ -17,8 +17,10 @@ class Projects::ArtifactsController < Projects::ApplicationController
 
   def index
     finder = ArtifactsFinder.new(@project, artifacts_params)
-    @artifacts = finder.execute.page(params[:page]).per(MAX_PER_PAGE)
-    @total_size = @artifacts.total_size
+    all_artifacts = finder.execute
+
+    @artifacts = all_artifacts.page(params[:page]).per(MAX_PER_PAGE)
+    @total_size = all_artifacts.total_size
   end
 
   def destroy
