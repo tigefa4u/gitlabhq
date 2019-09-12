@@ -22,10 +22,6 @@ module Clusters
           allowed_to_uninstall? && uninstall_errored_or_installed?
         end
 
-        def uninstall_errored_or_installed?
-          uninstall_errored? || installed?
-        end
-
         # All new applications should uninstall by default
         # Override if there's dependencies that needs to be uninstalled first
         def allowed_to_uninstall?
@@ -59,6 +55,12 @@ module Clusters
         def post_uninstall
           # Override if your application needs any action after
           # being uninstalled by Helm
+        end
+
+        private
+
+        def uninstall_errored_or_installed?
+          uninstall_errored? || installed?
         end
       end
     end
