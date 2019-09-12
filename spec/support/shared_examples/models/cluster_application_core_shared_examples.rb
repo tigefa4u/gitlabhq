@@ -20,6 +20,8 @@ shared_examples 'cluster application core specs' do |application_name|
       where(:expected_value, :status_name) do
         true  | :uninstall_errored
         true  | :installed
+        true  | :updated
+        true  | :update_errored
         false | :scheduled
         false | :uninstalling
       end
@@ -35,6 +37,8 @@ shared_examples 'cluster application core specs' do |application_name|
       where(:expected_value, :status_name) do
         false | :uninstall_errored
         false | :installed
+        false | :updated
+        false | :update_errored
         false | :scheduled
         false | :uninstalling
       end

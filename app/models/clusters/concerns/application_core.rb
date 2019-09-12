@@ -19,7 +19,7 @@ module Clusters
         end
 
         def can_uninstall?
-          allowed_to_uninstall? && uninstall_errored_or_installed?
+          allowed_to_uninstall? && can_uninstall_state?
         end
 
         # All new applications should uninstall by default
@@ -59,8 +59,8 @@ module Clusters
 
         private
 
-        def uninstall_errored_or_installed?
-          uninstall_errored? || installed?
+        def can_uninstall_state?
+          uninstall_errored? || installed? || update_errored? || updated?
         end
       end
     end
