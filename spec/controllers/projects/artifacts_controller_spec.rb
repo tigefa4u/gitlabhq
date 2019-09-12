@@ -81,6 +81,14 @@ describe Projects::ArtifactsController do
         expect(flash[:notice]).to eq('Artifact could not be deleted.')
       end
     end
+
+    context 'when user is not authorized' do
+      let(:user) { create(:user) }
+
+      it 'does not delete the artifact' do
+        expect { subject }.not_to change { Ci::JobArtifact.count }
+      end
+    end
   end
 
   describe 'GET download' do
