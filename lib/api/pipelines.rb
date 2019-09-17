@@ -103,7 +103,7 @@ module API
         requires :pipeline_id, type: Integer, desc: 'The pipeline ID'
       end
       get ':id/pipelines/:pipeline_id/test_reports' do
-        authorize! :read_pipeline_variable, pipeline
+        authorize_read_builds!
 
         present pipeline.test_reports.test_suites.values, with: Entities::TestSuite
       end
