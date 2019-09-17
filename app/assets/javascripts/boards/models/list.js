@@ -5,6 +5,7 @@ import { __ } from '~/locale';
 import ListLabel from './label';
 import ListAssignee from './assignee';
 import { urlParamsToObject } from '~/lib/utils/common_utils';
+import flash from '~/flash';
 import boardsStore from '../stores/boards_store';
 import ListMilestone from './milestone';
 
@@ -193,7 +194,7 @@ class List {
 
         this.issues.splice(newIndex, 0, ...issues);
       } else {
-        Array.prototype.push.apply(this.issues, issues);
+        this.issues.push(...issues);
       }
 
       if (this.label) {
@@ -276,15 +277,15 @@ class List {
     });
   }
 
-  moveMultipleIssues(issues, oldIndex, newIndex, moveBeforeId, moveAfterId) {
-    this.issues.splice(oldIndex, issues.length);
+  moveMultipleIssues(issues, oldIndicies, newIndex, moveBeforeId, moveAfterId) {
+    oldIndicies.reverse().forEach(index => {
+      this.issues.splice(index, 1);
+    });
     this.issues.splice(newIndex, 0, ...issues);
 
     gl.boardService
       .moveMultipleIssues(issues.map(issue => issue.id), null, null, moveBeforeId, moveAfterId)
-      .catch(() => {
-        // TODO: handle request error
-      });
+      .catch(() => flash(__('Something went wrong on our end.')));
   }
 
   updateIssueLabel(issue, listFrom, moveBeforeId, moveAfterId) {
@@ -304,13 +305,25 @@ class List {
         moveBeforeId,
         moveAfterId,
       )
-      .catch(() => {
-        // TODO: handle error
-      });
+      .catch(() => flash(__('Something went wrong on our end.')));
   }
 
   findIssue(id) {
     return this.issues.find(issue => issue.id === id);
+  }
+
+  removeMultipleIssues(removeIssues) {
+    const ids = removeIssues.map(issue => issue.id);
+    debugger;
+    this.issues = this.issues.filter(issue => {
+      const matchesRemove = ids.findIndex(id => id === issue.id) > -1;
+      if (matchesRemove) {
+        this.issuesSize -= 1;
+        issue.removeLabel(this.label);
+      }
+      return !matchesRemove;
+    });
+    console.log(this.issues);
   }
 
   removeIssue(removeIssue) {

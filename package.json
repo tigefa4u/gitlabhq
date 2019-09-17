@@ -114,7 +114,7 @@
     "select2": "3.5.2-browserify",
     "sha1": "^1.1.1",
     "smooshpack": "^0.0.54",
-    "sortablejs": "1.10.0-rc3",
+    "sortablejs": "1.10.0",
     "sql.js": "^0.4.0",
     "stickyfilljs": "^2.0.5",
     "style-loader": "^0.23.1",

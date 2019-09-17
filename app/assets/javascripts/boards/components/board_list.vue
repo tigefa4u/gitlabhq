@@ -104,6 +104,7 @@ export default {
       multiSelectOpts.multiDrag = true;
       multiSelectOpts.selectedClass = 'js-multi-select';
       multiSelectOpts.animation = 500;
+      // multiSelectOpts.multiDragKey = 'shift'
     }
 
     const options = getBoardSortableDefaultOptions({
@@ -166,30 +167,27 @@ export default {
 
         const { list } = card;
 
-        let issue = list.findIssue(Number(e.item.dataset.issueId));
-
-        if (e.items && e.items.length) {
-          issue = [];
-          e.items.forEach(item => {
-            issue.push(list.findIssue(Number(item.dataset.issueId)));
-          });
-        }
+        const issue = list.findIssue(Number(e.item.dataset.issueId));
 
         boardsStore.startMoving(list, issue);
 
         sortableStart();
       },
       onAdd: e => {
-        if (e.items && e.items.length) {
-          // Not using e.newIndex here instead taking
-          // min of all the newIndicies
-          // Whenever the we select multiple items and drag
-          const newIndex = Math.min(...e.newIndicies.map(obj => obj.index));
-
+        const { items = [], newIndicies = [] } = e;
+        if (items.length) {
+          // Not using e.newIndex here instead taking a min of all
+          // the newIndicies. Basically we have to find that during
+          // a drop which is the index we're going to start putting
+          // all the dropped elements from.
+          console.log(newIndicies.map(obj => obj.index))
+          const newIndex = Math.min(...newIndicies.map(obj => obj.index).filter(i => i !== -1));
+          console.log(newIndex);
+          const issues = items.map(item =>  boardsStore.moving.list.findIssue(Number(item.dataset.issueId)));
           boardsStore.moveMultipleIssuesToList(
             boardsStore.moving.list,
             this.list,
-            boardsStore.moving.issue,
+            issues,
             newIndex,
           );
 
@@ -221,15 +219,20 @@ export default {
       onUpdate: e => {
         const sortedArray = this.sortable.toArray().filter(id => id !== '-1');
 
-        if (e.items && e.items.length) {
-          const newIndex = Math.min(...e.newIndicies.map(obj => obj.index));
+        const { items = [], newIndicies = [], oldIndicies = [] } = e;
+        if (items.length) {
+          const newIndex = Math.min(...newIndicies.map(obj => obj.index));
+          const issues = items.map(item => boardsStore.moving.list.findIssue(Number(item.dataset.issueId)));
           boardsStore.moveMultipleIssuesInList(
             this.list,
-            boardsStore.moving.issue,
-            e.oldIndex,
+            issues,
+            oldIndicies.map(obj => obj.index),
             newIndex,
             sortedArray,
           );
+          e.items.forEach(el => {
+            Sortable.utils.deselect(el);
+          });
           boardsStore.clearMultiSelect();
           return;
         }
@@ -244,6 +247,29 @@ export default {
       },
       onMove(e) {
         return !e.related.classList.contains('board-list-count');
+      },
+      onSelect(e) {
+        const {
+          item: { classList },
+        } = e;
+
+        if (
+          classList &&
+          classList.contains('js-multi-select') &&
+          !classList.contains('multi-select')
+        ) {
+          Sortable.utils.deselect(e.item);
+        }
+      },
+      onDeselect: (e) => {
+        const {
+          item: { dataset, classList },
+        } = e;
+
+        if (classList && classList.contains('multi-select') && !classList.contains('js-multi-select')) {
+          const issue = this.list.findIssue(Number(dataset.issueId));
+          boardsStore.toggleMultiSelect(issue);
+        }
       },
     });
 
@@ -289,6 +315,11 @@ export default {
         this.loadNextPage();
       }
     },
+    foo(issues) {
+      console.log(this.list.title);
+      console.log(issues.map(issue => issue.id));
+      return issues;
+    }
   },
 };
 </script>
@@ -316,9 +347,10 @@ export default {
       class="board-list w-100 h-100 list-unstyled mb-0 p-1 js-board-list"
     >
       <board-card
-        v-for="(issue, index) in issues"
+        v-for="(issue, index) in foo(issues)"
         ref="issue"
         :key="issue.id"
+        :foo="issue.id"
         :index="index"
         :list="list"
         :issue="issue"

@@ -195,7 +195,6 @@ export default () => {
       clearDetailIssue(multiSelect = false) {
         if (multiSelect) {
           boardsStore.clearMultiSelect();
-          return;
         }
         boardsStore.clearDetailIssue();
       },

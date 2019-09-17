@@ -387,32 +387,34 @@ describe('Store', () => {
   });
 
   describe('toggleMultiSelect', () => {
+    let basicIssueObj;
+
+    beforeAll(() => {
+      basicIssueObj = { id: 987654 };
+    });
+
     afterEach(() => {
       boardsStore.clearMultiSelect();
     });
 
     it('adds issue when not present', () => {
-      const issue = { id: 987654 };
-
-      boardsStore.toggleMultiSelect(issue);
+      boardsStore.toggleMultiSelect(basicIssueObj);
 
       const selectedIds = boardsStore.multiSelect.list.map(x => x.id);
 
-      expect(selectedIds.includes(issue.id)).toEqual(true);
+      expect(selectedIds.includes(basicIssueObj.id)).toEqual(true);
     });
 
     it('removes issue when issue is present', () => {
-      const issue = { id: 987654 };
-
-      boardsStore.toggleMultiSelect(issue);
+      boardsStore.toggleMultiSelect(basicIssueObj);
       let selectedIds = boardsStore.multiSelect.list.map(x => x.id);
 
-      expect(selectedIds.includes(issue.id)).toEqual(true);
+      expect(selectedIds.includes(basicIssueObj.id)).toEqual(true);
 
-      boardsStore.toggleMultiSelect(issue);
+      boardsStore.toggleMultiSelect(basicIssueObj);
       selectedIds = boardsStore.multiSelect.list.map(x => x.id);
 
-      expect(selectedIds.includes(issue.id)).toEqual(false);
+      expect(selectedIds.includes(basicIssueObj.id)).toEqual(false);
     });
   });
 
@@ -455,22 +457,19 @@ describe('Store', () => {
 
   describe('moveMultipleIssuesInList', () => {
     it('moves multiple issues in list', done => {
-      const issue1 = new ListIssue({
+      const issueObj = {
         title: 'Issue #1',
         id: 12345,
         iid: 2,
         confidential: false,
         labels: [],
         assignees: [],
-      });
-
+      };
+      const issue1 = new ListIssue(issueObj);
       const issue2 = new ListIssue({
+        ...issueObj,
         title: 'Issue #2',
         id: 12346,
-        iid: 2,
-        confidential: false,
-        labels: [],
-        assignees: [],
       });
 
       const list = boardsStore.addList(listObj);
@@ -482,9 +481,9 @@ describe('Store', () => {
         expect(list.issues.length).toBe(3);
         expect(list.issues[0].id).not.toBe(issue2.id);
 
-        boardsStore.moveMultipleIssuesInList(list, [issue1, issue2], 0, 1, [1, 12345, 12346]);
+        boardsStore.moveMultipleIssuesInList(list, [issue1, issue2], [0], 1, [1, 12345, 12346]);
 
-        expect(list.issues[0].id).toBe(issue2.id);
+        expect(list.issues[0].id).toBe(issue1.id);
 
         expect(gl.boardService.moveMultipleIssues).toHaveBeenCalledWith(
           [issue1.id, issue2.id],

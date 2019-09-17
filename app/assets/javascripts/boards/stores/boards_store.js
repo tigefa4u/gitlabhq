@@ -173,9 +173,14 @@ const boardsStore = {
             currentList.removeIssue(issue);
           });
         });
-
+        if (this.shouldRemoveIssue(listFrom, listTo)) {
+          listFrom.removeMultipleIssues(issues);
+        }
         listTo.addMultipleIssues(issues, listFrom, newIndex);
       } else {
+        if (this.shouldRemoveIssue(listFrom, listTo)) {
+          listFrom.removeMultipleIssues(issues);
+        }
         // Add to new lists issues if it doesn't already exist
         listTo.addMultipleIssues(issues, listFrom, newIndex);
       }
@@ -213,10 +218,6 @@ const boardsStore = {
         issues.forEach(issue => {
           list.removeIssue(issue);
         });
-      });
-    } else if (this.shouldRemoveIssue(listFrom, listTo)) {
-      issues.forEach(issue => {
-        listFrom.removeIssue(issue);
       });
     }
   },
@@ -282,11 +283,11 @@ const boardsStore = {
 
     list.moveIssue(issue, oldIndex, newIndex, beforeId, afterId);
   },
-  moveMultipleIssuesInList(list, issues, oldIndex, newIndex, idArray) {
+  moveMultipleIssuesInList(list, issues, oldIndicies, newIndex, idArray) {
     const beforeId = parseInt(idArray[newIndex - 1], 10) || null;
     const afterId = parseInt(idArray[newIndex + issues.length], 10) || null;
 
-    list.moveMultipleIssues(issues, oldIndex, newIndex, beforeId, afterId);
+    list.moveMultipleIssues(issues, oldIndicies, newIndex, beforeId, afterId);
   },
   findList(key, val, type = 'label') {
     const filteredList = this.state.lists.filter(list => {

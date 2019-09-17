@@ -50,8 +50,7 @@ export default {
       return this.detailIssue.issue && this.detailIssue.issue.id === this.issue.id;
     },
     multiSelectVisible() {
-      const ids = this.multiSelect.list.map(issue => issue.id);
-      return ids.indexOf(this.issue.id) !== -1;
+      return this.multiSelect.list.findIndex(issue => issue.id === this.issue.id) > -1;
     },
     canMultiSelect() {
       return gon.features && gon.features.multiSelectBoard;
@@ -71,12 +70,13 @@ export default {
 
         // If CMD or CTRL is clicked
         const isMultiSelect = this.canMultiSelect && (e.ctrlKey || e.metaKey);
-        if (
-          boardsStore.detail.issue &&
-          boardsStore.detail.issue.id === this.issue.id &&
-          !isMultiSelect
-        ) {
+
+        if (boardsStore.detail.issue && boardsStore.detail.issue.id === this.issue.id) {
           eventHub.$emit('clearDetailIssue', isMultiSelect);
+
+          if (isMultiSelect) {
+            eventHub.$emit('newDetailIssue', this.issue, isMultiSelect);
+          }
         } else {
           eventHub.$emit('newDetailIssue', this.issue, isMultiSelect);
           boardsStore.setListDetail(this.list);
