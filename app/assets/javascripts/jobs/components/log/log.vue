@@ -9,7 +9,7 @@ export default {
     LogLineHeader,
   },
   computed: {
-    ...mapState(['traceEndpoint', 'trace', 'isTraceComplete']),
+    ...mapState(['traceEndpoint', 'trace']),
   },
   methods: {
     ...mapActions(['toggleCollapsibleLine']),
@@ -20,13 +20,12 @@ export default {
 };
 </script>
 <template>
-  <code class="job-log d-block">
+  <code class="job-log">
     <template v-for="(section, index) in trace">
       <template v-if="section.isHeader">
         <log-line-header
           :key="`collapsible-${index}`"
           :line="section.line"
-          :duration="section.section_duration"
           :path="traceEndpoint"
           :is-closed="section.isClosed"
           @toggleLine="handleOnClickCollapsibleLine(section)"
@@ -42,11 +41,5 @@ export default {
       </template>
       <log-line v-else :key="section.offset" :line="section" :path="traceEndpoint" />
     </template>
-
-    <div v-if="!isTraceComplete" class="js-log-animation loader-animation pt-3 pl-3">
-      <div class="dot"></div>
-      <div class="dot"></div>
-      <div class="dot"></div>
-    </div>
   </code>
 </template>

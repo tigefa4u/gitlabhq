@@ -95,7 +95,6 @@ export default {
       <monitor-time-series-chart
         v-for="graphData in charts"
         :key="graphData.title"
-        class="w-100"
         :graph-data="graphData"
         :container-width="elWidth"
         group-id="monitor-area-chart"

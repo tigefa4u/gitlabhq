@@ -25,10 +25,6 @@ module QA
             element :protected_branches_list
           end
 
-          view 'app/views/projects/protected_branches/shared/_create_protected_branch.html.haml' do
-            element :protect_button
-          end
-
           def select_branch(branch_name)
             click_element :protected_branch_select
 
@@ -37,31 +33,40 @@ module QA
             end
           end
 
-          def select_allowed_to_merge(allowed)
-            select_allowed(:merge, allowed)
+          def allow_no_one_to_push
+            go_to_allow(:push, 'No one')
           end
 
-          def select_allowed_to_push(allowed)
-            select_allowed(:push, allowed)
+          def allow_devs_and_maintainers_to_push
+            go_to_allow(:push, 'Developers + Maintainers')
           end
+
+          # @deprecated
+          alias_method :allow_devs_and_masters_to_push, :allow_devs_and_maintainers_to_push
+
+          def allow_no_one_to_merge
+            go_to_allow(:merge, 'No one')
+          end
+
+          def allow_devs_and_maintainers_to_merge
+            go_to_allow(:merge, 'Developers + Maintainers')
+          end
+
+          # @deprecated
+          alias_method :allow_devs_and_masters_to_merge, :allow_devs_and_maintainers_to_merge
 
           def protect_branch
-            click_element :protect_button
+            click_on 'Protect'
           end
 
           private
 
-          def select_allowed(action, allowed)
+          def go_to_allow(action, text)
             click_element :"allowed_to_#{action}_select"
 
-            allowed[:roles] = Resource::ProtectedBranch::Roles::NO_ONE unless allowed.key?(:roles)
-
             within_element(:"allowed_to_#{action}_dropdown") do
-              click_on allowed[:roles]
+              click_on text
             end
-
-            # Click the select element again to close the dropdown
-            click_element :protected_branch_select
           end
         end
       end

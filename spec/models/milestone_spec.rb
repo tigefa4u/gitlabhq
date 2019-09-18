@@ -55,20 +55,20 @@ describe Milestone do
       end
     end
 
-    describe 'milestone_releases' do
+    describe 'milestone_release' do
       let(:milestone) { build(:milestone, project: project) }
 
       context 'when it is tied to a release for another project' do
         it 'creates a validation error' do
           other_project = create(:project)
-          milestone.releases << build(:release, project: other_project)
+          milestone.release = build(:release, project: other_project)
           expect(milestone).not_to be_valid
         end
       end
 
       context 'when it is tied to a release for the same project' do
         it 'is valid' do
-          milestone.releases << build(:release, project: project)
+          milestone.release = build(:release, project: project)
           expect(milestone).to be_valid
         end
       end
@@ -78,8 +78,7 @@ describe Milestone do
   describe "Associations" do
     it { is_expected.to belong_to(:project) }
     it { is_expected.to have_many(:issues) }
-    it { is_expected.to have_many(:releases) }
-    it { is_expected.to have_many(:milestone_releases) }
+    it { is_expected.to have_one(:release) }
   end
 
   let(:project) { create(:project, :public) }

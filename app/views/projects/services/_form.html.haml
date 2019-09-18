@@ -2,10 +2,8 @@
   .col-lg-3
     %h4.prepend-top-0
       = @service.title
-      - [true, false].each do |value|
-        - hide_class = 'd-none' if @service.activated? != value
-        %span.js-service-active-status{ class: hide_class, data: { value: value.to_s } }
-          = boolean_to_icon value
+      = boolean_to_icon @service.activated?
+
     %p= #{@service.description}.
 
     - if @service.respond_to?(:detailed_description)

@@ -1,4 +1,4 @@
-/* eslint-disable func-names, no-var, consistent-return, one-var, prefer-template, no-else-return, no-param-reassign */
+/* eslint-disable func-names, no-var, no-unused-vars, consistent-return, one-var, prefer-template, no-else-return, no-param-reassign */
 
 import $ from 'jquery';
 import _ from 'underscore';
@@ -7,7 +7,7 @@ import flash from './flash';
 import axios from './lib/utils/axios_utils';
 import { sprintf, s__, __ } from './locale';
 
-function Sidebar() {
+function Sidebar(currentUser) {
   this.toggleTodo = this.toggleTodo.bind(this);
   this.sidebar = $('aside');
 
@@ -15,9 +15,9 @@ function Sidebar() {
   this.addEventListeners();
 }
 
-Sidebar.initialize = function() {
+Sidebar.initialize = function(currentUser) {
   if (!this.instance) {
-    this.instance = new Sidebar();
+    this.instance = new Sidebar(currentUser);
   }
 };
 
@@ -77,7 +77,7 @@ Sidebar.prototype.sidebarToggleClicked = function(e, triggered) {
 };
 
 Sidebar.prototype.toggleTodo = function(e) {
-  var $this, ajaxType, url;
+  var $btnText, $this, $todoLoading, ajaxType, url;
   $this = $(e.currentTarget);
   ajaxType = $this.data('deletePath') ? 'delete' : 'post';
 
@@ -140,7 +140,7 @@ Sidebar.prototype.todoUpdateDone = function(data) {
   });
 };
 
-Sidebar.prototype.sidebarDropdownLoading = function() {
+Sidebar.prototype.sidebarDropdownLoading = function(e) {
   var $loading, $sidebarCollapsedIcon, i, img;
   $sidebarCollapsedIcon = $(this)
     .closest('.block')
@@ -157,7 +157,7 @@ Sidebar.prototype.sidebarDropdownLoading = function() {
   }
 };
 
-Sidebar.prototype.sidebarDropdownLoaded = function() {
+Sidebar.prototype.sidebarDropdownLoaded = function(e) {
   var $sidebarCollapsedIcon, i, img;
   $sidebarCollapsedIcon = $(this)
     .closest('.block')

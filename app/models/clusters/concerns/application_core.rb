@@ -32,10 +32,6 @@ module Clusters
           self.to_s.demodulize.underscore
         end
 
-        def self.association_name
-          :"application_#{application_name}"
-        end
-
         def name
           self.class.application_name
         end

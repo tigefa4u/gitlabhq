@@ -8,6 +8,7 @@ globals:
   IS_EE: false
 plugins:
   - import
+  - html
   - "@gitlab/i18n"
   - "@gitlab/vue-i18n"
 settings:

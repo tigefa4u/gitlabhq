@@ -81,18 +81,6 @@ ActiveRecord::Schema.define(version: 2019_09_14_223900) do
     t.index ["start_event_label_id"], name: "index_analytics_ca_project_stages_on_start_event_label_id"
   end
 
-  create_table "analytics_language_trend_repository_languages", id: false, force: :cascade do |t|
-    t.integer "file_count", default: 0, null: false
-    t.bigint "programming_language_id", null: false
-    t.bigint "project_id", null: false
-    t.integer "loc", default: 0, null: false
-    t.integer "bytes", default: 0, null: false
-    t.integer "percentage", limit: 2, default: 0, null: false
-    t.date "snapshot_date", null: false
-    t.index ["programming_language_id", "project_id", "snapshot_date"], name: "analytics_repository_languages_unique_index", unique: true
-    t.index ["project_id"], name: "analytics_repository_languages_on_project_id"
-  end
-
   create_table "appearances", id: :serial, force: :cascade do |t|
     t.string "title", null: false
     t.text "description", null: false
@@ -331,9 +319,8 @@ ActiveRecord::Schema.define(version: 2019_09_14_223900) do
     t.integer "report_type", limit: 2
     t.index ["merge_request_id", "code_owner", "name"], name: "approval_rule_name_index_for_code_owners", unique: true, where: "(code_owner = true)"
     t.index ["merge_request_id", "code_owner"], name: "index_approval_merge_request_rules_1"
-    t.index ["merge_request_id", "name"], name: "index_approval_rule_name_for_code_owners_rule_type", unique: true, where: "(rule_type = 2)"
-    t.index ["merge_request_id", "rule_type"], name: "any_approver_merge_request_rule_type_unique_index", unique: true, where: "(rule_type = 4)"
-    t.index ["merge_request_id"], name: "index_approval_rules_code_owners_rule_type", where: "(rule_type = 2)"
+    t.index ["merge_request_id", "rule_type", "name"], name: "index_approval_rule_name_for_code_owners_rule_type", unique: true, where: "(rule_type = 2)"
+    t.index ["merge_request_id", "rule_type"], name: "index_approval_rules_code_owners_rule_type", where: "(rule_type = 2)"
   end
 
   create_table "approval_merge_request_rules_approved_approvers", force: :cascade do |t|
@@ -364,7 +351,6 @@ ActiveRecord::Schema.define(version: 2019_09_14_223900) do
     t.integer "approvals_required", limit: 2, default: 0, null: false
     t.string "name", null: false
     t.integer "rule_type", limit: 2, default: 0, null: false
-    t.index ["project_id"], name: "any_approver_project_rule_type_unique_index", unique: true, where: "(rule_type = 3)"
     t.index ["project_id"], name: "index_approval_project_rules_on_project_id"
     t.index ["rule_type"], name: "index_approval_project_rules_on_rule_type"
   end
@@ -2208,7 +2194,7 @@ ActiveRecord::Schema.define(version: 2019_09_14_223900) do
     t.index ["user_id"], name: "index_merge_trains_on_user_id"
   end
 
-  create_table "milestone_releases", id: false, force: :cascade do |t|
+  create_table "milestone_releases", force: :cascade do |t|
     t.bigint "milestone_id", null: false
     t.bigint "release_id", null: false
     t.index ["milestone_id", "release_id"], name: "index_miletone_releases_on_milestone_and_release", unique: true
@@ -2496,18 +2482,6 @@ ActiveRecord::Schema.define(version: 2019_09_14_223900) do
     t.string "file_name", null: false
     t.text "file", null: false
     t.index ["package_id", "file_name"], name: "index_packages_package_files_on_package_id_and_file_name"
-  end
-
-  create_table "packages_package_metadata", force: :cascade do |t|
-    t.integer "package_id", null: false
-    t.binary "metadata", null: false
-    t.index ["package_id"], name: "index_packages_package_metadata_on_package_id", unique: true
-  end
-
-  create_table "packages_package_tags", force: :cascade do |t|
-    t.integer "package_id", null: false
-    t.string "name", limit: 255, null: false
-    t.index ["package_id"], name: "index_packages_package_tags_on_package_id"
   end
 
   create_table "packages_packages", force: :cascade do |t|
@@ -3786,8 +3760,6 @@ ActiveRecord::Schema.define(version: 2019_09_14_223900) do
   add_foreign_key "analytics_cycle_analytics_project_stages", "labels", column: "end_event_label_id", on_delete: :cascade
   add_foreign_key "analytics_cycle_analytics_project_stages", "labels", column: "start_event_label_id", on_delete: :cascade
   add_foreign_key "analytics_cycle_analytics_project_stages", "projects", on_delete: :cascade
-  add_foreign_key "analytics_language_trend_repository_languages", "programming_languages", on_delete: :cascade
-  add_foreign_key "analytics_language_trend_repository_languages", "projects", on_delete: :cascade
   add_foreign_key "application_settings", "namespaces", column: "custom_project_templates_group_id", on_delete: :nullify
   add_foreign_key "application_settings", "projects", column: "file_template_project_id", name: "fk_ec757bd087", on_delete: :nullify
   add_foreign_key "application_settings", "projects", column: "instance_administration_project_id", on_delete: :nullify
@@ -4035,8 +4007,6 @@ ActiveRecord::Schema.define(version: 2019_09_14_223900) do
   add_foreign_key "operations_feature_flags_clients", "projects", on_delete: :cascade
   add_foreign_key "packages_maven_metadata", "packages_packages", column: "package_id", name: "fk_be88aed360", on_delete: :cascade
   add_foreign_key "packages_package_files", "packages_packages", column: "package_id", name: "fk_86f0f182f8", on_delete: :cascade
-  add_foreign_key "packages_package_metadata", "packages_packages", column: "package_id", on_delete: :cascade
-  add_foreign_key "packages_package_tags", "packages_packages", column: "package_id", on_delete: :cascade
   add_foreign_key "packages_packages", "projects", on_delete: :cascade
   add_foreign_key "pages_domain_acme_orders", "pages_domains", on_delete: :cascade
   add_foreign_key "pages_domains", "projects", name: "fk_ea2f6dfc6f", on_delete: :cascade

@@ -39,6 +39,10 @@
   min-height: $header-height;
 }
 
+.snippet-edited-ago {
+  color: $gray-darkest;
+}
+
 .snippet-actions {
   @include media-breakpoint-up(sm) {
     float: right;

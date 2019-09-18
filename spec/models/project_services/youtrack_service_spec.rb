@@ -16,7 +16,6 @@ describe YoutrackService do
 
       it { is_expected.to validate_presence_of(:project_url) }
       it { is_expected.to validate_presence_of(:issues_url) }
-
       it_behaves_like 'issue tracker service URL attribute', :project_url
       it_behaves_like 'issue tracker service URL attribute', :issues_url
     end
@@ -52,7 +51,7 @@ describe YoutrackService do
         create(:youtrack_service, :without_properties_callback, properties: properties)
       end
 
-      it_behaves_like 'issue tracker fields'
+      include_examples 'issue tracker fields'
     end
 
     context 'when data are stored in separated fields' do
@@ -60,7 +59,7 @@ describe YoutrackService do
         create(:youtrack_service, title: title, description: description, properties: access_params)
       end
 
-      it_behaves_like 'issue tracker fields'
+      include_examples 'issue tracker fields'
     end
 
     context 'when data are stored in both properties and separated fields' do
@@ -69,7 +68,7 @@ describe YoutrackService do
         create(:youtrack_service, :without_properties_callback, title: title, description: description, properties: properties)
       end
 
-      it_behaves_like 'issue tracker fields'
+      include_examples 'issue tracker fields'
     end
 
     context 'when no title & description are set' do

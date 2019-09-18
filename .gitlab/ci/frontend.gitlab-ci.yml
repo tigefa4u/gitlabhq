@@ -9,10 +9,9 @@
   extends:
     - .default-tags
     - .default-retry
-    - .default-only
-    - .default-before_script
     - .assets-compile-cache
-    - .only-code-qa-changes
+    - .default-before_script
+    - .except-docs
   image: dev.gitlab.org:5005/gitlab/gitlab-build-images:ruby-2.6.3-git-2.22-chrome-73.0-node-12.x-yarn-1.16-graphicsmagick-1.3.33-docker-18.06.1
   stage: test
   dependencies: ["setup-test-env"]
@@ -46,9 +45,10 @@
     - scripts/clean-old-cached-assets
     - rm -f /etc/apt/sources.list.d/google*.list  # We don't need to update Chrome here
   only:
-    variables:
-      - $CI_SERVER_HOST == "gitlab.com" && $CI_PROJECT_NAMESPACE == "gitlab-org"
-      - $CI_SERVER_HOST == "dev.gitlab.org"
+    - /.+/@gitlab-org/gitlab-foss
+    - /.+/@gitlab-org/gitlab
+    - /.+/@gitlab/gitlabhq
+    - /.+/@gitlab/gitlab-ee
   tags:
     - gitlab-org
     - docker
@@ -57,7 +57,8 @@ gitlab:assets:compile:
   extends: .gitlab:assets:compile-metadata
   only:
     refs:
-      - master
+      - master@gitlab-org/gitlab-foss
+      - master@gitlab-org/gitlab
   cache:
     policy: pull-push
 
@@ -65,7 +66,9 @@ gitlab:assets:compile pull-cache:
   extends: .gitlab:assets:compile-metadata
   except:
     refs:
-      - master
+      - master@gitlab-org/gitlab-foss
+      - master@gitlab-org/gitlab
+      - /(^docs[\/-].+|.+-docs$)/
   cache:
     policy: pull
 
@@ -73,10 +76,8 @@ gitlab:assets:compile pull-cache:
   extends:
     - .default-tags
     - .default-retry
-    - .default-only
-    - .default-before_script
     - .assets-compile-cache
-    - .only-code-qa-changes
+    - .default-before_script
     - .use-pg
   stage: prepare
   script:
@@ -97,10 +98,12 @@ gitlab:assets:compile pull-cache:
       - public/assets
 
 compile-assets:
-  extends: .compile-assets-metadata
+  extends:
+    - .compile-assets-metadata
   only:
     refs:
-      - master
+      - master@gitlab-org/gitlab-foss
+      - master@gitlab-org/gitlab
   cache:
     policy: pull-push
 
@@ -108,23 +111,21 @@ compile-assets pull-cache:
   extends: .compile-assets-metadata
   except:
     refs:
-      - master
+      - master@gitlab-org/gitlab-foss
+      - master@gitlab-org/gitlab
+      - /(^docs[\/-].+|.+-docs$)/
   cache:
     policy: pull
 
-.only-code-frontend-job-base:
+karma:
   extends:
     - .default-tags
     - .default-retry
     - .default-cache
-    - .default-only
     - .default-before_script
-    - .only-code-changes
     - .use-pg
+    - .except-docs
   dependencies: ["compile-assets", "compile-assets pull-cache", "setup-test-env"]
-
-karma:
-  extends: .only-code-frontend-job-base
   variables:
     # we override the max_old_space_size to prevent OOM errors
     NODE_OPTIONS: --max_old_space_size=3584
@@ -147,7 +148,14 @@ karma:
       junit: junit_karma.xml
 
 jest:
-  extends: .only-code-frontend-job-base
+  extends:
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
+    - .use-pg
+    - .except-docs-qa
+  dependencies: ["compile-assets", "compile-assets pull-cache", "setup-test-env"]
   script:
     - scripts/gitaly-test-spawn
     - date
@@ -170,26 +178,27 @@ jest:
       - tmp/jest/jest/
     policy: pull-push
 
-.qa-job-base:
+.qa:
   extends:
     - .default-tags
     - .default-retry
     - .default-cache
-    - .default-only
-    - .only-code-qa-changes
+    - .except-docs
   dependencies: []
   stage: test
+  variables:
+    SETUP_DB: "false"
   before_script:
     - cd qa/
     - bundle install
 
 qa:internal:
-  extends: .qa-job-base
+  extends: .qa
   script:
     - bundle exec rspec
 
 qa:selectors:
-  extends: .qa-job-base
+  extends: .qa
   script:
     - bundle exec bin/qa Test::Sanity::Selectors
 
@@ -198,8 +207,7 @@ qa:selectors:
     - .default-tags
     - .default-retry
     - .default-cache
-    - .default-only
-    - .only-code-changes
+    - .except-docs
   dependencies: []
   cache:
     key: "$CI_JOB_NAME"
@@ -230,9 +238,10 @@ webpack-dev-server:
     - .default-tags
     - .default-retry
     - .default-cache
-    - .only-code-changes
-  dependencies: ["setup-test-env", "compile-assets", "compile-assets pull-cache"]
+    - .except-docs-qa
+  dependencies: ["compile-assets", "compile-assets pull-cache", "setup-test-env"]
   variables:
+    SETUP_DB: "false"
     WEBPACK_MEMORY_TEST: "true"
   script:
     - node --version

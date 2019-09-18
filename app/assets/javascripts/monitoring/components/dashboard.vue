@@ -456,7 +456,6 @@ export default {
           <panel-type
             v-for="(graphData, graphIndex) in groupData.metrics"
             :key="`panel-type-${graphIndex}`"
-            class="col-12 col-lg-6 pb-3"
             :clipboard-text="generateLink(groupData.group, graphData.title, graphData.y_label)"
             :graph-data="graphData"
             :dashboard-width="elWidth"
@@ -469,7 +468,6 @@ export default {
           <monitor-time-series-chart
             v-for="(graphData, graphIndex) in chartsWithData(groupData.metrics)"
             :key="graphIndex"
-            class="col-12 col-lg-6 pb-3"
             :graph-data="graphData"
             :deployment-data="deploymentData"
             :thresholds="getGraphAlertValues(graphData.queries)"

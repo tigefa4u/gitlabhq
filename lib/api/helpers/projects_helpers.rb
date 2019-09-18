@@ -56,14 +56,6 @@ module API
         use :optional_project_params_ee
       end
 
-      params :optional_create_project_params_ee do
-      end
-
-      params :optional_create_project_params do
-        use :optional_project_params
-        use :optional_create_project_params_ee
-      end
-
       params :optional_filter_params_ee do
       end
 

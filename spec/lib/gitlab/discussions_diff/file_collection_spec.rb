@@ -22,13 +22,11 @@ describe Gitlab::DiscussionsDiff::FileCollection do
                 note_diff_file_b.id => file_b_caching_content })
         .and_call_original
 
-      subject.load_highlight
+      subject.load_highlight([note_diff_file_a.id, note_diff_file_b.id])
     end
 
     it 'does not write cache for already cached file' do
-      file_a_caching_content = diff_note_a.diff_file.highlighted_diff_lines.map(&:to_hash)
-      Gitlab::DiscussionsDiff::HighlightCache
-        .write_multiple({ note_diff_file_a.id => file_a_caching_content })
+      subject.load_highlight([note_diff_file_a.id])
 
       file_b_caching_content = diff_note_b.diff_file.highlighted_diff_lines.map(&:to_hash)
 
@@ -37,42 +35,27 @@ describe Gitlab::DiscussionsDiff::FileCollection do
         .with({ note_diff_file_b.id => file_b_caching_content })
         .and_call_original
 
-      subject.load_highlight
+      subject.load_highlight([note_diff_file_a.id, note_diff_file_b.id])
     end
 
-    it 'does not write cache for resolved notes' do
-      diff_note_a.update_column(:resolved_at, Time.now)
-
-      file_b_caching_content = diff_note_b.diff_file.highlighted_diff_lines.map(&:to_hash)
-
-      expect(Gitlab::DiscussionsDiff::HighlightCache)
-        .to receive(:write_multiple)
-        .with({ note_diff_file_b.id => file_b_caching_content })
-        .and_call_original
-
-      subject.load_highlight
+    it 'does not err when given ID does not exist in @collection' do
+      expect { subject.load_highlight([999]) }.not_to raise_error
     end
 
     it 'loaded diff files have highlighted lines loaded' do
-      subject.load_highlight
+      subject.load_highlight([note_diff_file_a.id])
 
-      diff_file_a = subject.find_by_id(note_diff_file_a.id)
-      diff_file_b = subject.find_by_id(note_diff_file_b.id)
+      diff_file = subject.find_by_id(note_diff_file_a.id)
 
-      expect(diff_file_a).to be_highlight_loaded
-      expect(diff_file_b).to be_highlight_loaded
+      expect(diff_file.highlight_loaded?).to be(true)
     end
 
     it 'not loaded diff files does not have highlighted lines loaded' do
-      diff_note_a.update_column(:resolved_at, Time.now)
+      subject.load_highlight([note_diff_file_a.id])
 
-      subject.load_highlight
+      diff_file = subject.find_by_id(note_diff_file_b.id)
 
-      diff_file_a = subject.find_by_id(note_diff_file_a.id)
-      diff_file_b = subject.find_by_id(note_diff_file_b.id)
-
-      expect(diff_file_a).not_to be_highlight_loaded
-      expect(diff_file_b).to be_highlight_loaded
+      expect(diff_file.highlight_loaded?).to be(false)
     end
   end
 end

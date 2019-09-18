@@ -391,9 +391,6 @@ msgstr ""
 msgid "'%{source}' is not a import source"
 msgstr ""
 
-msgid "'%{template_name}' is unknown or invalid"
-msgstr ""
-
 msgid "(%d closed)"
 msgid_plural "(%d closed)"
 msgstr[0] ""
@@ -3514,9 +3511,6 @@ msgstr ""
 msgid "ClusterIntegration|Let's Encrypt"
 msgstr ""
 
-msgid "ClusterIntegration|Loading IAM Roles"
-msgstr ""
-
 msgid "ClusterIntegration|Machine type"
 msgstr ""
 
@@ -3524,9 +3518,6 @@ msgid "ClusterIntegration|Make sure your account %{link_to_requirements} to crea
 msgstr ""
 
 msgid "ClusterIntegration|Manage your Kubernetes cluster by visiting %{link_gke}"
-msgstr ""
-
-msgid "ClusterIntegration|No IAM Roles found"
 msgstr ""
 
 msgid "ClusterIntegration|No machine types matched your search"
@@ -3595,13 +3586,7 @@ msgstr ""
 msgid "ClusterIntegration|Request to begin uninstalling failed"
 msgstr ""
 
-msgid "ClusterIntegration|Role name"
-msgstr ""
-
 msgid "ClusterIntegration|Save changes"
-msgstr ""
-
-msgid "ClusterIntegration|Search IAM Roles"
 msgstr ""
 
 msgid "ClusterIntegration|Search machine types"
@@ -3626,9 +3611,6 @@ msgid "ClusterIntegration|Select project and zone to choose machine type"
 msgstr ""
 
 msgid "ClusterIntegration|Select project to choose zone"
-msgstr ""
-
-msgid "ClusterIntegration|Select the IAM Role to allow Amazon EKS and the Kubernetes control plane to manage AWS resources on your behalf. To use a new role name, first create one on %{startLink}Amazon Web Services%{endLink}."
 msgstr ""
 
 msgid "ClusterIntegration|Select zone"
@@ -3752,9 +3734,6 @@ msgid "ClusterIntegration|pricing"
 msgstr ""
 
 msgid "ClusterIntegration|sign up"
-msgstr ""
-
-msgid "ClusterIntergation|Select role name"
 msgstr ""
 
 msgid "Code"
@@ -5842,9 +5821,6 @@ msgstr ""
 msgid "Epics Roadmap"
 msgstr ""
 
-msgid "Epics and Issues"
-msgstr ""
-
 msgid "Epics let you manage your portfolio of projects more efficiently and with less effort"
 msgstr ""
 
@@ -5894,9 +5870,6 @@ msgid "Epics|Something went wrong while fetching child epics."
 msgstr ""
 
 msgid "Epics|Something went wrong while fetching group epics."
-msgstr ""
-
-msgid "Epics|Something went wrong while ordering item."
 msgstr ""
 
 msgid "Epics|Something went wrong while removing issue from epic."
@@ -10356,6 +10329,9 @@ msgid "Nodes"
 msgstr ""
 
 msgid "None"
+msgstr ""
+
+msgid "Not all data has been processed yet, the accuracy of the chart for the selected timeframe is limited."
 msgstr ""
 
 msgid "Not available"
@@ -15547,6 +15523,12 @@ msgstr ""
 msgid "There is already a repository with that name on disk"
 msgstr ""
 
+msgid "There is no data available. Please change your selection."
+msgstr ""
+
+msgid "There is no data for the selected metric. Please change your selection."
+msgstr ""
+
 msgid "There was a problem communicating with your device."
 msgstr ""
 
@@ -16380,6 +16362,9 @@ msgid "TransferProject|Project with same name or path in target namespace alread
 msgstr ""
 
 msgid "TransferProject|Transfer failed, please contact an admin."
+msgstr ""
+
+msgid "Tree"
 msgstr ""
 
 msgid "Tree view"

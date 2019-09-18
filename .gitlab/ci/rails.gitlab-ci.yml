@@ -1,40 +1,36 @@
-.only-master:
+.only-schedules-master:
   only:
     refs:
-      - master
+      - schedules@gitlab-org/gitlab-foss
+      - schedules@gitlab-org/gitlab
+      - master@gitlab-org/gitlab-foss
+      - master@gitlab-org/gitlab
+      - master@gitlab/gitlabhq
+      - master@gitlab/gitlab-ee
+
+.only-gitlab-ee:
+  only:
+    - branches@gitlab-org/gitlab
+    - tags@gitlab-org/gitlab
 
 .rake-exec:
   extends:
     - .default-tags
     - .default-retry
     - .default-cache
-    - .default-only
     - .default-before_script
   variables:
     SETUP_DB: "false"
   script:
     - bundle exec rake $CI_JOB_NAME
 
-.only-code-rails-job-base:
-  extends:
-    - .default-tags
-    - .default-retry
-    - .default-cache
-    - .default-only
-    - .default-before_script
-    - .only-code-changes
-
-.only-code-qa-rails-job-base:
-  extends:
-    - .default-tags
-    - .default-retry
-    - .default-cache
-    - .default-only
-    - .default-before_script
-    - .only-code-qa-changes
-
 .rspec-base:
-  extends: .only-code-rails-job-base
+  extends:
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
+    - .except-docs-qa
   stage: test
   script:
     - JOB_NAME=( $CI_JOB_NAME )
@@ -83,8 +79,12 @@
 
 setup-test-env:
   extends:
-    - .only-code-qa-rails-job-base
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
     - .use-pg
+    - .except-docs
   stage: prepare
   script:
     - bundle exec ruby -Ispec -e 'require "spec_helper" ; TestEnv.init'
@@ -111,19 +111,19 @@ rspec system pg:
 rspec unit pg-10:
   extends:
     - .rspec-base-pg-10
-    - .only-master
+    - .only-schedules-master
   parallel: 20
 
 rspec integration pg-10:
   extends:
     - .rspec-base-pg-10
-    - .only-master
+    - .only-schedules-master
   parallel: 6
 
 rspec system pg-10:
   extends:
     - .rspec-base-pg-10
-    - .only-master
+    - .only-schedules-master
   parallel: 24
 
 rspec-fast-spec-helper:
@@ -133,8 +133,9 @@ rspec-fast-spec-helper:
 
 rspec quarantine pg:
   extends:
+    - .default-before_script
     - .rspec-base-pg
-    - .only-master
+    - .only-schedules-master
   script:
     - export NO_KNAPSACK=1 CACHE_CLASSES=true
     - scripts/gitaly-test-spawn
@@ -142,7 +143,12 @@ rspec quarantine pg:
   allow_failure: true
 
 static-analysis:
-  extends: .only-code-qa-rails-job-base
+  extends:
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
+    - .except-docs
   dependencies: ["setup-test-env", "compile-assets", "compile-assets pull-cache"]
   variables:
     SETUP_DB: "false"
@@ -156,48 +162,81 @@ static-analysis:
     policy: pull-push
 
 downtime_check:
-  extends:
-    - .rake-exec
-    - .only-code-changes
+  extends: .rake-exec
   except:
     refs:
       - master
       - tags
-    variables:
-      - $CI_COMMIT_REF_NAME =~ /^[\d-]+-stable(-ee)?$/
+      - /^[\d-]+-stable(-ee)?$/
+      - /(^docs[\/-].+|.+-docs$)/
+      - /(^qa[\/-].*|.*-qa$)/
   stage: test
   dependencies: ["setup-test-env"]
   needs: ["setup-test-env"]
 
-.db-job-base:
-  extends:
-    - .only-code-rails-job-base
-    - .use-pg
-  stage: test
-  dependencies: ["setup-test-env"]
-  needs: ["setup-test-env"]
+ee_compat_check:
+  extends: .rake-exec
+  dependencies: []
+  except:
+    refs:
+      - master
+      - tags
+      - branches@gitlab-org/gitlab
+      - branches@gitlab/gitlab-ee
+      - /^[\d-]+-stable(-ee)?$/
+      - /(^docs[\/-].+|.+-docs$)/
+      - /^security-/
+  artifacts:
+    name: "${CI_JOB_NAME}_${CI_COMIT_REF_NAME}_${CI_COMMIT_SHA}"
+    when: always
+    expire_in: 10d
+    paths:
+      - ee_compat_check/patches/*.patch
 
 # DB migration, rollback, and seed jobs
 db:migrate:reset:
-  extends: .db-job-base
+  extends:
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
+    - .use-pg
+    - .except-docs-qa
+  stage: test
+  dependencies: ["setup-test-env"]
+  needs: ["setup-test-env"]
   script:
     - bundle exec rake db:migrate:reset
 
 db:check-schema:
-  extends: .db-job-base
+  extends:
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
+    - .use-pg
+    - .except-docs-qa
+  stage: test
+  dependencies: ["setup-test-env"]
+  needs: ["setup-test-env"]
   script:
     - source scripts/schema_changed.sh
 
 db:migrate-from-v11.11.0:
-  extends: .db-job-base
+  extends:
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
+    - .use-pg
+    - .except-docs-qa
+  stage: test
+  dependencies: ["setup-test-env"]
+  needs: ["setup-test-env"]
   variables:
     SETUP_DB: "false"
   script:
-    - export PROJECT_TO_CHECKOUT="gitlab-foss"
-    - export TAG_TO_CHECKOUT="v11.11.0"
-    - '[[ ! -d "ee/" ]] || export PROJECT_TO_CHECKOUT="gitlab"'
-    - '[[ ! -d "ee/" ]] || export TAG_TO_CHECKOUT="v11.11.0-ee"'
-    - git fetch https://gitlab.com/gitlab-org/$PROJECT_TO_CHECKOUT.git $TAG_TO_CHECKOUT
+    - git fetch https://gitlab.com/gitlab-org/gitlab.git v11.11.0-ee
     - git checkout -f FETCH_HEAD
     - sed -i "s/gem 'oj', '~> 2.17.4'//" Gemfile
     - sed -i "s/gem 'bootsnap', '~> 1.0.0'/gem 'bootsnap'/" Gemfile
@@ -215,13 +254,31 @@ db:migrate-from-v11.11.0:
     - bundle exec rake db:migrate
 
 db:rollback:
-  extends: .db-job-base
+  extends:
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
+    - .use-pg
+    - .except-docs-qa
+  stage: test
+  dependencies: ["setup-test-env"]
+  needs: ["setup-test-env"]
   script:
     - bundle exec rake db:migrate VERSION=20180101160629
     - bundle exec rake db:migrate SKIP_SCHEMA_VERSION_CHECK=true
 
 gitlab:setup:
-  extends: .db-job-base
+  extends:
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
+    - .use-pg
+    - .except-docs-qa
+  stage: test
+  dependencies: ["setup-test-env"]
+  needs: ["setup-test-env"]
   variables:
     SETUP_DB: "false"
   script:
@@ -238,7 +295,14 @@ gitlab:setup:
       - log/development.log
 
 coverage:
-  extends: .only-code-rails-job-base
+  # Don't include dedicated-no-docs-no-db-pull-cache-job here since we need to
+  # download artifacts from all the rspec jobs instead of from setup-test-env only
+  extends:
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
+    - .except-docs-qa
   cache:
     policy: pull
   variables:
@@ -260,7 +324,7 @@ coverage:
 .rspec-base-ee:
   extends:
     - .rspec-base
-    - .only-ee
+    - .only-gitlab-ee
   script:
     - JOB_NAME=( $CI_JOB_NAME )
     - TEST_TOOL=${JOB_NAME[0]}
@@ -298,9 +362,10 @@ rspec system pg ee:
   extends: .rspec-base-pg-ee
   parallel: 5
 
-.rspec-base-geo:
-  extends: .rspec-base-ee
-  parallel: 3
+.rspec-base-pg-geo:
+  extends:
+    - .rspec-base
+    - .only-gitlab-ee
   script:
     - JOB_NAME=( $CI_JOB_NAME )
     - TEST_TOOL=${JOB_NAME[0]}
@@ -317,37 +382,33 @@ rspec system pg ee:
 
 rspec geo pg ee:
   extends:
-    - .rspec-base-geo
+    - .rspec-base-pg-geo
     - .use-pg
-  except:
-    variables:
-      - $CI_COMMIT_REF_NAME =~ /(^geo[\/-].*|.*-geo$)/
+    - .except-docs-qa-geo
+  parallel: 3
 
 rspec geo pg-10 ee:
   extends:
-    - .rspec-base-geo
+    - .rspec-base-pg-geo
     - .use-pg-10
-  except:
-    variables:
-      - $CI_COMMIT_REF_NAME =~ /(^geo[\/-].*|.*-geo$)/
+    - .except-docs-qa-geo
+  parallel: 3
 
 quick-rspec geo pg ee:
   extends:
-    - .rspec-base-geo
+    - .rspec-base-pg-geo
     - .use-pg
   stage: quick-test
   only:
-    variables:
-      - $CI_COMMIT_REF_NAME =~ /(^geo[\/-].*|.*-geo$)/
+    - /(^geo[\/-].*|.*-geo$)/
 
 quick-rspec geo pg-10 ee:
   extends:
-    - .rspec-base-geo
+    - .rspec-base-pg-geo
     - .use-pg-10
   stage: quick-test
   only:
-    variables:
-      - $CI_COMMIT_REF_NAME =~ /(^geo[\/-].*|.*-geo$)/
+    - /(^geo[\/-].*|.*-geo$)/
 
 rspec quarantine pg ee:
   extends: rspec quarantine pg
@@ -356,10 +417,35 @@ rspec quarantine pg ee:
     - scripts/gitaly-test-spawn
     - bin/rspec --color --format documentation --format RspecJunitFormatter --out junit_rspec.xml --tag quarantine -- ee/spec/
 
+migration:upgrade-pg-ce-to-ee:
+  extends:
+    - .default-tags
+    - .default-retry
+    - .default-cache
+    - .default-before_script
+    - .use-pg
+    - .except-docs-qa
+  dependencies: ["setup-test-env"]
+  variables:
+    SETUP_DB: "false"
+  script:
+    - ruby -r./scripts/ee_specific_check/ee_specific_check -e'EESpecificCheck.fetch_remote_ce_branch'
+    - git checkout -f FETCH_HEAD
+    - . scripts/utils.sh
+    - . scripts/prepare_build.sh
+    - date
+    - setup_db
+    - date
+    - git checkout -f $CI_COMMIT_SHA
+    - date
+    - . scripts/prepare_build.sh
+    - date
+    - bundle exec rake db:migrate
+
 db:rollback geo:
   extends:
     - db:rollback
-    - .only-ee
+    - .only-gitlab-ee
   script:
     - bundle exec rake geo:db:migrate VERSION=20170627195211
     - bundle exec rake geo:db:migrate

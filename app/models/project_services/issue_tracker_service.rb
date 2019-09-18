@@ -3,14 +3,9 @@
 class IssueTrackerService < Service
   validate :one_issue_tracker, if: :activated?, on: :manual_change
 
-  # TODO: we can probably just delegate as part of
-  # https://gitlab.com/gitlab-org/gitlab-ce/issues/63084
-  data_field :project_url, :issues_url, :new_issue_url
-
   default_value_for :category, 'issue_tracker'
 
-  before_validation :handle_properties
-  before_validation :set_default_data, on: :create
+  before_save :handle_properties
 
   # Pattern used to extract links from comments
   # Override this method on services that uses different patterns
@@ -48,31 +43,12 @@ class IssueTrackerService < Service
   end
 
   def handle_properties
-    # this has been moved from initialize_properties and should be improved
-    # as part of https://gitlab.com/gitlab-org/gitlab-ce/issues/63084
-    return unless properties
-
-    @legacy_properties_data = properties.dup
-    data_values = properties.slice!('title', 'description')
-    properties.each do |key, _|
+    properties.slice('title', 'description').each do |key, _|
       current_value = self.properties.delete(key)
       value = attribute_changed?(key) ? attribute_change(key).last : current_value
 
       write_attribute(key, value)
     end
-
-    data_values.reject! { |key| data_fields.changed.include?(key) }
-    data_fields.assign_attributes(data_values) if data_values.present?
-
-    self.properties = {}
-  end
-
-  def legacy_properties_data
-    @legacy_properties_data ||= {}
-  end
-
-  def data_fields
-    issue_tracker_data || self.build_issue_tracker_data
   end
 
   def default?
@@ -80,7 +56,7 @@ class IssueTrackerService < Service
   end
 
   def issue_url(iid)
-    issues_url.gsub(':id', iid.to_s)
+    self.issues_url.gsub(':id', iid.to_s)
   end
 
   def issue_tracker_path
@@ -104,22 +80,25 @@ class IssueTrackerService < Service
     ]
   end
 
-  def initialize_properties
-    {}
-  end
-
   # Initialize with default properties values
-  def set_default_data
-    return unless issues_tracker.present?
+  # or receive a block with custom properties
+  def initialize_properties(&block)
+    return unless properties.nil?
 
-    self.title ||= issues_tracker['title']
-
-    # we don't want to override if we have set something
-    return if project_url || issues_url || new_issue_url
-
-    data_fields.project_url = issues_tracker['project_url']
-    data_fields.issues_url = issues_tracker['issues_url']
-    data_fields.new_issue_url = issues_tracker['new_issue_url']
+    if enabled_in_gitlab_config
+      if block_given?
+        yield
+      else
+        self.properties = {
+          title: issues_tracker['title'],
+          project_url: issues_tracker['project_url'],
+          issues_url: issues_tracker['issues_url'],
+          new_issue_url: issues_tracker['new_issue_url']
+        }
+      end
+    else
+      self.properties = {}
+    end
   end
 
   def self.supported_events

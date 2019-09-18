@@ -43,6 +43,11 @@ export default {
       required: false,
       default: '',
     },
+    showBorder: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
     singleEmbed: {
       type: Boolean,
       required: false,
@@ -267,66 +272,71 @@ export default {
 </script>
 
 <template>
-  <div class="prometheus-graph">
-    <div class="prometheus-graph-header">
-      <h5 class="prometheus-graph-title js-graph-title">{{ graphData.title }}</h5>
-      <gl-button
-        v-if="exportMetricsToCsvEnabled"
-        :href="downloadLink"
-        :title="__('Download CSV')"
-        :aria-label="__('Download CSV')"
-        style="margin-left: 200px;"
-        download="chart_metrics.csv"
-      >
-        {{ __('Download CSV') }}
-      </gl-button>
-      <div class="prometheus-graph-widgets js-graph-widgets">
-        <slot></slot>
-      </div>
-    </div>
-
-    <component
-      :is="glChartComponent"
-      ref="chart"
-      v-bind="$attrs"
-      :data="chartData"
-      :option="chartOptions"
-      :format-tooltip-text="formatTooltipText"
-      :thresholds="thresholds"
-      :width="width"
-      :height="height"
-      @updated="onChartUpdated"
-    >
-      <template v-if="tooltip.isDeployment">
-        <template slot="tooltipTitle">
-          {{ __('Deployed') }}
-        </template>
-        <div slot="tooltipContent" class="d-flex align-items-center">
-          <icon name="commit" class="mr-2" />
-          <gl-link :href="tooltip.commitUrl">{{ tooltip.sha }}</gl-link>
+  <div
+    class="prometheus-graph col-12"
+    :class="[showBorder ? 'p-2' : 'p-0', { 'col-lg-6': !singleEmbed }]"
+  >
+    <div :class="{ 'prometheus-graph-embed w-100 p-3': showBorder }">
+      <div class="prometheus-graph-header">
+        <h5 class="prometheus-graph-title js-graph-title">{{ graphData.title }}</h5>
+        <gl-button
+          v-if="exportMetricsToCsvEnabled"
+          :href="downloadLink"
+          :title="__('Download CSV')"
+          :aria-label="__('Download CSV')"
+          style="margin-left: 200px;"
+          download="chart_metrics.csv"
+        >
+          {{ __('Download CSV') }}
+        </gl-button>
+        <div class="prometheus-graph-widgets js-graph-widgets">
+          <slot></slot>
         </div>
-      </template>
-      <template v-else>
-        <template slot="tooltipTitle">
-          <div class="text-nowrap">
-            {{ tooltip.title }}
+      </div>
+
+      <component
+        :is="glChartComponent"
+        ref="chart"
+        v-bind="$attrs"
+        :data="chartData"
+        :option="chartOptions"
+        :format-tooltip-text="formatTooltipText"
+        :thresholds="thresholds"
+        :width="width"
+        :height="height"
+        @updated="onChartUpdated"
+      >
+        <template v-if="tooltip.isDeployment">
+          <template slot="tooltipTitle">
+            {{ __('Deployed') }}
+          </template>
+          <div slot="tooltipContent" class="d-flex align-items-center">
+            <icon name="commit" class="mr-2" />
+            <gl-link :href="tooltip.commitUrl">{{ tooltip.sha }}</gl-link>
           </div>
         </template>
-        <template slot="tooltipContent">
-          <div
-            v-for="(content, key) in tooltip.content"
-            :key="key"
-            class="d-flex justify-content-between"
-          >
-            <gl-chart-series-label :color="isMultiSeries ? content.color : ''">
-              {{ content.name }}
-            </gl-chart-series-label>
-            <div class="prepend-left-32">
-              {{ content.value }}
+        <template v-else>
+          <template slot="tooltipTitle">
+            <div class="text-nowrap">
+              {{ tooltip.title }}
             </div>
-          </div>
+          </template>
+          <template slot="tooltipContent">
+            <div
+              v-for="(content, key) in tooltip.content"
+              :key="key"
+              class="d-flex justify-content-between"
+            >
+              <gl-chart-series-label :color="isMultiSeries ? content.color : ''">
+                {{ content.name }}
+              </gl-chart-series-label>
+              <div class="prepend-left-32">
+                {{ content.value }}
+              </div>
+            </div>
+          </template>
         </template>
-      </template>
-    </component>
+      </component>
+    </div>
   </div>
 </template>

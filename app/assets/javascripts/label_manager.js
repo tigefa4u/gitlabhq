@@ -1,4 +1,4 @@
-/* eslint-disable  class-methods-use-this, no-underscore-dangle, no-param-reassign, func-names */
+/* eslint-disable  class-methods-use-this, no-underscore-dangle, no-param-reassign, no-unused-vars, func-names */
 
 import $ from 'jquery';
 import Sortable from 'sortablejs';
@@ -50,7 +50,7 @@ export default class LabelManager {
     $(e.currentTarget).tooltip('hide');
   }
 
-  toggleEmptyState() {
+  toggleEmptyState($label, $btn, action) {
     this.emptyState.classList.toggle(
       'hidden',
       Boolean(this.prioritizedLabels[0].querySelector(':scope > li')),
@@ -61,6 +61,7 @@ export default class LabelManager {
     if (persistState == null) {
       persistState = true;
     }
+    const _this = this;
     const url = $label.find('.js-toggle-priority').data('url');
     let $target = this.prioritizedLabels;
     let $from = this.otherLabels;

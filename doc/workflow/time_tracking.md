@@ -1,7 +1,3 @@
----
-type: reference
----
-
 # Time Tracking
 
 > Introduced in GitLab 8.14.
@@ -11,7 +7,7 @@ requests within GitLab.
 
 ## Overview
 
-Time Tracking allows you:
+Time Tracking lets you:
 
 - Record the time spent working on an issue or a merge request.
 - Add an estimate of the amount of time needed to complete an issue or a merge
@@ -22,7 +18,7 @@ You don't have to indicate an estimate to enter the time spent, and vice versa.
 Data about time tracking is shown on the issue/merge request sidebar, as shown
 below.
 
-![Time tracking in the sidebar](time_tracking/img/time_tracking_sidebar_v8_16.png)
+![Time tracking in the sidebar](time-tracking/time-tracking-sidebar.png)
 
 ## How to enter data
 
@@ -34,7 +30,7 @@ in a comment in both an issue or a merge request.
 
 Below is an example of how you can use those new quick actions inside a comment.
 
-![Time tracking example in a comment](time_tracking/img/time_tracking_example_v12_2.png)
+![Time tracking example in a comment](time-tracking/time-tracking-example.png)
 
 Adding time entries (time spent or estimates) is limited to project members.
 
@@ -69,11 +65,11 @@ To remove all the time spent at once, use `/remove_time_spent`.
 
 The following time units are available:
 
-- Months (mo)
-- Weeks (w)
-- Days (d)
-- Hours (h)
-- Minutes (m)
+- months (mo)
+- weeks (w)
+- days (d)
+- hours (h)
+- minutes (m)
 
 Default conversion rates are 1mo = 4w, 1w = 5d and 1d = 8h.
 

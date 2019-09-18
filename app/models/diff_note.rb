@@ -108,10 +108,13 @@ class DiffNote < Note
   end
 
   def fetch_diff_file
-    return note_diff_file.raw_diff_file if note_diff_file
-
     file =
-      if created_at_diff?(noteable.diff_refs)
+      if note_diff_file
+        diff = Gitlab::Git::Diff.new(note_diff_file.to_hash)
+        Gitlab::Diff::File.new(diff,
+                               repository: repository,
+                               diff_refs: original_position.diff_refs)
+      elsif created_at_diff?(noteable.diff_refs)
         # We're able to use the already persisted diffs (Postgres) if we're
         # presenting a "current version" of the MR discussion diff.
         # So no need to make an extra Gitaly diff request for it.
@@ -123,7 +126,9 @@ class DiffNote < Note
         original_position.diff_file(repository)
       end
 
-    file&.unfold_diff_lines(position)
+    # Since persisted diff files already have its content "unfolded"
+    # there's no need to make it pass through the unfolding process.
+    file&.unfold_diff_lines(position) unless note_diff_file
 
     file
   end

@@ -10,8 +10,8 @@ module Gitlab
       @instance
     end
 
-    def self.instance(*args)
-      @instance ||= initialize_instance(*args)
+    def self.instance
+      @instance ||= initialize_instance
     end
 
     attr_reader :thread

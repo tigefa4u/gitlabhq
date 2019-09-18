@@ -1,5 +1,4 @@
 .package-and-qa-base:
-  extends: .default-only
   image: ruby:2.6-alpine
   stage: qa
   dependencies: []
@@ -11,16 +10,17 @@
     - install_gitlab_gem
     - ./scripts/trigger-build omnibus
   only:
-    variables:
-      - $CI_SERVER_HOST == "gitlab.com" && $CI_PROJECT_NAMESPACE == "gitlab-org"
+    refs:
+      - branches@gitlab-org/gitlab-foss
+      - branches@gitlab-org/gitlab
 
 package-and-qa-manual:
-  extends:
-    - .package-and-qa-base
-    - .only-code-changes
+  extends: .package-and-qa-base
   except:
     refs:
       - master
+      - /(^docs[\/-].+|.+-docs$)/
+      - /(^qa[\/-].*|.*-qa$)/
   when: manual
   needs: ["build-qa-image", "gitlab:assets:compile pull-cache"]
 
@@ -34,11 +34,10 @@ package-and-qa-manual:master:
   needs: ["build-qa-image", "gitlab:assets:compile"]
 
 package-and-qa:
-  extends:
-    - .package-and-qa-base
-    - .only-qa-changes
-  except:
+  extends: .package-and-qa-base
+  only:
     refs:
-      - master
+      - /(^qa[\/-].*|.*-qa$)/@gitlab-org/gitlab-foss
+      - /(^qa[\/-].*|.*-qa$)/@gitlab-org/gitlab
   needs: ["build-qa-image", "gitlab:assets:compile pull-cache"]
   allow_failure: true

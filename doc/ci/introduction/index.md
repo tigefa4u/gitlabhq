@@ -174,7 +174,7 @@ If we take a deeper look into the basic workflow, we can see
 the features available in GitLab at each stage of the DevOps
 lifecycle, as shown on the illustration below.
 
-![Deeper look into the basic CI/CD workflow](img/gitlab_workflow_example_extended_v12_3.png)
+![Deeper look into the basic CI/CD workflow](img/gitlab_workflow_example_extended_11_11.png)
 
 If you look at the image from the left to the right,
 you'll see some of the features available in GitLab
@@ -187,9 +187,9 @@ according to each stage (Verify, Package, Release).
    - Perform a series of tests, such as [Container Scanning](../../user/application_security/container_scanning/index.md) **(ULTIMATE)**, [Dependency Scanning](../../user/application_security/dependency_scanning/index.md) **(ULTIMATE)**, and [JUnit tests](../junit_test_reports.md).
    - Deploy your changes with [Review Apps](../review_apps/index.md) to preview the app changes on every branch.
 1. **Package**:
-   - Store Docker images with [Container Registry](../../user/packages/container_registry/index.md).
-   - Store NPM packages with [NPM Registry](../../user/packages/npm_registry/index.md). **(PREMIUM)**
-   - Store Maven artifacts with [Maven Repository](../../user/packages/maven_repository/index.md). **(PREMIUM)**
+   - Store Docker images with [Container Registry](../../user/project/container_registry.md).
+   - Store NPM packages with [NPM Registry](../../user/project/packages/npm_registry.md). **(PREMIUM)**
+   - Store Maven artifacts with [Maven Repository](../../user/project/packages/maven_repository.md). **(PREMIUM)**
 1. **Release**:
    - Continuous Deployment, automatically deploying your app to production.
    - Continuous Delivery, manually click to deploy your app to production.

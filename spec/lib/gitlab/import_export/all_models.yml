@@ -65,8 +65,8 @@ milestone:
 - participants
 - events
 - boards
-- milestone_releases
-- releases
+- milestone_release
+- release
 snippets:
 - author
 - project
@@ -77,8 +77,8 @@ releases:
 - author
 - project
 - links
-- milestone_releases
-- milestones
+- milestone_release
+- milestone
 links:
 - release
 project_members:

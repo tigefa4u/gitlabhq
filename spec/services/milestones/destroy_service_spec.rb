@@ -72,7 +72,7 @@ describe Milestones::DestroyService do
           :release,
           tag: 'v1.0',
           project: project,
-          milestones: [milestone]
+          milestone: milestone
         )
 
         expect { service.execute(milestone) }.not_to change { Release.count }

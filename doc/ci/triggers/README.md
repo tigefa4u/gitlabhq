@@ -277,6 +277,6 @@ removed with one of the future versions of GitLab.
 [ee]: https://about.gitlab.com/pricing/
 [variables]: ../variables/README.md
 [predef]: ../variables/README.md#predefined-environment-variables
-[registry]: ../../user/packages/container_registry/index.md
+[registry]: ../../user/project/container_registry.md
 [permissions]: ../../user/permissions.md#job-permissions
 [trigapi]: ../../api/pipeline_triggers.md

@@ -58,7 +58,6 @@ class Project < ApplicationRecord
   ACCESS_REQUEST_APPROVERS_TO_BE_NOTIFIED_LIMIT = 10
 
   SORTING_PREFERENCE_FIELD = :projects_sort
-  MAX_BUILD_TIMEOUT = 1.month
 
   cache_markdown_field :description, pipeline: :description
 
@@ -431,7 +430,7 @@ class Project < ApplicationRecord
 
   validates :build_timeout, allow_nil: true,
                             numericality: { greater_than_or_equal_to: 10.minutes,
-                                            less_than: MAX_BUILD_TIMEOUT,
+                                            less_than: 1.month,
                                             only_integer: true,
                                             message: _('needs to be between 10 minutes and 1 month') }
 
@@ -751,15 +750,6 @@ class Project < ApplicationRecord
 
   def latest_successful_build_for_ref!(job_name, ref = default_branch)
     latest_successful_build_for_ref(job_name, ref) || raise(ActiveRecord::RecordNotFound.new("Couldn't find job #{job_name}"))
-  end
-
-  def latest_pipeline_for_ref(ref = default_branch)
-    ref = ref.presence || default_branch
-    sha = commit(ref)&.sha
-
-    return unless sha
-
-    ci_pipelines.newest_first(ref: ref, sha: sha).first
   end
 
   def merge_base_commit(first_commit_id, second_commit_id)

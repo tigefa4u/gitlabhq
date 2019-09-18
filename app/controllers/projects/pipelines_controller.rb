@@ -8,9 +8,6 @@ class Projects::PipelinesController < Projects::ApplicationController
   before_action :authorize_read_build!, only: [:index]
   before_action :authorize_create_pipeline!, only: [:new, :create]
   before_action :authorize_update_pipeline!, only: [:retry, :cancel]
-  before_action do
-    push_frontend_feature_flag(:hide_dismissed_vulnerabilities)
-  end
 
   around_action :allow_gitaly_ref_name_caching, only: [:index, :show]
 
@@ -199,7 +196,12 @@ class Projects::PipelinesController < Projects::ApplicationController
   end
 
   def latest_pipeline
-    @project.latest_pipeline_for_ref(params['ref'])
+    ref = params['ref'].presence || @project.default_branch
+    sha = @project.commit(ref)&.sha
+
+    @project.ci_pipelines
+            .newest_first(ref: ref, sha: sha)
+            .first
             &.present(current_user: current_user)
   end
 

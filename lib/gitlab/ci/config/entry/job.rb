@@ -14,8 +14,8 @@ module Gitlab
           ALLOWED_WHEN = %w[on_success on_failure always manual delayed].freeze
           ALLOWED_KEYS = %i[tags script only except rules type image services
                             allow_failure type stage when start_in artifacts cache
-                            dependencies before_script needs after_script variables
-                            environment coverage retry parallel extends interruptible timeout].freeze
+                            dependencies needs before_script after_script variables
+                            environment coverage retry parallel extends interruptible].freeze
 
           REQUIRED_BY_NEEDS = %i[stage].freeze
 
@@ -45,8 +45,6 @@ module Gitlab
                 in: ALLOWED_WHEN,
                 message: "should be one of: #{ALLOWED_WHEN.join(', ')}"
               }
-
-              validates :timeout, duration: { limit: ChronicDuration.output(Project::MAX_BUILD_TIMEOUT) }
 
               validates :dependencies, array_of_strings: true
               validates :needs, array_of_strings: true
@@ -129,7 +127,7 @@ module Gitlab
 
           attributes :script, :tags, :allow_failure, :when, :dependencies,
                      :needs, :retry, :parallel, :extends, :start_in, :rules,
-                     :interruptible, :timeout
+                     :interruptible
 
           def self.matching?(name, config)
             !name.to_s.start_with?('.') &&
@@ -220,7 +218,6 @@ module Gitlab
               retry: retry_defined? ? retry_value : nil,
               parallel: parallel_defined? ? parallel_value.to_i : nil,
               interruptible: interruptible_defined? ? interruptible_value : nil,
-              timeout: has_timeout? ? ChronicDuration.parse(timeout.to_s) : nil,
               artifacts: artifacts_value,
               after_script: after_script_value,
               ignore: ignored?,

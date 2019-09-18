@@ -76,7 +76,6 @@ describe 'Admin disables Git access protocol', :js do
   context 'with nothing disabled' do
     before do
       create(:personal_key, user: admin)
-      allow_all_protocols
     end
 
     it 'shows default SSH url and protocol selection dropdown' do
@@ -106,10 +105,6 @@ describe 'Admin disables Git access protocol', :js do
 
   def visit_project
     visit project_path(project)
-  end
-
-  def allow_all_protocols
-    switch_git_protocol(1)
   end
 
   def disable_http_protocol

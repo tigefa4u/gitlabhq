@@ -1,4 +1,5 @@
-/* eslint-disable func-names, no-underscore-dangle, no-var, one-var, vars-on-top, no-shadow, no-cond-assign, prefer-arrow-callback, no-return-assign, no-else-return, camelcase, no-lonely-if, guard-for-in, no-restricted-syntax, consistent-return, prefer-template, no-param-reassign, no-loop-func */
+/* eslint-disable func-names, no-underscore-dangle, no-var, one-var, vars-on-top, no-unused-vars, no-shadow, no-cond-assign, prefer-arrow-callback, no-return-assign, no-else-return, camelcase, no-lonely-if, guard-for-in, no-restricted-syntax, consistent-return, prefer-template, no-param-reassign, no-loop-func */
+/* global fuzzaldrinPlus */
 
 import $ from 'jquery';
 import _ from 'underscore';
@@ -65,9 +66,11 @@ GitLabDropdownInput = (function() {
 })();
 
 GitLabDropdownFilter = (function() {
-  var BLUR_KEYCODES, HAS_VALUE_CLASS;
+  var ARROW_KEY_CODES, BLUR_KEYCODES, HAS_VALUE_CLASS;
 
   BLUR_KEYCODES = [27, 40];
+
+  ARROW_KEY_CODES = [38, 40];
 
   HAS_VALUE_CLASS = 'has-value';
 
@@ -874,8 +877,9 @@ GitLabDropdown = (function() {
   };
 
   GitLabDropdown.prototype.addArrowKeyEvent = function() {
-    var ARROW_KEY_CODES, selector;
+    var $input, ARROW_KEY_CODES, selector;
     ARROW_KEY_CODES = [38, 40];
+    $input = this.dropdown.find('.dropdown-input-field');
     selector = SELECTABLE_CLASSES;
     if (this.dropdown.find('.dropdown-toggle-page').length) {
       selector = '.dropdown-page-one ' + selector;

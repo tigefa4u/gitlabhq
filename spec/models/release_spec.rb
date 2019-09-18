@@ -13,8 +13,7 @@ RSpec.describe Release do
     it { is_expected.to belong_to(:project) }
     it { is_expected.to belong_to(:author).class_name('User') }
     it { is_expected.to have_many(:links).class_name('Releases::Link') }
-    it { is_expected.to have_many(:milestones) }
-    it { is_expected.to have_many(:milestone_releases) }
+    it { is_expected.to have_one(:milestone) }
   end
 
   describe 'validation' do
@@ -39,15 +38,15 @@ RSpec.describe Release do
 
     context 'when a release is tied to a milestone for another project' do
       it 'creates a validation error' do
-        milestone = build(:milestone, project: create(:project))
-        expect { release.milestones << milestone }.to raise_error
+        release.milestone = build(:milestone, project: create(:project))
+        expect(release).not_to be_valid
       end
     end
 
     context 'when a release is tied to a milestone linked to the same project' do
-      it 'successfully links this release to this milestone' do
-        milestone = build(:milestone, project: project)
-        expect { release.milestones << milestone }.to change { MilestoneRelease.count }.by(1)
+      it 'is valid' do
+        release.milestone = build(:milestone, project: project)
+        expect(release).to be_valid
       end
     end
   end

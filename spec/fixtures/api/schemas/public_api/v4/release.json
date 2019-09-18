@@ -15,10 +15,7 @@
     "author": {
       "oneOf": [{ "type": "null" }, { "$ref": "user/basic.json" }]
     },
-    "milestones": {
-      "type": "array",
-      "items": { "$ref": "milestone.json" }
-    },
+    "milestone": { "type": "string" },
     "assets": {
       "required": ["count", "links", "sources"],
       "properties": {

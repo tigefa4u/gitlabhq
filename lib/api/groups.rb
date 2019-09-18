@@ -173,8 +173,7 @@ module API
 
         options = {
           with: params[:with_projects] ? Entities::GroupDetail : Entities::Group,
-          current_user: current_user,
-          user_can_admin_group: can?(current_user, :admin_group, group)
+          current_user: current_user
         }
 
         group, options = with_custom_attributes(group, options)

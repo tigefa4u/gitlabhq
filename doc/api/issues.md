@@ -57,8 +57,7 @@ GET /issues?confidential=true
 | `created_before`    | datetime         | no         | Return issues created on or before the given time                                                                                                   |
 | `updated_after`     | datetime         | no         | Return issues updated on or after the given time                                                                                                    |
 | `updated_before`    | datetime         | no         | Return issues updated on or before the given time                                                                                                   |
-| `confidential`      | Boolean          | no         | Filter confidential or public issues.                                                                                                               |
-| `not`               | Hash             | no         | Return issues that do not match the parameters supplied. Accepts: `labels`, `milestone`, `author_id`, `author_username`, `assignee_id`, `assignee_username`, `my_reaction_emoji`, `search`, `in` |  
+| `confidential`     | Boolean          | no         | Filter confidential or public issues.                                                                                                               |
 
 ```bash
 curl --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/issues
@@ -207,7 +206,6 @@ GET /groups/:id/issues?confidential=true
 | `updated_after`     | datetime         | no         | Return issues updated on or after the given time                                                                              |
 | `updated_before`    | datetime         | no         | Return issues updated on or before the given time                                                                             |
 | `confidential`     | Boolean          | no         | Filter confidential or public issues.                                                                                         |
-| `not`               | Hash             | no         | Return issues that do not match the parameters supplied. Accepts: `labels`, `milestone`, `author_id`, `author_username`, `assignee_id`, `assignee_username`, `my_reaction_emoji`, `search`, `in` |  
 
 ```bash
 curl --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/groups/4/issues
@@ -356,7 +354,6 @@ GET /projects/:id/issues?confidential=true
 | `updated_after`     | datetime         | no         | Return issues updated on or after the given time                                                                              |
 | `updated_before`    | datetime         | no         | Return issues updated on or before the given time                                                                             |
 | `confidential`     | Boolean          | no         | Filter confidential or public issues.                                                                                         |
-| `not`               | Hash             | no         | Return issues that do not match the parameters supplied. Accepts: `labels`, `milestone`, `author_id`, `author_username`, `assignee_id`, `assignee_username`, `my_reaction_emoji`, `search`, `in` |
 
 ```bash
 curl --header "PRIVATE-TOKEN: <your_access_token>" https://gitlab.example.com/api/v4/projects/4/issues

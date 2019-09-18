@@ -42,15 +42,7 @@ describe Gitlab::HookData::IssuableBuilder do
               [{ id: 1, title: 'foo' }],
               [{ id: 1, title: 'foo' }, { id: 2, title: 'bar' }]
             ],
-            total_time_spent: [1, 2],
-            assignees: [
-              [],
-              [{
-                name: "Foo Bar",
-                username: "foobar",
-                avatar_url: "http://www.example.com/my-avatar.jpg"
-              }]
-            ]
+            total_time_spent: [1, 2]
           }
         end
         let(:data) { builder.build(user: user, changes: changes) }
@@ -66,14 +58,6 @@ describe Gitlab::HookData::IssuableBuilder do
             total_time_spent: {
               previous: 1,
               current: 2
-            },
-            assignees: {
-              previous: [],
-                current: [{
-                  name: "Foo Bar",
-                  username: "foobar",
-                  avatar_url: "http://www.example.com/my-avatar.jpg"
-                }]
             }
           }))
         end

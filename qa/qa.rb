@@ -61,7 +61,6 @@ module QA
     autoload :KubernetesCluster, 'qa/resource/kubernetes_cluster'
     autoload :User, 'qa/resource/user'
     autoload :ProjectMilestone, 'qa/resource/project_milestone'
-    autoload :Members, 'qa/resource/members'
     autoload :Wiki, 'qa/resource/wiki'
     autoload :File, 'qa/resource/file'
     autoload :Fork, 'qa/resource/fork'
@@ -275,7 +274,6 @@ module QA
         autoload :Edit, 'qa/page/project/wiki/edit'
         autoload :New, 'qa/page/project/wiki/new'
         autoload :Show, 'qa/page/project/wiki/show'
-        autoload :GitAccess, 'qa/page/project/wiki/git_access'
       end
 
       module WebIDE

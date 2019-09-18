@@ -7,7 +7,7 @@ describe IssueTrackerService do
     let(:project) { create :project }
 
     describe 'only one issue tracker per project' do
-      let(:service) { RedmineService.new(project: project, active: true, issue_tracker_data: build(:issue_tracker_data)) }
+      let(:service) { RedmineService.new(project: project, active: true) }
 
       before do
         create(:custom_issue_tracker_service, project: project)
