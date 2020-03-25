@@ -58,6 +58,7 @@ Libraries with the following licenses are acceptable for use:
 - [Unlicense][UNLICENSE]: Another public domain dedication.
 - [OWFa 1.0][OWFa1]: An open-source license and patent grant designed for specifications.
 - [JSON License](https://www.json.org/license.html): Equivalent to the MIT license plus the statement, "The Software shall be used for Good, not Evil."
+- [Artistic License 2.0](https://spdx.org/licenses/Artistic-2.0): A permissive open-source license similar to the MIT license; as opposed to the MIT license, the Artistic License 2.0 requires any code modifications to be clearly stated.
 
 ## Unacceptable Licenses
 
