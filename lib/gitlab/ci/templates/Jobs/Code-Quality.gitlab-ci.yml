@@ -1,6 +1,7 @@
 code_quality:
   stage: test
   image: docker:19.03.11
+  needs: []
   allow_failure: true
   services:
     - docker:19.03.11-dind
