@@ -165,9 +165,7 @@ module QA
             terms.accept_terms if terms.visible?
           end
 
-          QA::Page::Main::Onboarding.perform do |onboarding|
-            onboarding.skip_for_now if onboarding.respond_to?(:skip_for_now) && onboarding.visible?
-          end
+          QA::EE::Page::Main::Onboarding.perform(&:skip_if_visible) if QA.const_defined?(:EE)
 
           Page::Main::Menu.validate_elements_present! unless skip_page_validation
         end
