@@ -36,7 +36,7 @@ project.
 
 To allow for asynchronous issue handling, we use [milestones](https://gitlab.com/groups/gitlab-org/-/milestones)
 and [labels](https://gitlab.com/gitlab-org/gitlab/-/labels). Leads and product managers handle most of the
-scheduling into milestones. Labeling is a task for everyone.
+scheduling into milestones. Labeling is a task for everyone (however for some projects labels can only be set by GitLab team members and cannot be set by community contributors).
 
 Most issues will have labels for at least one of the following:
 
