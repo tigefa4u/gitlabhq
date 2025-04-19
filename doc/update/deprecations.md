@@ -358,17 +358,19 @@ If your pipeline relies on forwarding protected variables, update your configura
 
 </div>
 
-In GitLab 18.0, we will remove CodeClimate-based Code Quality scanning.
+In GitLab 19.0, we will remove CodeClimate-based Code Quality scanning.
+This change was previously scheduled for GitLab 18.0 and has now been delayed.
+
 In its place, you should use quality tools directly in your CI/CD pipeline and [provide the tool's report as an artifact](https://docs.gitlab.com/ci/testing/code_quality/#import-code-quality-results-from-a-cicd-job).
-Many tools already support the required report format, and you can integrate them by following the [documented steps](https://docs.gitlab.com/ci/testing/code_quality/#integrate-common-tools-with-code-quality).
+We've already documented how to integrate many tools directly, and you can integrate them by following the [documentation](https://docs.gitlab.com/ci/testing/code_quality/#integrate-common-tools-with-code-quality).
 
 We expect to implement this change by:
 
-1. Changing the [`Code-Quality.gitlab-ci.yml` CI/CD template](https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Jobs/Code-Quality.gitlab-ci.yml) to no longer execute scans. Today, this template runs CodeClimate-based scans. (We plan to change the template rather than delete it to reduce the impact on any pipelines that still `include` the template after 18.0.)
+1. Changing the [`Code-Quality.gitlab-ci.yml` CI/CD template](https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Jobs/Code-Quality.gitlab-ci.yml) to no longer execute scans. Today, this template runs CodeClimate-based scans. (We plan to change the template rather than delete it to reduce the impact on any pipelines that still `include` the template after 19.0.)
 1. No longer running CodeClimate-based scanning as part of Auto DevOps.
 
 Effective immediately, CodeClimate-based scanning will receive only [limited updates](https://docs.gitlab.com/update/terminology/#deprecation).
-After End of Support in GitLab 18.0, we won't provide further updates.
+After End of Support in GitLab 19.0, we won't provide further updates.
 However, we won't delete previously published container images or remove the ability to run them by using custom CI/CD pipeline job definitions.
 
 For more details, see [Scan code for quality violations](https://docs.gitlab.com/ci/testing/code_quality/#scan-code-for-quality-violations).
@@ -508,6 +510,32 @@ See the corresponding [deprecation announcement](https://docs.gitlab.com/update/
 
 The Audit Event APIs for instances, groups, and projects currently support optional keyset pagination. In GitLab 18.0
 we will enforce keyset pagination on these APIs.
+
+</div>
+
+<div class="deprecation breaking-change" data-milestone="19.0">
+
+### GitLab Advanced SAST will be enabled by default
+
+<div class="deprecation-notes">
+
+- Announced in GitLab <span class="milestone">17.9</span>
+- Removal in GitLab <span class="milestone">19.0</span> ([breaking change](https://docs.gitlab.com/update/terminology/#breaking-change))
+- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/513685).
+
+</div>
+
+In GitLab 19.0, we will update the [SAST CI/CD templates](https://docs.gitlab.com/user/application_security/sast#stable-vs-latest-sast-templates) to enable [GitLab Advanced SAST](https://docs.gitlab.com/user/application_security/sast/gitlab_advanced_sast) by default in projects with GitLab Ultimate.
+Before this change, the GitLab Advanced SAST analyzer is enabled only if you set the CI/CD variable `GITLAB_ADVANCED_SAST_ENABLED` to `true`.
+This change was previously scheduled for GitLab 18.0 and has now been delayed.
+
+Advanced SAST delivers more accurate results by using cross-file, cross-function scanning and a new ruleset.
+Advanced SAST takes over coverage for [supported languages](https://docs.gitlab.com/user/application_security/sast/gitlab_advanced_sast#supported-languages) and disables scanning for that language in the previous scanner.
+An automated process migrates results from previous scanners after the first scan on each project's default branch, if they're still detected.
+
+Because it scans your project in more detail, Advanced SAST may take more time to scan your project.
+If needed, you can [disable GitLab Advanced SAST](https://docs.gitlab.com/user/application_security/sast/gitlab_advanced_sast#disable-gitlab-advanced-sast-scanning) by setting the CI/CD variable `GITLAB_ADVANCED_SAST_ENABLED` to `false`.
+You can set this variable in your project, group, or policy now to prevent Advanced SAST from being enabled by default in GitLab 19.0.
 
 </div>
 
@@ -758,22 +786,6 @@ For more information about updating your storage driver configuration, see [use 
 
 </div>
 
-<div class="deprecation " data-milestone="19.0">
-
-### Secret detection analyzer doesn't run as root user by default
-
-<div class="deprecation-notes">
-
-- Announced in GitLab <span class="milestone">17.9</span>
-- Removal in GitLab <span class="milestone">19.0</span>
-- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/476160).
-
-</div>
-
-This planned change to the secret detection analyzer is cancelled. You can still use the root user by default.
-
-</div>
-
 <div class="deprecation breaking-change" data-milestone="19.0">
 
 ### Single database connection is deprecated
@@ -884,6 +896,22 @@ The `Project.services` GraphQL field is deprecated. A `Project.integrations` fie
 
 <div class="deprecation breaking-change" data-milestone="19.0">
 
+### The `ci_job_token_scope_enabled` projects API attribute is deprecated
+
+<div class="deprecation-notes">
+
+- Announced in GitLab <span class="milestone">16.4</span>
+- Removal in GitLab <span class="milestone">19.0</span> ([breaking change](https://docs.gitlab.com/update/terminology/#breaking-change))
+- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/423091).
+
+</div>
+
+GitLab 16.1 introduced [API endpoints for the job token scope](https://gitlab.com/gitlab-org/gitlab/-/issues/351740). In the [projects API](https://docs.gitlab.com/api/projects/), the `ci_job_token_scope_enabled` attribute is deprecated, and will be removed in 17.0. You should use the [job token scope APIs](https://docs.gitlab.com/api/project_job_token_scopes/) instead.
+
+</div>
+
+<div class="deprecation breaking-change" data-milestone="19.0">
+
 ### The `heroku/builder:22` image is deprecated
 
 <div class="deprecation-notes">
@@ -962,6 +990,22 @@ Known issues:
 
 The [ZenTao product integration](https://docs.gitlab.com/user/project/integrations/zentao/) has been deprecated
 and will be moved to the JiHu GitLab codebase.
+
+</div>
+
+<div class="deprecation breaking-change" data-milestone="19.0">
+
+### `ciJobTokenScopeAddProject` GraphQL mutation is deprecated
+
+<div class="deprecation-notes">
+
+- Announced in GitLab <span class="milestone">17.5</span>
+- Removal in GitLab <span class="milestone">19.0</span> ([breaking change](https://docs.gitlab.com/update/terminology/#breaking-change))
+- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/474175).
+
+</div>
+
+With the [upcoming default behavior change to the CI/CD job token](https://docs.gitlab.com/update/deprecations/#default-cicd-job-token-ci_job_token-scope-changed) in GitLab 18.0, we are also deprecating the associated `ciJobTokenScopeAddProject` GraphQL mutation in favor of `ciJobTokenScopeAddGroupOrProject`.
 
 </div>
 
@@ -1161,22 +1205,21 @@ Starting in GitLab 18.0, we'll align this template's behavior with the behavior 
 
 </div>
 
-The Application Security Testing stage will be bumping the major versions of its analyzers in
-tandem with the GitLab 18.0 release.
+In GitLab 18.0, we will update the major version of all Application Security Testing analyzer container images.
 
 If you are not using the default included templates, or have pinned your analyzer versions, you
 must update your CI/CD job definition to either remove the pinned version or update
 the latest major version.
 
-Users of GitLab 17.0 to GitLab 17.11 will continue to experience analyzer updates until the
+Users of GitLab 17.0 to GitLab 17.11 will continue to receive analyzer updates until the
 release of GitLab 18.0, after which all newly fixed bugs and released features will be
 released only in the new major version of the analyzers.
+However, we will not remove any published container images from the container registry.
 
 We do not backport bugs and features to deprecated versions as per our maintenance policy. As
 required, security patches will be backported within the latest 3 minor releases.
 
-Specifically, the following analyzers are being deprecated and will no longer be updated after
-the GitLab 18.0 release:
+Specifically, the following analyzers will no longer be updated after the GitLab 18.0 release:
 
 - GitLab Advanced SAST: version 1
 - Container Scanning: version 7
@@ -1322,13 +1365,13 @@ In most cases, the 45-second value was higher than the timeout value of many sca
 
 To lessen potential disruptions, we will incrementally adjust the default timeout value according to this schedule:
 
-| Timeout value | Milestone |
-|:--------------|:----------|
-| 45            | Current   |
-| 30            | 18.0      |
-| 20            | 18.1      |
-| 10            | 18.2      |
-| 5             | 18.3      |
+| Timeout value | Milestone         |
+|:--------------|:------------------|
+| 45            | 17.11 and earlier |
+| 30            | 18.0              |
+| 20            | 18.1              |
+| 10            | 18.2              |
+| 5             | 18.3              |
 
 </div>
 
@@ -1512,31 +1555,6 @@ For more information, see the [charts release page](https://docs.gitlab.com/char
 
 </div>
 
-<div class="deprecation breaking-change" data-milestone="18.0">
-
-### GitLab Advanced SAST will be enabled by default
-
-<div class="deprecation-notes">
-
-- Announced in GitLab <span class="milestone">17.9</span>
-- Removal in GitLab <span class="milestone">18.0</span> ([breaking change](https://docs.gitlab.com/update/terminology/#breaking-change))
-- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/513685).
-
-</div>
-
-In GitLab 18.0, we will update the [SAST CI/CD templates](https://docs.gitlab.com/user/application_security/sast#stable-vs-latest-sast-templates) to enable [GitLab Advanced SAST](https://docs.gitlab.com/user/application_security/sast/gitlab_advanced_sast) by default in projects with GitLab Ultimate.
-Before this change, the GitLab Advanced SAST analyzer was enabled only if you set the CI/CD variable `GITLAB_ADVANCED_SAST_ENABLED` to `true`.
-
-Advanced SAST delivers more accurate results by using cross-file, cross-function scanning and a new ruleset.
-Advanced SAST takes over coverage for [supported languages](https://docs.gitlab.com/user/application_security/sast/gitlab_advanced_sast#supported-languages) and disables scanning for that language in the previous scanner.
-An automated process migrates results from previous scanners after the first scan on each project's default branch, if they're still detected.
-
-Because it scans your project in more detail, Advanced SAST may take more time to scan your project.
-If needed, you can [disable GitLab Advanced SAST](https://docs.gitlab.com/user/application_security/sast/gitlab_advanced_sast#disable-gitlab-advanced-sast-scanning) by setting the CI/CD variable `GITLAB_ADVANCED_SAST_ENABLED` to `false`.
-You can set this variable in your project, group, or policy now to prevent Advanced SAST from being enabled by default in GitLab 18.0.
-
-</div>
-
 <div class="deprecation " data-milestone="18.0">
 
 ### Gitaly rate limiting
@@ -1701,6 +1719,26 @@ The project page will be removed entirely from the group settings in 18.0.
 
 </div>
 
+<div class="deprecation " data-milestone="18.0">
+
+### REST API endpoint `pre_receive_secret_detection_enabled` is deprecated
+
+<div class="deprecation-notes">
+
+- Announced in GitLab <span class="milestone">17.9</span>
+- Removal in GitLab <span class="milestone">18.0</span>
+- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/514413).
+
+</div>
+
+The REST API endpoint `pre_receive_secret_detection_enabled` is deprecated in favor of `secret_push_protection_enabled`. We are renaming some API fields to reflect the name change of the feature `pre_receive_secret_detection` to `secret_push_protection`.
+
+We have added the new API field name, but will no longer remove the old field name in GitLab 18.0 as originally announced.
+
+We will still update the database to [remove](https://gitlab.com/gitlab-org/gitlab/-/issues/512996) the old `pre_receive_secret_detection_enabled` database column, but you'll be able to use either API field name. Both will reflect the value of the new `secret_push_protection_enabled` database column.
+
+</div>
+
 <div class="deprecation breaking-change" data-milestone="18.0">
 
 ### Raspberry Pi 32-bit packages are deprecated
@@ -1763,6 +1801,26 @@ In 18.0 we are removing the `duoProAssignedUsersCount` GraphQL field. Users may 
 
 <div class="deprecation " data-milestone="18.0">
 
+### Rename `setPreReceiveSecretDetection` GraphQL mutation to `setSecretPushProtection`
+
+<div class="deprecation-notes">
+
+- Announced in GitLab <span class="milestone">17.7</span>
+- Removal in GitLab <span class="milestone">18.0</span>
+- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/514414).
+
+</div>
+
+The `setPreReceiveSecretDetection` GraphQL mutation has been renamed to `setSecretPushProtection`. We are also renaming some fields in the mutation's response to reflect the name change of the feature `pre_receive_secret_detection` to `secret_push_protection`.
+
+We have added the new mutation name, but will no longer remove the old mutation name in GitLab 18.0 as originally announced.
+
+We will still update the database to [remove](https://gitlab.com/gitlab-org/gitlab/-/issues/512996) the old `pre_receive_secret_detection_enabled` database column, but you'll be able to use either mutation name. Both will reflect the value of the new `secret_push_protection_enabled` database column.
+
+</div>
+
+<div class="deprecation " data-milestone="18.0">
+
 ### Rename options to skip GitGuardian secret detection
 
 <div class="deprecation-notes">
@@ -1774,6 +1832,8 @@ In 18.0 we are removing the `duoProAssignedUsersCount` GraphQL field. Users may 
 </div>
 
 The options to skip GitGuardian secret detection, `[skip secret detection]` and `secret_detection.skip_all`, are deprecated. You should use `[skip secret push protection]` and `secret_push_protection.skip_all` instead.
+
+While we recommend using the new wording, we no longer will remove the old option in GitLab 18.0.
 
 </div>
 
@@ -1825,29 +1885,6 @@ Long term service and support (LTSS) for SUSE Linux Enterprise Server (SLES) 15 
 
 Therefore, we will no longer support the SLES SP2 distribution for Linux package installs. You should upgrade to
 SLES 15 SP6 for continued support.
-
-</div>
-
-<div class="deprecation " data-milestone="18.0">
-
-### Support for project build as part of SpotBugs scans
-
-<div class="deprecation-notes">
-
-- Announced in GitLab <span class="milestone">17.9</span>
-- End of Support in GitLab <span class="milestone">18.0</span>
-- Removal in GitLab <span class="milestone">18.0</span>
-- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/513409).
-
-</div>
-
-The SpotBugs [SAST analyzer](https://docs.gitlab.com/user/application_security/sast/#supported-languages-and-frameworks)
-can perform a build when the artifacts to be scanned aren't present. While this usually works well for simple projects, it can fail on more complex builds.
-
-From GitLab 18.0, to resolve SpotBugs analyzer build failures, you should:
-
-1. [Pre-compile](https://docs.gitlab.com/user/application_security/sast/#pre-compilation) the project.
-1. Pass the artifacts you want to scan to the analyzer.
 
 </div>
 
@@ -7764,60 +7801,6 @@ For information about migrating from the CI/CD template to the component, see th
 
 <div class="deprecation breaking-change">
 
-### Public use of Secure container registries is deprecated
-
-<div class="deprecation-notes">
-
-- Announced in GitLab <span class="milestone">17.4</span>
-- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/470641).
-
-</div>
-{{< alert type="note" >}}
-
-This change has been removed from its original milestone and is being reassessed.
-
-{{< /alert >}}
-
-Container registries under `registry.gitlab.com/gitlab-org/security-products/`
-are no longer accessible in GitLab 18.0. [Since GitLab 14.8](https://docs.gitlab.com/update/deprecations/#secure-and-protect-analyzer-images-published-in-new-location)
-the correct location is under `registry.gitlab.com/security-products` (note the absence of
-`gitlab-org` in the address).
-
-This change improves the security of the release process for GitLab [vulnerability scanners](https://docs.gitlab.com/user/application_security/#vulnerability-scanner-maintenance).
-
-Users are advised to use the equivalent registry under `registry.gitlab.com/security-products/`,
-which is the canonical location for GitLab security scanner images. The relevant GitLab CI
-templates already use this location, so no changes should be necessary for users that use the
-unmodified templates.
-
-Offline deployments should review the [specific scanner instructions](https://docs.gitlab.com/user/application_security/offline_deployments/#specific-scanner-instructions)
-to ensure the correct locations are being used to mirror the required scanner images.
-
-</div>
-
-<div class="deprecation ">
-
-### REST API endpoint `pre_receive_secret_detection_enabled` is deprecated
-
-<div class="deprecation-notes">
-
-- Announced in GitLab <span class="milestone">17.9</span>
-- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/514413).
-
-</div>
-{{< alert type="note" >}}
-
-This change has been removed from its original milestone and is being reassessed.
-
-{{< /alert >}}
-
-The REST API endpoint `pre_receive_secret_detection_enabled` is deprecated in favor of `secret_push_protection_enabled`. We are renaming some API fields to reflect the name change of the feature `pre_receive_secret_detection` to `secret_push_protection`.
-Following [new guidance](https://docs.gitlab.com/development/api_styleguide/#what-to-do-instead-of-a-breaking-change), we will adapt the schema to support both `pre_receive_secret_detection_enabled` and `secret_push_protection_enabled`. We will still [remove](https://gitlab.com/gitlab-org/gitlab/-/issues/512996) the old `pre_receive_secret_detection_enabled` column, but customers will be able to use either parameter, with both pointing to the new `secret_push_protection_enabled` column.
-
-</div>
-
-<div class="deprecation breaking-change">
-
 ### Rate limits for common User, Project, and Group API endpoints
 
 <div class="deprecation-notes">
@@ -7863,59 +7846,6 @@ The `previousStageJobsOrNeeds` field in GraphQL will be removed as it has been r
 
 </div>
 
-<div class="deprecation ">
-
-### Rename `setPreReceiveSecretDetection` GraphQL mutation to `setSecretPushProtection`
-
-<div class="deprecation-notes">
-
-- Announced in GitLab <span class="milestone">17.7</span>
-- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/514414).
-
-</div>
-{{< alert type="note" >}}
-
-This change has been removed from its original milestone and is being reassessed.
-
-{{< /alert >}}
-
-The `setPreReceiveSecretDetection` GraphQL mutation has been renamed to `setSecretPushProtection`. We are also renaming some fields in the mutation's response to reflect the name change of the feature `pre_receive_secret_detection` to `secret_push_protection`.
-Following [new guidance](https://docs.gitlab.com/development/api_styleguide/#what-to-do-instead-of-a-breaking-change), we're adapting the schema to support both `setPreReceiveSecretDetection` and `setSecretPushProtection`. You can use either parameter because they both point to the `secret_push_protection_enabled` column. In GitLab 18.0, we will [remove](https://gitlab.com/gitlab-org/gitlab/-/issues/514414) the old `setPreReceiveSecretDetection` column.
-
-</div>
-
-<div class="deprecation breaking-change">
-
-### SAST jobs no longer use global cache settings
-
-<div class="deprecation-notes">
-
-- Announced in GitLab <span class="milestone">17.9</span>
-- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/512564).
-
-</div>
-{{< alert type="note" >}}
-
-This change has been removed from its original milestone and is being reassessed.
-
-{{< /alert >}}
-
-In GitLab 18.0, we will update SAST and IaC Scanning to explicitly [disable the use of the CI/CD job cache](https://docs.gitlab.com/ci/caching/#disable-cache-for-specific-jobs) by default.
-
-This change affects the CI/CD templates for:
-
-- SAST: `SAST.gitlab-ci.yml`.
-- IaC Scanning: `SAST-IaC.gitlab-ci.yml`.
-
-We already updated the `latest` templates `SAST.latest.gitlab-ci.yml` and `SAST-IaC.latest.gitlab-ci.yml`. See [stable and latest templates](https://docs.gitlab.com/user/application_security/sast/#stable-vs-latest-sast-templates) for more details on these template versions.
-
-The cache directories are not in scope for scanning in most projects, so fetching the cache can cause timeouts or false-positive results.
-
-If you need to use the cache when scanning a project, you can restore the previous behavior by [overriding](https://docs.gitlab.com/user/application_security/sast/#overriding-sast-jobs) the
-[`cache`](https://docs.gitlab.com/ci/yaml/#cache) property in the project's CI configuration.
-
-</div>
-
 <div class="deprecation breaking-change">
 
 ### The `agentk` container registry is moving to Cloud Native GitLab
@@ -7944,46 +7874,6 @@ If you mirror the `agentk` container to a local registry, you should change your
 
 If you use the official [GitLab Agent Helm chart](https://gitlab.com/gitlab-org/charts/gitlab-agent/),
 the new `agentk` image will start deploying from the new location seamlessly in GitLab 18.0.
-
-</div>
-
-<div class="deprecation breaking-change">
-
-### The `ci_job_token_scope_enabled` projects API attribute is deprecated
-
-<div class="deprecation-notes">
-
-- Announced in GitLab <span class="milestone">16.4</span>
-- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/423091).
-
-</div>
-{{< alert type="note" >}}
-
-This change has been removed from its original milestone and is being reassessed.
-
-{{< /alert >}}
-
-GitLab 16.1 introduced [API endpoints for the job token scope](https://gitlab.com/gitlab-org/gitlab/-/issues/351740). In the [projects API](https://docs.gitlab.com/api/projects/), the `ci_job_token_scope_enabled` attribute is deprecated, and will be removed in 17.0. You should use the [job token scope APIs](https://docs.gitlab.com/api/project_job_token_scopes/) instead.
-
-</div>
-
-<div class="deprecation breaking-change">
-
-### `ciJobTokenScopeAddProject` GraphQL mutation is deprecated
-
-<div class="deprecation-notes">
-
-- Announced in GitLab <span class="milestone">17.5</span>
-- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/474175).
-
-</div>
-{{< alert type="note" >}}
-
-This change has been removed from its original milestone and is being reassessed.
-
-{{< /alert >}}
-
-With the [upcoming default behavior change to the CI/CD job token](https://docs.gitlab.com/update/deprecations/#default-cicd-job-token-ci_job_token-scope-changed) in GitLab 18.0, we are also deprecating the associated `ciJobTokenScopeAddProject` GraphQL mutation as the associated feature will be no longer be available.
 
 </div>
 
@@ -8126,6 +8016,119 @@ At the time when each analyzer reached End of Support, we updated its job `rules
 However, you might have customized the template to continue to use these jobs or depend on them existing in your pipelines.
 If you have any customization that depends on the jobs above, perform the [actions required](https://gitlab.com/gitlab-org/gitlab/-/issues/519133#actions-required) before
 upgrading to 18.0 to avoid disruptions to your CI/CD pipelines.
+
+</div>
+
+<div class="deprecation breaking-change">
+
+### Public use of Secure container registries is deprecated
+
+<div class="deprecation-notes">
+
+- Announced in GitLab <span class="milestone">17.4</span>
+- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/470641).
+
+</div>
+{{< alert type="note" >}}
+
+This change has been cancelled.
+
+{{< /alert >}}
+
+Container registries under `registry.gitlab.com/gitlab-org/security-products/`
+are no longer accessible in GitLab 18.0. [Since GitLab 14.8](https://docs.gitlab.com/update/deprecations/#secure-and-protect-analyzer-images-published-in-new-location)
+the correct location is under `registry.gitlab.com/security-products` (note the absence of
+`gitlab-org` in the address).
+
+This change improves the security of the release process for GitLab [vulnerability scanners](https://docs.gitlab.com/user/application_security/#vulnerability-scanner-maintenance).
+
+Users are advised to use the equivalent registry under `registry.gitlab.com/security-products/`,
+which is the canonical location for GitLab security scanner images. The relevant GitLab CI
+templates already use this location, so no changes should be necessary for users that use the
+unmodified templates.
+
+Offline deployments should review the [specific scanner instructions](https://docs.gitlab.com/user/application_security/offline_deployments/#specific-scanner-instructions)
+to ensure the correct locations are being used to mirror the required scanner images.
+
+</div>
+
+<div class="deprecation breaking-change">
+
+### SAST jobs no longer use global cache settings
+
+<div class="deprecation-notes">
+
+- Announced in GitLab <span class="milestone">17.9</span>
+- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/512564).
+
+</div>
+{{< alert type="note" >}}
+
+This change has been cancelled.
+
+{{< /alert >}}
+
+In GitLab 18.0, we will update SAST and IaC Scanning to explicitly [disable the use of the CI/CD job cache](https://docs.gitlab.com/ci/caching/#disable-cache-for-specific-jobs) by default.
+
+This change affects the CI/CD templates for:
+
+- SAST: `SAST.gitlab-ci.yml`.
+- IaC Scanning: `SAST-IaC.gitlab-ci.yml`.
+
+We already updated the `latest` templates `SAST.latest.gitlab-ci.yml` and `SAST-IaC.latest.gitlab-ci.yml`. See [stable and latest templates](https://docs.gitlab.com/user/application_security/sast/#stable-vs-latest-sast-templates) for more details on these template versions.
+
+The cache directories are not in scope for scanning in most projects, so fetching the cache can cause timeouts or false-positive results.
+
+If you need to use the cache when scanning a project, you can restore the previous behavior by [overriding](https://docs.gitlab.com/user/application_security/sast/#overriding-sast-jobs) the
+[`cache`](https://docs.gitlab.com/ci/yaml/#cache) property in the project's CI configuration.
+
+</div>
+
+<div class="deprecation ">
+
+### Secret detection analyzer doesn't run as root user by default
+
+<div class="deprecation-notes">
+
+- Announced in GitLab <span class="milestone">17.9</span>
+- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/476160).
+
+</div>
+{{< alert type="note" >}}
+
+This change has been cancelled.
+
+{{< /alert >}}
+
+This planned change to the secret detection analyzer is cancelled. You can still use the root user by default.
+
+</div>
+
+<div class="deprecation ">
+
+### Support for project build as part of SpotBugs scans
+
+<div class="deprecation-notes">
+
+- Announced in GitLab <span class="milestone">17.9</span>
+- To discuss this change or learn more, see the [deprecation issue](https://gitlab.com/gitlab-org/gitlab/-/issues/513409).
+
+</div>
+{{< alert type="note" >}}
+
+This change has been cancelled.
+
+{{< /alert >}}
+
+The SpotBugs [SAST analyzer](https://docs.gitlab.com/user/application_security/sast/#supported-languages-and-frameworks)
+can perform a build when the artifacts to be scanned aren't present. While this usually works well for simple projects, it can fail on more complex builds.
+
+From GitLab 18.0, to resolve SpotBugs analyzer build failures, you should:
+
+1. [Pre-compile](https://docs.gitlab.com/user/application_security/sast/#pre-compilation) the project.
+1. Pass the artifacts you want to scan to the analyzer.
+
+This is not a change in functionality, so we have marked this announcement "Cancelled" for clarity.
 
 </div>
 </div>

@@ -36,6 +36,8 @@ import {
   I18N_WORK_ITEM_ERROR_CREATING,
   sprintfWorkItem,
   i18n,
+  NAME_TO_LOWERCASE_TEXT_MAP,
+  NAME_TO_TEXT_MAP,
   WIDGET_TYPE_ASSIGNEES,
   WIDGET_TYPE_COLOR,
   NEW_WORK_ITEM_IID,
@@ -52,8 +54,6 @@ import {
   WIDGET_TYPE_MILESTONE,
   DEFAULT_EPIC_COLORS,
   WIDGET_TYPE_HIERARCHY,
-  WORK_ITEM_TYPE_NAME_LOWERCASE_MAP,
-  WORK_ITEM_TYPE_NAME_MAP,
   WORK_ITEM_TYPE_NAME_INCIDENT,
   WORK_ITEM_TYPE_NAME_EPIC,
   WIDGET_TYPE_CUSTOM_FIELDS,
@@ -322,7 +322,7 @@ export default {
       return getDisplayReference(this.selectedProjectFullPath, this.relatedItem.reference);
     },
     relatedItemType() {
-      return WORK_ITEM_TYPE_NAME_LOWERCASE_MAP[this.relatedItem?.type];
+      return NAME_TO_LOWERCASE_TEXT_MAP[this.relatedItem?.type];
     },
     workItemAssignees() {
       return findWidget(WIDGET_TYPE_ASSIGNEES, this.workItem);
@@ -382,7 +382,7 @@ export default {
 
       return workItemTypes.map((workItemType) => ({
         value: workItemType.id,
-        text: WORK_ITEM_TYPE_NAME_MAP[workItemType.name],
+        text: NAME_TO_TEXT_MAP[workItemType.name],
       }));
     },
     selectedWorkItemType() {
@@ -458,9 +458,6 @@ export default {
     workItemHealthStatusValue() {
       const healthStatusWidget = findWidget(WIDGET_TYPE_HEALTH_STATUS, this.workItem);
       return healthStatusWidget?.healthStatus || null;
-    },
-    workItemAuthor() {
-      return this.workItem?.author;
     },
     workItemDescription() {
       const descriptionWidget = findWidget(WIDGET_TYPE_DESCRIPTION, this.workItem);
@@ -970,7 +967,6 @@ export default {
               :work-item-id="workItemId"
               :assignees="workItemAssignees.assignees.nodes"
               :participants="workItemParticipantNodes"
-              :work-item-author="workItemAuthor"
               :allows-multiple-assignees="workItemAssignees.allowsMultipleAssignees"
               :work-item-type="selectedWorkItemTypeName"
               :can-invite-members="workItemAssignees.canInviteMembers"

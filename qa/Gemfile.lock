@@ -118,7 +118,7 @@ GEM
     gitlab (4.19.0)
       httparty (~> 0.20)
       terminal-table (>= 1.5.1)
-    gitlab-qa (15.3.0)
+    gitlab-qa (15.4.0)
       activesupport (>= 6.1, < 7.2)
       ffi (~> 1.17)
       gitlab (~> 4.19)
@@ -317,8 +317,8 @@ GEM
     slack-notifier (2.4.0)
     sync (0.5.0)
     table_print (1.5.7)
-    terminal-table (3.0.2)
-      unicode-display_width (>= 1.1.1, < 3)
+    terminal-table (4.0.0)
+      unicode-display_width (>= 1.1.1, < 4)
     thor (1.3.1)
     tins (1.38.0)
       bigdecimal
@@ -367,7 +367,7 @@ DEPENDENCIES
   fog-core (= 2.1.0)
   fog-google (~> 1.24, >= 1.24.1)
   gitlab-orchestrator!
-  gitlab-qa (~> 15, >= 15.3.0)
+  gitlab-qa (~> 15, >= 15.4.0)
   gitlab-utils!
   gitlab_quality-test_tooling (~> 2.9.0)
   googleauth (~> 1.9.0)
@@ -390,7 +390,7 @@ DEPENDENCIES
   ruby-debug-ide (~> 0.7.5)
   selenium-webdriver (= 4.31.0)
   slack-notifier (~> 2.4)
-  terminal-table (~> 3.0.2)
+  terminal-table (~> 4.0.0)
   warning (~> 1.5)
   zeitwerk (~> 2.7, >= 2.7.2)
 

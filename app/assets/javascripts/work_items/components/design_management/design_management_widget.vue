@@ -454,6 +454,7 @@ export default {
           multiple
           @change="onDesignUploadChange"
         />
+        <router-view :key="$route.fullPath" :all-designs="designs" :all-versions="allVersions" />
       </template>
 
       <template #default>
@@ -519,7 +520,6 @@ export default {
             </li>
           </vue-draggable>
         </design-dropzone>
-        <router-view :key="$route.fullPath" :all-designs="designs" :all-versions="allVersions" />
       </template>
     </crud-component>
   </div>

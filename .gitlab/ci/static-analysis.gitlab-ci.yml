@@ -69,15 +69,22 @@ generate-apollo-graphql-schema:
     paths:
       - "${GRAPHQL_SCHEMA_APOLLO_FILE}"
 
-eslint:
+.eslint-base:
   extends:
     - .static-analysis-base
     - .yarn-cache
-    - .frontend:rules:default-frontend-jobs
   needs: ['generate-apollo-graphql-schema']
   variables:
     USE_BUNDLE_INSTALL: "false"
     ESLINT_CODE_QUALITY_REPORT: "gl-code-quality-report.json"
+  artifacts:
+    reports:
+      codequality: gl-code-quality-report.json
+
+eslint-changed-files:
+  extends:
+    - .eslint-base
+    - .frontend:rules:eslint-changed-files
   script:
     - |
       function eslint_script() {
@@ -87,9 +94,18 @@ eslint:
 
       run_with_custom_exit_code eslint_script
 
-  artifacts:
-    reports:
-      codequality: gl-code-quality-report.json
+eslint:
+  extends:
+    - .eslint-base
+    - .frontend:rules:eslint-default
+  script:
+    - |
+      function eslint_script() {
+        yarn_install_script
+        yarn run lint:eslint:all --format gitlab
+      }
+
+      run_with_custom_exit_code eslint_script
 
 eslint-docs:
   extends:
@@ -113,19 +129,12 @@ haml-lint:
     - .ruby-cache
     - .static-analysis:rules:haml-lint
   script:
-    - bundle exec haml-lint --parallel app/views
+    - bundle exec haml-lint --parallel
   artifacts:
     expire_in: 31d
     when: always
     paths:
       - tmp/feature_flags/
-
-haml-lint ee:
-  extends:
-    - "haml-lint"
-    - .static-analysis:rules:haml-lint-ee
-  script:
-    - bundle exec haml-lint --parallel ee/app/views
 
 rubocop:
   extends:

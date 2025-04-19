@@ -16,6 +16,9 @@ import {
   FILTERED_SEARCH_TOKEN_MIN_ACCESS_LEVEL,
   SORT_DIRECTION_ASC,
   SORT_DIRECTION_DESC,
+  PAGINATION_TYPE_KEYSET,
+  PAGINATION_TYPE_OFFSET,
+  QUERY_PARAM_PAGE,
 } from '../constants';
 import userPreferencesUpdateMutation from '../graphql/mutations/user_preferences_update.mutation.graphql';
 import TabView from './tab_view.vue';
@@ -106,6 +109,13 @@ export default {
       required: false,
       default: __('An error occurred loading the tab counts.'),
     },
+    paginationType: {
+      type: String,
+      required: true,
+      validator(value) {
+        return [PAGINATION_TYPE_KEYSET, PAGINATION_TYPE_OFFSET].includes(value);
+      },
+    },
   },
   data() {
     return {
@@ -187,10 +197,14 @@ export default {
     endCursor() {
       return this.$route.query[QUERY_PARAM_END_CURSOR];
     },
+    page() {
+      return parseInt(this.$route.query[QUERY_PARAM_PAGE], 10) || 1;
+    },
     routeQueryWithoutPagination() {
       const {
         [QUERY_PARAM_START_CURSOR]: startCursor,
         [QUERY_PARAM_END_CURSOR]: endCursor,
+        [QUERY_PARAM_PAGE]: page,
         ...routeQuery
       } = this.$route.query;
 
@@ -270,7 +284,7 @@ export default {
         return;
       }
 
-      this.trackEvent(this.eventTracking.tabs, { label: tab.text });
+      this.trackEvent(this.eventTracking.tabs, { label: tab.value });
     },
     tabCount(tab) {
       return this.tabCounts[tab.value];
@@ -296,7 +310,7 @@ export default {
         return;
       }
 
-      this.trackEvent(this.eventTracking.sort, { label: this.activeTab.text, property: sort });
+      this.trackEvent(this.eventTracking.sort, { label: this.activeTab.value, property: sort });
     },
     onFilter(filters) {
       const { sort } = this.$route.query;
@@ -317,42 +331,18 @@ export default {
         // Don't record the value when using text search.
         // Only record with pre-set values (e.g language or access level).
         if (filter === this.filteredSearchTermKey) {
-          this.trackEvent(event, { label: this.activeTab.text });
+          this.trackEvent(event, { label: this.activeTab.value });
 
-          return;
-        }
-
-        const filteredSearchToken = this.filteredSearchTokens.find(
-          (token) => token.type === filter,
-        );
-
-        if (!filteredSearchToken) {
-          return;
-        }
-
-        const optionTitles = filterValues.flatMap((filterValue) => {
-          const optionTitle = filteredSearchToken.options.find(
-            ({ value }) => filterValue === value,
-          )?.title;
-
-          if (!optionTitle) {
-            return [];
-          }
-
-          return [optionTitle];
-        });
-
-        if (!optionTitles.length) {
           return;
         }
 
         this.trackEvent(event, {
-          label: this.activeTab.text,
-          property: optionTitles.join(','),
+          label: this.activeTab.value,
+          property: filterValues.join(','),
         });
       });
     },
-    onPageChange(pagination) {
+    onKeysetPageChange(pagination) {
       this.pushQuery(
         calculateGraphQLPaginationQueryParams({ ...pagination, routeQuery: this.$route.query }),
       );
@@ -362,9 +352,12 @@ export default {
       }
 
       this.trackEvent(this.eventTracking.pagination, {
-        label: this.activeTab.text,
+        label: this.activeTab.value,
         property: pagination.startCursor === null ? 'next' : 'previous',
       });
+    },
+    onOffsetPageChange(page) {
+      this.pushQuery({ ...this.$route.query, [QUERY_PARAM_PAGE]: page });
     },
     async userPreferencesUpdateMutate(sort) {
       try {
@@ -406,12 +399,16 @@ export default {
         :tab="tab"
         :start-cursor="startCursor"
         :end-cursor="endCursor"
+        :page="page"
         :sort="sort"
         :filters="filters"
         :timestamp-type="timestampType"
         :programming-languages="programmingLanguages"
         :filtered-search-term-key="filteredSearchTermKey"
-        @page-change="onPageChange"
+        :event-tracking="eventTracking"
+        :pagination-type="paginationType"
+        @keyset-page-change="onKeysetPageChange"
+        @offset-page-change="onOffsetPageChange"
       />
       <template v-else>{{ tab.text }}</template>
     </gl-tab>

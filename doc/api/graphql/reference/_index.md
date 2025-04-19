@@ -336,7 +336,7 @@ Returns [`BlobSearch`](#blobsearch).
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | <a id="queryblobsearchchunkcount"></a>`chunkCount` {{< icon name="warning-solid" >}} | [`Int`](#int) | **Introduced** in GitLab 17.2. **Status**: Experiment. Maximum chunks per file. |
-| <a id="queryblobsearchexcludeforks"></a>`excludeForks` {{< icon name="warning-solid" >}} | [`Boolean`](#boolean) | **Introduced** in GitLab 17.11. **Status**: Experiment. Excludes forked projects in the search. Always false for project search. Not available for global search. |
+| <a id="queryblobsearchexcludeforks"></a>`excludeForks` {{< icon name="warning-solid" >}} | [`Boolean`](#boolean) | **Introduced** in GitLab 17.11. **Status**: Experiment. Excludes forked projects in the search. Always false for project search. |
 | <a id="queryblobsearchgroupid"></a>`groupId` {{< icon name="warning-solid" >}} | [`GroupID`](#groupid) | **Introduced** in GitLab 17.2. **Status**: Experiment. Group to search in. |
 | <a id="queryblobsearchincludearchived"></a>`includeArchived` {{< icon name="warning-solid" >}} | [`Boolean`](#boolean) | **Introduced** in GitLab 17.7. **Status**: Experiment. Includes archived projects in the search. Always true for project search. Default is false. |
 | <a id="queryblobsearchincludeforked"></a>`includeForked` {{< icon name="warning-solid" >}} | [`Boolean`](#boolean) | **Introduced** in GitLab 17.7. **Status**: Experiment. Includes forked projects in the search. Always true for project search. Not available for global search. |
@@ -10976,6 +10976,28 @@ Input type: `TodoCreateInput`
 | <a id="mutationtodocreateclientmutationid"></a>`clientMutationId` | [`String`](#string) | A unique identifier for the client performing the mutation. |
 | <a id="mutationtodocreateerrors"></a>`errors` | [`[String!]!`](#string) | Errors encountered during execution of the mutation. |
 | <a id="mutationtodocreatetodo"></a>`todo` | [`Todo`](#todo) | To-do item created. |
+
+### `Mutation.todoDeleteAllDone`
+
+{{< details >}}
+**Introduced** in GitLab 17.11.
+**Status**: Experiment.
+{{< /details >}}
+
+Input type: `TodoDeleteAllDoneInput`
+
+#### Arguments
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| <a id="mutationtododeletealldoneclientmutationid"></a>`clientMutationId` | [`String`](#string) | A unique identifier for the client performing the mutation. |
+
+#### Fields
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| <a id="mutationtododeletealldoneclientmutationid"></a>`clientMutationId` | [`String`](#string) | A unique identifier for the client performing the mutation. |
+| <a id="mutationtododeletealldoneerrors"></a>`errors` | [`[String!]!`](#string) | Errors encountered during execution of the mutation. |
 
 ### `Mutation.todoDeleteMany`
 
@@ -43313,9 +43335,10 @@ Types of add-ons.
 
 | Value | Description |
 | ----- | ----------- |
-| <a id="gitlabsubscriptionsaddontypecode_suggestions"></a>`CODE_SUGGESTIONS` | GitLab Duo Pro seat add-on. |
-| <a id="gitlabsubscriptionsaddontypeduo_amazon_q"></a>`DUO_AMAZON_Q` | GitLab Duo with Amazon Q seat add-on. |
-| <a id="gitlabsubscriptionsaddontypeduo_enterprise"></a>`DUO_ENTERPRISE` | GitLab Duo Enterprise seat add-on. |
+| <a id="gitlabsubscriptionsaddontypecode_suggestions"></a>`CODE_SUGGESTIONS` | GitLab Duo Pro add-on. |
+| <a id="gitlabsubscriptionsaddontypeduo_amazon_q"></a>`DUO_AMAZON_Q` | GitLab Duo with Amazon Q add-on. |
+| <a id="gitlabsubscriptionsaddontypeduo_enterprise"></a>`DUO_ENTERPRISE` | GitLab Duo Enterprise add-on. |
+| <a id="gitlabsubscriptionsaddontypeduo_nano"></a>`DUO_NANO` {{< icon name="warning-solid" >}} | **Introduced** in GitLab 18.0. **Status**: Experiment. GitLab Duo Nano add-on. |
 
 ### `GitlabSubscriptionsUserRole`
 

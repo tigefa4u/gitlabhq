@@ -3681,9 +3681,6 @@ msgstr ""
 msgid "Add new key"
 msgstr ""
 
-msgid "Add new pipeline subscription"
-msgstr ""
-
 msgid "Add new pipeline trigger token"
 msgstr ""
 
@@ -6454,6 +6451,12 @@ msgid "Amazon Q"
 msgstr ""
 
 msgid "Amazon Q connectivity check failed: %{message}"
+msgstr ""
+
+msgid "Amazon Q could not call your GitLab instance. Please review your configuration and try again. Detail: %{error}"
+msgstr ""
+
+msgid "Amazon Q successfully received the callback request from your GitLab instance."
 msgstr ""
 
 msgid "AmazonQ|Active cloud connector token not found."
@@ -12433,9 +12436,6 @@ msgstr ""
 msgid "Checking group path availability…"
 msgstr ""
 
-msgid "Checking if %{message} failed: %{error}"
-msgstr ""
-
 msgid "Checking if merge request can be merged…"
 msgstr ""
 
@@ -14524,6 +14524,9 @@ msgid "CodeSuggestions|Get started with GitLab Duo Pro today by %{duo_ide_setup_
 msgstr ""
 
 msgid "CodeSuggestions|Get started with GitLab Duo Pro today."
+msgstr ""
+
+msgid "CodeSuggestions|GitLab Duo"
 msgstr ""
 
 msgid "CodeSuggestions|GitLab Duo Enterprise"
@@ -18771,13 +18774,13 @@ msgstr ""
 msgid "Credentials"
 msgstr ""
 
+msgid "Credentials stored in Amazon Q are valid and functioning correctly."
+msgstr ""
+
 msgid "CredentialsInventory|Deleted user"
 msgstr ""
 
 msgid "CredentialsInventory|Expired"
-msgstr ""
-
-msgid "CredentialsInventory|GPG Keys"
 msgstr ""
 
 msgid "CredentialsInventory|GPG keys"
@@ -20847,9 +20850,6 @@ msgid "Delete source branch"
 msgstr ""
 
 msgid "Delete source branch when merge request is accepted."
-msgstr ""
-
-msgid "Delete subscription"
 msgstr ""
 
 msgid "Delete table"
@@ -27040,10 +27040,10 @@ msgstr ""
 msgid "GPG Key ID:"
 msgstr ""
 
-msgid "GPG Keys"
+msgid "GPG key mismatch"
 msgstr ""
 
-msgid "GPG key mismatch"
+msgid "GPG keys"
 msgstr ""
 
 msgid "GPG keys allow you to verify signed commits."
@@ -27926,9 +27926,6 @@ msgstr ""
 msgid "GitLab container registry API not supported"
 msgstr ""
 
-msgid "GitLab credentials used by Amazon Q are valid"
-msgstr ""
-
 msgid "GitLab detected an attempt to sign in to your %{host} account using an incorrect verification code"
 msgstr ""
 
@@ -27951,9 +27948,6 @@ msgid "GitLab group: %{source_link}"
 msgstr ""
 
 msgid "GitLab informs you if a new version is available. %{link_start}What information does GitLab Inc. collect?%{link_end}"
-msgstr ""
-
-msgid "GitLab instance is reachable by Amazon Q"
 msgstr ""
 
 msgid "GitLab is a complete DevOps platform, delivered as a single application, fundamentally changing the way Development, Security, and Ops teams collaborate"
@@ -30800,6 +30794,9 @@ msgid "Hook execution failed. %{error}"
 msgstr ""
 
 msgid "Horizontal rule"
+msgstr ""
+
+msgid "Hosted runner usage"
 msgstr ""
 
 msgid "Hostname"
@@ -40370,9 +40367,6 @@ msgstr ""
 msgid "No project selected"
 msgstr ""
 
-msgid "No project subscribes to the pipelines in this project."
-msgstr ""
-
 msgid "No projects"
 msgstr ""
 
@@ -42047,6 +42041,9 @@ msgstr ""
 msgid "One and only one of %{params} is required"
 msgstr ""
 
+msgid "One and only one of [cn, filter] arguments is required"
+msgstr ""
+
 msgid "One more item"
 msgid_plural "%d more items"
 msgstr[0] ""
@@ -43138,7 +43135,7 @@ msgstr ""
 msgid "PackageRegistry|Manage storage used by package assets"
 msgstr ""
 
-msgid "PackageRegistry|Manually Published"
+msgid "PackageRegistry|Manually published"
 msgstr ""
 
 msgid "PackageRegistry|Maven"
@@ -43213,6 +43210,9 @@ msgid "PackageRegistry|Package registry"
 msgstr ""
 
 msgid "PackageRegistry|Package updated by commit %{link} on branch %{branch}, built by pipeline %{pipeline}, and published to the registry %{datetime}"
+msgstr ""
+
+msgid "PackageRegistry|Packages"
 msgstr ""
 
 msgid "PackageRegistry|Packages and assets cleanup is ready to be executed when the next cleanup job runs."
@@ -44550,7 +44550,7 @@ msgstr ""
 msgid "PipelineSubscriptions|Subscription for this project will be removed. Do you want to continue?"
 msgstr ""
 
-msgid "PipelineSubscriptions|Subscription successfully added."
+msgid "PipelineSubscriptions|Subscription successfully created."
 msgstr ""
 
 msgid "PipelineSubscriptions|Subscription successfully deleted."
@@ -53023,6 +53023,9 @@ msgstr ""
 msgid "ScanResultPolicy|Except"
 msgstr ""
 
+msgid "ScanResultPolicy|Exceptions that do not require approval"
+msgstr ""
+
 msgid "ScanResultPolicy|Exceptions that require approval"
 msgstr ""
 
@@ -54353,9 +54356,6 @@ msgstr ""
 msgid "SecurityOrchestration|Add project full path after @ to following branches: %{branches}"
 msgstr ""
 
-msgid "SecurityOrchestration|Add project full path after @ to following exceptions: %{exceptions}"
-msgstr ""
-
 msgid "SecurityOrchestration|Add protected branches"
 msgstr ""
 
@@ -55180,7 +55180,7 @@ msgstr ""
 msgid "SecurityOrchestration|Use default mode for scoping"
 msgstr ""
 
-msgid "SecurityOrchestration|Use the format %{schemaStart}path-to-package@package-version%{schemaEnd}. For multiple packages, separate paths with commas. For example: path/file1.yaml@1.1.1, path/file2.yaml@2.2.2"
+msgid "SecurityOrchestration|Use the format %{schemaStart}path-to-package@package-version%{schemaEnd}. For multiple packages, separate paths with commas. For example: npm/lodash@4.17.21, maven/org.apache.commons/commons-lang3@3.12.0, pypi/requests"
 msgstr ""
 
 msgid "SecurityOrchestration|Users can skip pipelines"
@@ -58926,9 +58926,6 @@ msgstr ""
 msgid "Subscribed to notifications."
 msgstr ""
 
-msgid "Subscribed to this project"
-msgstr ""
-
 msgid "Subscribes to notifications."
 msgstr ""
 
@@ -58942,9 +58939,6 @@ msgid "Subscription can be synchronized."
 msgstr ""
 
 msgid "Subscription deletion failed."
-msgstr ""
-
-msgid "Subscription for %{subscription} will be removed. Do you want to continue?"
 msgstr ""
 
 msgid "Subscription for this instance cannot be synchronized. Contact GitLab customer support to obtain a license."
@@ -60314,6 +60308,9 @@ msgid "The Bugzilla logo is a trademark of the Mozilla Foundation in the U.S. an
 msgstr ""
 
 msgid "The CSV export will be created in the background. Once finished, it will be sent to %{email} in an attachment."
+msgstr ""
+
+msgid "The GitLab instance can be reached but the credentials stored in Amazon Q are not valid. Please disconnect and start over."
 msgstr ""
 
 msgid "The GitLab subscription service (customers.gitlab.com) is currently experiencing an outage. You can monitor the status and get updates at %{linkStart}status.gitlab.com%{linkEnd}."
@@ -61979,9 +61976,6 @@ msgid "This project is licensed under the %{strong_start}%{license_name}%{strong
 msgstr ""
 
 msgid "This project is mirrored from %{link}."
-msgstr ""
-
-msgid "This project is not subscribed to any project pipelines."
 msgstr ""
 
 msgid "This project is pending deletion, and will be deleted on %{date}. Repository and other project resources are read-only."
@@ -64602,10 +64596,16 @@ msgstr ""
 msgid "Usage"
 msgstr ""
 
+msgid "Usage Quotas"
+msgstr ""
+
 msgid "Usage breakdown"
 msgstr ""
 
 msgid "Usage statistics"
+msgstr ""
+
+msgid "Usage this month"
 msgstr ""
 
 msgid "Usage trends"
@@ -64686,7 +64686,16 @@ msgstr ""
 msgid "UsageQuota|Excess storage usage"
 msgstr ""
 
+msgid "UsageQuota|Filter by runner"
+msgstr ""
+
+msgid "UsageQuota|Filter chart by year"
+msgstr ""
+
 msgid "UsageQuota|Filter charts by year"
+msgstr ""
+
+msgid "UsageQuota|Filter list by month"
 msgstr ""
 
 msgid "UsageQuota|Filter projects data by month"
@@ -64702,6 +64711,12 @@ msgid "UsageQuota|Gitlab-integrated Docker container registry for storing Docker
 msgstr ""
 
 msgid "UsageQuota|Group settings %{gt} Usage quotas"
+msgstr ""
+
+msgid "UsageQuota|Hosted runner duration"
+msgstr ""
+
+msgid "UsageQuota|Hosted runner pipeline duration by month"
 msgstr ""
 
 msgid "UsageQuota|How are limits applied?"
@@ -64735,6 +64750,9 @@ msgid "UsageQuota|Local proxy used for frequently-accessed upstream Docker image
 msgstr ""
 
 msgid "UsageQuota|Month"
+msgstr ""
+
+msgid "UsageQuota|Namespace"
 msgstr ""
 
 msgid "UsageQuota|Namespace entities"
@@ -64791,10 +64809,16 @@ msgstr ""
 msgid "UsageQuota|Shared bits of code and text."
 msgstr ""
 
+msgid "UsageQuota|Something went wrong while fetching compute usage"
+msgstr ""
+
 msgid "UsageQuota|Something went wrong while fetching pipeline statistics"
 msgstr ""
 
 msgid "UsageQuota|Something went wrong while fetching project storage statistics"
+msgstr ""
+
+msgid "UsageQuota|Something went wrong while fetching runner filters"
 msgstr ""
 
 msgid "UsageQuota|Something went wrong while loading Usage Quotas Tabs."
@@ -64869,6 +64893,9 @@ msgstr ""
 msgid "UsageQuota|Usage by month"
 msgstr ""
 
+msgid "UsageQuota|Usage by namespace"
+msgstr ""
+
 msgid "UsageQuota|Usage by project"
 msgstr ""
 
@@ -64879,6 +64906,9 @@ msgid "UsageQuota|Usage of project resources across the %{strong_start}%{project
 msgstr ""
 
 msgid "UsageQuota|Usage of resources across your projects"
+msgstr ""
+
+msgid "UsageQuota|Usage of shared resources across the projects in your instance"
 msgstr ""
 
 msgid "UsageQuota|User settings %{gt} Usage quotas"
@@ -66452,6 +66482,18 @@ msgstr ""
 msgid "VirtualRegistry|Maven"
 msgstr ""
 
+msgid "VirtualRegistry|Maven virtual registries"
+msgstr ""
+
+msgid "VirtualRegistry|New maven virtual registry"
+msgstr ""
+
+msgid "VirtualRegistry|No upstreams yet"
+msgstr ""
+
+msgid "VirtualRegistry|Upstreams"
+msgstr ""
+
 msgid "VirtualRegistry|Virtual registries"
 msgstr ""
 
@@ -66561,6 +66603,9 @@ msgid "Vulnerabilities|This link will expire in %{number} days."
 msgstr ""
 
 msgid "Vulnerabilities|Vulnerability report export"
+msgstr ""
+
+msgid "Vulnerabilities|changed vulnerability status to Needs Triage because it was redetected in pipeline %{pipeline_link}"
 msgstr ""
 
 msgid "Vulnerability"
@@ -68158,6 +68203,9 @@ msgid "WorkItemCustomField|Options"
 msgstr ""
 
 msgid "WorkItemCustomField|Remove"
+msgstr ""
+
+msgid "WorkItemCustomField|To add multiple options at once, paste a list of items, one per line."
 msgstr ""
 
 msgid "WorkItemCustomField|Type"
@@ -70576,6 +70624,9 @@ msgstr ""
 msgid "Your request for access has been queued for review."
 msgstr ""
 
+msgid "Your request has succeeded. Results will be visible in a couple of minutes."
+msgstr ""
+
 msgid "Your request to join %{host} has been rejected."
 msgstr ""
 
@@ -72010,6 +72061,9 @@ msgid "milestone"
 msgstr ""
 
 msgid "milestone should belong either to a project or a group."
+msgstr ""
+
+msgid "minutes"
 msgstr ""
 
 msgid "missing"

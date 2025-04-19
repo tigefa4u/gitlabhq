@@ -231,12 +231,10 @@ CREATE TABLE namespaces (
     last_ci_minutes_notification_at timestamp with time zone,
     last_ci_minutes_usage_notification_level integer,
     subgroup_creation_level integer DEFAULT 1,
-    emails_disabled boolean,
     max_pages_size integer,
     max_artifacts_size integer,
     mentions_disabled boolean,
     default_branch_protection smallint,
-    unlock_membership_to_ldap boolean,
     max_personal_access_token_lifetime integer,
     push_rule_id bigint,
     shared_runners_enabled boolean DEFAULT true NOT NULL,
@@ -14186,6 +14184,7 @@ CREATE TABLE duo_workflows_workflows (
     agent_privileges smallint[] DEFAULT '{1,2}'::smallint[] NOT NULL,
     workflow_definition text DEFAULT 'software_development'::text NOT NULL,
     allow_agent_to_request_user boolean DEFAULT true NOT NULL,
+    pre_approved_agent_privileges smallint[] DEFAULT '{1,2}'::smallint[] NOT NULL,
     CONSTRAINT check_5aedde451d CHECK ((char_length(goal) <= 4096)),
     CONSTRAINT check_ec723e2a1a CHECK ((char_length(workflow_definition) <= 255))
 );
@@ -19772,9 +19771,9 @@ CREATE TABLE packages_terraform_module_metadata (
     fields jsonb NOT NULL,
     semver_major integer,
     semver_minor integer,
-    semver_patch integer,
+    semver_patch_convert_to_bigint integer,
     semver_prerelease text,
-    semver_patch_convert_to_bigint bigint,
+    semver_patch bigint,
     CONSTRAINT check_46aa6c883a CHECK ((char_length(semver_prerelease) <= 255)),
     CONSTRAINT chk_rails_49f7b485ae CHECK ((char_length((fields)::text) <= 10485760))
 );
@@ -33620,6 +33619,8 @@ CREATE INDEX idx_wi_type_custom_lifecycles_on_lifecycle_id ON work_item_type_cus
 CREATE UNIQUE INDEX idx_wi_type_custom_lifecycles_on_namespace_type_lifecycle ON work_item_type_custom_lifecycles USING btree (namespace_id, work_item_type_id, lifecycle_id);
 
 CREATE INDEX idx_wi_type_custom_lifecycles_on_work_item_type_id ON work_item_type_custom_lifecycles USING btree (work_item_type_id);
+
+CREATE INDEX idx_workflows_status_updated_at_id ON duo_workflows_workflows USING btree (status, updated_at, id);
 
 CREATE INDEX idx_zoekt_last_indexed_at_gt_used_storage_bytes_updated_at ON zoekt_indices USING btree (used_storage_bytes_updated_at) WHERE (last_indexed_at >= used_storage_bytes_updated_at);
 
