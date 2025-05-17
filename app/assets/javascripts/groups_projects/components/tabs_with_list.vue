@@ -4,6 +4,7 @@ import { isEqual, pick, get } from 'lodash';
 import { __ } from '~/locale';
 import { QUERY_PARAM_END_CURSOR, QUERY_PARAM_START_CURSOR } from '~/graphql_shared/constants';
 import { numberToMetricPrefix } from '~/lib/utils/number_utils';
+import { convertToCamelCase } from '~/lib/utils/text_utility';
 import { createAlert } from '~/alert';
 import FilteredSearchAndSort from '~/groups_projects/components/filtered_search_and_sort.vue';
 import { calculateGraphQLPaginationQueryParams } from '~/graphql_shared/utils';
@@ -16,6 +17,9 @@ import {
   FILTERED_SEARCH_TOKEN_MIN_ACCESS_LEVEL,
   SORT_DIRECTION_ASC,
   SORT_DIRECTION_DESC,
+  PAGINATION_TYPE_KEYSET,
+  PAGINATION_TYPE_OFFSET,
+  QUERY_PARAM_PAGE,
 } from '../constants';
 import userPreferencesUpdateMutation from '../graphql/mutations/user_preferences_update.mutation.graphql';
 import TabView from './tab_view.vue';
@@ -106,6 +110,13 @@ export default {
       required: false,
       default: __('An error occurred loading the tab counts.'),
     },
+    paginationType: {
+      type: String,
+      required: true,
+      validator(value) {
+        return [PAGINATION_TYPE_KEYSET, PAGINATION_TYPE_OFFSET].includes(value);
+      },
+    },
   },
   data() {
     return {
@@ -116,6 +127,7 @@ export default {
           [tab.value]: undefined,
         };
       }, {}),
+      initialLoad: true,
     };
   },
   computed: {
@@ -187,10 +199,14 @@ export default {
     endCursor() {
       return this.$route.query[QUERY_PARAM_END_CURSOR];
     },
+    page() {
+      return parseInt(this.$route.query[QUERY_PARAM_PAGE], 10) || 1;
+    },
     routeQueryWithoutPagination() {
       const {
         [QUERY_PARAM_START_CURSOR]: startCursor,
         [QUERY_PARAM_END_CURSOR]: endCursor,
+        [QUERY_PARAM_PAGE]: page,
         ...routeQuery
       } = this.$route.query;
 
@@ -214,33 +230,14 @@ export default {
     timestampType() {
       return this.timestampTypeMap[this.activeSortOption.value];
     },
+    hasTabCountsQuery() {
+      return Boolean(Object.keys(this.tabCountsQuery).length);
+    },
   },
   async created() {
-    if (!Object.keys(this.tabCountsQuery).length) {
-      return;
-    }
-
-    try {
-      const { data } = await this.$apollo.query({ query: this.tabCountsQuery });
-
-      this.tabCounts = this.tabs.reduce((accumulator, tab) => {
-        const { count } = get(data, tab.countsQueryPath);
-
-        return {
-          ...accumulator,
-          [tab.value]: count,
-        };
-      }, {});
-    } catch (error) {
-      createAlert({
-        message: this.tabCountsQueryErrorMessage,
-        error,
-        captureError: true,
-      });
-    }
+    this.getTabCounts();
   },
   methods: {
-    numberToMetricPrefix,
     createSortQuery({ sortBy, isAscending }) {
       return `${sortBy}_${isAscending ? SORT_DIRECTION_ASC : SORT_DIRECTION_DESC}`;
     },
@@ -270,13 +267,12 @@ export default {
         return;
       }
 
-      this.trackEvent(this.eventTracking.tabs, { label: tab.text });
+      this.trackEvent(this.eventTracking.tabs, { label: tab.value });
     },
     tabCount(tab) {
-      return this.tabCounts[tab.value];
-    },
-    shouldShowCountBadge(tab) {
-      return this.tabCount(tab) !== undefined;
+      const tabCount = this.tabCounts[tab.value];
+
+      return tabCount === undefined ? '-' : numberToMetricPrefix(tabCount);
     },
     onSortDirectionChange(isAscending) {
       const sort = this.createSortQuery({ sortBy: this.activeSortOption.value, isAscending });
@@ -296,7 +292,7 @@ export default {
         return;
       }
 
-      this.trackEvent(this.eventTracking.sort, { label: this.activeTab.text, property: sort });
+      this.trackEvent(this.eventTracking.sort, { label: this.activeTab.value, property: sort });
     },
     onFilter(filters) {
       const { sort } = this.$route.query;
@@ -317,42 +313,18 @@ export default {
         // Don't record the value when using text search.
         // Only record with pre-set values (e.g language or access level).
         if (filter === this.filteredSearchTermKey) {
-          this.trackEvent(event, { label: this.activeTab.text });
+          this.trackEvent(event, { label: this.activeTab.value });
 
-          return;
-        }
-
-        const filteredSearchToken = this.filteredSearchTokens.find(
-          (token) => token.type === filter,
-        );
-
-        if (!filteredSearchToken) {
-          return;
-        }
-
-        const optionTitles = filterValues.flatMap((filterValue) => {
-          const optionTitle = filteredSearchToken.options.find(
-            ({ value }) => filterValue === value,
-          )?.title;
-
-          if (!optionTitle) {
-            return [];
-          }
-
-          return [optionTitle];
-        });
-
-        if (!optionTitles.length) {
           return;
         }
 
         this.trackEvent(event, {
-          label: this.activeTab.text,
-          property: optionTitles.join(','),
+          label: this.activeTab.value,
+          property: filterValues.join(','),
         });
       });
     },
-    onPageChange(pagination) {
+    onKeysetPageChange(pagination) {
       this.pushQuery(
         calculateGraphQLPaginationQueryParams({ ...pagination, routeQuery: this.$route.query }),
       );
@@ -362,9 +334,15 @@ export default {
       }
 
       this.trackEvent(this.eventTracking.pagination, {
-        label: this.activeTab.text,
+        label: this.activeTab.value,
         property: pagination.startCursor === null ? 'next' : 'previous',
       });
+    },
+    onOffsetPageChange(page) {
+      this.pushQuery({ ...this.$route.query, [QUERY_PARAM_PAGE]: page });
+    },
+    onRefetch() {
+      this.getTabCounts();
     },
     async userPreferencesUpdateMutate(sort) {
       try {
@@ -381,6 +359,54 @@ export default {
         Sentry.captureException(error);
       }
     },
+    async getTabCounts() {
+      if (!this.hasTabCountsQuery) {
+        return;
+      }
+
+      try {
+        const { data } = await this.$apollo.query({
+          query: this.tabCountsQuery,
+          // Since GraphQL doesn't support string comparison in @skip(if:)
+          // we use the naming convention of skip${tabValue} in camelCase (e.g. skipContributed).
+          // Skip the active tab to avoid requesting the count twice.
+          variables: { [convertToCamelCase(`skip_${this.activeTab.value}`)]: true },
+        });
+
+        this.tabCounts = this.tabs.reduce((accumulator, tab) => {
+          const countsQueryPath = get(data, tab.countsQueryPath);
+          const count =
+            countsQueryPath === undefined ? this.tabCounts[tab.value] : countsQueryPath.count;
+
+          return {
+            ...accumulator,
+            [tab.value]: count,
+          };
+        }, {});
+      } catch (error) {
+        createAlert({
+          message: this.tabCountsQueryErrorMessage,
+          error,
+          captureError: true,
+        });
+      }
+    },
+    onQueryComplete() {
+      if (!this.initialLoad) {
+        return;
+      }
+
+      this.initialLoad = false;
+
+      if (!this.eventTracking?.initialLoad) {
+        return;
+      }
+
+      this.trackEvent(this.eventTracking.initialLoad, { label: this.activeTab.value });
+    },
+    onUpdateCount(tab, newCount) {
+      this.tabCounts[tab.value] = newCount;
+    },
   },
 };
 </script>
@@ -392,11 +418,11 @@ export default {
         <div class="gl-flex gl-items-center gl-gap-2" data-testid="projects-dashboard-tab-title">
           <span>{{ tab.text }}</span>
           <gl-badge
-            v-if="shouldShowCountBadge(tab)"
+            v-if="hasTabCountsQuery"
             size="sm"
             class="gl-tab-counter-badge"
             data-testid="tab-counter-badge"
-            >{{ numberToMetricPrefix(tabCount(tab)) }}</gl-badge
+            >{{ tabCount(tab) }}</gl-badge
           >
         </div>
       </template>
@@ -406,12 +432,19 @@ export default {
         :tab="tab"
         :start-cursor="startCursor"
         :end-cursor="endCursor"
+        :page="page"
         :sort="sort"
         :filters="filters"
         :timestamp-type="timestampType"
         :programming-languages="programmingLanguages"
         :filtered-search-term-key="filteredSearchTermKey"
-        @page-change="onPageChange"
+        :event-tracking="eventTracking"
+        :pagination-type="paginationType"
+        @keyset-page-change="onKeysetPageChange"
+        @offset-page-change="onOffsetPageChange"
+        @refetch="onRefetch"
+        @query-complete="onQueryComplete"
+        @update-count="onUpdateCount"
       />
       <template v-else>{{ tab.text }}</template>
     </gl-tab>

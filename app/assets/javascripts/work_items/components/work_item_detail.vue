@@ -38,7 +38,6 @@ import {
   WIDGET_TYPE_DESIGNS,
   WORK_ITEM_REFERENCE_CHAR,
   WORK_ITEM_TYPE_NAME_EPIC,
-  WIDGET_TYPE_WEIGHT,
   WIDGET_TYPE_DEVELOPMENT,
   STATE_OPEN,
   WIDGET_TYPE_ERROR_TRACKING,
@@ -90,10 +89,9 @@ import DesignUploadButton from './design_management/upload_button.vue';
 import WorkItemDevelopment from './work_item_development/work_item_development.vue';
 import WorkItemCreateBranchMergeRequestSplitButton from './work_item_development/work_item_create_branch_merge_request_split_button.vue';
 
-const WorkItemErrorTracking = () => import('~/work_items/components/work_item_error_tracking.vue');
-
 const defaultWorkspacePermissions = {
   createDesign: false,
+  updateDesign: false,
   moveDesign: false,
 };
 
@@ -128,7 +126,7 @@ export default {
     WorkItemTree,
     WorkItemNotes,
     WorkItemRelationships,
-    WorkItemErrorTracking,
+    WorkItemErrorTracking: () => import('~/work_items/components/work_item_error_tracking.vue'),
     WorkItemStickyHeader,
     WorkItemAncestors,
     WorkItemTitle,
@@ -178,6 +176,11 @@ export default {
       required: false,
       default: () => [],
     },
+    isBoard: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   data() {
     return {
@@ -185,8 +188,6 @@ export default {
       updateError: undefined,
       workItem: {},
       updateInProgress: false,
-      modalWorkItemIid: getParameterByName('work_item_iid'),
-      modalWorkItemNamespaceFullPath: '',
       isReportModalOpen: false,
       reportedUrl: '',
       reportedUserId: 0,
@@ -345,6 +346,9 @@ export default {
     hasBlockedWorkItemsFeature() {
       return this.workItem.userPermissions?.blockedWorkItems;
     },
+    canCreateNote() {
+      return this.workItem.userPermissions?.createNote;
+    },
     isDiscussionLocked() {
       return this.workItemNotes?.discussionLocked;
     },
@@ -377,20 +381,14 @@ export default {
     parentWorkItemConfidentiality() {
       return this.parentWorkItem?.confidential;
     },
-    parentWorkItemType() {
-      return this.parentWorkItem?.workItemType?.name;
-    },
-    workItemIconName() {
-      return this.workItem.workItemType?.iconName;
-    },
     hasDescriptionWidget() {
       return this.findWidget(WIDGET_TYPE_DESCRIPTION);
     },
     hasDesignWidget() {
-      return this.findWidget(WIDGET_TYPE_DESIGNS) && this.$router;
+      return this.findWidget(WIDGET_TYPE_DESIGNS) && (this.$router || this.isBoard);
     },
     showUploadDesign() {
-      return this.hasDesignWidget && this.workspacePermissions.createDesign;
+      return this.hasDesignWidget && this.canAddDesign;
     },
     canReorderDesign() {
       return this.hasDesignWidget && this.workspacePermissions.moveDesign;
@@ -422,9 +420,6 @@ export default {
     workItemNotes() {
       return this.findWidget(WIDGET_TYPE_NOTES);
     },
-    workItemWeight() {
-      return this.findWidget(WIDGET_TYPE_WEIGHT);
-    },
     workItemDevelopment() {
       return this.findWidget(WIDGET_TYPE_DEVELOPMENT);
     },
@@ -455,9 +450,6 @@ export default {
     },
     showWorkItemTree() {
       return this.findWidget(WIDGET_TYPE_HIERARCHY) && this.allowedChildTypes?.length > 0;
-    },
-    showWorkItemVulnerabilities() {
-      return this.glFeatures.workItemRelatedVulnerabilities;
     },
     titleClassHeader() {
       return {
@@ -583,6 +575,15 @@ export default {
     uploadsPath() {
       const rootPath = this.workItem?.namespace?.webUrl || '';
       return this.isGroupWorkItem ? `${rootPath}/-/uploads` : `${rootPath}/uploads`;
+    },
+    canAddDesign() {
+      return this.workspacePermissions.createDesign;
+    },
+    canUpdateDesign() {
+      return this.workspacePermissions.updateDesign;
+    },
+    canPasteDesign() {
+      return !this.isSaving && !this.isAddingNotes && !this.editMode && !this.activeChildItem;
     },
   },
   mounted() {
@@ -727,7 +728,7 @@ export default {
       this.editMode = false;
     },
     isValidDesignUpload(files) {
-      if (!this.workspacePermissions.createDesign) return false;
+      if (!this.canAddDesign) return false;
 
       if (files.length > MAXIMUM_FILE_UPLOAD_LIMIT) {
         this.designUploadError = MAXIMUM_FILE_UPLOAD_LIMIT_REACHED;
@@ -830,17 +831,6 @@ export default {
       this.isValidDragDataType(event);
       if (this.isDesignUploadButtonInViewport) this.isEmptyStateVisible = true;
     },
-    onDragLeave(event) {
-      const emptyStateDesignDropzone =
-        this.$refs.emptyStateDesignDropzone?.$el || this.$refs.emptyStateDesignDropzone;
-      if (!emptyStateDesignDropzone.contains(event.relatedTarget)) {
-        this.dragCounter -= 1;
-      }
-
-      if (this.dragCounter === 0) {
-        this.isEmptyStateVisible = false; // Hide dropzone
-      }
-    },
     onDragLeaveMain(event) {
       // Check if the drag is leaving the main container entirely
       const mainContainerRef = this.$refs.workItemDetail;
@@ -891,20 +881,11 @@ export default {
       :current-user-todos="currentUserTodos"
       :show-work-item-current-user-todos="showWorkItemCurrentUserTodos"
       :parent-work-item-confidentiality="parentWorkItemConfidentiality"
-      :update-in-progress="updateInProgress"
       :full-path="workItemFullPath"
       :is-modal="isModal"
       :work-item="workItem"
       :is-sticky-header-showing="isStickyHeaderShowing"
       :work-item-notifications-subscribed="workItemNotificationsSubscribed"
-      :work-item-author-id="workItemAuthorId"
-      :is-group="isGroupWorkItem"
-      :allowed-child-types="allowedChildTypes"
-      :parent-id="parentWorkItemId"
-      :namespace-full-name="namespaceFullName"
-      :has-children="hasChildren"
-      :show-sidebar="showSidebar"
-      :truncation-enabled="truncationEnabled"
       @hideStickyHeader="hideStickyHeader"
       @showStickyHeader="showStickyHeader"
       @deleteWorkItem="$emit('deleteWorkItem', { workItemType, workItemId: workItem.id })"
@@ -921,6 +902,7 @@ export default {
         <work-item-actions
           v-if="workItemPresent"
           v-bind="workItemActionProps"
+          :update-in-progress="updateInProgress"
           @deleteWorkItem="$emit('deleteWorkItem', { workItemType, workItemId: workItem.id })"
           @toggleWorkItemConfidentiality="toggleConfidentiality"
           @error="updateError = $event"
@@ -1008,15 +990,14 @@ export default {
               />
               <work-item-notifications-widget
                 v-if="newTodoAndNotificationsEnabled"
-                :full-path="workItemFullPath"
                 :work-item-id="workItem.id"
                 :subscribed-to-notifications="workItemNotificationsSubscribed"
-                :can-update="canUpdate"
                 @error="updateError = $event"
               />
               <work-item-actions
                 v-if="workItemPresent"
                 v-bind="workItemActionProps"
+                :update-in-progress="updateInProgress"
                 @deleteWorkItem="$emit('deleteWorkItem', { workItemType, workItemId: workItem.id })"
                 @toggleWorkItemConfidentiality="toggleConfidentiality"
                 @error="updateError = $event"
@@ -1039,7 +1020,7 @@ export default {
               @click="$emit('close')"
             />
           </div>
-          <div :class="{ 'gl-mt-3': !editMode }">
+          <div>
             <work-item-title
               v-if="workItem.title && shouldShowAncestors"
               ref="title"
@@ -1056,7 +1037,6 @@ export default {
                 v-if="!editMode"
                 :full-path="workItemFullPath"
                 :work-item-iid="iid"
-                :update-in-progress="updateInProgress"
                 class="gl-grow"
               />
               <div v-if="!showSidebar" class="work-item-container-xs-hidden gl-hidden md:gl-block">
@@ -1124,7 +1104,6 @@ export default {
                   </gl-intersection-observer>
                   <work-item-create-branch-merge-request-split-button
                     v-if="showCreateBranchMergeRequestSplitButton"
-                    :work-item-id="workItem.id"
                     :work-item-iid="iid"
                     :work-item-full-path="workItemFullPath"
                     :work-item-type="workItem.workItemType.name"
@@ -1172,13 +1151,16 @@ export default {
               :upload-error-variant="designUploadErrorVariant"
               :is-saving="isSaving"
               :can-reorder-design="canReorderDesign"
+              :is-board="isBoard"
+              :can-add-design="canAddDesign"
+              :can-update-design="canUpdateDesign"
+              :can-paste-design="canPasteDesign"
               @upload="onUploadDesign"
               @dismissError="designUploadError = null"
             >
               <template #empty-state>
                 <design-dropzone
                   v-if="isEmptyStateVisible && !isSaving && isDragDataValid && !isAddingNotes"
-                  ref="emptyStateDesignDropzone"
                   class="gl-relative gl-mt-5"
                   show-upload-design-overlay
                   validate-design-upload-on-dragover
@@ -1234,7 +1216,6 @@ export default {
             />
 
             <work-item-vulnerabilities
-              v-if="showWorkItemVulnerabilities"
               :work-item-iid="iid"
               :work-item-full-path="workItemFullPath"
               data-testid="work-item-vulnerabilities"
@@ -1251,6 +1232,7 @@ export default {
               :assignees="workItemAssignees && workItemAssignees.assignees.nodes"
               :can-set-work-item-metadata="canAssignUnassignUser"
               :can-summarize-comments="canSummarizeComments"
+              :can-create-note="canCreateNote"
               :is-discussion-locked="isDiscussionLocked"
               :is-work-item-confidential="workItem.confidential"
               :new-comment-template-paths="newCommentTemplatePaths"

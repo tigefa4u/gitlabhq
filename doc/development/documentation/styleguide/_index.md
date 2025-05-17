@@ -25,9 +25,10 @@ The GitLab documentation is the SSoT for all product information related to impl
 use, and troubleshooting. The documentation evolves continuously. It is updated with
 new products and features, and with improvements for clarity, accuracy, and completeness.
 
-This policy prevents information silos, making it easier to find information
-about GitLab products. It also informs decisions about the kinds of content
-included in the documentation.
+This policy:
+
+- Prevents information silos and makes it easier to find information about GitLab products.
+- Does not mean that content cannot be duplicated in multiple places in the documentation.
 
 ## Topic types
 
@@ -157,6 +158,7 @@ GitLab documentation uses the following shortcodes:
 - [Version history](availability_details.md#history)
 - [Icons](#gitlab-svg-icons)
 - [Tabs](#tabs)
+- [Cards](#cards)
 
 ## Language
 
@@ -409,7 +411,7 @@ For numbers in text, spell out zero through nine and use numbers for 10 and grea
 To make the source content easy to read, and to more easily compare diffs,
 follow these best practices when possible.
 
-- Split long lines at approximately 100 characters.
+- Split long lines at approximately 100 characters. (Exception: Do not split links.)
 - Start each new sentence on a new line.
 
 ### Comments
@@ -869,13 +871,14 @@ If you use consecutive numbers, you must disable Markdown rule `029`:
 
 ## Links
 
-Links help the docs adhere to the
-[single source of truth](#documentation-is-the-single-source-of-truth-ssot) principle.
+Links are an important way to help readers find what they need.
 
-However, you should avoid putting too many links on any page. Too many links can hinder readability.
+However, most content is found by searching, and you should avoid putting too many links on any page.
+Too many links can hinder readability.
 
 - Do not duplicate links on the same page. For example, on **Page A**, do not link to **Page B** multiple times.
 - Do not use links in headings. Headings that contain links cause errors.
+- Do not use a hard line wrap between any words in a link.
 - Avoid multiple links in a single paragraph.
 - Avoid multiple links in a single task.
 - On any one page, try not to use more than 15 links to other pages.
@@ -909,11 +912,17 @@ To link to another documentation (`.md`) file in the same repository:
 - Use an inline link with a relative file path. For example, `[GitLab.com settings](../user/gitlab_com/_index.md)`.
 - Put the entire link on a single line, even if the link is very long. ([Vale](../testing/vale.md) rule: [`MultiLineLinks.yml`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/.vale/gitlab_base/MultiLineLinks.yml)).
 
+{{< alert type="note" >}}
+
+In the GitLab repository, do not link to the `/development` directory from any other directory.
+
+{{< /alert >}}
+
 To link to a file outside of the documentation files, for example to link from development
 documentation to a specific code file:
 
 - Use a full URL. For example: ``[`app/views/help/show.html.haml`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/app/views/help/show.html.haml)``
-- (Optional) Use a full URL with a specific ref. For example: ``[`app/views/help/show.html.haml`](https://gitlab.com/gitlab-org/gitlab/-/blob/6d01aa9f1cfcbdfa88edf9d003bd073f1a6fff1d/app/views/help/show.html.haml)``
+- Optional. Use a full URL with a specific ref. For example: ``[`app/views/help/show.html.haml`](https://gitlab.com/gitlab-org/gitlab/-/blob/6d01aa9f1cfcbdfa88edf9d003bd073f1a6fff1d/app/views/help/show.html.haml)``
 
 ### Links in separate repositories
 
@@ -1003,6 +1012,11 @@ Sometimes links are required. They might clarify troubleshooting steps or help p
 Sometimes they are more precise and will be maintained more actively.
 
 For each external link you add, weigh the customer benefit with the maintenance difficulties.
+
+### Links to handbook
+
+Limit links to the handbook. Some links are unavoidable, like licensing terms, data usage and access policies,
+testing agreements, and terms and conditions.
 
 ### Confidential or restricted access links
 
@@ -1387,7 +1401,7 @@ if you were helping someone read and interact with the page and they couldn't se
 
 Do:
 
-`![A runner sending a request to the Docker API](img/document_image_title_vX_Y.png)`
+`![A runner sending a request to the Docker API.](img/document_image_title_vX_Y.png)`
 
 Do not:
 
@@ -1399,9 +1413,7 @@ When writing alt text:
   Screen readers typically stop reading after this many characters.
 - If the image has complex information like a workflow diagram, use short alt text
   to identify the image and include detailed information in the text.
-- Use punctuation.
-- Do not use a period if the text is not a full sentence.
-- Use a period after every full sentence.
+- Use a period at the end of the string, whether it's a sentence or not.
 - Use sentence case and avoid using all caps.
   Some screen readers read capitals as individual letters.
 - Do not use phrases like **Image of** or **Graphic of**.
@@ -1931,6 +1943,27 @@ For more information, see [issue 225](https://gitlab.com/gitlab-org/technical-wr
 
 See [Pajamas](https://design.gitlab.com/components/tabs/#guidelines) for more
 details on tabs.
+
+## Cards
+
+Use cards to create landing pages with links to sub-pages.
+
+To create a set of cards, follow this example:
+
+```markdown
+{{</* cards */>}}
+
+- [The first page](first_page.md)
+- [Another page](another/page.md)
+- [One more page](one_more.md)
+
+{{</* /cards */>}}
+```
+
+Cards render only on the GitLab documentation site (`https://docs.gitlab.com`).
+In the GitLab product help, a set of cards appears as an unordered list of links.
+
+Card descriptions are populated from the `description` metadata on the Markdown page headers.
 
 ## Plagiarism
 

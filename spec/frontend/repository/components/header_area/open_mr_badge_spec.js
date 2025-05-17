@@ -3,6 +3,7 @@ import VueApollo from 'vue-apollo';
 import { GlDisclosureDropdown, GlSkeletonLoader, GlDisclosureDropdownItem } from '@gitlab/ui';
 import { shallowMountExtended } from 'helpers/vue_test_utils_helper';
 import { stubComponent, RENDER_ALL_SLOTS_TEMPLATE } from 'helpers/stub_component';
+import { useMockInternalEventsTracking } from 'helpers/tracking_internal_events_helper';
 import OpenMrBadge from '~/repository/components/header_area/open_mr_badge.vue';
 import getOpenMrCountsForBlobPath from '~/repository/queries/open_mr_count.query.graphql';
 import getOpenMrsForBlobPath from '~/repository/queries/open_mrs.query.graphql';
@@ -107,6 +108,7 @@ describe('OpenMrBadge', () => {
         expect(badge.exists()).toBe(true);
         expect(badge.props('variant')).toBe('success');
         expect(badge.props('icon')).toBe('merge-request');
+        expect(badge.props('tag')).toBe('a');
         expect(badge.attributes('title')).toBe(
           'Open merge requests created in the past 30 days that target this branch and modify this file.',
         );
@@ -161,6 +163,34 @@ describe('OpenMrBadge', () => {
         );
         expect(Sentry.captureException).toHaveBeenCalledWith(mockError);
       });
+    });
+  });
+
+  describe('tracking', () => {
+    const { bindInternalEventDocument } = useMockInternalEventsTracking();
+
+    it('tracks an event when open MRs are found', async () => {
+      const { trackEventSpy } = bindInternalEventDocument(wrapper.element);
+
+      createComponent();
+      await waitForPromises();
+
+      expect(trackEventSpy).toHaveBeenCalledWith(
+        'render_recent_mrs_for_file_on_branch_badge',
+        {
+          value: 3,
+        },
+        undefined,
+      );
+    });
+
+    it('does not track an event when no open MRs are found', async () => {
+      const { trackEventSpy } = bindInternalEventDocument(wrapper.element);
+
+      createComponent({}, zeroOpenMRQueryResult);
+      await waitForPromises();
+
+      expect(trackEventSpy).not.toHaveBeenCalled();
     });
   });
 

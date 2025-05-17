@@ -195,6 +195,7 @@ This approach uses a real cloud license through CustomersDot, providing the most
       ```shell
       export GITLAB_LICENSE_MODE=test
       export CUSTOMER_PORTAL_URL=https://customers.staging.gitlab.com
+      export GITLAB_SIMULATE_SAAS=0
       ```
 
   - **Note on GDK and AI Gateway:** While GDK can include AI Gateway as part of its distribution, developers may run AI Gateway with different configurations or ports. Currently, GitLab instances need explicit configuration of the AI Gateway URL, even in development environments.
@@ -234,13 +235,13 @@ This approach uses a real cloud license through CustomersDot, providing the most
 
 ### Future improvements
 
-> **Note:** There are ongoing plans to streamline the configuration of AI Gateway in development environments to reduce manual setup steps. In the future, we aim to automate this process as part of the GDK setup. For now, please follow the manual configuration steps described above.
+> **Note:** There are ongoing plans to streamline the configuration of AI Gateway in development environments to reduce manual setup steps. In the future, we aim to automate this process as part of the GDK setup. For now, follow the manual configuration steps described above.
 
 ## Setting up Duo on your GitLab.com staging account
 
 When working in staging environments, you may need to set up Duo add-ons for your staging account. This is different from setting up your local development environment.
 
-> **Note:** This section contains the same information as the previous [Staging account setup](staging_accounts.md) document, which now redirects here.
+> **Note:** This section contains the same information as the previous [Staging account setup](ai_development_license.md) document, which now redirects here.
 
 ### Duo Pro
 

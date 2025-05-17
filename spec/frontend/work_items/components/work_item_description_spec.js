@@ -70,10 +70,10 @@ describe('WorkItemDescription', () => {
     workItemResponseHandler = jest.fn().mockResolvedValue(workItemResponse),
     isEditing = false,
     isGroup = false,
+    newWorkItemType = workItemQueryResponse.data.workItem.workItemType.name,
     workItemId = workItemQueryResponse.data.workItem.id,
     workItemIid = '1',
     workItemTypeId = workItemQueryResponse.data.workItem.workItemType.id,
-    workItemTypeName = workItemQueryResponse.data.workItem.workItemType.name,
     editMode = false,
     showButtonsBelowField,
     descriptionTemplateHandler = successfulTemplateHandler,
@@ -97,7 +97,7 @@ describe('WorkItemDescription', () => {
         workItemId,
         workItemIid,
         workItemTypeId,
-        workItemTypeName,
+        newWorkItemType,
         editMode,
         showButtonsBelowField,
         isCreateFlow,
@@ -400,6 +400,25 @@ describe('WorkItemDescription', () => {
           expect(findDescriptionTemplateWarning().exists()).toBe(true);
           expect(findCancelApplyTemplate().exists()).toBe(true);
           expect(findApplyTemplate().exists()).toBe(true);
+        });
+
+        it('does not display a warning when a description is pre-populated in create mode', async () => {
+          // Mimic component mount with a pre-populated description
+          await createComponent({
+            editMode: true,
+            workItemId: newWorkItemId(workItemQueryResponse.data.workItem.workItemType.name),
+          });
+          findDescriptionTemplateListbox().vm.$emit('selectTemplate', {
+            name: 'default',
+            projectId: 1,
+            catagory: 'catagory',
+          });
+          await nextTick();
+          await waitForPromises();
+
+          expect(findDescriptionTemplateWarning().exists()).toBe(false);
+          expect(findCancelApplyTemplate().exists()).toBe(false);
+          expect(findApplyTemplate().exists()).toBe(false);
         });
 
         it('hides the warning when the cancel button is clicked', async () => {

@@ -99,7 +99,7 @@ When the conditions are met, the existing Semgrep vulnerability is converted int
 
 In some cases, Semgrep vulnerabilities may still appear as duplicates if the [deduplication conditions](#conditions-for-deduplication) are not met. To resolve this in the [Vulnerability Report](../vulnerability_report/_index.md):
 
-1. [Filter vulnerabilities](../vulnerability_report/_index.md#filtering-vulnerabilities) by Advanced SAST scanner and [export the results in CSV format](../vulnerability_report/_index.md#export-details-in-csv-format).
+1. [Filter vulnerabilities](../vulnerability_report/_index.md#filtering-vulnerabilities) by Advanced SAST scanner and [export the results in CSV format](../vulnerability_report/_index.md#export-details).
 1. [Filter vulnerabilities](../vulnerability_report/_index.md#filtering-vulnerabilities) by Semgrep scanner. These are likely the vulnerabilities that were not deduplicated.
 1. For each Semgrep vulnerability, check if it has a corresponding match in the exported Advanced SAST results.
 1. If a duplicate exists, resolve the Semgrep vulnerability appropriately.
@@ -130,7 +130,7 @@ On GitLab Self-Managed, you must also use a GitLab version that supports GitLab 
 - You should use GitLab 17.4 or later if possible. GitLab 17.4 includes a new code-flow view, vulnerability deduplication, and further updates to the SAST CI/CD template.
 - The [SAST CI/CD templates](_index.md#stable-vs-latest-sast-templates) were updated to include GitLab Advanced SAST in the following releases:
   - The stable template includes GitLab Advanced SAST in GitLab 17.3 or later.
-  - The latest template includes GitLab Advanced SAST in GitLab 17.2 or later. Note that you [should not mix latest and stable templates](../detect/roll_out_security_scanning.md#template-editions) in a single project.
+  - The latest template includes GitLab Advanced SAST in GitLab 17.2 or later. [Don't mix latest and stable templates](../detect/roll_out_security_scanning.md#template-editions) in a single project.
 - At a minimum, GitLab Advanced SAST requires version 17.1 or later.
 
 ### Enable GitLab Advanced SAST scanning
@@ -171,7 +171,7 @@ To enable GitLab Advanced SAST by using the pipeline editor:
 1. Update the CI/CD configuration to:
    - Include one of the GitLab-managed [SAST CI/CD templates](_index.md#stable-vs-latest-sast-templates) if it is not [already included](_index.md#configure-sast-in-your-cicd-yaml).
        - In GitLab 17.3 or later, you should use the stable template, `Jobs/SAST.gitlab-ci.yml`.
-       - In GitLab 17.2, GitLab Advanced SAST is only available in the latest template, `Jobs/SAST.latest.gitlab-ci.yml`. Note that you [should not mix latest and stable templates](../detect/roll_out_security_scanning.md#template-editions) in a single project.
+       - In GitLab 17.2, GitLab Advanced SAST is only available in the latest template, `Jobs/SAST.latest.gitlab-ci.yml`.[Don't mix latest and stable templates](../detect/roll_out_security_scanning.md#template-editions) in a single project.
        - In GitLab 17.1, you must manually copy the contents of the GitLab Advanced SAST job into your CI/CD pipeline definition.
    - Set the CI/CD variable `GITLAB_ADVANCED_SAST_ENABLED` to `true`.
 
@@ -221,7 +221,7 @@ The code flow information is shown the **Code flow** tab and includes:
 - The steps from source to sink.
 - The relevant files, including code snippets.
 
-![A code flow of a Python application across two files](../vulnerabilities/img/code_flow_view_v17_7.png)
+![A code flow of a Python application across two files](img/code_flow_view_v17_7.png)
 
 ## Troubleshooting
 
@@ -251,7 +251,7 @@ For details, see [Customize rulesets](customize_rulesets.md#disable-predefined-g
 
 ## Request source code of LGPL-licensed components in GitLab Advanced SAST
 
-To request information about the source code of LGPL-licensed components in GitLab Advanced SAST, please
+To request information about the source code of LGPL-licensed components in GitLab Advanced SAST,
 [contact GitLab Support](https://about.gitlab.com/support/).
 
 To ensure a quick response, include the GitLab Advanced SAST analyzer version in your request.

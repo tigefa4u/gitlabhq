@@ -7,6 +7,7 @@ db:setup pg16:
   extends:
     - .use-pg16
     - .default-before_script
+    - .failure_category_after_script
     - .ruby-cache
     - .rails:rules:setup-test-env
   script:
@@ -158,7 +159,7 @@ db:check-schema-single-db:
 db:check-migrations:
   extends:
     - .db-job-base
-    - .use-pg14  # Should match the db same version used by GDK
+    - .use-pg16  # Should match the db same version used by GDK
     - .rails:rules:ee-and-foss-mr-with-migration
   script:
     - |

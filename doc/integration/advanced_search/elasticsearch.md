@@ -78,20 +78,20 @@ Advanced search works with the following versions of Elasticsearch.
 
 | GitLab version        | Elasticsearch version       |
 |-----------------------|-----------------------------|
-| GitLab 15.0 and later | Elasticsearch 7.x and later |
+| GitLab 15.0 and later | Elasticsearch 7.x and 8.x   |
 | GitLab 14.0 to 14.10  | Elasticsearch 6.8 to 7.x    |
 
 Advanced search follows the [Elasticsearch end-of-life policy](https://www.elastic.co/support/eol).
-When we change Elasticsearch supported versions in GitLab, we announce them in [deprecation notes](https://handbook.gitlab.com/handbook/marketing/blog/release-posts/#update-the-deprecations-doc) in monthly release posts
-before we remove them.
 
 #### OpenSearch
 
 | GitLab version          | OpenSearch version             |
 |-------------------------|--------------------------------|
-| GitLab 17.6.3 and later | OpenSearch 1.x and later       |
+| GitLab 17.6.3 and later | OpenSearch 1.x and 2.x         |
 | GitLab 15.5.3 to 17.6.2 | OpenSearch 1.x, 2.0 to 2.17    |
 | GitLab 15.0 to 15.5.2   | OpenSearch 1.x                 |
+
+OpenSearch 3.0 is not supported, see [issue 540086](https://gitlab.com/gitlab-org/gitlab/-/issues/540086).
 
 If your version of Elasticsearch or OpenSearch is incompatible, to prevent data loss, indexing pauses and
 a message is logged in the
@@ -570,8 +570,16 @@ in your Sidekiq logs. For more information, see
 
 - Indexing all project records [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/428070) in GitLab 16.7 [with a flag](../../administration/feature_flags.md) named `search_index_all_projects`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/148111) in GitLab 16.11. Feature flag `search_index_all_projects` removed.
+- Indexing vulnerability records [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/536299) on GitLab.com and GitLab Dedicated in GitLab 18.1 [with a flag](../../administration/feature_flags.md) named `vulnerability_es_ingestion`. Disabled by default.
 
 {{< /history >}}
+
+{{< alert type="flag" >}}
+
+The availability of this feature is controlled by a feature flag.
+For more information, see the history.
+
+{{< /alert >}}
 
 When you select the **Limit the amount of namespace and project data to index** checkbox,
 you can specify namespaces and projects to index.
@@ -581,6 +589,8 @@ When you enable this setting:
 
 - Namespaces or projects must be specified for full indexing.
 - Project records (metadata like project names and descriptions) are always indexed for all projects.
+- Vulnerability records are always indexed for all projects and namespaces
+  to support filtering in security reports.
 - [Associated data](#advanced-search-index-scopes) is indexed only for the namespaces and projects you specify.
 
 {{< alert type="warning" >}}
@@ -799,9 +809,13 @@ scoped to a group or project return no results.
 
 ## Advanced search migrations
 
-With reindex migrations running in the background, there's no need for a manual
-intervention. This usually happens in situations where new features are added to
-advanced search, which means adding or changing the way content is indexed.
+Reindex migrations run in the background, which means
+you do not have to reindex the instance manually.
+
+[In GitLab 18.0 and later](https://gitlab.com/gitlab-org/gitlab/-/issues/352424),
+you can use the `elastic_migration_worker_enabled` application setting
+to enable or disable the migration worker.
+By default, the migration worker is enabled.
 
 ### Migration dictionary files
 
@@ -993,6 +1007,11 @@ When performing a search, the GitLab index uses the following scopes:
 | `wiki_blobs`     | Wiki contents          |
 | `users`          | Users                  |
 | `epics`          | Epic data              |
+
+On GitLab.com and GitLab Dedicated, vulnerability records are always indexed
+for all projects and namespaces to support features outside of search.
+Indexing vulnerability records on GitLab Self-Managed is proposed in
+[issue 525484](https://gitlab.com/gitlab-org/gitlab/-/issues/525484).
 
 ## Tuning
 
@@ -1236,7 +1255,9 @@ due to large volumes of data being indexed:
 
 ### Deleted documents
 
-Whenever a change or deletion is made to an indexed GitLab object (a merge request description is changed, a file is deleted from the default branch in a repository, a project is deleted, etc), a document in the index is deleted. However, since these are "soft" deletes, the overall number of "deleted documents", and therefore wasted space, increases. Elasticsearch does intelligent merging of segments to remove these deleted documents. However, depending on the amount and type of activity in your GitLab installation, it's possible to see as much as 50% wasted space in the index.
+Whenever a change or deletion is made to an indexed GitLab object (a merge request description is changed, a file is deleted from the default branch in a repository, a project is deleted, etc), a document in the index is deleted. However, because these are "soft" deletes, the overall number of "deleted documents", and therefore wasted space, increases.
+
+Elasticsearch does intelligent merging of segments to remove these deleted documents. However, depending on the amount and type of activity in your GitLab installation, it's possible to see as much as 50% of wasted space in the index.
 
 In general, we recommend letting Elasticsearch merge and reclaim space automatically, with the default settings. From [Lucene's Handling of Deleted Documents](https://www.elastic.co/blog/lucenes-handling-of-deleted-documents "Lucene's Handling of Deleted Documents"), _"Overall, besides perhaps decreasing the maximum segment size, it is best to leave Lucene defaults as-is and not fret too much about when deletes are reclaimed."_
 
@@ -1462,7 +1483,7 @@ To recover data more quickly, you can replay:
    for [`indexing_commit_range`](https://gitlab.com/gitlab-org/gitlab/-/blob/6f9d75dd3898536b9ec2fb206e0bd677ab59bd6d/ee/lib/gitlab/elastic/indexer.rb#L41).
    You must set [`IndexStatus#last_commit/last_wiki_commit`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/app/models/index_status.rb)
    to the oldest `from_sha` in the logs and then trigger another index of
-   the project with [`ElasticCommitIndexerWorker`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/app/workers/elastic_commit_indexer_worker.rb) and [`ElasticWikiIndexerWorker`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/app/workers/elastic_wiki_indexer_worker.rb).
+   the project with [`Search::Elastic::CommitIndexerWorker`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/app/workers/search/elastic/commit_indexer_worker.rb) and [`ElasticWikiIndexerWorker`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/app/workers/elastic_wiki_indexer_worker.rb).
 1. All project deletes by searching in
    [`sidekiq.log`](../../administration/logs/_index.md#sidekiqlog) for
    [`ElasticDeleteProjectWorker`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/app/workers/elastic_delete_project_worker.rb).

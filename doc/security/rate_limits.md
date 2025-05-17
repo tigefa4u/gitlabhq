@@ -186,6 +186,12 @@ There is a rate limit for notification emails related to a project or group.
 
 The **rate limit** is 1,000 notifications per 24 hours per project or group per user.
 
+### GitHub import
+
+There is a rate limit for triggering project imports from GitHub.
+
+The **rate limit** is 6 triggered imports per minute per user.
+
 ### FogBugz import
 
 {{< history >}}
@@ -238,7 +244,7 @@ To remove a blocked IP:
    grep "Rack_Attack" /var/log/gitlab/gitlab-rails/auth.log
    ```
 
-1. Since the denylist is stored in Redis, you must open up `redis-cli`:
+1. The denylist is stored in Redis, so you must open up `redis-cli`:
 
    ```shell
    /opt/gitlab/embedded/bin/redis-cli -s /var/opt/gitlab/redis/redis.socket

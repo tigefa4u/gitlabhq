@@ -32,6 +32,8 @@ module API
         optional :sort, type: String, values: %w[asc desc], default: 'asc', desc: 'Sort by asc (ascending) or desc (descending)'
         optional :min_access_level, type: Integer, values: Gitlab::Access.all_values, desc: 'Minimum access level of authenticated user'
         optional :top_level_only, type: Boolean, desc: 'Only include top-level groups'
+        optional :marked_for_deletion_on, type: Date, desc: 'Return groups that are marked for deletion on this date'
+        optional :active, type: Boolean, desc: 'Limit by groups that are not archived and not marked for deletion'
         use :optional_group_list_params_ee
         use :pagination
       end
@@ -60,7 +62,8 @@ module API
         [:all_available,
           :custom_attributes,
           :owned, :min_access_level,
-          :include_parent_descendants, :search, :visibility, :archived]
+          :include_parent_descendants, :search, :visibility, :archived,
+          :active, :marked_for_deletion_on]
       end
 
       # This is a separate method so that EE can extend its behaviour, without
@@ -289,7 +292,7 @@ module API
         requires :name, type: String, desc: 'The name of the group'
         requires :path, type: String, desc: 'The path of the group'
         optional :parent_id, type: Integer, desc: 'The parent group id for creating nested group'
-        optional :organization_id, type: Integer, default: -> { Current.organization&.id },
+        optional :organization_id, type: Integer, default: -> { Current.organization.id },
           desc: 'The organization id for the group'
 
         use :optional_params

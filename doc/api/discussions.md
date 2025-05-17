@@ -30,11 +30,11 @@ Label notes are not part of this API, but recorded as separate events in
 
 Not all discussion types are equally available in the API:
 
-- **Note**: A comment left on the _root_ of an issue, merge request, commit,
+- Note: A comment left on the _root_ of an issue, merge request, commit,
   or snippet.
-- **Discussion**: A collection, often called a _thread_, of `DiscussionNotes` in
+- Discussion: A collection, often called a _thread_, of `DiscussionNotes` in
   an issue, merge request, commit, or snippet.
-- **DiscussionNote**: An individual item in a discussion on an issue, merge request,
+- DiscussionNote: An individual item in a discussion on an issue, merge request,
   commit, or snippet. Items of type `DiscussionNote` are not returned as part of the Note API.
   Not available in the [Events API](events.md).
 
@@ -502,7 +502,7 @@ curl --request DELETE \
 The Epics REST API was [deprecated](https://gitlab.com/gitlab-org/gitlab/-/issues/460668) in GitLab 17.0
 and is planned for removal in v5 of the API.
 In GitLab 17.4 or later, if [the new look for epics](../user/group/epics/epic_work_items.md) is enabled, use the
-[Work Items API](https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/work_items/) instead. For more information, see the [guide how to migrate your existing APIs](graphql/epic_work_items_api_migration_guide.md).
+Work Items API instead. For more information, see the [guide how to migrate your existing APIs](graphql/epic_work_items_api_migration_guide.md).
 This change is a breaking change.
 
 {{< /alert >}}

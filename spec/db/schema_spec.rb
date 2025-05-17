@@ -65,7 +65,6 @@ RSpec.describe 'Database schema',
       chat_teams: %w[team_id],
       ci_builds: %w[project_id runner_id user_id erased_by_id trigger_request_id partition_id
         auto_canceled_by_partition_id execution_config_id upstream_pipeline_partition_id],
-      ci_builds_metadata: %w[partition_id project_id build_id],
       ci_build_needs: %w[project_id],
       ci_build_pending_states: %w[project_id],
       ci_build_trace_chunks: %w[project_id],
@@ -73,14 +72,12 @@ RSpec.describe 'Database schema',
       ci_daily_build_group_report_results: %w[partition_id],
       ci_deleted_objects: %w[project_id],
       ci_gitlab_hosted_runner_monthly_usages: %w[root_namespace_id project_id runner_id],
-      ci_job_artifacts: %w[partition_id project_id job_id],
       ci_namespace_monthly_usages: %w[namespace_id],
       ci_pipeline_artifacts: %w[partition_id],
       ci_pipeline_chat_data: %w[partition_id project_id],
       ci_pipeline_messages: %w[partition_id project_id],
       ci_pipeline_metadata: %w[partition_id],
       ci_pipeline_schedule_variables: %w[project_id],
-      ci_pipeline_variables: %w[partition_id pipeline_id project_id],
       ci_pipelines_config: %w[partition_id project_id],
       ci_pipelines: %w[partition_id auto_canceled_by_partition_id project_id user_id merge_request_id trigger_id], # LFKs are defined on the routing table
       ci_secure_file_states: %w[project_id],
@@ -89,21 +86,20 @@ RSpec.describe 'Database schema',
       p_ci_pipelines: %w[partition_id auto_canceled_by_partition_id auto_canceled_by_id trigger_id],
       p_ci_runner_machine_builds: %w[project_id],
       ci_runner_taggings: %w[runner_id sharding_key_id], # The sharding_key_id value is meant to populate the partitioned table, no other usage. The runner_id FK exists at the partition level
-      ci_runner_taggings_instance_type: %w[sharding_key_id], # This field is always NULL in this partition
+      ci_runner_taggings_instance_type: %w[tag_id sharding_key_id], # sharding_key_id is always NULL in this partition, tag_id is handled on ci_runner_taggings
+      ci_runner_taggings_group_type: %w[tag_id], # tag_id is handled on ci_runner_taggings
+      ci_runner_taggings_project_type: %w[tag_id], # tag_id is handled on ci_runner_taggings
       ci_runners: %w[sharding_key_id], # This value is meant to populate the partitioned table, no other usage
-      ci_runners_archived: %w[sharding_key_id creator_id], # This field is only used in the partitions, and has the appropriate FKs. We don't need the LFK for creator_id since that is already mirrored from ci_runners
       instance_type_ci_runners: %w[creator_id sharding_key_id], # No need for LFKs on partition, already handled on ci_runners routing table.
       group_type_ci_runners: %w[creator_id sharding_key_id], # No need for LFKs on partition, already handled on ci_runners routing table.
       project_type_ci_runners: %w[creator_id sharding_key_id], # No need for LFKs on partition, already handled on ci_runners routing table.
       ci_runner_machines: %w[runner_id sharding_key_id], # The runner_id and sharding_key_id fields are only used in the partitions, and have the appropriate FKs. The runner_id field will be removed with https://gitlab.com/gitlab-org/gitlab/-/issues/503749.
-      ci_runner_machines_archived: %w[runner_id sharding_key_id], # The sharding_key_id field is only used in the partitions, and has the appropriate FKs. The runner_id field will be removed with https://gitlab.com/gitlab-org/gitlab/-/issues/503749.
       instance_type_ci_runner_machines: %w[sharding_key_id], # This field is always NULL in this partition.
       group_type_ci_runner_machines: %w[sharding_key_id], # No need for LFK, rows will be deleted by the FK to ci_runners.
       project_type_ci_runner_machines: %w[sharding_key_id], # No need for LFK, rows will be deleted by the FK to ci_runners.
       ci_runner_projects: %w[runner_id],
       ci_sources_pipelines: %w[partition_id source_partition_id source_job_id],
       ci_sources_projects: %w[partition_id],
-      ci_stages: %w[partition_id project_id pipeline_id],
       ci_trigger_requests: %w[commit_id project_id],
       ci_job_artifact_states: %w[partition_id project_id],
       cluster_providers_aws: %w[security_group_id vpc_id access_key_id],
@@ -140,10 +136,11 @@ RSpec.describe 'Database schema',
       members: %w[source_id created_by_id],
       merge_requests: %w[last_edited_by_id state_id],
       merge_request_cleanup_schedules: %w[project_id],
+      merge_request_commits_metadata: %w[project_id commit_author_id committer_id],
       merge_requests_compliance_violations: %w[target_project_id],
       merge_request_diffs: %w[project_id],
       merge_request_diff_files: %w[project_id],
-      merge_request_diff_commits: %w[commit_author_id committer_id],
+      merge_request_diff_commits: %w[commit_author_id committer_id merge_request_commits_metadata_id],
       # merge_request_diff_commits_b5377a7a34 is the temporary table for the merge_request_diff_commits partitioning
       # backfill. It will get foreign keys after the partitioning is finished.
       merge_request_diff_commits_b5377a7a34: %w[merge_request_diff_id commit_author_id committer_id project_id],
@@ -182,14 +179,13 @@ RSpec.describe 'Database schema',
       repository_languages: %w[programming_language_id],
       routes: %w[source_id],
       security_findings: %w[project_id],
-      sent_notifications: %w[project_id noteable_id recipient_id commit_id in_reply_to_discussion_id],
+      sent_notifications: %w[project_id noteable_id recipient_id commit_id in_reply_to_discussion_id namespace_id], # namespace_id FK will be added after index creation
       slack_integrations: %w[team_id user_id bot_user_id], # these are external Slack IDs
       snippets: %w[author_id],
       spam_logs: %w[user_id],
       status_check_responses: %w[external_approval_rule_id],
       subscriptions: %w[user_id subscribable_id],
       suggestions: %w[commit_id],
-      taggings: %w[tag_id taggable_id tagger_id],
       timelogs: %w[user_id],
       todos: %w[target_id commit_id],
       uploads: %w[model_id organization_id namespace_id project_id],
@@ -265,10 +261,9 @@ RSpec.describe 'Database schema',
   let(:ignored_tables_with_too_many_indexes) do
     {
       approval_merge_request_rules: 17,
-      ci_builds: 27,
+      ci_builds: 26,
       ci_pipelines: 24,
       ci_runners: 16,
-      ci_runners_archived: 17,
       deployments: 18,
       epics: 19,
       events: 16,
@@ -278,7 +273,8 @@ RSpec.describe 'Database schema',
       members: 21,
       merge_requests: 33,
       namespaces: 26,
-      p_ci_builds: 27,
+      notes: 16,
+      p_ci_builds: 26,
       p_ci_pipelines: 24,
       packages_package_files: 16,
       packages_packages: 27,
@@ -510,7 +506,8 @@ RSpec.describe 'Database schema',
       FAILURE_MESSAGE
     end
 
-    it 'uses json schema validator', :eager_load, :aggregate_failures, quarantine: 'https://gitlab.com/gitlab-org/gitlab/-/issues/500903' do
+    it 'uses json schema validator', :eager_load, :aggregate_failures,
+      quarantine: 'https://gitlab.com/gitlab-org/gitlab/-/issues/500903' do
       columns_name_with_jsonb.each do |jsonb_column|
         column_name = jsonb_column["column_name"]
         models = models_by_table_name[jsonb_column["table_name"]] || []

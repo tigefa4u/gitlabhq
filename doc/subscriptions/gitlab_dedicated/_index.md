@@ -61,7 +61,7 @@ Data is encrypted at rest and in transit using the latest encryption standards.
 
 Optionally, you can use your own AWS Key Management Service (KMS) encryption key for data at rest. This option gives you full control over the data you store in GitLab.
 
-For more information, see [Encrypted data at rest (BYOK)](../../administration/dedicated/create_instance.md#encrypted-data-at-rest-byok).
+For more information, see [encrypted data at rest (BYOK)](../../administration/dedicated/encryption.md#encrypted-data-at-rest).
 
 #### Email service
 
@@ -79,9 +79,9 @@ You can view compliance and certification details, and download compliance artif
 
 GitLab Dedicated implements strict access controls to protect your environment:
 
-- Follows the [principle of least privilege](https://handbook.gitlab.com/handbook/security/access-management-policy/#principle-of-least-privilege).
+- Follows the principle of least privilege, which grants only the minimum permissions necessary.
 - Restricts access to the AWS organization to select GitLab team members.
-- User accounts follow the [Access Management Policy](https://handbook.gitlab.com/handbook/security/access-management-policy/).
+- Implements comprehensive security policies and access requests for user accounts.
 - Uses a single Hub account for automated actions and emergency access.
 - GitLab Dedicated engineers do not have direct access to customer environments.
 
@@ -118,7 +118,7 @@ When you add a custom hostname:
 - The hostname is included in the external URL used to access your instance.
 - Any connections to your instance using the previous domain names are no longer available.
 
-To add a custom hostname after your instance is created, submit a [support ticket](https://support.gitlab.com/hc/en-us/requests/new?ticket_form_id=4414917877650).
+For more information about using a custom hostname for your GitLab Dedicated instance, see [bring your own domain (BYOD)](../../administration/dedicated/configure_instance/network_security.md#bring-your-own-domain-byod).
 
 {{< alert type="note" >}}
 
@@ -249,8 +249,8 @@ The following operational features are not available:
 GitLab uses [feature flags](../../user/feature_flags.md) to support the development and rollout of new or experimental features.
 In GitLab Dedicated:
 
-- Features using feature flags that are **enabled by default** are available.
-- Features using feature flags that are **disabled by default** are not available and cannot be enabled by administrators.
+- Features behind feature flags that are **enabled by default** are available.
+- Features behind feature flags that are **disabled by default** are not available and cannot be enabled by administrators.
 
 Features behind flags that are disabled by default are not ready for production use and therefore unsafe for GitLab Dedicated.
 
@@ -274,4 +274,4 @@ To migrate your data to GitLab Dedicated:
 
 For more information about GitLab Dedicated or to request a demo, see [GitLab Dedicated](https://about.gitlab.com/dedicated/).
 
-For more information on setting up your GitLab Dedicated instance, see [Create your GitLab Dedicated instance](../../administration/dedicated/create_instance.md).
+For more information on setting up your GitLab Dedicated instance, see [Create your GitLab Dedicated instance](../../administration/dedicated/create_instance/_index.md).

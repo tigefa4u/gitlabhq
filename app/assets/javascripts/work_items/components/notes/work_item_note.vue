@@ -9,6 +9,7 @@ import { updateDraft, clearDraft } from '~/lib/utils/autosave';
 import { renderMarkdown } from '~/notes/utils';
 import { getLocationHash } from '~/lib/utils/url_utility';
 import { getIdFromGraphQLId } from '~/graphql_shared/utils';
+import gfmEventHub from '~/vue_shared/components/markdown/eventhub';
 import EditedAt from '~/issues/show/components/edited.vue';
 import TimelineEntryItem from '~/vue_shared/components/notes/timeline_entry_item.vue';
 import NoteHeader from '~/notes/components/note_header.vue';
@@ -111,6 +112,11 @@ export default {
       required: false,
       default: false,
     },
+    resolvedBy: {
+      type: Object,
+      required: false,
+      default: () => ({}),
+    },
     hideFullscreenMarkdownButton: {
       type: Boolean,
       required: false,
@@ -212,9 +218,12 @@ export default {
     isWorkItemConfidential() {
       return this.workItem.confidential;
     },
-    discussionResolvedBy() {
-      return this.note.discussion.resolvedBy;
-    },
+  },
+  mounted() {
+    gfmEventHub.$on('edit-note', this.handleEditNote);
+  },
+  beforeDestroy() {
+    gfmEventHub.$off('edit-note', this.handleEditNote);
   },
 
   apollo: {
@@ -246,6 +255,11 @@ export default {
       this.$emit('startEditing');
       this.isEditing = true;
       updateDraft(this.autosaveKey, this.note.body);
+    },
+    handleEditNote({ note }) {
+      if (this.hasAdminPermission && note.id === this.note.id) {
+        this.startEditing();
+      }
     },
     async updateNote({ commentText, executeOptimisticResponse = true }) {
       try {
@@ -377,6 +391,7 @@ export default {
             :note-id="note.id"
             :note-url="noteUrl"
             :is-internal-note="note.internal"
+            :is-imported="note.imported"
             :email-participant="externalAuthor"
           />
           <div class="gl-inline-flex">
@@ -400,7 +415,7 @@ export default {
               :can-resolve="canResolve"
               :is-resolved="isDiscussionResolved"
               :is-resolving="isResolving"
-              :resolved-by="discussionResolvedBy"
+              :resolved-by="resolvedBy"
               @startReplying="showReplyForm"
               @startEditing="startEditing"
               @resolve="$emit('resolve')"

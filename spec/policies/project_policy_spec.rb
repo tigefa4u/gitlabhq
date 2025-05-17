@@ -135,6 +135,38 @@ RSpec.describe ProjectPolicy, feature_category: :system_access do
     end
   end
 
+  context 'invite_project_members policy' do
+    context 'admin' do
+      let(:current_user) { admin }
+
+      context 'when admin mode is enabled', :enable_admin_mode do
+        it { is_expected.to be_allowed(:invite_project_members) }
+      end
+
+      context 'when admin mode is disabled' do
+        it { is_expected.to be_disallowed(:invite_project_members) }
+      end
+    end
+
+    context 'project owner' do
+      let(:current_user) { owner }
+
+      it { is_expected.to be_allowed(:invite_project_members) }
+    end
+
+    context 'project maintainer' do
+      let(:current_user) { maintainer }
+
+      it { is_expected.to be_allowed(:invite_project_members) }
+    end
+
+    context 'project developer' do
+      let(:current_user) { developer }
+
+      it { is_expected.to be_disallowed(:invite_project_members) }
+    end
+  end
+
   context 'when both issues and merge requests are disabled' do
     let(:current_user) { owner }
 
@@ -510,12 +542,13 @@ RSpec.describe ProjectPolicy, feature_category: :system_access do
     end
   end
 
-  context 'importing members from another project' do
+  context 'for inviting and adding members' do
     %w[maintainer owner].each do |role|
       context "with #{role}" do
         let(:current_user) { send(role) }
 
         it { is_expected.to be_allowed(:import_project_members_from_another_project) }
+        it { is_expected.to be_allowed(:invite_member) }
       end
     end
 
@@ -524,6 +557,7 @@ RSpec.describe ProjectPolicy, feature_category: :system_access do
         let(:current_user) { send(role) }
 
         it { is_expected.to be_disallowed(:import_project_members_from_another_project) }
+        it { is_expected.to be_disallowed(:invite_member) }
       end
     end
 
@@ -532,10 +566,12 @@ RSpec.describe ProjectPolicy, feature_category: :system_access do
 
       context 'when admin mode is enabled', :enable_admin_mode do
         it { expect_allowed(:import_project_members_from_another_project) }
+        it { expect_allowed(:invite_member) }
       end
 
       context 'when admin mode is disabled' do
         it { expect_disallowed(:import_project_members_from_another_project) }
+        it { expect_disallowed(:invite_member) }
       end
     end
   end
@@ -1411,6 +1447,7 @@ RSpec.describe ProjectPolicy, feature_category: :system_access do
 
           it { is_expected.to be_disallowed(:read_container_image) }
           it { is_expected.to be_disallowed(:create_container_image) }
+          it { is_expected.to be_disallowed(:create_container_registry_protection_immutable_tag_rule) }
         end
       end
 
@@ -2772,6 +2809,7 @@ RSpec.describe ProjectPolicy, feature_category: :system_access do
         end
 
         before do
+          allow(::Gitlab::CurrentSettings).to receive(:enforce_ci_inbound_job_token_scope_enabled?).and_return(instance_level_token_scope_enabled)
           current_user.set_ci_job_token_scope!(job)
           current_user.external = external_user
           project.update!(
@@ -2794,25 +2832,31 @@ RSpec.describe ProjectPolicy, feature_category: :system_access do
       end
     end
 
-    where(:user_role, :external_user, :scope_project_type, :token_scope_enabled, :result) do
-      :reporter | false | :same      | true  | true
-      :reporter | true  | :same      | true  | true
-      :reporter | false | :same      | false | true
-      :reporter | false | :different | true  | false
-      :reporter | true  | :different | true  | false
-      :reporter | false | :different | false | true
-      :planner  | false | :same      | true  | true
-      :planner  | true  | :same      | true  | true
-      :planner  | false | :same      | false | true
-      :planner  | false | :different | true  | false
-      :planner  | true  | :different | true  | false
-      :planner  | false | :different | false | true
-      :guest    | false | :same      | true  | true
-      :guest    | true  | :same      | true  | true
-      :guest    | false | :same      | false | true
-      :guest    | false | :different | true  | false
-      :guest    | true  | :different | true  | false
-      :guest    | false | :different | false | true
+    where(:user_role, :external_user, :scope_project_type, :token_scope_enabled, :instance_level_token_scope_enabled, :result) do
+      :reporter | false | :same      | true  | false | true
+      :reporter | true  | :same      | true  | false | true
+      :reporter | false | :same      | false | false | true
+      :reporter | false | :different | true  | false | false
+      :reporter | true  | :different | true  | false | false
+      :reporter | false | :different | false | true  | false
+      :reporter | true  | :different | false | true  | false
+      :reporter | false | :different | false | false | true
+      :planner  | false | :same      | true  | false | true
+      :planner  | true  | :same      | true  | false | true
+      :planner  | false | :same      | false | false | true
+      :planner  | false | :different | true  | false | false
+      :planner  | true  | :different | true  | false | false
+      :planner  | false | :different | false | true  | false
+      :planner  | true  | :different | false | true  | false
+      :planner  | false | :different | false | false | true
+      :guest    | false | :same      | true  | false | true
+      :guest    | true  | :same      | true  | false | true
+      :guest    | false | :same      | false | false | true
+      :guest    | false | :different | true  | false | false
+      :guest    | true  | :different | true  | false | false
+      :guest    | false | :different | false | true  | false
+      :guest    | true  | :different | false | true | false
+      :guest    | false | :different | false | false | true
     end
 
     include_examples "CI_JOB_TOKEN enforces the expected permissions"
@@ -4088,6 +4132,33 @@ RSpec.describe ProjectPolicy, feature_category: :system_access do
           is_expected.to be_disallowed(:build_push_code)
         end
       end
+    end
+  end
+
+  describe 'creating container registry protection immutable tag rules' do
+    using RSpec::Parameterized::TableSyntax
+
+    where(:user_role, :expected_result) do
+      :admin      | :be_allowed
+      :owner      | :be_allowed
+      :maintainer | :be_disallowed
+      :developer  | :be_disallowed
+      :reporter   | :be_disallowed
+      :planner    | :be_disallowed
+      :guest      | :be_disallowed
+      :anonymous  | :be_disallowed
+    end
+
+    with_them do
+      let(:current_user) do
+        public_send(user_role)
+      end
+
+      before do
+        enable_admin_mode!(current_user) if user_role == :admin
+      end
+
+      it { is_expected.to send(expected_result, :create_container_registry_protection_immutable_tag_rule) }
     end
   end
 

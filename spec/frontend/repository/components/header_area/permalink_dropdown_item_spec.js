@@ -4,8 +4,9 @@ import PermalinkDropdownItem from '~/repository/components/header_area/permalink
 import { keysFor, PROJECT_FILES_GO_TO_PERMALINK } from '~/behaviors/shortcuts/keybindings';
 import { shouldDisableShortcuts } from '~/behaviors/shortcuts/shortcuts_toggle';
 import { Mousetrap } from '~/lib/mousetrap';
-import { lineState } from '~/blob/state';
+import { hashState } from '~/blob/state';
 import { shallowMountExtended } from 'helpers/vue_test_utils_helper';
+import { useMockInternalEventsTracking } from 'helpers/tracking_internal_events_helper';
 
 jest.mock('~/behaviors/shortcuts/shortcuts_toggle');
 jest.mock('~/blob/state');
@@ -22,6 +23,7 @@ describe('PermalinkDropdownItem', () => {
     wrapper = shallowMountExtended(PermalinkDropdownItem, {
       propsData: {
         permalinkPath: relativePermalinkPath,
+        source: 'blob',
         ...props,
       },
       mocks: {
@@ -33,9 +35,10 @@ describe('PermalinkDropdownItem', () => {
   };
 
   const findPermalinkLinkDropdown = () => wrapper.findComponent(GlDisclosureDropdownItem);
+  const { bindInternalEventDocument } = useMockInternalEventsTracking();
 
   beforeEach(() => {
-    lineState.currentLineNumber = null;
+    hashState.currentHash = null;
     createComponent();
   });
 
@@ -51,11 +54,29 @@ describe('PermalinkDropdownItem', () => {
     });
 
     it('returns updated path with line number when set', () => {
-      lineState.currentLineNumber = '10';
+      hashState.currentHash = 10;
       createComponent();
 
       expect(findPermalinkLinkDropdown().attributes('data-clipboard-text')).toBe(
         `http://test.host/flightjs/Flight/-/blob/46ca9ebd5a43ec240ee8d64e2bb829169dff744e/bower.json#L10`,
+      );
+    });
+
+    it('returns updated path with line number range when set', () => {
+      hashState.currentHash = '#L5-10';
+      createComponent();
+
+      expect(findPermalinkLinkDropdown().attributes('data-clipboard-text')).toBe(
+        `http://test.host/flightjs/Flight/-/blob/46ca9ebd5a43ec240ee8d64e2bb829169dff744e/bower.json#L5-10`,
+      );
+    });
+
+    it('returns updated path with anchors when set', () => {
+      hashState.currentHash = '#something-wonderful';
+      createComponent();
+
+      expect(findPermalinkLinkDropdown().attributes('data-clipboard-text')).toBe(
+        `http://test.host/flightjs/Flight/-/blob/46ca9ebd5a43ec240ee8d64e2bb829169dff744e/bower.json#something-wonderful`,
       );
     });
   });
@@ -71,18 +92,62 @@ describe('PermalinkDropdownItem', () => {
     it('triggers copy permalink when shortcut is used', async () => {
       const clickSpy = jest.spyOn(findPermalinkLinkDropdown().element, 'click');
 
-      Mousetrap.trigger('y');
+      const mousetrapInstance = wrapper.vm.mousetrap;
+
+      const triggerSpy = jest.spyOn(mousetrapInstance, 'trigger');
+      mousetrapInstance.trigger('y');
+
       await nextTick();
 
+      expect(triggerSpy).toHaveBeenCalledWith('y');
       expect(clickSpy).toHaveBeenCalled();
       expect(mockToastShow).toHaveBeenCalledWith('Permalink copied to clipboard.');
+    });
+
+    describe('tracking events', () => {
+      it.each([['blob'], ['repository']])(
+        'emits a tracking event with %s source when the dropdown item is clicked',
+        (source) => {
+          createComponent({ source });
+          const { trackEventSpy } = bindInternalEventDocument(wrapper.element);
+          findPermalinkLinkDropdown().vm.$emit('action');
+          expect(trackEventSpy).toHaveBeenCalledWith(
+            'click_permalink_button_in_overflow_menu',
+            { label: 'click', property: source },
+            undefined,
+          );
+        },
+      );
+
+      it.each(['blob', 'repository'])(
+        'emits a tracking event with %s source when the shortcut is used',
+        async (source) => {
+          createComponent({ source });
+          const { trackEventSpy } = bindInternalEventDocument(wrapper.element);
+          const clickSpy = jest.spyOn(findPermalinkLinkDropdown().element, 'click');
+
+          const mousetrapInstance = wrapper.vm.mousetrap;
+          const triggerSpy = jest.spyOn(mousetrapInstance, 'trigger');
+          mousetrapInstance.trigger('y');
+
+          await nextTick();
+
+          expect(triggerSpy).toHaveBeenCalledWith('y');
+          expect(clickSpy).toHaveBeenCalled();
+          expect(trackEventSpy).toHaveBeenCalledWith(
+            'click_permalink_button_in_overflow_menu',
+            { label: 'shortcut', property: source },
+            undefined,
+          );
+        },
+      );
     });
   });
 
   describe('lifecycle hooks', () => {
     it('binds and unbinds Mousetrap shortcuts', () => {
-      const bindSpy = jest.spyOn(Mousetrap, 'bind');
-      const unbindSpy = jest.spyOn(Mousetrap, 'unbind');
+      const bindSpy = jest.spyOn(Mousetrap.prototype, 'bind');
+      const unbindSpy = jest.spyOn(Mousetrap.prototype, 'unbind');
 
       createComponent();
       expect(bindSpy).toHaveBeenCalledWith(

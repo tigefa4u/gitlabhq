@@ -35,6 +35,7 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
     it { is_expected.to have_one :namespace_route }
     it { is_expected.to have_many :namespace_members }
     it { is_expected.to have_one :cluster_enabled_grant }
+    it { is_expected.to have_one :placeholder_user_detail }
     it { is_expected.to have_many(:work_items) }
     it { is_expected.to have_many(:work_items_dates_source) }
     it { is_expected.to have_many :achievements }
@@ -652,6 +653,10 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
     it { is_expected.to delegate_method(:resource_access_token_notify_inherited_locked?).to(:namespace_settings) }
     it { is_expected.to delegate_method(:resource_access_token_notify_inherited_locked_by_ancestor?).to(:namespace_settings) }
     it { is_expected.to delegate_method(:resource_access_token_notify_inherited_locked_by_application_setting?).to(:namespace_settings) }
+    it { is_expected.to delegate_method(:web_based_commit_signing_enabled).to(:namespace_settings) }
+    it { is_expected.to delegate_method(:web_based_commit_signing_enabled?).to(:namespace_settings) }
+    it { is_expected.to delegate_method(:lock_web_based_commit_signing_enabled).to(:namespace_settings) }
+    it { is_expected.to delegate_method(:lock_web_based_commit_signing_enabled?).to(:namespace_settings) }
 
     it do
       is_expected.to delegate_method(:prevent_sharing_groups_outside_hierarchy=).to(:namespace_settings)
@@ -834,6 +839,51 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
     end
   end
 
+  describe '#self_or_ancestor_archived?' do
+    using RSpec::Parameterized::TableSyntax
+
+    let(:grandparent) { create(:group) }
+    let(:parent) { create(:group, parent: grandparent) }
+    let(:namespace) { create(:group, parent: parent) }
+
+    where(:namespace_archived, :parent_archived, :grandparent_archived, :expected_result) do
+      true  | false | false | true
+      true  | false | true  | true
+      true  | true  | false | true
+      true  | true  | true  | true
+      false | true  | true  | true
+      false | true  | false | true
+      false | false | true  | true
+      false | false | false | false
+    end
+
+    with_them do
+      before do
+        namespace.namespace_settings.update!(archived: namespace_archived)
+        parent.namespace_settings.update!(archived: parent_archived)
+        grandparent.namespace_settings.update!(archived: grandparent_archived)
+      end
+
+      it 'returns the expected result' do
+        expect(namespace.self_or_ancestor_archived?).to eq(expected_result)
+      end
+    end
+
+    context 'when group has no parent' do
+      let_it_be(:root) { create(:group) }
+
+      it 'returns true when archived' do
+        root.namespace_settings.update!(archived: true)
+        expect(root.self_or_ancestor_archived?).to eq(true)
+      end
+
+      it 'returns false when not archived' do
+        root.namespace_settings.update!(archived: false)
+        expect(root.self_or_ancestor_archived?).to eq(false)
+      end
+    end
+  end
+
   describe '#traversal_ids' do
     let(:namespace) { build(:group) }
 
@@ -992,6 +1042,26 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
     it 'calls schedule_sync_event_worker on the updated namespace' do
       expect(namespace1).to receive(:schedule_sync_event_worker)
       namespace1.update!(parent: namespace2)
+    end
+  end
+
+  describe 'traversal_path' do
+    it 'formats the traversal ids with slashes' do
+      expect(namespace.traversal_path).to eq("#{namespace.id}/")
+    end
+
+    context 'for subgroup' do
+      let(:subgroup) { Group.new(traversal_ids: [1, 2, 3], organization_id: 1111) }
+
+      it 'formats the traversal ids with slashes' do
+        expect(subgroup.traversal_path).to eq("1/2/3/")
+      end
+
+      context 'when with_organization option is enabled' do
+        it 'prepends the organization id' do
+          expect(subgroup.traversal_path(with_organization: true)).to eq("1111/1/2/3/")
+        end
+      end
     end
   end
 

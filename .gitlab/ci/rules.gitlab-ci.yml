@@ -192,6 +192,9 @@
 .if-default-branch-schedule-nightly: &if-default-branch-schedule-nightly
   if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TYPE == "nightly"'
 
+.if-default-branch-schedule-weekly: &if-default-branch-schedule-weekly
+  if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TYPE == "weekly"'
+
 .if-ruby-branch-schedule-nightly: &if-ruby-branch-schedule-nightly
   if: '$CI_COMMIT_BRANCH == "ruby-next" && $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TYPE == "nightly"'
 
@@ -321,6 +324,15 @@
   - "scripts/frontend/lint_docs_links.mjs"
   - "tooling/eslint-config/eslint-local-rules/**/*"
 
+.docs-i18n-patterns: &docs-i18n-patterns
+  - "doc-locale/**/*"
+  - "scripts/lint-i18n-doc.sh"
+
+.if-tech-docs-localization: &if-tech-docs-localization
+  if: '($CI_PROJECT_PATH == "gitlab-com/localization" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH) ||
+      ($CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_EVENT_TYPE != "merge_train") ||
+      ($CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^docs-i18n-/ || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /-docs-i18n$/)'
+
 .docs-deprecations-and-removals-patterns: &docs-deprecations-and-removals-patterns
   - "doc/update/breaking_windows.md"
   - "doc/update/deprecations.md"
@@ -430,6 +442,7 @@
   - "{,jh/}Gemfile.lock"
   - "{,jh/}Gemfile.next.lock"
   - "GITLAB_ELASTICSEARCH_INDEXER_VERSION"
+  - "GITLAB_ZOEKT_VERSION"
   # List explicitly all the app/ dirs that are backend (i.e. all except app/assets).
   - "{,ee/,jh/}{app/channels,app/components,app/controllers,app/finders,app/graphql,app/helpers,app/mailers,app/models,app/policies,app/presenters,app/serializers,app/services,app/uploaders,app/validators,app/views,app/workers}/**/*"
   - "{,ee/,jh/}{bin,config,db,elastic,gems,generator_templates,lib}/**/*"
@@ -502,6 +515,12 @@
 # for the reasons why we only match those patterns.
 .frontend-predictive-patterns: &frontend-predictive-patterns
   - "{,ee/,jh/}{app/assets/javascripts,spec/frontend}/**/*"
+
+.frontend-code-patterns: &frontend-code-patterns
+  - "**/{package.json,yarn.lock}"
+  - "**/*.{js,cjs,mjs,vue,graphql}"
+  # match the .rc config files like .browserslistrc, .stylelintrc etc.,
+  - "{.,}*rc"
 
 # Code patterns + .ci-patterns
 .code-patterns: &code-patterns
@@ -778,21 +797,9 @@
   - "qa/gems/gitlab-orchestrator/{Gemfile,Gemfile.lock}"
 
 .observability-code-patterns: &observability-code-patterns
-  # backend
-  - "ee/app/helpers/observability/**/*"
-  - "ee/app/helpers/projects/observability_helper.rb"
   - "lib/gitlab/observability.rb"
   - "ee/lib/ee/gitlab/observability.rb"
   - "ee/lib/api/internal/observability.rb"
-  - "ee/app/controllers/projects/tracing_controller.rb"
-  - "ee/app/controllers/projects/metrics_controller.rb"
-  - "ee/app/controllers/projects/logs_controller.rb"
-  - "ee/app/services/observability/**/*"
-  # frontend
-  - "app/assets/javascripts/observability/**/*"
-  - "ee/app/assets/javascripts/logs/**/*"
-  - "ee/app/assets/javascripts/metrics/**/*"
-  - "ee/app/assets/javascripts/tracing/**/*"
 
 ##################
 # Conditions set #
@@ -835,6 +842,8 @@
 .rails:rules:system-default-rules:
   rules:
     - <<: *if-merge-request-labels-pipeline-expedite
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - <<: *if-merge-request-labels-run-all-rspec
     - <<: *if-merge-request
@@ -1066,6 +1075,8 @@
       when: never
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-ruby-branch
     - <<: *if-rails-next-branch
     - <<: *if-force-ci
@@ -1094,6 +1105,8 @@
 .build-images:rules:retag-gdk-image:
   rules:
     - if: '$CI_SERVER_HOST == "gitlab.com" && $CI_PROJECT_PATH == "gitlab-org/gitlab" && $CI_COMMIT_TAG =~ /^v\d+\.\d+\.0-ee$/ && $CI_PIPELINE_SOURCE == "push"'
+    # Make sure `stable` prefixed tag is created as soon as stable branch is cut and is updated throughout it's existence
+    - if: '$CI_SERVER_HOST == "gitlab.com" && $CI_PROJECT_PATH == "gitlab-org/gitlab" && $CI_COMMIT_REF_NAME =~ /^[\d-]+-stable-ee$/ && $CI_PIPELINE_SOURCE == "push"'
     # In case gdk base tag is updated via backport mr, make sure we retag it with stable prefix as well
     - if: '$CI_SERVER_HOST == "gitlab.com" && $CI_PROJECT_PATH == "gitlab-org/gitlab" && ($CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_EVENT_TYPE != "merge_train") && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^[\d-]+-stable-ee$/'
       changes:
@@ -1107,6 +1120,8 @@
   rules:
     - !reference [".qa:rules:e2e-test-never-run", rules]
     - <<: *if-default-branch-schedule-nightly  # already executed in the 2-hourly schedule
+      when: never
+    - <<: *if-default-branch-schedule-weekly  # already executed in the 2-hourly schedule
       when: never
     - <<: *if-default-branch-refs
     - <<: *if-merge-request-labels-run-all-e2e
@@ -1213,6 +1228,8 @@
 ######################
 .ci-templates:rules:shellcheck:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *ci-templates-patterns
     - <<: *if-default-refs
@@ -1237,6 +1254,8 @@
       when: never
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *code-backstage-patterns
 
@@ -1257,11 +1276,20 @@
 
 .docs:rules:docs-lint:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *docs-patterns
 
+.docs:rules:docs-i18n-lint:
+  rules:
+    - <<: *if-tech-docs-localization
+      changes: *docs-i18n-patterns
+
 .docs:rules:deprecations-and-removals:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *docs-deprecations-and-removals-patterns
 
@@ -1276,6 +1304,8 @@
   rules:
     - <<: *if-not-ee
       when: never
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *code-backstage-qa-patterns
 
@@ -1285,6 +1315,8 @@
 .openapi:rules:openapi-check_docs:
   rules:
     - <<: *if-not-ee
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - <<: *if-default-refs
       changes: *code-rest-api-patterns
@@ -1296,6 +1328,8 @@
   rules:
     - <<: *if-not-ee
       when: never
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *audit-events-patterns
 
@@ -1306,6 +1340,8 @@
   rules:
     - <<: *if-not-ee
       when: never
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *custom-roles-patterns
 
@@ -1315,6 +1351,8 @@
 .ci-job-token-policies:rules:ci-job-token-policies-verify:
   rules:
     - <<: *if-not-ee
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - <<: *if-default-refs
       changes: *ci-job-token-policies-patterns
@@ -1366,6 +1404,8 @@
       when: never
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - if: '$ENABLE_COMPILE_PRODUCTION_ASSETS == "true"'
     - <<: *if-tag
     - <<: *if-sync-changes-on-stable-branches
@@ -1387,9 +1427,28 @@
     - <<: *if-default-refs
       changes: *workhorse-patterns
 
+.frontend:rules:eslint-changed-files:
+  rules:
+    - <<: *if-merge-request-labels-pipeline-expedite
+      when: never
+    - <<: *if-default-branch-refs
+      when: never
+    - !reference [".prevent-tier-2-and-above", "rules"]
+    - <<: *if-merge-request-no-tier
+      changes: *frontend-code-patterns
+    - <<: *if-merge-request-tier-1
+      changes: *frontend-code-patterns
+
+.frontend:rules:eslint-default:
+  rules:
+    - !reference [".prevent-tier-1", "rules"]
+    - !reference [.frontend:rules:default-frontend-jobs, rules]
+
 .frontend:rules:default-frontend-jobs:
   rules:
     - <<: *if-merge-request-labels-pipeline-expedite
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - if: '$ENABLE_JEST_INTEGRATION == "true"'
     - if: '$ENABLE_RSPEC_FRONTEND_FIXTURE == "true"'
@@ -1421,6 +1480,8 @@
     # From .frontend:rules:default-frontend-jobs
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-fork-merge-request
       changes: *code-backstage-patterns
     - if: '$ENABLE_RSPEC_FRONTEND_FIXTURE == "true"'
@@ -1451,6 +1512,8 @@
 # .frontend:rules:default-frontend-jobs, with a additional rules when MR is not approved
 .frontend:rules:compile-storybook:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     # From .frontend:rules:default-frontend-jobs
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
@@ -1475,6 +1538,8 @@
       when: never
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-dot-com-gitlab-org-default-branch
       changes: *code-backstage-patterns
     - <<: *if-merge-request-not-approved
@@ -1491,6 +1556,8 @@
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
     - <<: *if-fork-merge-request
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - if: '$ENABLE_JEST == "true"'
     - <<: *if-automated-merge-request
@@ -1531,6 +1598,8 @@
     # From .frontend:rules:default-frontend-jobs
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - if: '$ENABLE_JEST_INTEGRATION == "true"'
     - <<: *if-merge-request-labels-run-all-rspec
     - <<: *if-merge-request-labels-frontend-and-feature-flag
@@ -1551,6 +1620,8 @@
       when: never
     - <<: *if-merge-request
       when: never
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-branch-refs
       changes: *code-backstage-patterns
 
@@ -1559,6 +1630,8 @@
     - <<: *if-not-canonical-namespace
       when: never
     - <<: *if-merge-request-labels-pipeline-expedite
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - <<: *if-default-branch-refs
       changes: *frontend-build-patterns
@@ -1598,6 +1671,8 @@
 .frontend:rules:jest-linters:
   rules:
     - <<: *if-merge-request-labels-run-all-jest
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: ["tooling/eslint-config/**/*", "spec/tooling/frontend/eslint-config/**/*"]
 
@@ -1606,6 +1681,8 @@
     - <<: *if-not-merge-request
       when: never
     - <<: *if-security-merge-request
+      when: never
+    - <<: *if-merge-request-targeting-stable-branch
       when: never
     - !reference [.frontend:rules:jest, rules]
 
@@ -1644,6 +1721,8 @@
 ############
 .qa:rules:update-gem-cache:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-merge-train
       when: never
     - if: '$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^[\d-]+-stable(-ee)?$/ || $CI_COMMIT_REF_NAME =~ /^\d+-\d+-auto-deploy-\d+$/ || $CI_COMMIT_REF_NAME =~ /^security\//'
@@ -1663,6 +1742,8 @@
 
 .qa:rules:update-orchestrator-gem-cache:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-merge-train
       when: never
     - if: '$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^[\d-]+-stable(-ee)?$/ || $CI_COMMIT_REF_NAME =~ /^\d+-\d+-auto-deploy-\d+$/ || $CI_COMMIT_REF_NAME =~ /^security\//'
@@ -1676,6 +1757,8 @@
 
 .qa:rules:metadata-lint:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *qa-patterns
     - <<: *if-default-refs
@@ -1683,6 +1766,8 @@
 
 .qa:rules:gitlab-orchestrator:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-merge-request
       changes: *gitlab-orchestrator-patterns
     - <<: *if-merge-request
@@ -1715,12 +1800,16 @@
 
 .qa:rules:internal:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - if: '$ENABLE_QA_INTERNAL == "true"'
     - <<: *if-default-refs
       changes: *qa-patterns
 
 .qa:rules:selectors:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - if: '$ENABLE_QA_SELECTORS == "true"'
     - <<: *if-default-refs
       changes: *code-qa-patterns
@@ -1730,6 +1819,8 @@
     - <<: *if-not-ee
       when: never
     - <<: *if-merge-request-labels-pipeline-expedite
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - *if-ruby-branch
     - *if-rails-next-branch
@@ -1767,6 +1858,8 @@
     - <<: *if-not-ee
       when: never
     - <<: *if-merge-request-labels-pipeline-expedite
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
 
 # primary triggers for e2e tests
@@ -1916,6 +2009,8 @@
     - if: '$QA_RUN_TESTS_ON_GDK =~ /false|no|0/i'
       when: never
     - <<: *if-default-branch-schedule-nightly  # already executed in the 2-hourly schedule
+      when: never
+    - <<: *if-default-branch-schedule-weekly  # already executed in the 2-hourly schedule
       when: never
     - !reference [".qa:rules:e2e-blocking-base-before", rules]
     # Run tests automatically for MRs that touch Ruby version files
@@ -2098,6 +2193,8 @@
   rules:
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-merge-request-labels-run-all-rspec
     - <<: *if-default-refs
       changes: *db-backup-patterns
@@ -2138,6 +2235,8 @@
     - <<: *if-fork-merge-request
       when: never
     - <<: *if-merge-request-labels-pipeline-expedite
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - if: '$ENABLE_RSPEC_MIGRATION == "true"'
     - <<: *if-merge-request-labels-run-all-rspec
@@ -2317,6 +2416,8 @@
 .rails:rules:ee-and-foss-fast_spec_helper:
   rules:
     - if: '$ENABLE_RSPEC_FAST_SPEC_HELPER == "true"'
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-merge-request-labels-run-all-rspec
     - <<: *if-merge-request
       changes: *backend-patterns
@@ -2336,6 +2437,8 @@
     - <<: *if-fork-merge-request
       when: never
     - <<: *if-merge-request-labels-pipeline-expedite
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - <<: *if-merge-request-labels-run-all-rspec
     - <<: *if-merge-request
@@ -2516,9 +2619,11 @@
 
 .rails:rules:default-branch-schedule-nightly--code-backstage-default-rules:
   rules:
-    - <<: *if-merge-request-labels-pipeline-expedite
-      when: never
     - <<: *if-default-branch-schedule-nightly
+
+.rails:rules:default-branch-schedule-weekly--code-backstage-default-rules:
+  rules:
+    - <<: *if-default-branch-schedule-weekly
 
 .rails:rules:default-branch-schedule-nightly--code-backstage:
   rules:
@@ -2530,9 +2635,17 @@
       when: never
     - !reference [".rails:rules:default-branch-schedule-nightly--code-backstage-default-rules", rules]
 
+.rails:rules:default-branch-schedule-weekly--code-backstage-ee-only:
+  rules:
+    - <<: *if-not-ee
+      when: never
+    - !reference [".rails:rules:default-branch-schedule-weekly--code-backstage-default-rules", rules]
+
 .rails:rules:rspec-feature-flags:
   rules:
     - <<: *if-not-ee
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
@@ -2546,6 +2659,8 @@
     - <<: *if-merge-request
       when: never
     - if: '$FAST_QUARANTINE == "false" && $RETRY_FAILED_TESTS_IN_NEW_PROCESS != "true"'
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - <<: *if-default-branch-refs
       changes: *code-backstage-patterns
@@ -2563,6 +2678,8 @@
 .static-analysis:rules:static-analysis:
   rules:
     - if: '$ENABLE_STATIC_ANALYSIS == "true"'
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *code-backstage-qa-patterns
     - <<: *if-default-refs
@@ -2570,12 +2687,16 @@
 
 .static-analysis:rules:static-verification-with-database:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *code-backstage-qa-patterns
 
 .static-analysis:rules:rubocop:
   rules:
     - if: '$ENABLE_RUBOCOP == "true"'
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     # Do not run full rubocop if the merge request isn't approved
     - <<: *if-merge-request-not-approved
       changes: *rubocop-patterns
@@ -2590,6 +2711,8 @@
 
 .static-analysis:rules:ensure-application-settings-have-definition-file:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes:
         - db/structure.sql
@@ -2597,16 +2720,7 @@
 
 .static-analysis:rules:haml-lint:
   rules:
-    - <<: *if-default-refs
-      changes: *rubocop-patterns
-    - <<: *if-default-refs
-      changes: *static-analysis-patterns
-    - <<: *if-default-refs
-      changes: *code-backstage-qa-patterns
-
-.static-analysis:rules:haml-lint-ee:
-  rules:
-    - <<: *if-not-ee
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - <<: *if-default-refs
       changes: *rubocop-patterns
@@ -2614,6 +2728,8 @@
       changes: *static-analysis-patterns
     - <<: *if-default-refs
       changes: *code-backstage-qa-patterns
+    - <<: *if-default-refs
+      changes: *docs-patterns
 
 .semgrep-appsec-custom-rules:rules:
   rules:
@@ -2676,6 +2792,8 @@
 #################
 .reports:rules:code_quality:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
     - if: '$CODE_QUALITY_DISABLED'
@@ -2695,6 +2813,8 @@
 
 .reports:rules:semgrep-sast:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
     - if: $SAST_DISABLED
@@ -2714,6 +2834,8 @@
 
 .reports:rules:secret_detection:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
     - if: '$SECRET_DETECTION_DISABLED'
@@ -2725,6 +2847,8 @@
 
 .reports:rules:gemnasium-dependency_scanning:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
     - if: '$DEPENDENCY_SCANNING_DISABLED || $GITLAB_FEATURES !~ /\bdependency_scanning\b/ || $DS_EXCLUDED_ANALYZERS =~ /gemnasium([^-]|$)/'
@@ -2736,6 +2860,8 @@
 
 .reports:rules:gemnasium-python-dependency_scanning:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
     - if: '$DEPENDENCY_SCANNING_DISABLED || $GITLAB_FEATURES !~ /\bdependency_scanning\b/ || $DS_EXCLUDED_ANALYZERS =~ /gemnasium-python/'
@@ -2769,18 +2895,6 @@
     - <<: *if-merge-request
       changes: ["Gemfile.lock", "Gemfile.next.lock"]
 
-.reports:rules:x-ray:
-  rules:
-    - <<: *if-default-branch-refs
-      changes: *dependency-patterns
-    - <<: *if-merge-request
-      changes: *dependency-patterns
-      when: never
-    - <<: *if-merge-request
-      changes: [".gitlab/ci/reports.gitlab-ci.yml"]
-      when: manual
-    - when: never
-
 .reports:rules:pajamas_adoption:
   rules:
     - <<: *if-not-ee
@@ -2788,6 +2902,8 @@
     - <<: *if-jh
       when: never
     - <<: *if-merge-request-labels-pipeline-expedite
+      when: never
+    - <<: *if-default-branch-schedule-weekly
       when: never
     - <<: *if-merge-request
       changes:
@@ -2964,6 +3080,8 @@
   rules:
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *code-backstage-patterns
 
@@ -3033,9 +3151,15 @@
   rules:
     - <<: *if-merge-request-labels-pipeline-expedite
       when: never
+    - !reference [".prevent-tier-2-and-above", rules]
+    - <<: *if-merge-request
+      changes: *code-patterns
+    - <<: *if-merge-request # no code changes, but has doc changes
+      changes:
+        - "doc/**/*"
+      when: never
     - <<: *if-merge-request-tier-1
       allow_failure: true
-    - !reference [".prevent-tier-2-and-above", rules]
     # If we cannot find a tier label, run this job
     #
     # This could be the very first pipeline of a merge request if no
@@ -3094,6 +3218,8 @@
 ###################
 .workhorse:rules:workhorse:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *workhorse-patterns
 
@@ -3102,16 +3228,22 @@
 ###################
 .yaml-lint:rules:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *yaml-lint-patterns
 
 .lint-pipeline-yaml:rules:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *lint-pipeline-yaml-patterns
 
 .lint-metrics-yaml:rules:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *lint-metrics-yaml-patterns
 
@@ -3413,6 +3545,8 @@
 ###################
 .benchmark:rules:benchmark-markdown:
   rules:
+    - <<: *if-default-branch-schedule-weekly
+      when: never
     - <<: *if-default-refs
       changes: *setup-test-env-patterns
       when: manual

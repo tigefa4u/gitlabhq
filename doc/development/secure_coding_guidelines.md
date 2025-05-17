@@ -17,7 +17,7 @@ For each of the vulnerabilities listed in this document, AppSec aims to have a S
 | Guideline | Rule | Status |
 |---|---|---|
 | [Regular Expressions](#regular-expressions-guidelines)  | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_regex.yml)  | ✅ |
-| [ReDOS](#denial-of-service-redos--catastrophic-backtracking) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_redos_1.yml), [2](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_redos_2.yml)  | ✅ |
+| [ReDOS](#denial-of-service-redos--catastrophic-backtracking) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_redos_1.yml), [2](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_redos_2.yml), [3](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/merge_requests/59#note_2443657926)  | ✅ |
 | [JWT](#json-web-tokens-jwt) | Pending | ❌ |
 | [SSRF](#server-side-request-forgery-ssrf) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_url-1.yml), [2](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_http.yml?ref_type=heads)  | ✅ |
 | [XSS](#xss-guidelines) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xss_redirect.yml), [2](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xss_html_safe.yml)  | ✅ |
@@ -161,7 +161,7 @@ In most cases the anchors `\A` for beginning of text and `\z` for end of text sh
 
 ### Escape sequences in Go
 
-When a character in a string literal or regular expression literal is preceded by a backslash, it is interpreted as part of an escape sequence. For example, the escape sequence `\n` in a string literal corresponds to a single `newline` character, and not the <code>&#92;</code> and `n` characters.
+When a character in a string literal or regular expression literal is preceded by a backslash, it is interpreted as part of an escape sequence. For example, the escape sequence `\n` in a string literal corresponds to a single `newline` character, and not the ` \ ` and `n` characters.
 
 There are two Go escape sequences that could produce surprising results. First, `regexp.Compile("\a")` matches the bell character, whereas `regexp.Compile("\\A")` matches the start of text and `regexp.Compile("\\a")` is a Vim (but not Go) regular expression matching any alphabetic character. Second, `regexp.Compile("\b")` matches a backspace, whereas `regexp.Compile("\\b")` matches the start of a word. Confusing one for the other could lead to a regular expression passing or failing much more often than expected, with potential security consequences.
 
@@ -269,7 +269,7 @@ end
 
 #### Ruby from 3.2.0
 
-Ruby released [Regexp improvements against ReDoS in 3.2.0](https://www.ruby-lang.org/en/news/2022/12/25/ruby-3-2-0-released/). ReDoS will no longer be an issue, with the exception of _"some kind of regular expressions, such as those including advanced features (e.g., back-references or look-around), or with a huge fixed number of repetitions"_.
+Ruby released [Regexp improvements against ReDoS in 3.2.0](https://www.ruby-lang.org/en/news/2022/12/25/ruby-3-2-0-released/). ReDoS will no longer be an issue, with the exception of _"some kind of regular expressions, such as those including advanced features (like back-references or look-around), or with a huge fixed number of repetitions"_.
 
 [Until GitLab enforces a global Regexp timeout](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/145679) you should pass an explicit timeout parameter, particularly when using advanced features or a large number of repetitions. For example:
 
@@ -300,6 +300,37 @@ For other regular expressions, here are a few guidelines:
 #### Go
 
 Go's [`regexp`](https://pkg.go.dev/regexp) package uses `re2` and isn't vulnerable to backtracking issues.
+
+#### Python Regular Expression Denial of Service (ReDoS) Prevention
+
+Python offers three main regular expression libraries:
+
+| Library | Security            | Notes                                                                 |
+|---------|---------------------|-----------------------------------------------------------------------|
+| `re`    | Vulnerable to ReDoS | Built-in library. Must use timeout parameter.                        |
+| `regex` | Vulnerable to ReDoS | Third-party library with extended features. Must use timeout parameter. |
+| `re2`   | Secure by default   | Wrapper for the Google RE2 engine. Prevents backtracking by design.     |
+
+Both `re` and `regex` use backtracking algorithms that can cause exponential execution time with certain patterns.
+
+```python
+evil_input = 'a' * 30 + '!'
+
+# Vulnerable - can cause exponential execution time with nested quantifiers
+# 30 'a's -> ~30 seconds
+# 31 'a's -> ~60 seconds
+re.match(r'^(a+)+$', evil_input)
+regex.match(r'^(a|aa)+$', evil_input)
+
+# Secure - adds timeout to limit execution time
+re.match(r'^(a+)+$', evil_input, timeout=1.0)
+regex.match(r'^(a|aa)+$', evil_input, timeout=1.0)
+
+# Preferred - re2 prevents catastrophic backtracking by design
+re2.match(r'^(a+)+$', evil_input)
+```
+
+When working with regular expressions in Python, use `re2` when possible or always include timeouts with `re` and `regex`.
 
 ### Further Links
 
@@ -909,6 +940,44 @@ path.Clean("/../../etc/passwd")
 path.Clean("../../etc/passwd")
 // renders the path to "../../etc/passwd"; the file path will look back up to two parent directories!
 ```
+
+#### Safe File Operations in Go
+
+The Go standard library provides basic file operations like `os.Open`, `os.ReadFile`, `os.WriteFile`, and `os.Readlink`. However, these functions do not prevent path traversal attacks, where user-supplied paths can escape the intended directory and access sensitive system files.
+
+Example of unsafe usage:
+
+```go
+// Vulnerable: user input is directly used in the path
+os.Open(filepath.Join("/app/data", userInput))
+os.ReadFile(filepath.Join("/app/data", userInput))
+os.WriteFile(filepath.Join("/app/data", userInput), []byte("data"), 0644)
+os.Readlink(filepath.Join("/app/data", userInput))
+```
+
+To mitigate these risks, use the  [`safeopen`](https://pkg.go.dev/github.com/google/safeopen) library functions. These functions enforce a secure root directory and sanitize file paths:
+
+Example of safe usage:
+
+```go
+safeopen.OpenBeneath("/app/data", userInput)
+safeopen.ReadFileBeneath("/app/data", userInput)
+safeopen.WriteFileBeneath("/app/data", []byte("data"), 0644)
+safeopen.ReadlinkBeneath("/app/data", userInput)
+```
+
+Benefits:
+
+- Prevents path traversal attacks (`../` sequences).
+- Restricts file operations to trusted root directories.
+- Secures against unauthorized file reads, writes, and symlink resolutions.
+- Provides simple, developer-friendly replacements.
+
+References:
+
+- [Go Standard Library os Package](https://pkg.go.dev/os)
+- [Safe Go Libraries Announcement](https://bughunters.google.com/blog/4925068200771584/the-family-of-safe-golang-libraries-is-growing)
+- [OWASP Path Traversal Cheat Sheet](https://owasp.org/www-community/attacks/Path_Traversal)
 
 ## OS command injection guidelines
 

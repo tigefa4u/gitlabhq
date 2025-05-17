@@ -121,6 +121,14 @@ export default {
         { value: 'CONAN', text: s__('PackageRegistry|Conan') },
       ];
 
+      if (this.glFeatures.packagesProtectedPackagesNuget) {
+        packageTypeOptions.push({ value: 'NUGET', text: s__('PackageRegistry|NuGet') });
+      }
+
+      if (this.glFeatures.packagesProtectedPackagesHelm) {
+        packageTypeOptions.push({ value: 'HELM', text: s__('PackageRegistry|Helm') });
+      }
+
       return packageTypeOptions.sort((a, b) => a.text.localeCompare(b.text));
     },
     minimumAccessLevelForPushOptions() {
@@ -211,6 +219,7 @@ export default {
         v-model.trim="packageProtectionRuleFormData.packageNamePattern"
         type="text"
         required
+        autofocus
         :disabled="isFieldDisabled"
       />
       <template #description>

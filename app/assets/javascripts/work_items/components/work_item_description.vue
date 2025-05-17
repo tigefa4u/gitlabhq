@@ -85,7 +85,7 @@ export default {
       required: false,
       default: true,
     },
-    workItemTypeName: {
+    newWorkItemType: {
       type: String,
       required: false,
       default: '',
@@ -141,11 +141,11 @@ export default {
   },
   computed: {
     createFlow() {
-      return this.workItemId === newWorkItemId(this.workItemTypeName);
+      return this.workItemId === newWorkItemId(this.newWorkItemType);
     },
     workItemFullPath() {
       return this.createFlow
-        ? newWorkItemFullPath(this.fullPath, this.workItemTypeName)
+        ? newWorkItemFullPath(this.fullPath, this.newWorkItemType)
         : this.fullPath;
     },
     autosaveKey() {
@@ -157,6 +157,7 @@ export default {
     hasConflicts() {
       return Boolean(this.conflictedDescription);
     },
+    // eslint-disable-next-line vue/no-unused-properties
     tracking() {
       return {
         category: TRACKING_CATEGORY_SHOW,
@@ -300,6 +301,10 @@ export default {
         }
         if (this.isEditing && this.createFlow) {
           this.startEditing();
+          // Reset edit state as the description
+          // can also be populated from localStorage
+          // when creating a new work item.
+          this.wasEdited = false;
         }
       },
       error() {
@@ -327,6 +332,18 @@ export default {
         if (this.descriptionTemplate === this.descriptionText) {
           return;
         }
+        if (this.createFlow && !this.wasEdited && hasContent && this.appliedTemplate === '') {
+          // If the template was fetched on component mount
+          // while in create flow, we may also have populated
+          // the description from localStorage. In this case,
+          // we need avoid showing the warning on first load.
+          // while also setting appliedTemplate to the current
+          // template such that reset is possible.
+          this.appliedTemplate = this.descriptionTemplate;
+          this.wasEdited = true;
+          return;
+        }
+
         if (!isUnchangedTemplate && (isDirty || hasContent)) {
           this.showTemplateApplyWarning = true;
         } else {
@@ -456,6 +473,16 @@ export default {
         this.onInput();
       }
     },
+    handleEscape() {
+      // Don't cancel if autosuggest open in plain text editor
+      if (
+        !this.$refs.markdownEditor.$el
+          .querySelector('textarea')
+          ?.classList.contains('at-who-active')
+      ) {
+        this.cancelEditing();
+      }
+    },
   },
 };
 </script>
@@ -503,6 +530,7 @@ export default {
           </template>
         </gl-alert>
         <markdown-editor
+          ref="markdownEditor"
           :value="descriptionText"
           :render-markdown-path="markdownPreviewPath"
           :markdown-docs-path="$options.markdownDocsPath"
@@ -518,6 +546,7 @@ export default {
           @input="setDescriptionText"
           @keydown.meta.enter="updateWorkItem"
           @keydown.ctrl.enter="updateWorkItem"
+          @keydown.esc.stop="handleEscape"
         />
         <div class="gl-flex">
           <gl-alert

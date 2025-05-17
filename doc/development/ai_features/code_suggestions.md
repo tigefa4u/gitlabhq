@@ -10,8 +10,8 @@ title: Code Suggestions development guidelines
 
 The recommended setup for locally developing and debugging Code Suggestions is to have all 3 different components running:
 
-- IDE Extension (e.g. GitLab Workflow extension for VS Code).
-- Main application configured correctly (e.g. GDK).
+- IDE Extension (for example, GitLab Workflow extension for VS Code).
+- Main application configured correctly (for example, GDK).
 - [AI gateway](https://gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist).
 
 This should enable everyone to locally see how any change made in an IDE is sent to the main application to be transformed into a prompt before being sent to the respective model.
@@ -44,8 +44,10 @@ When testing interactions with the AI gateway, you might want to integrate your 
 with the deployed staging AI gateway. To do this:
 
 1. You need a cloud staging license that has the Code Suggestions add-on,
-   because add-ons are enabled on staging. Follow [these instructions](#setup-instructions-to-use-gdk-with-the-code-suggestions-add-on) to add the add-on to your license (you can reach out to `#s_fulfillment_engineering` if you have any problems). See this [handbook page](https://handbook.gitlab.com/handbook/developer-onboarding/#working-on-gitlab-ee-developer-licenses) for how to request a license for local development.
-1. Set environment variables to point customers-dot to staging, and the AI gateway to staging:
+   because add-ons are enabled on staging. Follow [these instructions](#setup-instructions-to-use-gdk-with-the-code-suggestions-add-on) to add the add-on to your license (you can reach out to `#s_fulfillment_engineering` if you have any problems).
+   See this [handbook page](https://handbook.gitlab.com/handbook/engineering/developer-onboarding/#working-on-gitlab-ee-developer-licenses) for how to request a license for local development.
+1. Set environment variables in your GDK to point customers-dot to staging, and the AI gateway to staging. You can refer to [this documentation](https://gitlab.com/gitlab-org/gitlab-development-kit/-/blob/main/doc/runit.md#using-environment-variables)
+   to set the environment variables in your GDK:
 
    ```shell
    export GITLAB_LICENSE_MODE=test
@@ -64,12 +66,12 @@ with the deployed staging AI gateway. To do this:
 
 ### Setup instructions to use GDK with the Code Suggestions Add-on
 
-**Option 1 - Recommended**
+#### Option 1 - Recommended
 
 1. Ensure that you have a [GitLab Team Member License](https://handbook.gitlab.com/handbook/engineering/developer-onboarding/#working-on-gitlab-ee-developer-licenses) and that it is [activated](../../administration/license_file.md).
 1. Follow the [Setup and Run GDK](_index.md#set-up-and-run-gdk) guide under the AI Features doc.
 
-**Option 2**
+#### Option 2
 
 You can set up Duo on your GDK by going through CustomersDot. This is a more complex process, but it more accurately reflects the GitLab Self-Managed setup of our customers.
 
@@ -134,7 +136,7 @@ The above methods make use of the [BulkAssignService](https://gitlab.com/gitlab-
 
 ### Setting up Duo on your **staging** GitLab.com account
 
-Please refer to [Instructions for setting up Duo add-ons on your **staging** GitLab.com account](staging_accounts.md).
+Please refer to [Instructions for setting up Duo add-ons on your **staging** GitLab.com account](ai_development_license.md).
 
 ### Video demonstrations of installing and using Code Suggestions in IDEs
 

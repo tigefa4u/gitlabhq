@@ -3,8 +3,10 @@
 import { mapState } from 'vuex';
 import { __, s__ } from '~/locale';
 import getBlobSearchQuery from '~/search/graphql/blob_search_zoekt.query.graphql';
+import { ERROR_POLICY_NONE } from '~/lib/graphql';
 import { parseBoolean } from '~/lib/utils/common_utils';
 import { logError } from '~/lib/logger';
+import { EXCLUDE_FORKS_FILTER_PARAM } from '~/search/sidebar/constants';
 import { DEFAULT_FETCH_CHUNKS } from '../constants';
 import { RECEIVE_NAVIGATION_COUNT } from '../../store/mutation_types';
 import EmptyResult from './result_empty.vue';
@@ -38,7 +40,7 @@ export default {
       query() {
         return getBlobSearchQuery;
       },
-      errorPolicy: 'none',
+      errorPolicy: ERROR_POLICY_NONE,
       variables() {
         const variables = {
           search: this.query.search || '',
@@ -46,7 +48,7 @@ export default {
           chunkCount: DEFAULT_FETCH_CHUNKS,
           regex: parseBoolean(this.query?.regex),
           includeArchived: parseBoolean(this.query?.include_archived),
-          includeForked: parseBoolean(this.query?.include_forked),
+          excludeForks: parseBoolean(this.query?.[EXCLUDE_FORKS_FILTER_PARAM]),
         };
 
         if (this.query?.group_id) {

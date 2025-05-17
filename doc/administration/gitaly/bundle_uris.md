@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Data Access
 group: Gitaly
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Bundle URIs
@@ -57,7 +57,7 @@ storage services:
 - Google Cloud Storage
 - AWS S3 (or compatible)
 - Azure Blob Storage
-- Local file storage (**not recommended**)
+- Local file storage (not recommended)
 
 ### Configure Azure Blob storage
 

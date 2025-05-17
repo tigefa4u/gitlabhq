@@ -940,7 +940,7 @@ GET /groups/:id/integrations/hangouts-chat
 
 {{< /details >}}
 
-This feature is in [beta](../policy/experiment-beta-support.md).
+This feature is in [beta](../policy/development_stages_support.md).
 
 ### Set up Google Artifact Management
 
@@ -985,7 +985,7 @@ GET /groups/:id/integrations/google-cloud-platform-artifact-registry
 
 {{< /details >}}
 
-This feature is in [beta](../policy/experiment-beta-support.md).
+This feature is in [beta](../policy/development_stages_support.md).
 
 ### Set up Google Cloud Identity and Access Management
 
@@ -1001,8 +1001,8 @@ Parameters:
 | --------- | ---- | -------- | ----------- |
 | `workload_identity_federation_project_id` | string | yes | Google Cloud project ID for the Workload Identity Federation. |
 | `workload_identity_federation_project_number` | integer | yes | Google Cloud project number for the Workload Identity Federation. |
-| `workload_identity_pool_id` | string | yes | ID of the Workload Identity Pool. |
-| `workload_identity_pool_provider_id` | string | yes | ID of the Workload Identity Pool provider. |
+| `workload_identity_pool_id` | string | yes | ID of the workload identity pool. |
+| `workload_identity_pool_provider_id` | string | yes | ID of the workload identity pool provider. |
 | `use_inherited_settings` | boolean | no | Indicates whether or not to inherit default settings. Defaults to `false`. |
 
 ### Disable Google Cloud Identity and Access Management

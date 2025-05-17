@@ -289,7 +289,7 @@ The project becomes a security policy project, and the setting becomes available
 {{< alert type="note" >}}
 
 To create downstream pipelines using `$CI_JOB_TOKEN`, you need to make sure that projects and groups are authorized to request the security policy project.
-In the security policy project, go to **Settings > CI/CD > Job token permissions** and add the authorized groups and projects to the allowlist. Alternatively, you can authorize all groups and projects.
+In the security policy project, go to **Settings > CI/CD > Job token permissions** and add the authorized groups and projects to the allowlist.
 If you don't see the **CI/CD** settings, go to **Settings > General > Visibility, project features, permissions** and enable **CI/CD**.
 
 {{< /alert >}}
@@ -756,7 +756,7 @@ predefined project variable, not defined in the project's `.gitlab-ci.yml` file.
 
 ```yaml
 variables:
-  CS_ANALYZER_IMAGE: "$CI_TEMPLATE_REGISTRY_HOST/security-products/container-scanning:7"
+  CS_ANALYZER_IMAGE: "$CI_TEMPLATE_REGISTRY_HOST/security-products/container-scanning:8"
   CS_IMAGE: alpine:latest
 
 policy::container-security:
@@ -885,4 +885,22 @@ pipeline_execution_policy:
       allowlist:
         users:
           - id: 75
+```
+
+### Configure the `exists` condition
+
+Use the `exists` rule to configure the pipeline execution policy to include the CI/CD configuration file from the project when a certain file exists.
+
+In the following example, the pipeline execution policy includes the CI/CD configuration from the project if a `Dockerfile` exists. You must set the `exists` rule to use `'$CI_PROJECT_PATH'` as the `project`, otherwise GitLab evaluates where the files exists in the project that holds the security policy CI/CD configuration.
+
+```yaml
+include:
+  - project: $CI_PROJECT_PATH
+    ref: $CI_COMMIT_SHA
+    file: $CI_CONFIG_PATH
+    rules:
+      - exists:
+          paths:
+            - 'Dockerfile'
+          project: '$CI_PROJECT_PATH'
 ```

@@ -1,4 +1,4 @@
-import { shallowMountExtended } from 'helpers/vue_test_utils_helper';
+import { shallowMount } from '@vue/test-utils';
 import YourWorkGroupsApp from '~/groups/your_work/components/app.vue';
 import {
   GROUP_DASHBOARD_TABS,
@@ -14,6 +14,7 @@ import {
   TIMESTAMP_TYPE_CREATED_AT,
   TIMESTAMP_TYPE_UPDATED_AT,
 } from '~/vue_shared/components/resource_lists/constants';
+import { PAGINATION_TYPE_OFFSET } from '~/groups_projects/constants';
 
 describe('YourWorkGroupsApp', () => {
   let wrapper;
@@ -23,7 +24,7 @@ describe('YourWorkGroupsApp', () => {
   };
 
   const createComponent = () => {
-    wrapper = shallowMountExtended(YourWorkGroupsApp, { propsData: defaultPropsData });
+    wrapper = shallowMount(YourWorkGroupsApp, { propsData: defaultPropsData });
   };
 
   beforeEach(() => {
@@ -49,6 +50,7 @@ describe('YourWorkGroupsApp', () => {
       eventTracking: {},
       tabCountsQuery: {},
       tabCountsQueryErrorMessage: 'An error occurred loading the tab counts.',
+      paginationType: PAGINATION_TYPE_OFFSET,
     });
   });
 });

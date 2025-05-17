@@ -15,8 +15,10 @@ RSpec.describe Packages::Protection::Rule, type: :model, feature_category: :pack
     it {
       is_expected.to define_enum_for(:package_type).with_values(
         conan: Packages::Package.package_types[:conan],
+        helm: Packages::Package.package_types[:helm],
         maven: Packages::Package.package_types[:maven],
         npm: Packages::Package.package_types[:npm],
+        nuget: Packages::Package.package_types[:nuget],
         pypi: Packages::Package.package_types[:pypi]
       )
     }

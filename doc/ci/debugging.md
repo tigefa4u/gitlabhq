@@ -3,6 +3,7 @@ stage: Verify
 group: Pipeline Authoring
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Debugging CI/CD pipelines
+description: Configuration validation, warnings, errors, and troubleshooting.
 ---
 
 {{< details >}}
@@ -242,7 +243,7 @@ as they could be viewed by any user with access to the pipelines.
 
 ### Run the job's commands locally
 
-You can use a tool like [Rancher Desktop](https://rancherdesktop.io/) or [similar alternatives](https://handbook.gitlab.com/handbook/tools-and-tips/mac/#docker-desktop)
+You can use a tool like [Rancher Desktop](https://rancherdesktop.io/) or similar alternatives
 to run the job's container image on your local machine. Then, run the job's `script` commands
 in the container and verify the behavior.
 
@@ -331,6 +332,8 @@ a branch pipeline instead.
 
 It's also possible that your [`workflow: rules`](yaml/_index.md#workflow) configuration
 blocked the pipeline, or allowed the wrong pipeline type.
+
+If you are using pull mirroring, you can check the [troubleshooting entry for pull mirroring pipelines](../user/project/repository/mirror/troubleshooting.md#pull-mirroring-is-not-triggering-pipelines).
 
 ### Pipeline with many jobs fails to start
 

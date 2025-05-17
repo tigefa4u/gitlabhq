@@ -2,7 +2,7 @@ import { GlButton, GlIcon } from '@gitlab/ui';
 import Vue from 'vue';
 import VueApollo from 'vue-apollo';
 
-import namespaceWorkItemTypesQueryResponse from 'test_fixtures/graphql/work_items/namespace_work_item_types.query.graphql.json';
+import namespaceWorkItemTypesQueryResponse from 'test_fixtures/graphql/work_items/project_namespace_work_item_types.query.graphql.json';
 
 import createMockApollo from 'helpers/mock_apollo_helper';
 import waitForPromises from 'helpers/wait_for_promises';
@@ -80,10 +80,16 @@ describe('WorkItemActions component', () => {
     expect(findNotificationsButton().exists()).toBe(true);
   });
 
+  it('does not render button if user is not logged in', () => {
+    isLoggedIn.mockReturnValue(false);
+    createComponent();
+
+    expect(findNotificationsButton().exists()).toBe(false);
+  });
+
   describe('notifications action', () => {
     beforeEach(() => {
       createComponent();
-      isLoggedIn.mockReturnValue(true);
     });
 
     it.each`

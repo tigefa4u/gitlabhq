@@ -7,14 +7,27 @@ RSpec.describe Gitlab::QuickActions::SpendTimeAndDateSeparator, feature_category
 
   shared_examples 'arg line with invalid parameters' do
     it 'return nil' do
-      expect(subject.new(invalid_arg).execute).to eq(nil)
+      expect(subject.new(invalid_arg, nil).execute).to eq(nil)
     end
   end
 
   shared_examples 'arg line with valid parameters' do
     it 'return time and date array' do
       freeze_time do
-        expect(subject.new(valid_arg).execute).to eq(expected_response)
+        expect(subject.new(valid_arg, nil).execute).to eq(expected_response)
+      end
+    end
+
+    context 'when timezone set' do
+      let(:timezone) { 'Hawaii' }
+
+      it 'return time and date array' do
+        freeze_time do
+          date = defined?(raw_date) ? Date.parse(raw_date).in_time_zone(timezone).midday : DateTime.current
+          expected_response[1] = date
+
+          expect(subject.new(valid_arg, timezone).execute).to eq(expected_response)
+        end
       end
     end
   end
@@ -43,7 +56,7 @@ RSpec.describe Gitlab::QuickActions::SpendTimeAndDateSeparator, feature_category
         let(:invalid_arg) { 'dfjkghdskjfghdjskfgdfg' }
 
         it 'return nil as time value' do
-          time_date_response = subject.new(invalid_arg).execute
+          time_date_response = subject.new(invalid_arg, nil).execute
 
           expect(time_date_response).to be_an_instance_of(Array)
           expect(time_date_response.first).to eq(nil)
@@ -72,7 +85,7 @@ RSpec.describe Gitlab::QuickActions::SpendTimeAndDateSeparator, feature_category
       let(:raw_time) { '10m' }
       let(:raw_date) { '2016-02-02' }
       let(:valid_arg) { "#{raw_time} #{raw_date}" }
-      let(:date) { Date.parse(raw_date) }
+      let(:date) { Date.parse(raw_date).midday }
       let(:time) { Gitlab::TimeTrackingFormatter.parse(raw_time) }
       let(:expected_response) { [time, date, nil] }
 
@@ -91,7 +104,7 @@ RSpec.describe Gitlab::QuickActions::SpendTimeAndDateSeparator, feature_category
         let(:raw_time) { '2m 10m 1h 3d' }
         let(:raw_date) { '2016/02/02' }
         let(:valid_arg) { "#{raw_time} #{raw_date}" }
-        let(:date) { Date.parse(raw_date) }
+        let(:date) { Date.parse(raw_date).midday }
         let(:time) { Gitlab::TimeTrackingFormatter.parse(raw_time) }
         let(:expected_response) { [time, date, nil] }
       end

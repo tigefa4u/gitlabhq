@@ -203,13 +203,27 @@ These database indicators are checked to throttle a migration. Upon receiving a
 stop signal, the migration is paused for a set time (10 minutes):
 
 - WAL queue pending archival crossing the threshold.
-- Active autovacuum on the tables on which the migration works on.
+- Active autovacuum on the tables on which the migration works on (enabled by default as of GitLab 18.0).
 - Patroni apdex SLI dropping below the SLO.
 - WAL rate crossing the threshold.
 
 There is an ongoing effort to add more indicators to further enhance the
 database health check framework. For more details, see
 [epic 7594](https://gitlab.com/groups/gitlab-org/-/epics/7594).
+
+#### How to disable/enable autovacuum indicator on tables
+
+As of GitLab 18.0, this health indicator is enabled by default. To disable it, run the following command on the rails console:
+
+```ruby
+Feature.disable(:batched_migrations_health_status_autovacuum)
+```
+
+Alternatively, if you want to enable it again, run the following command in rails console:
+
+```ruby
+Feature.enable(:batched_migrations_health_status_autovacuum)
+```
 
 ### Isolation
 
@@ -283,14 +297,19 @@ This ensures a smooth upgrade process for GitLab Self-Managed instances.
 It is important to finalize all batched background migrations when it is safe
 to do so. Leaving around old batched background migration is a form of
 technical debt that needs to be maintained in tests and in application
-behavior. It is important to note that you cannot depend on any batched
-background migration being completed until after it is finalized.
+behavior.
+
+{{< alert type="note" >}}
+
+You cannot depend on any batched background migration being completed until after it is finalized.
+
+{{< /alert >}}
 
 We recommend that batched background migrations are finalized after all of the
 following conditions are met:
 
 - The batched background migration is completed on GitLab.com
-- The batched background migration was added in or before the last [required stop](required_stops.md). For example if 17.8 is a required stop and the migration was added in 17.7, the finalizing migration can be added in 17.9.
+- The batched background migration was added in or before the last [required stop](required_stops.md). For example if 17.8 is a required stop and the migration was added in 17.7, the [finalizing migration can be added in 17.9](required_stops.md#long-running-migrations-being-finalized).
 
 The `ensure_batched_background_migration_is_finished` call must exactly match
 the migration that was used to enqueue it. Pay careful attention to:
@@ -333,7 +352,7 @@ Here is an example scenario:
 - In 17.4 the migration may be finalized, provided that it's completed in GitLab.com.
 - In 17.6 the code related to the migration may be deleted.
 
-Batched background migration code is routinely deleted when migrations are squashed.
+Batched background migration code is routinely deleted when [migrations are squashed](migration_squashing.md).
 
 ### Re-queue batched background migrations
 
@@ -949,6 +968,9 @@ This command supports the following options:
   - `--staging`: Uses the `staging` environment.
   - `--staging_ref`: Uses the `staging_ref` environment.
   - `--production` : Uses the `production` environment (default).
+- Filter by job class
+  - `--job-class-name JOB_CLASS_NAME`: Only list jobs for the given job class.
+  - This is the `migration_job_name` in the YAML definition of the background migration.
 
 Output example:
 
@@ -1194,7 +1216,7 @@ for more details.
    This can be achieve in different ways, depending on the scenario.
 
    - Generate an `UPDATE` query, and use `FROM` to join the tables
-   that provide the necessary values 
+   that provide the necessary values
    ([example](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/184051)).
    - Generate an `UPDATE` query, and use `FROM(VALUES( ...))` to
    pass values calculated beforehand

@@ -20,6 +20,14 @@ module QA
           element 'submit-review-button'
         end
 
+        view 'app/assets/javascripts/batch_comments/components/review_drawer.vue' do
+          element 'submit-review-button'
+        end
+
+        view 'app/assets/javascripts/batch_comments/components/submit_review_button.vue' do
+          element 'review-drawer-toggle'
+        end
+
         view 'app/assets/javascripts/diffs/components/compare_dropdown_layout.vue' do
           element 'version-dropdown-content'
         end
@@ -185,11 +193,7 @@ module QA
             end
           end
 
-          within_element('review-bar-content') do
-            click_element('review-preview-dropdown')
-          end
-
-          click_element('submit-review-dropdown')
+          all_elements('review-drawer-toggle', minimum: 1).first.click
           click_element('submit-review-button')
 
           # After clicking the button, wait for the review bar to disappear
@@ -268,7 +272,7 @@ module QA
         end
 
         def has_merge_button?
-          has_element?('merge-button', wait: 30)
+          has_element?('merge-button', skip_finished_loading_check: true, wait: 30)
         end
 
         def has_no_merge_button?
@@ -502,7 +506,7 @@ module QA
 
         def cherry_pick!
           click_element('cherry-pick-button', Page::Component::CommitModal)
-          click_element('submit-commit')
+          submit_commit
         end
 
         def revert_change!
@@ -511,7 +515,7 @@ module QA
           retry_on_exception(reload: true) do
             click_element('revert-button', Page::Component::CommitModal)
           end
-          click_element('submit-commit')
+          submit_commit
         end
 
         def mr_widget_text
@@ -552,6 +556,13 @@ module QA
 
         def has_exposed_artifact_with_name?(name)
           has_link?(name)
+        end
+
+        private
+
+        def submit_commit
+          # There may be two modals due to https://gitlab.com/gitlab-org/gitlab/-/issues/538079
+          all_elements('submit-commit', minimum: 1).last.click
         end
       end
     end

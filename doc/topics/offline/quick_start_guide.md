@@ -220,7 +220,7 @@ For more information, see [Enable or disable service ping](../../administration/
 
 Runner version management retrieves the latest runner versions from GitLab to
 [determine which runners in your environment are out of date](../../ci/runners/runners_scope.md#determine-which-runners-need-to-be-upgraded).
-You must [disable runner version management](../../administration/settings/continuous_integration.md#disable-runner-version-management)
+You must [disable runner version management](../../administration/settings/continuous_integration.md#control-runner-version-management)
 for offline environments.
 
 ### Configure NTP
@@ -275,9 +275,8 @@ Package metadata is stored in the following Google Cloud Provider (GCP) buckets:
 
    ```shell
    # To download the package metadata exports, an outbound connection to Google Cloud Storage bucket must be allowed.
-   # Skip v1 objects using -y "^v1\/" to only download v2 objects. v1 data is no longer used and deprecated since 16.3.
    mkdir -p "$GITLAB_RAILS_ROOT_DIR/vendor/package_metadata/$DATA_DIR"
-   gsutil -m rsync -r -d -y "^v1\/" gs://$PKG_METADATA_BUCKET "$GITLAB_RAILS_ROOT_DIR/vendor/package_metadata/$DATA_DIR"
+   gsutil -m rsync -r -d gs://$PKG_METADATA_BUCKET "$GITLAB_RAILS_ROOT_DIR/vendor/package_metadata/$DATA_DIR"
 
    # Alternatively, if the GitLab instance is not allowed to connect to the Google Cloud Storage bucket, the package metadata
    # exports can be downloaded using a machine with the allowed access, and then copied to the root of the GitLab Rails directory.
@@ -310,18 +309,17 @@ PKG_METADATA_BUCKET="prod-export-$DATA_TYPE-bucket-1a6c642fc4de57d4"
 PKG_METADATA_DOWNLOADS_OUTPUT_FILE="/tmp/package_metadata_${DATA_TYPE}_object_links.tsv"
 
 # Download the contents of the bucket
-# Filter results using `prefix=v2` to only download v2 objects. v1 data is no longer used and deprecated since 16.3.
 # The script downloads all the objects and creates files with a maximum 1000 objects per file in JSON format.
 
 MAX_RESULTS=1000
 TEMP_FILE="out.json"
 
-curl --silent --show-error --request GET "https://storage.googleapis.com/storage/v1/b/$PKG_METADATA_BUCKET/o?maxResults=$MAX_RESULTS&prefix=v2%2f" >"$TEMP_FILE"
+curl --silent --show-error --request GET "https://storage.googleapis.com/storage/v1/b/$PKG_METADATA_BUCKET/o?maxResults=$MAX_RESULTS" >"$TEMP_FILE"
 NEXT_PAGE_TOKEN="$(jq -r '.nextPageToken' $TEMP_FILE)"
 jq -r '.items[] | [.name, .mediaLink] | @tsv' "$TEMP_FILE" >"$PKG_METADATA_DOWNLOADS_OUTPUT_FILE"
 
 while [ "$NEXT_PAGE_TOKEN" != "null" ]; do
-  curl --silent --show-error --request GET "https://storage.googleapis.com/storage/v1/b/$PKG_METADATA_BUCKET/o?maxResults=$MAX_RESULTS&pageToken=$NEXT_PAGE_TOKEN&prefix=v2%2f" >"$TEMP_FILE"
+  curl --silent --show-error --request GET "https://storage.googleapis.com/storage/v1/b/$PKG_METADATA_BUCKET/o?maxResults=$MAX_RESULTS&pageToken=$NEXT_PAGE_TOKEN" >"$TEMP_FILE"
   NEXT_PAGE_TOKEN="$(jq -r '.nextPageToken' $TEMP_FILE)"
   jq -r '.items[] | [.name, .mediaLink] | @tsv' "$TEMP_FILE" >>"$PKG_METADATA_DOWNLOADS_OUTPUT_FILE"
   #use for API rate-limiting

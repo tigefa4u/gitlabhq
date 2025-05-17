@@ -19,7 +19,7 @@ title: Package registry
 {{< /history >}}
 
 With the GitLab package registry, you can use GitLab as a private or public registry for a variety
-of [supported package managers](supported_package_managers.md).
+of [supported package managers](supported_functionality.md).
 You can publish and share packages, which can be consumed as a dependency in downstream projects.
 
 ## Package workflows
@@ -49,36 +49,7 @@ When you view packages in a group:
 - Only the projects you can access are displayed.
 - If a project is private, or you are not a member of the project, the packages from that project are not displayed.
 
-To learn how to create and upload a package, follow the instructions for your [package type](supported_package_managers.md).
-
-## Authenticate with the registry
-
-Authentication depends on the package manager being used. To learn what authentication protocols are supported for a specific package type, see [Authentication protocols](supported_functionality.md#authentication-protocols).
-
-For most package types, the following credential types are valid:
-
-- [Personal access token](../../profile/personal_access_tokens.md):
-  authenticates with your user permissions. Good for personal and local use of the package registry.
-- [Project deploy token](../../project/deploy_tokens/_index.md):
-  allows access to all packages in a project. Good for granting and revoking project access to many
-  users.
-- [Group deploy token](../../project/deploy_tokens/_index.md):
-  allows access to all packages in a group and its subgroups. Good for granting and revoking access
-  to a large number of packages to sets of users.
-- [Job token](../../../ci/jobs/ci_job_token.md):
-  allows access to packages in the project running the job for the users running the pipeline.
-  Access to other external projects can be configured.
-- If your organization uses two-factor authentication (2FA), you must use a personal access token with the scope set to `api`.
-- If you are publishing a package by using CI/CD pipelines, you must use a CI/CD job token.
-
-{{< alert type="note" >}}
-
-When configuring authentication to the package registry:
-
-- If the **Package registry** project setting is [turned off](#turn-off-the-package-registry), you receive a `403 Forbidden` error when you interact with the package registry, even if you have the Owner role.
-- If [external authorization](../../../administration/settings/external_authorization.md) is turned on, you can't access the package registry with a deploy token.
-
-{{< /alert >}}
+To learn how to create and upload a package, follow the instructions for your [package type](supported_functionality.md).
 
 ## Use GitLab CI/CD
 
@@ -226,9 +197,8 @@ You can view audit events:
 
 ## Accepting contributions
 
-The following table lists unsupported package manager formats that we are accepting contributions for.
-See the [development guidelines](../../../development/packages/_index.md)
-to learn how to contribute to GitLab.
+The following table lists package formats that are not supported.
+Consider contributing to GitLab to add support for these formats.
 
 <!-- vale gitlab_base.Spelling = NO -->
 

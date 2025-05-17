@@ -3,6 +3,7 @@ stage: Application Security Testing
 group: Static Analysis
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Static Application Security Testing (SAST)
+description: Scanning, configuration, analyzers, vulnerabilities, reporting, customization, and integration.
 ---
 
 <style>
@@ -251,7 +252,7 @@ In Ultimate, the [SAST report file](#download-a-sast-report) is processed by Git
 A pipeline consists of multiple jobs, including SAST and DAST scanning. If any job fails to finish
 for any reason, the security dashboard does not show SAST scanner output. For example, if the SAST
 job finishes but the DAST job fails, the security dashboard does not show SAST results. On failure,
-the analyzer outputs an [exit code](../../../development/integrations/secure.md#exit-code).
+the analyzer outputs an exit code.
 
 ### Merge request widget
 
@@ -279,10 +280,6 @@ SAST results display in the merge request **Changes** view. Lines containing SAS
 issues are marked by a symbol beside the gutter. Select the symbol to see the list of issues, then select an issue to see its details.
 
 ![SAST Inline Indicator](img/sast_inline_indicator_v16_7.png)
-
-## Contribute your scanner
-
-The [Security Scanner Integration](../../../development/integrations/secure.md) documentation explains how to integrate other security scanners into GitLab.
 
 ## Configuration
 
@@ -512,6 +509,17 @@ For example, to scan a Rust application, you must:
            - '**/*.rs'
            # include any other file extensions you need to scan from the semgrep-sast template: Jobs/SAST.gitlab-ci.yml
    ```
+
+### JDK21 support for SpotBugs analyzer
+
+Version `6` of the SpotBugs analyzer adds support for JDK21 and removes JDK11. The default version remains at `5` as discussed in [issue 517169](https://gitlab.com/gitlab-org/gitlab/-/issues/517169).
+To use version `6`, manually pin the version by following the instructions [Pinning to minor image version](#pinning-to-minor-image-version).
+
+```yaml
+spotbugs-sast:
+  variables:
+    SAST_ANALYZER_IMAGE_TAG: "6"
+```
 
 ### Using pre-compilation with SpotBugs analyzer
 
@@ -855,7 +863,7 @@ flags are added to the scanner's CLI options.
         <code>--include-propagator-files</code>
       </td>
       <td>
-        WARNING: This flag may cause significant performance degradation. <br> This option enables the scanning of intermediary files that connect source and sink files without containing either sources or sinks themselves. While useful for comprehensive analysis in smaller repositories, enabling this feature for large repositories will substantially impact performance. 
+        WARNING: This flag may cause significant performance degradation. <br> This option enables the scanning of intermediary files that connect source and sink files without containing either sources or sinks themselves. While useful for comprehensive analysis in smaller repositories, enabling this feature for large repositories will substantially impact performance.
       </td>
     </tr>
     <tr>
@@ -863,7 +871,7 @@ flags are added to the scanner's CLI options.
         <code>--multi-core</code>
       </td>
       <td>
-        Multi-core scanning is enabled by default, automatically detecting and utilizing available CPU cores based on container information. On self-hosted runners, the maximum number of cores is capped at 4. You can override the automatic core detection by explicitly setting <code>--multi-core</code> to a specific value. Multi-core execution requires proportionally more memory than single-core execution. To disable multi-core scanning, set the environment variable <code>DISABLE_MULTI_CORE</code>. Note that exceeding available cores or memory resources may lead to resource contention and suboptimal performance.
+        Multi-core scanning is enabled by default, automatically detecting and utilizing available CPU cores based on container information. On self-hosted runners, the maximum number of cores is capped at 4. You can override the automatic core detection by explicitly setting <code>--multi-core</code> to a specific value. Multi-core execution requires proportionally more memory than single-core execution. To disable multi-core scanning, set the environment variable <code>DISABLE_MULTI_CORE</code>. Exceeding available cores or memory resources may lead to resource contention and suboptimal performance.
       </td>
     </tr>
     <tr>

@@ -20,87 +20,93 @@ title: Custom roles
 - Ability to create and remove a custom role with the UI [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/393235) in GitLab 16.4.
 - Ability to use the UI to add a user to your group with a custom role, change a user's custom role, or remove a custom role from a group member [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/393239) in GitLab 16.7.
 - Ability to create and remove an instance-wide custom role on GitLab Self-Managed [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/141562) in GitLab 16.9.
+- Custom admin roles [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/181346) in GitLab 17.9 [with a flag](../../administration/feature_flags.md) named `custom_admin_roles`. Disabled by default.
 
 {{< /history >}}
 
-Custom roles allow an organization to create user roles with the precise privileges and permissions required for that organization's needs.
+Custom roles allow you to create roles with only the specific [custom permissions](abilities.md)
+required by your organization. Each custom role is based on an existing default role. For example,
+you might create a custom role based on the Guest role, but also include permission to view code
+in a project repository.
+
+There are two types of custom roles:
+
+- Custom member roles:
+  - Can be assigned to members of a group or project.
+  - Gains the same permissions in any subgroups or projects. For more information, see [membership types](../../user/project/members/_index.md#membership-types).
+  - [Uses a seat](../../subscriptions/gitlab_com/_index.md#how-seat-usage-is-determined) and becomes a [billable user](../../subscriptions/self_managed/_index.md#billable-users).
+    - A custom Guest member role that includes only the `read_code` permission does not use a seat.
+- Custom admin roles:
+  - Can be assigned to any user on the instance.
+  - Gains permissions to perform specific admin actions.
 
 <i class="fa fa-youtube-play youtube" aria-hidden="true"></i>
 For a demo of the custom roles feature, see [[Demo] Ultimate Guest can view code on private repositories via custom role](https://www.youtube.com/watch?v=46cp_-Rtxps).
-
-{{< alert type="note" >}}
-
-Most custom roles are considered [billable users that use a seat](#billing-and-seat-usage). When you add a user to your group with a custom role and you are about to incur additional charges for having more seats than are included in your subscription, a warning is displayed.
-
-{{< /alert >}}
-
-## Available permissions
-
-For more information on available permissions, see [custom permissions](abilities.md).
+<!-- Video published on 2023-02-13 -->
 
 {{< alert type="warning" >}}
 
-Depending on the permissions added to a lower base role such as Guest, a user with a custom role might be able to perform actions that are usually restricted to the Maintainer role or higher. For example, if a custom role is Guest plus a permissions to manage CI/CD variables, a user with this role can manage CI/CD variables added by other Maintainers or Owners for that group or project.
+- Custom member roles can allow users to perform actions usually restricted to the Maintainer role or higher.
+For example, if a custom role includes permission to manage CI/CD variables, users with the role
+could also manage CI/CD variables added by other Maintainers or Owners for the group or project.
+
+- Custom admin roles can allow users to perform actions in the Admin area.
 
 {{< /alert >}}
 
-## Create a custom role
+## Create a custom member role
 
-You create a custom role by adding [permissions](#available-permissions) to a base role.
-You can add multiple permissions to that custom role. For example, you can create a custom role
-with the permission to do all of the following:
+To create a custom member role, add [permissions](abilities.md) to a base role. Each custom role has
+have one or more permissions. For example, you might base the custom member role on the Reporter role,
+but also include permission to view vulnerability reports, change the status of vulnerabilities,
+and approve merge requests.
 
-- View vulnerability reports.
-- Change the status of vulnerabilities.
-- Approve merge requests.
+Custom member roles are available to groups and projects:
 
-### GitLab SaaS
+- On GitLab.com, under the top-level group where the custom role was created.
+- On GitLab Self-Managed and GitLab Dedicated, in the entire instance.
 
 Prerequisites:
 
-- You must have the Owner role for the top-level group.
+- For GitLab.com, you must have the Owner role for the group.
+- For GitLab Self-Managed and GitLab Dedicated, you must have administrator access to the instance.
 
-1. On the left sidebar, select **Search or go to** and find your group.
+To create a custom member role:
+
+1. On the left sidebar:
+   - For GitLab.com, select **Search or go to** and find your group.
+   - For GitLab Self-Managed and GitLab Dedicated, at the bottom, select **Admin**.
 1. Select **Settings > Roles and permissions**.
 1. Select **New role**.
-1. In **Base role to use as template**, select an existing default role.
-1. In **Role name**, enter the custom role's title.
-1. In **Description**, enter a description for the custom role. 255 characters max.
-1. Select the **Permissions** for the new custom role.
+1. GitLab Self-Managed and GitLab Dedicated instances only. Select **Member role**.
+1. Enter a name and description for the custom role.
+1. From the **Base role** dropdown list, select a default role.
+1. Select any permissions for the custom role.
 1. Select **Create role**.
 
-In **Settings > Roles and permissions**, the list of all custom roles displays the:
+You can also [use the API](../../api/graphql/reference/_index.md#mutationmemberrolecreate) to create a custom role.
 
-- Custom role name.
-- Role ID.
-- Base role that the custom role uses as a template.
-- Permissions.
+## Create a custom admin role
 
-### GitLab Self-Managed
+To create a custom admin role, add [permissions](abilities.md) to a base role. Each custom role has
+have one or more permissions.
 
 Prerequisites:
 
-- You must be an administrator for the GitLab Self-Managed instance.
+- You must have administrator access to the instance.
 
-After you create a custom role for your GitLab Self-Managed instance, you can assign that custom role to a user in any group or subgroup in that instance.
+To create a custom admin role:
 
 1. On the left sidebar, at the bottom, select **Admin**.
 1. Select **Settings > Roles and permissions**.
 1. Select **New role**.
-1. In **Base role to use as template**, select an existing default role.
-1. In **Role name**, enter the custom role's title.
-1. In **Description**, enter a description for the custom role. 255 characters max.
-1. Select the **Permissions** for the new custom role.
+1. Select **Admin role**.
+1. Enter a name and description for the custom role.
+1. From the **Base role** dropdown list, select a default role.
+1. Select any permissions for the custom role.
 1. Select **Create role**.
 
-In **Settings > Roles and permissions**, the list of all custom roles displays the:
-
-- Custom role name.
-- Role ID.
-- Base role that the custom role uses as a template.
-- Permissions.
-
-To create a custom role, you can also [use the API](../../api/graphql/reference/_index.md#mutationmemberrolecreate).
+You can also [use the API](../../api/graphql/reference/_index.md#mutationmemberroleadmincreate) to create a custom role.
 
 ## Edit a custom role
 
@@ -110,179 +116,107 @@ To create a custom role, you can also [use the API](../../api/graphql/reference/
 
 {{< /history >}}
 
-After a custom role has been created, you can edit that custom role's name, description,
-and permissions. You cannot change the base role. If you need to change the base role,
-you must create a new custom role.
-
-### GitLab SaaS
+You can edit the name, description, and permissions of a custom role, but you cannot edit the
+base role. If you need to change the base role, you must create a new custom role.
 
 Prerequisites:
 
-- You must have the Owner role for the group.
+- For GitLab.com, you must have the Owner role for the group.
+- For GitLab Self-Managed and GitLab Dedicated, you must have administrator access to the instance.
 
-1. On the left sidebar, select **Search or go to** and find your group.
+To edit a custom role:
+
+1. On the left sidebar:
+   - For GitLab.com, select **Search or go to** and find your group.
+   - For GitLab Self-Managed and GitLab Dedicated, at the bottom, select **Admin**.
 1. Select **Settings > Roles and permissions**.
-1. Select the vertical ellipsis ({{< icon name="ellipsis_v" >}}) for the custom role, then
-   select **Edit role**.
-1. Modify the role as needed.
-1. Select **Save role** to update the role.
+1. Next to a custom role, select the vertical ellipsis ({{< icon name="ellipsis_v" >}}) > **Edit role**.
+1. Modify the role.
+1. Select **Save role**.
 
-### GitLab Self-Managed
+You can also use the API to edit a [custom member role](../../api/graphql/reference/_index.md#mutationmemberroleupdate) or a [custom admin role](../../api/graphql/reference/_index.md#mutationmemberroleadminupdate).
+
+## View details of a custom role
+
+The **Roles and permissions** page lists basic information about all available default and custom roles. This
+includes information like the name, description, and number of users assigned each custom role. Each custom role
+includes either a `Custom member role` or `Custom admin role` badge.
+
+You can also view more detailed information about a custom role including the role ID,
+base role, and specific permissions.
+
+Prerequisites:
+
+- For GitLab.com, you must have the Owner role for the group.
+- For GitLab Self-Managed and GitLab Dedicated, you must have administrator access to the instance.
+
+To view details of a custom role:
+
+1. On the left sidebar:
+   - For GitLab.com, select **Search or go to** and find your group.
+   - For GitLab Self-Managed and GitLab Dedicated, at the bottom, select **Admin**.
+1. Select **Settings > Roles and permissions**.
+1. Next to a custom role, select the vertical ellipsis ({{< icon name="ellipsis_v" >}}) > **View details**.
+
+## Delete a custom role
+
+You cannot delete custom roles that are still assigned to a user. See [assign a custom role to a user](#assign-a-custom-member-role).
+
+Prerequisites:
+
+- For GitLab.com, you must have the Owner role for the group.
+- For GitLab Self-Managed and GitLab Dedicated, you must have administrator access to the instance.
+
+To delete a custom role:
+
+1. On the left sidebar:
+   - For GitLab.com, select **Search or go to** and find your group.
+   - For GitLab Self-Managed and GitLab Dedicated, at the bottom, select **Admin**.
+1. Select **Settings > Roles and permissions**.
+1. Next to a custom role, select the vertical ellipsis ({{< icon name="ellipsis_v" >}}) > **Delete role**.
+1. On the confirmation dialog, select **Delete role**.
+
+You can also use the API to delete a [custom member role](../../api/graphql/reference/_index.md#mutationmemberroledelete) or a [custom admin role](../../api/graphql/reference/_index.md#mutationmemberroleadmindelete).
+
+## Assign a custom member role
+
+You can assign or modify roles for members of your groups and projects. You can do this for existing users or when you add a user to a
+[group](../group/_index.md#add-users-to-a-group),
+[project](../project/members/_index.md#add-users-to-a-project),
+or [instance](../profile/account/create_accounts.md).
+
+Prerequisites:
+
+- For groups, you must have the Owner role for the group.
+- For projects, you must have at least the Maintainer role for the project.
+
+To assign a custom member role to an existing user:
+
+1. On the left sidebar, select **Search or go to** and find your group or project.
+1. Select **Manage > Members**.
+1. In the **Role** column, select the role for an existing member. The **Role details** drawer opens.
+1. From the **Role** dropdown list, select a role to assign to the member.
+1. Select **Update role** to assign the role.
+
+You can also [use the API](../../api/graphql/reference/_index.md#mutationmemberroletouserassign) to assign or modify custom role assignments.
+
+## Assign a custom admin role
+
+You can assign or modify admin roles to users in your instance. You can do this for existing users or when you add a user to the [instance](../profile/account/create_accounts.md).
 
 Prerequisites:
 
 - You must be an administrator for the GitLab Self-Managed instance.
 
+To assign a custom admin role to an existing user:
+
 1. On the left sidebar, at the bottom, select **Admin**.
-1. Select **Settings > Roles and permissions**.
-1. Select the vertical ellipsis ({{< icon name="ellipsis_v" >}}) for the custom role, then
-   select **Edit role**.
-1. Modify the role as needed.
-1. Select **Save role** to update the role.
+1. Select **Overview > Users**.
+1. Select **Edit** for a user.
+1. In the **Access** section, set the access level to either **Regular** or **Auditor**.
+1. From the **Admin area** dropdown list, select a custom admin role.
 
-To edit a custom role, you can also [use the API](../../api/graphql/reference/_index.md#mutationmemberroleupdate).
-
-## Delete a custom role
-
-Prerequisites:
-
-- You must be an administrator or have the Owner role for the group.
-
-You can't remove a custom role from a group if there are members assigned that role. See [unassign a custom role from a group or project member](#unassign-a-custom-role-from-a-group-or-project-member).
-
-1. On the left sidebar:
-   - For GitLab Self-Managed, at the bottom, select **Admin**.
-   - For SaaS, select **Search or go to** and find your group.
-1. Select **Settings > Roles and permissions**.
-1. Select **Custom Roles**.
-1. In the **Actions** column, select **Delete role** ({{< icon name="remove" >}}) and confirm.
-
-You can also [use the API](../../api/graphql/reference/_index.md#mutationmemberroledelete) to delete a custom role. To use the API, you must provide the `id` of the custom role. If you do not know this `id`, you can find it by making an [API request on the group](../../api/graphql/reference/_index.md#groupmemberroles) or an [API request on the instance](../../api/graphql/reference/_index.md#querymemberroles).
-
-## Add a user with a custom role to your group or project
-
-Prerequisites:
-
-If you are adding a user with a custom role:
-
-- To your group, you must have the Owner role for the group.
-- To your project, you must have at least the Maintainer role for the project.
-
-To add a user with a custom role:
-
-- To a group, see [add users to a group](../group/_index.md#add-users-to-a-group).
-- To a project, see [add users to a project](../project/members/_index.md#add-users-to-a-project).
-
-If a group or project member has a custom role, the [group or project members list](../group/_index.md#view-group-members) displays **Custom Role** in the **Max role** column of the table.
-
-## Assign a custom role to an existing group or project member
-
-Prerequisites:
-
-If you are assigning a custom role to an existing:
-
-- Group member, you must have the Owner role for the group.
-- Project member, you must have at least the Maintainer role for the project.
-
-### Use the UI to assign a custom role
-
-1. On the left sidebar, select **Search or go to** and find your group or project.
-1. Select **Manage > Members**.
-1. In the **Max role** column, select the role for the member. The **Role details** drawer opens.
-1. Using the **Role** dropdown list, select the custom role you want to assign to the member.
-1. Select **Update role** to assign the role.
-
-### Use the API to assign a custom role
-
-1. Invite a user as a direct member to the top-level group or any subgroup or project in the
-   top-level group's hierarchy as a Guest. At this point, this Guest user cannot see any
-   code on the projects in the group or subgroup.
-1. Optional. If you do not know the `id` of the Guest user receiving a custom
-   role, find that `id` by making an [API request](../../api/member_roles.md).
-1. Use the [Group and Project Members API endpoint](../../api/members.md#edit-a-member-of-a-group-or-project) to
-   associate the member with the Guest+1 role:
-
-   ```shell
-   # to update a project membership
-   curl --request PUT --header "Content-Type: application/json" --header "Authorization: Bearer <your_access_token>" --data '{"member_role_id": '<member_role_id>', "access_level": 10}' "https://gitlab.example.com/api/v4/projects/<project_id>/members/<user_id>"
-
-   # to update a group membership
-   curl --request PUT --header "Content-Type: application/json" --header "Authorization: Bearer <your_access_token>" --data '{"member_role_id": '<member_role_id>', "access_level": 10}' "https://gitlab.example.com/api/v4/groups/<group_id>/members/<user_id>"
-   ```
-
-   Where:
-
-   - `<project_id` and `<group_id>`: The `id` or [URL-encoded path of the project or group](../../api/rest/_index.md#namespaced-paths) associated with the membership receiving the custom role.
-   - `<member_role_id>`: The `id` of the member role created in the previous section.
-   - `<user_id>`: The `id` of the user receiving a custom role.
-
-   Now the Guest+1 user can view code on all projects associated with this membership.
-
-## Unassign a custom role from a group or project member
-
-Prerequisites:
-
-If you are unassigning a custom role from a:
-
-- Group member, you must have the Owner role for the group.
-- Project member, you must have at least the Maintainer role for the project.
-
-You can remove a custom role from a group or project only if no group or project members have that role. To do this, you can use one of the following methods:
-
-- Remove a member with a custom role from a [group](../group/_index.md#remove-a-member-from-the-group) or [project](../project/members/_index.md#remove-a-member-from-a-project).
-- [Use the UI to change the user role](#use-the-ui-to-change-user-role).
-- [Use the API to change the user role](#use-the-api-to-change-user-role).
-
-### Use the UI to change user role
-
-To remove a custom role from a group member:
-
-1. On the left sidebar, select **Search or go to** and find your group.
-1. Select **Manage > Members**.
-1. In the **Max role** column, select the role for the member. The **Role details** drawer opens.
-1. Using the **Role** dropdown list, select the default role you want to assign to the member.
-1. Select **Update role** to assign the role.
-
-### Use the API to change user role
-
-You can also use the [Group and Project Members API endpoint](../../api/members.md#edit-a-member-of-a-group-or-project) to update or remove a custom role from a group member by passing an empty `member_role_id` value:
-
-```shell
-# to update a project membership
-curl --request PUT --header "Content-Type: application/json" --header "Authorization: Bearer <your_access_token>" --data '{"member_role_id": null, "access_level": 10}' "https://gitlab.example.com/api/v4/projects/<project_id>/members/<user_id>"
-
-# to update a group membership
-curl --request PUT --header "Content-Type: application/json" --header "Authorization: Bearer <your_access_token>" --data '{"member_role_id": null, "access_level": 10}' "https://gitlab.example.com/api/v4/groups/<group_id>/members/<user_id>"
-```
-
-## Inheritance
-
-If a user belongs to a group, they are a direct member of the group
-and an [inherited member](../project/members/_index.md#membership-types)
-of any subgroups or projects. If a user is assigned a custom role
-by the top-level group, the permissions of the role are also inherited by subgroups
-and projects.
-
-For example, assume the following structure exists:
-
-- Group A
-  - Subgroup B
-    - Project 1
-
-If a custom role with the Developer role plus the `Manage CI/CD variables` permission is assigned to Group A,
-the user also has `Manage CI/CD variables` permission in Subgroup B and Project 1.
-
-## Billing and seat usage
-
-When you assign a custom role to a user with the Guest role, that user has
-access to elevated permissions over the base role, and therefore:
-
-- Is considered a [billable user](../../subscriptions/self_managed/_index.md#billable-users) on GitLab Self-Managed.
-- [Uses a seat](../../subscriptions/gitlab_com/_index.md#how-seat-usage-is-determined) on GitLab.com.
-
-This does not apply when the user's custom role only has the `read_code` permission
-enabled. Guest users with that specific permission only are not considered billable users
-and do not use a seat.
+You can also [use the API](../../api/graphql/reference/_index.md#mutationmemberroletouserassign) to assign or modify custom role assignments.
 
 ## Assign a custom role to an invited group
 
@@ -304,7 +238,7 @@ When a group is invited to another group with a custom role, the following rules
 - When a user has a custom permission in one group with a base access level that is the same or higher than the default role in the other group, the user's maximum role is the default role. That is, the user is granted the lower of the two access levels.
 - When a user is invited with a custom permission with the same base access level as their original group, the user is always granted the custom permission from their original group.
 
-For example, let's say we have 5 users in Group A, and they are assigned the following roles:
+For example, consider Group A with 5 users assigned the following roles:
 
 - User A: Guest role
 - User B: Guest role + `read_code` custom permission
@@ -335,12 +269,13 @@ You can assign custom roles and permissions to the following:
 | Groups       | 17.7          | Partially supported. Further support for group assignment in projects is proposed in [Issue 468329](https://gitlab.com/gitlab-org/gitlab/-/issues/468329)  |
 | Tokens       | Not supported | [Issue 434354](https://gitlab.com/gitlab-org/gitlab/-/issues/434354) |
 
-## Supported group links
+## Sync users to custom roles
 
-You can sync users to custom roles with following authentication providers:
+If you use tools like SAML or LDAP to manage your group membership, you can automatically sync your
+users to custom roles. For more information, see:
 
-- See [Configure SAML Group Links](../group/saml_sso/group_sync.md#configure-saml-group-links).
-- See [Manage group memberships via LDAP](../group/access_and_permissions.md#manage-group-memberships-with-ldap).
+- [Configure SAML Group Links](../group/saml_sso/group_sync.md#configure-saml-group-links).
+- [Manage group memberships via LDAP](../group/access_and_permissions.md#manage-group-memberships-with-ldap).
 
 ## Custom admin roles
 
@@ -364,7 +299,7 @@ If a permission does not exist, you can:
 
 - Discuss individual custom role and permission requests in [issue 391760](https://gitlab.com/gitlab-org/gitlab/-/issues/391760).
 - Create an issue to request the permission with the [permission proposal issue template](https://gitlab.com/gitlab-org/gitlab/-/issues/new?issuable_template=Permission%2520Proposal).
-- Contribute to GitLab and [add the permission](../../development/permissions/custom_roles.md).
+- Contribute to GitLab and add the permission.
 
 ## Known issues
 

@@ -41,7 +41,7 @@ module Gitlab
     config.active_support.executor_around_test_case = nil # New default is true
     config.active_support.isolation_level = nil # New default is thread
     config.active_support.key_generator_hash_digest_class = nil # New default is OpenSSL::Digest::SHA256
-    config.active_support.cache_format_version = nil
+    config.active_support.cache_format_version = 7.1
 
     # Rails 6.1
     config.action_dispatch.cookies_same_site_protection = nil # New default is :lax
@@ -82,10 +82,12 @@ module Gitlab
     require_dependency Rails.root.join('lib/gitlab/middleware/handle_malformed_strings')
     require_dependency Rails.root.join('lib/gitlab/middleware/path_traversal_check')
     require_dependency Rails.root.join('lib/gitlab/middleware/rack_multipart_tempfile_factory')
+    require_dependency Rails.root.join('lib/gitlab/middleware/secure_headers')
     require_dependency Rails.root.join('lib/gitlab/runtime')
     require_dependency Rails.root.join('lib/gitlab/patch/database_config')
     require_dependency Rails.root.join('lib/gitlab/patch/redis_cache_store')
     require_dependency Rails.root.join('lib/gitlab/patch/old_redis_cache_store')
+    require_dependency Rails.root.join('lib/gitlab/pdf')
     require_dependency Rails.root.join('lib/gitlab/exceptions_app')
 
     unless ::Gitlab.next_rails?
@@ -177,6 +179,7 @@ module Gitlab
     # config.i18n.load_path += Dir[Rails.root.join('my', 'locales', '*.{rb,yml}').to_s]
     # config.i18n.default_locale = :de
     config.i18n.enforce_available_locales = false
+    Gitlab.ee { config.i18n.load_path += Dir[config.root.join("ee/config/locales/*.yml").to_s] }
 
     # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
     # the I18n.default_locale when a translation can not be found).
@@ -304,6 +307,7 @@ module Gitlab
     config.assets.precompile << "page_bundles/commit_description.css"
     config.assets.precompile << "page_bundles/commit_rapid_diffs.css"
     config.assets.precompile << "page_bundles/commits.css"
+    config.assets.precompile << "page_bundles/compare_rapid_diffs.css"
     config.assets.precompile << "page_bundles/cycle_analytics.css"
     config.assets.precompile << "page_bundles/dashboard.css"
     config.assets.precompile << "page_bundles/dashboard_projects.css"
@@ -335,6 +339,7 @@ module Gitlab
     config.assets.precompile << "page_bundles/merge_request_analytics.css"
     config.assets.precompile << "page_bundles/merge_request_rapid_diffs.css"
     config.assets.precompile << "page_bundles/merge_requests.css"
+    config.assets.precompile << "page_bundles/merge_request_creation_rapid_diffs.css"
     config.assets.precompile << "page_bundles/milestone.css"
     config.assets.precompile << "page_bundles/ml_experiment_tracking.css"
     config.assets.precompile << "page_bundles/new_namespace.css"
@@ -443,6 +448,8 @@ module Gitlab
     config.middleware.insert_after Rack::Sendfile, ::Gitlab::Middleware::RackMultipartTempfileFactory
 
     config.middleware.insert_before Rack::Runtime, ::Gitlab::Middleware::CompressedJson
+
+    config.middleware.insert_after ActionDispatch::Cookies, ::Gitlab::Middleware::SecureHeaders
 
     # Allow access to GitLab API from other domains
     config.middleware.insert_before Warden::Manager, Rack::Cors do

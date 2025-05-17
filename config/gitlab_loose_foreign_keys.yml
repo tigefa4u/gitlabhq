@@ -15,6 +15,9 @@ analyzer_project_statuses:
   - table: projects
     column: project_id
     on_delete: async_delete
+  - table: p_ci_builds
+    column: build_id
+    on_delete: async_nullify
 application_settings:
   - table: push_rules
     column: push_rule_id
@@ -32,6 +35,10 @@ approval_merge_request_rules:
   - table: approval_policy_rules
     column: approval_policy_rule_id
     on_delete: async_nullify
+ci_build_needs:
+  - table: projects
+    column: project_id
+    on_delete: async_delete
 ci_build_report_results:
   - table: projects
     column: project_id
@@ -160,6 +167,10 @@ ci_runner_projects:
   - table: projects
     column: project_id
     on_delete: async_delete
+ci_runner_taggings:
+  - table: tags
+    column: tag_id
+    on_delete: async_delete
 ci_runner_taggings_group_type:
   - table: namespaces
     column: sharding_key_id
@@ -178,7 +189,7 @@ ci_running_builds:
     on_delete: async_delete
   - table: ci_runners
     column: runner_id
-    on_delete: async_nullify
+    on_delete: async_delete
 ci_secure_files:
   - table: projects
     column: project_id
@@ -276,6 +287,9 @@ dast_site_profiles_builds:
   - table: p_ci_builds
     column: ci_build_id
     on_delete: async_delete
+  - table: projects
+    column: project_id
+    on_delete: async_delete
 dast_site_tokens:
   - table: projects
     column: project_id
@@ -315,6 +329,10 @@ deployment_approvals:
 deployment_clusters:
   - table: clusters
     column: cluster_id
+    on_delete: async_delete
+duo_workflows_workloads:
+  - table: p_ci_workloads
+    column: workload_id
     on_delete: async_delete
 events:
   - table: users
@@ -477,6 +495,9 @@ p_ci_pipelines:
   - table: projects
     column: project_id
     on_delete: async_delete
+  - table: ci_triggers
+    column: trigger_id
+    on_delete: async_delete
 p_ci_runner_machine_builds:
   - table: ci_runner_machines
     column: runner_machine_id
@@ -485,6 +506,10 @@ p_ci_runner_machine_builds:
     column: project_id
     on_delete: async_delete
 p_ci_stages:
+  - table: projects
+    column: project_id
+    on_delete: async_delete
+p_ci_workloads:
   - table: projects
     column: project_id
     on_delete: async_delete
@@ -511,6 +536,10 @@ pool_repositories:
     column: source_project_id
     on_delete: async_nullify
 project_authorizations:
+  - table: users
+    column: user_id
+    on_delete: async_delete
+project_authorizations_for_migration:
   - table: users
     column: user_id
     on_delete: async_delete

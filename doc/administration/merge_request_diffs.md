@@ -1,6 +1,6 @@
 ---
 stage: Create
-group: Source Code
+group: Code Review
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: Configure external storage for merge request diffs on your GitLab instance.
 title: Merge request diffs storage
@@ -228,3 +228,18 @@ These environment variables modify the behavior of the Rake task:
 - `BATCH` and `UPDATE_DELAY` enable the speed of the migration to be traded off
   against concurrent access to the table.
 - `ANSI` should be set to `false` if your terminal does not support ANSI escape codes.
+
+To check the distribution of external diffs between object and local storage, use the following SQL query:
+
+```shell
+gitlabhq_production=# SELECT count(*) AS total,
+  SUM(CASE
+    WHEN external_diff_store = '1' THEN 1
+    ELSE 0
+  END) AS filesystem,
+  SUM(CASE
+    WHEN external_diff_store = '2' THEN 1
+    ELSE 0
+  END) AS objectstg
+FROM merge_request_diffs; 
+```

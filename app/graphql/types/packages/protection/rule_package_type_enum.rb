@@ -11,6 +11,10 @@ module Types
           value: 'conan',
           description: 'Packages of the Conan format.'
 
+        value 'HELM',
+          value: 'helm',
+          description: 'Packages of the Helm format.'
+
         value 'MAVEN',
           value: 'maven',
           description: 'Packages of the Maven format.'
@@ -18,6 +22,12 @@ module Types
         value 'NPM',
           value: 'npm',
           description: 'Packages of the npm format.'
+
+        value 'NUGET',
+          value: 'nuget',
+          experiment: { milestone: '18.0' },
+          description: 'Packages of the NuGet format. ' \
+            'Available only when feature flag `packages_protected_packages_nuget` is enabled.'
 
         value 'PYPI',
           value: 'pypi',

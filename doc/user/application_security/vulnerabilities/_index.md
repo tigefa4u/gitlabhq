@@ -3,6 +3,7 @@ stage: Security Risk Management
 group: Security Insights
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Vulnerability details
+description: Vulnerability details, status, resolution, and linking issues.
 ---
 
 {{< details >}}
@@ -142,7 +143,7 @@ Prerequisites:
 - You must be a member of the project.
 - The vulnerability must be a SAST finding from a supported analyzer:
   - Any [GitLab-supported analyzer](../sast/analyzers.md).
-  - A properly integrated [third-party SAST scanner](../../../development/integrations/secure.md) that reports the [vulnerability location](../../../development/integrations/secure.md#sast) and a [CWE Identifier](../../../development/integrations/secure.md#identifiers) for each vulnerability.
+  - A properly integrated third-party SAST scanner that reports the vulnerability location and a CWE Identifier for each vulnerability.
 - The vulnerability must be of a [supported type](#supported-vulnerabilities-for-vulnerability-resolution).
 
 Learn more about [how to enable all GitLab Duo features](../../ai_features_enable.md).
@@ -157,7 +158,7 @@ To resolve the vulnerability:
 1. Select outside the filter field. The vulnerability severity totals and list of matching vulnerabilities are updated.
 1. Select the SAST vulnerability you want resolved.
    - A blue icon is shown next to vulnerabilities that support Vulnerability Resolution.
-1. In the upper-right corner, select **Resolve with AI**. If this project is a public project be aware that creating an MR will publicly expose the vulnerability and offered resolution. To create the MR privately, please [create a private fork](../../project/merge_requests/confidential.md), and repeat this process.
+1. In the upper-right corner, select **Resolve with AI**. If this project is a public project be aware that creating an MR will publicly expose the vulnerability and offered resolution. To create the MR privately, [create a private fork](../../project/merge_requests/confidential.md), and repeat this process.
 1. Add an additional commit to the MR. This forces a new pipeline to run.
 1. After the pipeline is complete, on the [pipeline security tab](../vulnerability_report/pipeline.md#view-vulnerabilities-in-a-pipeline), confirm that the vulnerability no longer appears.
 1. On the vulnerability report, [manually update the vulnerability](../vulnerability_report/_index.md#change-status-of-vulnerabilities).
@@ -180,7 +181,9 @@ We are actively working to expand coverage to more types of vulnerabilities.
 <ul>
   <li>CWE-23: Relative Path Traversal</li>
   <li>CWE-73: External Control of File Name or Path</li>
+  <li>CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')</li>
   <li>CWE-80: Improper Neutralization of Script-Related HTML Tags in a Web Page (Basic XSS)</li>
+  <li>CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')</li>
   <li>CWE-116: Improper Encoding or Escaping of Output</li>
   <li>CWE-118: Incorrect Access of Indexable Resource ('Range Error')</li>
   <li>CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer</li>
@@ -504,7 +507,8 @@ The following scanners are supported by this feature:
 
 - [Dependency Scanning](../dependency_scanning/_index.md).
   Automatic patch creation is only available for Node.js projects managed with
-  `yarn`. Also, Automatic patch creation is only supported when [FIPS mode](../../../development/fips_gitlab.md#enable-fips-mode) is disabled.
+  `yarn`. Automatic patch creation is only supported when [FIPS mode](../../../development/fips_gitlab.md#enable-fips-mode) is disabled.
+
 - [Container Scanning](../container_scanning/_index.md).
 
 To resolve a vulnerability, you can either:
@@ -565,7 +569,7 @@ Each integration submits the Vulnerability identifier, for example CWE or OWASP,
 
 The vulnerability page may include a training link relevant to the detected vulnerability if security training is enabled.
 The availability of training depends on whether the enabled training vendor has content matching the particular vulnerability.
-Training content is requested based on the [vulnerability identifiers](../../../development/integrations/secure.md#identifiers).
+Training content is requested based on the vulnerability identifiers.
 The identifier given to a vulnerability varies from one vulnerability to the next and the available training
 content varies between vendors. Some vulnerabilities do not display training content.
 Vulnerabilities with a CWE are most likely to return a training result.

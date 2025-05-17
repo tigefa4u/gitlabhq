@@ -60,6 +60,10 @@
     "MergeRequest",
     "WorkItemWidgetCurrentUserTodos"
   ],
+  "DependencyInterface": [
+    "Dependency",
+    "DependencyAggregation"
+  ],
   "DependencyLinkMetadata": [
     "NugetDependencyLinkMetadata"
   ],
@@ -135,9 +139,19 @@
     "PendingProjectMember",
     "ProjectMember"
   ],
+  "NamespaceUnion": [
+    "CiDeletedNamespace",
+    "Namespace"
+  ],
+  "NamespacesLinkPaths": [
+    "GroupNamespaceLinks",
+    "ProjectNamespaceLinks",
+    "UserNamespaceLinks"
+  ],
   "NoteableInterface": [
     "AlertManagementAlert",
     "BoardEpic",
+    "CountableVulnerability",
     "Design",
     "Epic",
     "EpicIssue",
@@ -155,8 +169,10 @@
   "OrchestrationPolicy": [
     "ApprovalPolicy",
     "PipelineExecutionPolicy",
+    "PipelineExecutionSchedulePolicy",
     "ScanExecutionPolicy",
     "ScanResultPolicy",
+    "SecurityPolicyType",
     "VulnerabilityManagementPolicy"
   ],
   "PackageFileMetadata": [
@@ -178,6 +194,13 @@
   "PipelineInterface": [
     "Pipeline",
     "PipelineMinimalAccess"
+  ],
+  "PolicyAttributesUnion": [
+    "ApprovalPolicyAttributesType",
+    "PipelineExecutionPolicyAttributesType",
+    "PipelineExecutionScheduledPolicyAttributesType",
+    "ScanExecutionPolicyAttributesType",
+    "VulnerabilityManagementPolicyAttributesType"
   ],
   "ProjectInterface": [
     "Project",
@@ -235,6 +258,7 @@
     "AutocompletedUser",
     "BoardEpic",
     "Commit",
+    "CountableVulnerability",
     "CurrentUser",
     "Design",
     "Epic",

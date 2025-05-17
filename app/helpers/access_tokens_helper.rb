@@ -35,6 +35,18 @@ module AccessTokensHelper
     }.to_json
   end
 
+  def personal_access_token_data
+    {
+      access_token: {
+        **expires_at_field_data,
+        create: user_settings_personal_access_tokens_path,
+        revoke: api_v4_personal_access_tokens_path,
+        rotate: api_v4_personal_access_tokens_path,
+        show: "#{api_v4_personal_access_tokens_path}?user_id=:id"
+      }
+    }
+  end
+
   def expires_at_field_data
     {
       min_date: 1.day.from_now.iso8601,

@@ -4,8 +4,9 @@ module RapidDiffs
   class DiffFileHeaderComponent < ViewComponent::Base
     include ButtonHelper
 
-    def initialize(diff_file:)
+    def initialize(diff_file:, additional_menu_items: [])
       @diff_file = diff_file
+      @additional_menu_items = additional_menu_items
     end
 
     def copy_path_button
@@ -17,6 +18,41 @@ module RapidDiffs
         boundary: "viewport",
         testid: "rd-diff-file-copy-clipboard"
       )
+    end
+
+    def menu_items
+      base_items = [
+        {
+          text: helpers.safe_format(
+            _('View file @ %{commitSha}'),
+            commitSha: Commit.truncate_sha(@diff_file.content_sha)
+          ),
+          href: helpers.project_blob_path(
+            @diff_file.repository.project,
+            helpers.tree_join(@diff_file.content_sha, @diff_file.new_path)
+          ),
+          position: 0
+        }
+      ]
+
+      [*base_items, *@additional_menu_items].sort_by { |item| item[:position] || Float::INFINITY }
+    end
+
+    def moved_title_label
+      helpers.safe_format(
+        s_('RapidDiffs|File moved from %{old} to %{new}'),
+        old: @diff_file.old_path,
+        new: @diff_file.new_path
+      )
+    end
+
+    def stats_label
+      added = @diff_file.added_lines
+      removed = @diff_file.removed_lines
+      counters = []
+      counters << (ns_('RapidDiffs|Added %d line.', 'RapidDiffs|Added %d lines.', added) % added) if added > 0
+      counters << (ns_('RapidDiffs|Removed %d line.', 'RapidDiffs|Removed %d lines.', removed) % removed) if removed > 0
+      counters.join(' ')
     end
   end
 end

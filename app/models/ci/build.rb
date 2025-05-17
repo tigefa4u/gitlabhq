@@ -47,7 +47,6 @@ module Ci
 
     DEGRADATION_THRESHOLD_VARIABLE_NAME = 'DEGRADATION_THRESHOLD'
     RUNNERS_STATUS_CACHE_EXPIRATION = 1.minute
-    CANCELABLE_STATUSES = (HasStatus::CANCELABLE_STATUSES + ['canceling']).freeze
     DEPLOYMENT_NAMES = %w[deploy release rollout].freeze
 
     TOKEN_PREFIX = 'glcbt-'
@@ -144,7 +143,7 @@ module Ci
     delegate :enable_debug_trace!, to: :metadata
 
     serialize :options # rubocop:disable Cop/ActiveRecordSerialize
-    serialize :yaml_variables, Gitlab::Serializer::Ci::Variables # rubocop:disable Cop/ActiveRecordSerialize
+    serialize :yaml_variables, coder: Gitlab::Serializer::Ci::Variables # rubocop:disable Cop/ActiveRecordSerialize
 
     delegate :name, to: :project, prefix: true
 
@@ -166,7 +165,7 @@ module Ci
       preload(
         :job_artifacts_archive, :ci_stage, :job_artifacts, :runner, :tags, :runner_manager, :metadata,
         pipeline: :project,
-        user: [:user_preference, :user_detail, :followees]
+        user: [:user_preference, :user_detail, :followees, :followers]
       )
     end
 
@@ -232,6 +231,7 @@ module Ci
 
     after_commit :track_ci_secrets_management_id_tokens_usage, on: :create, if: :id_tokens?
     after_commit :track_ci_build_created_event, on: :create
+    after_commit :trigger_job_status_change_subscription, if: :saved_change_to_status?
 
     class << self
       # This is needed for url_for to work,
@@ -246,7 +246,7 @@ module Ci
 
       def clone_accessors
         %i[pipeline project ref tag options name
-          allow_failure stage_idx trigger_request
+          allow_failure stage_idx
           yaml_variables when environment coverage_regex
           description tag_list protected needs_attributes
           job_variables_attributes resource_group scheduling_type
@@ -410,6 +410,10 @@ module Ci
 
     def self.taggings_join_model
       ::Ci::BuildTag
+    end
+
+    def trigger_job_status_change_subscription
+      GraphqlTriggers.ci_job_status_updated(self)
     end
 
     # A Ci::Bridge may transition to `canceling` as a result of strategy: :depend
@@ -649,7 +653,6 @@ module Ci
         .concat(dependency_proxy_variables)
         .concat(job_jwt_variables)
         .concat(scoped_variables)
-        .concat(job_variables)
         .concat(persisted_environment_variables)
     end
     strong_memoize_attr :base_variables

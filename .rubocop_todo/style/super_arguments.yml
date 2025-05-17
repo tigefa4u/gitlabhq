@@ -109,7 +109,6 @@ Style/SuperArguments:
     - 'ee/lib/audit_events/strategies/base_google_cloud_logging_destination_strategy.rb'
     - 'ee/lib/banzai/filter/references/iteration_reference_filter.rb'
     - 'ee/lib/ee/api/groups.rb'
-    - 'ee/lib/ee/api/internal/kubernetes.rb'
     - 'ee/lib/ee/api/snippets.rb'
     - 'ee/lib/ee/banzai/filter/sanitization_filter.rb'
     - 'ee/lib/ee/gitlab/quick_actions/users_extractor.rb'
@@ -175,5 +174,4 @@ Style/SuperArguments:
     - 'qa/qa/service/docker_run/smocker.rb'
     - 'spec/lib/gitlab/database/no_overrides_for_through_associations_spec.rb'
     - 'spec/support/shared_examples/graphql/sorted_paginated_query_shared_examples.rb'
-    - 'tooling/lib/tooling/crystalball/coverage_lines_strategy.rb'
     - 'tooling/lib/tooling/debug.rb'

@@ -4,6 +4,7 @@ group: Code Review
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: Propose, review, and collaborate on changes to a project.
 title: Merge requests
+description: Code review, collaboration, branch merging, and commits.
 ---
 
 {{< details >}}
@@ -283,8 +284,8 @@ the code added or changed in another merge request. To support keeping individua
 merge requests small, GitLab can update up to four open merge requests when their
 target branch merges into `main`. For example:
 
-- **Merge request 1**: merge `feature-alpha` into `main`.
-- **Merge request 2**: merge `feature-beta` into `feature-alpha`.
+- Merge request 1: merge `feature-alpha` into `main`.
+- Merge request 2: merge `feature-beta` into `feature-alpha`.
 
 If these merge requests are open at the same time, and merge request 1 (`feature-alpha`)
 merges into `main`, GitLab updates the destination of merge request 2 from `feature-alpha`
@@ -378,7 +379,7 @@ When you want to finish a conversation in a merge request,
 [resolve a thread](../../discussions/_index.md#resolve-a-thread).
 
 GitLab shows the number of unresolved threads in the top right corner of a
-merge request, like this: **7 unresolved threads**.
+merge request, like this: `7 unresolved threads`.
 
 ### Move all unresolved threads in a merge request to an issue
 

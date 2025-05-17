@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe "Compare", :js, feature_category: :groups_and_projects do
+RSpec.describe "Compare", :js, feature_category: :source_code_management do
   let(:user)    { create(:user) }
   let(:project) { create(:project, :repository) }
 
@@ -192,9 +192,7 @@ RSpec.describe "Compare", :js, feature_category: :groups_and_projects do
       # wait for searching for commits to finish
       has_testid?('listbox-no-results-text')
 
-      within(find_by_testid('listbox-search-input')) do
-        find('input').send_keys(:return)
-      end
+      find_by_testid('listbox-search-input').send_keys(:return)
     else
       # find before all to wait for the items visibility
       within(".js-compare-#{dropdown_type}-dropdown") do

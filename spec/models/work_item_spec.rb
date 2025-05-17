@@ -575,10 +575,31 @@ RSpec.describe WorkItem, feature_category: :portfolio_management do
     end
   end
 
-  describe '#linked_items_keyset_order' do
+  describe '.linked_items_keyset_order' do
     subject { described_class.linked_items_keyset_order }
 
     it { is_expected.to eq('"issue_links"."id" DESC') }
+  end
+
+  describe '.linked_items_for' do
+    let_it_be(:items) { create_list(:work_item, 3, project: reusable_project) }
+    let_it_be(:linked_items) { create_list(:work_item, 3, project: reusable_project) }
+
+    let(:work_item_ids) { items.pluck(:id) }
+
+    subject(:linked) { described_class.linked_items_for(work_item_ids) }
+
+    before do
+      items.each_with_index do |item, i|
+        create(:work_item_link, source: item, target: linked_items[i])
+      end
+    end
+
+    it 'returns the linked items' do
+      expect(linked.map(&:issue_link_target_id)).to match_array(work_item_ids)
+      expect(linked.map(&:issue_link_source_id)).to match_array(linked_items.map(&:id))
+      expect(linked.map(&:issue_link_type).uniq).to contain_exactly('relates_to')
+    end
   end
 
   context 'with hierarchy' do
@@ -869,8 +890,7 @@ RSpec.describe WorkItem, feature_category: :portfolio_management do
 
     context 'when a user cannot read cross project' do
       it 'only returns work items within the same project' do
-        allow(Ability).to receive(:allowed?).with(user, :read_all_resources, :global).and_call_original
-        expect(Ability).to receive(:allowed?).with(user, :read_cross_project).and_return(false)
+        allow(Gitlab::ExternalAuthorization).to receive_messages(perform_check?: true, access_allowed?: true)
 
         expect(authorized_item_a.linked_work_items(user)).to contain_exactly(authorized_item_b)
       end
