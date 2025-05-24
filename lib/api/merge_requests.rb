@@ -13,8 +13,7 @@ module API
     before { authenticate_non_get! }
 
     allow_access_with_scope :ai_workflows, if: ->(request) do
-      request.get? || request.head? ||
-        (request.put? && request.path.match?(%r{/api/v\d+/projects/\d+/merge_requests/\d+$})) # Only allow basic MR updates
+      request.get? || request.head? || mr_update?(request) || mr_create?(request)
     end
 
     rescue_from ActiveRecord::QueryCanceled do |_e|
@@ -48,6 +47,14 @@ module API
       def ci_params
         {}
       end
+    end
+
+    def self.mr_update?(request)
+      request.put? && request.path.match?(%r{/api/v\d+/projects/\d+/merge_requests/\d+$})
+    end
+
+    def self.mr_create?(request)
+      request.post? && request.path.match?(%r{/api/v\d+/projects/\d+/merge_requests$})
     end
 
     def self.update_params_at_least_one_of
@@ -603,7 +610,7 @@ module API
       get ':id/merge_requests/:merge_request_iid/diffs', feature_category: :code_review_workflow, urgency: :low do
         merge_request = find_merge_request_with_access(params[:merge_request_iid])
 
-        present merge_request.merge_request_diff.paginated_diffs(params[:page], params[:per_page]).diffs, with: Entities::Diff, enable_unidiff: declared_params[:unidiff]
+        present paginate(merge_request.merge_request_diff.paginated_diffs(params[:page], params[:per_page]), skip_pagination_check: true).diffs, with: Entities::Diff, enable_unidiff: declared_params[:unidiff]
       end
 
       desc 'Get the merge request raw diffs' do

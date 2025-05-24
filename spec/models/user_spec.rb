@@ -62,9 +62,6 @@ RSpec.describe User, feature_category: :user_profile do
     it { is_expected.to delegate_method(:gitpod_enabled).to(:user_preference) }
     it { is_expected.to delegate_method(:gitpod_enabled=).to(:user_preference).with_arguments(:args) }
 
-    it { is_expected.to delegate_method(:setup_for_company).to(:user_preference) }
-    it { is_expected.to delegate_method(:setup_for_company=).to(:user_preference).with_arguments(:args) }
-
     it { is_expected.to delegate_method(:project_shortcut_buttons).to(:user_preference) }
     it { is_expected.to delegate_method(:project_shortcut_buttons=).to(:user_preference).with_arguments(:args) }
 
@@ -135,9 +132,6 @@ RSpec.describe User, feature_category: :user_profile do
     it { is_expected.to delegate_method(:bio).to(:user_detail).allow_nil }
     it { is_expected.to delegate_method(:bio=).to(:user_detail).with_arguments(:args).allow_nil }
 
-    it { is_expected.to delegate_method(:registration_objective).to(:user_detail).allow_nil }
-    it { is_expected.to delegate_method(:registration_objective=).to(:user_detail).with_arguments(:args).allow_nil }
-
     it { is_expected.to delegate_method(:discord).to(:user_detail).allow_nil }
     it { is_expected.to delegate_method(:discord=).to(:user_detail).with_arguments(:args).allow_nil }
 
@@ -155,6 +149,9 @@ RSpec.describe User, feature_category: :user_profile do
 
     it { is_expected.to delegate_method(:skype).to(:user_detail).allow_nil }
     it { is_expected.to delegate_method(:skype=).to(:user_detail).with_arguments(:args).allow_nil }
+
+    it { is_expected.to delegate_method(:orcid).to(:user_detail).allow_nil }
+    it { is_expected.to delegate_method(:orcid=).to(:user_detail).with_arguments(:args).allow_nil }
 
     it { is_expected.to delegate_method(:website_url).to(:user_detail).allow_nil }
     it { is_expected.to delegate_method(:website_url=).to(:user_detail).with_arguments(:args).allow_nil }
@@ -185,6 +182,7 @@ RSpec.describe User, feature_category: :user_profile do
     it { is_expected.to have_one(:credit_card_validation) }
     it { is_expected.to have_one(:phone_number_validation) }
     it { is_expected.to have_one(:banned_user) }
+    it { is_expected.to have_one(:placeholder_user_detail).class_name('Import::PlaceholderUserDetail') }
     it { is_expected.to have_many(:snippets).dependent(:destroy) }
     it { is_expected.to have_many(:members) }
     it { is_expected.to have_many(:member_namespaces) }
@@ -237,6 +235,7 @@ RSpec.describe User, feature_category: :user_profile do
     it { is_expected.to have_many(:merge_request_assignment_events).class_name('ResourceEvents::MergeRequestAssignmentEvent') }
     it { is_expected.to have_many(:admin_abuse_report_assignees).class_name('Admin::AbuseReportAssignee') }
     it { is_expected.to have_many(:early_access_program_tracking_events).class_name('EarlyAccessProgram::TrackingEvent') }
+    it { is_expected.to have_many(:project_deletion_schedules).class_name('::Projects::DeletionSchedule').inverse_of(:deleting_user) }
 
     describe '#triggers' do
       let(:user) { create(:user) }
@@ -2524,7 +2523,7 @@ RSpec.describe User, feature_category: :user_profile do
     end
 
     context 'with instance prefix configured' do
-      let(:instance_prefix) { 'instance-prefix-' }
+      let(:instance_prefix) { 'instanceprefix' }
 
       before do
         stub_application_setting(instance_token_prefix: instance_prefix)
@@ -2533,7 +2532,7 @@ RSpec.describe User, feature_category: :user_profile do
       it 'returns feed token with instance prefix' do
         user = create(:user)
 
-        expect(user.feed_token).to start_with("#{instance_prefix}ft-")
+        expect(user.feed_token).to start_with("#{instance_prefix}glft-")
       end
     end
 
@@ -2689,6 +2688,34 @@ RSpec.describe User, feature_category: :user_profile do
         user.remember_me!
 
         expect(user.remember_created_at).to be_nil
+      end
+    end
+
+    context 'when session_expire_from_init is enabled' do
+      before do
+        stub_application_setting(remember_me_enabled: true, session_expire_from_init: true)
+      end
+
+      it 'does not set rememberable attributes' do
+        expect(user.remember_created_at).to be_nil
+
+        user.remember_me!
+
+        expect(user.remember_created_at).to be_nil
+      end
+
+      context 'when session_expire_from_init FF is disabled' do
+        before do
+          stub_feature_flags(session_expire_from_init: false)
+        end
+
+        it 'sets rememberable attributes' do
+          expect(user.remember_created_at).to be_nil
+
+          user.remember_me!
+
+          expect(user.remember_created_at).not_to be_nil
+        end
       end
     end
   end
@@ -3270,12 +3297,35 @@ RSpec.describe User, feature_category: :user_profile do
       :without_projects         | 'wop'
       :trusted                  | 'trusted'
       :external                 | 'external'
+      :without_bots             | 'without_bots'
+      :bots                     | 'bots'
+      :ldap                     | 'ldap_sync'
     end
 
     with_them do
       it 'uses a certain scope for the given filter name' do
         expect(described_class).to receive(scope).and_return([user])
         expect(described_class.filter_items(filter_name)).to include user
+      end
+    end
+
+    context 'with without_bots filter' do
+      it 'returns only humans' do
+        non_human_user = create(:user, user_type: :automation_bot)
+        regular_user = create(:user)
+
+        expect(described_class.filter_items('without_bots')).not_to include(non_human_user)
+        expect(described_class.filter_items('without_bots')).to include(regular_user)
+      end
+    end
+
+    context 'with bots filter' do
+      it 'returns only bots' do
+        non_human_user = create(:user, user_type: :automation_bot)
+        regular_user = create(:user)
+
+        expect(described_class.filter_items('bots')).to include(non_human_user)
+        expect(described_class.filter_items('bots')).not_to include(regular_user)
       end
     end
 
@@ -4201,6 +4251,32 @@ RSpec.describe User, feature_category: :user_profile do
           end
         end
       end
+    end
+  end
+
+  describe '#can_leave_group?' do
+    let_it_be(:user) { create(:user) }
+    let_it_be(:group) { create(:group) }
+
+    subject { user.can_leave_group?(group) }
+
+    context 'when user is member' do
+      context 'when user has permission to leave the group' do
+        let_it_be(:group_owner) { create(:group_member, :owner, group: group, user: create(:user)) }
+        let_it_be(:group_member) { create(:group_member, group: group, user: user) }
+
+        it { is_expected.to be(true) }
+      end
+
+      context 'when user has no permission to leave the group' do
+        let_it_be(:group_owner) { create(:group_member, :owner, user: user) }
+
+        it { is_expected.to be(false) }
+      end
+    end
+
+    context 'when user is not a member' do
+      it { is_expected.to be(false) }
     end
   end
 
@@ -6407,7 +6483,7 @@ RSpec.describe User, feature_category: :user_profile do
     it 'invalidates cache for Merge Request counter' do
       cache_mock = double
 
-      expect(cache_mock).to receive(:delete).with(['users', user.id, 'assigned_open_merge_requests_count', false])
+      expect(cache_mock).to receive(:delete).with(['users', user.id, 'assigned_open_merge_requests_count', false, true])
       expect(cache_mock).to receive(:delete).with(['users', user.id, 'review_requested_open_merge_requests_count', false])
 
       allow(Rails).to receive(:cache).and_return(cache_mock)
@@ -6504,6 +6580,7 @@ RSpec.describe User, feature_category: :user_profile do
     context 'when merge_request_dashboard feature flag is enabled' do
       before do
         stub_feature_flags(merge_request_dashboard: true)
+        stub_feature_flags(merge_request_dashboard_author_or_assignee: false)
       end
 
       it 'returns number of open merge requests from non-archived projects where there are no reviewers' do
@@ -6516,7 +6593,38 @@ RSpec.describe User, feature_category: :user_profile do
         create(:merge_request, :closed, source_project: project, author: user, assignees: [user])
         create(:merge_request, source_project: archived_project, author: user, assignees: [user])
 
-        expect(user.assigned_open_merge_requests_count(force: true)).to eq 1
+        mr = create(:merge_request, :unique_branches, source_project: project, author: user, assignees: [user], reviewers: [user])
+        mr2 = create(:merge_request, :unique_branches, source_project: project, author: user, assignees: [user], reviewers: [user])
+
+        mr.merge_request_reviewers.update_all(state: :reviewed)
+        mr2.merge_request_reviewers.update_all(state: :requested_changes)
+
+        expect(user.assigned_open_merge_requests_count(force: true)).to eq 3
+      end
+
+      context 'when merge_request_dashboard_author_or_assignee is enabed' do
+        before do
+          stub_feature_flags(merge_request_dashboard_author_or_assignee: true)
+        end
+
+        it 'returns number of open merge requests assigned or author by the user, that have no review or a review' do
+          user    = create(:user)
+          project = create(:project, :public)
+          archived_project = create(:project, :public, :archived)
+
+          create(:merge_request, source_project: project, author: user, reviewers: [user])
+          create(:merge_request, source_project: project, source_branch: 'feature_conflict', author: user, assignees: [user])
+          create(:merge_request, :closed, source_project: project, author: user, assignees: [user])
+          create(:merge_request, source_project: archived_project, author: user, assignees: [user])
+
+          mr = create(:merge_request, :unique_branches, source_project: project, author: user, assignees: [user], reviewers: [user])
+          mr2 = create(:merge_request, :unique_branches, source_project: project, author: user, assignees: [user], reviewers: [user])
+
+          mr.merge_request_reviewers.update_all(state: :reviewed)
+          mr2.merge_request_reviewers.update_all(state: :requested_changes)
+
+          expect(user.assigned_open_merge_requests_count(force: true)).to eq 3
+        end
       end
     end
   end
@@ -6545,14 +6653,14 @@ RSpec.describe User, feature_category: :user_profile do
         archived_project = create(:project, :public, :archived)
 
         mr = create(:merge_request, source_project: project, author: user, reviewers: [user])
-        mr2 = create(:merge_request, source_project: project, source_branch: 'feature_conflict', author: user, assignees: [user], reviewers: create_list(:user, 2))
+        mr2 = create(:merge_request, :unique_branches, source_project: project, author: user, reviewers: [user])
         create(:merge_request, :closed, source_project: project, author: user, reviewers: [user])
         create(:merge_request, source_project: archived_project, author: user, reviewers: [user])
 
         mr.merge_request_reviewers.update_all(state: :unreviewed)
         mr2.merge_request_reviewers.update_all(state: :requested_changes)
 
-        expect(user.review_requested_open_merge_requests_count(force: true)).to eq 2
+        expect(user.review_requested_open_merge_requests_count(force: true)).to eq 1
       end
     end
   end
@@ -8752,6 +8860,19 @@ RSpec.describe User, feature_category: :user_profile do
 
       expect(Identity).to receive(:with_extern_uid).and_call_original
       expect(described_class.by_provider_and_extern_uid(:github, 'my_github_id')).to match_array([expected_user])
+    end
+  end
+
+  describe '.ldap' do
+    subject(:ldap) { described_class.ldap }
+
+    let_it_be(:ldap_user) { create(:omniauth_user, provider: "ldapmain") }
+    let_it_be(:gitlab_user) { create(:omniauth_user, provider: "gitlab") }
+    let_it_be(:regular_user) { create(:user) }
+
+    it 'returns LDAP users' do
+      expect(ldap).to include(ldap_user)
+      expect(ldap).not_to include(gitlab_user, regular_user)
     end
   end
 

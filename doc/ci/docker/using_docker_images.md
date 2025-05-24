@@ -191,7 +191,7 @@ With the extended Docker configuration options, instead of:
 
 You can now define an `entrypoint` in the `.gitlab-ci.yml` file.
 
-**For Docker 17.06 and later:**
+**For Docker 17.06 and later**:
 
 ```yaml
 image:
@@ -199,7 +199,7 @@ image:
   entrypoint: [""]
 ```
 
-**For Docker 17.03 and earlier:**
+**For Docker 17.03 and earlier**:
 
 ```yaml
 image:
@@ -275,11 +275,11 @@ registry.
 
 Let's also assume that these are the sign-in credentials:
 
-| Key      | Value                       |
-|:---------|:----------------------------|
+| Key      | Value |
+|:---------|:------|
 | registry | `registry.example.com:5000` |
-| username | `my_username`               |
-| password | `my_password`               |
+| username | `my_username` |
+| password | `my_password` |
 
 Use one of the following methods to determine the value for `DOCKER_AUTH_CONFIG`:
 
@@ -314,7 +314,7 @@ Use one of the following methods to determine the value for `DOCKER_AUTH_CONFIG`
 
   {{< alert type="note" >}}
 
-  If your username includes special characters like `@`, you must escape them with a backslash (<code>&#92;</code>) to prevent authentication problems.
+  If your username includes special characters like `@`, you must escape them with a backslash (` \ `) to prevent authentication problems.
 
   {{< /alert >}}
 
@@ -355,11 +355,11 @@ follow these steps:
    image: registry.example.com:5000/namespace/image:tag
    ```
 
-   In the example above, GitLab Runner looks at `registry.example.com:5000` for the
+   In the previous example, GitLab Runner looks at `registry.example.com:5000` for the
    image `namespace/image:tag`.
 
 You can add configuration for as many registries as you want, adding more
-registries to the `"auths"` hash as described above.
+registries to the `"auths"` hash as described previously.
 
 The full `hostname:port` combination is required everywhere
 for the runner to match the `DOCKER_AUTH_CONFIG`. For example, if
@@ -418,7 +418,7 @@ To configure a Credentials Store:
        }
      ```
 
-   - Or, if you're running self-managed runners, add the above JSON to
+   - Or, if you're running self-managed runners, add the JSON to
      `${GITLAB_RUNNER_HOME}/.docker/config.json`. GitLab Runner reads this configuration file
      and uses the needed helper for this specific repository.
 

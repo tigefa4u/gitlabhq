@@ -56,7 +56,7 @@ The normal change process requires the change request to be approved before the 
 Use the `gitlab-ci-workflow1.yml` sample pipeline in the solution repository as a starting point.
 Check below for the steps to enable the automatic change creation and pass the change attributes through the pipeline.
 
-Note: for more detailed instructions, please see [the ServiceNow documentation](https://www.servicenow.com/docs/bundle/yokohama-it-service-management/page/product/enterprise-dev-ops/task/automate-devops-change-request.html)
+Note: for more detailed instructions, see [Automate DevOps change request creation](https://www.servicenow.com/docs/bundle/yokohama-it-service-management/page/product/enterprise-dev-ops/task/automate-devops-change-request.html).
 
 Below are the high-level steps:
 
@@ -92,11 +92,11 @@ Use the ServiceNow custom actions via the DevOps Change Velocity Docker image to
 
 #### Setup the Pipeline and Change Request Jobs
 
-Since this is add-on to the ServiceNow DevOps Change Velocity, the above setup steps are same. You just need to include the Docker image in the pipeline definition.
+This is an add-on to the ServiceNow DevOps Change Velocity, so the previous setup steps are the same. You just need to include the Docker image in the pipeline definition.
 
 Use the `gitlab-ci-workflow2.yml` sample pipeline in this repository as an example.
 
-1. Specify the image to use in the job. Please update the image version as needed.
+1. Specify the image to use in the job. Update the image version as needed.
 
    ```yaml
       image: servicenowdocker/sndevops:5.0.0

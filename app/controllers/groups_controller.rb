@@ -20,12 +20,12 @@ class GroupsController < Groups::ApplicationController
   before_action :group, except: [:index, :new, :create]
 
   # Authorize
-  before_action :authorize_admin_group!, only: [:update, :projects, :transfer, :export, :download_export]
+  before_action :authorize_admin_group!, only: [:update, :transfer, :export, :download_export]
   before_action :authorize_view_edit_page!, only: :edit
   before_action :authorize_remove_group!, only: [:destroy, :restore]
   before_action :authorize_create_group!, only: [:new]
 
-  before_action :group_projects, only: [:projects, :activity, :issues, :merge_requests]
+  before_action :group_projects, only: [:activity, :issues, :merge_requests]
   before_action :event_filter, only: [:activity]
 
   before_action :user_actions, only: [:show]
@@ -47,7 +47,7 @@ class GroupsController < Groups::ApplicationController
     push_frontend_feature_flag(:mr_approved_filter, type: :ops)
   end
 
-  skip_cross_project_access_check :index, :new, :create, :edit, :update, :destroy, :projects
+  skip_cross_project_access_check :index, :new, :create, :edit, :update, :destroy
   # When loading show as an atom feed, we render events that could leak cross
   # project information
   skip_cross_project_access_check :show, if: -> { request.format.html? }
@@ -82,7 +82,7 @@ class GroupsController < Groups::ApplicationController
   def create
     response = Groups::CreateService.new(
       current_user,
-      group_params.merge(organization_id: Current.organization&.id)
+      group_params.merge(organization_id: Current.organization.id)
     ).execute
     @group = response[:group]
 
@@ -152,10 +152,6 @@ class GroupsController < Groups::ApplicationController
 
   def merge_requests; end
 
-  def projects
-    @projects = @group.projects.with_statistics.page(params[:page])
-  end
-
   def update
     if Groups::UpdateService.new(@group, current_user, group_params).execute
 
@@ -197,8 +193,7 @@ class GroupsController < Groups::ApplicationController
             message: format(
               _("'%{group_name}' has been scheduled for deletion and will be deleted on %{date}."),
               group_name: group.name,
-              # FIXME: Replace `group.marked_for_deletion_on` with `group` after https://gitlab.com/gitlab-org/gitlab/-/work_items/527085
-              date: helpers.permanent_deletion_date_formatted(group.marked_for_deletion_on)
+              date: helpers.permanent_deletion_date_formatted(group)
             )
           }
         end
@@ -329,7 +324,7 @@ class GroupsController < Groups::ApplicationController
   def determine_layout
     if [:new, :create].include?(action_name.to_sym)
       'dashboard'
-    elsif [:edit, :update, :projects].include?(action_name.to_sym)
+    elsif [:edit, :update].include?(action_name.to_sym)
       'group_settings'
     else
       'group'
@@ -379,14 +374,7 @@ class GroupsController < Groups::ApplicationController
   private
 
   def successful_creation_hooks
-    update_user_setup_for_company
-  end
-
-  def update_user_setup_for_company
-    return if @group.setup_for_company.nil? || current_user.setup_for_company.present?
-
-    Users::UpdateService.new(current_user,
-      { setup_for_company: @group.setup_for_company }.merge(user: current_user)).execute
+    # overwritten in EE
   end
 
   def groups

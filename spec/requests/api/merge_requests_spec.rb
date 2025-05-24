@@ -1819,7 +1819,6 @@ RSpec.describe API::MergeRequests, :aggregate_failures, feature_category: :sourc
 
     context 'when commits_from_gitaly and optimized_commit_storage feature flags are disabled' do
       before do
-        stub_feature_flags(more_commits_from_gitaly: false)
         stub_feature_flags(commits_from_gitaly: false)
         stub_feature_flags(optimized_commit_storage: false)
       end
@@ -2022,7 +2021,7 @@ RSpec.describe API::MergeRequests, :aggregate_failures, feature_category: :sourc
     it 'returns the diffs of the merge_request' do
       get api("/projects/#{project.id}/merge_requests/#{merge_request.iid}/diffs", user)
 
-      expect(response).to have_gitlab_http_status(:ok)
+      expect_successful_response_with_paginated_array
       expect(json_response.size).to eq(merge_request.diffs.size)
     end
 
@@ -2030,7 +2029,7 @@ RSpec.describe API::MergeRequests, :aggregate_failures, feature_category: :sourc
       it 'returns the diff in Unified format' do
         get api("/projects/#{project.id}/merge_requests/#{merge_request.iid}/diffs", user), params: { unidiff: true }
 
-        expect(response).to have_gitlab_http_status(:ok)
+        expect_successful_response_with_paginated_array
         expect(json_response.dig(0, 'diff')).to eq(merge_request.diffs.diffs.first.unidiff)
       end
     end
@@ -2042,7 +2041,7 @@ RSpec.describe API::MergeRequests, :aggregate_failures, feature_category: :sourc
           params: { page: 1, per_page: 1 }
         )
 
-        expect(response).to have_gitlab_http_status(:ok)
+        expect_successful_response_with_paginated_array
         expect(json_response.size).to eq(1)
       end
 
@@ -2057,7 +2056,7 @@ RSpec.describe API::MergeRequests, :aggregate_failures, feature_category: :sourc
             params: { per_page: 2 }
           )
 
-          expect(response).to have_gitlab_http_status(:ok)
+          expect_successful_response_with_paginated_array
           expect(json_response.size).to eq(1)
         end
       end
@@ -2226,6 +2225,16 @@ RSpec.describe API::MergeRequests, :aggregate_failures, feature_category: :sourc
       end
     end
 
+    context 'with oauth token that has ai_workflows scope' do
+      let(:token) { create(:oauth_access_token, user: authenticated_user, scopes: [:ai_workflows]) }
+
+      it 'does not allow access' do
+        post api("/projects/#{project.id}/merge_requests/#{merge_request_iid}/pipelines", oauth_access_token: token), params: { async: true }
+
+        expect(response).to have_gitlab_http_status(:forbidden)
+      end
+    end
+
     context 'when unauthorized' do
       let(:authenticated_user) { create(:user) }
 
@@ -2267,6 +2276,19 @@ RSpec.describe API::MergeRequests, :aggregate_failures, feature_category: :sourc
           author_id: user.id,
           assignee_id: user2.id
         }
+      end
+
+      context 'with oauth token that has ai_workflows scope' do
+        let(:token) { create(:oauth_access_token, user: user, scopes: [:ai_workflows]) }
+
+        it "creates a new merge request" do
+          post api("/projects/#{project.id}/merge_requests", oauth_access_token: token), params: params
+
+          expect(response).to have_gitlab_http_status(:created)
+          expect(json_response['title']).to eq('Test merge request')
+          expect(json_response['assignee']['name']).to eq(user2.name)
+          expect(json_response['assignees'].first['name']).to eq(user2.name)
+        end
       end
 
       it 'creates a new merge request' do
@@ -3007,6 +3029,16 @@ RSpec.describe API::MergeRequests, :aggregate_failures, feature_category: :sourc
         expect(json_response.first['author_email']).to eq(commit.author_email)
         expect(json_response.first['committer_name']).to eq(commit.committer_name)
         expect(json_response.first['committer_email']).to eq(commit.committer_email)
+      end
+
+      context 'with oauth token that has ai_workflows scope' do
+        let(:token) { create(:oauth_access_token, user: authenticated_user, scopes: [:ai_workflows]) }
+
+        it 'does not allow access' do
+          post api("/projects/#{project.id}/merge_requests/#{merge_request_iid}/context_commits", oauth_access_token: token), params: params
+
+          expect(response).to have_gitlab_http_status(:forbidden)
+        end
       end
 
       context 'doesnt create when its already created' do
@@ -4127,6 +4159,16 @@ RSpec.describe API::MergeRequests, :aggregate_failures, feature_category: :sourc
       post api("/projects/#{project.id}/merge_requests/#{merge_request.id}/cancel_merge_when_pipeline_succeeds", user)
 
       expect(response).to have_gitlab_http_status(:not_found)
+    end
+
+    context 'with oauth token that has ai_workflows scope' do
+      let(:token) { create(:oauth_access_token, user: user, scopes: [:ai_workflows]) }
+
+      it "does not allow access" do
+        post api("/projects/#{project.id}/merge_requests/#{merge_request.iid}/cancel_merge_when_pipeline_succeeds", oauth_access_token: token)
+
+        expect(response).to have_gitlab_http_status(:forbidden)
+      end
     end
   end
 

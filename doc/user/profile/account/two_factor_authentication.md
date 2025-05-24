@@ -2,13 +2,14 @@
 stage: Software Supply Chain Security
 group: Authentication
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+gitlab_dedicated: yes
 title: Two-factor authentication
 ---
 
 {{< details >}}
 
 - Tier: Free, Premium, Ultimate
-- Offering: GitLab.com, GitLab Self-Managed
+- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 
@@ -65,11 +66,11 @@ Your account email must be confirmed to enable 2FA.
 
 To enable 2FA with an OTP authenticator:
 
-1. **In GitLab:**
+1. **In GitLab**:
    1. Access your [**User settings**](../_index.md#access-your-user-settings).
    1. Select **Account**.
    1. Select **Enable Two-factor Authentication**.
-1. **On your device (usually your phone):**
+1. **On your device (usually your phone)**:
    1. Install a compatible application. For example:
       - Cloud-based (recommended because you can restore access if you lose the hardware device):
         - [Authy](https://authy.com/).
@@ -83,7 +84,7 @@ To enable 2FA with an OTP authenticator:
    1. In the application, add a new entry in one of two ways:
       - Scan the code displayed by GitLab with your device's camera to add the entry automatically.
       - Enter the details provided to add the entry manually.
-1. **In GitLab:**
+1. **In GitLab**:
    1. Enter the six-digit pin number from the entry on your device into **Pin code**.
    1. Enter your current password.
    1. Select **Submit**.
@@ -431,7 +432,7 @@ This clears all your 2FA registrations, including mobile applications and WebAut
 {{< details >}}
 
 - Tier: Free, Premium, Ultimate
-- Offering: GitLab Self-Managed
+- Offering: GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 

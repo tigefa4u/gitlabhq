@@ -63,7 +63,7 @@ For this we use several techniques:
 
 - For certain filters that can take a long time, we use a Ruby timeout with `Gitlab::RenderTimeout.timeout` in [TimeoutFilterHandler](https://gitlab.com/gitlab-org/gitlab/blob/master/lib/banzai/filter/concerns/timeout_filter_handler.rb).
   This allows us to interrupt the actual processing if it takes too long.
-  It's **important** to note that in general using Ruby `timeout` is [not considered safe](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/).
+  In general, using Ruby `timeout` is [not considered safe](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/).
   We therefore only use it when absolutely necessary, preferring to fix an actual performance problem rather then using a timeout.
 - [PipelineTimingCheck](https://gitlab.com/gitlab-org/gitlab/blob/master/lib/banzai/filter/concerns/pipeline_timing_check.rb) allows us to keep track of the cumulative amount of time the pipeline is taking. When we reach a maximum, we can then skip any remaining filters.
   For nearly all filters, it's generally ok to skip them in a case like this in order to show the user _something_, rather than nothing.
@@ -80,7 +80,7 @@ We use our [`gitlab-glfm-markdown`](https://gitlab.com/gitlab-org/ruby/gems/gitl
 
 `comrak` provides 100% compatibility with GFM and CommonMark while allowing additional extensions to be added to it. For example, we were able to implement our multi-line blockquote and wikilink syntax directly in `comrak`. The goal is to move more of the Ruby filters into either `comrak` (if it makes sense) or into `gitlab-glfm-markdown`.
 
-Please see [glfm_markdown.rb](https://gitlab.com/gitlab-org/gitlab/blob/master/lib/banzai/filter/markdown_engines/glfm_markdown.rb#L12-L34) for the various options that get passed into `comrak`.
+For more information about the various options that get passed into `comrak`, see [glfm_markdown.rb](https://gitlab.com/gitlab-org/gitlab/blob/master/lib/banzai/filter/markdown_engines/glfm_markdown.rb#L12-L34).
 
 ## Debugging
 

@@ -21,9 +21,16 @@ export default {
       required: true,
       type: Object,
     },
+    displayAsLink: {
+      required: false,
+      default: false,
+      type: Boolean,
+    },
   },
   data() {
     return {
+      project: undefined,
+      group: undefined,
       ...extractGroupOrProject(this.data.webUrl),
     };
   },
@@ -37,18 +44,13 @@ export default {
     await this.$nextTick();
     initIssuablePopovers([this.$refs.reference.$el]);
   },
-  methods: {
-    truncateText(text, length = 50) {
-      return text.length > length ? `${text.substring(0, length - 3)}...` : text;
-    },
-  },
 };
 </script>
 <template>
   <gl-link
     ref="reference"
     class="gl-text-strong"
-    :class="`gfm gfm-${type}`"
+    :class="[`gfm gfm-${type}`, { '!gl-text-link': displayAsLink }]"
     :data-original="`${project || group}${data.reference}+`"
     :data-reference-type="type"
     :title="data.title"
@@ -58,7 +60,7 @@ export default {
     :data-group-path="group"
   >
     <gl-intersperse separator="">
-      <span>{{ truncateText(data.title) }}</span>
+      <span>{{ data.title }}</span>
       <span> ({{ data.reference }}</span>
       <span v-if="data.state === 'closed'"> - {{ __('closed') }}</span>
       <span v-if="data.state === 'merged'"> - {{ __('merged') }}</span>

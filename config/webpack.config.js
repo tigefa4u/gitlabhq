@@ -89,6 +89,8 @@ if (WEBPACK_REPORT) {
   NO_HASHED_CHUNKS = true;
 }
 
+console.debug(`BABEL_ENV inside Webpack is: ${process.env.BABEL_ENV}`);
+
 const devtool = IS_PRODUCTION ? 'source-map' : 'cheap-module-eval-source-map';
 
 const incrementalCompiler = createIncrementalWebpackCompiler(
@@ -278,6 +280,7 @@ module.exports = {
     return {
       default: defaultEntries,
       sentry: './sentry/index.js',
+      coverage_persistence: './entrypoints/coverage_persistence.js',
       performance_bar: './entrypoints/performance_bar.js',
       jira_connect_app: './jira_connect/subscriptions/index.js',
       sandboxed_mermaid: './lib/mermaid.js',

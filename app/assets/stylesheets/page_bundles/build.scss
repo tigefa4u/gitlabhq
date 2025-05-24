@@ -15,6 +15,7 @@
 
   .top-bar {
     @include job-log-top-bar;
+    @include translucent-glass-background(var(--gl-background-color-section));
 
     &.has-archived-block {
       top: calc(#{$calc-application-header-height} + 28px);
@@ -113,11 +114,11 @@
 
     .build-job {
       &.retried {
-        background-color: var(--gray-10, $gray-10);
+        @apply gl-bg-subtle;
       }
 
       &:hover {
-        background-color: var(--gray-50, $gray-50);
+        @apply gl-bg-strong;
       }
     }
   }
@@ -268,6 +269,13 @@
   @media (max-width: map-get($grid-breakpoints, lg)) {
     padding-left: 1rem;
   }
+}
+
+.rca-bar-component.rca-bar-component-fullscreen {
+  left: 0;
+  width: 100%;
+  padding-left: .5rem;
+  transition: left 0.3s ease, width 0.3s ease, padding 0.3s ease;
 }
 
 .loader-animation {

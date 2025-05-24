@@ -10,6 +10,9 @@ RSpec.describe DraftNotes::PublishService, feature_category: :code_review_workfl
   let(:commit) { project.commit(sample_commit.id) }
   let(:internal) { false }
   let(:executing_user) { nil }
+  let(:service) { described_class.new(merge_request, user) }
+  let(:todo_service) { instance_double(TodoService) }
+  let(:notification_service) { instance_double(NotificationService) }
 
   let(:position) do
     Gitlab::Diff::Position.new(
@@ -21,8 +24,15 @@ RSpec.describe DraftNotes::PublishService, feature_category: :code_review_workfl
     )
   end
 
+  before do
+    allow(service).to receive_messages(todo_service: todo_service, notification_service: notification_service)
+    allow(todo_service).to receive(:new_review)
+    allow(notification_service).to receive_message_chain(:async, :new_review)
+    allow(::Gitlab::EventStore).to receive(:publish)
+  end
+
   def publish(draft: nil)
-    DraftNotes::PublishService.new(merge_request, user).execute(draft: draft, executing_user: executing_user)
+    service.execute(draft: draft, executing_user: executing_user)
   end
 
   context 'single draft note' do
@@ -134,20 +144,48 @@ RSpec.describe DraftNotes::PublishService, feature_category: :code_review_workfl
       expect(notes.last.note).to eq('second note')
     end
 
-    it 'sends batch notification' do
-      expect_next_instance_of(NotificationService) do |notification_service|
-        expect(notification_service).to receive_message_chain(:async, :new_review).with(kind_of(Review))
+    context 'when pub-sub event feature flag is disabled' do
+      before do
+        stub_feature_flags(notification_event_store_migration_draft_published: false)
       end
 
-      publish
+      it 'resolves todos for the MR' do
+        expect(todo_service).to receive(:new_review).with(merge_request, user)
+
+        publish
+      end
+
+      it 'sends batch notification' do
+        expect(notification_service).to receive_message_chain(:async, :new_review).with(kind_of(Review))
+
+        publish
+      end
     end
 
-    it 'resolves todos for the MR' do
-      expect_any_instance_of(TodoService) do |todo_service|
-        expect(todo_service).to receive(:new_review).with(kind_of(Review), user)
+    context 'when pub-sub event feature flag is enabled' do
+      before do
+        stub_feature_flags(notification_event_store_migration_draft_published: true)
       end
 
-      publish
+      it 'creates the correct pub-sub event' do
+        expect(::Gitlab::EventStore).to receive(:publish).with(
+          an_instance_of(MergeRequests::DraftNotePublishedEvent)
+        ).and_call_original
+
+        publish
+      end
+
+      it 'does not send batch notification' do
+        expect(notification_service).not_to receive(:async)
+
+        publish
+      end
+
+      it 'does not handle todos' do
+        expect(todo_service).not_to receive(:new_review)
+
+        publish
+      end
     end
 
     it 'tracks the publish event' do
@@ -252,6 +290,35 @@ RSpec.describe DraftNotes::PublishService, feature_category: :code_review_workfl
       recorder = ActiveRecord::QueryRecorder.new(skip_cached: false) { publish }
 
       expect(recorder.count).not_to be > 116
+    end
+  end
+
+  context 'with no draft notes' do
+    let(:merge_request) { create(:merge_request) }
+
+    context 'when pub-sub event feature flag is disabled' do
+      before do
+        stub_feature_flags(notification_event_store_migration_draft_published: false)
+      end
+
+      it 'resolves todos for the MR' do
+        expect(todo_service).to receive(:new_review).with(merge_request, user)
+
+        publish
+      end
+    end
+
+    context 'when pub-sub event feature flag is enabled' do
+      before do
+        stub_feature_flags(notification_event_store_migration_draft_published: true)
+      end
+
+      it 'creates the correct pub-sub event' do
+        expect(::Gitlab::EventStore).to receive(:publish)
+        expect(MergeRequests::DraftNotePublishedEvent).to receive(:new)
+
+        publish
+      end
     end
   end
 
@@ -380,12 +447,32 @@ RSpec.describe DraftNotes::PublishService, feature_category: :code_review_workfl
       expect(Note.find(note.id).discussion.resolved?).to be true
     end
 
-    it 'sends notifications if all threads are resolved' do
-      expect_next_instance_of(MergeRequests::ResolvedDiscussionNotificationService) do |instance|
-        expect(instance).to receive(:execute).with(merge_request)
+    context 'when pub-sub event feature flag is enabled' do
+      before do
+        stub_feature_flags(notification_event_store_migration_draft_published: true)
       end
 
-      publish
+      it 'handles resolved discussions without sending notifications' do
+        expect_next_instance_of(MergeRequests::ResolvedDiscussionNotificationService) do |instance|
+          expect(instance).to receive(:execute).with(merge_request, send_notifications: false)
+        end
+
+        publish
+      end
+    end
+
+    context 'when pub-sub event feature flag is disabled' do
+      before do
+        stub_feature_flags(notification_event_store_migration_draft_published: false)
+      end
+
+      it 'handles resolved discussions sending notifications' do
+        expect_next_instance_of(MergeRequests::ResolvedDiscussionNotificationService) do |instance|
+          expect(instance).to receive(:execute).with(merge_request, send_notifications: true)
+        end
+
+        publish
+      end
     end
   end
 

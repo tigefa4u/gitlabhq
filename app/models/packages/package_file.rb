@@ -4,9 +4,11 @@ class Packages::PackageFile < ApplicationRecord
   include EachBatch
   include UpdateProjectStatistics
   include FileStoreMounter
+  include ObjectStorable
   include Packages::Installable
   include Packages::Destructible
 
+  STORE_COLUMN = :file_store
   INSTALLABLE_STATUSES = [:default].freeze
   ENCODED_SLASH = "%2F"
   SORTABLE_COLUMNS = %w[id file_name created_at].freeze
@@ -16,7 +18,7 @@ class Packages::PackageFile < ApplicationRecord
   delegate :file_type, :dsc?, :component, :architecture, :fields, to: :debian_file_metadatum, prefix: :debian
   delegate :channel, :metadata, to: :helm_file_metadatum, prefix: :helm
 
-  enum status: { default: 0, pending_destruction: 1, processing: 2, error: 3 }
+  enum :status, { default: 0, pending_destruction: 1, processing: 2, error: 3 }
 
   belongs_to :package
 
@@ -45,7 +47,6 @@ class Packages::PackageFile < ApplicationRecord
   scope :for_package_ids, ->(ids) { where(package_id: ids) }
   scope :with_file_name, ->(file_name) { where(file_name: file_name) }
   scope :with_file_name_like, ->(file_name) { where(arel_table[:file_name].matches(file_name)) }
-  scope :with_files_stored_locally, -> { where(file_store: ::Packages::PackageFileUploader::Store::LOCAL) }
   scope :with_format, ->(format) { where(::Packages::PackageFile.arel_table[:file_name].matches("%.#{format}")) }
   scope :with_nuget_format, -> { where("reverse(split_part(reverse(packages_package_files.file_name), '.', 1)) = :format", format: Packages::Nuget::FORMAT) }
 
@@ -111,6 +112,16 @@ class Packages::PackageFile < ApplicationRecord
   scope :without_conan_recipe_revision, -> do
     joins(:conan_file_metadatum)
       .where(packages_conan_file_metadata: { recipe_revision_id: nil })
+  end
+
+  scope :with_conan_package_revision, ->(package_revision) do
+    joins(conan_file_metadatum: :package_revision)
+      .where(packages_conan_package_revisions: { revision: package_revision })
+  end
+
+  scope :without_conan_package_revision, -> do
+    joins(:conan_file_metadatum)
+      .where(packages_conan_file_metadata: { package_revision_id: nil })
   end
 
   def self.most_recent!

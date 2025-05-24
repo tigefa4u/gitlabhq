@@ -232,6 +232,11 @@ export default {
       required: false,
       default: false,
     },
+    detailLoading: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   data() {
     return {
@@ -406,6 +411,7 @@ export default {
           :show-work-item-type-icon="showWorkItemTypeIcon"
           :prevent-redirect="preventRedirect"
           :is-active="isIssuableActive(issuable)"
+          :detail-loading="detailLoading"
           @checked-input="handleIssuableCheckedInput(issuable, $event)"
           @select-issuable="$emit('select-issuable', $event)"
         >
@@ -444,6 +450,9 @@ export default {
           </template>
           <template #health-status>
             <slot name="health-status" :issuable="issuable"></slot>
+          </template>
+          <template #custom-status>
+            <slot name="custom-status" :issuable="issuable"></slot>
           </template>
         </issuable-item>
       </component>

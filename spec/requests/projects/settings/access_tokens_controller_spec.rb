@@ -54,7 +54,7 @@ RSpec.describe Projects::Settings::AccessTokensController, feature_category: :sy
   end
 
   describe 'POST /:namespace/:project/-/settings/access_tokens' do
-    let(:access_token_params) { { name: 'Nerd bot', description: 'Nerd bot description', scopes: ["api"], expires_at: Date.today + 1.month } }
+    let(:access_token_params) { { name: 'Nerd bot', description: 'Nerd bot description', scopes: ["api"], expires_at: 1.month.from_now } }
 
     subject do
       post project_settings_access_tokens_path(resource), params: { resource_access_token: access_token_params }
@@ -85,7 +85,7 @@ RSpec.describe Projects::Settings::AccessTokensController, feature_category: :sy
     end
 
     context 'with custom access level' do
-      let(:access_token_params) { { name: 'Nerd bot', scopes: ["api"], expires_at: Date.today + 1.month, access_level: 20 } }
+      let(:access_token_params) { { name: 'Nerd bot', scopes: ["api"], expires_at: 1.month.from_now, access_level: 20 } }
 
       subject { post project_settings_access_tokens_path(resource), params: { resource_access_token: access_token_params } }
 
@@ -109,6 +109,8 @@ RSpec.describe Projects::Settings::AccessTokensController, feature_category: :sy
     let_it_be(:resource_access_tokens) { create_list(:personal_access_token, 3, user: access_token_user) }
 
     before do
+      stub_config(dependency_proxy: { enabled: true })
+
       get project_settings_access_tokens_path(resource)
     end
 
@@ -124,31 +126,11 @@ RSpec.describe Projects::Settings::AccessTokensController, feature_category: :sy
       expect(assigns(:scopes)).to include(Gitlab::Auth::SELF_ROTATE_SCOPE)
     end
 
-    context 'with feature flags virtual_registry_maven and dependency_proxy_read_write_scopes disabled' do
-      before do
-        stub_feature_flags(virtual_registry_maven: false, dependency_proxy_read_write_scopes: false)
-        stub_config(dependency_proxy: { enabled: true })
-
-        get project_settings_access_tokens_path(resource)
-      end
-
-      it 'does not include the virtual registry scopes' do
-        expect(assigns(:scopes)).not_to include(Gitlab::Auth::READ_VIRTUAL_REGISTRY_SCOPE)
-        expect(assigns(:scopes)).not_to include(Gitlab::Auth::WRITE_VIRTUAL_REGISTRY_SCOPE)
-      end
-
-      %i[virtual_registry_maven dependency_proxy_read_write_scopes].each do |feature_flag|
-        context "with feature flag #{feature_flag} enabled" do
-          before do
-            stub_feature_flags(feature_flag => true)
-          end
-
-          it 'includes the virtual registry scopes' do
-            expect(assigns(:scopes)).not_to include(::Gitlab::Auth::READ_VIRTUAL_REGISTRY_SCOPE)
-            expect(assigns(:scopes)).not_to include(::Gitlab::Auth::WRITE_VIRTUAL_REGISTRY_SCOPE)
-          end
-        end
-      end
+    it 'does not include the virtual registry scopes' do
+      expect(assigns(:scopes)).not_to include(
+        ::Gitlab::Auth::READ_VIRTUAL_REGISTRY_SCOPE,
+        ::Gitlab::Auth::WRITE_VIRTUAL_REGISTRY_SCOPE
+      )
     end
   end
 end

@@ -85,7 +85,7 @@ export default {
       required: false,
       default: true,
     },
-    workItemTypeName: {
+    newWorkItemType: {
       type: String,
       required: false,
       default: '',
@@ -141,11 +141,11 @@ export default {
   },
   computed: {
     createFlow() {
-      return this.workItemId === newWorkItemId(this.workItemTypeName);
+      return this.workItemId === newWorkItemId(this.newWorkItemType);
     },
     workItemFullPath() {
       return this.createFlow
-        ? newWorkItemFullPath(this.fullPath, this.workItemTypeName)
+        ? newWorkItemFullPath(this.fullPath, this.newWorkItemType)
         : this.fullPath;
     },
     autosaveKey() {
@@ -157,6 +157,7 @@ export default {
     hasConflicts() {
       return Boolean(this.conflictedDescription);
     },
+    // eslint-disable-next-line vue/no-unused-properties
     tracking() {
       return {
         category: TRACKING_CATEGORY_SHOW,
@@ -265,13 +266,16 @@ export default {
   },
   mounted() {
     const DEFAULT_TEMPLATE_NAME = 'default';
-    if (this.isCreateFlow) {
-      const templateName = !this.isNewWorkItemRoute
-        ? DEFAULT_TEMPLATE_NAME
-        : this.$route.query[paramName] ||
-          this.$route.query[oldParamNameFromPreWorkItems] ||
-          DEFAULT_TEMPLATE_NAME;
+    const templateNameFromRoute =
+      this.$route.query[paramName] || this.$route.query[oldParamNameFromPreWorkItems];
+    const templateName = !this.isNewWorkItemRoute
+      ? DEFAULT_TEMPLATE_NAME
+      : templateNameFromRoute || DEFAULT_TEMPLATE_NAME;
 
+    // Ensure that template is set during Create Flow only if any of the following is true:;
+    // - Template name is present in URL.
+    // - Description is empty.
+    if (this.isCreateFlow && (templateNameFromRoute || this.descriptionText.trim() === '')) {
       this.selectedTemplate = {
         name: templateName,
         projectId: null,
@@ -327,6 +331,7 @@ export default {
         if (this.descriptionTemplate === this.descriptionText) {
           return;
         }
+
         if (!isUnchangedTemplate && (isDirty || hasContent)) {
           this.showTemplateApplyWarning = true;
         } else {
@@ -349,9 +354,17 @@ export default {
       this.isEditing = true;
       this.wasEdited = true;
 
-      this.descriptionText = this.createFlow
-        ? this.workItemDescription?.description
-        : getDraft(this.autosaveKey) || this.workItemDescription?.description;
+      if (this.createFlow) {
+        this.descriptionText = this.workItemDescription?.description;
+      } else {
+        const draftDescription = getDraft(this.autosaveKey) || '';
+        if (draftDescription.trim() !== '') {
+          this.descriptionText = draftDescription;
+        } else {
+          this.descriptionText = this.workItemDescription?.description;
+        }
+      }
+
       this.initialDescriptionText = this.descriptionText;
 
       await this.$nextTick();
@@ -456,6 +469,20 @@ export default {
         this.onInput();
       }
     },
+    handleEscape() {
+      // Don't cancel if autosuggest open in plain text editor
+      if (
+        !this.$refs.markdownEditor.$el
+          .querySelector('textarea')
+          ?.classList.contains('at-who-active')
+      ) {
+        if (this.isCreateFlow) {
+          this.$emit('cancelCreate');
+        } else {
+          this.cancelEditing();
+        }
+      }
+    },
   },
 };
 </script>
@@ -503,6 +530,7 @@ export default {
           </template>
         </gl-alert>
         <markdown-editor
+          ref="markdownEditor"
           :value="descriptionText"
           :render-markdown-path="markdownPreviewPath"
           :markdown-docs-path="$options.markdownDocsPath"
@@ -518,6 +546,7 @@ export default {
           @input="setDescriptionText"
           @keydown.meta.enter="updateWorkItem"
           @keydown.ctrl.enter="updateWorkItem"
+          @keydown.esc.stop="handleEscape"
         />
         <div class="gl-flex">
           <gl-alert

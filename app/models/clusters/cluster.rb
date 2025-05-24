@@ -52,6 +52,7 @@ module Clusters
     accepts_nested_attributes_for :platform_kubernetes, update_only: true
 
     validates :name, cluster_name: true
+    validates :environment_scope, length: 1..255, if: :environment_scope_changed?
     validates :cluster_type, presence: true
     validates :domain, allow_blank: true, hostname: { allow_numeric_hostname: true }
     validates :namespace_per_environment, inclusion: { in: [true, false] }
@@ -73,17 +74,17 @@ module Clusters
     alias_attribute :base_domain, :domain
     alias_attribute :provided_by_user?, :user?
 
-    enum cluster_type: {
+    enum :cluster_type, {
       instance_type: 1,
       group_type: 2,
       project_type: 3
     }
 
-    enum platform_type: {
+    enum :platform_type, {
       kubernetes: 1
     }
 
-    enum provider_type: {
+    enum :provider_type, {
       user: 0,
       gcp: 1,
       aws: 2

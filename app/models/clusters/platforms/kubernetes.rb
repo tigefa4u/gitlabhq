@@ -7,6 +7,7 @@ module Clusters
       include AfterCommitQueue
       include ReactiveCaching
       include NullifyIfBlank
+      include Gitlab::EncryptedAttribute
 
       RESERVED_NAMESPACES = %w[gitlab-managed-apps].freeze
       REQUIRED_K8S_MIN_VERSION = 23
@@ -30,12 +31,12 @@ module Clusters
 
       attr_encrypted :password,
         mode: :per_attribute_iv,
-        key: Settings.attr_encrypted_db_key_base_truncated,
+        key: :db_key_base_truncated,
         algorithm: 'aes-256-cbc'
 
       attr_encrypted :token,
         mode: :per_attribute_iv,
-        key: Settings.attr_encrypted_db_key_base_truncated,
+        key: :db_key_base_truncated,
         algorithm: 'aes-256-cbc'
 
       before_validation :enforce_namespace_to_lower_case
@@ -56,17 +57,20 @@ module Clusters
       # We expect to be `active?` only when enabled and cluster is created (the api_url is assigned)
       validates :api_url, public_url: true, presence: true
       validates :token, presence: true
-      validates :ca_cert, certificate: true, allow_blank: true, if: :ca_cert_changed?
+      validates :ca_cert, certificate: true, allow_blank: true, length: 1..65535, if: :ca_cert_changed?
+
+      validates :api_url, length: 1..2048, if: :api_url_changed?
+      validates :token, length: 1..8192, if: :token_changed?
 
       validate :prevent_modification, on: :update
 
       alias_attribute :ca_pem, :ca_cert
 
-      enum authorization_type: {
+      enum :authorization_type, {
         unknown_authorization: nil,
         rbac: 1,
         abac: 2
-      }, _default: :rbac
+      }, default: :rbac
 
       nullify_if_blank :namespace
 

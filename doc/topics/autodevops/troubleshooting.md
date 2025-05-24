@@ -104,9 +104,9 @@ your application. The default installation method changed in GitLab 13.0, and
 upgrading existing databases requires user involvement. The two installation
 methods are:
 
-- **channel 1 (deprecated):** Pulls in the database as a dependency of the associated
+- **channel 1 (deprecated)**: Pulls in the database as a dependency of the associated
   Helm chart. Only supports Kubernetes versions up to version 1.15.
-- **channel 2 (current):** Installs the database as an independent Helm chart. Required
+- **channel 2 (current)**: Installs the database as an independent Helm chart. Required
   for using the in-cluster database feature with Kubernetes versions 1.16 and greater.
 
 If you receive this error, you can do one of the following actions:
@@ -146,7 +146,7 @@ channel 1 database for your environment.
 
 If Auto DevOps is automatically disabled for a project, it may be due to the following reasons:
 
-- The Auto DevOps setting has not been explicitly enabled in the [project](_index.md#per-project) itself. It is enabled only in the parent [group](_index.md#per-group) or its [instance](../../administration/settings/continuous_integration.md#auto-devops).
+- The Auto DevOps setting has not been explicitly enabled in the [project](_index.md#per-project) itself. It is enabled only in the parent [group](_index.md#per-group) or its [instance](../../administration/settings/continuous_integration.md#configure-auto-devops-for-all-projects).
 - The project has no history of successful Auto DevOps pipelines.
 - An Auto DevOps pipeline failed.
 

@@ -45,12 +45,12 @@ For example, the `X-Requested-With` header can't be used for preflight requests.
 
 GitLab supports the following authorization flows:
 
-- **Authorization code with [Proof Key for Code Exchange (PKCE)](https://www.rfc-editor.org/rfc/rfc7636):**
+- **Authorization code with [Proof Key for Code Exchange (PKCE)](https://www.rfc-editor.org/rfc/rfc7636)**:
   Most secure. Without PKCE, you'd have to include client secrets on mobile clients,
   and is recommended for both client and server apps.
-- **Authorization code:** Secure and common flow. Recommended option for secure
+- **Authorization code**: Secure and common flow. Recommended option for secure
   server-side apps.
-- **Resource owner password credentials:** To be used **only** for securely
+- **Resource owner password credentials**: To be used **only** for securely
   hosted, first-party services. GitLab recommends against use of this flow.
 - **Device Authorization Grant** (GitLab 17.1 and later) Secure flow oriented toward devices without browser access. Requires a secondary device to complete the authorization flow.
 
@@ -414,7 +414,7 @@ detailed flow description.
 Resource owner password credentials are disabled for users with
 [two-factor authentication](../user/profile/account/two_factor_authentication.md) turned on
 and [enterprise users](../user/enterprise_user/_index.md)
-with [password authentication disabled for their group](../user/enterprise_user/_index.md#disable-password-authentication-for-enterprise-users).
+with [password authentication disabled for their group](../user/enterprise_user/_index.md#restrict-authentication-methods).
 These users can access the API using [personal access tokens](../user/profile/personal_access_tokens.md)
 instead.
 {{< /alert >}}

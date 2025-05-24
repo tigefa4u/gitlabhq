@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Diagnostics tools
 ---
@@ -26,7 +26,7 @@ running on.
 
 ## strace-parser
 
-[strace-parser](https://gitlab.com/wchandler/strace-parser) is a small tool to analyze
+[strace-parser](https://gitlab.com/gitlab-com/support/toolbox/strace-parser) is a small tool to analyze
 and summarize raw `strace` data.
 
 ## `kubesos`

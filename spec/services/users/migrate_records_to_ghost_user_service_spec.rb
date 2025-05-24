@@ -161,6 +161,12 @@ RSpec.describe Users::MigrateRecordsToGhostUserService, feature_category: :user_
       end
     end
 
+    context 'for timelogs' do
+      include_examples 'migrating records to the ghost user', Timelog, [:user] do
+        let(:created_record) { create(:timelog, user: user) }
+      end
+    end
+
     context 'for user achievements' do
       include_examples 'migrating records to the ghost user', Achievements::UserAchievement,
         [:awarded_by_user, :revoked_by_user] do
@@ -200,11 +206,7 @@ RSpec.describe Users::MigrateRecordsToGhostUserService, feature_category: :user_
     context 'for batched nullify' do
       # rubocop:disable Layout/LineLength
       def nullify_in_batches_regexp(table, column, user, batch_size: 100)
-        if ::Gitlab.next_rails?
-          %r{^UPDATE "#{table}" SET "#{column}" = NULL WHERE \("#{table}"."id"\) IN \(SELECT "#{table}"."id" FROM "#{table}" WHERE "#{table}"."#{column}" = #{user.id} LIMIT #{batch_size}\)}
-        else
-          %r{^UPDATE "#{table}" SET "#{column}" = NULL WHERE "#{table}"."id" IN \(SELECT "#{table}"."id" FROM "#{table}" WHERE "#{table}"."#{column}" = #{user.id} LIMIT #{batch_size}\)}
-        end
+        %r{^UPDATE "#{table}" SET "#{column}" = NULL WHERE \("#{table}"."id"\) IN \(SELECT "#{table}"."id" FROM "#{table}" WHERE "#{table}"."#{column}" = #{user.id} LIMIT #{batch_size}\)}
       end
       # rubocop:enable Layout/LineLength
 

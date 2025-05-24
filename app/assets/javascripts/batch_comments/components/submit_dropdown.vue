@@ -219,7 +219,11 @@ export default {
     onBeforeClose({ originalEvent: { target }, preventDefault }) {
       if (
         target &&
-        [document.querySelector('.atwho-container'), document.querySelector('.dz-hidden-input')]
+        [
+          document.querySelector('.atwho-container'),
+          document.querySelector('.dz-hidden-input'),
+          document.querySelector('.comment-templates-modal'),
+        ]
           .filter(Boolean)
           .some((el) => el.contains(target))
       ) {
@@ -240,7 +244,7 @@ export default {
     placement="bottom-end"
     class="submit-review-dropdown"
     :class="{ 'submit-review-dropdown-animated': shouldAnimateReviewButton }"
-    data-testid="submit-review-dropdown"
+    data-testid="review-drawer-toggle"
     fluid-width
     @beforeClose="onBeforeClose"
     @shown="setDropdownVisible(true)"

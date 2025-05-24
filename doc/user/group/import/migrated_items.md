@@ -53,7 +53,7 @@ Group items that are migrated to the destination GitLab instance include:
 | Subgroups            | [GitLab 13.7](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/18938)  |
 | Uploads              | [GitLab 13.7](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/18938)  |
 
-**Footnotes:**
+**Footnotes**:
 
 1. State and state ID [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/28203) in GitLab 13.7.
    Label associations [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/62074) in GitLab 13.12.
@@ -74,9 +74,10 @@ Some group items are excluded from migration because they:
   - Deploy tokens
   - Webhooks
 - Are not supported:
-  - Push rules
+  - Custom fields
   - Iteration cadence settings
   - Pending member invitations
+  - Push rules
 
 ## Migrated project items
 
@@ -153,7 +154,7 @@ Project items that are migrated to the destination GitLab instance include:
 
 <!-- vale gitlab_base.OutdatedVersions = YES -->
 
-**Footnotes:**
+**Footnotes**:
 
 1. Imported branches respect the [default branch protection settings](../../project/repository/branches/protected.md) of the destination group.
    These settings might cause an unprotected branch to be imported as protected.
@@ -220,8 +221,8 @@ Setting-related project items that are migrated to the destination GitLab instan
 Some project items are excluded from migration because they:
 
 - Might contain sensitive information:
-  - CI/CD variables
   - CI/CD job logs
+  - CI/CD variables
   - Container registry images
   - Deploy keys
   - Deploy tokens
@@ -232,6 +233,14 @@ Some project items are excluded from migration because they:
   - Webhooks
 - Are not supported:
   - Agents
+  - Container registry
+  - Custom fields
+  - Environments
+  - Feature flags
+  - Infrastructure registry
+  - Instance administrators in branch protection rules when migrating
+    from GitLab Self-Managed to GitLab.com or GitLab Dedicated
+  - Linked issues
   - Merge request approval rules
 
     {{< alert type="note" >}}
@@ -240,11 +249,11 @@ Some project items are excluded from migration because they:
 
     {{< /alert >}}
 
-  - Container registry
-  - Environments
-  - Feature flags
-  - Infrastructure registry
+  - Merge request dependencies
   - Package registry
   - Pages domains
-  - Remote mirrors
   - Pending member invitations
+  - Remote mirrors
+- Do not contain recoverable data:
+  - Merge requests with no diff or source information
+    (for more information, see [issue 537943](https://gitlab.com/gitlab-org/gitlab/-/issues/537943))

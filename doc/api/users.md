@@ -12,8 +12,8 @@ title: Users API
 
 {{< /details >}}
 
-You can [manage your account](../user/profile/_index.md) and
-[manage other users](../user/profile/account/create_accounts.md) by using the REST API.
+Use this API to interact with user accounts on GitLab. These endpoints can help manage [your account](../user/profile/_index.md) or
+[accounts for other users](../administration/administer_users.md).
 
 ## List users
 
@@ -210,6 +210,7 @@ Example response:
     "linkedin": "",
     "twitter": "",
     "discord": "",
+    "github": "",
     "website_url": "",
     "organization": "",
     "job_title": "",
@@ -254,6 +255,7 @@ Example response:
     "linkedin": "",
     "twitter": "",
     "discord": "",
+    "github": "",
     "website_url": "",
     "organization": "",
     "job_title": "",
@@ -408,6 +410,7 @@ Example response:
   "linkedin": "",
   "twitter": "",
   "discord": "",
+  "github": "",
   "website_url": "",
   "organization": "",
   "job_title": "Operations Specialist",
@@ -469,6 +472,7 @@ Example response:
   "linkedin": "",
   "twitter": "",
   "discord": "",
+  "github": "",
   "website_url": "",
   "organization": "",
   "job_title": "Operations Specialist",
@@ -607,6 +611,7 @@ Example response:
   "linkedin": "",
   "twitter": "",
   "discord": "",
+  "github": "",
   "website_url": "",
   "organization": "",
   "job_title": "",
@@ -686,6 +691,7 @@ Supported attributes:
   "linkedin": "",
   "twitter": "",
   "discord": "",
+  "github": "",
   "website_url": "",
   "organization": "",
   "job_title": "",
@@ -804,6 +810,7 @@ Supported attributes:
 | `theme_id`                           | No       | GitLab theme for the user (for more information, see the [user preference documentation](../user/profile/preferences.md#change-the-color-theme) for more information) |
 | `twitter`                            | No       | X (formerly Twitter) account |
 | `discord`                            | No       | Discord account |
+| `github`                             | No       | GitHub username |
 | `username`                           | Yes      | Username    |
 | `view_diffs_file_by_file`            | No       | Flag indicating the user sees only one file diff per page |
 | `website_url`                        | No       | Website URL |
@@ -870,6 +877,7 @@ Supported attributes:
 | `theme_id`                           | No       | GitLab theme for the user (for more information, see the [user preference documentation](../user/profile/preferences.md#change-the-color-theme) for more information) |
 | `twitter`                            | No       | X (formerly Twitter) account |
 | `discord`                            | No       | Discord account |
+| `github`                             | No       | GitHub username |
 | `username`                           | No       | Username    |
 | `view_diffs_file_by_file`            | No       | Flag indicating the user sees only one file diff per page |
 | `website_url`                        | No       | Website URL |
@@ -992,6 +1000,7 @@ Supported attributes:
 |:---------------------|:-------|:---------|:------------|
 | `emoji`              | string | no       | Name of the emoji to use as status. If omitted `speech_balloon` is used. Emoji name can be one of the specified names in the [Gemojione index](https://github.com/bonusly/gemojione/blob/master/config/index.json). |
 | `message`            | string | no       | Message to set as a status. It can also contain emoji codes. Cannot exceed 100 characters. |
+| `availability`       | string | no       | The availability of the user. Possible values: `busy` and `not_set`. |
 | `clear_status_after` | string | no       | Automatically clean up the status after a given time interval, allowed values: `30_minutes`, `3_hours`, `8_hours`, `1_day`, `3_days`, `7_days`, `30_days` |
 
 Difference between `PUT` and `PATCH`:
@@ -1003,7 +1012,7 @@ Example request:
 
 ```shell
 curl --request PUT --header "PRIVATE-TOKEN: <your_access_token>" --data "clear_status_after=1_day" --data "emoji=coffee" \
-     --data "message=I crave coffee" "https://gitlab.example.com/api/v4/user/status"
+     --data "message=I crave coffee" --data "availability=busy" "https://gitlab.example.com/api/v4/user/status"
 ```
 
 Example response:
@@ -1011,6 +1020,7 @@ Example response:
 ```json
 {
   "emoji":"coffee",
+  "availability":"busy",
   "message":"I crave coffee",
   "message_html": "I crave coffee",
   "clear_status_at":"2021-02-15T10:49:01.311Z"
@@ -1383,7 +1393,7 @@ Prerequisites:
 
 - You must be an administrator or have the Owner role for the target namespace or project.
 - For `instance_type`, you must be an administrator of the GitLab instance.
-- For `group_type` or `project_type` with an Owner role, an administrator must not have enabled [restrict runner registration](../administration/settings/continuous_integration.md#restrict-runner-registration-by-all-users-in-an-instance).
+- For `group_type` or `project_type` with an Owner role, [runner registration](../administration/settings/continuous_integration.md#control-runner-registration) must be allowed.
 - An access token with the `create_runner` scope.
 
 Be sure to copy or save the `token` in the response, the value cannot be retrieved again.
@@ -1584,3 +1594,48 @@ Supported attributes:
 | Attribute              | Type     | Required | Description |
 |:-----------------------|:---------|:---------|:------------|
 | `id`             | integer   | yes       | ID of user account |
+
+## Revoke a Support PIN for a user
+
+{{< details >}}
+
+- Tier: Free, Premium, Ultimate
+- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
+
+{{< /details >}}
+
+{{< history >}}
+
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/187657)
+in GitLab 17.11.
+
+{{< /history >}}
+
+Revokes a Support PIN for the specified user before its natural expiration.
+This immediately expires and removes the PIN.
+
+Prerequisites:
+
+- You must be an administrator.
+
+```plaintext
+POST /users/:id/support_pin/revoke
+```
+
+Example request:
+
+```shell
+curl --request POST \
+  --header "PRIVATE-TOKEN: <your_access_token>" \
+  --url "https://gitlab.example.com/api/v4/users/1234/support_pin/revoke"
+```
+
+Example response:
+
+If successful, returns `202 Accepted`.
+
+Supported attributes:
+
+| Attribute    | Type      | Required | Description         |
+|:-------------|:----------|:---------|:--------------------|
+| `id`         | integer   | yes      | ID of a user  |

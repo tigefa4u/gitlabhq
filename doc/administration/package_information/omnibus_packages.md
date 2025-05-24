@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Build
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Packages and images from the Linux package
 ---
@@ -32,7 +32,7 @@ application is more complex and has multiple components. If these components are
 not present or are incorrectly configured, GitLab does not work or it works
 unpredictably.
 
-The [GitLab Architecture Overview](../../development/architecture.md) shows some of these components and how they
+The GitLab Architecture Overview in the GitLab development documentation shows some of these components and how they
 interact. Each of these components needs to be configured and kept up to date.
 
 Most of the components also have external dependencies. For example, the Rails

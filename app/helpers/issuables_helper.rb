@@ -135,20 +135,6 @@ module IssuablesHelper
     html.html_safe
   end
 
-  def assigned_issuables_count(issuable_type)
-    case issuable_type
-    when :issues
-      ::Users::AssignedIssuesCountService.new(
-        current_user: current_user,
-        max_limit: User::MAX_LIMIT_FOR_ASSIGNEED_ISSUES_COUNT
-      ).count
-    when :merge_requests
-      current_user.assigned_open_merge_requests_count
-    else
-      raise ArgumentError, "invalid issuable `#{issuable_type}`"
-    end
-  end
-
   def issuable_reference(issuable)
     @show_full_reference ? issuable.to_reference(full: true) : issuable.to_reference(@group || @project)
   end
@@ -408,7 +394,7 @@ module IssuablesHelper
   def new_comment_template_paths(group, project = nil)
     [{
       text: _('Your comment templates'),
-      href: profile_comment_templates_path
+      href: ::Gitlab::Routing.url_helpers.profile_comment_templates_path
     }]
   end
 end

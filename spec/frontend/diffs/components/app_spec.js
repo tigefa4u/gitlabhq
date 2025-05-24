@@ -12,7 +12,6 @@ import createMockApollo from 'helpers/mock_apollo_helper';
 import setWindowLocation from 'helpers/set_window_location_helper';
 import { mockTracking } from 'helpers/tracking_helper';
 import { TEST_HOST } from 'spec/test_constants';
-
 import App from '~/diffs/components/app.vue';
 import CommitWidget from '~/diffs/components/commit_widget.vue';
 import CompareVersions from '~/diffs/components/compare_versions.vue';
@@ -21,14 +20,11 @@ import NoChanges from '~/diffs/components/no_changes.vue';
 import FindingsDrawer from 'ee_component/diffs/components/shared/findings_drawer.vue';
 import DiffsFileTree from '~/diffs/components/diffs_file_tree.vue';
 import DiffAppControls from '~/diffs/components/diff_app_controls.vue';
-
 import CollapsedFilesWarning from '~/diffs/components/collapsed_files_warning.vue';
 import HiddenFilesWarning from '~/diffs/components/hidden_files_warning.vue';
-
 import eventHub from '~/diffs/event_hub';
 import notesEventHub from '~/notes/event_hub';
 import { EVT_DISCUSSIONS_ASSIGNED, FILE_BROWSER_VISIBLE } from '~/diffs/constants';
-
 import axios from '~/lib/utils/axios_utils';
 import { HTTP_STATUS_OK } from '~/lib/utils/http_status';
 import { Mousetrap } from '~/lib/mousetrap';
@@ -51,6 +47,7 @@ import {
   MR_PREVIOUS_FILE_IN_DIFF,
   MR_TOGGLE_REVIEW,
 } from '~/behaviors/shortcuts/keybindings';
+import { useNotes } from '~/notes/store/legacy_notes';
 import createDiffsStore from '../create_diffs_store';
 import diffsMockData from '../mock_data/merge_request_diffs';
 
@@ -78,17 +75,10 @@ describe('diffs/components/app', () => {
 
   const codeQualityAndSastQueryHandlerSuccess = jest.fn().mockResolvedValue({});
 
-  const createComponent = ({ props = {}, provisions = {} } = {}) => {
+  const createComponent = ({ props = {} } = {}) => {
     fakeApollo = createMockApollo([
       [getMRCodequalityAndSecurityReports, codeQualityAndSastQueryHandlerSuccess],
     ]);
-
-    const provide = {
-      ...provisions,
-      glFeatures: {
-        ...provisions.glFeatures,
-      },
-    };
 
     wrapper = shallowMount(App, {
       apolloProvider: fakeApollo,
@@ -102,7 +92,6 @@ describe('diffs/components/app', () => {
         changesEmptyStateIllustration: '',
         ...props,
       },
-      provide,
       store: createDiffsStore(),
       pinia,
     });
@@ -131,6 +120,8 @@ describe('diffs/components/app', () => {
     store.fetchDiffFilesMeta.mockResolvedValue({ real_size: '20' });
     store.fetchDiffFilesBatch.mockResolvedValue();
     store.assignDiscussionsToDiff.mockResolvedValue();
+
+    useNotes();
 
     stubPerformanceWebAPI();
     // setup globals (needed for component to mount :/)
@@ -628,6 +619,14 @@ describe('diffs/components/app', () => {
         createComponent();
         wrapper.findComponent(DiffsFileTree).vm.$emit('clickFile', file);
         expect(store.goToFile).toHaveBeenCalledWith({ path: file.path });
+      });
+
+      it('should handle toggleFolder events', () => {
+        const file = { path: '111.js' };
+        store.treeEntries = { 111: { type: 'blob', fileHash: '111', path: '111.js' } };
+        createComponent();
+        wrapper.findComponent(DiffsFileTree).vm.$emit('toggleFolder', file);
+        expect(store.toggleTreeOpen).toHaveBeenCalledWith(file);
       });
     });
   });

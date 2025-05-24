@@ -107,6 +107,8 @@ The secure stage is responsible for maintaining the following CI/CD Templates an
 
 Changes must always be made to both the CI/CD template _and_ component for your group, and you must also determine if the changes need to be applied to the _latest_ CI/CD template.
 
+Analyzers are also referenced in the [`Secure-Binaries.gitlab-ci.yml`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Security/Secure-Binaries.gitlab-ci.yml) file for [offline environments](../../user/application_security/offline_deployments/_index.md#using-the-official-gitlab-template). Ensure this file is also kept in sync when doing changes.
+
 ### Execution criteria
 
 [Enabling SAST](../../user/application_security/sast/_index.md#configure-sast-in-your-cicd-yaml) requires including a pre-defined [template](https://gitlab.com/gitlab-org/gitlab/-/blob/ee4d473eb9a39f2f84b719aa0ca13d2b8e11dc7e/lib/gitlab/ci/templates/Jobs/SAST.gitlab-ci.yml) to your GitLab CI/CD configuration.
@@ -320,6 +322,10 @@ The `GITLAB_TOKEN` for the [@gl-service-dev-secure-analyzers-automation](https:/
 
       The `ci-templates` project requires the `GITLAB_TOKEN` to allow certain scripts to execute API calls. This step can be removed after [allow JOB-TOKEN access to CI/lint endpoint](https://gitlab.com/gitlab-org/gitlab/-/issues/438781) has been completed.
 
+   1. `GITLAB_TOKEN` CI/CD variable for the [`gitlab-org/secure/tools/security-triage-automation`](https://gitlab.com/gitlab-org/secure/tools/security-triage-automation) project.
+
+      This must be explicitly configured because the `security-triage-automation` project is not nested under the `gitlab-org/security-products/analyzers` namespace, and therefore _does not inherit_ the `GITLAB_TOKEN` value.
+
    1. `SEC_REGISTRY_PASSWORD` CI/CD variable for [`gitlab-advanced-sast`](https://gitlab.com/gitlab-org/security-products/analyzers/gitlab-advanced-sast/-/settings/ci_cd#js-cicd-variables-settings).
 
       This allows our [tagging script](https://gitlab.com/gitlab-org/security-products/ci-templates/blob/cfe285a/scripts/tag_image.sh) to pull from the private container registry in the development project `registry.gitlab.com/gitlab-org/security-products/analyzers/<analyzer-name>/tmp`, and push to the publicly accessible container registry `registry.gitlab.com/security-products/<analyzer-name>`.
@@ -479,12 +485,12 @@ This is necessary to provide compatibility with Red Hat OpenShift instances,
 which don't allow containers to run as an admin (root) user.
 There are certain limitations to keep in mind when running a container as an unprivileged user,
 such as the fact that any files that need to be written on the Docker filesystem will require the appropriate permissions for the `GitLab` user.
-Please see the following merge request for more details:
+See the following merge request for more details:
 [Use GitLab user instead of root in Docker image](https://gitlab.com/gitlab-org/security-products/analyzers/gemnasium/-/merge_requests/130).
 
 #### Minimal vulnerability data
 
-Please see [our security-report-schemas](https://gitlab.com/gitlab-org/security-products/security-report-schemas/-/blob/master/src/security-report-format.json) for a full list of required fields.
+See [our security-report-schemas](https://gitlab.com/gitlab-org/security-products/security-report-schemas/-/blob/master/src/security-report-format.json) for a full list of required fields.
 
 The [security-report-schema](https://gitlab.com/gitlab-org/security-products/security-report-schemas) repository contains JSON schemas that list the required fields for each report type:
 
@@ -660,9 +666,9 @@ The analyzer images are rebuilt on a daily basis to ensure that we frequently an
 
 This process only applies to the images used in versions of GitLab matching the current MAJOR release. The intent is not to release a newer version each day but rather rebuild each active variant of an image and overwrite the corresponding tags:
 
-- the `MAJOR.MINOR.PATCH` image tag (e.g.: `4.1.7`)
-- the `MAJOR.MINOR` image tag(e.g.: `4.1`)
-- the `MAJOR` image tag (e.g.: `4`)
+- the `MAJOR.MINOR.PATCH` image tag (for example: `4.1.7`)
+- the `MAJOR.MINOR` image tag(for example: `4.1`)
+- the `MAJOR` image tag (for example: `4`)
 - the `latest` image tag
 
 The implementation of the rebuild process may vary [depending on the project](../../user/application_security/detect/vulnerability_scanner_maintenance.md), though a shared CI configuration is available in our [development ci-templates project](https://gitlab.com/gitlab-org/security-products/ci-templates/-/blob/master/includes-dev/docker.yml) to help achieving this.

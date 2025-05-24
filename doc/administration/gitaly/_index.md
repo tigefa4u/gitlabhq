@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Data Access
 group: Gitaly
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Gitaly and Gitaly Cluster
@@ -12,7 +12,7 @@ title: Gitaly and Gitaly Cluster
 
 {{< /details >}}
 
-[Gitaly](https://gitlab.com/gitlab-org/gitaly) provides high-level RPC access to Git repositories.
+[Gitaly](https://gitlab.com/gitlab-org/gitaly) provides high-level remote procedure call (RPC) access to Git repositories.
 It is used by GitLab to read and write Git data.
 
 Gitaly is present in every GitLab installation and coordinates Git repository
@@ -65,7 +65,7 @@ If you have not yet migrated to Gitaly Cluster, you have two options:
 - A sharded Gitaly instance.
 - Gitaly Cluster.
 
-Contact your [Customer Success Manager](https://handbook.gitlab.com/job-families/sales/customer-success-management/) or customer support if you have any questions.
+Contact your Customer Success Manager or customer support if you have any questions.
 
 ### Known issues
 
@@ -265,14 +265,14 @@ In this example:
 
 The availability objectives for Gitaly clusters assuming a single node failure are:
 
-- **Recovery Point Objective (RPO):** Less than 1 minute.
+- Recovery Point Objective (RPO): Less than 1 minute.
 
   Writes are replicated asynchronously. Any writes that have not been replicated
   to the newly promoted primary are lost.
 
   [Strong consistency](#strong-consistency) prevents loss in some circumstances.
 
-- **Recovery Time Objective (RTO):** Less than 10 seconds.
+- Recovery Time Objective (RTO): Less than 10 seconds.
   Outages are detected by a health check run by each Praefect node every
   second. Failover requires ten consecutive failed health checks on each
   Praefect node.
@@ -587,7 +587,7 @@ To downgrade a Gitaly Cluster (assuming multiple Praefect nodes):
    ```
 
 1. Count the number of migrations with `unknown migration` in the `APPLIED` column.
-1. On a Praefect node that has **not** been downgraded, perform a dry run of the rollback to validate which migrations to revert. `<CT_UNKNOWN>`
+1. On a Praefect node that has not been downgraded, perform a dry run of the rollback to validate which migrations to revert. `<CT_UNKNOWN>`
    is the number of unknown migrations reported by the downgraded node.
 
    ```shell
@@ -640,17 +640,3 @@ off Gitaly Cluster to a sharded Gitaly instance:
 1. Create and configure a new [Gitaly server](configure_gitaly.md#run-gitaly-on-its-own-server).
 1. [Move the repositories](../operations/moving_repositories.md#moving-repositories) to the newly created storage. You can
    move them by shard or by group, which gives you the opportunity to spread them over multiple Gitaly servers.
-
-### Transition to Gitaly Cluster
-
-For the sake of removing complexity, we must remove direct Git access in GitLab. However, we can't
-remove it as long some GitLab installations require Git repositories on NFS.
-
-Two facets of our efforts to remove direct Git access in GitLab are:
-
-- Reduce the number of inefficient Gitaly queries made by GitLab.
-- Persuade administrators of fault-tolerant or horizontally-scaled GitLab instances to migrate off
-  NFS.
-
-The second facet presents the only real solution. For this, we developed
-[Gitaly Cluster](#gitaly-cluster).

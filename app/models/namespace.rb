@@ -13,20 +13,20 @@ class Namespace < ApplicationRecord
   include Namespaces::Traversal::Recursive
   include Namespaces::Traversal::Linear
   include Namespaces::Traversal::Cached
+  include Namespaces::AdjournedDeletable
   include EachBatch
   include BlocksUnsafeSerialization
   include Ci::NamespaceSettings
   include Referable
-  include CrossDatabaseIgnoredTables
   include UseSqlFunctionForPrimaryKeyLookups
   include SafelyChangeColumnDefault
   include Todoable
 
-  ignore_column :unlock_membership_to_ldap, remove_with: '16.7', remove_after: '2023-11-16'
+  extend Gitlab::Utils::Override
 
-  cross_database_ignore_tables %w[routes redirect_routes], url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/424277'
+  ignore_column :unlock_membership_to_ldap, remove_with: '18.1', remove_after: '2025-05-20'
 
-  ignore_column :emails_disabled, remove_with: '17.0', remove_after: '2024-04-24'
+  ignore_column :emails_disabled, remove_with: '18.1', remove_after: '2025-05-20'
 
   columns_changing_default :organization_id
 
@@ -118,6 +118,7 @@ class Namespace < ApplicationRecord
 
   has_many :bot_user_details, class_name: 'UserDetail', foreign_key: 'bot_namespace_id', inverse_of: :bot_namespace
   has_many :bot_users, through: :bot_user_details, source: :user
+  has_one :placeholder_user_detail, class_name: 'Import::PlaceholderUserDetail'
 
   validates :owner, presence: true, if: ->(n) { n.owner_required? }
   validates :organization, presence: true
@@ -165,43 +166,40 @@ class Namespace < ApplicationRecord
 
   delegate :name, to: :owner, allow_nil: true, prefix: true
   delegate :avatar_url, to: :owner, allow_nil: true
-  delegate :prevent_sharing_groups_outside_hierarchy, :prevent_sharing_groups_outside_hierarchy=,
-    to: :namespace_settings, allow_nil: true
-  delegate :show_diff_preview_in_email, :show_diff_preview_in_email?, :show_diff_preview_in_email=,
-    to: :namespace_settings
-  delegate :runner_registration_enabled, :runner_registration_enabled?, :runner_registration_enabled=,
-    to: :namespace_settings
-  delegate :emails_enabled, :emails_enabled=,
-    to: :namespace_settings, allow_nil: true
-  delegate :allow_runner_registration_token,
-    :allow_runner_registration_token=,
-    to: :namespace_settings
+
   delegate :maven_package_requests_forwarding,
     :pypi_package_requests_forwarding,
     :npm_package_requests_forwarding,
     to: :package_settings
-  delegate :default_branch_protection_defaults, to: :namespace_settings, allow_nil: true
-  delegate :archived, :archived=, to: :namespace_settings, allow_nil: true
-  delegate :math_rendering_limits_enabled,
-    :lock_math_rendering_limits_enabled,
-    to: :namespace_settings, allow_nil: true
-  delegate :math_rendering_limits_enabled?,
-    :lock_math_rendering_limits_enabled?,
-    to: :namespace_settings
+
   delegate :add_creator, :deleted_at, :deleted_at=,
-    to: :namespace_details
-  delegate :resource_access_token_notify_inherited,
-    :resource_access_token_notify_inherited=,
-    :lock_resource_access_token_notify_inherited,
-    :lock_resource_access_token_notify_inherited=,
-    :resource_access_token_notify_inherited?,
-    :resource_access_token_notify_inherited_locked?,
-    :resource_access_token_notify_inherited_locked_by_ancestor?,
-    :resource_access_token_notify_inherited_locked_by_application_setting?,
-    to: :namespace_settings
-  delegate :jwt_ci_cd_job_token_enabled?,
-    :job_token_policies_enabled?,
-    to: :namespace_settings
+    to: :namespace_details, allow_nil: true
+
+  with_options to: :namespace_settings do
+    delegate :show_diff_preview_in_email, :show_diff_preview_in_email?, :show_diff_preview_in_email=
+    delegate :runner_registration_enabled, :runner_registration_enabled?, :runner_registration_enabled=
+    delegate :allow_runner_registration_token, :allow_runner_registration_token=
+    delegate :math_rendering_limits_enabled?, :lock_math_rendering_limits_enabled?
+    delegate :resource_access_token_notify_inherited,
+      :resource_access_token_notify_inherited=,
+      :lock_resource_access_token_notify_inherited,
+      :lock_resource_access_token_notify_inherited=,
+      :resource_access_token_notify_inherited?,
+      :resource_access_token_notify_inherited_locked?,
+      :resource_access_token_notify_inherited_locked_by_ancestor?,
+      :resource_access_token_notify_inherited_locked_by_application_setting?
+    delegate :jwt_ci_cd_job_token_enabled?, :job_token_policies_enabled?
+
+    with_options allow_nil: true do
+      delegate :prevent_sharing_groups_outside_hierarchy, :prevent_sharing_groups_outside_hierarchy=
+      delegate :default_branch_protection_defaults
+      delegate :archived, :archived=
+      delegate :math_rendering_limits_enabled, :lock_math_rendering_limits_enabled
+      delegate :emails_enabled, :emails_enabled=
+      delegate :web_based_commit_signing_enabled?, :lock_web_based_commit_signing_enabled?
+      delegate :web_based_commit_signing_enabled, :lock_web_based_commit_signing_enabled
+    end
+  end
 
   before_create :sync_share_with_group_lock_with_parent
   before_update :sync_share_with_group_lock_with_parent, if: :parent_changed?
@@ -389,15 +387,23 @@ class Namespace < ApplicationRecord
   end
 
   def archive
-    return false if namespace_settings.archived?
+    return false if archived?
 
     namespace_settings.update(archived: true)
   end
 
   def unarchive
-    return false unless namespace_settings.archived?
+    return false unless archived?
 
     namespace_settings.update(archived: false)
+  end
+
+  def archived?
+    !!namespace_settings&.archived?
+  end
+
+  def self_or_ancestor_archived?
+    self_and_ancestors.archived.exists?
   end
 
   def to_reference_base(from = nil, full: false, absolute_path: false)
@@ -781,7 +787,9 @@ class Namespace < ApplicationRecord
     Gitlab::UrlBuilder.build(self, only_path: only_path)
   end
 
-  def deleted?
+  # Overriding of Namespaces::AdjournedDeletable method
+  override :self_deletion_in_progress?
+  def self_deletion_in_progress?
     !!deleted_at
   end
 

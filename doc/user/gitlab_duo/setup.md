@@ -2,6 +2,7 @@
 stage: AI-powered
 group: AI Framework
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+description: Ensure GitLab Duo is configured and operating correctly.
 title: Configure GitLab Duo on a GitLab Self-Managed instance
 gitlab_dedicated: no
 ---
@@ -111,7 +112,10 @@ These tests are performed:
 | Test | Description |
 |-----------------|-------------|
 | Network | Tests whether your instance can connect to `customers.gitlab.com` and `cloud.gitlab.com`.<br><br>If your instance cannot connect to either destination, ensure that your firewall or proxy server settings [allow connection](setup.md). |
-| Synchronization | Tests whether your subscription: <br>- Has been activated with an activation code and can be synchronized with `customers.gitlab.com`.<br>- Has correct access credentials.<br>- Has been synchronized recently. If it hasn't or the access credentials are missing or expired, you can [manually synchronize](../../subscriptions/self_managed/_index.md#manually-synchronize-subscription-data) your subscription data. |
+| Synchronization | Tests whether your subscription: <br>- Has been activated with an activation code and can be synchronized with `customers.gitlab.com`.<br>- Has correct access credentials.<br>- Has been synchronized recently. If it hasn't or the access credentials are missing or expired, you can [manually synchronize](../../subscriptions/manage_subscription.md#manually-synchronize-subscription-data) your subscription data. |
 | System exchange | Tests whether Code Suggestions can be used in your instance. If the system exchange assessment fails, users might not be able to use GitLab Duo features. |
 
-If you are experiencing any issues with the health check, see [GitLab Duo Self-Hosted troubleshooting](../../administration/gitlab_duo_self_hosted/troubleshooting.md#gitlab-duo-health-check-is-not-working).
+If you are experiencing any issues with the health check for:
+
+- GitLab-hosted Duo, see the [troubleshooting page](troubleshooting.md).
+- GitLab Duo Self-Hosted, see the [troubleshooting section](../../administration/gitlab_duo_self_hosted/troubleshooting.md#gitlab-duo-health-check-is-not-working).

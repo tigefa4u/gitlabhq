@@ -70,10 +70,10 @@ describe('WorkItemDescription', () => {
     workItemResponseHandler = jest.fn().mockResolvedValue(workItemResponse),
     isEditing = false,
     isGroup = false,
+    newWorkItemType = workItemQueryResponse.data.workItem.workItemType.name,
     workItemId = workItemQueryResponse.data.workItem.id,
     workItemIid = '1',
     workItemTypeId = workItemQueryResponse.data.workItem.workItemType.id,
-    workItemTypeName = workItemQueryResponse.data.workItem.workItemType.name,
     editMode = false,
     showButtonsBelowField,
     descriptionTemplateHandler = successfulTemplateHandler,
@@ -97,7 +97,7 @@ describe('WorkItemDescription', () => {
         workItemId,
         workItemIid,
         workItemTypeId,
-        workItemTypeName,
+        newWorkItemType,
         editMode,
         showButtonsBelowField,
         isCreateFlow,
@@ -400,6 +400,28 @@ describe('WorkItemDescription', () => {
           expect(findDescriptionTemplateWarning().exists()).toBe(true);
           expect(findCancelApplyTemplate().exists()).toBe(true);
           expect(findApplyTemplate().exists()).toBe(true);
+        });
+
+        it('does not display a warning when a description is pre-populated in create mode', async () => {
+          // Mimic component mount with a pre-populated description
+          await createComponent({
+            editMode: true,
+            workItemResponseHandler: jest
+              .fn()
+              .mockResolvedValue(
+                workItemByIidResponseFactory({ description: 'Pre-filled description' }),
+              ),
+            workItemId: newWorkItemId(workItemQueryResponse.data.workItem.workItemType.name),
+          });
+          await nextTick();
+          await waitForPromises();
+
+          expect(findDescriptionTemplateWarning().exists()).toBe(false);
+          expect(findCancelApplyTemplate().exists()).toBe(false);
+          expect(findApplyTemplate().exists()).toBe(false);
+
+          // No template is selected when description is pre-filled
+          expect(findDescriptionTemplateListbox().props('template')).toBeNull();
         });
 
         it('hides the warning when the cancel button is clicked', async () => {

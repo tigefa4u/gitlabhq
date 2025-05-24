@@ -8,6 +8,8 @@ module Types
 
     implements ::Types::Namespaces::GroupInterface
 
+    connection_type_class Types::CountableConnectionType
+
     authorize :read_group
 
     expose_permissions Types::PermissionTypes::Group
@@ -476,9 +478,9 @@ module Types
     end
 
     def permanent_deletion_date
-      return unless group.adjourned_deletion_configured?
+      return unless group.adjourned_deletion?
 
-      permanent_deletion_date_formatted(Date.current)
+      permanent_deletion_date_formatted
     end
 
     private

@@ -25,9 +25,10 @@ The GitLab documentation is the SSoT for all product information related to impl
 use, and troubleshooting. The documentation evolves continuously. It is updated with
 new products and features, and with improvements for clarity, accuracy, and completeness.
 
-This policy prevents information silos, making it easier to find information
-about GitLab products. It also informs decisions about the kinds of content
-included in the documentation.
+This policy:
+
+- Prevents information silos and makes it easier to find information about GitLab products.
+- Does not mean that content cannot be duplicated in multiple places in the documentation.
 
 ## Topic types
 
@@ -141,6 +142,35 @@ Do not add an `H1` heading in Markdown, as there can be only one per page.
 - If you use code in topic titles, ensure the code is in backticks.
 - Do not use bold text in topic titles.
 
+### Description lists in Markdown
+
+To define terms, use [description lists](../../../user/markdown.md#description-lists).
+
+```markdown
+Term 1
+: Definition of Term 1
+
+Term 2
+: Definition of Term 2
+```
+
+These lists render like this:
+
+Term 1
+: Definition of Term 1
+
+Term 2
+: Definition of Term 2
+
+You can also use description lists to differentiate between options.
+For example:
+
+On GitLab Self-Managed
+: This feature works this way.
+
+On GitLab.com
+: This feature works this way.
+
 ### Shortcodes
 
 [Shortcodes](https://gohugo.io/content-management/shortcodes/) are snippets of template code that we can include in our Markdown content to display non-standard elements on a page, such as alert boxes or tabs.
@@ -157,6 +187,7 @@ GitLab documentation uses the following shortcodes:
 - [Version history](availability_details.md#history)
 - [Icons](#gitlab-svg-icons)
 - [Tabs](#tabs)
+- [Cards](#cards)
 
 ## Language
 
@@ -322,17 +353,17 @@ documentation even if the probability of a token being exploited is low.
 
 Use these fake tokens as examples:
 
-| Token type            | Token value                                                        |
-|:----------------------|:-------------------------------------------------------------------|
-| Personal access token | `<your_access_token>`                                             |
+| Token type            | Token value |
+|:----------------------|:------------|
+| Personal access token | `<your_access_token>` |
 | Application ID        | `2fcb195768c39e9a94cec2c2e32c59c0aad7a3365c10892e8116b5d83d4096b6` |
 | Application secret    | `04f294d1eaca42b8692017b426d53bbc8fe75f827734f0260710b83a556082df` |
-| CI/CD variable        | `Li8j-mLUVA3eZYjPfd_H`                                             |
-| Project runner token  | `yrnZW46BrtBFqM7xDzE7dddd`                                         |
-| Instance runner token | `6Vk7ZsosqQyfreAxXTZr`                                             |
-| Trigger token         | `be20d8dcc028677c931e04f3871a9b`                                   |
-| Webhook secret token  | `6XhDroRcYPM5by_h-HLY`                                             |
-| Health check token    | `Tu7BgjR9qeZTEyRzGG2P`                                             |
+| CI/CD variable        | `Li8j-mLUVA3eZYjPfd_H` |
+| Project runner token  | `yrnZW46BrtBFqM7xDzE7dddd` |
+| Instance runner token | `6Vk7ZsosqQyfreAxXTZr` |
+| Trigger token         | `be20d8dcc028677c931e04f3871a9b` |
+| Webhook secret token  | `6XhDroRcYPM5by_h-HLY` |
+| Health check token    | `Tu7BgjR9qeZTEyRzGG2P` |
 
 ### Contractions
 
@@ -344,12 +375,12 @@ Some contractions, however, should be avoided:
 
 <!-- vale gitlab_base.Possessive = NO -->
 
-| Do not use a contraction      | Example                                          | Use instead                                                      |
-|-------------------------------|--------------------------------------------------|------------------------------------------------------------------|
-| With a proper noun and a verb | **Terraform's** a helpful tool.                  | **Terraform** is a helpful tool.                                  |
-| To emphasize a negative       | **Don't** install X with Y.                      | **Do not** install X with Y.                                     |
-| In reference documentation    | **Don't** set a limit.                           | **Do not** set a limit.                                          |
-| In error messages             | Requests to localhost **aren't** allowed.        | Requests to localhost **are not** allowed.                       |
+| Do not use a contraction      | Example                                   | Use instead |
+|-------------------------------|-------------------------------------------|-------------|
+| With a proper noun and a verb | **Terraform's** a helpful tool.           | **Terraform** is a helpful tool. |
+| To emphasize a negative       | **Don't** install X with Y.               | **Do not** install X with Y. |
+| In reference documentation    | **Don't** set a limit.                    | **Do not** set a limit. |
+| In error messages             | Requests to localhost **aren't** allowed. | Requests to localhost **are not** allowed. |
 
 <!-- vale gitlab_base.Possessive = YES -->
 
@@ -378,9 +409,9 @@ These constructions are more casual than the alternatives:
 
 If you use an acronym, spell it out on first use on a page. You do not need to spell it out more than once on a page.
 
-- **Titles:** Try to avoid acronyms in topic titles, especially if the acronym is not widely used.
-- **Plurals:** Try not to make acronyms plural. For example, use `YAML files`, not `YAMLs`. If you must make an acronym plural, do not use an apostrophe. For example, use `APIs`, not `API's`.
-- **Possessives:** Use caution when making an acronym possessive. If possible,
+- **Titles**: Try to avoid acronyms in topic titles, especially if the acronym is not widely used.
+- **Plurals**: Try not to make acronyms plural. For example, use `YAML files`, not `YAMLs`. If you must make an acronym plural, do not use an apostrophe. For example, use `APIs`, not `API's`.
+- **Possessives**: Use caution when making an acronym possessive. If possible,
   write the sentence to avoid making the acronym possessive. If you must make the
   acronym possessive, consider spelling out the words.
 
@@ -409,7 +440,7 @@ For numbers in text, spell out zero through nine and use numbers for 10 and grea
 To make the source content easy to read, and to more easily compare diffs,
 follow these best practices when possible.
 
-- Split long lines at approximately 100 characters.
+- Split long lines at approximately 100 characters. (Exception: Do not split links.)
 - Start each new sentence on a new line.
 
 ### Comments
@@ -743,6 +774,10 @@ To make tables easier to maintain:
   | Setting 3 | `0`     | Another short description. |
   ```
 
+Always align the delimiter (second) row of the table with the header (first) row.
+Avoid using shortened delimiter rows like `|-|-|-|` or `|--|--|`.
+If a large table does not auto-format well, you should still align the delimiter row with the header row.
+
 ### Editor extensions for table formatting
 
 To ensure consistent table formatting across all Markdown files, consider formatting your tables
@@ -773,7 +808,8 @@ plugin, but it does not have a **Follow header row length** setting.
 
 ### Updates to existing tables
 
-When you add or edit rows in an existing table, the cells in the new rows might be wider.
+When you add or edit rows in an existing table, some rows might not be aligned anymore.
+You do not need to realign the entire table if only changing a few rows.
 If you realign the columns to account for the width, the diff becomes difficult to read,
 because the entire table shows as modified.
 
@@ -791,9 +827,9 @@ When creating tables of lists of features (such the features
 available to each role on the [Permissions](../../../user/permissions.md#project-members-permissions)
 page), use these phrases:
 
-| Option | Markdown                 | Displayed result       |
-|--------|--------------------------|------------------------|
-| No     | `{{</* icon name="dash-circle" */>}} No` | {{< icon name="dash-circle" >}} No |
+| Option | Markdown                                          | Displayed result |
+|--------|---------------------------------------------------|------------------|
+| No     | `{{</* icon name="dash-circle" */>}} No`          | {{< icon name="dash-circle" >}} No |
 | Yes    | `{{</* icon name="check-circle-filled" */>}} Yes` | {{< icon name="check-circle-filled" >}} Yes |
 
 Do not use these SVG icons in API documentation.
@@ -815,20 +851,20 @@ Put the tag at the end of the sentence. Leave one space between the sentence and
 For example:
 
 ```markdown
-| App name | Description                    |
-|:---------|:-------------------------------|
+| App name | Description |
+|:---------|:------------|
 | App A    | Description text. <sup>1</sup> |
 | App B    | Description text. <sup>2</sup> |
 ```
 
 When you add a footnote, do not re-sort the existing tags in the table.
 
-For the footnotes below the table, use `**Footnotes:**` followed by an ordered list.
+For the footnotes below the table, use `**Footnotes**:` followed by an ordered list.
 
 For example:
 
 ```markdown
-**Footnotes:**
+**Footnotes**:
 
 1. This is the first footnote.
 1. This is the second footnote.
@@ -836,12 +872,12 @@ For example:
 
 The table and footnotes would render as follows:
 
-| App name | Description                    |
-|:---------|:-------------------------------|
+| App name | Description |
+|:---------|:------------|
 | App A    | Description text. <sup>1</sup> |
 | App B    | Description text. <sup>2</sup> |
 
-**Footnotes:**
+**Footnotes**:
 
 1. This is the first footnote.
 1. This is the second footnote.
@@ -853,7 +889,7 @@ use consecutive numbers for the list items.
 If you use consecutive numbers, you must disable Markdown rule `029`:
 
 ```markdown
-**Footnotes:**
+**Footnotes**:
 
 <!-- Disable ordered list rule https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md#md029---ordered-list-item-prefix -->
 <!-- markdownlint-disable MD029 -->
@@ -869,13 +905,14 @@ If you use consecutive numbers, you must disable Markdown rule `029`:
 
 ## Links
 
-Links help the docs adhere to the
-[single source of truth](#documentation-is-the-single-source-of-truth-ssot) principle.
+Links are an important way to help readers find what they need.
 
-However, you should avoid putting too many links on any page. Too many links can hinder readability.
+However, most content is found by searching, and you should avoid putting too many links on any page.
+Too many links can hinder readability.
 
 - Do not duplicate links on the same page. For example, on **Page A**, do not link to **Page B** multiple times.
 - Do not use links in headings. Headings that contain links cause errors.
+- Do not use a hard line wrap between any words in a link.
 - Avoid multiple links in a single paragraph.
 - Avoid multiple links in a single task.
 - On any one page, try not to use more than 15 links to other pages.
@@ -909,11 +946,17 @@ To link to another documentation (`.md`) file in the same repository:
 - Use an inline link with a relative file path. For example, `[GitLab.com settings](../user/gitlab_com/_index.md)`.
 - Put the entire link on a single line, even if the link is very long. ([Vale](../testing/vale.md) rule: [`MultiLineLinks.yml`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/.vale/gitlab_base/MultiLineLinks.yml)).
 
+{{< alert type="note" >}}
+
+In the GitLab repository, do not link to the `/development` directory from any other directory.
+
+{{< /alert >}}
+
 To link to a file outside of the documentation files, for example to link from development
 documentation to a specific code file:
 
 - Use a full URL. For example: ``[`app/views/help/show.html.haml`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/app/views/help/show.html.haml)``
-- (Optional) Use a full URL with a specific ref. For example: ``[`app/views/help/show.html.haml`](https://gitlab.com/gitlab-org/gitlab/-/blob/6d01aa9f1cfcbdfa88edf9d003bd073f1a6fff1d/app/views/help/show.html.haml)``
+- Optional. Use a full URL with a specific ref. For example: ``[`app/views/help/show.html.haml`](https://gitlab.com/gitlab-org/gitlab/-/blob/6d01aa9f1cfcbdfa88edf9d003bd073f1a6fff1d/app/views/help/show.html.haml)``
 
 ### Links in separate repositories
 
@@ -1003,6 +1046,11 @@ Sometimes links are required. They might clarify troubleshooting steps or help p
 Sometimes they are more precise and will be maintained more actively.
 
 For each external link you add, weigh the customer benefit with the maintenance difficulties.
+
+### Links to handbook
+
+Limit links to the handbook. Some links are unavoidable, like licensing terms, data usage and access policies,
+testing agreements, and terms and conditions.
 
 ### Confidential or restricted access links
 
@@ -1387,7 +1435,7 @@ if you were helping someone read and interact with the page and they couldn't se
 
 Do:
 
-`![A runner sending a request to the Docker API](img/document_image_title_vX_Y.png)`
+`![A runner sending a request to the Docker API.](img/document_image_title_vX_Y.png)`
 
 Do not:
 
@@ -1399,9 +1447,7 @@ When writing alt text:
   Screen readers typically stop reading after this many characters.
 - If the image has complex information like a workflow diagram, use short alt text
   to identify the image and include detailed information in the text.
-- Use punctuation.
-- Do not use a period if the text is not a full sentence.
-- Use a period after every full sentence.
+- Use a period at the end of the string, whether it's a sentence or not.
 - Use sentence case and avoid using all caps.
   Some screen readers read capitals as individual letters.
 - Do not use phrases like **Image of** or **Graphic of**.
@@ -1481,15 +1527,15 @@ GUI diagramming tools can help authors overcome Mermaid's complexity and layout 
 the preferred GUI tool because, when using the editor, both the diagram and its definition are
 stored in the SVG file, so it can be easily edited. Draw.io is also integrated with the GitLab wiki.
 
-| Feature| Mermaid | Draw.io |
-|--------|---------|---------|
-| **Editor required** | Text editor | Draw.io editor |
-| **WYSIWYG editing** | {{< icon name="dash-circle" >}} No | {{< icon name="check-circle-filled" >}} Yes |
-| **Text content findable by `grep`** | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="dash-circle" >}} No |
-| **Appearance controlled by** | Web site's CSS | Diagram's author |
-| **File format** | SVG | SVG |
+| Feature                                   | Mermaid                                                                 | Draw.io |
+|-------------------------------------------|-------------------------------------------------------------------------|---------|
+| **Editor required**                       | Text editor                                                             | Draw.io editor |
+| **WYSIWYG editing**                       | {{< icon name="dash-circle" >}} No                                      | {{< icon name="check-circle-filled" >}} Yes |
+| **Text content findable by `grep`**       | {{< icon name="check-circle-filled" >}} Yes                             | {{< icon name="dash-circle" >}} No |
+| **Appearance controlled by**              | Web site's CSS                                                          | Diagram's author |
+| **File format**                           | SVG                                                                     | SVG     |
 | **VS Code integration (with extensions)** | {{< icon name="check-circle-filled" >}} Yes (Preview and local editing) | {{< icon name="check-circle-filled" >}} Yes (Preview and local editing) |
-| **Generated dynamically** | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="dash-circle" >}} No |
+| **Generated dynamically**                 | {{< icon name="check-circle-filled" >}} Yes                             | {{< icon name="dash-circle" >}} No |
 
 #### Guidelines
 
@@ -1931,6 +1977,27 @@ For more information, see [issue 225](https://gitlab.com/gitlab-org/technical-wr
 
 See [Pajamas](https://design.gitlab.com/components/tabs/#guidelines) for more
 details on tabs.
+
+## Cards
+
+Use cards to create landing pages with links to sub-pages.
+
+To create a set of cards, follow this example:
+
+```markdown
+{{</* cards */>}}
+
+- [The first page](first_page.md)
+- [Another page](another/page.md)
+- [One more page](one_more.md)
+
+{{</* /cards */>}}
+```
+
+Cards render only on the GitLab documentation site (`https://docs.gitlab.com`).
+In the GitLab product help, a set of cards appears as an unordered list of links.
+
+Card descriptions are populated from the `description` metadata on the Markdown page headers.
 
 ## Plagiarism
 

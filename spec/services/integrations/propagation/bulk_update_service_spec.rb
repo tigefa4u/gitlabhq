@@ -73,7 +73,10 @@ RSpec.describe Integrations::Propagation::BulkUpdateService, feature_category: :
 
     context 'with integration with data fields' do
       let(:excluded_attributes) do
-        %w[id integration_id created_at updated_at encrypted_properties encrypted_properties_iv]
+        %w[
+          id integration_id created_at updated_at encrypted_properties encrypted_properties_iv
+          group_id project_id
+        ]
       end
 
       it 'updates the data fields from the integration', :aggregate_failures do
@@ -274,6 +277,23 @@ RSpec.describe Integrations::Propagation::BulkUpdateService, feature_category: :
         team_id: group_slack_integration.team_id,
         authorized_scope_names: group_slack_integration.authorized_scope_names
       )
+    end
+
+    describe 'propagation from instance integration' do
+      let_it_be(:instance_integration) { create(:jira_integration, :instance) }
+
+      let_it_be(:integration) do
+        create(:jira_integration, project: create(:project), inherit_from_id: instance_integration.id)
+      end
+
+      it 'does not propagate organization' do
+        batch = Integration.id_in([integration])
+
+        described_class.new(integration.reload, batch).execute
+
+        expect(instance_integration.organization).not_to be_nil
+        expect(integration.reload.organization).to be_nil
+      end
     end
   end
 end

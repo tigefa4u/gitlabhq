@@ -7,6 +7,7 @@ fragment WorkItemNote on Note {
   bodyHtml
   system
   internal
+  imported
   systemNoteIconName
   createdAt
   lastEditedAt
@@ -17,15 +18,6 @@ fragment WorkItemNote on Note {
   lastEditedBy {
     ...User
     webPath
-  }
-  discussion {
-    id
-    resolved
-    resolvable
-    resolvedBy {
-      id
-      name
-    }
   }
   author {
     ...User
@@ -38,10 +30,8 @@ fragment WorkItemNote on Note {
   userPermissions {
     adminNote
     awardEmoji
-    readNote
     createNote
     resolveNote
-    repositionNote
   }
   systemNoteMetadata {
     id

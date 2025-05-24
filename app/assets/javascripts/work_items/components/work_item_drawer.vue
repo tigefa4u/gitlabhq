@@ -4,6 +4,7 @@ import { __ } from '~/locale';
 import deleteWorkItemMutation from '~/work_items/graphql/delete_work_item.mutation.graphql';
 import glFeatureFlagMixin from '~/vue_shared/mixins/gl_feature_flags_mixin';
 import { TYPE_EPIC, TYPE_ISSUE } from '~/issues/constants';
+import { getContentWrapperHeight } from '~/lib/utils/dom_utils';
 import {
   DETAIL_VIEW_QUERY_PARAM_NAME,
   DETAIL_VIEW_DESIGN_VERSION_PARAM_NAME,
@@ -61,6 +62,11 @@ export default {
       required: false,
       default: () => [],
     },
+    isBoard: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   data() {
     return {
@@ -84,6 +90,9 @@ export default {
         (this.glFeatures.workItemViewForIssues ||
           (this.glFeatures.workItemsViewPreference && gon.current_user_use_work_items_view))
       );
+    },
+    getDrawerHeight() {
+      return `calc(${getContentWrapperHeight()} + var(--top-bar-height))`;
     },
   },
   watch: {
@@ -138,6 +147,7 @@ export default {
       e.preventDefault();
       const shouldRouterNav =
         !this.preventRouterNav &&
+        !this.isBoard &&
         this.$router &&
         canRouterNav({
           fullPath: this.fullPath,
@@ -171,6 +181,16 @@ export default {
       });
     },
     handleClose(isClickedOutside) {
+      /* Do not close when a modal is open, or when the user is focused in an editor/input.
+       */
+      if (
+        document.body.classList.contains('modal-open') ||
+        document.activeElement?.closest('.js-editor') != null ||
+        document.activeElement.classList.contains('gl-form-input')
+      ) {
+        return;
+      }
+
       updateHistory({
         url: removeParams([DETAIL_VIEW_QUERY_PARAM_NAME, DETAIL_VIEW_DESIGN_VERSION_PARAM_NAME]),
       });
@@ -233,6 +253,9 @@ export default {
     '.modal-content',
     '#create-merge-request-modal',
     '#b-toaster-bottom-left',
+    '.js-tanuki-bot-chat-toggle',
+    '#super-sidebar-search',
+    '#chat-component',
   ],
 };
 </script>
@@ -243,9 +266,9 @@ export default {
     :open="open"
     :z-index="200"
     data-testid="work-item-drawer"
+    :header-height="getDrawerHeight"
     header-sticky
-    header-height="calc(var(--top-bar-height) + var(--performance-bar-height))"
-    class="gl-w-full gl-leading-reset lg:gl-w-[480px] xl:gl-w-[768px] min-[1440px]:gl-w-[912px]"
+    class="work-item-drawer gl-w-full gl-leading-reset lg:gl-w-[480px] xl:gl-w-[768px] min-[1440px]:gl-w-[912px]"
     @close="handleClose"
     @opened="$emit('opened')"
   >
@@ -255,7 +278,7 @@ export default {
           ref="workItemUrl"
           data-testid="work-item-drawer-ref-link"
           :href="activeItem.webUrl"
-          class="gl-text-sm gl-font-bold gl-text-default"
+          class="gl-mr-2 gl-text-sm gl-font-bold gl-text-default"
           @click="redirectToWorkItem"
         >
           {{ headerReference }}
@@ -291,6 +314,7 @@ export default {
         :modal-work-item-full-path="activeItemFullPath"
         :modal-is-group="modalIsGroup"
         :new-comment-template-paths="newCommentTemplatePaths"
+        :is-board="isBoard"
         is-drawer
         class="work-item-drawer !gl-pt-0 xl:!gl-px-6"
         @deleteWorkItem="deleteWorkItem"

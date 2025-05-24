@@ -92,10 +92,8 @@ export default {
       'fullScreenEnabled',
     ]),
     ...mapGetters([
-      'headerTime',
       'hasUnmetPrerequisitesFailure',
       'shouldRenderCalloutMessage',
-      'shouldRenderTriggeredLabel',
       'hasEnvironment',
       'shouldRenderSharedRunnerLimitWarning',
       'hasJobLog',
@@ -237,14 +235,7 @@ export default {
       <div class="build-page" data-testid="job-content">
         <!-- Header Section -->
         <header>
-          <job-header
-            :status="job.status"
-            :time="headerTime"
-            :user="job.user"
-            :should-render-triggered-label="shouldRenderTriggeredLabel"
-            :name="jobName"
-            @clickedSidebarButton="toggleSidebar"
-          />
+          <job-header :job-id="job.id" :user="job.user" @clickedSidebarButton="toggleSidebar" />
           <gl-alert
             v-if="shouldRenderHeaderCallout"
             variant="danger"
@@ -327,7 +318,10 @@ export default {
 
           <nav
             v-if="displayStickyFooter"
-            class="rca-bar-component gl-fixed gl-px-5 gl-py-2 xl:gl-px-6"
+            :class="[
+              'rca-bar-component gl-fixed gl-px-5 gl-py-2 xl:gl-px-6',
+              { 'rca-bar-component-fullscreen': fullScreenEnabled },
+            ]"
             data-testid="rca-bar-component"
           >
             <div class="rca-bar-content gl-flex gl-w-full" data-testid="rca-bar-content">

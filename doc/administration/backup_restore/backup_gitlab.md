@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Geo
+stage: Data Access
+group: Durability
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Back up GitLab
 ---
@@ -74,7 +74,7 @@ However, merge request diffs can also be configured to be offloaded to the file 
 
 Gitaly Cluster's Praefect service uses a PostgreSQL database as a single source of truth to manage its Gitaly nodes.
 
-A common PostgreSQL utility, [`pg_dump`](https://www.postgresql.org/docs/current/app-pgdump.html), produces a backup file which can be used to restore a PostgreSQL database. The [backup command](#backup-command) uses this utility under the hood.
+A common PostgreSQL utility, [`pg_dump`](https://www.postgresql.org/docs/16/app-pgdump.html), produces a backup file which can be used to restore a PostgreSQL database. The [backup command](#backup-command) uses this utility under the hood.
 
 Unfortunately, the larger the database, the longer it takes `pg_dump` to execute. Depending on your situation, the duration becomes impractical at some point (days, for example). If your database is over 100 GB, `pg_dump`, and by extension the [backup command](#backup-command), is likely not usable. For more information, see [alternative backup strategies](#alternative-backup-strategies).
 
@@ -145,7 +145,7 @@ The backup Rake task GitLab provides does _not_ store your configuration files. 
 The secrets file may change after upgrades.
 {{< /alert >}}
 
-You should back up the configuration directory. At the very **minimum**, you must back up:
+You should back up the configuration directory. At the very minimum, you must back up:
 
 {{< tabs >}}
 
@@ -270,7 +270,7 @@ you make sure that all backups are complete before starting a new one.
 
 {{< alert type="note" >}}
 
-You can only restore a backup to **exactly the same version and type (CE/EE)**
+You can only restore a backup to exactly the same version and type (CE/EE)
 of GitLab on which it was created.
 
 {{< /alert >}}
@@ -817,8 +817,9 @@ Both options accept a comma-separated list of project or group paths. If you
 specify a group path, all repositories in all projects in the group and
 descendent groups are included or skipped, depending on which option you used.
 
-For example, to back up all repositories for all projects in **Group A** (`group-a`), the repository for **Project C** in **Group B** (`group-b/project-c`),
-and skip the **Project D** in **Group A** (`group-a/project-d`):
+For example, to back up all repositories for all projects in Group A (`group-a`), the repository for
+Project C in Group B (`group-b/project-c`),
+and skip the Project D in Group A (`group-a/project-d`):
 
 {{< tabs >}}
 
@@ -883,7 +884,7 @@ For Linux package (Omnibus):
      'aws_secret_access_key' => 'secret123'
    }
    gitlab_rails['backup_upload_remote_directory'] = 'my.s3.bucket'
-   # Consider using multipart uploads when file size reaches 100MB. Enter a number in bytes.
+   # Consider using multipart uploads when file size reaches 100 MB. Enter a number in bytes.
    # gitlab_rails['backup_multipart_chunk_size'] = 104857600
    ```
 
@@ -1119,7 +1120,7 @@ For self-compiled installations:
    If you are using [a managed identity](../object_storage.md#azure-workload-and-managed-identities), omit `azure_storage_access_key`:
 
    ```ruby
-   gitlab_rails['object_store']['connection'] = {
+   gitlab_rails['backup_upload_connection'] = {
      'provider' => 'AzureRM',
      'azure_storage_account_name' => '<AZURE STORAGE ACCOUNT NAME>',
      'azure_storage_domain' => '<AZURE STORAGE DOMAIN>' # Optional
@@ -1490,7 +1491,7 @@ leaving the `PG*` names as is:
 sudo GITLAB_BACKUP_MAIN_PGHOST=192.168.1.10 GITLAB_BACKUP_CI_PGHOST=192.168.1.12 /opt/gitlab/bin/gitlab-backup create
 ```
 
-See the [PostgreSQL documentation](https://www.postgresql.org/docs/12/libpq-envars.html)
+See the [PostgreSQL documentation](https://www.postgresql.org/docs/16/libpq-envars.html)
 for more details on what these parameters do.
 
 #### `gitaly-backup` for repository backup and restore
@@ -1589,10 +1590,11 @@ For manually backing up the Git repository data on disk, there are multiple poss
 
 #### Prevent writes and copy the Git repository data
 
-Git repositories must be copied in a consistent way. They should not be copied during concurrent write
-operations, as this can lead to inconsistencies or corruption issues. For more details,
-[issue #270422](https://gitlab.com/gitlab-org/gitlab/-/issues/270422 "Provide documentation on preferred method of migrating Gitaly servers")
-has a longer discussion explaining the potential problems.
+Git repositories must be copied in a consistent way. If repositories
+are copied during concurrent write operations,
+inconsistencies or corruption issues can occur. For more details,
+[issue 270422](https://gitlab.com/gitlab-org/gitlab/-/issues/270422)
+has a longer discussion that explains the potential problems.
 
 To prevent writes to the Git repository data, there are two possible approaches:
 
@@ -1631,5 +1633,5 @@ There are a few possible downsides to this:
   the last project that gets backed up.
 - Fork networks should be entirely read-only while the projects inside get backed up to prevent potential changes to the pool repository.
 
-There is an **experimental** script that attempts to automate this process in
+There is an experimental script that attempts to automate this process in
 [the Geo team Runbooks project](https://gitlab.com/gitlab-org/geo-team/runbooks/-/tree/main/experimental-online-backup-through-rsync).

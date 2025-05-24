@@ -80,9 +80,7 @@ RSpec.describe 'new tables missing sharding_key', feature_category: :cell do
   #   2. It does not yet have a foreign key as the index is still being backfilled
   let(:allowed_to_be_missing_foreign_key) do
     [
-      'ci_builds_metadata.project_id',
       'ci_deleted_objects.project_id', # LFK already present on p_ci_builds and cascade delete all ci resources
-      'ci_job_artifacts.project_id',
       'ci_namespace_monthly_usages.namespace_id', # https://gitlab.com/gitlab-org/gitlab/-/issues/321400
       'ci_pipeline_chat_data.project_id',
       'p_ci_pipeline_variables.project_id',
@@ -109,7 +107,6 @@ RSpec.describe 'new tables missing sharding_key', feature_category: :cell do
       'p_catalog_resource_sync_events.project_id',
       'project_data_transfers.project_id', # https://gitlab.com/gitlab-org/gitlab/-/issues/439201
       'value_stream_dashboard_counts.namespace_id', # https://gitlab.com/gitlab-org/gitlab/-/issues/439555
-      'zoekt_tasks.project_identifier',
       'project_audit_events.project_id',
       'group_audit_events.group_id',
       # aggregated table, a worker ensures eventual consistency
@@ -126,7 +123,8 @@ RSpec.describe 'new tables missing sharding_key', feature_category: :cell do
       # The table contains references in the object storage and thus can't have cascading delete
       # nor being NULL by the definition of a sharding key.
       'packages_nuget_symbols.project_id',
-      'packages_package_files.project_id'
+      'packages_package_files.project_id',
+      'merge_request_commits_metadata.project_id'
     ]
   end
 
@@ -274,6 +272,7 @@ RSpec.describe 'new tables missing sharding_key', feature_category: :cell do
       "ai_duo_chat_events" => "https://gitlab.com/gitlab-org/gitlab/-/issues/516140",
       "fork_networks" => "https://gitlab.com/gitlab-org/gitlab/-/issues/522958",
       "merge_request_diff_commit_users" => "https://gitlab.com/gitlab-org/gitlab/-/issues/526725",
+      "bulk_import_configurations" => "https://gitlab.com/gitlab-org/gitlab/-/issues/536521",
       # All the tables below related to uploads are part of the same work to
       # add sharding key to the table
       "uploads" => "https://gitlab.com/gitlab-org/gitlab/-/issues/398199",

@@ -30,22 +30,8 @@ class User < ApplicationRecord
   include StripAttribute
   include EachBatch
   include IgnorableColumns
-  include CrossDatabaseIgnoredTables
   include UseSqlFunctionForPrimaryKeyLookups
   include Todoable
-
-  # `ensure_namespace_correct` needs to be moved to an after_commit (?)
-  cross_database_ignore_tables %w[namespaces namespace_settings], url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/424279'
-
-  # `notification_settings_for` is called, and elsewhere `save` is then called.
-  cross_database_ignore_tables %w[notification_settings], url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/424284'
-
-  # Associations with dependent: option
-  cross_database_ignore_tables(
-    %w[namespaces projects project_authorizations issues merge_requests merge_requests issues issues merge_requests events],
-    url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/424285',
-    on: :destroy
-  )
 
   ignore_column :last_access_from_pipl_country_at, remove_after: '2024-11-17', remove_with: '17.7'
 
@@ -62,8 +48,6 @@ class User < ApplicationRecord
 
   MAX_USERNAME_LENGTH = 255
   MIN_USERNAME_LENGTH = 2
-
-  MAX_LIMIT_FOR_ASSIGNEED_ISSUES_COUNT = 100
 
   SECONDARY_EMAIL_ATTRIBUTES = [
     :commit_email,
@@ -112,7 +96,7 @@ class User < ApplicationRecord
 
   devise :two_factor_backupable, otp_number_of_backup_codes: 10
   devise :two_factor_backupable_pbkdf2
-  serialize :otp_backup_codes, JSON # rubocop:disable Cop/ActiveRecordSerialize
+  serialize :otp_backup_codes, coder: JSON # rubocop:disable Cop/ActiveRecordSerialize
 
   devise :lockable, :recoverable, :rememberable, :trackable,
     :validatable, :omniauthable, :confirmable, :registerable
@@ -212,7 +196,6 @@ class User < ApplicationRecord
     -> { where(members: { access_level: [Gitlab::Access::MAINTAINER, Gitlab::Access::OWNER] }) },
     through: :group_members,
     source: :group
-  alias_attribute :masters_groups, :maintainers_groups
   has_many :developer_maintainer_owned_groups,
     -> { where(members: { access_level: [Gitlab::Access::DEVELOPER, Gitlab::Access::MAINTAINER, Gitlab::Access::OWNER] }) },
     through: :group_members,
@@ -228,8 +211,9 @@ class User < ApplicationRecord
   has_many :groups_projects,          through: :groups, source: :projects
   has_many :personal_projects,        through: :namespace, source: :projects
   has_many :project_members, -> { where(requested_at: nil) }
-  has_many :projects,                 through: :project_members
-  has_many :created_projects,         foreign_key: :creator_id, class_name: 'Project', dependent: :nullify # rubocop:disable Cop/ActiveRecordDependent
+  has_many :projects, through: :project_members
+  has_many :project_deletion_schedules, class_name: '::Projects::DeletionSchedule', inverse_of: :deleting_user
+  has_many :created_projects, foreign_key: :creator_id, class_name: 'Project', dependent: :nullify # rubocop:disable Cop/ActiveRecordDependent
   has_many :created_namespace_details, foreign_key: :creator_id, class_name: 'Namespace::Detail'
   has_many :projects_with_active_memberships, -> { where(members: { state: ::Member::STATE_ACTIVE }) }, through: :project_members, source: :project
   has_many :users_star_projects, dependent: :destroy # rubocop:disable Cop/ActiveRecordDependent
@@ -279,6 +263,7 @@ class User < ApplicationRecord
 
   has_many :bulk_imports
   has_one :namespace_import_user, class_name: 'Import::NamespaceImportUser', inverse_of: :import_user
+  has_one :placeholder_user_detail, class_name: 'Import::PlaceholderUserDetail', foreign_key: :placeholder_user_id, inverse_of: :placeholder_user
 
   has_many :custom_attributes, class_name: 'UserCustomAttribute'
   has_one  :trusted_with_spam_attribute, -> { UserCustomAttribute.trusted_with_spam }, class_name: 'UserCustomAttribute'
@@ -290,6 +275,7 @@ class User < ApplicationRecord
   belongs_to :created_by, class_name: 'User', optional: true
 
   has_many :organization_users, class_name: 'Organizations::OrganizationUser', inverse_of: :user
+  has_many :organization_user_aliases, class_name: 'Organizations::OrganizationUserAlias', inverse_of: :user
 
   has_many :organizations, through: :organization_users, class_name: 'Organizations::Organization', inverse_of: :users,
     disable_joins: true
@@ -447,7 +433,6 @@ class User < ApplicationRecord
     :extensions_marketplace_opt_in_url, :extensions_marketplace_opt_in_url=,
     :organization_groups_projects_sort, :organization_groups_projects_sort=,
     :organization_groups_projects_display, :organization_groups_projects_display=,
-    :setup_for_company, :setup_for_company=,
     :project_shortcut_buttons, :project_shortcut_buttons=,
     :keyboard_shortcuts_enabled, :keyboard_shortcuts_enabled=,
     :render_whitespace_in_code, :render_whitespace_in_code=,
@@ -473,8 +458,8 @@ class User < ApplicationRecord
   delegate :webauthn_xid, :webauthn_xid=, to: :user_detail, allow_nil: true
   delegate :pronouns, :pronouns=, to: :user_detail, allow_nil: true
   delegate :pronunciation, :pronunciation=, to: :user_detail, allow_nil: true
-  delegate :registration_objective, :registration_objective=, to: :user_detail, allow_nil: true
   delegate :bluesky, :bluesky=, to: :user_detail, allow_nil: true
+  delegate :orcid, :orcid=, to: :user_detail, allow_nil: true
   delegate :mastodon, :mastodon=, to: :user_detail, allow_nil: true
   delegate :linkedin, :linkedin=, to: :user_detail, allow_nil: true
   delegate :twitter, :twitter=, to: :user_detail, allow_nil: true
@@ -483,6 +468,7 @@ class User < ApplicationRecord
   delegate :location, :location=, to: :user_detail, allow_nil: true
   delegate :organization, :organization=, to: :user_detail, allow_nil: true
   delegate :discord, :discord=, to: :user_detail, allow_nil: true
+  delegate :github, :github=, to: :user_detail, allow_nil: true
   delegate :email_reset_offered_at, :email_reset_offered_at=, to: :user_detail, allow_nil: true
   delegate :project_authorizations_recalculated_at, :project_authorizations_recalculated_at=, to: :user_detail, allow_nil: true
   delegate :bot_namespace, :bot_namespace=, to: :user_detail, allow_nil: true
@@ -602,19 +588,11 @@ class User < ApplicationRecord
     end
 
     after_transition any => :active do |user|
-      user.class.temporary_ignore_cross_database_tables(
-        %w[projects], url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/424278'
-      ) do
-        user.starred_projects.update_counters(star_count: 1)
-      end
+      user.starred_projects.update_counters(star_count: 1)
     end
 
     after_transition active: any do |user|
-      user.class.temporary_ignore_cross_database_tables(
-        %w[projects], url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/424278'
-      ) do
-        user.starred_projects.where('star_count > 0').update_counters(star_count: -1)
-      end
+      user.starred_projects.where('star_count > 0').update_counters(star_count: -1)
     end
   end
 
@@ -684,6 +662,7 @@ class User < ApplicationRecord
   scope :dormant, -> { with_state(:active).human_or_service_user.where('last_activity_on <= ?', Gitlab::CurrentSettings.deactivate_dormant_users_period.day.ago.to_date) }
   scope :with_no_activity, -> { with_state(:active).human_or_service_user.where(last_activity_on: nil).where('created_at <= ?', MINIMUM_DAYS_CREATED.day.ago.to_date) }
   scope :by_provider_and_extern_uid, ->(provider, extern_uid) { joins(:identities).merge(Identity.with_extern_uid(provider, extern_uid)) }
+  scope :ldap, -> { joins(:identities).where('identities.provider LIKE ?', 'ldap%') }
   scope :by_ids, ->(ids) { where(id: ids) }
   scope :by_ids_or_usernames, ->(ids, usernames) { where(username: usernames).or(where(id: ids)) }
   scope :without_forbidden_states, -> { where.not(state: FORBIDDEN_SEARCH_STATES) }
@@ -888,12 +867,18 @@ class User < ApplicationRecord
         without_projects
       when 'external'
         external
-      when "trusted"
+      when 'trusted'
         trusted
-      when "placeholder"
+      when 'placeholder'
         placeholder
-      when "without_placeholders"
+      when 'without_placeholders'
         without_placeholders
+      when 'ldap_sync'
+        ldap
+      when "without_bots"
+        without_bots
+      when "bots"
+        bots
       else
         all_without_ghosts
       end
@@ -1105,7 +1090,13 @@ class User < ApplicationRecord
     end
 
     def generate_incoming_mail_token
-      "#{INCOMING_MAIL_TOKEN_PREFIX}#{SecureRandom.hex.to_i(16).to_s(36)}"
+      "#{prefix_for_incoming_mail_token}#{SecureRandom.hex.to_i(16).to_s(36)}"
+    end
+
+    def prefix_for_incoming_mail_token
+      return INCOMING_MAIL_TOKEN_PREFIX unless Feature.enabled?(:custom_prefix_for_all_token_types, :instance)
+
+      ::Authn::TokenField::PrefixHelper.prepend_instance_prefix(INCOMING_MAIL_TOKEN_PREFIX)
     end
 
     def username_exists?(username)
@@ -1222,7 +1213,7 @@ class User < ApplicationRecord
   # to the session cookie. When remember me is disabled this method ensures these
   # values aren't set.
   def remember_me!
-    super if ::Gitlab::Database.read_write? && ::Gitlab::CurrentSettings.remember_me_enabled?
+    super if ::Gitlab::Database.read_write? && ::Gitlab::CurrentSettings.allow_user_remember_me?
   end
 
   def forget_me!
@@ -1248,7 +1239,7 @@ class User < ApplicationRecord
   # and compares to the stored value. When remember me is disabled this method ensures
   # the upstream comparison does not happen.
   def remember_me?(token, generated_at)
-    return false unless ::Gitlab::CurrentSettings.remember_me_enabled?
+    return false unless ::Gitlab::CurrentSettings.allow_user_remember_me?
 
     super
   end
@@ -1567,6 +1558,10 @@ class User < ApplicationRecord
 
   def can_create_group?
     can?(:create_group)
+  end
+
+  def can_leave_group?(group)
+    can?(:destroy_group_member, group.member(self))
   end
 
   def can_select_namespace?
@@ -2174,10 +2169,23 @@ class User < ApplicationRecord
     Feature.enabled?(:merge_request_dashboard, self, type: :wip)
   end
 
+  def merge_request_dashboard_author_or_assignee_enabled?
+    ::Feature.enabled?(:merge_request_dashboard_author_or_assignee, self)
+  end
+
   def assigned_open_merge_requests_count(force: false)
-    Rails.cache.fetch(['users', id, 'assigned_open_merge_requests_count', merge_request_dashboard_enabled?], force: force, expires_in: COUNT_CACHE_VALIDITY_PERIOD) do
-      params = { assignee_id: id, state: 'opened', non_archived: true }
-      params[:reviewer_id] = 'none' if merge_request_dashboard_enabled?
+    Rails.cache.fetch(['users', id, 'assigned_open_merge_requests_count', merge_request_dashboard_enabled?, merge_request_dashboard_author_or_assignee_enabled?], force: force, expires_in: COUNT_CACHE_VALIDITY_PERIOD) do
+      params = { state: 'opened', non_archived: true }
+
+      if merge_request_dashboard_enabled?
+        params = params.merge(or: { reviewer_wildcard: 'none', review_states: %w[reviewed requested_changes], only_reviewer_username: ::Users::Internal.duo_code_review_bot.username })
+      end
+
+      if merge_request_dashboard_author_or_assignee_enabled? && merge_request_dashboard_enabled?
+        params = params.merge(include_assigned: true, author_id: id)
+      else
+        params[:assignee_id] = id
+      end
 
       MergeRequestsFinder.new(self, params).execute.count
     end
@@ -2185,11 +2193,10 @@ class User < ApplicationRecord
 
   def review_requested_open_merge_requests_count(force: false)
     Rails.cache.fetch(['users', id, 'review_requested_open_merge_requests_count', merge_request_dashboard_enabled?], force: force, expires_in: COUNT_CACHE_VALIDITY_PERIOD) do
-      if merge_request_dashboard_enabled?
-        MergeRequestsFinder.new(self, assigned_user_id: id, reviewer_review_states: %w[unreviewed unapproved review_started], assigned_review_states: %w[requested_changes reviewed], state: 'opened', non_archived: true).execute.count
-      else
-        MergeRequestsFinder.new(self, reviewer_id: id, state: 'opened', non_archived: true).execute.count
-      end
+      params = { reviewer_id: id, state: 'opened', non_archived: true }
+      params[:review_states] = %w[unapproved unreviewed review_started] if merge_request_dashboard_enabled?
+
+      MergeRequestsFinder.new(self, params).execute.count
     end
   end
 
@@ -2228,7 +2235,7 @@ class User < ApplicationRecord
   end
 
   def invalidate_merge_request_cache_counts
-    Rails.cache.delete(['users', id, 'assigned_open_merge_requests_count', merge_request_dashboard_enabled?])
+    Rails.cache.delete(['users', id, 'assigned_open_merge_requests_count', merge_request_dashboard_enabled?, merge_request_dashboard_author_or_assignee_enabled?])
     Rails.cache.delete(['users', id, 'review_requested_open_merge_requests_count', merge_request_dashboard_enabled?])
   end
 
@@ -2942,9 +2949,7 @@ class User < ApplicationRecord
   def self.prefix_for_feed_token
     return FEED_TOKEN_PREFIX unless Feature.enabled?(:custom_prefix_for_all_token_types, :instance)
 
-    # Manually remove gl - we'll add this from the configuration.
-    # Once the feature flag has been removed, we can change FEED_TOKEN_PREFIX to `ft-`
-    ::Authn::TokenField::PrefixHelper.prepend_instance_prefix(FEED_TOKEN_PREFIX.delete_prefix('gl'))
+    ::Authn::TokenField::PrefixHelper.prepend_instance_prefix(FEED_TOKEN_PREFIX)
   end
 
   # method overridden in EE

@@ -113,7 +113,16 @@ module API
             end
 
             unless Feature.enabled?(:log_git_streaming_audit_events, project)
-              send_git_audit_streaming_event(protocol: params[:protocol], action: params[:action])
+              audit_message = { protocol: params[:protocol], action: params[:action] }
+
+              # If the protocol is SSH, we need to send the original IP from the PROXY
+              # protocol to the audit streaming event. The original IP from gitlab-shell
+              # is set through the `check_ip` parameter.
+              if include_ip_address_in_audit_event?(Gitlab::IpAddressState.current)
+                audit_message[:ip_address] = Gitlab::IpAddressState.current
+              end
+
+              send_git_audit_streaming_event(audit_message)
             end
 
             response_with_status(**payload)
@@ -286,7 +295,7 @@ module API
           end
 
           result = ::PersonalAccessTokens::CreateService.new(
-            current_user: user, target_user: user, organization_id: Current.organization&.id, params: { name: params[:name], scopes: params[:scopes], expires_at: expires_at }
+            current_user: user, target_user: user, organization_id: Current.organization.id, params: { name: params[:name], scopes: params[:scopes], expires_at: expires_at }
           ).execute
 
           unless result.status == :success

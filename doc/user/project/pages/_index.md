@@ -4,6 +4,7 @@ group: Knowledge
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: Learn how to use GitLab Pages to deploy a static website at no additional cost.
 title: GitLab Pages
+description: Static site hosting, documentation publishing, project websites, and custom domains.
 ---
 
 {{< details >}}
@@ -67,7 +68,7 @@ For more information, see:
 | [Modern static site generators](https://about.gitlab.com/blog/2016/06/10/ssg-overview-gitlab-pages-part-2/) | SSG overview. |
 | [Build any SSG site with GitLab Pages](https://about.gitlab.com/blog/2016/06/17/ssg-overview-gitlab-pages-part-3-examples-ci/) | Use SSGs for GitLab Pages. |
 
-## How it works
+## Using GitLab Pages
 
 To use GitLab Pages, you must create a project in GitLab to upload your website's
 files to. These projects can be either public, internal, or private.

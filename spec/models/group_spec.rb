@@ -1643,6 +1643,30 @@ RSpec.describe Group, feature_category: :groups_and_projects do
         it { is_expected.to match_array([subgroup, subsubgroup]) }
       end
     end
+
+    describe '.active' do
+      let_it_be(:active_group) { create(:group) }
+      let_it_be(:archived_group) { create(:group, namespace_settings: create(:namespace_settings, archived: true)) }
+      let_it_be(:marked_for_deletion_group) { create(:group_with_deletion_schedule) }
+
+      subject { described_class.active }
+
+      it { is_expected.to include(active_group) }
+      it { is_expected.not_to include(marked_for_deletion_group) }
+      it { is_expected.not_to include(archived_group) }
+    end
+
+    describe '.inactive' do
+      let_it_be(:active_group) { create(:group) }
+      let_it_be(:archived_group) { create(:group, namespace_settings: create(:namespace_settings, archived: true)) }
+      let_it_be(:marked_for_deletion_group) { create(:group_with_deletion_schedule) }
+
+      subject { described_class.inactive }
+
+      it { is_expected.to include(archived_group) }
+      it { is_expected.to include(marked_for_deletion_group) }
+      it { is_expected.not_to include(active_group) }
+    end
   end
 
   describe '.project_creation_levels_for_user' do
@@ -1874,6 +1898,45 @@ RSpec.describe Group, feature_category: :groups_and_projects do
 
           it { expect(subgroup.last_owner?(@members[:owner])).to be_falsey }
         end
+      end
+    end
+  end
+
+  describe '#last_owner_in_list?' do
+    let_it_be(:group) { create(:group) }
+    let_it_be(:user) { create(:user) }
+
+    context 'when user is nil' do
+      it 'returns false' do
+        expect(group.last_owner_in_list?(nil, [])).to be false
+      end
+    end
+
+    context 'with a single owner in the list' do
+      let(:owner_member) { build_stubbed(:group_member, user_id: user.id) }
+
+      it 'returns true when user matches the owner' do
+        expect(group.last_owner_in_list?(user, [owner_member])).to be true
+      end
+
+      it 'returns false when user does not match the owner' do
+        other_user = create(:user)
+        expect(group.last_owner_in_list?(other_user, [owner_member])).to be false
+      end
+    end
+
+    context 'with multiple owners in the list' do
+      let(:owner_member) { build_stubbed(:group_member, user_id: user.id) }
+      let(:another_owner) { build_stubbed(:group_member, user_id: create(:user).id) }
+
+      it 'returns false even if user is one of the owners' do
+        expect(group.last_owner_in_list?(user, [owner_member, another_owner])).to be false
+      end
+    end
+
+    context 'with an empty owners list' do
+      it 'returns false' do
+        expect(group.last_owner_in_list?(user, [])).to be false
       end
     end
   end
@@ -4378,5 +4441,30 @@ RSpec.describe Group, feature_category: :groups_and_projects do
     subject { root_group.cluster_agents }
 
     it { is_expected.to contain_exactly(cluster_agent_for_project, cluster_agent_for_project_in_subgroup) }
+  end
+
+  describe '#active?' do
+    let_it_be(:active_group) { create(:group) }
+    let_it_be(:inactive_group) { create(:group_with_deletion_schedule) }
+
+    context 'when group is active' do
+      specify { expect(active_group.active?).to be(true) }
+    end
+
+    context 'when group is inactive' do
+      specify { expect(inactive_group.active?).to be(false) }
+    end
+
+    context 'when ancestor is active' do
+      let_it_be(:group_with_active_ancestor) { create(:group, parent: active_group) }
+
+      specify { expect(group_with_active_ancestor.active?).to be(true) }
+    end
+
+    context 'when ancestor is inactive' do
+      let_it_be(:group_with_inactive_ancestor) { create(:group, parent: inactive_group) }
+
+      specify { expect(group_with_inactive_ancestor.active?).to be(false) }
+    end
   end
 end

@@ -24,10 +24,11 @@ import {
 import {
   autocompleteDataSources,
   convertTypeEnumToName,
+  formatLabelForListbox,
+  formatUserForListbox,
   markdownPreviewPath,
   newWorkItemPath,
   isReference,
-  getWorkItemIcon,
   workItemRoadmapPath,
   saveToggleToLocalStorage,
   getToggleFromLocalStorage,
@@ -42,6 +43,51 @@ import {
 } from '~/work_items/utils';
 import { useLocalStorageSpy } from 'helpers/local_storage_helper';
 import { TYPE_EPIC } from '~/issues/constants';
+
+describe('formatLabelForListbox', () => {
+  const label = {
+    __typename: 'Label',
+    id: 'gid://gitlab/Label/1',
+    title: 'Label 1',
+    description: '',
+    color: '#f00',
+    textColor: '#00f',
+  };
+
+  it('formats as expected', () => {
+    expect(formatLabelForListbox(label)).toEqual({
+      text: 'Label 1',
+      value: 'gid://gitlab/Label/1',
+      color: '#f00',
+    });
+  });
+});
+
+describe('formatUserForListbox', () => {
+  const user = {
+    __typename: 'UserCore',
+    id: 'gid://gitlab/User/1',
+    avatarUrl: '',
+    webUrl: '',
+    webPath: '/doe_I',
+    name: 'John Doe',
+    username: 'doe_I',
+  };
+
+  it('formats as expected', () => {
+    expect(formatUserForListbox(user)).toEqual({
+      __typename: 'UserCore',
+      id: 'gid://gitlab/User/1',
+      avatarUrl: '',
+      webUrl: '',
+      webPath: '/doe_I',
+      name: 'John Doe',
+      username: 'doe_I',
+      text: 'John Doe',
+      value: 'gid://gitlab/User/1',
+    });
+  });
+});
 
 describe('autocompleteDataSources', () => {
   beforeEach(() => {
@@ -170,6 +216,12 @@ describe('markdownPreviewPath', () => {
       '/foobar/groups/group/-/preview_markdown?target_type=WorkItem&target_id=2',
     );
   });
+
+  it('returns correct data sources with NEW_WORK_ITEM_IID', () => {
+    expect(markdownPreviewPath({ fullPath: 'group', iid: NEW_WORK_ITEM_IID, isGroup: true })).toBe(
+      '/foobar/groups/group/-/preview_markdown?target_type=WorkItem',
+    );
+  });
 });
 
 describe('newWorkItemPath', () => {
@@ -185,7 +237,7 @@ describe('newWorkItemPath', () => {
 
   it('returns correct path for workItemType', () => {
     expect(
-      newWorkItemPath({ fullPath: 'group/project', workItemTypeName: WORK_ITEM_TYPE_ENUM_ISSUE }),
+      newWorkItemPath({ fullPath: 'group/project', workItemType: WORK_ITEM_TYPE_NAME_ISSUE }),
     ).toBe('/foobar/group/project/-/issues/new');
   });
 
@@ -194,7 +246,7 @@ describe('newWorkItemPath', () => {
       newWorkItemPath({
         fullPath: 'group',
         isGroup: true,
-        workItemTypeName: WORK_ITEM_TYPE_ENUM_EPIC,
+        workItemType: WORK_ITEM_TYPE_NAME_EPIC,
       }),
     ).toBe('/foobar/groups/group/-/epics/new');
   });
@@ -220,12 +272,6 @@ describe('convertTypeEnumToName', () => {
     ${WORK_ITEM_TYPE_NAME_TICKET}       | ${WORK_ITEM_TYPE_ENUM_TICKET}
   `('returns %name when given the enum %enumValue', ({ name, enumValue }) => {
     expect(convertTypeEnumToName(enumValue)).toBe(name);
-  });
-});
-
-describe('getWorkItemIcon', () => {
-  it.each(['epic', 'issue-type-epic'])('returns epic icon in case of %s', (icon) => {
-    expect(getWorkItemIcon(icon)).toBe('epic');
   });
 });
 

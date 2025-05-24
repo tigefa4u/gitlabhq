@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: Recommended deployments at scale.
 title: Reference architectures
@@ -174,7 +174,7 @@ To determine which architecture to pick for the expected load, see the following
 
 {{< alert type="note" >}}
 
-Before you select an initial architecture, review this section thoroughly. Consider other factors such as High Availability (HA) or use of large monorepos, as they may impact the choice beyond just RPS or user count.
+Before you select an initial architecture, review this section thoroughly. Consider other factors such as High Availability (HA) or use of large monorepos because they may impact the choice beyond just RPS or user count.
 
 {{< /alert >}}
 
@@ -361,7 +361,7 @@ See [Recommended cloud providers and services](#recommended-cloud-providers-and-
 
 The architectures were tested with repositories of varying sizes that follow best practices.
 
-**However, [large monorepos](../../user/project/repository/monorepos/_index.md) (several gigabytes or more) can significantly impact the performance of Git and in turn the environment itself.**
+**However, [large monorepos](../../user/project/repository/monorepos/_index.md) (several gigabytes or more) can significantly impact the performance of Git and in turn the environment itself**.
 Their presence and how they are used can put a significant strain on the entire system from Gitaly to the underlying infrastructure.
 
 The performance implications are largely software in nature. Additional hardware resources lead to diminishing returns.
@@ -388,7 +388,7 @@ These architectures have been [designed and tested](#validation-and-test-results
 setups based on real data.
 
 However, additional workloads can multiply the impact of operations by triggering follow-up actions.
-You may need to adjust the suggested specifications to compensate if you use:
+You might have to adjust the suggested specifications to compensate if you use:
 
 - Security software on the nodes.
 - Hundreds of concurrent CI jobs for [large repositories](../../user/project/repository/monorepos/_index.md).
@@ -425,7 +425,7 @@ We don't recommend the use of round-robin algorithms as they are known to not sp
 
 The total network bandwidth available to a load balancer when deployed on a machine can vary notably across cloud providers. Some cloud providers, like [AWS](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-network-bandwidth.html), may operate on a burst system with credits to determine the bandwidth at any time.
 
-The required network bandwidth for your load balancers depends on factors such as data shape and workload. The recommended base sizes for each architecture class have been selected based on real data. However, in some scenarios such as consistent clones of [large monorepos](#large-monorepos), the sizes may need to be adjusted accordingly.
+The required network bandwidth for your load balancers depends on factors such as data shape and workload. The recommended base sizes for each architecture class have been selected based on real data. However, in some scenarios such as consistent clones of [large monorepos](#large-monorepos), you might have to adjust the sizes accordingly.
 
 ### No swap
 
@@ -449,7 +449,7 @@ can be set up using the Linux package as the specifications reflect. For more de
 The following lists are non-exhaustive. Other cloud providers not listed
 here may work with the same specifications, but they have not been validated.
 For the cloud provider services not listed here,
-use caution, as each implementation can be notably different.
+use caution because each implementation can be notably different.
 Test thoroughly before using them in production.
 
 {{< /alert >}}
@@ -523,7 +523,7 @@ Additionally, the following cloud provider services are recommended for use as p
 
 <!-- Disable ordered list rule https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md#md029---ordered-list-item-prefix -->
 <!-- markdownlint-disable MD029 -->
-1. For optimal performance, especially in larger environments (500 RPS / 25k users or higher), use the [Enterprise Plus edition](https://cloud.google.com/sql/docs/editions-intro) for GCP Cloud SQL. You might need to adjust the maximum connections higher than the service's defaults, depending on your workload.
+1. For optimal performance, especially in larger environments (500 RPS / 25k users or higher), use the [Enterprise Plus edition](https://cloud.google.com/sql/docs/editions-intro) for GCP Cloud SQL. You might have to adjust the maximum connections higher than the service's defaults, depending on your workload.
 2. To ensure good performance, deploy the [Premium tier of Azure Cache for Redis](https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/cache-overview#service-tiers).
 <!-- markdownlint-enable MD029 -->
 
@@ -533,7 +533,7 @@ If you choose to use a third-party external service, use an [external database s
 
 1. The HA Linux package PostgreSQL setup encompasses PostgreSQL, PgBouncer, and Consul. All of these components are no longer required when using a third party external service.
 1. For optimal performance, enable [Database Load Balancing](../postgresql/database_load_balancing.md) with Read Replicas. Match the node counts to those used in standard Linux package deployments. This approach is particularly important for larger environments (more than 200 requests per second or 10,000+ users).
-1. Database Connection Poolers are not required for this setup as the options vary per service. As a result, connection count configuration may need to be adjusted depending on the environment size. If Pooling is desired, a third party option needs to be explored as the GitLab Linux Package bundled PgBouncer is only compatible with the package bundled Postgres. [Database Load Balancing](../postgresql/database_load_balancing.md) can also be used to spread the load accordingly.
+1. Database Connection Poolers are not required for this setup as the options vary per service. As a result, you might have to adjust the connection count configuration, depending on the environment size. If Pooling is desired, a third party option must be explored as the GitLab Linux Package bundled PgBouncer is only compatible with the package bundled Postgres. [Database Load Balancing](../postgresql/database_load_balancing.md) can also be used to spread the load accordingly.
    - Ensure that if a pooler is included in a Cloud Provider service, it can handle the total load without bottlenecks. For example, Azure Database for PostgreSQL flexible server can optionally deploy a PgBouncer pooler in front of the database. However, PgBouncer is single threaded, which may cause bottlenecks under heavy load. To mitigate this issue, you can use database load balancing to distribute the pooler across multiple nodes.
 1. The number of nodes required for HA may vary depending on the service. The requirements for one deployment may vary from those for Linux package installations.
 
@@ -626,7 +626,7 @@ For deploying GitLab over multiple data centers or regions, we offer [GitLab Geo
 
 ## Validation and test results
 
-The [GitLab Delivery: Framework](https://handbook.gitlab.com/handbook/engineering/infrastructure-platforms/gitlab-delivery/framework/) team
+GitLab
 does regular smoke and performance tests for these architectures to ensure they
 remain compliant.
 
@@ -754,7 +754,7 @@ If a component is continuously exhausting its given resources, reach out to our 
 For most components, vertical and horizontal scaling can be applied as usual. However, before doing so, be aware of the following caveats:
 
 - When scaling Puma or Sidekiq vertically, the amount of workers must be adjusted to use the additional specifications. Puma is scaled automatically on the next reconfigure. However, you might have to [change Sidekiq configuration beforehand](../sidekiq/extra_sidekiq_processes.md#start-multiple-processes).
-- Redis and PgBouncer are primarily single threaded. If these components are seeing CPU exhaustion, they may need to be scaled out horizontally.
+- Redis and PgBouncer are primarily single threaded. If these components are seeing CPU exhaustion, they might have to be scaled out horizontally.
 - The Consul, Redis Sentinel, and Praefect components require an odd number of nodes for a voting quorum when deployed in HA form.
 - Scaling certain components significantly can result in notable knock on effects that affect the performance of the environment. For more guidance, see [Scaling knock on effects](#scaling-knock-on-effects).
 
@@ -763,7 +763,7 @@ You should take an iterative approach when scaling downwards, to ensure there ar
 
 #### Scaling knock on effects
 
-In some cases, scaling a component significantly may result in knock on effects for downstream components, impacting performance. The architectures are designed with balance in mind to ensure components that depend on each other are congruent in terms of specifications. Notably scaling a component may result in additional throughput being passed to the other components it depends on. As a result, they may need to be scaled as well.
+In some cases, scaling a component significantly may result in knock on effects for downstream components, impacting performance. The architectures are designed with balance in mind to ensure components that depend on each other are congruent in terms of specifications. Notably scaling a component may result in additional throughput being passed to the other components it depends on. As a result, you could have to scale these other dependent components as well.
 
 {{< alert type="note" >}}
 
@@ -773,8 +773,8 @@ The architectures have been designed to have elasticity to accommodate an upstre
 
 The following components can impact others when they have been significantly scaled:
 
-- Puma and Sidekiq - Notable scale ups of either Puma or Sidekiq workers will result in higher concurrent connections to the internal load balancer, PostgreSQL (via PgBouncer if present), Gitaly (via Praefect if present) and Redis respectively.
-  - Redis is primarily single-threaded. In some cases, you may need to split Redis into separate instances (for example, cache and persistent) if the increased throughput causes CPU exhaustion in a combined cluster.
+- Puma and Sidekiq - Notable scale ups of either Puma or Sidekiq workers will result in higher concurrent connections to the internal load balancer, PostgreSQL (via PgBouncer if present), Gitaly (via Praefect if present) and Redis.
+  - Redis is primarily single-threaded. In some cases, you might have to split Redis into separate instances (for example, cache and persistent) if the increased throughput causes CPU exhaustion in a combined cluster.
   - PgBouncer is also single threaded but a scale out might result in a new pool being added that in turn might increase the total connections to Postgres. It's strongly recommended to only do this if you have experience in managing Postgres connections and to seek assistance if in doubt.
 - Gitaly Cluster / PostgreSQL - A notable scale out of additional nodes can have a detrimental effect on the HA system and performance due to increased replication calls to the primary node.
 
@@ -817,11 +817,11 @@ The following is a history of notable updates for reference architectures (2021-
 
 You can find a full history of changes [on the GitLab project](https://gitlab.com/gitlab-org/gitlab/-/merge_requests?scope=all&state=merged&label_name%5B%5D=Reference%20Architecture&label_name%5B%5D=documentation).
 
-**2025:**
+**2025**:
 
 - [2025-02](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/181145): Added further clarity around supported machine types and that the listed examples are not intended as prescriptive defaults.
 
-**2024:**
+**2024**:
 
 - [2024-12](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/175854): Added _Start Large_ section as further guidance for choosing initial sizing.
 - [2024-08](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/164181): Updated Expected Load section with some more examples on how to calculate RPS.
@@ -838,7 +838,7 @@ You can find a full history of changes [on the GitLab project](https://gitlab.co
 - [2024-02](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/143539): Adjusted the Sidekiq recommendations on 2k to disable Sidekiq on Rails nodes and updated architecture diagram.
 - [2024-01](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/140465): Updated recommendations for Azure for all Reference Architecture sizes and latest cloud services.
 
-**2023:**
+**2023**:
 
 - [2023-12-12](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/139557): Updated notes on Load Balancers to be more reflective that any reputable offering is expected to work.
 - [2023-11-03](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/133457): Expanded details on what each Reference Architecture is designed for, the testing methodology used and added details on how to scale environments.
@@ -870,7 +870,7 @@ You can find a full history of changes [on the GitLab project](https://gitlab.co
 - [2023-01-31](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/110328): Expanded and centralized the requirements section on the main page.
 - [2023-01-26](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/110183): Added notes on migrating Git data from NFS, that object data is still supported on NFS and handling SSH keys correctly across multiple Rails nodes.
 
-**2022:**
+**2022**:
 
 - [2022-12-14](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/105451): Removed guidance for using NFS for Git data as support for this is now ended with `15.6` or later.
 - [2022-12-12](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/106826): Added a note to clarify the difference between Amazon RDS Multi-AZ DB _cluster_ and _instance_, with the latter being supported. Also, increase PostgreSQL maximum connections setting to new default of `500`.
@@ -910,7 +910,7 @@ You can find a full history of changes [on the GitLab project](https://gitlab.co
 - [2022-01-26](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/78705): Merged testing process and cost estimates into one section with expanded details.
 - [2022-01-13](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/77968): Expanded guidance on recommended Kubernetes platforms.
 
-**2021:**
+**2021**:
 
 - [2021-12-31](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/77437): Fix typo for 25k Redis AWS machine size.
 - [2021-12-28](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/77243): Add Cloud Provider breakdowns to testing process & results section.

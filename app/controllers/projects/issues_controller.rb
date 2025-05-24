@@ -17,12 +17,11 @@ class Projects::IssuesController < Projects::ApplicationController
   prepend_before_action :store_uri, only: [:new, :show, :designs]
 
   before_action :disable_query_limiting, only: [:create_merge_request, :move, :bulk_update]
+  before_action :disable_show_query_limit!, only: :show
+
   before_action :check_issues_available!
   before_action :issue, unless: ->(c) { ISSUES_EXCEPT_ACTIONS.include?(c.action_name.to_sym) }
-  before_action :redirect_if_work_item, unless: ->(c) { work_item_redirect_except_actions.include?(c.action_name.to_sym) }
   before_action :require_incident_for_incident_routes, only: :show
-
-  after_action :log_issue_show, only: :show
 
   before_action :set_issuables_index, if: ->(c) {
     SET_ISSUABLES_INDEX_ONLY_ACTIONS.include?(c.action_name.to_sym) && !index_html_request?
@@ -30,6 +29,9 @@ class Projects::IssuesController < Projects::ApplicationController
   before_action :check_search_rate_limit!, if: ->(c) {
     SET_ISSUABLES_INDEX_ONLY_ACTIONS.include?(c.action_name.to_sym) && !index_html_request? && params[:search].present?
   }
+
+  before_action :redirect_if_work_item, unless: ->(c) { work_item_redirect_except_actions.include?(c.action_name.to_sym) }
+  before_action :redirect_index_to_work_items, only: :index
 
   # Allow write(create) issue
   before_action :authorize_create_issue!, only: [:new, :create]
@@ -71,6 +73,8 @@ class Projects::IssuesController < Projects::ApplicationController
     push_frontend_feature_flag(:epic_widget_edit_confirmation, project)
     push_frontend_feature_flag(:work_items_view_preference, current_user)
   end
+
+  after_action :log_issue_show, only: :show
 
   around_action :allow_gitaly_ref_name_caching, only: [:discussions]
 
@@ -197,13 +201,9 @@ class Projects::IssuesController < Projects::ApplicationController
       new_project = Project.find(params[:move_to_project_id])
       return render_404 unless issue.can_move?(current_user, new_project)
 
-      @issue = if project.work_item_move_and_clone_flag_enabled?
-                 ::WorkItems::DataSync::MoveService.new(
-                   work_item: issue, current_user: current_user, target_namespace: new_project.project_namespace
-                 ).execute[:work_item]
-               else
-                 ::Issues::MoveService.new(container: project, current_user: current_user).execute(issue, new_project)
-               end
+      @issue = ::WorkItems::DataSync::MoveService.new(
+        work_item: issue, current_user: current_user, target_namespace: new_project.project_namespace
+      ).execute[:work_item]
     end
 
     respond_to do |format|
@@ -408,6 +408,10 @@ class Projects::IssuesController < Projects::ApplicationController
 
   private
 
+  def disable_show_query_limit!
+    Gitlab::QueryLimiting.disable!('https://gitlab.com/gitlab-org/gitlab/-/issues/544875', new_threshold: 120)
+  end
+
   def show_work_item?
     # Service Desk issues and incidents should not use the work item view
     !issue.from_service_desk? &&
@@ -472,6 +476,13 @@ class Projects::IssuesController < Projects::ApplicationController
     return unless use_work_items_path?(issue)
 
     redirect_to project_work_item_path(project, issue.iid, params: request.query_parameters)
+  end
+
+  def redirect_index_to_work_items
+    return unless index_html_request? && ::Feature.enabled?(:work_item_planning_view, project.group)
+
+    params = request.query_parameters.except("type").merge('type[]' => 'issue')
+    redirect_to project_work_items_path(project, params: params)
   end
 
   def require_incident_for_incident_routes

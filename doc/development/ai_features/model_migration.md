@@ -42,7 +42,7 @@ Model migrations typically follow these general timelines:
 
 - **Complex Migrations:** 1-2 months (full milestone or longer)
   - Example: Adding support for a new provider like AWS Bedrock
-  - Example: Major version upgrades with breaking changes (e.g., Claude 2 to 3)
+  - Example: Major version upgrades with breaking changes (for example, Claude 2 to 3)
   - Requires significant API integration work
   - May need infrastructure changes
 
@@ -425,7 +425,7 @@ Priority: [Priority level]
 
 ## Implementation Details
 
-Please follow the issues below with the associated rollout plans:
+Follow the issues below with the associated rollout plans:
 
 | Feature | DRI | ETA | Issue Link |
 |---------|-----|-----|------------|

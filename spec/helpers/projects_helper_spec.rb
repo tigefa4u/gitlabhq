@@ -965,6 +965,34 @@ RSpec.describe ProjectsHelper, feature_category: :source_code_management do
     end
   end
 
+  describe '#remove_project_message' do
+    subject(:message) { helper.remove_project_message(project) }
+
+    before do
+      allow(project).to receive(:delayed_deletion_ready?).and_return(enabled)
+    end
+
+    context 'when project has delayed deletion enabled' do
+      let(:enabled) { true }
+
+      specify do
+        deletion_date = helper.permanent_deletion_date_formatted(Date.current)
+
+        expect(message).to eq "Deleting a project places it into a read-only state until #{deletion_date}, " \
+          "at which point the project will be permanently deleted. Are you ABSOLUTELY sure?"
+      end
+    end
+
+    context 'when project has delayed deletion disabled' do
+      let(:enabled) { false }
+
+      specify do
+        expect(message).to eq "You are going to delete #{project.full_name}. Deleted projects CANNOT be " \
+          "restored! Are you ABSOLUTELY sure?"
+      end
+    end
+  end
+
   describe '#project_permissions_panel_data' do
     subject { helper.project_permissions_panel_data(project) }
 
@@ -1292,6 +1320,26 @@ RSpec.describe ProjectsHelper, feature_category: :source_code_management do
 
       it { is_expected.to include(expected) }
     end
+
+    context "when project is not marked for deletion" do
+      before do
+        allow(project).to receive(:marked_for_deletion?).and_return(false)
+      end
+
+      subject { helper.home_panel_data_attributes }
+
+      it { is_expected.to include({ is_project_marked_for_deletion: "false" }) }
+    end
+
+    context "when project is marked for deletion" do
+      before do
+        allow(project).to receive(:marked_for_deletion?).and_return(true)
+      end
+
+      subject { helper.home_panel_data_attributes }
+
+      it { is_expected.to include({ is_project_marked_for_deletion: "true" }) }
+    end
   end
 
   shared_examples 'configure import method modal' do
@@ -1320,43 +1368,118 @@ RSpec.describe ProjectsHelper, feature_category: :source_code_management do
     it_behaves_like 'configure import method modal'
   end
 
-  describe "#show_archived_project_banner?" do
-    shared_examples 'does not show the banner' do |pass_project: true|
-      it do
-        expect(project.archived?).to be(false)
-        expect(helper.show_archived_project_banner?(pass_project ? project : nil)).to be(false)
-      end
-    end
+  describe "#archiving_available?" do
+    subject(:archiving_available?) { helper.archiving_available?(project) }
 
-    context 'with no project' do
-      it_behaves_like 'does not show the banner', pass_project: false
+    context 'with nil project' do
+      let_it_be(:project) { nil }
+
+      it { is_expected.to be(false) }
     end
 
     context 'with unsaved project' do
       let_it_be(:project) { build(:project) }
 
-      it_behaves_like 'does not show the banner'
+      it { is_expected.to be(false) }
     end
 
-    context 'with the setting enabled' do
-      context 'with an active project' do
-        it_behaves_like 'does not show the banner'
+    shared_context 'with current user :archive_project permission' do |can_manage|
+      before do
+        allow(helper)
+          .to receive(:can?)
+          .with(user, :archive_project, project)
+          .and_return(can_manage)
+      end
+    end
+
+    context 'with an active project' do
+      context 'when current user cannot manage archiving' do
+        include_context 'with current user :archive_project permission', false
+
+        it { is_expected.to be(false) }
       end
 
-      context 'with an inactive project' do
-        before do
-          project.archived = true
-          project.save!
-        end
+      context 'when current user can manage archiving' do
+        include_context 'with current user :archive_project permission', true
 
-        it 'shows the banner' do
-          expect(project.present?).to be(true)
-          expect(project.saved?).to be(true)
-          expect(project.archived?).to be(true)
-          expect(helper.show_archived_project_banner?(project)).to be(true)
-          expect(helper.show_inactive_project_deletion_banner?(project)).to be(false)
-        end
+        it { is_expected.to be(true) }
       end
+    end
+
+    context 'with an archived project' do
+      before do
+        project.archived = true
+        project.save!
+      end
+
+      context 'when current user cannot manage archiving' do
+        include_context 'with current user :archive_project permission', false
+
+        it { is_expected.to be(false) }
+      end
+
+      context 'when current user can manage archiving' do
+        include_context 'with current user :archive_project permission', true
+
+        it { is_expected.to be(true) }
+      end
+    end
+
+    context 'with a project marked for deletion' do
+      before do
+        project.marked_for_deletion_at = Time.current
+        project.save!
+      end
+
+      context 'when current user cannot manage archiving' do
+        include_context 'with current user :archive_project permission', false
+
+        it { is_expected.to be(false) }
+      end
+
+      context 'when current user can manage archiving' do
+        include_context 'with current user :archive_project permission', true
+
+        it { is_expected.to be(false) }
+      end
+    end
+  end
+
+  describe "#show_archived_project_banner?" do
+    subject(:show_archived_project_banner?) { helper.show_archived_project_banner?(project) }
+
+    context 'with nil project' do
+      let_it_be(:project) { nil }
+
+      it { is_expected.to be(false) }
+    end
+
+    context 'with unsaved project' do
+      let_it_be(:project) { build(:project) }
+
+      it { is_expected.to be(false) }
+    end
+
+    context 'with an active project' do
+      it { is_expected.to be(false) }
+    end
+
+    context 'with an archived project' do
+      before do
+        project.archived = true
+        project.save!
+      end
+
+      it { is_expected.to be(true) }
+    end
+
+    context 'with a project marked for deletion' do
+      before do
+        project.marked_for_deletion_at = Time.current
+        project.save!
+      end
+
+      it { is_expected.to be(false) }
     end
   end
 
@@ -1966,104 +2089,46 @@ RSpec.describe ProjectsHelper, feature_category: :source_code_management do
     end
   end
 
-  describe '#scheduled_for_deletion?' do
-    context 'when project is NOT scheduled for deletion' do
-      it { expect(helper.scheduled_for_deletion?(project)).to be false }
-    end
+  describe '#delete_delayed_project_message' do
+    subject(:message) { helper.delete_delayed_project_message(project) }
 
-    context 'when project is scheduled for deletion' do
-      let_it_be(:archived_project) { create(:project, :archived, marked_for_deletion_at: 10.minutes.ago) }
+    specify do
+      deletion_adjourned_period = ::Gitlab::CurrentSettings.deletion_adjourned_period
 
-      it { expect(helper.scheduled_for_deletion?(archived_project)).to be true }
-    end
-  end
-
-  describe '#delete_delayed_message' do
-    subject(:message) { helper.delete_delayed_message(project) }
-
-    before do
-      allow(project).to receive(:adjourned_deletion_configured?)
-        .and_return(feature_available)
-    end
-
-    context 'when project has delayed deletion feature' do
-      let(:feature_available) { true }
-
-      specify do
-        deletion_adjourned_period = ::Gitlab::CurrentSettings.deletion_adjourned_period
-        deletion_date = helper.permanent_deletion_date_formatted(Date.current)
-
-        expect(message).to eq "This action will place this project, " \
-          "including all its resources, in a pending deletion state for #{deletion_adjourned_period} days, " \
-          "and delete it permanently on <strong>#{deletion_date}</strong>."
-      end
-    end
-
-    context 'when project does not have delayed deletion feature' do
-      let(:feature_available) { false }
-
-      specify do
-        expect(message).to eq "This action will permanently delete this project, including all its resources."
-      end
+      expect(message).to eq "This action will place this project, " \
+        "including all its resources, in a pending deletion state for #{deletion_adjourned_period} days, " \
+        "and delete it permanently on <strong>#{helper.permanent_deletion_date_formatted}</strong>."
     end
   end
 
-  describe '#delete_immediately_message' do
-    subject(:message) { helper.delete_immediately_message(project) }
+  describe '#delete_immediately_project_scheduled_for_deletion_message' do
+    let(:marked_for_deletion) { Date.parse('2024-01-01') }
+
+    subject(:message) { helper.delete_immediately_project_scheduled_for_deletion_message(project) }
 
     before do
-      allow(project).to receive(:adjourned_deletion?).and_return(allowed)
-      allow(project).to receive(:adjourned_deletion_configured?).and_return(allowed)
       allow(project).to receive(:marked_for_deletion_on).and_return(marked_for_deletion)
     end
 
-    describe 'when adjourned deletion is not available' do
-      let(:allowed) { false }
-      let(:marked_for_deletion) { nil }
+    it 'returns the delete permanently override message' do
+      deletion_date = helper.permanent_deletion_date_formatted(project)
 
-      it 'returns permanent deletion message' do
-        expect(message).to eq "This action will permanently delete this project, including all its resources."
-      end
-    end
-
-    describe 'when adjourned deletion is available and project is already marked for deletion' do
-      let(:allowed) { true }
-      let(:marked_for_deletion) { Date.parse('2024-01-01') }
-
-      it 'returns the delete permanently override message' do
-        deletion_date = helper.permanent_deletion_date_formatted(project.marked_for_deletion_on)
-
-        expect(message).to eq "This project is scheduled for deletion on <strong>#{deletion_date}</strong>. " \
-          "This action will permanently delete this project, including all its resources, " \
-          "<strong>immediately</strong>. This action cannot be undone."
-      end
-    end
-
-    describe 'when adjourned deletion is available and project is not marked for deletion' do
-      let(:allowed) { true }
-      let(:marked_for_deletion) { nil }
-
-      it 'returns the delete delete delayed message' do
-        deletion_adjourned_period = ::Gitlab::CurrentSettings.deletion_adjourned_period
-        deletion_date = helper.permanent_deletion_date_formatted(Date.current)
-
-        expect(message).to eq "This action will place this project, " \
-          "including all its resources, in a pending deletion state for #{deletion_adjourned_period} days, " \
-          "and delete it permanently on <strong>#{deletion_date}</strong>."
-      end
+      expect(message).to eq "This project is scheduled for deletion on <strong>#{deletion_date}</strong>. " \
+        "This action will permanently delete this project, including all its resources, " \
+        "<strong>immediately</strong>. This action cannot be undone."
     end
   end
 
   describe '#project_delete_delayed_button_data', time_travel_to: '2025-02-02' do
     let(:base_button_data) do
       {
+        button_text: 'Delete project',
         restore_help_path: help_page_path('user/project/working_with_projects.md', anchor: 'restore-a-project'),
         delayed_deletion_date: '2025-02-09',
         form_path: project_path(project),
         confirm_phrase: project.path_with_namespace,
         name_with_namespace: project.name_with_namespace,
         is_fork: 'false',
-        is_security_policy_project: "false",
         issues_count: '0',
         merge_requests_count: '0',
         forks_count: '0',
@@ -2079,7 +2144,7 @@ RSpec.describe ProjectsHelper, feature_category: :source_code_management do
       subject(:data) { helper.project_delete_delayed_button_data(project) }
 
       it 'returns expected hash' do
-        expect(data).to match(base_button_data.merge(button_text: 'Delete project'))
+        expect(data).to match(base_button_data)
       end
     end
 
@@ -2090,32 +2155,12 @@ RSpec.describe ProjectsHelper, feature_category: :source_code_management do
         expect(data).to match(base_button_data.merge(button_text: 'Delete project immediately'))
       end
     end
-
-    describe 'when it is a security policy project' do
-      subject(:data) { helper.project_delete_delayed_button_data(project, is_security_policy_project: true) }
-
-      it 'returns expected hash' do
-        expect(data).to match({
-          button_text: 'Delete project',
-          restore_help_path: help_page_path('user/project/working_with_projects.md', anchor: 'restore-a-project'),
-          delayed_deletion_date: '2025-02-09',
-          form_path: project_path(project),
-          confirm_phrase: project.path_with_namespace,
-          name_with_namespace: project.name_with_namespace,
-          is_fork: 'false',
-          is_security_policy_project: "true",
-          issues_count: '0',
-          merge_requests_count: '0',
-          forks_count: '0',
-          stars_count: '0'
-        })
-      end
-    end
   end
 
   describe '#project_delete_immediately_button_data' do
     let(:base_button_data) do
       {
+        button_text: 'Delete project',
         form_path: project_path(project, permanently_delete: true),
         confirm_phrase: project.path_with_namespace,
         name_with_namespace: project.name_with_namespace,
@@ -2128,18 +2173,18 @@ RSpec.describe ProjectsHelper, feature_category: :source_code_management do
     end
 
     describe 'with default button text' do
-      subject { helper.project_delete_immediately_button_data(project) }
+      subject(:data) { helper.project_delete_immediately_button_data(project) }
 
       it 'returns expected hash' do
-        expect(subject).to match(base_button_data.merge(button_text: 'Delete project'))
+        expect(data).to match(base_button_data)
       end
     end
 
     describe 'with custom button text' do
-      subject { helper.project_delete_immediately_button_data(project, 'Delete project immediately') }
+      subject(:data) { helper.project_delete_immediately_button_data(project, 'Delete project immediately') }
 
       it 'returns expected hash' do
-        expect(subject).to match(base_button_data.merge(button_text: 'Delete project immediately'))
+        expect(data).to match(base_button_data.merge(button_text: 'Delete project immediately'))
       end
     end
   end

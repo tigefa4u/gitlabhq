@@ -69,13 +69,19 @@ If the case of `404.html`, there are different scenarios. For example:
 You can configure redirects for your site using a `_redirects` file. For more information, see
 [Create redirects for GitLab Pages](redirects.md).
 
-## Remove your pages
+## Delete a Pages site
 
-To remove your pages:
+Permanently delete all Pages deployments for a project.
+This is permanent and cannot be undone.
+
+To delete your pages:
 
 1. On the left sidebar, select **Search or go to** and find your project.
 1. Select **Deploy > Pages**.
-1. Select **Remove pages**.
+1. Select **Delete pages**.
+
+Your Pages site is no longer deployed.
+To deploy this Pages site again, run a new pipeline.
 
 ## Subdomains of subdomains
 
@@ -402,3 +408,11 @@ However, in the Pages session, only the most recent `state` value is stored for 
 As a result, after submitting credentials, one of the tabs returns a `401 Unauthorized` error.
 
 To resolve the `401` error, refresh the page.
+
+### Failing `pages:deploy` job
+
+To deploy with GitLab Pages, the root content directory must contain a non-empty `index.html` file,
+or the `pages:deploy` job fails.
+
+The content directory is `public/` by default, or a directory specified with the
+`pages.publish` keyword in your `.gitlab-ci.yml` file.

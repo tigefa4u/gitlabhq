@@ -225,8 +225,8 @@ RSpec.describe 'Internal Events matchers', :clean_gitlab_redis_shared_state, fea
 
         subject(:assertion) do
           expect do
-            Gitlab::InternalEvents.track_event('g_edit_by_sfe', **tracked_params)
-          end.to trigger_internal_events('g_edit_by_sfe')
+            Gitlab::InternalEvents.track_event('register_agent_at_kas', **tracked_params) # event that has all 3 params
+          end.to trigger_internal_events('register_agent_at_kas')
               .with(expected_params)
               .once
         end
@@ -243,7 +243,7 @@ RSpec.describe 'Internal Events matchers', :clean_gitlab_redis_shared_state, fea
         end
 
         context 'with extra attributes' do
-          let(:extra_track_params) { { other_property: 'other_prop' } }
+          let(:extra_track_params) { { kubernetes_version: 'other_prop' } }
 
           it 'accepts correct extra attributes' do
             assertion
@@ -263,8 +263,9 @@ RSpec.describe 'Internal Events matchers', :clean_gitlab_redis_shared_state, fea
         end
 
         context 'with extra attributes tracked but not expected' do
-          let(:expected_params) { { user: user_1, namespace: group_1, additional_properties: additional_properties } }
-          let(:tracked_params) { expected_params.deep_merge(additional_properties: { other_property: 'other_prop' }) }
+          let(:expected_params) do
+            { user: user_1, namespace: group_1, additional_properties: { kubernetes_version: '1' } }
+          end
 
           it_behaves_like 'raises error for unexpected event args'
         end
@@ -334,6 +335,27 @@ RSpec.describe 'Internal Events matchers', :clean_gitlab_redis_shared_state, fea
 
              expected metric redis_hll_counters.ide_edit.g_edit_by_sfe_monthly to be incremented by 1
                ->  value went from 0 to 0
+          TEXT
+        end
+      end
+
+      context 'when failure may be due to a dirty redis state for unique metrics' do
+        subject(:assertion) do
+          expect { track_event }.to increment_usage_metrics(
+            'redis_hll_counters.ide_edit.g_edit_by_sfe_weekly'
+          )
+        end
+
+        before do
+          track_event # ensure event has already been tracked
+        end
+
+        it 'returns a meaningful failure message for :increment_usage_metrics with debugging tip' do
+          expect { assertion }.to raise_expectation_error_with <<~TEXT
+            expected metric redis_hll_counters.ide_edit.g_edit_by_sfe_weekly to be incremented by 1
+              ->  value went from 1 to 1
+
+            Debugging tip: Add the :clean_gitlab_redis_shared_state trait to reset event counters between examples.
           TEXT
         end
       end
@@ -490,7 +512,7 @@ RSpec.describe 'Internal Events matchers', :clean_gitlab_redis_shared_state, fea
     end
 
     context 'with additional properties' do
-      let(:event) { 'g_edit_by_sfe' }
+      let(:event) { 'click_delete_pod' } # event with label property
       let(:user) { user_1 }
       let(:project) { project_1 }
       let(:expected_label) { 'Awesome label value' }
@@ -512,10 +534,6 @@ RSpec.describe 'Internal Events matchers', :clean_gitlab_redis_shared_state, fea
         let(:label) { expected_label }
       end
 
-      it_behaves_like 'internal event tracking' do
-        let(:event_attribute_overrides) { { additional_properties: { label: expected_label } } }
-      end
-
       context 'with incorrect value being provided in additional_properties.' do
         let(:unexpected_label) { 'BAD label value' }
 
@@ -530,10 +548,6 @@ RSpec.describe 'Internal Events matchers', :clean_gitlab_redis_shared_state, fea
 
         it_behaves_like 'internal event tracking' do
           let(:label) { unexpected_label }
-        end
-
-        it_behaves_like 'internal event tracking' do
-          let(:event_attribute_overrides) { { additional_properties: { label: unexpected_label } } }
         end
       end
     end

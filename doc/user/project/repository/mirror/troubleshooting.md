@@ -13,7 +13,7 @@ title: Troubleshooting repository mirroring
 
 {{< /details >}}
 
-When mirroring fails, project maintainers can see a link similar to {{< icon name="warning-solid" >}} **Pull mirroring failed 1 hour ago.**
+When mirroring fails, project maintainers can see a link similar to {{< icon name="warning-solid" >}} **Pull mirroring failed 1 hour ago**.
 on the project details page. Select this link to go directly to the mirroring settings,
 where GitLab displays an **Error** badge for the mirrored repository. You can hover your mouse cursor
 over the badge to display the text of the error:
@@ -120,7 +120,7 @@ Pipelines might not run for multiple reasons:
   being added to the pipeline.
 - Pipelines are triggered using [the account that set up the pull mirror](https://gitlab.com/gitlab-org/gitlab/-/issues/13697).
   If the account is no longer valid, pipelines do not run.
-- [Branch protection](../branches/protected.md#run-pipelines-on-protected-branches)
+- [Branch protection](../branches/protected.md#cicd-on-protected-branches)
   might prevent the account that set up mirroring from running pipelines.
 
 ## `The repository is being updated`, but neither fails nor succeeds visibly
@@ -155,7 +155,7 @@ fail nor succeed. They also do not leave a clear log. To check for this problem:
 
 If you receive this error while setting up mirroring over [SSH](_index.md#ssh-authentication), make sure the URL is in a valid format.
 
-Mirroring **does not** support SCP-like clone URLs in the form of
+Mirroring does not support SCP-like clone URLs in the form of
 `git@gitlab.com:gitlab-org/gitlab.git`, with host and project path separated using `:`.
 It requires a [standard URL](https://git-scm.com/docs/git-clone#_git_urls)
 that includes the `ssh://` protocol, like `ssh://git@gitlab.com/gitlab-org/gitlab.git`.

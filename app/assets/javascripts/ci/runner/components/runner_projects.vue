@@ -78,6 +78,19 @@ export default {
     loading() {
       return this.$apollo.queries.projects.loading;
     },
+    canReadRunnerProjects() {
+      if (this.loading || Boolean(this.search)) {
+        return true;
+      }
+
+      /*
+       * When runner.projectCount > 0 but runner.projects.nodes is empty the
+       * user might not have read access to the projects assigned to the runner
+       * (e.g. users with read_admin_cicd custom admin role). We do not want to
+       * render the list in this case.
+       */
+      return !(this.projects.count > 0 && this.projects.items.length < 1);
+    },
   },
   methods: {
     isOwner(projectId) {
@@ -100,6 +113,7 @@ export default {
 
 <template>
   <crud-component
+    v-if="canReadRunnerProjects"
     :title="s__('Runner|Assigned Projects')"
     :count="projects.count"
     icon="project"
