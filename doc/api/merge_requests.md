@@ -98,7 +98,7 @@ Supported attributes:
 | `view`                          | string         | No       | If `simple`, returns the `iid`, URL, title, description, and basic state of merge request.                                                                                                                                                                                                                                                                 |
 | `with_labels_details`           | boolean        | No       | If `true`, response returns more details for each label in labels field: `:name`, `:color`, `:description`, `:description_html`, `:text_color`. Default is `false`.                                                                                                                                                                                        |
 | `with_merge_status_recheck`     | boolean        | No       | If `true`, this projection requests (but does not guarantee) an asynchronous recalculation of the `merge_status` field. Default is `false`. In GitLab 15.11 and later, enable the `restrict_merge_status_recheck` feature [flag](../administration/feature_flags.md) to ignore this attribute when requested by users without at least the Developer role. |
-| `wip`                           | string         | No       | Filter merge requests against their `wip` status. Use `yes` to return *only* draft merge requests, `no` to return *non-draft* merge requests.                                                                                                                                                                                                              |
+| `wip`                           | string         | No       | Filter merge requests against their `wip` status. Use `yes` to return only draft merge requests, `no` to return non-draft merge requests.                                                                                                                                                                                                              |
 
 Example response:
 
@@ -283,7 +283,7 @@ Supported attributes:
 | `updated_after`                 | datetime       | No       | Returns merge requests updated on or after the given time. Expected in ISO 8601 format (`2019-03-15T08:00:00Z`). |
 | `updated_before`                | datetime       | No       | Returns merge requests updated on or before the given time. Expected in ISO 8601 format (`2019-03-15T08:00:00Z`). |
 | `view`                          | string         | No       | If `simple`, returns the `iid`, URL, title, description, and basic state of merge request. |
-| `wip`                           | string         | No       | Filter merge requests against their `wip` status. `yes` to return *only* draft merge requests, `no` to return *non-draft* merge requests. |
+| `wip`                           | string         | No       | Filter merge requests against their `wip` status. `yes` to return only draft merge requests, `no` to return non-draft merge requests. |
 | `with_labels_details`           | boolean        | No       | If `true`, response returns more details for each label in labels field: `:name`, `:color`, `:description`, `:description_html`, `:text_color`. Default is `false`. |
 | `with_merge_status_recheck`     | boolean        | No       | If `true`, this projection requests (but does not guarantee) the asynchronous recalculation of the `merge_status` field. Default is `false`. In GitLab 15.11 and later, enable the `restrict_merge_status_recheck` feature [flag](../administration/feature_flags.md) to ignore this attribute when requested by users without at least the Developer role. |
 
@@ -1783,7 +1783,7 @@ returned by the API or viewed through the UI. When these limits impact the resul
 field contains a value of `true`. Retrieve the diff data without these limits by
 adding the `access_raw_diffs` parameter, which accesses diffs not from the database, but from Gitaly directly.
 This approach is generally slower and more resource-intensive, but isn't subject to size limits
-placed on database-backed diffs. [Limits inherent to Gitaly](../development/merge_request_concepts/diffs/_index.md#diff-limits)
+placed on database-backed diffs. Limits inherent to Gitaly
 still apply.
 
 Example response:
@@ -2325,7 +2325,7 @@ PUT /projects/:id/merge_requests/:merge_request_iid
 | `target_branch`            | string  | No       | The target branch. |
 | `title`                    | string  | No       | Title of MR. |
 
-Must include at least one non-required attribute from above.
+Must include at least one non-required attribute.
 
 Example response:
 

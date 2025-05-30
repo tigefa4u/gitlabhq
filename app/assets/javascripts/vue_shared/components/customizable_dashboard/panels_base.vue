@@ -110,7 +110,7 @@ export default {
     :title-popover="tooltip"
     :loading="loading"
     :loading-delayed="loadingDelayed"
-    :loading-delayed-text="__('Still loading...')"
+    :loading-delayed-text="__('Still loading…')"
     :actions="editingActions"
     :actions-toggle-text="__('Actions')"
     :border-color-class="borderColor"
@@ -123,7 +123,6 @@ export default {
     <template #alert-message="{ panelId }">
       <gl-popover
         v-if="showAlertPopover"
-        data-test-id="panel-alert-popover"
         :aria-describedby="panelId"
         triggers="hover focus"
         :title="alertPopoverTitle"

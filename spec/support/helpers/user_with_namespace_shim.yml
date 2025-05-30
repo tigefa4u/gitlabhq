@@ -246,7 +246,6 @@
 - ee/spec/services/ee/projects/remove_paid_features_service_spec.rb
 - ee/spec/services/ee/users/destroy_service_spec.rb
 - ee/spec/services/ee/users/migrate_records_to_ghost_user_service_spec.rb
-- ee/spec/services/epics/create_service_spec.rb
 - ee/spec/services/epics/issue_promote_service_spec.rb
 - ee/spec/services/epics/transfer_service_spec.rb
 - ee/spec/services/epics/update_service_spec.rb
@@ -547,8 +546,6 @@
 - spec/features/projects/sourcegraph_csp_spec.rb
 - spec/features/projects/tags/user_views_tag_spec.rb
 - spec/features/projects/tags/user_views_tags_spec.rb
-- spec/features/projects/tree/create_directory_spec.rb
-- spec/features/projects/tree/create_file_spec.rb
 - spec/features/projects/tree/rss_spec.rb
 - spec/features/projects/tree/tree_show_spec.rb
 - spec/features/projects/user_creates_project_spec.rb

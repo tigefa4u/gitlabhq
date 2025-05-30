@@ -16,7 +16,7 @@ import { fetchPolicies } from '~/lib/graphql';
 import Tracking from '~/tracking';
 import PersistedPagination from '~/packages_and_registries/shared/components/persisted_pagination.vue';
 import PersistedSearch from '~/packages_and_registries/shared/components/persisted_search.vue';
-import MetadataDatabaseAlert from '~/packages_and_registries/shared/components/container_registry_metadata_database_alert.vue';
+import MetadataDatabaseBanner from '~/packages_and_registries/shared/components/container_registry_metadata_database_banner.vue';
 import { FILTERED_SEARCH_TERM } from '~/vue_shared/components/filtered_search_bar/constants';
 import {
   getPageParams,
@@ -70,7 +70,7 @@ export default {
     GlSkeletonLoader,
     RegistryHeader,
     DeleteImage,
-    MetadataDatabaseAlert,
+    MetadataDatabaseBanner,
     PersistedPagination,
     PersistedSearch,
   },
@@ -252,7 +252,7 @@ export default {
 
 <template>
   <div>
-    <metadata-database-alert v-if="!config.isMetadataDatabaseEnabled" />
+    <metadata-database-banner v-if="!config.isMetadataDatabaseEnabled" />
     <gl-alert
       v-if="showDeleteAlert"
       :variant="deleteAlertType"
@@ -297,18 +297,20 @@ export default {
         :show-cleanup-policy-link="config.showCleanupPolicyLink"
       >
         <template #commands>
+          <gl-button
+            v-if="config.showContainerRegistrySettings"
+            v-gl-tooltip="$options.i18n.SETTINGS_TEXT"
+            icon="settings"
+            class="!gl-w-auto"
+            :href="config.settingsPath"
+            :aria-label="$options.i18n.SETTINGS_TEXT"
+          />
           <cli-commands
             v-if="showCommands"
             :docker-build-command="dockerBuildCommand"
             :docker-push-command="dockerPushCommand"
             :docker-login-command="dockerLoginCommand"
-          />
-          <gl-button
-            v-if="config.showContainerRegistrySettings"
-            v-gl-tooltip="$options.i18n.SETTINGS_TEXT"
-            icon="settings"
-            :href="config.settingsPath"
-            :aria-label="$options.i18n.SETTINGS_TEXT"
+            class="!gl-w-auto"
           />
         </template>
       </registry-header>

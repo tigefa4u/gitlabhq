@@ -9,6 +9,7 @@ RSpec.describe Gitlab::Database::LockWritesManager, :delete, feature_category: :
   let(:skip_table_creation) { false }
   let(:logger) { instance_double(Logger) }
   let(:dry_run) { false }
+  let(:force) { true }
 
   subject(:lock_writes_manager) do
     described_class.new(
@@ -17,7 +18,8 @@ RSpec.describe Gitlab::Database::LockWritesManager, :delete, feature_category: :
       database_name: 'main',
       with_retries: true,
       logger: logger,
-      dry_run: dry_run
+      dry_run: dry_run,
+      force: force
     )
   end
 
@@ -95,7 +97,9 @@ RSpec.describe Gitlab::Database::LockWritesManager, :delete, feature_category: :
     it 'retries again if it receives a statement_timeout a few number of times' do
       error_message = "PG::QueryCanceled: ERROR: canceling statement due to statement timeout"
       call_count = 0
-      expect(connection).to receive(:execute).twice.with(/^CREATE TRIGGER gitlab_schema_write_trigger_for_/) do
+      expect(connection).to receive(:execute).twice.with(
+        /^CREATE OR REPLACE TRIGGER gitlab_schema_write_trigger_for_/
+      ) do
         call_count += 1
         raise(ActiveRecord::QueryCanceled, error_message) if call_count.odd?
       end
@@ -104,22 +108,16 @@ RSpec.describe Gitlab::Database::LockWritesManager, :delete, feature_category: :
       expect(call_count).to eq(2) # The first call fails, the 2nd call succeeds
     end
 
-    it 'raises the exception if it happened many times' do
+    it 'logs retried errors as skipped' do
       error_message = "PG::QueryCanceled: ERROR: canceling statement due to statement timeout"
-      allow(connection).to receive(:execute).with(/^CREATE TRIGGER gitlab_schema_write_trigger_for_/) do
+      allow(connection).to receive(:execute).with(/^CREATE OR REPLACE TRIGGER gitlab_schema_write_trigger_for_/) do
         raise(ActiveRecord::QueryCanceled, error_message)
       end
 
-      expect do
-        subject.lock_writes
-      end.to raise_error(ActiveRecord::QueryCanceled)
-    end
-
-    it 'skips the operation if the table is already locked for writes' do
-      subject.lock_writes
-
-      expect(logger).to receive(:info).with("Skipping lock_writes, because #{test_table} is already locked for writes")
-      expect(connection).not_to receive(:execute).with(/CREATE TRIGGER/)
+      expect(logger).to receive(:warn).with(
+        /Failed lock_writes, because #{test_table} raised an error. Error:/
+      )
+      expect(connection).to receive(:execute).with(/CREATE OR REPLACE TRIGGER/)
 
       expect do
         result = subject.lock_writes
@@ -129,13 +127,58 @@ RSpec.describe Gitlab::Database::LockWritesManager, :delete, feature_category: :
       }
     end
 
-    context 'when table does not exist' do
-      let(:skip_table_creation) { true }
-      let(:test_table) { non_existent_table }
+    context 'when running in force mode' do
+      it 'replaces the trigger if the table is already locked' do
+        subject.lock_writes
 
-      it 'skips locking table' do
-        expect(logger).to receive(:info).with("Skipping lock_writes, because #{test_table} does not exist")
-        expect(connection).not_to receive(:execute).with(/CREATE TRIGGER/)
+        expect(connection).to receive(:execute).with(/CREATE OR REPLACE TRIGGER/)
+
+        expect do
+          result = subject.lock_writes
+          expect(result).to eq({ action: "locked", database: "main", dry_run: false, table: test_table })
+        end.not_to change {
+          number_of_triggers_on(connection, test_table)
+        }
+      end
+
+      context 'when table does not exist' do
+        let(:skip_table_creation) { true }
+        let(:test_table) { non_existent_table }
+
+        # In tests if we don't add the fake table to the gitlab schema then our test only schema checks will fail.
+        before do
+          allow(Gitlab::Database::GitlabSchema).to receive(:table_schema).and_call_original
+          allow(Gitlab::Database::GitlabSchema).to receive(:table_schema).with(
+            non_existent_table
+          ).and_return(:gitlab_main_cell)
+        end
+
+        it 'tries to lock the table anyways, and logs the failure' do
+          expect(logger).to receive(:warn).with(
+            /Failed lock_writes, because #{test_table} raised an error. Error:/
+          )
+          expect(connection).to receive(:execute).with(/CREATE OR REPLACE TRIGGER/)
+
+          expect do
+            result = subject.lock_writes
+            expect(result).to eq({ action: "skipped", database: "main", dry_run: false, table: test_table })
+          end.not_to change {
+            number_of_triggers_on(connection, test_table)
+          }
+        end
+      end
+    end
+
+    context 'when running in force mode false' do
+      let(:force) { false }
+
+      it 'skips the operation if the table is already locked for writes' do
+        subject.lock_writes
+
+        expect(logger).to receive(:info).with(
+          "Skipping lock_writes, because #{test_table} is already locked for writes"
+        )
+        expect(connection).not_to receive(:execute).with(/CREATE OR REPLACE TRIGGER/)
 
         expect do
           result = subject.lock_writes
@@ -143,6 +186,31 @@ RSpec.describe Gitlab::Database::LockWritesManager, :delete, feature_category: :
         end.not_to change {
           number_of_triggers_on(connection, test_table)
         }
+      end
+
+      context 'when table does not exist' do
+        let(:skip_table_creation) { true }
+        let(:test_table) { non_existent_table }
+
+        # In tests if we don't add the fake table to the gitlab schema then our test only schema checks will fail.
+        before do
+          allow(Gitlab::Database::GitlabSchema).to receive(:table_schema).and_call_original
+          allow(Gitlab::Database::GitlabSchema).to receive(:table_schema).with(
+            non_existent_table
+          ).and_return(:gitlab_main_cell)
+        end
+
+        it 'skips locking table' do
+          expect(logger).to receive(:info).with("Skipping lock_writes, because #{test_table} does not exist")
+          expect(connection).not_to receive(:execute).with(/CREATE OR REPLACE TRIGGER/)
+
+          expect do
+            result = subject.lock_writes
+            expect(result).to eq({ action: "skipped", database: "main", dry_run: false, table: test_table })
+          end.not_to change {
+            number_of_triggers_on(connection, test_table)
+          }
+        end
       end
     end
 
@@ -152,7 +220,7 @@ RSpec.describe Gitlab::Database::LockWritesManager, :delete, feature_category: :
       it 'prints the sql statement to the logger' do
         expect(logger).to receive(:info).with("Database: 'main', Table: '#{test_table}': Lock Writes")
         expected_sql_statement = <<~SQL
-          CREATE TRIGGER gitlab_schema_write_trigger_for_#{test_table}
+          CREATE OR REPLACE TRIGGER gitlab_schema_write_trigger_for_#{test_table}
             BEFORE INSERT OR UPDATE OR DELETE OR TRUNCATE
             ON #{test_table}
             FOR EACH STATEMENT EXECUTE FUNCTION gitlab_schema_prevent_write();
@@ -181,6 +249,12 @@ RSpec.describe Gitlab::Database::LockWritesManager, :delete, feature_category: :
 
   describe '#unlock_writes' do
     before do
+      allow(logger).to receive(:warn).with(/Failed lock_writes, because #{test_table} raised an error. Error:/)
+
+      # In tests if we don't add the fake table to the gitlab schema then our test only schema checks will fail.
+      allow(Gitlab::Database::GitlabSchema).to receive(:table_schema).and_call_original
+      allow(Gitlab::Database::GitlabSchema).to receive(:table_schema).with(test_table).and_return(:gitlab_main_cell)
+
       # Locking the table without the considering the value of dry_run
       described_class.new(
         table_name: test_table,
@@ -202,15 +276,6 @@ RSpec.describe Gitlab::Database::LockWritesManager, :delete, feature_category: :
       end.not_to raise_error
     end
 
-    it 'skips unlocking the table if the table was already unlocked for writes' do
-      subject.unlock_writes
-
-      expect(subject).not_to receive(:execute_sql_statement)
-      expect(subject.unlock_writes).to eq(
-        { action: "skipped", database: "main", dry_run: dry_run, table: test_table }
-      )
-    end
-
     it 'removes the write protection triggers from the gitlab_main tables on the ci database' do
       expect do
         subject.unlock_writes
@@ -227,17 +292,54 @@ RSpec.describe Gitlab::Database::LockWritesManager, :delete, feature_category: :
       subject.unlock_writes
     end
 
-    context 'when table does not exist' do
-      let(:skip_table_creation) { true }
-      let(:test_table) { non_existent_table }
+    context 'when running in force mode true' do
+      it 'idempotently drops the lock even if it does not exist' do
+        subject.unlock_writes
 
-      it 'skips unlocking table' do
+        expect(subject).to receive(:execute_sql_statement)
+        expect(subject.unlock_writes).to eq(
+          { action: "unlocked", database: "main", dry_run: dry_run, table: test_table }
+        )
+      end
+
+      context 'when table does not exist' do
+        let(:skip_table_creation) { true }
+        let(:test_table) { non_existent_table }
+
+        it 'tries to unlock the table which postgres handles gracefully' do
+          expect(subject).to receive(:execute_sql_statement).and_call_original
+
+          expect(subject.unlock_writes).to eq(
+            { action: "unlocked", database: "main", dry_run: false, table: test_table }
+          )
+        end
+      end
+    end
+
+    context 'when running in force mode false' do
+      let(:force) { false }
+
+      it 'skips unlocking the table if the table was already unlocked for writes' do
         subject.unlock_writes
 
         expect(subject).not_to receive(:execute_sql_statement)
         expect(subject.unlock_writes).to eq(
           { action: "skipped", database: "main", dry_run: dry_run, table: test_table }
         )
+      end
+
+      context 'when table does not exist' do
+        let(:skip_table_creation) { true }
+        let(:test_table) { non_existent_table }
+
+        it 'skips unlocking table' do
+          subject.unlock_writes
+
+          expect(subject).not_to receive(:execute_sql_statement)
+          expect(subject.unlock_writes).to eq(
+            { action: "skipped", database: "main", dry_run: dry_run, table: test_table }
+          )
+        end
       end
     end
 

@@ -41,7 +41,7 @@ You can manage your branches:
 
 {{< /history >}}
 
-The **Branch rules overview** page shows all branches with any configured protections,
+The branch rules overview page shows all branches with any configured protections,
 and their protection methods:
 
 ![Example of a branch with configured protections](img/view_branch_protections_v15_10.png)
@@ -50,7 +50,7 @@ Prerequisites:
 
 - You must have at least the Maintainer role for the project.
 
-To view the **Branch rules overview** list:
+To view the branch rules overview list:
 
 1. On the left sidebar, select **Search or go to** and find your project.
 1. Select **Settings > Repository**.
@@ -179,6 +179,8 @@ For additional information, see [Approval rules](../../merge_requests/approvals/
 Prerequisites:
 
 - You must have at least the Maintainer role for the project.
+- In GitLab Free, this feature is available only if the branch rule targets **All branches**.
+- In GitLab Premium and GitLab Ultimate, this feature is available for all branch rules.
 
 To edit a squash option:
 
@@ -308,6 +310,12 @@ For additional information about branch protection controls, see [Protected bran
 
 The availability of this feature is controlled by a feature flag.
 For more information, see the history.
+
+{{< /alert >}}
+
+{{< alert type="note" >}}
+
+Deleting a branch rule is not available for rules targeting `all branches`.
 
 {{< /alert >}}
 

@@ -1,14 +1,14 @@
 ---
-stage: AI-Powered
+stage: AI-powered
 group: Custom Models
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-description: Get started with GitLab Duo Self-Hosted.
+description: Host your own AI gateway and language models.
 title: GitLab Duo Self-Hosted
 ---
 
 {{< details >}}
 
-- Tier: Ultimate
+- Tier: Premium, Ultimate
 - Add-on: GitLab Duo Enterprise
 - Offering: GitLab Self-Managed
 
@@ -19,8 +19,9 @@ title: GitLab Duo Self-Hosted
 - [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/12972) in GitLab 17.1 [with a flag](../feature_flags.md) named `ai_custom_model`. Disabled by default.
 - [Enabled on GitLab Self-Managed](https://gitlab.com/groups/gitlab-org/-/epics/15176) in GitLab 17.6.
 - Changed to require GitLab Duo add-on in GitLab 17.6 and later.
-- Feature flag `ai_custom_model` removed in GitLab 17.8
-- Generally available in GitLab 17.9
+- Feature flag `ai_custom_model` removed in GitLab 17.8.
+- Generally available in GitLab 17.9.
+- Changed to include Premium in GitLab 18.0.
 
 {{< /history >}}
 
@@ -59,16 +60,16 @@ The following table lists the GitLab Duo features, and whether they are availabl
 | [Test Generation](../../user/gitlab_duo_chat/examples.md#write-tests-in-the-ide)                                                       | {{< icon name="check-circle-filled" >}} Yes    | GitLab 17.9 and later |
 | [Refactor Code](../../user/gitlab_duo_chat/examples.md#refactor-code-in-the-ide)                                                       | {{< icon name="check-circle-filled" >}} Yes    | GitLab 17.9 and later |
 | [Fix Code](../../user/gitlab_duo_chat/examples.md#fix-code-in-the-ide)                                                                 | {{< icon name="check-circle-filled" >}} Yes    | GitLab 17.9 and later |
-| [AI Impact Dashboard](../../user/analytics/ai_impact_analytics.md)                                                                     | {{< icon name="check-circle-dashed" >}} Beta | GitLab 17.9 and later |
-| [Root Cause Analysis](../../user/gitlab_duo_chat/examples.md#troubleshoot-failed-cicd-jobs-with-root-cause-analysis)                   | {{< icon name="check-circle-dashed" >}} Beta      | GitLab 17.10 and later |
-| [Vulnerability Explanation](../../user/application_security/vulnerabilities/_index.md#explaining-a-vulnerability)                      | {{< icon name="check-circle-dashed" >}} Beta      | GitLab 17.11 and later |
-| [Vulnerability Resolution](../../user/application_security/vulnerabilities/_index.md#vulnerability-resolution)                         | {{< icon name="check-circle-dashed" >}} Beta      | GitLab 17.11 and later |
-| [Discussion Summary](../../user/discussions/_index.md#summarize-issue-discussions-with-duo-chat)                                       | {{< icon name="check-circle-dashed" >}} Beta      | GitLab 17.11 and later |
-| [GitLab Duo for the CLI](../../editor_extensions/gitlab_cli/_index.md#gitlab-duo-for-the-cli)                                          | {{< icon name="check-circle-dashed" >}} Beta      | GitLab 17.11 and later |
-| [Summarize a Code Review](../../user/project/merge_requests/duo_in_merge_requests.md#summarize-a-code-review)                          | {{< icon name="check-circle-dashed" >}} Experiment      | GitLab 17.11 and later |
+| [AI Impact Dashboard](../../user/analytics/ai_impact_analytics.md)                                                                     | {{< icon name="check-circle-dashed" >}} Beta   | GitLab 17.9 and later |
+| [Root Cause Analysis](../../user/gitlab_duo_chat/examples.md#troubleshoot-failed-cicd-jobs-with-root-cause-analysis)                   | {{< icon name="check-circle-dashed" >}} Beta   | GitLab 18.1 and later |
+| [Vulnerability Explanation](../../user/application_security/vulnerabilities/_index.md#explaining-a-vulnerability)                      | {{< icon name="check-circle-dashed" >}} Beta   | GitLab 18.1 and later |
+| [Vulnerability Resolution](../../user/application_security/vulnerabilities/_index.md#vulnerability-resolution)                         | {{< icon name="check-circle-dashed" >}} Beta   | GitLab 18.1 and later |
+| [Discussion Summary](../../user/discussions/_index.md#summarize-issue-discussions-with-duo-chat)                                       | {{< icon name="check-circle-dashed" >}} Beta   | GitLab 18.1 and later |
+| [GitLab Duo for the CLI](../../editor_extensions/gitlab_cli/_index.md#gitlab-duo-for-the-cli)                                          | {{< icon name="check-circle-dashed" >}} Beta   | GitLab 18.1 and later |
+| [Summarize a Code Review](../../user/project/merge_requests/duo_in_merge_requests.md#summarize-a-code-review)                          | {{< icon name="check-circle-dashed" >}} Experiment | GitLab 18.1 and later |
 | [Code Review](../../user/project/merge_requests/duo_in_merge_requests.md#have-gitlab-duo-review-your-code)                               | {{< icon name="dash-circle" >}} No      | Not applicable |
-| [Merge Commit Message Generation](../../user/project/merge_requests/duo_in_merge_requests.md#generate-a-merge-commit-message)          | {{< icon name="check-circle-dashed" >}} Beta      | GitLab 17.11 and later |
-| [Summarize New Merge Request](../../user/project/merge_requests/duo_in_merge_requests.md#generate-a-description-by-summarizing-code-changes)          | {{< icon name="check-circle-dashed" >}} Beta      | GitLab 17.11 and later |
+| [Merge Commit Message Generation](../../user/project/merge_requests/duo_in_merge_requests.md#generate-a-merge-commit-message)          | {{< icon name="check-circle-dashed" >}} Beta | GitLab 18.1 and later |
+| [Summarize New Merge Request](../../user/project/merge_requests/duo_in_merge_requests.md#generate-a-description-by-summarizing-code-changes)          | {{< icon name="check-circle-dashed" >}} Beta | GitLab 18.1 and later |
 | [Issue Description Generation](../../user/project/issues/managing_issues.md#populate-an-issue-with-issue-description-generation)              | {{< icon name="dash-circle" >}} No      | Not applicable |
 
 #### Supported Duo Chat features
@@ -95,7 +96,7 @@ Before setting up the GitLab Duo Self-Hosted infrastructure, you must have:
 - A [supported model](supported_models_and_hardware_requirements.md) (either cloud-based or on-premises).
 - A [supported serving platform](supported_llm_serving_platforms.md) (either cloud-based or on-premises).
 - A [locally hosted AI gateway](../../install/install_ai_gateway.md).
-- [Ultimate with GitLab Duo Enterprise](https://about.gitlab.com/solutions/gitlab-duo-pro/sales/?toggle=gitlab-duo-pro).
+- [Premium or Ultimate with GitLab Duo Enterprise](https://about.gitlab.com/solutions/gitlab-duo-pro/sales/?toggle=gitlab-duo-pro).
 - GitLab 17.9 or later.
 
 ## Decide on your configuration type
@@ -122,7 +123,7 @@ While this configuration is fully self-hosted and you can use models like Mistra
 
 If you have an offline environment with physical barriers or security policies that prevent or limit internet access, and comprehensive LLM controls, you can use GitLab Duo Self-Hosted.
 
-For licensing, you must have a GitLab Ultimate subscription and GitLab Duo Enterprise. Offline Enterprise licenses are available for those customers with fully isolated offline environments. To get access to your purchased subscription, request a license through the [Customers Portal](../../subscriptions/customers_portal.md).
+For licensing, you must have a GitLab Premium or Ultimate subscription, and [GitLab Duo Enterprise](https://about.gitlab.com/solutions/gitlab-duo-pro/sales/?type=free-trial). Offline Enterprise licenses are available for those customers with fully isolated offline environments. To get access to your purchased subscription, request a license through the [Customers Portal](../../subscriptions/customers_portal.md).
 
 For more information, see:
 
@@ -142,10 +143,10 @@ integrates with external vendor LLM providers, including:
 - [Fireworks AI](https://fireworks.ai/)
 - [Google Vertex](https://cloud.google.com/vertex-ai/)
 
-These LLMs communicate through the [GitLab Cloud Connector](../../development/cloud_connector/_index.md),
+These LLMs communicate through the GitLab Cloud Connector,
 offering a ready-to-use AI solution without the need for on-premise infrastructure.
 
-For licensing, you must have a GitLab Ultimate subscription, and [GitLab Duo Enterprise](https://about.gitlab.com/solutions/gitlab-duo-pro/sales/?type=free-trial). To get access to your purchased subscription, request a license through the [Customers Portal](../../subscriptions/customers_portal.md)
+For licensing, you must have a GitLab Premium or Ultimate subscription, and [GitLab Duo Enterprise](https://about.gitlab.com/solutions/gitlab-duo-pro/sales/?type=free-trial). To get access to your purchased subscription, request a license through the [Customers Portal](../../subscriptions/customers_portal.md)
 
 For more information, see the
 [GitLab.com AI gateway configuration diagram](configuration_types.md#gitlabcom-ai-gateway).

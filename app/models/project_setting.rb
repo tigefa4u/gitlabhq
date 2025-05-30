@@ -5,6 +5,8 @@ class ProjectSetting < ApplicationRecord
   include EachBatch
   include CascadingProjectSettingAttribute
   include Projects::SquashOption
+  include Gitlab::EncryptedAttribute
+  include AfterCommitQueue
 
   ALLOWED_TARGET_PLATFORMS = %w[ios osx tvos watchos android].freeze
 
@@ -16,16 +18,18 @@ class ProjectSetting < ApplicationRecord
   scope :for_projects, ->(projects) { where(project_id: projects) }
   scope :with_namespace, -> { joins(project: :namespace) }
 
+  cascading_attr :web_based_commit_signing_enabled
+
   attr_encrypted :cube_api_key,
     mode: :per_attribute_iv,
-    key: Settings.attr_encrypted_db_key_base_32,
+    key: :db_key_base_32,
     algorithm: 'aes-256-gcm',
     encode: false,
     encode_iv: false
 
   attr_encrypted :product_analytics_configurator_connection_string,
     mode: :per_attribute_iv,
-    key: Settings.attr_encrypted_db_key_base_32,
+    key: :db_key_base_32,
     algorithm: 'aes-256-gcm',
     encode: false,
     encode_iv: false
@@ -47,6 +51,9 @@ class ProjectSetting < ApplicationRecord
   validate :validates_mr_default_target_self
 
   validate :pages_unique_domain_availability, if: :pages_unique_domain_changed?
+
+  after_update :enqueue_auto_merge_workers,
+    if: -> { Feature.enabled?(:merge_request_title_regex, project) && saved_change_to_merge_request_title_regex }
 
   attribute :legacy_open_source_license_available, default: -> do
     Feature.enabled?(:legacy_open_source_license_available, type: :ops)
@@ -92,6 +99,12 @@ class ProjectSetting < ApplicationRecord
   def validates_mr_default_target_self
     if mr_default_target_self_changed? && !project.forked?
       errors.add :mr_default_target_self, _('This setting is allowed for forked projects only')
+    end
+  end
+
+  def enqueue_auto_merge_workers
+    run_after_commit do
+      AutoMergeProcessWorker.perform_async({ 'project_id' => project.id })
     end
   end
 

@@ -54,6 +54,24 @@ To set up DNS records for a custom hostname with GitLab Dedicated:
 
 1. Save your changes and wait for the DNS changes to propagate.
 
+### DNS requirements for Let's Encrypt certificates
+
+When using custom hostnames with GitLab Dedicated, your domain must be publicly resolvable
+through DNS, even if you plan to access your instance through private networks only.
+
+This public DNS requirement exists because:
+
+- Let's Encrypt uses the HTTP-01 challenge, which requires public internet access to verify
+  domain ownership.
+- The validation process must reach your custom hostname from the public internet through
+  the CNAME record that points to your GitLab Dedicated tenant.
+- Certificate renewal happens automatically every 90 days and uses the same public
+  validation process as the initial issuance.
+
+For instances configured with private networking (such as AWS PrivateLink), maintaining public
+DNS resolution ensures certificate renewal works properly, even when all other access is
+restricted to private networks.
+
 ### Add your custom hostname
 
 To add a custom hostname to your existing GitLab Dedicated instance, submit a [support ticket](https://support.gitlab.com/hc/en-us/requests/new?ticket_form_id=4414917877650).
@@ -291,7 +309,7 @@ The configuration is applied during the next maintenance window.
 
 ### Enable SCIM provisioning for your IP allowlist
 
-You can use SCIM with external identity providers to automatically provision and manage users. To use SCIM, your identity provider must be able to access the [instance SCIM API](../../../development/internal_api/_index.md#instance-scim-api) endpoints. By default, IP allowlisting blocks communication to these endpoints.
+You can use SCIM with external identity providers to automatically provision and manage users. To use SCIM, your identity provider must be able to access the instance SCIM API endpoints. By default, IP allowlisting blocks communication to these endpoints.
 
 To enable SCIM while maintaining your IP allowlist:
 

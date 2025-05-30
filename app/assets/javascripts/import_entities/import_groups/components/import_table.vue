@@ -277,10 +277,13 @@ export default {
     },
 
     unavailableFeaturesAlertTitle() {
-      return sprintf(s__('BulkImport| %{host} is running outdated GitLab version (v%{version})'), {
-        host: this.sourceUrl,
-        version: this.bulkImportSourceGroups.versionValidation.features.sourceInstanceVersion,
-      });
+      return sprintf(
+        s__('BulkImport|%{host} is running an outdated GitLab version (v%{version})'),
+        {
+          host: this.sourceUrl,
+          version: this.bulkImportSourceGroups.versionValidation.features.sourceInstanceVersion,
+        },
+      );
     },
 
     pageInfo() {
@@ -701,7 +704,7 @@ export default {
       <gl-sprintf
         :message="
           s__(
-            'BulkImport|Following data will not be migrated: %{bullets} Contact system administrator of %{host} to upgrade GitLab if you need this data in your migration',
+            'BulkImport|The following items are not migrated: %{bullets} To include these items, ask the administrator of %{host} to upgrade GitLab.',
           )
         "
       >
@@ -764,9 +767,7 @@ export default {
         <help-popover :options="$options.popoverOptions">
           <gl-sprintf
             :message="
-              s__(
-                'BulkImport|Only groups that you have the %{role} role for are listed as groups you can import.',
-              )
+              s__('BulkImport|Only groups you have the %{role} role for are listed for import.')
             "
           >
             <template #role>
@@ -835,7 +836,7 @@ export default {
             <span v-if="showImportProjectsWarning" class="gl-shrink-0">
               <gl-icon
                 v-gl-tooltip
-                :title="s__('BulkImport|Some groups will be imported without projects.')"
+                :title="s__('BulkImport|Some groups are imported without projects.')"
                 name="warning"
                 variant="warning"
                 data-testid="import-projects-warning"
@@ -888,7 +889,7 @@ export default {
             <span data-testid="new-path-col">
               <span class="gl-mr-2">{{ data.label }}</span
               ><gl-icon
-                v-gl-tooltip="s__('BulkImport|Path of the new group.')"
+                v-gl-tooltip="s__('BulkImport|Path of the new group')"
                 name="information"
                 :size="12"
               />

@@ -188,21 +188,21 @@ Members list for an example subgroup _Four_:
 
 ![Group members page](img/group_members_v14_4.png)
 
-In the screenshot above:
+In the previous screenshot:
 
-- Five members have access to group _Four_.
-- User 0 has the Reporter role on group _Four_, and has inherited their permissions from group _One_:
-  - User 0 is a direct member of group _One_.
-  - Group _One_ is above group _Four_ in the hierarchy.
-- User 1 has the Developer role on group _Four_ and inherited their permissions from group _Two_:
-  - User 0 is a direct member of group _Two_, which is a subgroup of group _One_.
-  - Groups _One / Two_ are above group _Four_ in the hierarchy.
-- User 2 has the Developer role on group _Four_ and has inherited their permissions from group _Three_:
-  - User 0 is a direct member of group _Three_, which is a subgroup of group _Two_. Group _Two_ is a subgroup of group
-    _One_.
-  - Groups _One / Two / Three_ are above group _Four_ the hierarchy.
-- User 3 is a direct member of group _Four_. This means they get their Maintainer role directly from group _Four_.
-- Administrator has the Owner role on group _Four_ and is a member of all subgroups. For that reason, as with User 3,
+- Five members have access to group **Four**.
+- User 0 has the Reporter role on group **Four**, and has inherited their permissions from group **One**:
+  - User 0 is a direct member of group **One**.
+  - Group **One** is above group **Four** in the hierarchy.
+- User 1 has the Developer role on group **Four** and inherited their permissions from group **Two**:
+  - User 0 is a direct member of group **Two**, which is a subgroup of group **One**.
+  - Groups **One** / **Two** are above group **Four** in the hierarchy.
+- User 2 has the Developer role on group **Four** and has inherited their permissions from group **Three**:
+  - User 0 is a direct member of group **Three**, which is a subgroup of group **Two**. Group **Two** is a subgroup of group
+    **One**.
+  - Groups **One** / **Two** / **Three** are above group **Four** the hierarchy.
+- User 3 is a direct member of group **Four**. This means they get their Maintainer role directly from group **Four**.
+- Administrator has the Owner role on group **Four** and is a member of all subgroups. For that reason, as with User 3,
   the **Source** column indicates they are a direct member.
 
 Members can be [filtered by inherited or direct membership](../_index.md#filter-a-group).
@@ -226,15 +226,3 @@ For example:
 Mentioning subgroups ([`@<subgroup_name>`](../../discussions/_index.md#mentions)) in epics, issues, commits, and merge requests
 notifies all direct members of that group. Inherited members of a subgroup are not notified by mentions.
 Mentioning works the same as for projects and groups, and you can choose the group of members to be notified.
-
-<!-- ## Troubleshooting
-
-Include any troubleshooting steps that you can foresee. If you know beforehand what issues
-one might have when setting this up, or when something is changed, or on upgrading, it's
-important to describe those, too. Think of things that may go wrong and include them here.
-This is important to minimize requests for support, and to avoid doc comments with
-questions that you know someone might ask.
-
-Each scenario can be a third-level heading, for example `### Getting error message X`.
-If you have none to add when creating a doc, leave this section in place
-but commented out to help encourage others to add to it in the future. -->

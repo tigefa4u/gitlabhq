@@ -1,12 +1,6 @@
 # frozen_string_literal: true
 
 class IssuePolicy < IssuablePolicy
-  # This class duplicates the same check of Issue#readable_by? for performance reasons
-  # Make sure to sync this class checks with issue.rb to avoid security problems.
-  # Check commit 002ad215818450d2cbbc5fa065850a953dc7ada8 for more information.
-
-  include CrudPolicyHelpers
-
   # In FOSS there is no license.
   # This method is overridden in EE
   def epics_license_available?
@@ -88,8 +82,16 @@ class IssuePolicy < IssuablePolicy
   end
 
   rule { confidential & ~can_read_confidential }.policy do
-    prevent(*create_read_update_admin_destroy(:issue))
-    prevent(*create_read_update_admin_destroy(:work_item))
+    prevent :read_issue
+    prevent :create_issue
+    prevent :update_issue
+    prevent :admin_issue
+    prevent :destroy_issue
+    prevent :read_work_item
+    prevent :create_work_item
+    prevent :update_work_item
+    prevent :admin_work_item
+    prevent :destroy_work_item
     prevent :read_issue_iid
   end
 

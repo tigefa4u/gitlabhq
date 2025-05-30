@@ -14,6 +14,7 @@ import { nDaysBefore } from '~/lib/utils/datetime/date_calculation_utility';
 import { formatDate } from '~/lib/utils/datetime/date_format_utility';
 import { logError } from '~/lib/logger';
 import * as Sentry from '~/sentry/sentry_browser_wrapper';
+import { InternalEvents } from '~/tracking';
 import MergeRequestListItem from './merge_request_list_item.vue';
 
 const OPEN_MR_AGE_LIMIT_DAYS = 30;
@@ -27,6 +28,7 @@ export default {
     MergeRequestListItem,
   },
   directives: { GlTooltip: GlTooltipDirective },
+  mixins: [InternalEvents.mixin()],
   inject: ['currentRef'],
   props: {
     projectPath: {
@@ -81,6 +83,13 @@ export default {
       },
       update({ project: { mergeRequests: { count } = {} } = {} } = {}) {
         return count;
+      },
+      result() {
+        if (this.openMrsCount > 0) {
+          this.trackEvent('render_recent_mrs_for_file_on_branch_badge', {
+            value: this.openMrsCount,
+          });
+        }
       },
       error(error) {
         logError(
@@ -140,6 +149,7 @@ export default {
           class="gl-h-full"
           :title="badgeTitle"
           :aria-label="badgeTitle"
+          tag="a"
         >
           {{ openMRsCountText }}
         </gl-badge>

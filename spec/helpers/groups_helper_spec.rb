@@ -431,6 +431,25 @@ RSpec.describe GroupsHelper, feature_category: :groups_and_projects do
     end
   end
 
+  describe '#can_invite_group_member?' do
+    let_it_be(:user) { create(:user) }
+    let_it_be(:group) { create(:group) }
+
+    before do
+      allow(helper).to receive(:current_user) { user }
+    end
+
+    it 'returns true when current_user can invite members' do
+      group.add_owner(user)
+
+      expect(helper.can_invite_group_member?(group)).to be(true)
+    end
+
+    it 'returns false when current_user can not invite members' do
+      expect(helper.can_invite_group_member?(group)).to be(false)
+    end
+  end
+
   describe '#localized_jobs_to_be_done_choices' do
     it 'has a translation for all `jobs_to_be_done` values' do
       expect(localized_jobs_to_be_done_choices.keys).to match_array(NamespaceSetting.jobs_to_be_dones.keys)
@@ -505,9 +524,10 @@ RSpec.describe GroupsHelper, feature_category: :groups_and_projects do
       expect(helper.group_overview_tabs_app_data(group)).to match(
         {
           group_id: group.id,
-          subgroups_and_projects_endpoint: including("/groups/#{group.path}/-/children.json"),
+          subgroups_and_projects_endpoint:
+            including("/groups/#{group.path}/-/children.json?archived=false&not_aimed_for_deletion=true"),
           shared_projects_endpoint: including("/groups/#{group.path}/-/shared_projects.json"),
-          inactive_projects_endpoint: including("/groups/#{group.path}/-/children.json?archived=only"),
+          inactive_projects_endpoint: including("/groups/#{group.path}/-/children.json?active=false"),
           current_group_visibility: group.visibility,
           initial_sort: initial_sort,
           show_schema_markup: 'true',
@@ -764,6 +784,39 @@ RSpec.describe GroupsHelper, feature_category: :groups_and_projects do
     end
   end
 
+  describe '#delete_delayed_group_message' do
+    let(:group) { build(:group) }
+
+    subject(:message) { helper.delete_delayed_group_message(group) }
+
+    specify do
+      deletion_adjourned_period = ::Gitlab::CurrentSettings.deletion_adjourned_period
+
+      expect(message).to eq "This action will place this group, " \
+        "including its subgroups and projects, in a pending deletion state for #{deletion_adjourned_period} days, " \
+        "and delete it permanently on <strong>#{helper.permanent_deletion_date_formatted}</strong>."
+    end
+  end
+
+  describe '#delete_immediately_group_scheduled_for_deletion_message' do
+    let(:group) { build(:group) }
+    let(:marked_for_deletion) { Date.parse('2024-01-01') }
+
+    subject(:message) { helper.delete_immediately_group_scheduled_for_deletion_message(group) }
+
+    before do
+      allow(group).to receive(:marked_for_deletion_on).and_return(marked_for_deletion)
+    end
+
+    it 'returns the delete permanently override message' do
+      deletion_date = helper.permanent_deletion_date_formatted(group)
+
+      expect(message).to eq "This group is scheduled for deletion on <strong>#{deletion_date}</strong>. " \
+        "This action will permanently delete this group, including its subgroups and projects, " \
+        "<strong>immediately</strong>. This action cannot be undone."
+    end
+  end
+
   describe '#remove_group_message' do
     let_it_be(:group) { create(:group) }
     let(:delayed_deletion_message) { "The contents of this group, its subgroups and projects will be permanently deleted after" }
@@ -783,59 +836,58 @@ RSpec.describe GroupsHelper, feature_category: :groups_and_projects do
       end
     end
 
-    context 'delayed deletion feature is available' do
+    it_behaves_like 'delayed deletion message'
+
+    context 'group is already marked for deletion' do
       before do
-        allow(group).to receive(:adjourned_deletion?).and_return(true)
-      end
-
-      it_behaves_like 'delayed deletion message'
-
-      context 'group is already marked for deletion' do
-        before do
-          create(:group_deletion_schedule, group: group, marked_for_deletion_on: Date.current)
-          allow(group).to receive(:marked_for_deletion?).and_return(true)
-        end
-
-        it_behaves_like 'permanent deletion message'
-      end
-
-      context 'when group delay deletion is enabled' do
-        before do
-          stub_application_setting(delayed_group_deletion: true)
-        end
-
-        it_behaves_like 'delayed deletion message'
-      end
-
-      context 'when group delay deletion is disabled' do
-        before do
-          stub_application_setting(delayed_group_deletion: false)
-        end
-
-        it_behaves_like 'delayed deletion message'
-      end
-
-      context "group has not been marked for deletion" do
-        let(:group) { build(:group) }
-
-        context "'permanently_remove' argument is set to 'true'" do
-          it "displays permanent deletion message" do
-            allow(group).to receive(:marked_for_deletion?).and_return(false)
-            allow(group).to receive(:adjourned_deletion?).and_return(true)
-
-            expect(subject).to include(delayed_deletion_message)
-            expect(helper.remove_group_message(group, true)).to include(*permanent_deletion_message)
-          end
-        end
-      end
-    end
-
-    context 'delayed deletion feature is not available' do
-      before do
-        stub_feature_flags(downtier_delayed_deletion: false)
+        create(:group_deletion_schedule, group: group, marked_for_deletion_on: Date.current)
+        allow(group).to receive(:marked_for_deletion?).and_return(true)
       end
 
       it_behaves_like 'permanent deletion message'
+    end
+
+    context 'when group delay deletion is enabled' do
+      before do
+        stub_application_setting(delayed_group_deletion: true)
+      end
+
+      it_behaves_like 'delayed deletion message'
+    end
+
+    context 'when group delay deletion is disabled' do
+      before do
+        stub_application_setting(delayed_group_deletion: false)
+      end
+
+      it_behaves_like 'delayed deletion message'
+    end
+
+    context "group has not been marked for deletion" do
+      let(:group) { build(:group) }
+
+      context "'permanently_remove' argument is set to 'true'" do
+        it "displays permanent deletion message" do
+          allow(group).to receive(:marked_for_deletion?).and_return(false)
+          allow(group).to receive(:adjourned_deletion?).and_return(true)
+
+          expect(subject).to include(delayed_deletion_message)
+          expect(helper.remove_group_message(group, true)).to include(*permanent_deletion_message)
+        end
+      end
+    end
+  end
+
+  describe '#groups_list_with_filtered_search_app_data' do
+    let_it_be(:endpoint) { '/groups' }
+
+    it 'returns expected json' do
+      expect(Gitlab::Json.parse(helper.groups_list_with_filtered_search_app_data(endpoint))).to eq(
+        {
+          'endpoint' => endpoint,
+          'initial_sort' => 'created_desc'
+        }
+      )
     end
   end
 

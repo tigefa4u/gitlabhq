@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: 'Database case study: Namespaces storage statistics'
 ---
 
@@ -43,7 +43,7 @@ alternative method.
 
 ### Attempt A: PostgreSQL materialized view
 
-Model can be updated through a refresh strategy based on a project routes SQL and a [materialized view](https://www.postgresql.org/docs/11/rules-materializedviews.html):
+Model can be updated through a refresh strategy based on a project routes SQL and a [materialized view](https://www.postgresql.org/docs/16/rules-materializedviews.html):
 
 ```sql
 SELECT split_part("rs".path, '/', 1) as root_path,

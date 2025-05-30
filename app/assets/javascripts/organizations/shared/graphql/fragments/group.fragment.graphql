@@ -1,5 +1,0 @@
-#import "./base_group.fragment.graphql"
-
-fragment Group on Group {
-  ...BaseGroup
-}

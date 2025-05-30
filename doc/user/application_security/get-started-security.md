@@ -1,8 +1,10 @@
 ---
-stage: DevSecOps
-group: Technical writing
+stage: Application Security Testing
+group: Secret Detection
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+description: Learn about testing and resolving vulnerabilities.
 title: Get started securing your application
+description: Overview of how features fit together.
 ---
 
 Identify and remediate vulnerabilities in your application's source code.
@@ -146,4 +148,4 @@ For more information, see:
 - [DAST](dast/_index.md)
 - [Fuzz testing](coverage_fuzzing/_index.md)
 - [Web API fuzzing](api_fuzzing/_index.md)
-- [Review apps](../../development/testing_guide/review_apps.md)
+- [Review apps](../../ci/review_apps/_index.md)

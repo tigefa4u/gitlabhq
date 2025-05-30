@@ -1,7 +1,7 @@
 ---
 stage: Monitor
 group: Analytics Instrumentation
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Single Instrumentation Layer
 ---
 
@@ -18,7 +18,7 @@ The Single Instrumentation Layer allows to:
 - Use the same event definitions for both instrumentation and processing
 - Eliminate the need to write duplicate tracking code for the same event
 
-## How it works
+## How a Single Instrumentation Layer works
 
 [See example MR](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/167415/diffs).
 

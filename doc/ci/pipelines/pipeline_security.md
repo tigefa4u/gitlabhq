@@ -3,6 +3,7 @@ stage: Software Supply Chain Security
 group: Pipeline Security
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Pipeline security
+description: Secrets management, job tokens, secure files, and cloud security.
 ---
 
 {{< details >}}
@@ -199,6 +200,11 @@ Then you can include the local copy:
 include:
   - local: '/ci/security-scan.yml'  # Verified and stored in the repository
 ```
+
+### Automatic SLSA attestation generation
+
+GitLab offers a SLSA Level 1 compliant attestation that can be [automatically generated for all build artifacts produced by the GitLab Runner](../runners/configure_runners.md#artifact-provenance-metadata).
+This attestation is produced by the runner itself.
 
 ### Related topics
 

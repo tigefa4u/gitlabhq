@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Organizations::GroupsController, '(JavaScript fixtures)', type: :controller, feature_category: :cell do
+RSpec.describe Organizations::GroupsController, '(JavaScript fixtures)', type: :controller, feature_category: :organization do
   include JavaScriptFixturesHelpers
 
   let_it_be(:current_user) { create(:user) }
@@ -27,7 +27,7 @@ RSpec.describe Organizations::GroupsController, '(JavaScript fixtures)', type: :
   end
 end
 
-RSpec.describe 'Organizations (GraphQL fixtures)', feature_category: :cell do
+RSpec.describe 'Organizations (GraphQL fixtures)', feature_category: :organization do
   describe GraphQL::Query, type: :request do
     include GraphqlHelpers
     include JavaScriptFixturesHelpers
@@ -37,7 +37,13 @@ RSpec.describe 'Organizations (GraphQL fixtures)', feature_category: :cell do
     let_it_be(:organizations) { create_list(:organization, 3) }
     let_it_be(:organization) { organizations.first }
     let_it_be(:groups) { create_list(:group, 3, organization: organization) }
+
     let_it_be(:group) { groups.first }
+    let_it_be(:group_owner) { create(:group_member, :owner, group: group, user: create(:user)) }
+    let_it_be(:deletion_schedule) do
+      create(:group_deletion_schedule, group: group, marked_for_deletion_on: Date.yesterday)
+    end
+
     let_it_be(:projects) do
       groups.map do |group|
         create(:project, :public, namespace: group, organization: organization)

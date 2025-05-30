@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Configure the bundled Puma instance of the GitLab package
 ---
@@ -35,7 +35,7 @@ set `per_worker_max_memory_mb` to the new RSS limit in megabytes:
 1. Edit `/etc/gitlab/gitlab.rb`:
 
    ```ruby
-   puma['per_worker_max_memory_mb'] = 1024 # 1GB
+   puma['per_worker_max_memory_mb'] = 1024 # 1 GB
    ```
 
 1. Reconfigure GitLab:
@@ -420,7 +420,7 @@ separate Rails process to debug the issue:
 ### GitLab: API is not accessible
 
 This often occurs when GitLab Shell attempts to request authorization via the
-[internal API](../../development/internal_api/_index.md) (for example, `http://localhost:8080/api/v4/internal/allowed`), and
+internal API (for example, `http://localhost:8080/api/v4/internal/allowed`), and
 something in the check fails. There are many reasons why this may happen:
 
 1. Timeout connecting to a database (for example, PostgreSQL or Redis)
@@ -429,7 +429,7 @@ something in the check fails. There are many reasons why this may happen:
 
 To diagnose this problem, try to reproduce the problem and then see if there
 is a Puma worker that is spinning via `top`. Try to use the `gdb`
-techniques above. In addition, using `strace` may help isolate issues:
+techniques documented previously. In addition, using `strace` may help isolate issues:
 
 ```shell
 strace -ttTfyyy -s 1024 -p <PID of puma worker> -o /tmp/puma.txt
@@ -437,7 +437,7 @@ strace -ttTfyyy -s 1024 -p <PID of puma worker> -o /tmp/puma.txt
 
 If you cannot isolate which Puma worker is the issue, try to run `strace`
 on all the Puma workers to see where the
-[`/internal/allowed`](../../development/internal_api/_index.md) endpoint gets stuck:
+`/internal/allowed` endpoint gets stuck:
 
 ```shell
 ps auwx | grep puma | awk '{ print " -p " $2}' | xargs  strace -ttTfyyy -s 1024 -o /tmp/puma.txt

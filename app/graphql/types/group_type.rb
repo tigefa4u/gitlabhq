@@ -8,6 +8,8 @@ module Types
 
     implements ::Types::Namespaces::GroupInterface
 
+    connection_type_class Types::CountableConnectionType
+
     authorize :read_group
 
     expose_permissions Types::PermissionTypes::Group
@@ -371,7 +373,9 @@ module Types
 
     field :permanent_deletion_date, GraphQL::Types::String,
       null: true,
-      description: 'Date when group will be deleted if delayed group deletion is enabled.',
+      description: "For groups pending deletion, returns the group's scheduled deletion date. " \
+        'For groups not pending deletion, returns a theoretical date based on current settings ' \
+        'if marked for deletion today.',
       experiment: { milestone: '16.11' }
 
     def label(title:)
@@ -476,9 +480,9 @@ module Types
     end
 
     def permanent_deletion_date
-      return unless group.adjourned_deletion_configured?
+      return unless group.adjourned_deletion?
 
-      permanent_deletion_date_formatted(Date.current)
+      permanent_deletion_date_formatted(group.marked_for_deletion_on || Date.current)
     end
 
     private

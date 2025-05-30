@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Database required stops
 ---
 
@@ -20,7 +20,11 @@ background migration may cause these issues with particularly large customers, w
 introduce stops when the impact is widespread.
 
 - **Cause:** When an upgrade takes more than an hour, omnibus times out.
-- **Mitigation:** Schedule finalization for the first minor version after the next required stop.
+- **Mitigation:** Schedule finalization for the first minor version after the next required stop. By waiting for the
+  next required stop, we ensure the customers jumping between required stops will have an opportunity to run the
+  migrations in the background ensuring their services remain operational. Otherwise, finalizing migrations in the
+  required stop would force synchronous execution during upgrade from previous required stop, causing downtime if the
+  migration runtime exceed the maintenance window.
 
 ### Improperly finalized background migrations
 
@@ -69,4 +73,4 @@ to prevent these in testing, sometimes they happen.
 ## Adding a required stop
 
 If you plan to introduce a change the falls into one of the above scenarios,
-please refer to [adding required stops](../avoiding_required_stops.md#adding-required-stops).
+see [adding required stops](../avoiding_required_stops.md#adding-required-stops).

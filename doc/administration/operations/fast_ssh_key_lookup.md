@@ -2,6 +2,7 @@
 stage: Create
 group: Source Code
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+gitlab_dedicated: no
 description: Configure a faster SSH authorization method for GitLab instances with many users.
 title: Fast lookup of SSH keys
 ---
@@ -101,7 +102,7 @@ To set up fast lookup with OpenSSH:
    - Self-compiled installations: If you followed the instructions for
    [installing GitLab Shell from source](../../install/installation.md#install-gitlab-shell), the command should be
    located at `/home/git/gitlab-shell/bin/gitlab-shell-authorized-keys-check`.
-   Consider creating a wrapper script somewhere else, as this command must be owned by `root`,
+   Consider creating a wrapper script somewhere else because this command must be owned by `root`,
    and not be writable by a group or others.
    Also consider changing the ownership of this command as needed, but this might require temporary
    ownership changes during `gitlab-shell` upgrades.
@@ -126,7 +127,7 @@ To set up fast lookup with OpenSSH:
       ```
 
       A successful pull or [welcome message](../../user/ssh.md#verify-that-you-can-connect)
-      means that GitLab found the key in the database, as the key is not present in the file.
+      means that GitLab found the key in the database because the key is not present in the file.
 
 If there are lookup failures, the `authorized_keys` file is still scanned.
 Git SSH performance might still be slow for many users, as long as the large file exists.
@@ -154,7 +155,7 @@ or for users to re-add their keys.
 
 ### How to go back to using the `authorized_keys` file
 
-This overview is brief. Refer to the above instructions for more context.
+This overview is brief. Refer to the previous instructions for more context.
 
 1. [Rebuild the `authorized_keys` file](../raketasks/maintenance.md#rebuild-authorized_keys-file).
 1. Enable writes to the `authorized_keys` file.
@@ -172,12 +173,12 @@ GitLab supports `authorized_keys` database lookups with [SELinux](https://en.wik
 
 Because the SELinux policy is static, GitLab doesn't support changing
 internal web server ports. Administrators would have to create a special `.te`
-file for the environment, as it isn't generated dynamically.
+file for the environment because it isn't generated dynamically.
 
 ### Additional documentation
 
 Additional technical documentation for `gitlab-sshd` may be found in the
-[GitLab Shell documentation](../../development/gitlab_shell/_index.md).
+GitLab Shell documentation.
 
 ## Troubleshooting
 

@@ -10,7 +10,8 @@ module ServicePing
 
     SubmissionError = Class.new(StandardError)
 
-    def initialize(payload: nil)
+    def initialize(organization:, payload: nil)
+      @organization = organization
       @payload = payload
     end
 
@@ -35,12 +36,13 @@ module ServicePing
 
     private
 
-    attr_reader :payload
+    attr_reader :payload, :organization
 
     def metadata(service_ping_payload)
       {
         metadata: {
           uuid: service_ping_payload[:uuid],
+          unique_instance_id: service_ping_payload[:unique_instance_id],
           metrics: Gitlab::Utils::UsageData.metrics_collection_metadata(service_ping_payload)
         }
       }
@@ -82,6 +84,7 @@ module ServicePing
       error_payload = {
         time: current_time,
         uuid: Gitlab::CurrentSettings.uuid,
+        unique_instance_id: Gitlab::GlobalAnonymousId.instance_uuid,
         hostname: Gitlab.config.gitlab.host,
         version: Gitlab.version_info.to_s,
         message: "#{error.message.presence || error.class} at #{error.backtrace[0]}",
@@ -101,7 +104,7 @@ module ServicePing
       # rubocop: disable CodeReuse/ActiveRecord
       RawUsageData.find_or_create_by(recorded_at: usage_data[:recorded_at]) do |record|
         record.payload = usage_data
-        record.organization_id = Organizations::Organization.first.id
+        record.organization_id = organization.id
       end
       # rubocop: enable CodeReuse/ActiveRecord
     end

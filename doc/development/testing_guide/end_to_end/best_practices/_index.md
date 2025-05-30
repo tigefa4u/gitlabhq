@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: End-to-end testing Best Practices
 ---
 
@@ -292,7 +292,7 @@ end
 
 Our framework includes a couple of parallelization mechanisms that work by executing spec files in parallel.
 
-However, because tests are parallelized by spec *file* and not by test/example, we can't achieve greater parallelization if a new test is added to an existing file.
+However, because tests are parallelized by spec file and not by test/example, we can't achieve greater parallelization if a new test is added to an existing file.
 
 Nonetheless, there could be other reasons to add a new test to an existing file.
 

@@ -159,7 +159,8 @@ class Projects::CommitController < Projects::ApplicationController
   end
 
   def rapid_diffs
-    return render_404 unless ::Feature.enabled?(:rapid_diffs, current_user, type: :wip)
+    return render_404 unless ::Feature.enabled?(:rapid_diffs, current_user, type: :wip) &&
+      ::Feature.enabled?(:rapid_diffs_on_commit_show, current_user, type: :wip)
 
     streaming_offset = 5
     @reload_stream_url = diffs_stream_url(@commit)
@@ -303,16 +304,16 @@ class Projects::CommitController < Projects::ApplicationController
     check_rate_limit!(:expanded_diff_files, scope: current_user || request.ip)
   end
 
-  def diffs_resource
-    commit&.diffs(commit_diff_options)
+  def diffs_resource(options = {})
+    commit&.diffs(commit_diff_options.merge(options))
   end
 
   def complete_diff_path
-    project_commit_path(project, commit, format: :patch)
+    project_commit_path(project, commit, format: :diff)
   end
 
   def email_format_path
-    project_commit_path(project, commit, format: :diff)
+    project_commit_path(project, commit, format: :patch)
   end
 end
 

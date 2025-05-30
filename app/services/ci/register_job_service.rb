@@ -119,27 +119,8 @@ module Ci
 
     # rubocop: disable CodeReuse/ActiveRecord
     def each_build(params, &blk)
-      queue = ::Ci::Queue::BuildQueueService.new(runner)
-
-      builds = if runner.instance_type?
-                 queue.builds_for_shared_runner
-               elsif runner.group_type?
-                 queue.builds_for_group_runner
-               else
-                 queue.builds_for_project_runner
-               end
-
-      if runner.ref_protected?
-        builds = queue.builds_for_protected_runner(builds)
-      end
-
-      # pick builds that does not have other tags than runner's one
-      builds = queue.builds_matching_tag_ids(builds, runner.tags.ids)
-
-      # pick builds that have at least one tag
-      unless runner.run_untagged?
-        builds = queue.builds_with_any_tags(builds)
-      end
+      queue = Ci::Queue::BuildQueueService.new(runner)
+      builds = queue.build_candidates
 
       build_and_partition_ids = retrieve_queue(-> { queue.execute(builds) })
 
@@ -245,9 +226,7 @@ module Ci
     def present_build!(build)
       # We need to use the presenter here because Gitaly calls in the presenter
       # may fail, and we need to ensure the response has been generated.
-      presented_build = @logger.instrument(:present_build_presenter) do
-        ::Ci::BuildRunnerPresenter.new(build) # rubocop:disable CodeReuse/Presenter -- old code
-      end
+      presented_build = ::Ci::BuildRunnerPresenter.new(build) # rubocop:disable CodeReuse/Presenter -- old code
 
       @logger.instrument(:present_build_logs) do
         log_artifacts_context(build)

@@ -77,16 +77,23 @@ namespace :ci do
     pipelines_for_selective_improved = [:test_on_gdk]
     logger.warn("*** Recreating #{pipelines_for_selective_improved} using spec list based on coverage mappings ***")
     tests_from_mapping = qa_changes.qa_tests(from_code_path_mapping: true)
-    properties = {
-      label: tests_from_mapping.nil? || tests_from_mapping.empty? ? 'non-selective' : 'selective',
-      value: tests_from_mapping.nil? || tests_from_mapping.empty? ? 0 : tests_from_mapping.count
-    }
-    Tooling::Events::TrackPipelineEvents.new(
-      event_name: "e2e_tests_selected_for_execution_gitlab_pipeline",
-      properties: properties
-    ).send_event
+
     logger.info("Following specs were selected for execution: '#{tests_from_mapping}'")
-    QA::Tools::Ci::PipelineCreator.new(tests_from_mapping, **creator_args).create(pipelines_for_selective_improved)
+    begin
+      QA::Tools::Ci::PipelineCreator.new(tests_from_mapping, **creator_args).create(pipelines_for_selective_improved)
+      properties = {
+        label: tests_from_mapping.nil? || tests_from_mapping.empty? ? 'non-selective' : 'selective',
+        value: tests_from_mapping.nil? || tests_from_mapping.empty? ? 0 : tests_from_mapping.count
+      }
+      Tooling::Events::TrackPipelineEvents.new(logger: logger).send_event(
+        "e2e_tests_selected_for_execution_gitlab_pipeline",
+        **properties
+      )
+    rescue StandardError => e
+      logger.warn("*** Error while creating pipeline with selected specs: #{e.backtrace} ***")
+      logger.info("*** Defaulting to running full suite ***")
+      QA::Tools::Ci::PipelineCreator.new([], **creator_args).create
+    end
   end
 
   desc "Export test run metrics to influxdb"
@@ -96,10 +103,18 @@ namespace :ci do
     QA::Tools::Ci::TestMetrics.export(args[:glob])
   end
 
-  desc "Export code paths mapping to GCP"
+  desc "Export backend code paths mapping to GCP"
   task :export_code_paths_mapping, [:glob] do |_, args|
     raise("Code paths mapping JSON glob pattern is required") unless args[:glob]
 
     QA::Tools::Ci::CodePathsMapping.export(args[:glob])
+  end
+
+  desc "Export frontend code paths mapping to GCP"
+  task :export_code_paths_mapping, [:glob] do |_, args|
+    raise("Code paths mapping JSON glob pattern is required") unless args[:glob]
+
+    QA::Tools::Ci::CodePathsMapping.export(args[:glob], bucket: "code-path-mappings",
+      file_name: "js-coverage-by-example-merged-pipeline")
   end
 end

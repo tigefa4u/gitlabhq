@@ -174,8 +174,23 @@ module TestEnv
       public_send(method)
     end
     post_init
+    duration = Time.now - start
 
-    puts "\nTest environment set up in #{Time.now - start} seconds"
+    puts "\nTest environment set up in #{duration} seconds"
+
+    send_rspec_setup_duration_telemetry(duration)
+  end
+
+  def send_rspec_setup_duration_telemetry(duration)
+    gdk_path = Gitlab::Utils.which('gdk')
+    return if gdk_path.empty?
+
+    Bundler.with_unbundled_env do
+      success = system(gdk_path, 'send-telemetry', 'rspec_setup_duration', duration.to_s)
+      warn "Failed to send RSpec setup time via telemetry command." unless success
+    end
+  rescue StandardError => e
+    warn "Failed to send telemetry: #{e.message}"
   end
 
   # Can be overriden
@@ -416,13 +431,6 @@ module TestEnv
     Gitlab::DatabaseImporters::WorkItems::BaseTypeImporter.upsert_types
     Gitlab::DatabaseImporters::WorkItems::HierarchyRestrictionsImporter.upsert_restrictions
     Gitlab::DatabaseImporters::WorkItems::RelatedLinksRestrictionsImporter.upsert_restrictions
-
-    # Updating old_id to simulate an environment that has gone through the process of cleaning
-    # the issues.work_item_type_id column. old_id is used as a fallback id.
-    # TODO: https://gitlab.com/gitlab-org/gitlab/-/issues/520023
-    WorkItems::Type.find_each do |work_item_type|
-      work_item_type.update!(old_id: -work_item_type.id)
-    end
   end
 
   private

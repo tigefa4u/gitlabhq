@@ -21,7 +21,6 @@ class TodosFinder
   include FinderMethods
   include Gitlab::Utils::StrongMemoize
   include SafeFormatHelper
-  include Gitlab::InternalEventsTracking
 
   requires_cross_project_access unless: -> { project? }
 
@@ -48,8 +47,6 @@ class TodosFinder
   def execute
     return Todo.none if current_user.nil?
     raise ArgumentError, invalid_type_message unless valid_types?
-
-    track_bot_user if current_user.bot?
 
     items = current_user.todos
     items = without_hidden(items)
@@ -79,7 +76,7 @@ class TodosFinder
   private
 
   def action_id?
-    action_id.present? && Todo::ACTION_NAMES.key?(action_id.to_i)
+    action_id.present? && Todo.action_names.key?(action_id.to_i)
   end
 
   def action_id
@@ -91,14 +88,14 @@ class TodosFinder
   end
 
   def map_actions_to_ids
-    params[:action].map { |item| Todo::ACTION_NAMES.key(item.to_sym) }
+    params[:action].map { |item| Todo.action_names.key(item.to_sym) }
   end
 
   def to_action_id
     if action_array_provided?
       map_actions_to_ids
     else
-      Todo::ACTION_NAMES.key(action.to_sym)
+      Todo.action_names.key(action.to_sym)
     end
   end
 
@@ -263,17 +260,6 @@ class TodosFinder
 
   def filter_done_only?
     Array.wrap(params[:state]).map(&:to_sym) == [:done]
-  end
-
-  def track_bot_user
-    track_internal_event(
-      "request_todos_by_bot_user",
-      user: current_user,
-      additional_properties: {
-        label: 'user_type',
-        property: current_user.user_type
-      }
-    )
   end
 end
 

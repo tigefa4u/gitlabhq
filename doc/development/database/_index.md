@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Database development guidelines
 ---
 
@@ -62,7 +62,7 @@ title: Database development guidelines
 ## Best practices
 
 - [Adding database indexes](adding_database_indexes.md)
-- [Adding a foreign key constraint to an existing column](add_foreign_key_to_existing_column.md)
+- [Adding Foreign key constraints without downtime](foreign_keys.md#avoiding-downtime-and-migration-failures)
 - [Compatiblity with Cells](../cells/_index.md)
 - [Check for background migrations before upgrading](../../update/background_migrations.md)
 - [Client-side connection-pool](client_side_connection_pool.md)

@@ -1,5 +1,5 @@
 ---
-stage: Secure
+stage: Application Security Testing
 group: Static Analysis
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Configure CodeClimate-based Code Quality scanning (deprecated)
@@ -16,7 +16,7 @@ title: Configure CodeClimate-based Code Quality scanning (deprecated)
 
 {{< alert type="warning" >}}
 
-This feature was [deprecated](../../update/deprecations.md#codeclimate-based-code-quality-scanning-will-be-removed) in GitLab 17.3 and is planned for removal in 18.0.
+This feature was [deprecated](../../update/deprecations.md#codeclimate-based-code-quality-scanning-will-be-removed) in GitLab 17.3 and is planned for removal in 19.0.
 [Integrate the results from a supported tool directly](code_quality.md#import-code-quality-results-from-a-cicd-job) instead. This change is a breaking change.
 
 {{< /alert >}}
@@ -365,7 +365,7 @@ To use private runners:
      --non-interactive
    ```
 
-1. **Optional, but recommended:** Set the builds directory to `/tmp/builds`,
+1. **Optional, but recommended**: Set the builds directory to `/tmp/builds`,
    so job artifacts are periodically purged from the runner host. If you skip
    this step, you must clean up the default builds directory (`/builds`) yourself.
    You can do this by adding the following two flags to `gitlab-runner register`
@@ -529,9 +529,9 @@ name = "docker:20.10.12-dind"
 {{< alert type="note" >}}
 
 If you use the [GitLab Runner Helm Chart](https://docs.gitlab.com/runner/install/kubernetes.html), you can use
-the above Kubernetes configuration in the [`config` field](https://docs.gitlab.com/runner/install/kubernetes_helm_chart_configuration.html)
-in the `values.yaml` file.
-
+the previous Kubernetes configuration in the [`config` field](https://docs.gitlab.com/runner/install/kubernetes_helm_chart_configuration.html)
+of the `values.yaml` file.
+x
 {{< /alert >}}
 
 To ensure that you use the `overlay2` [storage driver](https://docs.docker.com/storage/storagedriver/select-storage-driver/), which offers the best overall performance:

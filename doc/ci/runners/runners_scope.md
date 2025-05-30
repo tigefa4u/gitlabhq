@@ -98,7 +98,7 @@ For more information, see
 
 Prerequisites:
 
-- Runner registration tokens must be [enabled](../../administration/settings/continuous_integration.md#allow-runner-registration-tokens) in the **Admin** area.
+- Runner registration tokens must be [enabled](../../administration/settings/continuous_integration.md#control-runner-registration) in the **Admin** area.
 - You must be an administrator.
 
 To create an instance runner:
@@ -485,7 +485,7 @@ Project runners process jobs by using a first in, first out ([FIFO](https://en.w
 {{< alert type="note" >}}
 
 Project runners do not get instance with forked projects automatically.
-A fork *does* copy the CI/CD settings of the cloned repository.
+A fork does copy the CI/CD settings of the cloned repository.
 
 {{< /alert >}}
 
@@ -645,7 +645,7 @@ You can edit a project runner from any of the projects it's enabled for.
 The modifications, which include unlocking and editing tags and the description,
 affect all projects that use the runner.
 
-An administrator can [enable the runner for multiple projects](../../administration/settings/continuous_integration.md#enable-a-project-runner-for-multiple-projects).
+An administrator can [enable the runner for multiple projects](../../administration/settings/continuous_integration.md#share-project-runners-with-multiple-projects).
 
 ### Prevent a project runner from being enabled for other projects
 
@@ -768,7 +768,7 @@ To determine the IP address of an instance runner:
 1. Select **CI/CD > Runners**.
 1. Find the runner in the table and view the **IP Address** column.
 
-![Instance runner IP address](img/shared_runner_ip_address_v14_5.png)
+![Screenshot showing the IP address column for an instance runner in the GitLab Admin area](img/shared_runner_ip_address_v14_5.png)
 
 ### Determine the IP address of a project runner
 
@@ -779,7 +779,7 @@ project.
 1. Go to the project's **Settings > CI/CD** and expand the **Runners** section.
 1. Select the runner name and find the **IP Address** row.
 
-![Project runner IP address](img/project_runner_ip_address_v17_6.png)
+![Screenshot showing where to find the IP address for a project runner in the runner details](img/project_runner_ip_address_v17_6.png)
 
 ## Enable use of runner registration tokens in projects and groups
 
@@ -805,7 +805,7 @@ In GitLab 17.0, the use of runner registration tokens is disabled in all GitLab 
 
 Prerequisites:
 
-- Runner registration tokens must be [enabled](../../administration/settings/continuous_integration.md#allow-runner-registration-tokens) in the **Admin** area.
+- Runner registration tokens must be [enabled](../../administration/settings/continuous_integration.md#control-runner-registration) in the **Admin** area.
 
 To enable the use of runner registration token in project and groups:
 

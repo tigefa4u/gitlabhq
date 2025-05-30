@@ -17,9 +17,9 @@ Downstream pipelines run independently and concurrently to the upstream pipeline
 that triggered them.
 
 - A [parent-child pipeline](downstream_pipelines.md#parent-child-pipelines) is a downstream pipeline
-  triggered in the *same* project as the first pipeline.
+  triggered in the same project as the first pipeline.
 - A [multi-project pipeline](#multi-project-pipelines) is a downstream pipeline triggered
-  in a *different* project than the first pipeline.
+  in a different project than the first pipeline.
 
 You can sometimes use parent-child pipelines and multi-project pipelines for similar purposes,
 but there are [key differences](pipeline_architectures.md).
@@ -233,7 +233,7 @@ with the CI/CD configuration in that file.
 The artifact path is parsed by GitLab, not the runner, so the path must match the
 syntax for the OS running GitLab. If GitLab is running on Linux but using a Windows
 runner for testing, the path separator for the trigger job is `/`. Other CI/CD
-configuration for jobs that use the Windows runner, like scripts, use <code>&#92;</code>.
+configuration for jobs that use the Windows runner, like scripts, use ` \ `.
 
 You cannot use CI/CD variables in an `include` section in a dynamic child pipeline's configuration.
 [Issue 378717](https://gitlab.com/gitlab-org/gitlab/-/issues/378717) proposes fixing

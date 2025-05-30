@@ -142,12 +142,12 @@ export default {
     },
     detailsPath() {
       if (this.isLink) {
-        return this.status.detailsPath;
+        return this.status.detailsPath || this.status.deploymentDetailsPath;
       }
       return null;
     },
     hasDetails() {
-      return this.status.hasDetails;
+      return this.status.hasDetails || this.status.deploymentDetailsPath;
     },
     hasRetryAction() {
       return Boolean(this.job?.status?.action?.title === RETRY_ACTION_TITLE);
@@ -221,7 +221,7 @@ export default {
      * @return {Boolean}
      */
     hasAction() {
-      return this.job.status && this.job.status.action && this.job.status.action.path;
+      return this.job.status?.action?.path && this.job.status?.action?.icon;
     },
     hasManualConfirmationMessage() {
       return this.job.status.action.confirmationMessage !== null;
@@ -335,7 +335,7 @@ export default {
       :title="tooltipText"
       :href="detailsPath"
       :class="jobClasses"
-      class="menu-item gl-w-full gl-rounded-base gl-text-strong hover:gl-bg-strong hover:gl-no-underline focus:gl-bg-strong focus:gl-no-underline active:gl-no-underline dark:hover:gl-bg-gray-200 dark:focus:gl-bg-gray-200"
+      class="!gl-no-underline"
       data-testid="ci-job-item-content"
       @click="jobItemClick"
       @mouseout="hideTooltips"

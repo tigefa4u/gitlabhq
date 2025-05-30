@@ -279,6 +279,38 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
         end
       end
 
+      context 'when filtering by active parameter' do
+        let_it_be(:marked_for_deletion_project) do
+          create(:project, marked_for_deletion_on: Date.parse('2024-01-01'), namespace: user.namespace)
+        end
+
+        let_it_be(:archived_project) do
+          create(:project, :archived, namespace: user.namespace)
+        end
+
+        context 'when active is true' do
+          it 'returns only non archived and not marked for deletion projects' do
+            get api(path, user), params: { active: true }
+
+            expect(response).to have_gitlab_http_status(:ok)
+            expect(response).to include_pagination_headers
+            expect(json_response).to be_an Array
+            expect(json_response.map { |p| p['id'] }).not_to include(archived_project.id, marked_for_deletion_project.id)
+          end
+        end
+
+        context 'when active is false' do
+          it 'returns only archived or marked for deletion projects' do
+            get api(path, user), params: { active: false }
+
+            expect(response).to have_gitlab_http_status(:ok)
+            expect(response).to include_pagination_headers
+            expect(json_response).to be_an Array
+            expect(json_response.map { |p| p['id'] }).to contain_exactly(archived_project.id, marked_for_deletion_project.id)
+          end
+        end
+      end
+
       shared_examples 'includes container_registry_access_level' do
         specify do
           project.project_feature.update!(container_registry_access_level: ProjectFeature::DISABLED)
@@ -315,6 +347,43 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
         it_behaves_like 'projects response without N + 1 queries', 1 do
           let(:current_user) { user }
           let(:additional_project) { create(:project, :public, group: create(:group)) }
+        end
+      end
+
+      context 'when projects is in a subgroup' do
+        let_it_be(:group) { create(:group) }
+        let_it_be(:group_member) { create(:group_member, :developer, group: group, user: user) }
+
+        let_it_be(:subgroup) { create(:group, parent: group) }
+        let_it_be(:project) { create(:project, group: subgroup) }
+
+        before do
+          get api(path, user)
+        end
+
+        it_behaves_like 'projects response without N + 1 queries', 1 do
+          let(:current_user) { user }
+          let(:additional_project) { project }
+        end
+
+        it 'returns the correct group access', :aggregate_failures do
+          project_response = json_response.find { |p| p['id'] == project.id }
+
+          expect(response).to have_gitlab_http_status(:ok)
+          expect(project_response['permissions']['group_access']['access_level'])
+            .to eq(Gitlab::Access::DEVELOPER)
+        end
+
+        context 'when user has multiple group membership' do
+          let_it_be(:subgroup_member) { create(:group_member, :owner, group: subgroup, user: user) }
+
+          it 'returns the highest access level', :aggregate_failures do
+            project_response = json_response.find { |p| p['id'] == project.id }
+
+            expect(response).to have_gitlab_http_status(:ok)
+            expect(project_response['permissions']['group_access']['access_level'])
+              .to eq(Gitlab::Access::OWNER)
+          end
         end
       end
 
@@ -1258,18 +1327,6 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
             get api(path, current_user)
           end
         end
-
-        context 'when rate_limit_groups_and_projects_api feature flag is disabled' do
-          before do
-            stub_feature_flags(rate_limit_groups_and_projects_api: false)
-          end
-
-          it_behaves_like 'unthrottled endpoint'
-
-          def request
-            get api(path, current_user)
-          end
-        end
       end
 
       context 'when the user is not signed in' do
@@ -1291,7 +1348,7 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
       it 'does not create new project and respond with 403' do
         allow_any_instance_of(User).to receive(:projects_limit_left).and_return(0)
         expect { post api(path, user2), params: { name: 'foo' } }
-          .to change { Project.count }.by(0)
+          .not_to change { Project.count }
         expect(response).to have_gitlab_http_status(:forbidden)
       end
     end
@@ -1478,11 +1535,7 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
       url = 'http://example.com'
       stub_application_setting(import_sources: nil)
 
-      endpoint_url = "#{url}/info/refs?service=git-upload-pack"
-      stub_full_request(endpoint_url, method: :get).to_return(
-        { status: 200,
-          body: '001e# service=git-upload-pack',
-          headers: { 'Content-Type': 'application/x-git-upload-pack-advertisement' } })
+      allow(Gitlab::GitalyClient::RemoteService).to receive(:exists?).with(url).and_return(true)
 
       project_params = { import_url: url, path: 'path-project-Foo', name: 'Foo Project' }
       expect { post api(path, user), params: project_params }
@@ -1500,29 +1553,12 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
       expect(response).to have_gitlab_http_status(:created)
     end
 
-    it 'disallows creating a project with an import_url that is not reachable' do
-      url = 'http://example.com'
-      endpoint_url = "#{url}/info/refs?service=git-upload-pack"
-      error_response = { status: 301, body: '', headers: nil }
-      stub_full_request(endpoint_url, method: :get).to_return(error_response)
-      project_params = { import_url: url, path: 'path-project-Foo', name: 'Foo Project' }
-
-      expect { post api(path, user), params: project_params }.not_to change { Project.count }
-
-      expect(response).to have_gitlab_http_status(:unprocessable_entity)
-      expect(json_response['message']).to eq("#{url} endpoint error: #{error_response[:status]}")
-    end
-
     it 'creates a project with an import_url that is valid' do
       url = 'http://example.com'
-      endpoint_url = "#{url}/info/refs?service=git-upload-pack"
-      git_response = {
-        status: 200,
-        body: '001e# service=git-upload-pack',
-        headers: { 'Content-Type': 'application/x-git-upload-pack-advertisement' }
-      }
+
+      allow(Gitlab::GitalyClient::RemoteService).to receive(:exists?).with(url).and_return(true)
       stub_application_setting(import_sources: ['git'])
-      stub_full_request(endpoint_url, method: :get).to_return(git_response)
+
       project_params = { import_url: url, path: 'path-project-Foo', name: 'Foo Project' }
 
       expect { post api(path, user), params: project_params }.to change { Project.count }.by(1)
@@ -1818,18 +1854,6 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
       end
     end
 
-    context 'when rate_limit_groups_and_projects_api feature flag is disabled' do
-      before do
-        stub_feature_flags(rate_limit_groups_and_projects_api: false)
-      end
-
-      it_behaves_like 'unthrottled endpoint'
-
-      def request
-        get api("/users/#{user4.id}/projects/")
-      end
-    end
-
     it 'includes container_registry_access_level' do
       get api("/users/#{user4.id}/projects/", user)
 
@@ -1977,18 +2001,6 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
       end
     end
 
-    context 'when rate_limit_groups_and_projects_api feature flag is disabled' do
-      before do
-        stub_feature_flags(rate_limit_groups_and_projects_api: false)
-      end
-
-      it_behaves_like 'unthrottled endpoint'
-
-      def request
-        get api(path)
-      end
-    end
-
     context 'with a public profile' do
       it 'returns projects filtered by user' do
         get api(path, user)
@@ -2066,18 +2078,6 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
     end
 
     it_behaves_like 'rate limited endpoint', rate_limit_key: :user_contributed_projects_api do
-      def request
-        get api(path)
-      end
-    end
-
-    context 'when rate_limit_groups_and_projects_api feature flag is disabled' do
-      before do
-        stub_feature_flags(rate_limit_groups_and_projects_api: false)
-      end
-
-      it_behaves_like 'unthrottled endpoint'
-
       def request
         get api(path)
       end
@@ -2596,18 +2596,6 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
     end
 
     it_behaves_like 'rate limited endpoint', rate_limit_key: :project_api do
-      def request
-        get api(path)
-      end
-    end
-
-    context 'when rate_limit_groups_and_projects_api feature flag is disabled' do
-      before do
-        stub_feature_flags(rate_limit_groups_and_projects_api: false)
-      end
-
-      it_behaves_like 'unthrottled endpoint'
-
       def request
         get api(path)
       end
@@ -3245,8 +3233,8 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
       end
 
       context 'when project belongs to a user namespace' do
-        let(:user) { create(:user) }
-        let(:project) { create(:project, namespace: user.namespace) }
+        let_it_be(:user) { create(:user) }
+        let_it_be(:project) { create(:project, namespace: user.namespace) }
 
         it 'returns user web_url and avatar_url' do
           get api(path, user)
@@ -3601,6 +3589,18 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
 
             expect(response).to have_gitlab_http_status(:bad_request)
             expect(json_response['message']).to eq 'Target project cannot be equal to source project'
+          end
+        end
+
+        context 'when fork target and source project organization are not the same' do
+          let_it_be(:organization) { create(:organization) }
+          let_it_be(:project_fork_target_different_organization) { create(:project, organization: organization) }
+
+          it 'returns an error' do
+            post api("/projects/#{project_fork_target_different_organization.id}/fork/#{project_fork_source.id}", admin, admin_mode: true)
+
+            expect(response).to have_gitlab_http_status(:bad_request)
+            expect(json_response['message']).to eq 'Target project must belong to source project organization'
           end
         end
       end
@@ -4066,39 +4066,25 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
     let_it_be(:group) { create(:group, owners: user) }
     let_it_be_with_reload(:project) { create(:project, group: group) }
 
-    context 'when the feature is available' do
-      it 'restores project' do
-        project.update!(archived: true, marked_for_deletion_at: 1.day.ago, deleting_user: user)
+    it 'restores project' do
+      project.update!(archived: true, marked_for_deletion_at: 1.day.ago, deleting_user: user)
 
-        post api("/projects/#{project.id}/restore", user)
+      post api("/projects/#{project.id}/restore", user)
 
-        expect(response).to have_gitlab_http_status(:created)
-        expect(json_response['archived']).to be_falsey
-        expect(json_response['marked_for_deletion_at']).to be_falsey
-        expect(json_response['marked_for_deletion_on']).to be_falsey
-      end
-
-      it 'returns error if project is already being deleted' do
-        message = 'Error'
-        expect(::Projects::RestoreService).to receive_message_chain(:new, :execute).and_return({ status: :error, message: message })
-
-        post api("/projects/#{project.id}/restore", user)
-
-        expect(response).to have_gitlab_http_status(:bad_request)
-        expect(json_response["message"]).to eq(message)
-      end
+      expect(response).to have_gitlab_http_status(:created)
+      expect(json_response['archived']).to be_falsey
+      expect(json_response['marked_for_deletion_at']).to be_falsey
+      expect(json_response['marked_for_deletion_on']).to be_falsey
     end
 
-    context 'when the feature is not available' do
-      before do
-        stub_feature_flags(downtier_delayed_deletion: false)
-      end
+    it 'returns error if project is already being deleted' do
+      message = 'Error'
+      expect(::Projects::RestoreService).to receive_message_chain(:new, :execute).and_return({ status: :error, message: message })
 
-      it 'returns error' do
-        post api("/projects/#{project.id}/restore", user)
+      post api("/projects/#{project.id}/restore", user)
 
-        expect(response).to have_gitlab_http_status(:not_found)
-      end
+      expect(response).to have_gitlab_http_status(:bad_request)
+      expect(json_response["message"]).to eq(message)
     end
   end
 
@@ -5562,8 +5548,12 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
       end
     end
 
-    shared_examples 'marks project for deletion' do
-      it :aggregate_failures do
+    context 'for delayed deletion' do
+      let_it_be(:group) { create(:group) }
+      let_it_be_with_reload(:project) { create(:project, group: group, owners: user) }
+      let(:params) { {} }
+
+      it 'marks the project for deletion' do
         expect(::Projects::MarkForDeletionService).to receive(:new).with(project, user, {}).and_call_original
 
         delete api(path, user), params: params
@@ -5571,71 +5561,59 @@ RSpec.describe API::Projects, :aggregate_failures, feature_category: :groups_and
         expect(response).to have_gitlab_http_status(:accepted)
         expect(project.reload.marked_for_deletion?).to be_truthy
       end
-    end
 
-    context 'for delayed deletion' do
-      let_it_be(:group) { create(:group) }
-      let_it_be_with_reload(:project) { create(:project, group: group, owners: user) }
-      let(:params) { {} }
+      it 'returns error if project cannot be marked for deletion' do
+        message = 'Error'
+        expect(::Projects::MarkForDeletionService).to receive_message_chain(:new, :execute).and_return({ status: :error, message: message })
 
-      before do
-        stub_licensed_features(adjourned_deletion_for_projects_and_groups: false)
+        delete api("/projects/#{project.id}", user)
+
+        expect(response).to have_gitlab_http_status(:bad_request)
+        expect(json_response["message"]).to eq(message)
       end
 
-      context 'when the downtier_delayed_deletion feature flag is enabled' do
-        it_behaves_like 'marks project for deletion'
+      context 'when permanently_remove param is true' do
+        before do
+          params.merge!(permanently_remove: true)
+        end
 
-        context 'when permanently_remove param is true' do
+        context 'when project is already marked for deletion' do
           before do
-            params.merge!(permanently_remove: true)
+            project.update!(archived: true, marked_for_deletion_at: 1.day.ago, deleting_user: user)
           end
 
-          context 'when project is already marked for deletion' do
+          context 'with correct project full path' do
             before do
-              project.update!(archived: true, marked_for_deletion_at: 1.day.ago, deleting_user: user)
+              params.merge!(full_path: project.full_path)
             end
 
-            context 'with correct project full path' do
-              before do
-                params.merge!(full_path: project.full_path)
-              end
-
-              it_behaves_like 'deletes project immediately'
-            end
-
-            context 'with incorrect project full path' do
-              let(:error_message) { '`full_path` is incorrect. You must enter the complete path for the project.' }
-
-              before do
-                params.merge!(full_path: "#{project.full_path}-wrong-path")
-              end
-
-              it_behaves_like 'immediately delete project error'
-            end
+            it_behaves_like 'deletes project immediately'
           end
 
-          context 'when project is not marked for deletion' do
-            let(:error_message) { 'Project must be marked for deletion first.' }
+          context 'with incorrect project full path' do
+            let(:error_message) { '`full_path` is incorrect. You must enter the complete path for the project.' }
+
+            before do
+              params.merge!(full_path: "#{project.full_path}-wrong-path")
+            end
 
             it_behaves_like 'immediately delete project error'
           end
         end
+
+        context 'when project is not marked for deletion' do
+          let(:error_message) { 'Project must be marked for deletion first.' }
+
+          it_behaves_like 'immediately delete project error'
+        end
       end
 
-      context 'when the downtier_delayed_deletion feature flag is disabled' do
+      context 'when deletion adjourned period is 0' do
         before do
-          stub_feature_flags(downtier_delayed_deletion: false)
+          stub_application_setting(deletion_adjourned_period: 0)
         end
 
         it_behaves_like 'deletes project immediately'
-
-        context 'when permanently_remove param is true' do
-          before do
-            params.merge!(permanently_remove: true)
-          end
-
-          it_behaves_like 'deletes project immediately'
-        end
       end
     end
   end

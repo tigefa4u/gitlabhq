@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: SQL Query Guidelines
 ---
 
@@ -79,7 +79,7 @@ USING GIN(column_name gin_trgm_ops);
 ```
 
 The key here is the `GIN(column_name gin_trgm_ops)` part. This creates a
-[GIN index](https://www.postgresql.org/docs/current/gin.html)
+[GIN index](https://www.postgresql.org/docs/16/gin.html)
 with the operator class set to `gin_trgm_ops`. These indexes
 _can_ be used by `ILIKE` / `LIKE` and can lead to greatly improved performance.
 One downside of these indexes is that they can easily get quite large (depending
@@ -229,7 +229,7 @@ use them as an argument for another query. In general, moving query logic out of
 and into Ruby is detrimental because PostgreSQL has a query optimizer that performs better
 when it has relatively more context about the desired operation.
 
-If, for some reason, you need to `pluck` and use the results in a *single* query then,
+If, for some reason, you need to `pluck` and use the results in a single query then,
 most likely, a materialized CTE will be a better choice:
 
 ```sql
@@ -451,7 +451,7 @@ requirements). Adding indexes comes with
 Furthermore, since `created_at` usually isn't a unique column then sorting
 and paginating over it would be unstable and we'd still need to add a
 [tie-breaker column to the sort](database/pagination_performance_guidelines.md#tie-breaker-column)
-(e.g. `ORDER BY created_at, id`) with an appropriate index for that.
+(for example, `ORDER BY created_at, id`) with an appropriate index for that.
 
 But, for the majority of features our users find that `ORDER BY id` is a good
 enough proxy for what they need. It's not technically always
@@ -638,7 +638,7 @@ Using transactions does not solve this problem.
 To solve this we've added the `ApplicationRecord.safe_find_or_create_by`.
 
 This method can be used the same way as
-`find_or_create_by`, but it wraps the call in a *new* transaction (or a subtransaction) and
+`find_or_create_by`, but it wraps the call in a new transaction (or a subtransaction) and
 retries if it were to fail because of an
 `ActiveRecord::RecordNotUnique` error.
 

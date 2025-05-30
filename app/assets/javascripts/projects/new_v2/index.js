@@ -30,6 +30,8 @@ export function initNewProjectForm() {
     canSelectNamespace,
     canCreateProject,
     userProjectLimit,
+    restrictedVisibilityLevels,
+    defaultProjectVisibility,
     importHistoryPath,
     importGitlabEnabled,
     importGitlabImportPath,
@@ -48,6 +50,7 @@ export function initNewProjectForm() {
     importGitEnabled,
     importManifestEnabled,
     importManifestImportPath,
+    importByUrlValidatePath,
   } = el.dataset;
 
   const provide = {
@@ -69,6 +72,8 @@ export function initNewProjectForm() {
     canSelectNamespace: parseBoolean(canSelectNamespace),
     canCreateProject: parseBoolean(canCreateProject),
     userProjectLimit: parseInt(userProjectLimit, 10),
+    restrictedVisibilityLevels: JSON.parse(restrictedVisibilityLevels),
+    defaultProjectVisibility,
     importHistoryPath,
     importGitlabEnabled: parseBoolean(importGitlabEnabled),
     importGitlabImportPath,
@@ -87,6 +92,7 @@ export function initNewProjectForm() {
     importGitEnabled: parseBoolean(importGitEnabled),
     importManifestEnabled: parseBoolean(importManifestEnabled),
     importManifestImportPath,
+    importByUrlValidatePath,
   };
 
   return new Vue({

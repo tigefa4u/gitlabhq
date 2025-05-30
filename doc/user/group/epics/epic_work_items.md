@@ -46,12 +46,6 @@ following blog posts:
 If you run into any issues while navigating your data in the new experience, there are a couple
 of ways you can try to resolve it.
 
-### Access the old experience
-
-You can temporarily load the old experience by editing URL to include `force_legacy_view=true` parameter,
-for example, `https://gitlab.com/groups/gitlab-org/-/epics/9290?force_legacy_view=true`. Use this parameter to do any comparison
-between old and new experience to provide details while opening support request.
-
 ### Disable the new experience
 
 {{< details >}}
@@ -68,7 +62,3 @@ If you have to disable the new experience to unblock your workflow, disable the 
 
 If you run into any issues while trying out this change, you can use
 [feedback issue](https://gitlab.com/gitlab-org/gitlab/-/issues/494462) to provide more details.
-
-## Related topics
-
-- [Work items development](../../../development/work_items.md)

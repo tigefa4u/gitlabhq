@@ -6,8 +6,8 @@ import NamespaceStorageQuery from 'ee_else_ce/usage_quotas/storage/namespace/que
 import ProjectListStorageQuery from 'ee_else_ce/usage_quotas/storage/namespace/queries/project_list_storage.query.graphql';
 import StorageUsageStatistics from 'ee_else_ce/usage_quotas/storage/namespace/components/storage_usage_statistics.vue';
 import SearchAndSortBar from '~/usage_quotas/components/search_and_sort_bar/search_and_sort_bar.vue';
+import DependencyProxyUsage from 'ee_else_ce/usage_quotas/storage/namespace/components/dependency_proxy_usage.vue';
 import { parseGetStorageResults } from '../utils';
-import DependencyProxyUsage from './dependency_proxy_usage.vue';
 import ContainerRegistryUsage from './container_registry_usage.vue';
 import ProjectList from './project_list.vue';
 
@@ -72,7 +72,6 @@ export default {
       projectsLoadingError: false,
       sortKey: this.customSortKey ?? 'STORAGE_SIZE_DESC',
       initialSortBy: this.customSortKey ? null : 'storage',
-      enableSortableFields: !this.customSortKey,
     };
   },
   computed: {
@@ -191,7 +190,6 @@ export default {
         :is-loading="$apollo.queries.projects.loading"
         :help-links="helpLinks"
         :sort-by="initialSortBy"
-        :enable-sortable-fields="enableSortableFields"
         @sortChanged="onSortChanged"
       />
       <div class="gl-mt-5 gl-flex gl-justify-center">

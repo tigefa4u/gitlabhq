@@ -3,6 +3,7 @@ stage: Application Security Testing
 group: Composition Analysis
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Dependency Scanning
+description: Vulnerabilities, remediation, configuration, analyzers, and reports.
 ---
 
 <style>
@@ -51,10 +52,10 @@ table.no-vertical-table-lines tr {
 
 {{< alert type="warning" >}}
 
-The Dependency Scanning feature based on the Gemnasium analyzer is deprecated in GitLab 17.9 and reaches
-end of support in GitLab 18.0. It is replaced with [Dependency Scanning using SBOM](dependency_scanning_sbom/_index.md)
+The Dependency Scanning feature based on the Gemnasium analyzer is deprecated in GitLab 17.9 and is planned for removal in
+GitLab 19.0. It is being replaced with [Dependency Scanning using SBOM](dependency_scanning_sbom/_index.md)
 and the [new Dependency Scanning analyzer](https://gitlab.com/gitlab-org/security-products/analyzers/dependency-scanning).
-For more information, see [issue 501038](https://gitlab.com/gitlab-org/gitlab/-/issues/501308).
+For more information, see [epic 15961](https://gitlab.com/groups/gitlab-org/-/epics/15961).
 
 {{< /alert >}}
 
@@ -367,10 +368,9 @@ Dependency Scanning supports the following official
 
 The analyzers are published as Docker images, which Dependency Scanning uses to launch dedicated
 containers for each analysis. You can also integrate a custom
-[security scanner](../../../development/integrations/secure.md).
+security scanner.
 
-Each analyzer is updated as new versions of Gemnasium are released. For more information, see the
-analyzer [Release Process documentation](../../../development/sec/analyzer_development_guide.md#versioning-and-release-process).
+Each analyzer is updated as new versions of Gemnasium are released.
 
 ### How analyzers obtain dependency information
 
@@ -614,7 +614,7 @@ To support the following package managers, the GitLab analyzers proceed in two s
   <li>
     <a id="exported-dependency-information-notes-2"></a>
     <p>
-      Different versions of Java require different versions of Gradle. The versions of Gradle listed in the above table are pre-installed
+      Different versions of Java require different versions of Gradle. The versions of Gradle listed in the previous table are pre-installed
       in the analyzer image. The version of Gradle used by the analyzer depends on whether your project uses a <code>gradlew</code>
       (Gradle wrapper) file or not:
     </p>
@@ -656,7 +656,7 @@ To support the following package managers, the GitLab analyzers proceed in two s
 ### How analyzers are triggered
 
 GitLab relies on [`rules:exists`](../../../ci/yaml/_index.md#rulesexists) to start the relevant analyzers for the languages detected by the presence of the
-`Supported files` in the repository as shown in the [table above](#supported-languages-and-package-managers).
+[supported files](#supported-languages-and-package-managers) in the repository.
 A maximum of two directory levels from the repository's root is searched. For example, the
 `gemnasium-dependency_scanning` job is enabled if a repository contains either `Gemfile`,
 `api/Gemfile`, or `api/client/Gemfile`, but not if the only supported dependency file is
@@ -827,7 +827,7 @@ See <https://gitlab.com/explore/catalog/components/dependency-scanning>
 
 ### Running jobs in merge request pipelines
 
-See [Use security scanning tools with merge request pipelines](../detect/roll_out_security_scanning.md#use-security-scanning-tools-with-merge-request-pipelines)
+See [Use security scanning tools with merge request pipelines](../detect/security_configuration.md#use-security-scanning-tools-with-merge-request-pipelines)
 
 ### Customizing analyzer behavior
 
@@ -857,7 +857,7 @@ gemnasium-dependency_scanning:
     DS_REMEDIATE: "false"
 ```
 
-To override the `dependencies: []` attribute, add an override job as above, targeting this attribute:
+To override the `dependencies: []` attribute, add an override job as described previously, targeting this attribute:
 
 ```yaml
 include:
@@ -894,6 +894,7 @@ The following variables configure the behavior of specific dependency scanning a
 | `GEMNASIUM_DB_UPDATE_DISABLED`       | `gemnasium`        | `"false"`                    | Disable automatic updates for the `gemnasium-db` advisory database. For usage see [Access to the GitLab Advisory Database](#access-to-the-gitlab-advisory-database). |
 | `GEMNASIUM_DB_REMOTE_URL`            | `gemnasium`        | `https://gitlab.com/gitlab-org/security-products/gemnasium-db.git` | Repository URL for fetching the GitLab Advisory Database. |
 | `GEMNASIUM_DB_REF_NAME`              | `gemnasium`        | `master`                     | Branch name for remote repository database. `GEMNASIUM_DB_REMOTE_URL` is required. |
+| `GEMNASIUM_IGNORED_SCOPES`           | `gemnasium`        |                              | Comma-separated list of Maven dependency scopes to ignore. For more details, see the [Maven dependency scope documentation](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Dependency_Scope) |
 | `DS_REMEDIATE`                       | `gemnasium`        | `"true"`, `"false"` in FIPS mode | Enable automatic remediation of vulnerable dependencies. Not supported in FIPS mode. |
 | `DS_REMEDIATE_TIMEOUT`               | `gemnasium`        | `5m`                         | Timeout for auto-remediation. |
 | `GEMNASIUM_LIBRARY_SCAN_ENABLED`     | `gemnasium`        | `"true"`                     | Enable detecting vulnerabilities in vendored JavaScript libraries (libraries which are not managed by a package manager). This functionality requires a JavaScript lockfile to be present in a commit, otherwise Dependency Scanning is not executed and vendored files are not scanned.<br>Dependency scanning uses the [Retire.js](https://github.com/RetireJS/retire.js) scanner to detect a limited set of vulnerabilities. For details of which vulnerabilities are detected, see the [Retire.js repository](https://github.com/RetireJS/retire.js/blob/master/repository/jsrepository.json). |
@@ -909,7 +910,7 @@ The following variables configure the behavior of specific dependency scanning a
 | `DS_GRADLE_RESOLUTION_POLICY`        | `gemnasium-maven`  | `"failed"`                   | Controls Gradle dependency resolution strictness. Accepts `"none"` to allow partial results, or `"failed"` to fail the scan when any dependencies fail to resolve. |
 | `SBT_CLI_OPTS`                       | `gemnasium-maven`  |                              | List of command-line arguments that the analyzer passes to `sbt`. |
 | `PIP_INDEX_URL`                      | `gemnasium-python` | `https://pypi.org/simple`    | Base URL of Python Package Index. |
-| `PIP_EXTRA_INDEX_URL`                | `gemnasium-python` |                              | Array of [extra URLs](https://pip.pypa.io/en/stable/reference/pip_install/#cmdoption-extra-index-url) of package indexes to use in addition to `PIP_INDEX_URL`. Comma-separated. **Warning:** Read [the following security consideration](#python-projects) when using this environment variable. |
+| `PIP_EXTRA_INDEX_URL`                | `gemnasium-python` |                              | Array of [extra URLs](https://pip.pypa.io/en/stable/reference/pip_install/#cmdoption-extra-index-url) of package indexes to use in addition to `PIP_INDEX_URL`. Comma-separated. **Warning**: Read [the following security consideration](#python-projects) when using this environment variable. |
 | `PIP_REQUIREMENTS_FILE`              | `gemnasium-python` |                              | Pip requirements file to be scanned. This is a filename and not a path. When this environment variable is set only the specified file is scanned. |
 | `PIPENV_PYPI_MIRROR`                 | `gemnasium-python` |                              | If set, overrides the PyPi index used by Pipenv with a [mirror](https://github.com/pypa/pipenv/blob/v2022.1.8/pipenv/environments.py#L263). |
 | `DS_PIP_VERSION`                     | `gemnasium-python` |                              | Force the install of a specific pip version (example: `"19.3"`), otherwise the pip installed in the Docker image is used. |
@@ -945,7 +946,7 @@ dependency_scanning:
 As we have not tested all variables you may find some do work and others do not.
 If one does not work and you need it we suggest
 [submitting a feature request](https://gitlab.com/gitlab-org/gitlab/-/issues/new?issuable_template=Feature%20proposal%20-%20detailed&issue[title]=Docs%20feedback%20-%20feature%20proposal:%20Write%20your%20title)
-or [contributing to the code](../../../development/_index.md) to enable it to be used.
+or contributing to the code to enable it to be used.
 
 ### Custom TLS certificate authority
 
@@ -1048,10 +1049,8 @@ Dependency scanning outputs a report containing details of all vulnerabilities. 
 processed internally and the results are shown in the UI. The report is also output as an artifact
 of the dependency scanning job, named `gl-dependency-scanning-report.json`.
 
-For more details of the dependency scanning report, see:
-
-- [Security scanner integration](../../../development/integrations/secure.md).
-- [Dependency scanning report schema](https://gitlab.com/gitlab-org/security-products/security-report-schemas/-/blob/master/dist/dependency-scanning-report-format.json).
+For more details of the dependency scanning report, see the
+[Dependency scanning report schema](https://gitlab.com/gitlab-org/security-products/security-report-schemas/-/blob/master/dist/dependency-scanning-report-format.json).
 
 ### CycloneDX Software Bill of Materials
 
@@ -1160,6 +1159,7 @@ To run dependency scanning in an offline environment you must have:
 - A GitLab Runner with the `docker` or `kubernetes` executor
 - Local copies of the dependency scanning analyzer images
 - Access to the [GitLab Advisory Database](https://gitlab.com/gitlab-org/security-products/gemnasium-db)
+- Access to the [Package Metadata Database](../../../topics/offline/quick_start_guide.md#enabling-the-package-metadata-database)
 
 ### Local copies of analyzer images
 
@@ -1169,12 +1169,12 @@ To use dependency scanning with all [supported languages and frameworks](#suppor
    your [local Docker container registry](../../packages/container_registry/_index.md):
 
    ```plaintext
-   registry.gitlab.com/security-products/gemnasium:5
-   registry.gitlab.com/security-products/gemnasium:5-fips
-   registry.gitlab.com/security-products/gemnasium-maven:5
-   registry.gitlab.com/security-products/gemnasium-maven:5-fips
-   registry.gitlab.com/security-products/gemnasium-python:5
-   registry.gitlab.com/security-products/gemnasium-python:5-fips
+   registry.gitlab.com/security-products/gemnasium:6
+   registry.gitlab.com/security-products/gemnasium:6-fips
+   registry.gitlab.com/security-products/gemnasium-maven:6
+   registry.gitlab.com/security-products/gemnasium-maven:6-fips
+   registry.gitlab.com/security-products/gemnasium-python:6
+   registry.gitlab.com/security-products/gemnasium-python:6-fips
    ```
 
    The process for importing Docker images into a local offline Docker registry depends on
@@ -1294,7 +1294,7 @@ If you need to install Python packages before the analyzer runs, you should use 
 If you need to install Python packages before the analyzer runs, you should use `python setup.py install --user` in the `before_script` of the scanning job. The `--user` flag causes project dependencies to be installed in the user directory. If you do not pass the `--user` option, packages are installed globally, and they are not scanned and don't show up when listing project dependencies.
 
 When using self-signed certificates for your private PyPi repository, no extra job configuration (aside
-from the template `.gitlab-ci.yml` above) is needed. However, you must update your `setup.py` to
+from the previous `.gitlab-ci.yml` template) is needed. However, you must update your `setup.py` to
 ensure that it can reach your private repository. Here is an example configuration:
 
 1. Update `setup.py` to create a `dependency_links` attribute pointing at your private repository for each

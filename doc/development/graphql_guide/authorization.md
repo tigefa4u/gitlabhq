@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: GraphQL Authorization
 ---
 
@@ -297,7 +297,7 @@ query {
 }
 ```
 
-Let's say the root object of type `SomeType` has 10 discussions. Each of the 10 discussions have 10 notes. And the first note of each discussion has one emoji.
+For example, if the root object of type `SomeType` has 10 discussions. Each of the 10 discussions have 10 notes. And the first note of each discussion has one emoji.
 
 In this case, we authorize the discussions in `SomeResolver`, that is 10 authorization calls.
 Then when we represent each discussion with `DiscussionType`, we authorize each discussion object, again 10 calls. These

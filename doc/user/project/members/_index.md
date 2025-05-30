@@ -3,6 +3,7 @@ stage: Tenant Scale
 group: Organizations
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Members of a project
+description: User management, roles, permissions, and access levels.
 ---
 
 {{< details >}}
@@ -70,7 +71,7 @@ flowchart RL
 
 ![Project members page](img/project_members_v17_4.png)
 
-In the above example:
+In the previous example:
 
 - **Administrator** is an inherited member from the **demo** group.
 - **User 0** is an inherited member from the **demo** group.
@@ -94,8 +95,10 @@ Prerequisites:
 
 - You must have the Owner or Maintainer role.
 - [Group membership lock](../../group/access_and_permissions.md#prevent-members-from-being-added-to-projects-in-a-group) must be disabled.
-- If [sign-up is disabled](../../../administration/settings/sign_up_restrictions.md#disable-new-sign-ups), an administrator must add the user by email first.
-- If [approval for role promotion](../../../administration/settings/sign_up_restrictions.md#turn-on-administrator-approval-for-role-promotions) is enabled, an administrator must approve the invite.
+- For GitLab Self-Managed instances:
+  - If [new sign-ups are disabled](../../../administration/settings/sign_up_restrictions.md#disable-new-sign-ups), an administrator must add the user.
+  - If [user invitations are not allowed](../../../administration/settings/visibility_and_access_controls.md#prevent-invitations-to-groups-and-projects), an administrator must add the user.
+  - If [administrator approval is enabled](../../../administration/settings/sign_up_restrictions.md#turn-on-administrator-approval-for-role-promotions), an administrator must approve the invitation.
 
 To add a user to a project:
 
@@ -335,7 +338,7 @@ The following table lists the membership and visibility rights of project member
 | Be imported into other projects | {{< icon name="check-circle" >}} Yes | {{< icon name="dotted-circle" >}} No | {{< icon name="dotted-circle" >}} No | {{< icon name="dotted-circle" >}} No |
 | Share the project with other members | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes |
 
-**Footnotes:**
+**Footnotes**:
 
 1. Users can view only issues of projects they have access to.
 

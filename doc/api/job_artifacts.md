@@ -12,10 +12,10 @@ title: Job Artifacts API
 
 {{< /details >}}
 
-Use the job artifacts API to download or delete job artifacts.
+Use this API to interact with [job artifacts](../ci/jobs/job_artifacts.md).
 
 Authentication with a [CI/CD job token](../ci/jobs/job_artifacts.md#with-a-cicd-job-token)
-available in the Premium and Ultimate tier.
+is available in the Premium and Ultimate tier.
 
 ## Get job artifacts
 
@@ -212,7 +212,7 @@ artifacts are searched in hierarchical order from parent to child. If both paren
 have a job with the same name, the artifact from the parent pipeline is returned.
 
 The artifact file provides more detail than what is available in the
-[CSV export](../user/application_security/vulnerability_report/_index.md#export-vulnerability-details).
+[CSV export](../user/application_security/vulnerability_report/_index.md#exporting).
 
 Prerequisites:
 

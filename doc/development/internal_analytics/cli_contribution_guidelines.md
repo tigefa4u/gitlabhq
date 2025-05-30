@@ -1,7 +1,7 @@
 ---
 stage: Monitor
 group: Analytics Instrumentation
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Contributing to the Internal Events CLI
 ---
 
@@ -106,6 +106,6 @@ The internal events generator _should not_:
 
 ## FAQ
 
-**Q:** Why don't `InternalEventsCli::Event` & `InternalEventsCli::Metric` use `Gitlab::Tracking::EventDefinition` & `Gitlab::Usage::MetricDefinition` respectively?
+**Q:** Why don't `InternalEventsCli::Event` & `InternalEventsCli::Metric` use `Gitlab::Tracking::EventDefinition` & `Gitlab::Usage::MetricDefinition`?
 
 **A:** Using the `EventDefinition` & `MetricDefinition` classes would require GDK to be running and the rails app to be loaded. The performance of the CLI is critical to its usability, so separate classes are worth the value snappy startup times provide. Ideally, this will be refactored in time such that the same classes can be used for both the CLI & the rails app. For now, the rails app and the CLI share the `json-schemas` for the definitions as a single source of truth.

@@ -29,6 +29,7 @@ export default (function initInviteMembersModal() {
           hasGitlabSubscription: parseBoolean(el.dataset.hasGitlabSubscription),
           addSeatsHref: el.dataset.addSeatsHref,
           hasBsoEnabled: parseBoolean(el.dataset.hasBsoFeatureEnabled),
+          searchUrl: el.dataset.searchUrl,
         },
         render: (createElement) =>
           createElement(InviteMembersModal, {
@@ -38,8 +39,6 @@ export default (function initInviteMembersModal() {
               accessLevels: JSON.parse(el.dataset.accessLevels),
               defaultAccessLevel: parseInt(el.dataset.defaultAccessLevel, 10),
               defaultMemberRoleId: parseInt(el.dataset.defaultMemberRoleId, 10) || null,
-              usersFilter: el.dataset.usersFilter,
-              filterId: parseInt(el.dataset.filterId, 10),
               usersLimitDataset: convertObjectPropsToCamelCase(
                 JSON.parse(el.dataset.usersLimitDataset || '{}'),
               ),

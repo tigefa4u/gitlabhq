@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: GitLab Silent Mode
@@ -99,7 +99,7 @@ It may take up to a minute to take effect. [Issue 405433](https://gitlab.com/git
 
 This section documents the current behavior of GitLab when Silent Mode is enabled. The work for the first iteration of Silent Mode is tracked by [Epic 9826](https://gitlab.com/groups/gitlab-org/-/epics/9826).
 
-When Silent Mode is enabled, a banner is displayed at the top of the page for all users stating the setting is enabled and **All outbound communications are blocked.**.
+When Silent Mode is enabled, a banner is displayed at the top of the page for all users stating the setting is enabled and **All outbound communications are blocked**.
 
 ### Outbound communications that are silenced
 
@@ -126,6 +126,6 @@ Outbound communications from the following features are not silenced by Silent M
 | [File hooks](../file_hooks.md)                                                                              |                                                                                                                                                                                                                                                 |
 | [Server hooks](../server_hooks.md)                                                                          |                                                                                                                                                                                                                                                 |
 | [Advanced search](../../integration/advanced_search/elasticsearch.md)                                       | If two GitLab instances are using the same Advanced Search instance, then they can both modify Search data. This is a split-brain scenario which can occur for example after promoting a secondary Geo site while the primary Geo site is live. |
-| [Snowplow](../../development/internal_analytics/product_analytics.md)                                                           | There is [a proposal to silence these requests](https://gitlab.com/gitlab-org/gitlab/-/issues/409661).                                                                                                                                          |
+| Snowplow                                                           | There is [a proposal to silence these requests](https://gitlab.com/gitlab-org/gitlab/-/issues/409661).                                                                                                                                          |
 | [Deprecated Kubernetes Connections](../../user/clusters/agent/_index.md)                                    | There is [a proposal to silence these requests](https://gitlab.com/gitlab-org/gitlab/-/issues/396470).                                                                                                                                          |
 | [Container registry webhooks](../packages/container_registry.md#configure-container-registry-notifications) | There is [a proposal to silence these requests](https://gitlab.com/gitlab-org/gitlab/-/issues/409682).                                                                                                                                          |

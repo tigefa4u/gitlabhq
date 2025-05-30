@@ -18,7 +18,9 @@ RSpec.describe Resolvers::WorkItemsResolver, feature_category: :team_planning do
       project: project,
       state: :opened,
       created_at: 3.hours.ago,
-      updated_at: 3.hours.ago
+      updated_at: 3.hours.ago,
+      start_date: 3.days.ago,
+      due_date: 1.day.from_now
     )
   end
 
@@ -30,7 +32,9 @@ RSpec.describe Resolvers::WorkItemsResolver, feature_category: :team_planning do
       title: 'foo',
       created_at: 1.hour.ago,
       updated_at: 1.hour.ago,
-      closed_at: 1.hour.ago
+      closed_at: 1.hour.ago,
+      start_date: 1.day.ago,
+      due_date: 3.days.from_now
     )
   end
 
@@ -88,22 +92,12 @@ RSpec.describe Resolvers::WorkItemsResolver, feature_category: :team_planning do
         end
 
         %w[start_date due_date].each do |field|
-          context "when sorting by #{field}" do
-            let_it_be(:work_item_dates_source1) do
-              create(:work_items_dates_source, work_item: item1, start_date: 2.days.ago, due_date: 1.day.from_now)
-            end
+          it 'sorts items ascending' do
+            expect(resolve_items(sort: "#{field}_asc").to_a).to eq [item1, item2]
+          end
 
-            let_it_be(:work_item_dates_source2) do
-              create(:work_items_dates_source, work_item: item2, start_date: 1.day.ago, due_date: 2.days.from_now)
-            end
-
-            it 'sorts items ascending' do
-              expect(resolve_items(sort: "#{field}_asc").to_a).to eq [item1, item2]
-            end
-
-            it 'sorts items descending' do
-              expect(resolve_items(sort: "#{field}_desc").to_a).to eq [item2, item1]
-            end
+          it 'sorts items descending' do
+            expect(resolve_items(sort: "#{field}_desc").to_a).to eq [item2, item1]
           end
         end
 
@@ -167,6 +161,35 @@ RSpec.describe Resolvers::WorkItemsResolver, feature_category: :team_planning do
 
         expect(batch_sync { resolve_items(iids: iids).to_a }).to contain_exactly(item1, item2)
       end
+
+      context 'with parent_ids filter' do
+        context 'when filtering by more than 100 parent ids' do
+          let(:too_many_parent_ids) { (1..101).to_a }
+
+          it 'throws an error' do
+            response = batch_sync { resolve_items(parent_ids: too_many_parent_ids) }
+
+            expect(response).to be_a(GraphQL::ExecutionError)
+            expect(response.message).to eq('You can only provide up to 100 parent IDs at once.')
+          end
+        end
+
+        context 'when converting global ids to work item ids' do
+          let_it_be(:work_item1) { create(:work_item) }
+          let_it_be(:work_item2) { create(:work_item) }
+
+          let(:global_ids) { [work_item1.to_global_id, work_item2.to_global_id] }
+          let(:context) { { arg_style: :internal_prepared } }
+
+          it 'correctly processes global IDs and maps to work item model_ids' do
+            expect(GitlabSchema).to receive(:parse_gids)
+              .with(global_ids, expected_type: ::WorkItem)
+              .and_call_original
+
+            batch_sync { resolve_items({ parent_ids: global_ids.map(&:to_s) }, context) }
+          end
+        end
+      end
     end
   end
 
@@ -220,7 +243,8 @@ RSpec.describe Resolvers::WorkItemsResolver, feature_category: :team_planning do
 
   def resolve_items(args = {}, context = {})
     context[:current_user] = current_user
+    arg_style = context[:arg_style] ||= :internal
 
-    resolve(described_class, obj: project, args: args, ctx: context, arg_style: :internal)
+    resolve(described_class, obj: project, args: args, ctx: context, arg_style: arg_style)
   end
 end

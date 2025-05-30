@@ -7,7 +7,9 @@ import VueRouter from 'vue-router';
 import * as Sentry from '~/sentry/sentry_browser_wrapper';
 import IssueCardStatistics from 'ee_else_ce/issues/list/components/issue_card_statistics.vue';
 import IssueCardTimeInfo from 'ee_else_ce/issues/list/components/issue_card_time_info.vue';
+import WorkItemBulkEditSidebar from '~/work_items/components/work_item_bulk_edit/work_item_bulk_edit_sidebar.vue';
 import WorkItemHealthStatus from '~/work_items/components/work_item_health_status.vue';
+import WorkItemListHeading from '~/work_items/components/work_item_list_heading.vue';
 import EmptyStateWithoutAnyIssues from '~/issues/list/components/empty_state_without_any_issues.vue';
 import createMockApollo from 'helpers/mock_apollo_helper';
 import { describeSkipVue3, SkipReason } from 'helpers/vue3_conditional';
@@ -18,7 +20,7 @@ import {
 } from 'jest/issues/list/mock_data';
 import setWindowLocation from 'helpers/set_window_location_helper';
 import { getIdFromGraphQLId } from '~/graphql_shared/utils';
-import { STATUS_CLOSED, STATUS_OPEN, TYPE_ISSUE } from '~/issues/constants';
+import { STATUS_CLOSED, STATUS_OPEN } from '~/issues/constants';
 import { CREATED_DESC, UPDATED_DESC } from '~/issues/list/constants';
 import setSortPreferenceMutation from '~/issues/list/queries/set_sort_preference.mutation.graphql';
 import { scrollUp } from '~/lib/utils/scroll_utils';
@@ -43,6 +45,7 @@ import {
   TOKEN_TYPE_UPDATED,
 } from '~/vue_shared/components/filtered_search_bar/constants';
 import IssuableList from '~/vue_shared/issuable/list/components/issuable_list_root.vue';
+import CreateWorkItemModal from '~/work_items/components/create_work_item_modal.vue';
 import WorkItemsListApp from '~/work_items/pages/work_items_list_app.vue';
 import { sortOptions, urlSortParams } from '~/work_items/pages/list/constants';
 import getWorkItemStateCountsQuery from '~/work_items/graphql/list/get_work_item_state_counts.query.graphql';
@@ -52,12 +55,22 @@ import {
   DETAIL_VIEW_QUERY_PARAM_NAME,
   STATE_CLOSED,
   WORK_ITEM_TYPE_ENUM_EPIC,
+  WORK_ITEM_TYPE_NAME_EPIC,
+  WORK_ITEM_TYPE_NAME_INCIDENT,
+  WORK_ITEM_TYPE_NAME_ISSUE,
+  WORK_ITEM_TYPE_NAME_KEY_RESULT,
+  WORK_ITEM_TYPE_NAME_OBJECTIVE,
+  WORK_ITEM_TYPE_NAME_TASK,
 } from '~/work_items/constants';
 import { createRouter } from '~/work_items/router';
 import {
   groupWorkItemsQueryResponse,
+  groupWorkItemsQueryResponseNoLabels,
+  groupWorkItemsQueryResponseNoAssignees,
   groupWorkItemStateCountsQueryResponse,
+  combinedQueryResultExample,
 } from '../../mock_data';
+import { mockQueryFactory, mockListQueryFactory } from '../../graphql/mock_query_factory';
 
 jest.mock('~/lib/utils/scroll_utils', () => ({ scrollUp: jest.fn() }));
 jest.mock('~/sentry/sentry_browser_wrapper');
@@ -88,6 +101,10 @@ describeSkipVue3(skipReason, () => {
   const findWorkItemHealthStatus = () => wrapper.findComponent(WorkItemHealthStatus);
   const findDrawer = () => wrapper.findComponent(WorkItemDrawer);
   const findEmptyStateWithoutAnyIssues = () => wrapper.findComponent(EmptyStateWithoutAnyIssues);
+  const findCreateWorkItemModal = () => wrapper.findComponent(CreateWorkItemModal);
+  const findBulkEditStartButton = () => wrapper.find('[data-testid="bulk-edit-start-button"]');
+  const findBulkEditSidebar = () => wrapper.findComponent(WorkItemBulkEditSidebar);
+  const findWorkItemListHeading = () => wrapper.findComponent(WorkItemListHeading);
 
   const mountComponent = ({
     provide = {},
@@ -96,7 +113,9 @@ describeSkipVue3(skipReason, () => {
     sortPreferenceMutationResponse = mutationHandler,
     workItemsViewPreference = false,
     workItemsToggleEnabled = true,
+    workItemPlanningView = false,
     props = {},
+    additionalHandlers = [],
   } = {}) => {
     window.gon = {
       ...window.gon,
@@ -112,16 +131,25 @@ describeSkipVue3(skipReason, () => {
         [getWorkItemsQuery, queryHandler],
         [getWorkItemStateCountsQuery, countsQueryHandler],
         [setSortPreferenceMutation, sortPreferenceMutationResponse],
+        ...additionalHandlers,
       ]),
       provide: {
+        glFeatures: {
+          okrsMvc: true,
+          workItemPlanningView,
+        },
         autocompleteAwardEmojisPath: 'autocomplete/award/emojis/path',
+        canBulkUpdate: true,
+        canBulkEditEpics: true,
         fullPath: 'full/path',
         hasEpicsFeature: false,
+        hasGroupBulkEditFeature: true,
         hasOkrsFeature: false,
         hasQualityManagementFeature: false,
         initialSort: CREATED_DESC,
         isGroup: true,
         isSignedIn: true,
+        showNewWorkItem: true,
         workItemType: null,
         hasIssueDateFilterFeature: false,
         timeTrackingLimitToHours: false,
@@ -145,7 +173,7 @@ describeSkipVue3(skipReason, () => {
 
     mountComponent({
       provide: {
-        workItemType: TYPE_ISSUE,
+        workItemType: WORK_ITEM_TYPE_NAME_ISSUE,
         glFeatures: {
           issuesListDrawer: true,
         },
@@ -251,8 +279,7 @@ describeSkipVue3(skipReason, () => {
 
   describe('when workItemType is provided', () => {
     it('filters work items by workItemType', async () => {
-      const type = 'EPIC';
-      mountComponent({ provide: { workItemType: type } });
+      mountComponent({ provide: { workItemType: WORK_ITEM_TYPE_NAME_EPIC } });
 
       await waitForPromises();
 
@@ -262,16 +289,15 @@ describeSkipVue3(skipReason, () => {
           includeDescendants: true,
           sort: CREATED_DESC,
           state: STATUS_OPEN,
-          types: type,
+          types: WORK_ITEM_TYPE_ENUM_EPIC,
         }),
       );
     });
   });
 
-  describe('when workItemType EPIC is provided', () => {
+  describe('when workItemType Epic is provided', () => {
     it('sends excludeProjects variable in GraphQL query', async () => {
-      const type = 'EPIC';
-      mountComponent({ provide: { workItemType: type } });
+      mountComponent({ provide: { workItemType: WORK_ITEM_TYPE_NAME_EPIC } });
 
       await waitForPromises();
 
@@ -280,6 +306,72 @@ describeSkipVue3(skipReason, () => {
           excludeProjects: true,
         }),
       );
+    });
+
+    it('uses the eeEpicListQuery prop rather than the regular query', async () => {
+      const handler = jest.fn();
+      const mockQuery = mockQueryFactory('eeQuery');
+      const mockEEQueryHandler = [mockQuery, handler];
+      mountComponent({
+        provide: {
+          workItemType: WORK_ITEM_TYPE_NAME_EPIC,
+        },
+        additionalHandlers: [mockEEQueryHandler],
+        props: {
+          eeEpicListFullQuery: mockQuery,
+        },
+      });
+
+      await waitForPromises();
+
+      expect(handler).toHaveBeenCalled();
+    });
+
+    it('calls the slim EE query as well as the full EE query', async () => {
+      const fullHandler = jest.fn();
+      const fullMockQuery = mockQueryFactory('eeFullQuery');
+      const fullEEQueryHandler = [fullMockQuery, fullHandler];
+      const slimHandler = jest.fn();
+      const slimMockQuery = mockQueryFactory('eeSlimQuery');
+      const slimEEQueryHandler = [slimMockQuery, slimHandler];
+      mountComponent({
+        provide: {
+          workItemType: WORK_ITEM_TYPE_NAME_EPIC,
+        },
+        additionalHandlers: [fullEEQueryHandler, slimEEQueryHandler],
+        props: {
+          eeEpicListFullQuery: fullMockQuery,
+          eeEpicListSlimQuery: slimMockQuery,
+        },
+      });
+
+      await waitForPromises();
+
+      expect(fullHandler).toHaveBeenCalled();
+      expect(slimHandler).toHaveBeenCalled();
+    });
+
+    it('combines the slim and full results correctly and passes the to the list component', async () => {
+      const fullHandler = jest.fn().mockResolvedValue(groupWorkItemsQueryResponseNoLabels);
+      const fullMockQuery = mockListQueryFactory('eeFullQuery');
+      const fullEEQueryHandler = [fullMockQuery, fullHandler];
+      const slimHandler = jest.fn().mockResolvedValue(groupWorkItemsQueryResponseNoAssignees);
+      const slimMockQuery = mockListQueryFactory('eeSlimQuery');
+      const slimEEQueryHandler = [slimMockQuery, slimHandler];
+      mountComponent({
+        provide: {
+          workItemType: WORK_ITEM_TYPE_NAME_EPIC,
+        },
+        additionalHandlers: [fullEEQueryHandler, slimEEQueryHandler],
+        props: {
+          eeEpicListFullQuery: fullMockQuery,
+          eeEpicListSlimQuery: slimMockQuery,
+        },
+      });
+
+      await waitForPromises();
+
+      expect(findIssuableList().props('issuables')).toEqual(combinedQueryResultExample);
     });
   });
 
@@ -311,10 +403,12 @@ describeSkipVue3(skipReason, () => {
         await waitForPromises();
 
         expect(defaultQueryHandler).toHaveBeenCalledTimes(1);
+        expect(defaultCountsQueryHandler).toHaveBeenCalledTimes(1);
 
         await wrapper.setProps({ eeWorkItemUpdateCount: 1 });
 
         expect(defaultQueryHandler).toHaveBeenCalledTimes(2);
+        expect(defaultCountsQueryHandler).toHaveBeenCalledTimes(2);
       });
     });
   });
@@ -343,7 +437,7 @@ describeSkipVue3(skipReason, () => {
 
     describe('when workItemType is defined', () => {
       it('renders all tokens except "Type"', async () => {
-        mountComponent({ provide: { workItemType: 'EPIC' } });
+        mountComponent({ provide: { workItemType: WORK_ITEM_TYPE_NAME_EPIC } });
         await waitForPromises();
         const tokens = findIssuableList()
           .props('searchTokens')
@@ -621,8 +715,8 @@ describeSkipVue3(skipReason, () => {
             checkThatDrawerPropsAreEmpty();
           });
 
-          it('refetches and resets when work item is deleted', async () => {
-            expect(defaultQueryHandler).toHaveBeenCalledTimes(1);
+          it('refetches counts and resets when work item is deleted', async () => {
+            expect(defaultCountsQueryHandler).toHaveBeenCalledTimes(1);
 
             findDrawer().vm.$emit('workItemDeleted');
 
@@ -630,11 +724,11 @@ describeSkipVue3(skipReason, () => {
 
             checkThatDrawerPropsAreEmpty();
 
-            expect(defaultQueryHandler).toHaveBeenCalledTimes(2);
+            expect(defaultCountsQueryHandler).toHaveBeenCalledTimes(2);
           });
 
-          it('refetches when the selected work item is closed', async () => {
-            expect(defaultQueryHandler).toHaveBeenCalledTimes(1);
+          it('refetches counts when the selected work item is closed', async () => {
+            expect(defaultCountsQueryHandler).toHaveBeenCalledTimes(1);
 
             // component displays open work items by default
             findDrawer().vm.$emit('work-item-updated', {
@@ -643,7 +737,7 @@ describeSkipVue3(skipReason, () => {
 
             await nextTick();
 
-            expect(defaultQueryHandler).toHaveBeenCalledTimes(2);
+            expect(defaultCountsQueryHandler).toHaveBeenCalledTimes(2);
           });
         });
       });
@@ -659,7 +753,7 @@ describeSkipVue3(skipReason, () => {
                 issuesListDrawer: true,
                 epicsListDrawer: false,
               },
-              workItemType: WORK_ITEM_TYPE_ENUM_EPIC,
+              workItemType: WORK_ITEM_TYPE_NAME_EPIC,
             },
           });
           await waitForPromises();
@@ -676,7 +770,7 @@ describeSkipVue3(skipReason, () => {
                 issuesListDrawer: false,
                 epicsListDrawer: true,
               },
-              workItemType: WORK_ITEM_TYPE_ENUM_EPIC,
+              workItemType: WORK_ITEM_TYPE_NAME_EPIC,
             },
           });
           await waitForPromises();
@@ -706,7 +800,7 @@ describeSkipVue3(skipReason, () => {
         getParameterByName.mockReturnValue(show);
         mountComponent({
           provide: {
-            workItemType: TYPE_ISSUE,
+            workItemType: WORK_ITEM_TYPE_NAME_ISSUE,
             glFeatures: {
               issuesListDrawer: true,
             },
@@ -873,6 +967,153 @@ describeSkipVue3(skipReason, () => {
         .map((token) => token.type);
 
       expect(tokenTypes).toEqual(expect.arrayContaining([TOKEN_TYPE_CLOSED, TOKEN_TYPE_CREATED]));
+    });
+  });
+
+  describe('CreateWorkItem modal', () => {
+    it.each([true, false])('renders depending on showNewWorkItem=%s', async (showNewWorkItem) => {
+      mountComponent({ provide: { showNewWorkItem } });
+      await waitForPromises();
+
+      expect(findCreateWorkItemModal().exists()).toBe(showNewWorkItem);
+    });
+
+    describe('allowedWorkItemTypes', () => {
+      it('returns empty array when group', async () => {
+        mountComponent({ provide: { isGroup: true } });
+        await waitForPromises();
+
+        expect(findCreateWorkItemModal().props('allowedWorkItemTypes')).toEqual([]);
+      });
+
+      it('returns project-level types when project', async () => {
+        mountComponent({ provide: { isGroup: false } });
+        await waitForPromises();
+
+        expect(findCreateWorkItemModal().props('allowedWorkItemTypes')).toEqual([
+          WORK_ITEM_TYPE_NAME_INCIDENT,
+          WORK_ITEM_TYPE_NAME_ISSUE,
+          WORK_ITEM_TYPE_NAME_TASK,
+        ]);
+      });
+
+      it('returns project-level types including okr types when project and when okrs is enabled', async () => {
+        mountComponent({ provide: { isGroup: false, hasOkrsFeature: true } });
+        await waitForPromises();
+
+        expect(findCreateWorkItemModal().props('allowedWorkItemTypes')).toEqual([
+          WORK_ITEM_TYPE_NAME_INCIDENT,
+          WORK_ITEM_TYPE_NAME_ISSUE,
+          WORK_ITEM_TYPE_NAME_TASK,
+          WORK_ITEM_TYPE_NAME_KEY_RESULT,
+          WORK_ITEM_TYPE_NAME_OBJECTIVE,
+        ]);
+      });
+    });
+
+    describe('alwaysShowWorkItemTypeSelect', () => {
+      it.each`
+        workItemType                 | value
+        ${WORK_ITEM_TYPE_NAME_ISSUE} | ${true}
+        ${WORK_ITEM_TYPE_NAME_EPIC}  | ${false}
+      `('renders=$value when workItemType=$workItemType', async ({ workItemType, value }) => {
+        mountComponent({ provide: { workItemType } });
+        await waitForPromises();
+
+        expect(findCreateWorkItemModal().props('alwaysShowWorkItemTypeSelect')).toBe(value);
+      });
+    });
+
+    describe('preselectedWorkItemType', () => {
+      it.each`
+        workItemType                 | value
+        ${WORK_ITEM_TYPE_NAME_ISSUE} | ${WORK_ITEM_TYPE_NAME_ISSUE}
+        ${WORK_ITEM_TYPE_NAME_EPIC}  | ${WORK_ITEM_TYPE_NAME_EPIC}
+      `('renders=$value when workItemType=$workItemType', async ({ workItemType, value }) => {
+        mountComponent({ provide: { workItemType } });
+        await waitForPromises();
+
+        expect(findCreateWorkItemModal().props('preselectedWorkItemType')).toBe(value);
+      });
+    });
+  });
+
+  describe('when bulk editing', () => {
+    describe('user permissions', () => {
+      describe('when workItemType=Epic', () => {
+        it.each([true, false])('renders=$s when canBulkEditEpics=%s', async (canBulkEditEpics) => {
+          mountComponent({ provide: { canBulkEditEpics, workItemType: WORK_ITEM_TYPE_NAME_EPIC } });
+          await waitForPromises();
+
+          expect(findBulkEditStartButton().exists()).toBe(canBulkEditEpics);
+        });
+      });
+
+      describe('when group', () => {
+        it.each`
+          canBulkUpdate | hasGroupBulkEditFeature | renders
+          ${true}       | ${true}                 | ${true}
+          ${true}       | ${false}                | ${false}
+          ${false}      | ${true}                 | ${false}
+          ${false}      | ${false}                | ${false}
+        `(
+          'renders=$renders when canBulkUpdate=$canBulkUpdate and hasGroupBulkEditFeature=$hasGroupBulkEditFeature',
+          async ({ canBulkUpdate, hasGroupBulkEditFeature, renders }) => {
+            mountComponent({ provide: { isGroup: true, canBulkUpdate, hasGroupBulkEditFeature } });
+            await waitForPromises();
+
+            expect(findBulkEditStartButton().exists()).toBe(renders);
+          },
+        );
+      });
+
+      describe('when project', () => {
+        it.each([true, false])('renders depending on canBulkUpdate=%s', async (canBulkUpdate) => {
+          mountComponent({ provide: { isGroup: false, canBulkUpdate } });
+          await waitForPromises();
+
+          expect(findBulkEditStartButton().exists()).toBe(canBulkUpdate);
+        });
+      });
+    });
+
+    it('closes the bulk edit sidebar when the "success" event is emitted', async () => {
+      mountComponent();
+      await waitForPromises();
+
+      findBulkEditStartButton().vm.$emit('click');
+      await waitForPromises();
+
+      expect(findIssuableList().props('showBulkEditSidebar')).toBe(true);
+
+      findBulkEditSidebar().vm.$emit('success');
+      await nextTick();
+
+      expect(findIssuableList().props('showBulkEditSidebar')).toBe(false);
+    });
+
+    it('does not close the bulk edit sidebar when no "success" event is emitted', async () => {
+      mountComponent();
+      await waitForPromises();
+
+      findBulkEditStartButton().vm.$emit('click');
+      await waitForPromises();
+
+      expect(findIssuableList().props('showBulkEditSidebar')).toBe(true);
+
+      findBulkEditSidebar().vm.$emit('finish');
+      await nextTick();
+
+      expect(findIssuableList().props('showBulkEditSidebar')).toBe(true);
+    });
+  });
+
+  describe('when workItemPlanningView flag is enabled', () => {
+    it('renders the WorkItemListHeading component', async () => {
+      mountComponent({ workItemPlanningView: true });
+      await waitForPromises();
+
+      expect(findWorkItemListHeading().exists()).toBe(true);
     });
   });
 });

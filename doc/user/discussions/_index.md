@@ -4,6 +4,7 @@ group: Code Review
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: Use comments to discuss work, mention users, and suggest changes.
 title: Comments and threads
+description: Mentions, locked discussions, internal notes, and thread resolution.
 ---
 
 {{< details >}}
@@ -197,6 +198,17 @@ GitLab adds a system note to the page details.
 You must unlock all locked discussions in closed issues or merge requests before you can
 reopen the issue or merge request.
 
+## Comments on confidential items
+
+Only users with permission to access a confidential item receive notifications for comments on the item.
+If the item was not previously confidential, users without access may appear as participants. These users do not receive notifications while the item is confidential.
+
+Who can be notified:
+
+- Users assigned to the item, regardless of role.
+- Users who authored the item, if they have at least the Guest role.
+- Users with at least a Planner role in the group or project the item belongs to.
+
 ## Add an internal note
 
 {{< history >}}
@@ -250,13 +262,15 @@ GitLab saves your preference, and applies it to every issue, merge request, or e
 
 Reverse the default order and interact with the activity feed sorted by most recent items
 at the top. GitLab saves your preference in local storage and applies it to every issue,
-merge request, or epic you view.
+merge request, or epic you view. Issues and epics share the same sorting preference, while merge requests maintain their own separate preference.
 
 To change the activity sort order:
 
-1. Open the **Overview** tab in a merge request, issue, or epic.
-1. On the right side of the page, from the **Sort or filter** dropdown list, select the sort order
-   **Newest first** or **Oldest first** (default).
+1. Open an issue, or open the **Overview** tab in a merge request or epic.
+1. Scroll down to the **Activity** heading.
+1. On the right side of the page, change the sort order:
+   - **Issues and epics**: From the **Sort or filter** dropdown list, select **Newest first** or **Oldest first** (default).
+   - **Merge requests**: Use the sort direction arrow button to toggle between **Sort direction: Ascending** (oldest first, default) or **Sort direction: Descending (newest first)**.
 
 ## View description change history
 
@@ -353,7 +367,7 @@ such as:
 
 {{< details >}}
 
-- Tier: Ultimate
+- Tier: Premium, Ultimate
 - Add-on: GitLab Duo Enterprise, GitLab Duo with Amazon Q
 - Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
 - LLM for GitLab Self-Managed, GitLab Dedicated: Anthropic [Claude 3.5 Sonnet](https://console.cloud.google.com/vertex-ai/publishers/anthropic/model-garden/claude-3-5-sonnet)
@@ -368,10 +382,14 @@ such as:
 - [Moved](https://gitlab.com/gitlab-org/gitlab/-/issues/454550) to GitLab Duo and promoted to [beta](../../policy/development_stages_support.md#beta) in GitLab 17.3 [with a flag](../../administration/feature_flags.md) named `summarize_notes_with_duo`. Disabled by default.
 - [Enabled by default](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/162122) in GitLab 17.4.
 - Changed to require GitLab Duo add-on in GitLab 17.6 and later.
+- Changed to include Premium in GitLab 18.0.
 
 {{< /history >}}
 
 Generate a summary of discussions on an issue.
+
+<i class="fa fa-youtube-play youtube" aria-hidden="true"></i> [Watch an overview](https://www.youtube.com/watch?v=IcdxLfTIUgc)
+<!-- Video published on 2024-03-28 -->
 
 Prerequisites:
 
@@ -385,5 +403,5 @@ To generate a summary of issue discussions:
 The comments in the issue are summarized in as many as 10 list items.
 You can ask follow up questions based on the response.
 
-**Data usage**: When you use this feature, the text of all comments on the issue are sent to
+Data usage: When you use this feature, the text of all comments on the issue are sent to
 the large language model.

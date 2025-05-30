@@ -8,7 +8,6 @@ RSpec.describe Ci::Trigger, feature_category: :continuous_integration do
   describe 'associations' do
     it { is_expected.to belong_to(:project) }
     it { is_expected.to belong_to(:owner) }
-    it { is_expected.to have_many(:trigger_requests) }
     it { is_expected.to have_many(:pipelines) }
   end
 
@@ -45,36 +44,18 @@ RSpec.describe Ci::Trigger, feature_category: :continuous_integration do
 
     context 'when there is one pipeline' do
       let_it_be(:pipeline1) { create(:ci_empty_pipeline, trigger: trigger, project: project, created_at: '2025-02-13') }
-      let_it_be(:build1) { create(:ci_build, pipeline: pipeline1, trigger_request: trigger_request1) }
-      let_it_be(:trigger_request1) { create(:ci_trigger_request, trigger: trigger, created_at: '2025-02-12') }
+      let_it_be(:build1) { create(:ci_build, pipeline: pipeline1) }
 
       it { is_expected.to eq(pipeline1.reload.created_at) }
-
-      context 'when ff ci_read_trigger_from_ci_pipeline is disabled' do
-        before do
-          stub_feature_flags(ci_read_trigger_from_ci_pipeline: false)
-        end
-
-        it { is_expected.to eq(trigger_request1.reload.created_at) }
-      end
 
       context 'when there are two pipelines' do
         let_it_be(:pipeline2) do
           create(:ci_empty_pipeline, trigger: trigger, project: project, created_at: '2025-02-11')
         end
 
-        let_it_be(:build2) { create(:ci_build, pipeline: pipeline2, trigger_request: trigger_request2) }
-        let_it_be(:trigger_request2) { create(:ci_trigger_request, trigger: trigger, created_at: '2025-02-10') }
+        let_it_be(:build2) { create(:ci_build, pipeline: pipeline2) }
 
         it { is_expected.to eq(pipeline2.reload.created_at) }
-
-        context 'when ff ci_read_trigger_from_ci_pipeline is disabled' do
-          before do
-            stub_feature_flags(ci_read_trigger_from_ci_pipeline: false)
-          end
-
-          it { is_expected.to eq(trigger_request2.reload.created_at) }
-        end
       end
     end
   end
@@ -120,6 +101,15 @@ RSpec.describe Ci::Trigger, feature_category: :continuous_integration do
 
   it_behaves_like 'includes Limitable concern' do
     subject { build(:ci_trigger, owner: project.first_owner, project: project) }
+  end
+
+  it_behaves_like 'it has loose foreign keys' do
+    let(:factory_name) { :ci_trigger }
+  end
+
+  it_behaves_like 'loose foreign key with custom delete limit' do
+    let(:from_table) { "p_ci_pipelines" }
+    let(:delete_limit) { 50 }
   end
 
   context 'loose foreign key on ci_triggers.owner_id' do

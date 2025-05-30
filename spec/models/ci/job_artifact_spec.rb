@@ -668,6 +668,28 @@ RSpec.describe Ci::JobArtifact, feature_category: :job_artifacts do
     end
   end
 
+  it_behaves_like 'object storable' do
+    let(:locally_stored) do
+      ci_job_artifact = create(:ci_job_artifact)
+
+      if ci_job_artifact.file_store == ObjectStorage::Store::REMOTE
+        ci_job_artifact.update_column(described_class::STORE_COLUMN, ObjectStorage::Store::LOCAL)
+      end
+
+      ci_job_artifact
+    end
+
+    let(:remotely_stored) do
+      ci_job_artifact = create(:ci_job_artifact)
+
+      if ci_job_artifact.file_store == ObjectStorage::Store::LOCAL
+        ci_job_artifact.update_column(described_class::STORE_COLUMN, ObjectStorage::Store::REMOTE)
+      end
+
+      ci_job_artifact
+    end
+  end
+
   describe '.file_types' do
     context 'all file types have corresponding limit' do
       let_it_be(:plan_limits) { create(:plan_limits) }
@@ -744,8 +766,8 @@ RSpec.describe Ci::JobArtifact, feature_category: :job_artifacts do
 
   context 'FastDestroyAll' do
     let_it_be(:project) { create(:project) }
-    let_it_be(:pipeline) { create(:ci_pipeline, project: project) }
-    let_it_be(:job) { create(:ci_build, pipeline: pipeline, project: project) }
+    let_it_be_with_refind(:pipeline) { create(:ci_pipeline, project: project) }
+    let_it_be_with_refind(:job) { create(:ci_build, pipeline: pipeline, project: project) }
 
     let!(:job_artifact) { create(:ci_job_artifact, :archive, job: job) }
     let(:subjects) { pipeline.job_artifacts }

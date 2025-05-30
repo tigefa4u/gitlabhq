@@ -177,6 +177,7 @@ describe('WorkItemDetail component', () => {
       ]),
       isLoggedIn: isLoggedIn(),
       propsData: {
+        workItemFullPath: 'group/project',
         workItemId,
         isModal,
         workItemIid,
@@ -195,7 +196,6 @@ describe('WorkItemDetail component', () => {
           workItemsAlpha: workItemsAlphaEnabled,
         },
         hasSubepicsFeature,
-        fullPath: 'group/project',
         groupPath: 'group',
         hasLinkedItemsEpicsFeature,
       },
@@ -355,7 +355,7 @@ describe('WorkItemDetail component', () => {
       findWorkItemActions().vm.$emit('toggleWorkItemConfidentiality', true);
       await nextTick();
 
-      expect(findCreatedUpdated().props('updateInProgress')).toBe(true);
+      expect(findWorkItemActions().props('updateInProgress')).toBe(true);
     });
 
     it('emits workItemUpdated when mutation is successful', async () => {
@@ -853,6 +853,7 @@ describe('WorkItemDetail component', () => {
 
       expect(findNotesWidget().exists()).toBe(true);
       expect(findNotesWidget().props('isWorkItemConfidential')).toBe(confidential);
+      expect(findNotesWidget().props('canCreateNote')).toBeDefined();
     });
   });
 
@@ -1220,13 +1221,6 @@ describe('WorkItemDetail component', () => {
 
   describe('work item parent id', () => {
     const parentId = 'gid://gitlab/Issue/1';
-
-    it('passes the `parentWorkItemId` value down to the `WorkItemStickyHeader` component', async () => {
-      createComponent();
-      await waitForPromises();
-
-      expect(findStickyHeader().props('parentId')).toBe(parentId);
-    });
 
     it('passes the `parentWorkItemId` value down to the `WorkItemActions` component', async () => {
       createComponent();
