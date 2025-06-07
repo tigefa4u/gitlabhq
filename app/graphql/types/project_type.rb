@@ -4,7 +4,7 @@ module Types
   class ProjectType < BaseObject
     graphql_name 'Project'
 
-    include ::NamespacesHelper
+    include ::Namespaces::DeletableHelper
 
     connection_type_class Types::CountableConnectionType
 
@@ -149,7 +149,9 @@ module Types
 
     field :permanent_deletion_date, GraphQL::Types::String,
       null: true,
-      description: 'Date when project will be deleted if delayed project deletion is enabled.',
+      description: "For projects pending deletion, returns the project's scheduled deletion date. " \
+        'For projects not pending deletion, returns a theoretical date based on current settings ' \
+        'if marked for deletion today.',
       experiment: { milestone: '16.11' }
 
     field :visibility, GraphQL::Types::String,
@@ -409,6 +411,7 @@ module Types
 
     field :pipelines,
       null: true,
+      calls_gitaly: true,
       description: 'Pipelines of the project.',
       extras: [:lookahead],
       resolver: Resolvers::Ci::ProjectPipelinesResolver
@@ -571,7 +574,6 @@ module Types
 
     field :container_protection_tag_rules,
       Types::ContainerRegistry::Protection::TagRuleType.connection_type,
-      method: :container_registry_protection_tag_rules,
       null: true,
       experiment: { milestone: '17.8' },
       description: 'Container repository tag protection rules for the project.'
@@ -873,6 +875,11 @@ module Types
       end
     end
 
+    def container_protection_tag_rules
+      # Immutable tag rules are added in EE extension
+      object.container_registry_protection_tag_rules.mutable
+    end
+
     {
       issues: "Issues are",
       merge_requests: "Merge requests are",
@@ -1050,7 +1057,7 @@ module Types
     def permanent_deletion_date
       return unless project.adjourned_deletion_configured?
 
-      permanent_deletion_date_formatted(Date.current)
+      permanent_deletion_date_formatted(project) || permanent_deletion_date_formatted
     end
 
     private

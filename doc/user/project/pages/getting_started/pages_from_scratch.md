@@ -42,19 +42,19 @@ Create three files in the root (top-level) directory:
 - `.gitlab-ci.yml`: A YAML file that contains the commands you want to run.
   For now, leave the file's contents blank.
 
-- `index.html`: An HTML file you can populate with whatever HTML content
+- `index.html`: A non-empty HTML file you can populate with whatever HTML content
   you'd like, for example:
 
-   ```html
-   <html>
-   <head>
-     <title>Home</title>
-   </head>
-   <body>
-     <h1>Hello World!</h1>
-   </body>
-   </html>
-   ```
+  ```html
+  <html>
+  <head>
+    <title>Home</title>
+  </head>
+  <body>
+    <h1>Hello World!</h1>
+  </body>
+  </html>
+  ```
 
 - [`Gemfile`](https://bundler.io/gemfile.html): A file that describes dependencies for Ruby programs.
 

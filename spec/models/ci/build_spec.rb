@@ -31,7 +31,6 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
   end
 
   it { is_expected.to belong_to(:runner) }
-  it { is_expected.to belong_to(:trigger_request) }
   it { is_expected.to belong_to(:erased_by) }
   it { is_expected.to belong_to(:pipeline).inverse_of(:builds) }
   it { is_expected.to belong_to(:execution_config).class_name('Ci::BuildExecutionConfig').inverse_of(:builds) }
@@ -117,6 +116,14 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
       end
     end
 
+    describe 'created_before' do
+      subject { described_class.created_before(1.day.ago) }
+
+      it 'returns the builds created before the given time' do
+        is_expected.to contain_exactly(old_build)
+      end
+    end
+
     describe 'updated_after' do
       subject { described_class.updated_after(1.day.ago) }
 
@@ -145,6 +152,16 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
         is_expected.to contain_exactly(new_build)
       end
     end
+
+    describe 'with_token_present' do
+      it 'returns the builds with a non nil token' do
+        expect(described_class.with_token_present).to include(old_build)
+
+        old_build.remove_token!
+
+        expect(described_class.with_token_present).not_to include(old_build)
+      end
+    end
   end
 
   describe 'callbacks' do
@@ -170,6 +187,18 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
             project: project,
             additional_properties: { property: name }
           )
+      end
+    end
+
+    describe 'job status update subscription trigger' do
+      %w[cancel! drop! run! skip! success!].each do |action|
+        context "when build receives #{action} event" do
+          it 'triggers GraphQL subscription ciJobStatusUpdated' do
+            expect(GraphqlTriggers).to receive(:ci_job_status_updated).with(build)
+
+            build.public_send(action)
+          end
+        end
       end
     end
   end
@@ -301,6 +330,10 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
   describe '.with_live_trace' do
     subject { described_class.with_live_trace }
 
+    before do
+      stub_application_setting(ci_job_live_trace_enabled: true)
+    end
+
     context 'when build has live trace' do
       let!(:build) { create(:ci_build, :success, :trace_live, pipeline: pipeline) }
 
@@ -320,6 +353,10 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
 
   describe '.with_stale_live_trace' do
     subject { described_class.with_stale_live_trace }
+
+    before do
+      stub_application_setting(ci_job_live_trace_enabled: true)
+    end
 
     context 'when build has a stale live trace' do
       let!(:build) { create(:ci_build, :success, :trace_live, finished_at: 1.day.ago, pipeline: pipeline) }
@@ -5664,7 +5701,7 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
     it 'delegates to Ci::BuildTraceMetadata' do
       expect(Ci::BuildTraceMetadata)
         .to receive(:find_or_upsert_for!)
-        .with(build.id, build.partition_id)
+        .with(build.id, build.partition_id, build.project_id)
 
       build.ensure_trace_metadata!
     end
@@ -5782,13 +5819,31 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
     end
   end
 
-  it_behaves_like 'it has loose foreign keys' do
-    let(:factory_name) { :ci_build }
-  end
+  describe 'loose foreign keys' do
+    it_behaves_like 'it has loose foreign keys' do
+      let(:factory_name) { :ci_build }
+    end
 
-  it_behaves_like 'cleanup by a loose foreign key' do
-    let!(:model) { create(:ci_build, user: create(:user), pipeline: pipeline) }
-    let!(:parent) { model.user }
+    context 'with loose foreign key on users.id' do
+      it_behaves_like 'cleanup by a loose foreign key' do
+        let!(:model) { create(:ci_build, user: create(:user), pipeline: pipeline) }
+        let!(:parent) { model.user }
+      end
+    end
+
+    context 'with loose foreign key on projects.id' do
+      it_behaves_like 'cleanup by a loose foreign key' do
+        let!(:model) { create(:ci_build, pipeline: pipeline) }
+        let!(:parent) { model.project }
+      end
+    end
+
+    context 'with loose foreign key on ci_runners.id' do
+      it_behaves_like 'cleanup by a loose foreign key' do
+        let!(:model) { create(:ci_build, runner: create(:ci_runner), pipeline: pipeline) }
+        let!(:parent) { model.runner }
+      end
+    end
   end
 
   describe '#clone' do

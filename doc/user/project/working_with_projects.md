@@ -3,6 +3,7 @@ stage: Tenant Scale
 group: Organizations
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Manage projects
+description: Settings, configuration, project activity, and project deletion.
 ---
 
 {{< details >}}
@@ -55,14 +56,6 @@ For users without permission to view the project's code, the overview page shows
 - The wiki homepage.
 - The list of issues in the project.
 
-### Access a project by using the project ID
-
-{{< history >}}
-
-- Project ID [moved](https://gitlab.com/gitlab-org/gitlab/-/issues/431539) to the Actions menu in GitLab 16.7.
-
-{{< /history >}}
-
 You can access a project by using its ID instead of its name at `https://gitlab.example.com/projects/<id>`.
 For example, if in your personal namespace `alex` you have a project `my-project` with the ID `123456`,
 you can access the project either at `https://gitlab.example.com/alex/my-project` or `https://gitlab.example.com/projects/123456`.
@@ -73,9 +66,11 @@ In GitLab 17.5 and later, you can also use `https://gitlab.example.com/-/p/<id>`
 
 {{< /alert >}}
 
+## Find the Project ID
+
 You might also need the project ID if you want to interact with the project using the [GitLab API](../../api/_index.md).
 
-To copy the project ID:
+To find the project ID:
 
 1. On the left sidebar, select **Search or go to** and find your project.
 1. On the project overview page, in the upper-right corner, select **Actions** ({{< icon name="ellipsis_v" >}}).
@@ -249,16 +244,18 @@ To star a project:
 
 {{< history >}}
 
-- Default deletion behavior for projects on the Premium and Ultimate tier changed to [delayed project deletion](https://gitlab.com/gitlab-org/gitlab/-/issues/389557) in GitLab 16.0.
-- Default deletion behavior changed to delayed deletion on the Premium and Ultimate tier [on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/393622) and [on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/119606) in GitLab 16.0.
+- Default behavior [changed](https://gitlab.com/gitlab-org/gitlab/-/issues/389557) to delayed project deletion for Premium and Ultimate tiers on [GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/393622) and [GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/119606) in 16.0.
+- Option to delete projects immediately as a group setting removed [on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/393622) and [on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/119606) in GitLab 16.0.
+- Default behavior changed to delayed project deletion for [GitLab Free](https://gitlab.com/groups/gitlab-org/-/epics/17208) and [personal projects](https://gitlab.com/gitlab-org/gitlab/-/issues/536244) in 18.0.
+- Option to delete projects immediately [moved](https://gitlab.com/groups/gitlab-org/-/epics/17208) from GitLab Premium to GitLab Free in 18.0.
 
 {{< /history >}}
 
-You can mark a project to be deleted.
-After you delete a project:
+You can schedule a project for deletion.
+By default, when you delete a project for the first time, it enters a pending deletion state.
+Delete a project again to remove it immediately.
 
-- Projects in personal namespaces are deleted immediately.
-- Projects in groups are deleted after a retention period.
+On GitLab.com, after a project is deleted, its data is retained for seven days.
 
 Prerequisites:
 
@@ -270,98 +267,25 @@ To delete a project:
 1. On the left sidebar, select **Search or go to** and find your project.
 1. Select **Settings > General**.
 1. Expand **Advanced**.
-1. In the **Delete this project** section, select **Delete project**.
+1. In the **Delete project** section, select **Delete project**.
 1. On the confirmation dialog, enter the project name and select **Yes, delete project**.
-
-This action deletes the project and all associated resources (such as issues and merge requests).
+1. Optional. To delete the project immediately, repeat these steps.
 
 You can also [delete projects using the Rails console](troubleshooting.md#delete-a-project-using-console).
 
-### Delayed project deletion
-
-{{< details >}}
-
-- Tier: Premium, Ultimate
-- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
-
-{{< /details >}}
-
-{{< history >}}
-
-- [Enabled for projects in personal namespaces](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/89466) in GitLab 15.1.
-- [Disabled for projects in personal namespaces](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/95495) in GitLab 15.3.
-- Enabled delayed deletion by default and removed the option to delete immediately [on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/393622) and [on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/119606) in GitLab 16.0.
-
-{{< /history >}}
-
-Prerequisites:
-
-- You must have the Owner role for the project.
-
-Projects in a group (not a personal namespace) can be deleted after a delay period.
-
-On GitLab Self-Managed instances, group administrators can define a deletion delay period of between 1 and 90 days.
-On SaaS, there is a non-adjustable default retention period of seven days.
-
-You can [view projects that are pending deletion](#view-projects-pending-deletion),
-and use the Rails console to
-[find projects that are pending deletion](troubleshooting.md#find-projects-that-are-pending-deletion).
-
-If the user who scheduled the project deletion loses access to the project (for example, by leaving the project, having their role downgraded, or being banned from the project) before the deletion occurs,
-the deletion job will instead restore and unarchive the project, so the project will no longer be scheduled for deletion.
-
-   {{< alert type="warning" >}}
-
-   If the user who scheduled the project deletion regains Owner role or administrator access before the job runs, then the job removes the project permanently.
-
-   {{< /alert >}}
-
-### Delete a project immediately
-
-{{< details >}}
-
-- Tier: Premium, Ultimate
-- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
-
-{{< /details >}}
-
-{{< history >}}
-
-- Option to delete projects immediately from the **Admin** area and as a group setting removed [on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/393622) and [on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/119606) in GitLab 16.0.
-
-{{< /history >}}
-
-If you don't want to wait for delayed deletion, you can delete a project immediately. To do this, perform the steps for [deleting a projects](#delete-a-project) again.
-
-In the first cycle of deleting a project, the project is moved to the delayed deletion queue and automatically deleted after the retention period has passed.
-If during this delayed deletion time you run a second deletion cycle, the project is deleted immediately.
-
-Prerequisites:
-
-- You must have the Owner role for the project.
-- The project must be [marked for deletion](#delete-a-project).
-
-To immediately delete a project marked for deletion:
-
-1. On the left sidebar, select **Search or go to** and find your project.
-1. Select **Settings > General**.
-1. Expand **Advanced**.
-1. In the **Delete this project** section, select **Delete project**.
-1. On the confirmation dialog, enter the project name and select **Yes, delete project**.
+If the user who scheduled the project deletion loses access to the project before the deletion occurs
+(for example, by leaving the project, having their role downgraded, or being banned from the project),
+the deletion job restores the project. However, if the user regains access before the deletion job runs,
+the job removes the project permanently.
 
 ### View projects pending deletion
-
-{{< details >}}
-
-- Tier: Premium, Ultimate
-- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
-
-{{< /details >}}
 
 {{< history >}}
 
 - [Changed](https://gitlab.com/groups/gitlab-org/-/epics/13066) tab label from "Pending deletion" to "Inactive" in GitLab 17.9 [with a flag](../../administration/feature_flags.md) named `your_work_projects_vue`. Disabled by default.
 - [Changed tab label generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/465889) in GitLab 17.10. Feature flag `your_work_projects_vue` removed.
+- [Moved](https://gitlab.com/groups/gitlab-org/-/epics/17208) from GitLab Premium to GitLab Free in 18.0.
+- [Enabled for projects in personal namespaces](https://gitlab.com/gitlab-org/gitlab/-/issues/536244) in GitLab 18.0.
 
 {{< /history >}}
 
@@ -369,13 +293,7 @@ To view a list of all projects that are pending deletion:
 
 1. On the left sidebar, select **Search or go to**.
 1. Select **View all my projects**.
-1. Select the **Pending deletion** tab.
-
-{{< alert type="note" >}}
-
-This tab appears as **Inactive** when the `your_work_projects_vue` feature flag is enabled.
-
-{{< /alert >}}
+1. Select the **Inactive** tab.
 
 Each project in the list shows:
 
@@ -384,26 +302,25 @@ Each project in the list shows:
 - The time the project is scheduled for final deletion.
 - A **Restore** action to stop the project being eventually deleted.
 
-## Restore a project
+### Restore a project
 
-{{< details >}}
+{{< history >}}
 
-- Tier: Premium, Ultimate
-- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
+- [Moved](https://gitlab.com/groups/gitlab-org/-/epics/17208) from GitLab Premium to GitLab Free in 18.0.
+- [Enabled for projects in personal namespaces](https://gitlab.com/gitlab-org/gitlab/-/issues/536244) in GitLab 18.0.
 
-{{< /details >}}
+{{< /history >}}
 
 Prerequisites:
 
 - You must have the Owner role for the project.
-- The project must be marked for deletion.
 
-To restore a project marked for deletion:
+To restore a project pending deletion:
 
 1. On the left sidebar, select **Search or go to** and find your project.
 1. Select **Settings > General**.
 1. Expand **Advanced**.
-1. In the Restore project section, select **Restore project**.
+1. In the **Restore project** section, select **Restore project**.
 
 ## Archive a project
 
@@ -412,6 +329,13 @@ To restore a project marked for deletion:
 - Pages removal [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/343109) in GitLab 17.5.
 
 {{< /history >}}
+
+{{< alert type="note" >}}
+
+When a project is archived, its fork relationship is removed and any open merge requests from forks
+targeting this project are automatically closed.
+
+{{< /alert >}}
 
 When you archive a project, some features become read-only.
 These features are still accessible, but not writable.
@@ -543,8 +467,7 @@ To view only the projects you are the owner of:
 
 ## Rename a repository
 
-A project's repository name defines its URL and its place on the file disk
-where GitLab is installed.
+A project's repository name defines its URL.
 
 Prerequisites:
 
@@ -600,7 +523,7 @@ To leave a project:
 
 {{< /details >}}
 
-You can add compliance frameworks to projects in a group that has a [compliance framework](../compliance/compliance_frameworks.md).
+You can add compliance frameworks to projects in a group that has a [compliance framework](../compliance/compliance_frameworks/_index.md).
 
 ## Manage project access through LDAP groups
 

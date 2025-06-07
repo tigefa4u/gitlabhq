@@ -10,11 +10,7 @@ import isShowingLabelsQuery from '~/graphql_shared/client/is_showing_labels.quer
 import UserAvatarLink from '~/vue_shared/components/user_avatar/user_avatar_link.vue';
 import WorkItemTypeIcon from '~/work_items/components/work_item_type_icon.vue';
 import IssueMilestone from '~/issuable/components/issue_milestone.vue';
-import {
-  LINKED_CATEGORIES_MAP,
-  STATE_CLOSED,
-  WORK_ITEM_TYPE_NAME_EPIC,
-} from '~/work_items/constants';
+import { WORK_ITEM_TYPE_NAME_EPIC } from '~/work_items/constants';
 import WorkItemRelationshipIcons from '~/work_items/components/shared/work_item_relationship_icons.vue';
 import { ListType } from '../constants';
 import { setError } from '../graphql/cache_updates';
@@ -38,6 +34,8 @@ export default {
       import('ee_component/related_items_tree/components/issue_health_status.vue'),
     EpicCountables: () =>
       import('ee_else_ce/vue_shared/components/epic_countables/epic_countables.vue'),
+    WorkItemStatusBadge: () =>
+      import('ee_component/work_items/components/shared/work_item_status_badge.vue'),
   },
   directives: {
     GlTooltip: GlTooltipDirective,
@@ -191,16 +189,23 @@ export default {
     workItemFullPath() {
       return this.item.namespace?.fullPath || this.item.referencePath?.split(this.itemPrefix)[0];
     },
-    filteredLinkedItems() {
-      const linkedItems = this.item.linkedWorkItems?.nodes || [];
-      return linkedItems.filter((item) => {
-        return (
-          item.linkType !== LINKED_CATEGORIES_MAP.RELATES_TO && item.workItemState !== STATE_CLOSED
-        );
-      });
+    blockingCount() {
+      return this.item?.blockingCount || 0;
+    },
+    blockedByCount() {
+      return this.item?.blockedByCount || 0;
+    },
+    hasBlockingRelationships() {
+      return this.blockingCount > 0 || this.blockedByCount > 0;
     },
     targetId() {
       return uniqueId(`${this.item.iid}`);
+    },
+    showStatus() {
+      return this.hasStatus && this.glFeatures.workItemStatusFeatureFlag;
+    },
+    hasStatus() {
+      return Boolean(this.item.status);
     },
   },
   methods: {
@@ -305,15 +310,17 @@ export default {
         />
       </template>
     </div>
-    <div class="board-card-footer gl-mt-3 gl-flex gl-items-end gl-justify-between">
+    <div
+      class="board-card-footer gl-mt-3 gl-flex gl-flex-wrap gl-items-end gl-justify-between gl-gap-y-3"
+    >
       <div
         class="align-items-start board-card-number-container gl-flex gl-flex-wrap-reverse gl-overflow-hidden"
       >
-        <span class="board-info-items gl-inline-block gl-leading-20">
+        <span class="board-info-items gl-flex gl-items-center gl-leading-20">
           <gl-loading-icon v-if="isLoading" size="lg" class="gl-mt-5" />
           <span
             v-if="showBoardCardNumber"
-            class="board-card-number gl-mr-3 gl-mt-3 gl-gap-2 gl-overflow-hidden gl-text-sm gl-text-subtle"
+            class="board-card-number gl-mr-3 gl-gap-2 gl-overflow-hidden gl-text-sm gl-text-subtle"
             :class="{ 'gl-text-base': isEpicBoard }"
           >
             <work-item-type-icon
@@ -366,7 +373,7 @@ export default {
           </span>
         </span>
       </div>
-      <div class="gl-flex gl-items-center">
+      <div class="gl-flex gl-flex-1 gl-flex-wrap gl-items-center gl-justify-end gl-gap-3">
         <div class="board-card-assignee gl-flex">
           <user-avatar-link
             v-for="assignee in cappedAssignees"
@@ -394,15 +401,24 @@ export default {
           >
         </div>
         <work-item-relationship-icons
-          v-if="filteredLinkedItems.length"
-          class="gl-ml-3 gl-whitespace-nowrap"
+          v-if="hasBlockingRelationships"
+          class="gl-whitespace-nowrap"
           :work-item-type="workItemType"
-          :linked-work-items="filteredLinkedItems"
+          :blocking-count="blockingCount"
+          :blocked-by-count="blockedByCount"
           :work-item-full-path="workItemFullPath"
           :work-item-iid="item.iid"
           :work-item-web-url="item.webUrl"
           :target-id="targetId"
         />
+        <div class="gl-max-w-20">
+          <work-item-status-badge
+            v-if="showStatus"
+            :name="item.status.name"
+            :icon-name="item.status.iconName"
+            :color="item.status.color"
+          />
+        </div>
       </div>
     </div>
   </div>

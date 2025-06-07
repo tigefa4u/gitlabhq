@@ -3,6 +3,7 @@ stage: Deploy
 group: Environments
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Deploy keys
+description: Public SSH keys, repository access, bot users, and read-only access.
 ---
 
 {{< details >}}
@@ -29,8 +30,8 @@ Deploy keys can't be used for Git operations if [external authorization](../../.
 
 A deploy key has a defined scope when it is created:
 
-- **Project deploy key:** Access is limited to the selected project.
-- **Public deploy key:** Access can be granted to _any_ project in a GitLab instance. Access to each
+- **Project deploy key**: Access is limited to the selected project.
+- **Public deploy key**: Access can be granted to any project in a GitLab instance. Access to each
   project must be [granted](#grant-project-access-to-a-public-deploy-key) by a user with at least
   the Maintainer role.
 
@@ -40,8 +41,8 @@ You cannot change a deploy key's scope after creating it.
 
 A deploy key is given a permission level when it is created:
 
-- **Read-only:** A read-only deploy key can only read from the repository.
-- **Read-write:** A read-write deploy key can read from, and write to, the repository.
+- **Read-only**: A read-only deploy key can only read from the repository.
+- **Read-write**: A read-write deploy key can read from, and write to, the repository.
 
 You can change a deploy key's permission level after creating it. Changing a project deploy key's
 permissions only applies for the current project.
@@ -88,9 +89,9 @@ To view the deploy keys available to a project:
 
 The deploy keys available are listed:
 
-- **Enabled deploy keys:** Deploy keys that have access to the project.
-- **Privately accessible deploy keys:** Project deploy keys that don't have access to the project.
-- **Public accessible deploy keys:** Public deploy keys that don't have access to the project.
+- **Enabled deploy keys**: Deploy keys that have access to the project.
+- **Privately accessible deploy keys**: Project deploy keys that don't have access to the project.
+- **Public accessible deploy keys**: Public deploy keys that don't have access to the project.
 
 ## Create a project deploy key
 
@@ -204,7 +205,7 @@ There are a few scenarios where a deploy key fails to push to a
 - The owner associated to a deploy key has [project membership permissions](../../permissions.md#project-members-permissions) lower than required to **View project code**.
 - The deploy key does not have [read-write permissions for the project](#edit-project-access-permissions-of-a-deploy-key).
 - The deploy key has been [revoked](#revoke-project-access-of-a-deploy-key).
-- **No one** is selected in [the **Allowed to push and merge** section](../repository/branches/protected.md#add-protection-to-existing-branches) of the protected branch.
+- **No one** is selected in [the **Allowed to push and merge** section](../repository/branches/protected.md#protect-a-branch) of the protected branch.
 
 This issue occurs because all deploy keys are associated to an account. Because the permissions for an account can change, this might lead to scenarios where a deploy key that was working is suddenly unable to push to a protected branch.
 

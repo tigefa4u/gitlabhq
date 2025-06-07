@@ -555,8 +555,8 @@ Prerequisites:
 
 To make an epic confidential:
 
-- **When creating an epic:** select the checkbox under **Confidentiality**.
-- **In an existing epic:** on the right sidebar, select **Edit** next to **Confidentiality**, and then
+- **When creating an epic**: select the checkbox under **Confidentiality**.
+- **In an existing epic**: on the right sidebar, select **Edit** next to **Confidentiality**, and then
   select **Turn on**.
 
 In GitLab 15.6 and later, you can also use the `/confidential` [quick action](../../project/quick_actions.md).
@@ -858,8 +858,6 @@ You can create a spreadsheet template to manage a pattern of consistently repeat
 
 <i class="fa fa-youtube-play youtube" aria-hidden="true"></i>
 For an introduction to epic templates, see [GitLab Epics and Epic Template Tip](https://www.youtube.com/watch?v=D74xKFNw8vg).
-
-For more on epic templates, see [Epic Templates - Repeatable sets of issues](https://handbook.gitlab.com/handbook/marketing/brand-and-product-marketing/product-and-solution-marketing/getting-started/104/).
 
 ## Multi-level child epics
 

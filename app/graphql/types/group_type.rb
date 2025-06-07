@@ -4,9 +4,11 @@ module Types
   class GroupType < NamespaceType
     graphql_name 'Group'
 
-    include ::NamespacesHelper
+    include ::Namespaces::DeletableHelper
 
     implements ::Types::Namespaces::GroupInterface
+
+    connection_type_class Types::CountableConnectionType
 
     authorize :read_group
 
@@ -317,15 +319,13 @@ module Types
     field :work_item, Types::WorkItemType,
       resolver: Resolvers::Namespaces::WorkItemResolver,
       experiment: { milestone: '16.4' },
-      description: 'Find a work item by IID directly associated with the group. Returns `null` if the ' \
-        '`namespace_level_work_items` feature flag is disabled.'
+      description: 'Find a work item by IID directly associated with the group.'
 
     field :work_item_state_counts,
       Types::WorkItemStateCountsType,
       null: true,
       experiment: { milestone: '16.7' },
-      description: 'Counts of work items by state for the namespace. Returns `null` if the ' \
-        '`namespace_level_work_items` feature flag is disabled.',
+      description: 'Counts of work items by state for the namespace.',
       resolver: Resolvers::Namespaces::WorkItemStateCountsResolver
 
     field :autocomplete_users,
@@ -371,7 +371,9 @@ module Types
 
     field :permanent_deletion_date, GraphQL::Types::String,
       null: true,
-      description: 'Date when group will be deleted if delayed group deletion is enabled.',
+      description: "For groups pending deletion, returns the group's scheduled deletion date. " \
+        'For groups not pending deletion, returns a theoretical date based on current settings ' \
+        'if marked for deletion today.',
       experiment: { milestone: '16.11' }
 
     def label(title:)
@@ -476,9 +478,9 @@ module Types
     end
 
     def permanent_deletion_date
-      return unless group.adjourned_deletion_configured?
+      return unless group.adjourned_deletion?
 
-      permanent_deletion_date_formatted(Date.current)
+      permanent_deletion_date_formatted(group) || permanent_deletion_date_formatted
     end
 
     private

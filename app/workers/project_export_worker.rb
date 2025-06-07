@@ -8,6 +8,7 @@ class ProjectExportWorker # rubocop:disable Scalability/IdempotentWorker
 
   feature_category :importers
   worker_resource_boundary :memory
+  tags :import_shared_storage
   urgency :low
   loggable_arguments 2, 3
   sidekiq_options retry: false, dead: false
@@ -34,7 +35,7 @@ class ProjectExportWorker # rubocop:disable Scalability/IdempotentWorker
     export_job&.finish
   rescue ActiveRecord::RecordNotFound => e
     log_failure(project_id, e)
-  rescue Gitlab::ImportExport::AfterExportStrategyBuilder::StrategyNotFoundError => e
+  rescue Import::AfterExportStrategies::AfterExportStrategyBuilder::StrategyNotFoundError => e
     log_failure(project_id, e)
     export_job&.finish
   rescue StandardError => e
@@ -48,7 +49,7 @@ class ProjectExportWorker # rubocop:disable Scalability/IdempotentWorker
   def build!(after_export_strategy)
     strategy_klass = after_export_strategy&.delete('klass')
 
-    Gitlab::ImportExport::AfterExportStrategyBuilder.build!(strategy_klass, after_export_strategy)
+    Import::AfterExportStrategies::AfterExportStrategyBuilder.build!(strategy_klass, after_export_strategy)
   end
 
   def log_failure(project_id, ex)

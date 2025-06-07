@@ -6,6 +6,12 @@ description: Set up Code Suggestions.
 title: Set up Code Suggestions
 ---
 
+{{< history >}}
+
+- Changed to include GitLab Duo Core in GitLab 18.0.
+
+{{< /history >}}
+
 You can use Code Suggestions in several different IDEs.
 To set up Code Suggestions, follow the instructions for your IDE.
 
@@ -13,7 +19,10 @@ To set up Code Suggestions, follow the instructions for your IDE.
 
 To use Code Suggestions, you need:
 
-- A GitLab Duo add-on subscription and an assigned seat.
+- A GitLab Duo Core, Pro, or Enterprise add-on.
+- A Premium or Ultimate subscription.
+- If you have GitLab Duo Pro or Enterprise, an assigned seat.
+- If you have GitLab Duo Core, [IDE features turned on](../../../gitlab_duo/turn_on_off.md#change-gitlab-duo-core-availability).
 - To confirm that Code Suggestions [supports your preferred language](supported_extensions.md#supported-languages-by-ide).
   Different IDEs support different languages.
 
@@ -34,8 +43,8 @@ Follow these steps for your IDE:
 
 ## Turn on Code Suggestions
 
-If you are assigned a seat, GitLab Duo AI-native features are turned on by default.
-However, you can confirm that Code Suggestions is turned on.
+Code Suggestions is turned on [if you meet the prerequisites](#prerequisites).
+To confirm, open your IDE and verify if Code Suggestions works.
 
 ### VS Code
 
@@ -114,14 +123,14 @@ Code Suggestions provides a LSP (Language Server Protocol) server, to support th
 All editor extensions from GitLab, except Neovim, add an icon to your IDE's status bar.
 For example, in Visual Studio:
 
-![The status bar in Visual Studio.](../../../../editor_extensions/img/visual_studio_status_bar_v17_4.png)
+![The status bar in Visual Studio.](img/visual_studio_status_bar_v17_4.png)
 
 | Icon | Status | Meaning |
 | :--- | :----- | :------ |
 | {{< icon name="tanuki-ai" >}} | **Ready** | You've configured and enabled GitLab Duo, and you're using a language that supports Code Suggestions. |
 | {{< icon name="tanuki-ai-off" >}} | **Not configured** | You haven't entered a personal access token, or you're using a language that Code Suggestions doesn't support. |
-| ![The status icon for fetching Code Suggestions.](../../../../editor_extensions/img/code_suggestions_loading_v17_4.svg) | **Loading suggestion** | GitLab Duo is fetching Code Suggestions for you. |
-| ![The status icon for a Code Suggestions error.](../../../../editor_extensions/img/code_suggestions_error_v17_4.svg) | **Error** | GitLab Duo has encountered an error. |
+| ![The status icon for fetching Code Suggestions.](img/code_suggestions_loading_v17_4.svg) | **Loading suggestion** | GitLab Duo is fetching Code Suggestions for you. |
+| ![The status icon for a Code Suggestions error.](img/code_suggestions_error_v17_4.svg) | **Error** | GitLab Duo has encountered an error. |
 
 ## Turn off Code Suggestions
 
@@ -175,4 +184,4 @@ For more information, see the [JetBrains product documentation](https://www.jetb
 
 ### Turn off GitLab Duo
 
-Alternatively, you can [turn off GitLab Duo](../../../gitlab_duo/turn_on_off.md#turn-off-gitlab-duo-features) (which includes Code Suggestions) completely for a group, project, or instance.
+Alternatively, you can [turn off GitLab Duo](../../../gitlab_duo/turn_on_off.md) (which includes Code Suggestions) completely for a group, project, or instance.

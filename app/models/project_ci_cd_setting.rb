@@ -20,7 +20,7 @@ class ProjectCiCdSetting < ApplicationRecord
 
   ALLOWED_SUB_CLAIM_COMPONENTS = %w[project_path ref_type ref].freeze
 
-  enum pipeline_variables_minimum_override_role: PIPELINE_VARIABLES_OVERRIDE_ROLES, _prefix: true
+  enum :pipeline_variables_minimum_override_role, PIPELINE_VARIABLES_OVERRIDE_ROLES, prefix: true
 
   before_validation :set_pipeline_variables_secure_defaults, on: :create
   before_create :set_default_git_depth
@@ -42,8 +42,11 @@ class ProjectCiCdSetting < ApplicationRecord
     numericality: {
       only_integer: true,
       greater_than_or_equal_to: ChronicDuration.parse('1 day'),
-      less_than_or_equal_to: ChronicDuration.parse('1 year'),
-      message: N_('must be between 1 day and 1 year')
+      less_than_or_equal_to: ->(_) { ::Gitlab::CurrentSettings.ci_delete_pipelines_in_seconds_limit },
+      message: ->(*) {
+        format(N_('must be between 1 day and %{limit}'),
+          limit: ::Gitlab::CurrentSettings.ci_delete_pipelines_in_seconds_limit_human_readable_long)
+      }
     }
 
   attribute :forward_deployment_enabled, default: true

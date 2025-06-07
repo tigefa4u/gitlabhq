@@ -136,9 +136,11 @@ class Projects::ForksController < Projects::ApplicationController
   end
 
   def load_namespaces_with_associations
-    # rubocop: disable CodeReuse/ActiveRecord
-    @load_namespaces_with_associations ||= fork_service.valid_fork_targets(only_groups: true).preload(:route)
-    # rubocop: enable CodeReuse/ActiveRecord
+    @load_namespaces_with_associations ||= fork_service
+      .valid_fork_targets(only_groups: true)
+      .with_deletion_schedule_only
+      .with_route
+      .with_namespace_details
   end
 
   def memberships_hash

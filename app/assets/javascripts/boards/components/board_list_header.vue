@@ -8,6 +8,7 @@ import {
   GlIcon,
   GlSprintf,
   GlTooltipDirective,
+  GlAnimatedChevronLgRightDownIcon,
 } from '@gitlab/ui';
 import { isListDraggable } from '~/boards/boards_util';
 import { isScopedLabel, parseBoolean } from '~/lib/utils/common_utils';
@@ -46,6 +47,7 @@ export default {
     GlTooltip,
     GlIcon,
     GlSprintf,
+    GlAnimatedChevronLgRightDownIcon,
     ItemCount,
   },
   directives: {
@@ -152,9 +154,6 @@ export default {
     },
     chevronTooltip() {
       return this.list.collapsed ? this.$options.i18n.expand : this.$options.i18n.collapse;
-    },
-    chevronIcon() {
-      return this.list.collapsed ? 'chevron-lg-right' : 'chevron-lg-down';
     },
     isNewIssueShown() {
       return (this.listType === ListType.backlog || this.showListHeaderButton) && !this.isEpicBoard;
@@ -344,8 +343,7 @@ export default {
         v-gl-tooltip.hover
         :aria-label="chevronTooltip"
         :title="chevronTooltip"
-        :icon="chevronIcon"
-        class="board-title-caret no-drag gl-cursor-pointer hover:gl-bg-strong"
+        class="board-title-caret no-drag btn-icon gl-cursor-pointer hover:gl-bg-strong"
         :class="{
           '-gl-mt-1': list.collapsed && isLabelList,
           'gl-mb-2': list.collapsed && isLabelList && !isSwimlanesHeader,
@@ -356,7 +354,9 @@ export default {
         size="small"
         data-testid="board-title-caret"
         @click="toggleExpanded"
-      />
+      >
+        <gl-animated-chevron-lg-right-down-icon :is-on="!list.collapsed" />
+      </gl-button>
       <!-- EE start -->
 
       <a
@@ -447,7 +447,7 @@ export default {
       <!-- EE end -->
 
       <div
-        class="issue-count-badge no-drag gl-inline-flex gl-pr-2 gl-text-sm gl-text-subtle"
+        class="issue-count-badge no-drag gl-inline-flex gl-pr-2"
         data-testid="issue-count-badge"
         :class="{
           '!gl-hidden': list.collapsed && isSwimlanesHeader,
@@ -455,26 +455,42 @@ export default {
         }"
       >
         <span class="gl-inline-flex" :class="{ 'gl-rotate-90': list.collapsed }">
-          <gl-tooltip :target="() => $refs.itemCount" :title="itemsTooltipLabel" />
-          <span ref="itemCount" class="gl-inline-flex gl-items-center" data-testid="item-count">
+          <gl-button
+            ref="itemCount"
+            v-gl-tooltip
+            :title="itemsTooltipLabel"
+            class="!gl-bg-transparent !gl-p-0"
+            data-testid="item-count"
+            category="tertiary"
+            size="small"
+            button-text-classes="gl-flex gl-text-subtle gl-text-sm gl-font-bold"
+          >
             <gl-icon class="gl-mr-2" :name="countIcon" :size="14" />
             <item-count
               v-if="!isLoading"
               :current-count="itemsCount"
               :max-count="list.maxIssueCount"
             />
-          </span>
+          </gl-button>
           <!-- EE start -->
           <template v-if="canShowTotalWeight">
-            <gl-tooltip :target="() => $refs.weightTooltip" :title="weightCountToolTip" />
-            <span ref="weightTooltip" class="gl-ml-3 gl-inline-flex" data-testid="weight">
+            <gl-button
+              ref="weightTooltip"
+              v-gl-tooltip
+              :title="weightCountToolTip"
+              class="gl-ml-3 !gl-bg-transparent !gl-p-0"
+              data-testid="weight"
+              category="tertiary"
+              size="small"
+              button-text-classes="gl-flex gl-text-subtle gl-text-sm gl-font-bold"
+            >
               <gl-icon class="gl-mr-2" name="weight" :size="14" />
               <item-count
                 v-if="!isLoading"
                 :current-count="totalIssueWeight"
                 :max-count="list.maxIssueWeight"
               />
-            </span>
+            </gl-button>
           </template>
           <!-- EE end -->
         </span>

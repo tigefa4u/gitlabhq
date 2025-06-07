@@ -104,7 +104,7 @@ To run secret detection automatically in the pipeline as the enforced global pol
 1. Under the **Conditions** section, you can optionally change "Triggers:" to "Schedules:" if you want to run the scan on a schedule instead of at every commit.
 1. Setup access to the custom ruleset: add CI variables with the value of the bot user, group variable and the URL of the custom ruleset project.
 
-   Since the custom ruleset is hosted in a different project and considered as the remote ruleset, the `SECRET_DETECTION_RULESET_GIT_REFERENCE` must be used.
+   The custom ruleset is hosted in a different project and considered as the remote ruleset, so the `SECRET_DETECTION_RULESET_GIT_REFERENCE` must be used.
 
    ```yaml
    variables:
@@ -161,4 +161,4 @@ An example password in clear is shown below:
 
 ### Policy not applying
 
-Ensure the security policy project you modified is correctly linked to your group. See [Link to a security policy project](../../user/application_security/policies/_index.md#link-to-a-security-policy-project) for more.
+Ensure the security policy project you modified is correctly linked to your group. See [Link to a security policy project](../../user/application_security/policies/security_policy_projects.md#link-to-a-security-policy-project) for more.

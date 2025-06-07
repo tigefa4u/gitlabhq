@@ -296,8 +296,10 @@ export const rawIssue = {
   weight: null,
   blocked: false,
   blockedByCount: 0,
+  blockingCount: 0,
   iteration: null,
   healthStatus: null,
+  status: null,
   type: 'ISSUE',
   linkedWorkItems: {
     __typename: 'LinkedWorkItemTypeConnection',
@@ -348,9 +350,11 @@ export const mockIssue = {
   milestone: null,
   weight: null,
   blocked: false,
-  blockedByCount: 0,
+  blockedByCount: 1,
+  blockingCount: 0,
   iteration: null,
   healthStatus: null,
+  status: null,
   type: 'ISSUE',
   __typename: 'Issue',
   linkedWorkItems: {
@@ -542,6 +546,7 @@ export const mockList = {
   maxIssueCount: 0,
   maxIssueWeight: 0,
   limitMetric: 'issue_count',
+  status: null,
   metadata: {
     epicsCount: 1,
   },
@@ -590,6 +595,7 @@ export const mockLabelList = {
   issuesCount: 0,
   maxIssueCount: 0,
   maxIssueWeight: 0,
+  status: null,
   limitMetric: 'issue_count',
   __typename: 'BoardList',
 };

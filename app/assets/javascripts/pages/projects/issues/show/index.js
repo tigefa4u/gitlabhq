@@ -8,7 +8,7 @@ const initLegacyIssuePage = async () => {
 const initWorkItemPage = async () => {
   const [{ initWorkItemsRoot }] = await Promise.all([import('~/work_items')]);
 
-  initWorkItemsRoot({ workItemType: 'issue' });
+  initWorkItemsRoot();
 };
 
 const issuableData = issuableInitialDataById('js-issuable-app');

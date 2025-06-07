@@ -14,6 +14,7 @@ import EmptyProject from '~/pages/projects/show/empty_project';
 import initHeaderApp from '~/repository/init_header_app';
 import initWebIdeLink from '~/pages/projects/shared/web_ide_link';
 import CompactCodeDropdown from 'ee_else_ce/repository/components/code_dropdown/compact_code_dropdown.vue';
+import { convertObjectPropsToCamelCase, parseBoolean } from '~/lib/utils/common_utils';
 import apolloProvider from '~/repository/graphql';
 import { initHomePanel } from '../home_panel';
 
@@ -71,16 +72,28 @@ const initCodeDropdown = () => {
 
   if (!codeDropdownEl) return false;
 
-  const { sshUrl, httpUrl, kerberosUrl, newWorkspacePath, projectId, projectPath } =
-    codeDropdownEl.dataset;
+  const {
+    sshUrl,
+    httpUrl,
+    kerberosUrl,
+    xcodeUrl,
+    ideData,
+    directoryDownloadLinks,
+    newWorkspacePath,
+    projectId,
+    projectPath,
+  } = codeDropdownEl.dataset;
 
-  const CodeDropdownComponent =
-    gon.features.directoryCodeDropdownUpdates && gon.features.blobRepositoryVueHeaderApp
-      ? CompactCodeDropdown
-      : CodeDropdown;
+  const { gitpodEnabled, showWebIdeButton, showGitpodButton, webIdeUrl, gitpodUrl } =
+    convertObjectPropsToCamelCase(ideData ? JSON.parse(ideData) : {});
+
+  const CodeDropdownComponent = gon.features.directoryCodeDropdownUpdates
+    ? CompactCodeDropdown
+    : CodeDropdown;
 
   return new Vue({
     el: codeDropdownEl,
+    provide: { newWorkspacePath },
     apolloProvider,
     render(createElement) {
       return createElement(CodeDropdownComponent, {
@@ -88,9 +101,15 @@ const initCodeDropdown = () => {
           sshUrl,
           httpUrl,
           kerberosUrl,
+          xcodeUrl,
+          webIdeUrl,
+          gitpodUrl,
+          showWebIdeButton,
+          isGitpodEnabledForInstance: parseBoolean(showGitpodButton),
+          isGitpodEnabledForUser: parseBoolean(gitpodEnabled),
+          directoryDownloadLinks: directoryDownloadLinks ? JSON.parse(directoryDownloadLinks) : [],
           projectId,
           projectPath,
-          newWorkspacePath,
         },
       });
     },

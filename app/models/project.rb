@@ -41,10 +41,8 @@ class Project < ApplicationRecord
   include RunnerTokenExpirationInterval
   include BlocksUnsafeSerialization
   include Subquery
-  include IssueParent
   include WorkItems::Parent
   include UpdatedAtFilterable
-  include CrossDatabaseIgnoredTables
   include UseSqlFunctionForPrimaryKeyLookups
   include Importable
   include SafelyChangeColumnDefault
@@ -54,8 +52,6 @@ class Project < ApplicationRecord
   columns_changing_default :organization_id
 
   ignore_column :emails_disabled, remove_with: '16.3', remove_after: '2023-08-22'
-
-  cross_database_ignore_tables %w[routes redirect_routes], url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/424277'
 
   extend Gitlab::Cache::RequestCache
   extend Gitlab::Utils::Override
@@ -205,9 +201,7 @@ class Project < ApplicationRecord
 
   has_one :catalog_resource, class_name: 'Ci::Catalog::Resource', inverse_of: :project
   has_many :ci_components, class_name: 'Ci::Catalog::Resources::Component', inverse_of: :project
-  # These are usages of the ci_components owned (not used) by the project
   has_many :ci_component_last_usages, class_name: 'Ci::Catalog::Resources::Components::LastUsage', inverse_of: :component_project
-  has_many :ci_component_usages, class_name: 'Ci::Catalog::Resources::Components::Usage', inverse_of: :project
   has_many :catalog_resource_versions, class_name: 'Ci::Catalog::Resources::Version', inverse_of: :project
   has_many :catalog_resource_sync_events, class_name: 'Ci::Catalog::Resources::SyncEvent', inverse_of: :project
 
@@ -540,6 +534,7 @@ class Project < ApplicationRecord
   accepts_nested_attributes_for :prometheus_integration, update_only: true
   accepts_nested_attributes_for :alerting_setting, update_only: true
 
+  delegate :deletion_schedule, to: :project_namespace, allow_nil: true
   delegate :merge_requests_access_level, :forking_access_level, :issues_access_level, :wiki_access_level, :snippets_access_level, :builds_access_level, :repository_access_level, :package_registry_access_level, :pages_access_level, :metrics_dashboard_access_level, :analytics_access_level, :operations_access_level, :security_and_compliance_access_level, :container_registry_access_level, :environments_access_level, :feature_flags_access_level, :monitor_access_level, :releases_access_level, :infrastructure_access_level, :model_experiments_access_level, :model_registry_access_level, to: :project_feature, allow_nil: true
   delegate :name, to: :owner, allow_nil: true, prefix: true
   delegate :jira_dvcs_server_last_sync_at, to: :feature_usage
@@ -592,6 +587,7 @@ class Project < ApplicationRecord
     delegate :previous_default_branch, :previous_default_branch=
     delegate :squash_option, :squash_option=
     delegate :extended_prat_expiry_webhooks_execute, :extended_prat_expiry_webhooks_execute=
+    delegate :protect_merge_request_pipelines, :protect_merge_request_pipelines=, :protect_merge_request_pipelines?
 
     with_options allow_nil: true do
       delegate :merge_commit_template, :merge_commit_template=
@@ -601,7 +597,9 @@ class Project < ApplicationRecord
       delegate :enforce_auth_checks_on_uploads, :enforce_auth_checks_on_uploads=
       delegate :warn_about_potentially_unwanted_characters, :warn_about_potentially_unwanted_characters=
       delegate :duo_features_enabled, :duo_features_enabled=
+      delegate :model_prompt_cache_enabled, :model_prompt_cache_enabled=
       delegate :merge_request_title_regex, :merge_request_title_regex=
+      delegate :web_based_commit_signing_enabled, :web_based_commit_signing_enabled=
     end
   end
 
@@ -661,12 +659,29 @@ class Project < ApplicationRecord
   scope :not_hidden, -> { where(hidden: false) }
   scope :not_in_groups, ->(groups) { where.not(group: groups) }
   scope :by_not_in_root_id, ->(root_id) { joins(:project_namespace).where('namespaces.traversal_ids[1] NOT IN (?)', root_id) }
+
+  scope :aimed_for_deletion, -> { where.not(marked_for_deletion_at: nil).without_deleted }
+  scope :self_or_ancestors_aimed_for_deletion, -> do
+    left_joins(:group)
+      .where.not(marked_for_deletion_at: nil)
+      .or(where(Group.self_or_ancestors_deletion_schedule_subquery.exists))
+      .without_deleted
+  end
+
   scope :not_aimed_for_deletion, -> { where(marked_for_deletion_at: nil).without_deleted }
-  scope :aimed_for_deletion, ->(date) { where('marked_for_deletion_at <= ?', date).without_deleted }
-  scope :with_deleting_user, -> { includes(:deleting_user) }
-  scope :by_marked_for_deletion_on, ->(marked_for_deletion_on) do
+  scope :self_and_ancestors_not_aimed_for_deletion, -> do
+    left_joins(:group)
+      .where(marked_for_deletion_at: nil)
+      .where.not(Group.self_or_ancestors_deletion_schedule_subquery.exists)
+      .without_deleted
+  end
+
+  scope :marked_for_deletion_before, ->(date) { where('marked_for_deletion_at <= ?', date).without_deleted }
+  scope :marked_for_deletion_on, ->(marked_for_deletion_on) do
     where(marked_for_deletion_at: marked_for_deletion_on)
   end
+
+  scope :with_deleting_user, -> { includes(:deleting_user) }
 
   scope :with_storage_feature, ->(feature) do
     where(arel_table[:storage_version].gteq(HASHED_STORAGE_FEATURES[feature]))
@@ -801,8 +816,24 @@ class Project < ApplicationRecord
   scope :starred_by, ->(user) { joins(:users_star_projects).where('users_star_projects.user_id': user.id) }
   scope :visible_to_user, ->(user) { where(id: user.authorized_projects.select(:id).reorder(nil)) }
   scope :visible_to_user_and_access_level, ->(user, access_level) { where(id: user.authorized_projects.where('project_authorizations.access_level >= ?', access_level).select(:id).reorder(nil)) }
+
   scope :archived, -> { where(archived: true) }
+  scope :self_or_ancestors_archived, -> do
+    left_joins(:group)
+      .where(archived: true)
+      .or(where(Group.self_or_ancestors_archived_setting_subquery.exists))
+  end
+
   scope :non_archived, -> { where(archived: false) }
+  scope :self_and_ancestors_non_archived, -> do
+    left_joins(:group)
+      .where(archived: false)
+      .where.not(Group.self_or_ancestors_archived_setting_subquery.exists)
+  end
+
+  scope :self_and_ancestors_active, -> { self_and_ancestors_non_archived.self_and_ancestors_not_aimed_for_deletion }
+  scope :self_or_ancestors_inactive, -> { self_or_ancestors_archived.or(self_or_ancestors_aimed_for_deletion) }
+
   scope :with_push, -> { joins(:events).merge(Event.pushed_action) }
   scope :with_project_feature, -> { joins('LEFT JOIN project_features ON projects.id = project_features.project_id') }
   scope :with_jira_dvcs_server, -> { joins(:feature_usage).merge(ProjectFeatureUsage.with_jira_dvcs_integration_enabled(cloud: false)) }
@@ -939,7 +970,7 @@ class Project < ApplicationRecord
     left_outer_joins(:fork_network_member).where(fork_network_member: { forked_from_project_id: nil })
   }
 
-  enum auto_cancel_pending_pipelines: { disabled: 0, enabled: 1 }
+  enum :auto_cancel_pending_pipelines, { disabled: 0, enabled: 1 }
 
   chronic_duration_attr :build_timeout_human_readable, :build_timeout,
     default: 3600, error_message: N_('Maximum job timeout has a value which could not be accepted')
@@ -1518,16 +1549,16 @@ class Project < ApplicationRecord
     latest_successful_build_for_ref(job_name, ref) || raise(ActiveRecord::RecordNotFound, "Couldn't find job #{job_name}")
   end
 
-  def latest_pipelines(ref: default_branch, sha: nil, limit: nil)
+  def latest_pipelines(ref: default_branch, sha: nil, limit: nil, source: nil)
     ref = ref.presence || default_branch
     sha ||= commit(ref)&.sha
     return ci_pipelines.none unless sha
 
-    ci_pipelines.newest_first(ref: ref, sha: sha, limit: limit)
+    ci_pipelines.newest_first(ref: ref, sha: sha, limit: limit, source: source)
   end
 
-  def latest_pipeline(ref = default_branch, sha = nil)
-    latest_pipelines(ref: ref, sha: sha).take
+  def latest_pipeline(ref = default_branch, sha = nil, source = nil)
+    latest_pipelines(ref: ref, sha: sha, source: source).take
   end
 
   def merge_base_commit(first_commit_id, second_commit_id)
@@ -1784,13 +1815,13 @@ class Project < ApplicationRecord
   end
 
   def pages_https_only
-    return false unless Gitlab.config.pages.external_https
+    return false unless Gitlab.config.pages.external_https || Gitlab.config.pages.custom_domain_mode == 'https'
 
     super
   end
 
   def pages_https_only?
-    return false unless Gitlab.config.pages.external_https
+    return false unless Gitlab.config.pages.external_https || Gitlab.config.pages.custom_domain_mode == 'https'
 
     super
   end
@@ -1955,8 +1986,6 @@ class Project < ApplicationRecord
   # Returns a list of integration names that should be disabled at the project-level.
   # Globally disabled integrations should go in Integration.disabled_integration_names.
   def disabled_integrations
-    return [] if Rails.env.development?
-
     %w[zentao]
   end
 
@@ -2890,6 +2919,10 @@ class Project < ApplicationRecord
     self.storage_version && self.storage_version >= HASHED_STORAGE_FEATURES[feature]
   end
 
+  def archived
+    super && !marked_for_deletion?
+  end
+
   def renamed?
     persisted? && path_changed?
   end
@@ -3362,12 +3395,14 @@ class Project < ApplicationRecord
       end
   end
 
-  def pending_delete_or_hidden?
-    pending_delete? || hidden?
+  # Overriding of Namespaces::AdjournedDeletable method
+  override :self_deletion_in_progress?
+  def self_deletion_in_progress?
+    pending_delete?
   end
 
-  def work_item_move_and_clone_flag_enabled?
-    Feature.enabled?(:work_item_move_and_clone, self, type: :beta) || group&.work_item_move_and_clone_flag_enabled?
+  def self_deletion_in_progress_or_hidden?
+    self_deletion_in_progress? || hidden?
   end
 
   def work_items_feature_flag_enabled?
@@ -3380,6 +3415,10 @@ class Project < ApplicationRecord
 
   def work_items_alpha_feature_flag_enabled?
     group&.work_items_alpha_feature_flag_enabled? || Feature.enabled?(:work_items_alpha)
+  end
+
+  def work_item_epic_milestones_feature_flag_enabled?
+    group&.work_item_epic_milestones_feature_flag_enabled? || Feature.enabled?(:work_item_epic_milestones, type: :beta)
   end
 
   def work_item_status_feature_available?
@@ -3397,6 +3436,10 @@ class Project < ApplicationRecord
 
   def continue_indented_text_feature_flag_enabled?
     group&.continue_indented_text_feature_flag_enabled? || Feature.enabled?(:continue_indented_text, self, type: :wip)
+  end
+
+  def markdown_placeholders_feature_flag_enabled?
+    group&.markdown_placeholders_feature_flag_enabled? || Feature.enabled?(:markdown_placeholders, self, type: :gitlab_com_derisk)
   end
 
   def enqueue_record_project_target_platforms
@@ -3546,9 +3589,15 @@ class Project < ApplicationRecord
     end
   end
 
-  def has_container_registry_protected_tag_rules?(action:, access_level:)
-    strong_memoize_with(:has_container_registry_protected_tag_rules, action, access_level) do
-      container_registry_protection_tag_rules.for_actions_and_access([action], access_level).exists?
+  def has_container_registry_protected_tag_rules?(action:, access_level:, include_immutable: true)
+    strong_memoize_with(:has_container_registry_protected_tag_rules, action, access_level, include_immutable) do
+      container_registry_protection_tag_rules.for_actions_and_access([action], access_level, include_immutable:).exists?
+    end
+  end
+
+  def has_container_registry_immutable_tag_rules?
+    strong_memoize_with(:has_container_registry_immutable_tag_rules) do
+      container_registry_protection_tag_rules.immutable.exists?
     end
   end
 
@@ -3865,6 +3914,12 @@ class Project < ApplicationRecord
     run_after_commit do
       ::Ci::Catalog::Resources::SyncEvent.enqueue_worker
     end
+  end
+
+  # Overriding of Namespaces::AdjournedDeletable method
+  override :all_scheduled_for_deletion_in_hierarchy_chain
+  def all_scheduled_for_deletion_in_hierarchy_chain
+    ancestors(hierarchy_order: :asc).joins(:deletion_schedule)
   end
 end
 

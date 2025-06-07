@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Sidekiq queues administration API
 ---
@@ -13,7 +13,7 @@ title: Sidekiq queues administration API
 {{< /details >}}
 
 Delete jobs from a Sidekiq queue that match the given
-[metadata](../development/logging.md#logging-context-metadata-through-rails-or-grape-requests).
+metadata.
 
 The response has three fields:
 

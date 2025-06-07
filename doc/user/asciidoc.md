@@ -56,12 +56,12 @@ fixed-width font:
 
 Admonition paragraphs grab the reader's attention:
 
-- `NOTE: This is a brief reference, please read the full documentation at https://asciidoctor.org/docs/.`
+- `NOTE: This is a brief reference, read the full documentation at https://asciidoctor.org/docs/.`
 - `TIP: Lists can be indented. Leading whitespace is not significant.`
 
 ## Text formatting
 
-- **Constrained (applied at word boundaries)**:
+- Constrained (applied at word boundaries):
 
   ```plaintext
   *strong importance* (aka bold)
@@ -72,7 +72,7 @@ Admonition paragraphs grab the reader's attention:
   `+literal text+` (monospaced with substitutions disabled)
   ```
 
-- **Unconstrained (applied anywhere)**:
+- Unconstrained (applied anywhere):
 
   ```plaintext
   **C**reate+**R**ead+**U**pdate+**D**elete
@@ -80,7 +80,7 @@ Admonition paragraphs grab the reader's attention:
   ``mono``culture
   ```
 
-- **Replacements**:
+- Replacements:
 
   ```plaintext
   A long time ago in a galaxy far, far away...
@@ -88,7 +88,7 @@ Admonition paragraphs grab the reader's attention:
   I believe I shall--no, actually I won't.
   ```
 
-- **Macros**:
+- Macros:
 
   ```plaintext
   // where c=specialchars, q=quotes, a=attributes, r=replacements, m=macros, p=post_replacements
@@ -478,7 +478,7 @@ Read more in the [Kroki integration](../administration/integration/kroki.md) pag
 After Kroki is enabled, you can create diagrams in AsciiDoc and Markdown documents.
 Here's an example using a GraphViz diagram:
 
-- **AsciiDoc**:
+- AsciiDoc:
 
   ```plaintext
   [graphviz]
@@ -489,7 +489,7 @@ Here's an example using a GraphViz diagram:
   ....
   ```
 
-- **Markdown**:
+- Markdown:
 
   ````markdown
   ```graphviz

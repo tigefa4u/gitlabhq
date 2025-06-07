@@ -96,6 +96,7 @@ export default {
     setErrorMessage(message) {
       this.error = message || this.$options.i18n.errorMessage;
     },
+    // eslint-disable-next-line vue/no-unused-properties
     show() {
       this.$refs.modal.show();
     },
@@ -136,7 +137,7 @@ export default {
       is-modal
       :work-item-id="displayedWorkItemId"
       :work-item-iid="displayedWorkItemIid"
-      :modal-work-item-full-path="workItemFullPath"
+      :work-item-full-path="workItemFullPath"
       class="gl-isolate -gl-mt-3 gl-bg-inherit gl-p-5"
       @close="hide"
       @deleteWorkItem="deleteWorkItem"

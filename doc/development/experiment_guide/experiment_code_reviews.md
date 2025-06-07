@@ -1,7 +1,7 @@
 ---
 stage: Growth
 group: Acquisition
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Experiment code reviews
 ---
 
@@ -17,7 +17,7 @@ exist in the application. These tests should help prevent the experiment code fr
 being removed before the [experiment cleanup process](https://handbook.gitlab.com/handbook/marketing/growth/engineering/experimentation/#experiment-cleanup-issue) starts.
 
 If, as a reviewer or maintainer, you find code that would usually fail review
-but is acceptable for now, mention your concerns with a note that there's no
+but is acceptable for now, mention your concerns with a note stating that there's no
 need to change the code. The author can then add a comment to this piece of code
 and link to the issue that resolves the experiment. The author or reviewer can add a link to this concern in the
 experiment rollout issue under the `Experiment Successful Cleanup Concerns` section of the description.

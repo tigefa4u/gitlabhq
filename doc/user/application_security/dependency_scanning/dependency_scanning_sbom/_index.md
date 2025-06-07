@@ -72,7 +72,7 @@ However, the modular aspect of this functionality allows you to select how this 
 In order to activate dependency scanning using SBOM, the provided CycloneDX SBOM document must:
 
 - Comply with [the CycloneDX specification](https://github.com/CycloneDX/specification) version `1.4`, `1.5`, or `1.6`. Online validator available on [CycloneDX Web Tool](https://cyclonedx.github.io/cyclonedx-web-tool/validate).
-- Comply with the [GitLab CycloneDX property taxonomy](../../../../development/sec/cyclonedx_property_taxonomy.md).
+- Comply with the GitLab CycloneDX property taxonomy.
 - Be uploaded as [a CI/CD artifact report](../../../../ci/yaml/artifacts_reports.md#artifactsreportscyclonedx) from a successful pipeline.
 
 When using GitLab provided analyzers, these requirements are met.
@@ -119,17 +119,17 @@ Enable the Dependency Scanning using SBOM feature with one of the following opti
   - The (deprecated) Gemnasium analyzer is used by default.
   - To enable the new Dependency Scanning analyzer, set the CI/CD variable `DS_ENFORCE_NEW_ANALYZER` to `true`.
 - Use the [Dependency Scanning CI/CD component](https://gitlab.com/explore/catalog/components/dependency-scanning) to enable the new Dependency Scanning analyzer.
-- Provide your own CycloneDX SBOM document.
+- Provide your own CycloneDX SBOM document as [a CI/CD artifact report](../../../../ci/yaml/artifacts_reports.md#artifactsreportscyclonedx) from a successful pipeline.
 
 The preferred method is to use the new Dependency Scanning analyzer and this is what is documented in the next section.
-To enable the (deprecated) Gemnasium analyzer please refer to the enablement instructions for the [legacy Dependency Scanning feature](../_index.md#enabling-the-analyzer).
+To enable the (deprecated) Gemnasium analyzer, refer to the enablement instructions for the [legacy Dependency Scanning feature](../_index.md#enabling-the-analyzer).
 
 ## Enabling the analyzer
 
 The Dependency Scanning analyzer produces a CycloneDX SBOM report compatible with GitLab. If your
 application can't generate such a report, you can use the GitLab analyzer to produce one.
 
-Please share any feedback on the new Dependency Scanning analyzer in this [feedback issue](https://gitlab.com/gitlab-org/gitlab/-/issues/523458).
+Share any feedback on the new Dependency Scanning analyzer in this [feedback issue](https://gitlab.com/gitlab-org/gitlab/-/issues/523458).
 
 Prerequisites:
 
@@ -212,6 +212,8 @@ For Gradle projects use either of the following methods to create a dependency g
 
 ##### Dependency Lock Plugin
 
+This method gives information about dependencies which are direct.
+
 To enable the CI/CD component on a Gradle project:
 
 1. Edit the `build.gradle` or `build.gradle.kts` to use the
@@ -256,10 +258,11 @@ build:
 
 ##### HtmlDependencyReportTask
 
+This method gives information about dependencies which are both transitive and direct.
+
 The [HtmlDependencyReportTask](https://docs.gradle.org/current/dsl/org.gradle.api.reporting.dependencies.HtmlDependencyReportTask.html)
 is an alternative way to get the list of dependencies for a Gradle project (tested with `gradle`
-versions 4 through 8). This method gives information about dependencies which are both transitive
-and direct. To enable use of this method with dependency scanning the artifact from running the
+versions 4 through 8). To enable use of this method with dependency scanning the artifact from running the
 `gradle htmlDependencyReport` task needs to be available.
 
 ```yaml
@@ -465,7 +468,7 @@ positives.
 
 ### Customizing behavior with the CI/CD template
 
-When using the `latest` Dependency Scanning CI/CD template `Dependency-Scanning.latest.gitlab-ci.yml` or [Scan Execution Policies](../../policies/scan_execution_policies.md) please use [CI/CD variables](#available-cicd-variables).
+When using the `latest` Dependency Scanning CI/CD template `Dependency-Scanning.latest.gitlab-ci.yml` or [Scan Execution Policies](../../policies/scan_execution_policies.md) use [CI/CD variables](#available-cicd-variables).
 
 #### Available CI/CD variables
 
@@ -474,7 +477,7 @@ The following variables allow configuration of global dependency scanning settin
 | CI/CD variables             | Description |
 | ----------------------------|------------ |
 | `DS_EXCLUDED_ANALYZERS`     | Specify the analyzers (by name) to exclude from Dependency Scanning. |
-| `DS_EXCLUDED_PATHS`         | Exclude files and directories from the scan based on the paths. A comma-separated list of patterns. Patterns can be globs (see [`doublestar.Match`](https://pkg.go.dev/github.com/bmatcuk/doublestar/v4@v4.0.2#Match) for supported patterns), or file or folder paths (for example, `doc,spec`). Parent directories also match patterns. This is a pre-filter which is applied _before_ the scan is executed. Default: `"spec, test, tests, tmp"`. |
+| `DS_EXCLUDED_PATHS`         | Exclude files and directories from the scan based on the paths. A comma-separated list of patterns. Patterns can be globs (see [`doublestar.Match`](https://pkg.go.dev/github.com/bmatcuk/doublestar/v4@v4.0.2#Match) for supported patterns), or file or folder paths (for example, `doc,spec`). Parent directories also match patterns. This is a pre-filter which is applied before the scan is executed. Default: `"spec, test, tests, tmp"`. |
 | `DS_MAX_DEPTH`              | Defines how many directory levels deep that the analyzer should search for supported files to scan. A value of `-1` scans all directories regardless of depth. Default: `2`. |
 | `DS_INCLUDE_DEV_DEPENDENCIES` | When set to `"false"`, development dependencies are not reported. Only projects using Composer, Conda, Gradle, Maven, npm, pnpm, Pipenv, Poetry, or uv are supported. Default: `"true"` |
 | `DS_PIPCOMPILE_REQUIREMENTS_FILE_NAME_PATTERN`   | Defines which requirement files to process using glob pattern matching (for example, `requirements*.txt` or `*-requirements.txt`). The pattern should match filenames only, not directory paths. See [glob pattern documentation](https://github.com/bmatcuk/doublestar/tree/v1?tab=readme-ov-file#patterns) for syntax details. |

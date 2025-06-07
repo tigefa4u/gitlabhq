@@ -110,12 +110,6 @@ The OpenID Connect provider provides you with a client's details and secret for 
    }
    ```
 
-   {{< alert type="note" >}}
-
-   For more information on using multiple identity providers with OIDC, see [issue 5992](https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues/5992).
-
-   {{< /alert >}}
-
    For self-compiled installations:
 
    ```yaml
@@ -496,7 +490,7 @@ Add the [provider's configuration](https://docs.gitlab.com/charts/charts/globals
 
 {{< /tabs >}}
 
-As you migrate from `azure_oauth2` to `omniauth_openid_connect` as part of upgrading to GitLab 17.0 or above, the `sub` claim value set for your organization can vary. `azure_oauth2` uses Microsoft V1 endpoint while `azure_activedirectory_v2` and `omniauth_openid_connect` both use Microsoft V2 endpoint with a common `sub` value.
+As you migrate from `azure_oauth2` to `omniauth_openid_connect` as part of upgrading to GitLab 17.0 or later, the `sub` claim value set for your organization can vary. `azure_oauth2` uses Microsoft V1 endpoint while `azure_activedirectory_v2` and `omniauth_openid_connect` both use Microsoft V2 endpoint with a common `sub` value.
 
 - **For users with an email address in Entra ID**, to allow falling back to email address and updating the user's identity,
   configure the following:

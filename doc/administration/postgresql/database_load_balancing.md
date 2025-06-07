@@ -154,7 +154,7 @@ in the additional section of the `SRV` response. If no IP is found for a hostnam
 needs to query the configured `nameserver` for `ANY` record for each such hostname looking for `A` or `AAAA`
 records, eventually dropping this hostname from rotation if it can't resolve its IP.
 
-The `interval` value specifies the _minimum_ time between checks. If the `A`
+The `interval` value specifies the minimum time between checks. If the `A`
 record has a TTL greater than this value, then service discovery honors said
 TTL. For example, if the TTL of the `A` record is 90 seconds, then service
 discovery waits at least 90 seconds before checking the `A` record again.
@@ -256,4 +256,4 @@ without it immediately leading to errors being presented to the users.
 ### Development guide
 
 For detailed development guide on database load balancing,
-see [the development documentation](../../development/database/load_balancing.md).
+see the development documentation.

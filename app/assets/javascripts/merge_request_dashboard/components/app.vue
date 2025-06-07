@@ -28,9 +28,12 @@ export default {
           if (!mergeRequest) return;
 
           const isAssignee = mergeRequest.assignees.nodes.some((u) => u.id === this.currentUserId);
+          const isAuthor = mergeRequest.author.id === this.currentUserId;
           const isReviewer = mergeRequest.reviewers.nodes.some((u) => u.id === this.currentUserId);
 
           if (isAssignee) eventHub.$emit('refetch.mergeRequests', 'assignedMergeRequests');
+          if (isAssignee || isAuthor)
+            eventHub.$emit('refetch.mergeRequests', 'authorOrAssigneeMergeRequests');
           if (isReviewer) eventHub.$emit('refetch.mergeRequests', 'reviewRequestedMergeRequests');
         },
       },
@@ -49,7 +52,7 @@ export default {
     CollapsibleSection,
     MergeRequest,
   },
-  inject: ['mergeRequestsSearchDashboardPath', 'listTypeToggleEnabled'],
+  inject: ['mergeRequestsSearchDashboardPath'],
   props: {
     tabs: {
       type: Array,
@@ -75,6 +78,8 @@ export default {
       this.isVisible = !Visibility.hidden();
     },
     clickTab({ key }) {
+      if (this.currentTab === key) return;
+
       this.currentTab = key;
       this.$router.push({ path: key || '/' });
     },
@@ -119,10 +124,11 @@ export default {
         :key="tab.title"
         :active="tab.key === currentTab"
         lazy
+        data-testid="merge-request-dashboard-tab"
         @click="clickTab(tab)"
       >
         <template #title>
-          <tab-title :title="tab.title" :queries="queriesForTab(tab)" :tab-key="tab.key" />
+          <tab-title :title="tab.title" :queries="queriesForTab(tab)" />
         </template>
         <div v-for="(lists, i) in tab.lists" :key="`lists_${i}`">
           <div
@@ -257,13 +263,7 @@ export default {
       </template>
     </gl-tabs>
     <div class="gl-mt-6 gl-text-center">
-      <gl-link
-        :href="
-          listTypeToggleEnabled
-            ? 'https://gitlab.com/gitlab-org/gitlab/-/issues/533850'
-            : 'https://gitlab.com/gitlab-org/gitlab/-/issues/515912'
-        "
-      >
+      <gl-link href="https://gitlab.com/gitlab-org/gitlab/-/issues/542823">
         {{ __('Leave feedback') }}
       </gl-link>
       <span class="gl-mx-2">|</span>

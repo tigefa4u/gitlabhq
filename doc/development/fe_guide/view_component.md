@@ -1,7 +1,7 @@
 ---
 stage: Foundations
 group: Design System
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: ViewComponent
 ---
 
@@ -327,8 +327,8 @@ For the full list of options, see its
 
 If you need to have a custom layout for your ViewComponent preview consider using these paths for the layout code:
 
-- `app/views/layouts/lookbook` — for your layout HAML file
-- `app/assets/javascripts/entrypoints/lookbook` — for your custom JavaScript code
-- `app/assets/stylesheets/lookbook` — for your custom SASS code
+- `app/views/layouts/lookbook` for your layout HAML file
+- `app/assets/javascripts/entrypoints/lookbook` for your custom JavaScript code
+- `app/assets/stylesheets/lookbook` for your custom SASS code
 
-Please note that JavaScript and SASS code has to be manually included in the layout.
+JavaScript and SASS code have to be manually included in the layout.

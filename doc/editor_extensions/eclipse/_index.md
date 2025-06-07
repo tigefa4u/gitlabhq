@@ -27,6 +27,14 @@ This feature is an [experiment](../../policy/development_stages_support.md).
 
 [Install and configure the extension](setup.md).
 
+## Update the plugin
+
+To update your version of the plugin:
+
+1. In your Eclipse IDE, go to **Help > Check for Updates**.
+1. In the **Available Updates** dialog, ensure that **GitLab for Eclipse** is selected.
+1. Select **Next**, then **Finish**, to update the plugin.
+
 ## Report issues with the plugin
 
 You can report any issues, bugs, or feature requests in the
@@ -38,6 +46,5 @@ Use the `Bug` or `Feature Proposal` template.
 - [Code Suggestions](../../user/project/repository/code_suggestions/_index.md)
 - [Eclipse troubleshooting](troubleshooting.md)
 - [GitLab Language Server documentation](../language_server/_index.md)
-- [About the Create:Editor Extensions Group](https://handbook.gitlab.com/handbook/engineering/development/dev/create/editor-extensions/)
 - [Open issues for this plugin](https://gitlab.com/gitlab-org/editor-extensions/gitlab-eclipse-plugin/-/issues/)
 - [View source code](https://gitlab.com/gitlab-org/editor-extensions/gitlab-eclipse-plugin)

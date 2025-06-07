@@ -1,5 +1,13 @@
 <script>
-import { GlButton, GlIcon, GlBadge, GlLoadingIcon, GlLink, GlTooltipDirective } from '@gitlab/ui';
+import {
+  GlButton,
+  GlIcon,
+  GlBadge,
+  GlSkeletonLoader,
+  GlLink,
+  GlTooltipDirective,
+  GlAnimatedChevronLgDownUpIcon,
+} from '@gitlab/ui';
 import { __ } from '~/locale';
 
 export default {
@@ -7,8 +15,9 @@ export default {
     GlButton,
     GlIcon,
     GlBadge,
-    GlLoadingIcon,
+    GlSkeletonLoader,
     GlLink,
+    GlAnimatedChevronLgDownUpIcon,
   },
   directives: {
     GlTooltip: GlTooltipDirective,
@@ -98,7 +107,7 @@ export default {
   data() {
     return {
       isCollapsed:
-        this.collapsed ||
+        (this.collapsed && !this.persistCollapsedState) ||
         (this.persistCollapsedState &&
           localStorage.getItem(this.getLocalStorageKeyName()) === 'true'),
       isFormVisible: false,
@@ -110,9 +119,6 @@ export default {
         this.$scopedSlots.default || this.$scopedSlots.empty || this.$scopedSlots.pagination;
       return !(hasContent && this.isCollapsible && this.isCollapsed);
     },
-    toggleIcon() {
-      return this.isCollapsed ? 'chevron-lg-down' : 'chevron-lg-up';
-    },
     toggleLabel() {
       return this.isCollapsed ? __('Expand') : __('Collapse');
     },
@@ -121,7 +127,7 @@ export default {
     },
     displayedCount() {
       if (this.isLoading) {
-        return '...';
+        return null;
       }
 
       return this.icon && !this.count ? '0' : this.count;
@@ -139,6 +145,11 @@ export default {
   },
   mounted() {
     if (this.persistCollapsedState) {
+      // If collapsed by default and not yet toggled.
+      if (this.collapsed && localStorage.getItem(this.getLocalStorageKeyName()) === null) {
+        this.isCollapsed = true;
+      }
+
       if (localStorage.getItem(this.getLocalStorageKeyName()) === 'true') {
         this.$emit('collapsed');
       } else {
@@ -181,15 +192,15 @@ export default {
     :is="containerTag"
     :id="anchorId"
     ref="crudComponent"
-    class="crud gl-border gl-rounded-base gl-border-section gl-bg-subtle"
+    class="crud gl-border gl-rounded-lg gl-border-section gl-bg-subtle"
     :class="{ 'gl-mt-5': isCollapsible }"
   >
     <header
-      class="crud-header gl-border-b gl-relative gl-flex gl-flex-wrap gl-justify-between gl-gap-x-5 gl-gap-y-2 gl-rounded-t-base gl-border-section gl-bg-section gl-px-5 gl-py-4"
+      class="crud-header gl-border-b gl-relative gl-flex gl-flex-wrap gl-justify-between gl-gap-x-5 gl-gap-y-2 gl-rounded-t-lg gl-border-section gl-bg-section gl-p-4 gl-pl-5 md:gl-flex-nowrap"
       :class="[
         headerClass,
         {
-          'gl-rounded-base gl-border-b-transparent': !isContentVisible,
+          'gl-rounded-lg gl-border-b-transparent': !isContentVisible,
           'gl-relative gl-pr-10': isCollapsible,
         },
       ]"
@@ -232,7 +243,7 @@ export default {
         </p>
       </div>
       <div class="gl-flex gl-items-center gl-gap-3" data-testid="crud-actions">
-        <slot name="actions" :show-form="showForm"></slot>
+        <slot name="actions" :show-form="showForm" :is-form-visible="isFormVisible"></slot>
         <gl-button
           v-if="toggleText && !isFormUsedAndVisible"
           size="small"
@@ -248,16 +259,17 @@ export default {
           <gl-button
             v-gl-tooltip
             :title="toggleLabel"
-            :icon="toggleIcon"
             category="tertiary"
             size="small"
             :aria-label="toggleLabel"
             :aria-expanded="ariaExpandedAttr"
             :aria-controls="anchorId"
-            class="-gl-mr-2 gl-self-start"
+            class="btn-icon -gl-mr-2 gl-self-start"
             data-testid="crud-collapse-toggle"
             @click="toggleCollapse"
-          />
+          >
+            <gl-animated-chevron-lg-down-up-icon :is-on="!isCollapsed" variant="default" />
+          </gl-button>
         </div>
       </div>
     </header>
@@ -273,10 +285,11 @@ export default {
     <div
       v-if="isContentVisible"
       class="crud-body gl-mx-5 gl-my-4"
-      :class="[bodyClass, { 'gl-rounded-b-base': !$scopedSlots.footer }]"
+      :class="[bodyClass, { 'gl-rounded-b-lg': !$scopedSlots.footer }]"
       data-testid="crud-body"
     >
-      <gl-loading-icon v-if="isLoading" size="sm" data-testid="crud-loading" />
+      <gl-skeleton-loader v-if="isLoading" :width="400" :lines="3" data-testid="crud-loading" />
+
       <span v-else-if="$scopedSlots.empty" class="gl-text-subtle" data-testid="crud-empty">
         <slot name="empty"></slot>
       </span>
@@ -293,7 +306,7 @@ export default {
 
     <footer
       v-if="isContentVisible && $scopedSlots.footer"
-      class="gl-border-t gl-rounded-b-base gl-border-section gl-bg-section gl-px-5 gl-py-4"
+      class="gl-border-t gl-rounded-b-lg gl-border-section gl-bg-section gl-px-5 gl-py-4"
       :class="footerClass"
       data-testid="crud-footer"
     >

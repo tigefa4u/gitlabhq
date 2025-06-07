@@ -2,7 +2,9 @@ import Vue, { nextTick } from 'vue';
 import VueApollo from 'vue-apollo';
 import { GlAlert, GlButton, GlFormSelect, GlLink, GlSprintf } from '@gitlab/ui';
 import { shallowMount } from '@vue/test-utils';
-import namespaceWorkItemTypesQueryResponse from 'test_fixtures/graphql/work_items/namespace_work_item_types.query.graphql.json';
+import { cloneDeep } from 'lodash';
+import namespaceWorkItemTypesQueryResponse from 'test_fixtures/graphql/work_items/project_namespace_work_item_types.query.graphql.json';
+import { setHTMLFixture } from 'helpers/fixtures';
 import { useLocalStorageSpy } from 'helpers/local_storage_helper';
 import createMockApollo from 'helpers/mock_apollo_helper';
 import waitForPromises from 'helpers/wait_for_promises';
@@ -16,14 +18,20 @@ import WorkItemCrmContacts from '~/work_items/components/work_item_crm_contacts.
 import WorkItemMilestone from '~/work_items/components/work_item_milestone.vue';
 import WorkItemParent from '~/work_items/components/work_item_parent.vue';
 import WorkItemProjectsListbox from '~/work_items/components/work_item_links/work_item_projects_listbox.vue';
+import WorkItemNamespaceListbox from '~/work_items/components/shared/work_item_namespace_listbox.vue';
 import TitleSuggestions from '~/issues/new/components/title_suggestions.vue';
 import {
   WORK_ITEM_TYPE_NAME_EPIC,
   WORK_ITEM_TYPE_NAME_INCIDENT,
   WORK_ITEM_TYPE_NAME_ISSUE,
+  WORK_ITEM_TYPE_NAME_KEY_RESULT,
+  WORK_ITEM_TYPE_NAME_OBJECTIVE,
+  WORK_ITEM_TYPE_NAME_REQUIREMENTS,
   WORK_ITEM_TYPE_NAME_TASK,
-  WORK_ITEMS_TYPE_MAP,
+  WORK_ITEM_TYPE_NAME_TEST_CASE,
+  WORK_ITEM_TYPE_NAME_TICKET,
 } from '~/work_items/constants';
+import PageHeading from '~/vue_shared/components/page_heading.vue';
 import { setNewWorkItemCache } from '~/work_items/graphql/cache_utils';
 import namespaceWorkItemTypesQuery from '~/work_items/graphql/namespace_work_item_types.query.graphql';
 import createWorkItemMutation from '~/work_items/graphql/create_work_item.mutation.graphql';
@@ -41,17 +49,6 @@ jest.mock('~/work_items/graphql/cache_utils', () => ({
   setNewWorkItemCache: jest.fn(),
 }));
 
-jest.mock('~/lib/utils/url_utility', () => ({
-  getParameterByName: jest.fn().mockReturnValue('13'),
-  mergeUrlParams: jest.fn().mockReturnValue('/branches?state=all&search=%5Emain%24'),
-  joinPaths: jest.fn(),
-  setUrlParams: jest
-    .fn()
-    .mockReturnValue('/project/Project/-/settings/repository/branch_rules?branch=main'),
-  setUrlFragment: jest.fn(),
-  visitUrl: jest.fn().mockName('visitUrlMock'),
-}));
-
 Vue.use(VueApollo);
 
 describe('Create work item component', () => {
@@ -64,10 +61,10 @@ describe('Create work item component', () => {
   const createWorkItemSuccessHandler = jest.fn().mockResolvedValue(createWorkItemMutationResponse);
   const mutationErrorHandler = jest.fn().mockResolvedValue(createWorkItemMutationErrorResponse);
   const errorHandler = jest.fn().mockRejectedValue('Houston, we have a problem');
-  const workItemQuerySuccessHandler = jest.fn().mockResolvedValue(createWorkItemQueryResponse);
-  const namespaceWorkItemTypesHandler = jest
-    .fn()
-    .mockResolvedValue(namespaceWorkItemTypesQueryResponse);
+  const workItemQuerySuccessHandler = jest.fn().mockResolvedValue(createWorkItemQueryResponse());
+  const namespaceWorkItemTypes =
+    namespaceWorkItemTypesQueryResponse.data.workspace.workItemTypes.nodes;
+  const { webUrl: namespaceWebUrl } = namespaceWorkItemTypesQueryResponse.data.workspace;
 
   const findFormTitle = () => wrapper.find('h1');
   const findAlert = () => wrapper.findComponent(GlAlert);
@@ -79,6 +76,7 @@ describe('Create work item component', () => {
   const findMilestoneWidget = () => wrapper.findComponent(WorkItemMilestone);
   const findParentWidget = () => wrapper.findComponent(WorkItemParent);
   const findProjectsSelector = () => wrapper.findComponent(WorkItemProjectsListbox);
+  const findGroupProjectSelector = () => wrapper.findComponent(WorkItemNamespaceListbox);
   const findSelect = () => wrapper.findComponent(GlFormSelect);
   const findTitleSuggestions = () => wrapper.findComponent(TitleSuggestions);
   const findConfidentialCheckbox = () => wrapper.find('[data-testid="confidential-checkbox"]');
@@ -87,15 +85,26 @@ describe('Create work item component', () => {
   const findFormButtons = () => wrapper.find('[data-testid="form-buttons"]');
   const findCreateButton = () => wrapper.find('[data-testid="create-button"]');
   const findCancelButton = () => wrapper.find('[data-testid="cancel-button"]');
-
-  const namespaceWorkItemTypes =
-    namespaceWorkItemTypesQueryResponse.data.workspace.workItemTypes.nodes;
+  const findResolveDiscussionSection = () =>
+    wrapper.find('[data-testid="work-item-resolve-discussion"]');
+  const findResolveDiscussionLink = () =>
+    wrapper.find('[data-testid="work-item-resolve-discussion"]').findComponent(GlLink);
 
   const createComponent = ({
     props = {},
     mutationHandler = createWorkItemSuccessHandler,
     preselectedWorkItemType = WORK_ITEM_TYPE_NAME_EPIC,
+    isGroupWorkItem = false,
+    workItemPlanningViewEnabled = false,
   } = {}) => {
+    const namespaceResponseCopy = cloneDeep(namespaceWorkItemTypesQueryResponse);
+    namespaceResponseCopy.data.workspace.id = 'gid://gitlab/Group/33';
+    const namespaceResponse = isGroupWorkItem
+      ? namespaceResponseCopy
+      : namespaceWorkItemTypesQueryResponse;
+
+    const namespaceWorkItemTypesHandler = jest.fn().mockResolvedValue(namespaceResponse);
+
     mockApollo = createMockApollo(
       [
         [workItemByIidQuery, workItemQuerySuccessHandler],
@@ -108,17 +117,19 @@ describe('Create work item component', () => {
     wrapper = shallowMount(CreateWorkItem, {
       apolloProvider: mockApollo,
       propsData: {
+        fullPath: 'full-path',
         preselectedWorkItemType,
         ...props,
       },
       provide: {
-        fullPath: 'full-path',
         groupPath: 'group-path',
         hasIssuableHealthStatusFeature: false,
         hasIterationsFeature: true,
         hasIssueWeightsFeature: false,
+        workItemPlanningViewEnabled,
       },
       stubs: {
+        PageHeading,
         GlSprintf,
       },
     });
@@ -187,26 +198,36 @@ describe('Create work item component', () => {
       expect(setNewWorkItemCache).toHaveBeenCalled();
     });
 
-    it.each(Object.keys(WORK_ITEMS_TYPE_MAP))(
-      'Clears cache on cancel for workItemType: %s with the correct data',
-      async (type) => {
-        const typeName = WORK_ITEMS_TYPE_MAP[type].value;
+    it.each`
+      workItemType
+      ${WORK_ITEM_TYPE_NAME_EPIC}
+      ${WORK_ITEM_TYPE_NAME_INCIDENT}
+      ${WORK_ITEM_TYPE_NAME_ISSUE}
+      ${WORK_ITEM_TYPE_NAME_KEY_RESULT}
+      ${WORK_ITEM_TYPE_NAME_OBJECTIVE}
+      ${WORK_ITEM_TYPE_NAME_REQUIREMENTS}
+      ${WORK_ITEM_TYPE_NAME_TASK}
+      ${WORK_ITEM_TYPE_NAME_TEST_CASE}
+      ${WORK_ITEM_TYPE_NAME_TICKET}
+    `(
+      'Clears cache on cancel for workItemType=$workItemType with the correct data',
+      async ({ workItemType }) => {
         const expectedWorkItemTypeData = namespaceWorkItemTypes.find(
-          ({ name }) => name === typeName,
+          ({ name }) => name === workItemType,
         );
-        createComponent({ preselectedWorkItemType: typeName });
+        createComponent({ preselectedWorkItemType: workItemType });
         await waitForPromises();
 
         findCancelButton().vm.$emit('click');
         await nextTick();
 
-        expect(setNewWorkItemCache).toHaveBeenCalledWith(
-          'full-path',
-          expectedWorkItemTypeData.widgetDefinitions,
-          expectedWorkItemTypeData.name,
-          expectedWorkItemTypeData.id,
-          expectedWorkItemTypeData.iconName,
-        );
+        expect(setNewWorkItemCache).toHaveBeenCalledWith({
+          fullPath: 'full-path',
+          widgetDefinitions: expectedWorkItemTypeData.widgetDefinitions,
+          workItemType: expectedWorkItemTypeData.name,
+          workItemTypeId: expectedWorkItemTypeData.id,
+          workItemTypeIconName: expectedWorkItemTypeData.iconName,
+        });
       },
     );
   });
@@ -246,6 +267,16 @@ describe('Create work item component', () => {
 
       expect(findProjectsSelector().props('currentProjectName')).toBe(namespaceFullName);
       expect(findProjectsSelector().props('selectedProjectFullPath')).toBe('full-path');
+    });
+  });
+
+  describe('Group/project selector', () => {
+    it('renders with the current namespace selected by default', async () => {
+      createComponent({ workItemPlanningViewEnabled: true });
+      await waitForPromises();
+
+      expect(findGroupProjectSelector().exists()).toBe(true);
+      expect(findGroupProjectSelector().props('fullPath')).toBe('full-path');
     });
   });
 
@@ -335,6 +366,9 @@ describe('Create work item component', () => {
 
   describe('Create work item', () => {
     it('emits workItemCreated on successful mutation', async () => {
+      setWindowLocation(
+        '?discussion_to_resolve=f20989738bfe845f73a77a7109b1588852901befJD9I3FGU&merge_request_id=13',
+      );
       const workItem = { ...createWorkItemMutationResponse.data.workItemCreate.workItem };
       // there is a mismatch between the response and the expected workItem object between CE and EE fixture
       // so we need to remove the `promotedToEpicUrl` property from the expected workItem object
@@ -606,6 +640,24 @@ describe('Create work item component', () => {
     });
   });
 
+  describe('confidentiality checkbox', () => {
+    it('is checked when parameter issue[confidential]=true', async () => {
+      setWindowLocation('?issue[confidential]=true');
+      createComponent();
+      await waitForPromises();
+
+      expect(findConfidentialCheckbox().attributes('checked')).toBe('true');
+    });
+
+    it('is not checked when parameter issue[confidential]!=true', async () => {
+      setWindowLocation('?issue[confidential]=tru');
+      createComponent();
+      await waitForPromises();
+
+      expect(findConfidentialCheckbox().attributes('checked')).toBeUndefined();
+    });
+  });
+
   describe('With related item', () => {
     const id = 'gid://gitlab/WorkItem/1';
     const type = 'Epic';
@@ -730,6 +782,44 @@ describe('Create work item component', () => {
     });
   });
 
+  describe('title and description query parameters', () => {
+    it('saves to the cache when the backend provides them', async () => {
+      setHTMLFixture(`
+        <div class="new-issue-params hidden">
+          <div class="params-title">
+            i am a title
+          </div>
+          <div class="params-description">
+            i
+            am
+            a
+            description!
+          </div>
+          <div class="params-add-related-issue">
+            234
+          </div>
+          <div class="params-discussion-to-resolve">
+
+          </div>
+        </div>`);
+      createComponent();
+      await waitForPromises();
+
+      expect(setNewWorkItemCache).toHaveBeenCalledWith({
+        fullPath: expect.anything(),
+        widgetDefinitions: expect.anything(),
+        workItemType: expect.anything(),
+        workItemTypeId: expect.anything(),
+        workItemTypeIconName: expect.anything(),
+        workItemTitle: 'i am a title',
+        workItemDescription: `i
+            am
+            a
+            description!`,
+      });
+    });
+  });
+
   describe('New work item to resolve threads', () => {
     it('when not resolving any thread, does not pass resolve params to mutation', async () => {
       createComponent({
@@ -749,28 +839,6 @@ describe('Create work item component', () => {
     });
 
     it('when resolving all threads in a merge request', async () => {
-      setWindowLocation('?merge_request_id=13');
-
-      createComponent({
-        singleWorkItemType: true,
-        preselectedWorkItemType: WORK_ITEM_TYPE_NAME_ISSUE,
-      });
-      await waitForPromises();
-
-      await updateWorkItemTitle();
-      await submitCreateForm();
-
-      expect(createWorkItemSuccessHandler).toHaveBeenCalledWith({
-        input: expect.objectContaining({
-          discussionsToResolve: {
-            discussionId: '13',
-            noteableId: 'gid://gitlab/MergeRequest/13',
-          },
-        }),
-      });
-    });
-
-    it('when resolving one thread in a merge request', async () => {
       setWindowLocation(
         '?discussion_to_resolve=13&merge_request_to_resolve_discussions_of=112&merge_request_id=13',
       );
@@ -793,5 +861,78 @@ describe('Create work item component', () => {
         }),
       });
     });
+
+    describe('when resolving one thread in a merge request', () => {
+      beforeEach(async () => {
+        setHTMLFixture(`
+        <div class="new-issue-params hidden">
+          <div class="params-title">
+            Follow-up from "Necessitatibus delectus ex animi consequatur facere ipsum quaerat iusto veniam architecto."
+          </div>
+          <div class="params-description">
+            The following discussion from !1 should be addressed:
+
+            - [ ] @marlen started a [discussion](http://127.0.0.1:3000/flightjs/Flight/-/merge_requests/1#note_1224):  (+1 comment)
+
+                &gt; Quis nihil est molestias nemo rerum aspernatur.
+          </div>
+          <div class="params-add-related-issue">
+
+          </div>
+          <div class="params-discussion-to-resolve">
+            <a href="http://127.0.0.1:3000/flightjs/Flight/-/merge_requests/1#note_1224">!1 (discussion 1224)</a>
+          </div>
+        </div>`);
+        setWindowLocation(
+          '?discussion_to_resolve=13&merge_request_to_resolve_discussions_of=112&merge_request_id=13',
+        );
+        createComponent({
+          singleWorkItemType: true,
+          preselectedWorkItemType: WORK_ITEM_TYPE_NAME_ISSUE,
+        });
+        await waitForPromises();
+      });
+
+      it('renders text', () => {
+        expect(findResolveDiscussionSection().text()).toMatchInterpolatedText(
+          'Creating this issue will resolve the thread in !1 (discussion 1224)',
+        );
+      });
+
+      it('renders "resolve the thread" information', () => {
+        expect(findResolveDiscussionLink().text()).toBe('!1 (discussion 1224)');
+        expect(findResolveDiscussionLink().props('href')).toBe(
+          'http://127.0.0.1:3000/flightjs/Flight/-/merge_requests/1#note_1224',
+        );
+      });
+
+      it('calls mutation', async () => {
+        await updateWorkItemTitle();
+        await submitCreateForm();
+
+        expect(createWorkItemSuccessHandler).toHaveBeenCalledWith({
+          input: expect.objectContaining({
+            discussionsToResolve: {
+              discussionId: '13',
+              noteableId: 'gid://gitlab/MergeRequest/13',
+            },
+          }),
+        });
+      });
+    });
   });
+
+  it.each`
+    isGroupWorkItem | uploadsPath
+    ${true}         | ${`${namespaceWebUrl}/-/uploads`}
+    ${false}        | ${`${namespaceWebUrl}/uploads`}
+  `(
+    'passes correct uploads path for markdown editor when isGroupWorkItem is $isGroupWorkItem',
+    async ({ isGroupWorkItem, uploadsPath }) => {
+      createComponent({ isGroupWorkItem });
+      await waitForPromises();
+
+      expect(findDescriptionWidget().props('uploadsPath')).toBe(uploadsPath);
+    },
+  );
 });

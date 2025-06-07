@@ -1,7 +1,8 @@
 <script>
-import { GlButton, GlTooltipDirective, GlIcon } from '@gitlab/ui';
+import { GlButton, GlTooltipDirective, GlIcon, GlAnimatedLoaderIcon } from '@gitlab/ui';
 import { TYPE_ISSUE } from '~/issues/constants';
 import { __, sprintf, s__ } from '~/locale';
+import { createAlert } from '~/alert';
 import ReviewerAvatarLink from './reviewer_avatar_link.vue';
 
 const LOADING_STATE = 'loading';
@@ -44,6 +45,7 @@ export default {
   components: {
     GlButton,
     GlIcon,
+    GlAnimatedLoaderIcon,
     ReviewerAvatarLink,
   },
   directives: {
@@ -122,6 +124,7 @@ export default {
     },
     reRequestReview(userId) {
       this.loadingStates[userId] = LOADING_STATE;
+      this.$root.$emit('bv::hide::tooltip');
       this.$emit('request-review', { userId, callback: this.requestReviewComplete });
     },
     removeReviewer(userId) {
@@ -131,7 +134,7 @@ export default {
         done: () => this.requestRemovalComplete(userId),
       });
     },
-    requestReviewComplete(userId, success) {
+    requestReviewComplete(userId, success, errorMessage) {
       if (success) {
         this.loadingStates[userId] = SUCCESS_STATE;
 
@@ -140,6 +143,10 @@ export default {
         }, 1500);
       } else {
         this.loadingStates[userId] = null;
+
+        if (errorMessage) {
+          createAlert({ message: errorMessage });
+        }
       }
     },
     requestRemovalComplete(userId) {
@@ -216,7 +223,15 @@ export default {
         :class="reviewStateIcon(user).class"
         data-testid="reviewer-state-icon-parent"
       >
+        <gl-animated-loader-icon
+          v-if="
+            user.type === 'DUO_CODE_REVIEW_BOT' &&
+            user.mergeRequestInteraction.reviewState === 'REVIEW_STARTED'
+          "
+          is-on
+        />
         <gl-icon
+          v-else
           :size="reviewStateIcon(user).size || 16"
           :name="reviewStateIcon(user).name"
           :class="reviewStateIcon(user).iconClass"

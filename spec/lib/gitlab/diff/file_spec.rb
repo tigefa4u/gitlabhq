@@ -1253,20 +1253,16 @@ RSpec.describe Gitlab::Diff::File, feature_category: :shared do
 
   describe '#ai_reviewable?' do
     let(:diffable?) { true }
-    let(:deleted_file?) { false }
+    let(:text?) { true }
 
     before do
       allow(diff_file).to receive(:diffable?).and_return(diffable?)
-      allow(diff_file).to receive(:deleted_file?).and_return(deleted_file?)
+      allow(diff_file).to receive(:text?).and_return(text?)
     end
 
     subject(:ai_reviewable?) { diff_file.ai_reviewable? }
 
     it { is_expected.to eq(true) }
-
-    it 'returns true' do
-      expect(diff_file.ai_reviewable?).to eq(true)
-    end
 
     context 'when not diffable' do
       let(:diffable?) { false }
@@ -1274,8 +1270,8 @@ RSpec.describe Gitlab::Diff::File, feature_category: :shared do
       it { is_expected.to eq(false) }
     end
 
-    context 'when deleted file' do
-      let(:deleted_file?) { true }
+    context 'when not text' do
+      let(:text?) { false }
 
       it { is_expected.to eq(false) }
     end
@@ -1313,6 +1309,28 @@ RSpec.describe Gitlab::Diff::File, feature_category: :shared do
       allow(diff_file).to receive(:added_lines).and_return(2)
       allow(diff_file).to receive(:removed_lines).and_return(2)
       expect(whitespace_only?).to eq(true)
+    end
+  end
+
+  describe '#image_diff?' do
+    subject(:image_diff?) { diff_file.image_diff? }
+
+    it 'returns true for image diffs' do
+      allow(diff_file).to receive_messages(different_type?: false, external_storage_error?: false)
+      allow(DiffViewer::Image).to receive(:can_render?).and_return(true)
+      expect(image_diff?).to eq(true)
+    end
+
+    it 'returns false for different types' do
+      allow(diff_file).to receive_messages(different_type?: true, external_storage_error?: false)
+      allow(DiffViewer::Image).to receive(:can_render?).and_return(true)
+      expect(image_diff?).to eq(false)
+    end
+
+    it 'returns false for storage error' do
+      allow(diff_file).to receive_messages(different_type?: false, external_storage_error?: true)
+      allow(DiffViewer::Image).to receive(:can_render?).and_return(true)
+      expect(image_diff?).to eq(false)
     end
   end
 

@@ -64,7 +64,8 @@ RSpec.describe Keeps::DeleteOldFeatureFlags, feature_category: :tooling do
         rollout_issue_url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/123',
         default_enabled: false,
         group: groups.dig(:foo, :label),
-        path: feature_flag_file
+        path: feature_flag_file,
+        intended_to_rollout_by: nil
       )
     end
 
@@ -88,7 +89,8 @@ RSpec.describe Keeps::DeleteOldFeatureFlags, feature_category: :tooling do
           rollout_issue_url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/123',
           default_enabled: false,
           group: groups.dig(:foo, :label),
-          path: feature_flag_file
+          path: feature_flag_file,
+          intended_to_rollout_by: nil
         )
       end
 
@@ -142,7 +144,8 @@ RSpec.describe Keeps::DeleteOldFeatureFlags, feature_category: :tooling do
           rollout_issue_url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/123',
           default_enabled: true,
           group: groups.dig(:foo, :label),
-          path: feature_flag_file
+          path: feature_flag_file,
+          intended_to_rollout_by: nil
         )
       end
 
@@ -184,6 +187,78 @@ RSpec.describe Keeps::DeleteOldFeatureFlags, feature_category: :tooling do
         expect(keep.send(:can_remove_ff?, feature_flag, identifiers, :disabled)).to be true
       end
     end
+
+    describe '#parse_date' do
+      it 'returns a date object for valid date strings' do
+        expect(keep.send(:parse_date, '2023-01-01')).to eq(Date.new(2023, 1, 1))
+      end
+
+      it 'returns nil for invalid date strings' do
+        expect(keep.send(:parse_date, '2020')).to be_nil
+        expect(keep.send(:parse_date, 'invalid')).to be_nil
+        expect(keep.send(:parse_date, 'February 31, 2023')).to be_nil
+      end
+    end
+
+    context 'when feature flag has a future intended_to_rollout_by date' do
+      let(:feature_flag) do
+        instance_double(
+          Feature::Definition,
+          name: feature_flag_name,
+          milestone: feature_flag_milestone,
+          rollout_issue_url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/123',
+          default_enabled: false,
+          group: groups.dig(:foo, :label),
+          path: feature_flag_file,
+          intended_to_rollout_by: (Time.zone.today + 30).to_s
+        )
+      end
+
+      it 'returns false' do
+        expect(keep.send(:can_remove_ff?, feature_flag, identifiers, :enabled)).to be false
+      end
+    end
+
+    context 'when feature flag has a past intended_to_rollout_by date' do
+      let(:feature_flag) do
+        instance_double(
+          Feature::Definition,
+          name: feature_flag_name,
+          milestone: feature_flag_milestone,
+          rollout_issue_url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/123',
+          default_enabled: false,
+          group: groups.dig(:foo, :label),
+          path: feature_flag_file,
+          intended_to_rollout_by: (Time.zone.today - 30).to_s
+        )
+      end
+
+      it 'returns true when other conditions are met' do
+        expect(keep.send(:can_remove_ff?, feature_flag, identifiers, :enabled)).to be true
+      end
+    end
+
+    context 'when feature flag has an invalid intended_to_rollout_by date' do
+      let(:feature_flag) do
+        instance_double(
+          Feature::Definition,
+          name: feature_flag_name,
+          milestone: feature_flag_milestone,
+          rollout_issue_url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/123',
+          default_enabled: false,
+          group: groups.dig(:foo, :label),
+          path: feature_flag_file,
+          intended_to_rollout_by: '2020'
+        )
+      end
+
+      # When parse_date returns nil for an invalid date, it passes through
+      # the condition and allows removal
+      it 'returns true when other conditions are met' do
+        expect(keep.send(:parse_date, '2020')).to be_nil
+        expect(keep.send(:can_remove_ff?, feature_flag, identifiers, :enabled)).to be true
+      end
+    end
   end
 
   describe '#each_change' do
@@ -220,7 +295,8 @@ RSpec.describe Keeps::DeleteOldFeatureFlags, feature_category: :tooling do
         expect(actual_change.title).to eq("Delete the `#{feature_flag_name}` feature flag")
         expect(actual_change.identifiers).to match_array([described_class.name.demodulize, feature_flag_name])
         expect(actual_change.reviewers).to match_array(['@john_doe'])
-        expect(actual_change.labels).to match_array(['maintenance::removal', 'feature flag', groups.dig(:foo, :label)])
+        expect(actual_change.labels).to match_array(['automation:feature-flag-removal', 'maintenance::removal',
+          'feature flag', groups.dig(:foo, :label)])
         expect(actual_change.changed_files).to match_array([feature_flag_file])
       end
     end
@@ -261,7 +337,8 @@ RSpec.describe Keeps::DeleteOldFeatureFlags, feature_category: :tooling do
         expect(actual_change.identifiers).to match_array([described_class.name.demodulize, feature_flag_name])
         expect(actual_change.changed_files).to match_array([feature_flag_file, feature_flag_patch_path, 'foobar.txt'])
         expect(actual_change.reviewers).to match_array(['@john_doe'])
-        expect(actual_change.labels).to match_array(['maintenance::removal', 'feature flag', groups.dig(:foo, :label)])
+        expect(actual_change.labels).to match_array(['automation:feature-flag-removal', 'maintenance::removal',
+          'feature flag', groups.dig(:foo, :label)])
       end
     end
   end

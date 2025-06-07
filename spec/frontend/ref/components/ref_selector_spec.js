@@ -1,6 +1,5 @@
 import { GlLoadingIcon, GlCollapsibleListbox, GlListboxItem } from '@gitlab/ui';
 import Vue, { nextTick } from 'vue';
-import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { merge, last } from 'lodash';
 // eslint-disable-next-line no-restricted-imports
@@ -10,6 +9,7 @@ import commit from 'test_fixtures/api/commits/commit.json';
 import branches from 'test_fixtures/api/branches/branches.json';
 import { mountExtended } from 'helpers/vue_test_utils_helper';
 import { trimText } from 'helpers/text_helper';
+import axios from '~/lib/utils/axios_utils';
 import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR,
   HTTP_STATUS_NOT_FOUND,
@@ -131,6 +131,8 @@ describe('Ref selector component', () => {
   const findCommitsSection = () => findListBoxSection('Commits');
 
   const findHiddenInputField = () => wrapper.findByTestId('selected-ref-form-field');
+
+  const findCountBadges = () => wrapper.findAllByTestId('count');
 
   //
   // Expecters
@@ -347,23 +349,18 @@ describe('Ref selector component', () => {
 
         it('renders the default branch as a selectable item with a "default" badge', () => {
           const dropdownItems = findBranchDropdownItems();
-
           const defaultBranch = fixtures.branches.find((b) => b.default);
-          const defaultBranchIndex = fixtures.branches.indexOf(defaultBranch);
+          const defaultBranchItem = dropdownItems.at(0);
 
-          expect(trimText(dropdownItems.at(defaultBranchIndex).text())).toBe(
-            `${defaultBranch.name} default`,
-          );
+          expect(trimText(defaultBranchItem.text())).toBe(`${defaultBranch.name} default`);
         });
 
         it('renders the protected branch as a selectable item with a "protected" badge', () => {
           const dropdownItems = findBranchDropdownItems();
           const protectedBranch = fixtures.branches.find((b) => b.protected);
-          const protectedBranchIndex = fixtures.branches.indexOf(protectedBranch);
+          const protectedBranchItem = dropdownItems.at(3);
 
-          expect(trimText(dropdownItems.at(protectedBranchIndex).text())).toBe(
-            `${protectedBranch.name} protected`,
-          );
+          expect(trimText(protectedBranchItem.text())).toBe(`${protectedBranch.name} protected`);
         });
       });
 
@@ -427,11 +424,11 @@ describe('Ref selector component', () => {
         it('renders the protected tag as a selectable item with a "protected" badge', () => {
           const dropdownItems = findBranchDropdownItems();
           const protectedTag = fixtures.tags.find((b) => b.protected);
-          const protectedTagIndex = fixtures.tags.indexOf(protectedTag) + fixtures.branches.length;
+          const protectedTagItem = dropdownItems
+            .filter((item) => item.text().includes(protectedTag.name))
+            .at(0);
 
-          expect(trimText(dropdownItems.at(protectedTagIndex).text())).toBe(
-            `${protectedTag.name} protected`,
-          );
+          expect(trimText(protectedTagItem.text())).toBe(`${protectedTag.name} protected`);
         });
       });
 
@@ -812,6 +809,29 @@ describe('Ref selector component', () => {
           expect.objectContaining({ params: { per_page: 20, search: '' } }),
         );
       });
+    });
+  });
+
+  describe('badges', () => {
+    beforeEach(async () => {
+      const formatRefsModule = await import('~/ref/format_refs');
+      jest.spyOn(formatRefsModule, 'formatListBoxItems').mockReturnValue([
+        { text: DEFAULT_I18N.selected, options: [{ text: 'feature' }] },
+        { text: DEFAULT_I18N.branches, options: [{ text: 'main' }, { text: 'dev' }] },
+        { text: DEFAULT_I18N.tags, options: [{ text: 'v1' }, { text: 'v2' }, { text: 'v3' }] },
+      ]);
+
+      createComponent();
+      return waitForRequests();
+    });
+
+    it('hides badge for selected group, shows badge for other groups', async () => {
+      selectFirstBranch();
+      await nextTick();
+
+      expect(findCountBadges().length).toBe(2);
+      expect(findCountBadges().at(0).text()).toBe('2');
+      expect(findCountBadges().at(1).text()).toBe('3');
     });
   });
 });

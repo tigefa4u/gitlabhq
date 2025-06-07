@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Configure a new **secondary** site
@@ -46,7 +46,7 @@ Any change that requires access to the **Admin area** needs to be done in the
 ## Step 1. Manually replicate secret GitLab values
 
 GitLab stores a number of secret values in the `/etc/gitlab/gitlab-secrets.json`
-file which *must* be the same on all of a site's nodes. Until there is
+file which must be the same on all of a site's nodes. Until there is
 a means of automatically replicating these between sites (see [issue #3789](https://gitlab.com/gitlab-org/gitlab/-/issues/3789)),
 they must be manually replicated to **all nodes of the secondary site**.
 
@@ -226,6 +226,16 @@ In the following steps, replace `<ssh_host_key_path>` with the one you're using:
    gitlab_rails['geo_node_name'] = '<site_name_here>'
    ```
 
+{{< alert type="warning" >}}
+
+When the site name is configured to match the external URL, it is important to ensure
+that you add the trailing slash of the URL to the `gitlab_rails['geo_node_name']`
+definition in `/etc/gitlab/gitlab.rb`. Otherwise, it can cause the site to be
+misconfigured after updating the site's data from the Admin page.
+For more information, see [issue 536444](https://gitlab.com/gitlab-org/gitlab/-/issues/536444).
+
+{{< /alert >}}
+
 1. Reconfigure **each Rails and Sidekiq node on your secondary** site for the change to take effect:
 
    ```shell
@@ -277,8 +287,8 @@ in a process known as **backfill**.
 Meanwhile, the **primary** site starts to notify each **secondary** site of any changes, so
 that the **secondary** site can act on those notifications immediately.
 
-Be sure the _secondary_ site is running and accessible. You can sign in to the
-_secondary_ site with the same credentials as were used with the _primary_ site.
+Be sure the secondary site is running and accessible. You can sign in to the
+secondary site with the same credentials as were used with the primary site.
 
 ## Step 4. (Optional) Using custom certificates
 
@@ -300,7 +310,7 @@ Install the correct certificate based on your certificate type:
 
 A copy of the self-signed certificate for the external service needs to be added to the trust store on all the **primary** site's nodes that require access to the service.
 
-For the **secondary** site to be able to access the same external services, these certificates *must* be added to the **secondary** site's trust store.
+For the **secondary** site to be able to access the same external services, these certificates must be added to the **secondary** site's trust store.
 
 If your **primary** site is using a [custom or self-signed certificate for inbound HTTPS connections](#custom-or-self-signed-certificate-for-inbound-connections), the **primary** site's certificate needs to be added to the **secondary** site's trust store:
 

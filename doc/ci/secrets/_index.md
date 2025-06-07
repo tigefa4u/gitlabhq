@@ -40,7 +40,7 @@ can [use Vault secrets in a CI job](#use-vault-secrets-in-a-ci-job).
 The flow for using GitLab with HashiCorp Vault
 is summarized by this diagram:
 
-![Flow between GitLab and HashiCorp](../img/gitlab_vault_workflow_v13_4.png "How GitLab authenticates with HashiCorp Vault")
+![Flow between GitLab and HashiCorp](img/gitlab_vault_workflow_v13_4.png "How GitLab authenticates with HashiCorp Vault")
 
 1. Configure your vault and secrets.
 1. Generate your JWT and provide it to your CI job.
@@ -59,7 +59,7 @@ and supports multiple secrets engines.
 
 {{< /alert >}}
 
-You must replace the `vault.example.com` URL below with the URL of your Vault server, and `gitlab.example.com` with the URL of your GitLab instance.
+You must replace the `vault.example.com` URL in the following examples with the URL of your Vault server, and `gitlab.example.com` with the URL of your GitLab instance.
 
 ## Vault Secrets Engines
 
@@ -69,14 +69,14 @@ You must replace the `vault.example.com` URL below with the URL of your Vault se
 
 {{< /history >}}
 
-The Vault Secrets Engines supported by GitLab Runner are:
+The Vault Secrets Engines supported by GitLab Runner with the [`secrets:engine:name`](../yaml/_index.md#secretsvault) keyword:
 
-| Secrets engine                                                                                                                                     | [`secrets:engine:name`](../yaml/_index.md#secretsvault) value | Runner version | Details |
-|----------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------|----------------|---------|
-| [KV secrets engine - version 2](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v2)                                                       | `kv-v2`                                                      | 13.4           | `kv-v2` is the default engine GitLab Runner uses when no engine type is explicitly specified. |
-| [KV secrets engine - version 1](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v1)                                                       | `kv-v1` or `generic`                                         | 13.4           | Support for the `generic` keyword [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/366492) in GitLab 15.11. |
-| [The AWS secrets engine](https://developer.hashicorp.com/vault/docs/secrets/aws)                                                                   | `generic`                                                    | 16.11          |         |
-| [Hashicorp Vault Artifactory Secrets Plugin](https://jfrog.com/help/r/jfrog-integrations-documentation/hashicorp-vault-artifactory-secrets-plugin) | `generic`                                                    | 16.11          | This secrets backend talks to JFrog Artifactory server (5.0.0 or later) and dynamically provisions access tokens with specified scopes. |
+| Secrets engine                                                                                                                                     | `secrets:engine:name` value | Runner version | Details |
+|----------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------|----------------|---------|
+| [KV secrets engine - version 2](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v2)                                                       | `kv-v2`                     | 13.4           | `kv-v2` is the default engine GitLab Runner uses when no engine type is explicitly specified. |
+| [KV secrets engine - version 1](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v1)                                                       | `kv-v1` or `generic`        | 13.4           | Support for the `generic` keyword [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/366492) in GitLab 15.11. |
+| [The AWS secrets engine](https://developer.hashicorp.com/vault/docs/secrets/aws)                                                                   | `generic`                   | 16.11          |         |
+| [HashiCorp Vault Artifactory Secrets Plugin](https://jfrog.com/help/r/jfrog-integrations-documentation/hashicorp-vault-artifactory-secrets-plugin) | `generic`                   | 16.11          | This secrets backend talks to JFrog Artifactory server (5.0.0 or later) and dynamically provisions access tokens with specified scopes. |
 
 ## Configure your Vault server
 
@@ -219,7 +219,7 @@ attached to the resulting Vault token.
 [Bound claims](https://developer.hashicorp.com/vault/docs/auth/jwt#bound-claims) are predefined
 values that are matched to the JWT claims. With bounded claims, you can restrict access
 to specific GitLab users, specific projects, or even jobs running for specific Git
-references. You can have as many bounded claims you need, but they must *all* match
+references. You can have as many bounded claims you need, but they must all match
 for authentication to be successful.
 
 Combining bounded claims with GitLab features like [user roles](../../user/permissions.md)

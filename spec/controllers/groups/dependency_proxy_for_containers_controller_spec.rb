@@ -65,9 +65,7 @@ RSpec.describe Groups::DependencyProxyForContainersController, feature_category:
       let_it_be(:token) { create(:personal_access_token, user: user, scopes: [Gitlab::Auth::READ_API_SCOPE]) }
       let_it_be(:jwt) { build_jwt(token) }
 
-      context 'not under the group' do
-        it { is_expected.to have_gitlab_http_status(:not_found) }
-      end
+      it { is_expected.to have_gitlab_http_status(:not_found) }
 
       context 'with sufficient scopes, but not active' do
         %i[expired revoked].each do |status|
@@ -80,20 +78,6 @@ RSpec.describe Groups::DependencyProxyForContainersController, feature_category:
 
             it { is_expected.to have_gitlab_http_status(:not_found) }
           end
-        end
-      end
-
-      context 'with insufficient scopes' do
-        it { is_expected.to have_gitlab_http_status(:not_found) }
-
-        # TODO: Cleanup code related to packages_dependency_proxy_containers_scope_check
-        # https://gitlab.com/gitlab-org/gitlab/-/issues/520321
-        context 'packages_dependency_proxy_containers_scope_check disabled' do
-          before do
-            stub_feature_flags(packages_dependency_proxy_containers_scope_check: false)
-          end
-
-          it { is_expected.to have_gitlab_http_status(:not_found) }
         end
       end
     end
@@ -229,6 +213,57 @@ RSpec.describe Groups::DependencyProxyForContainersController, feature_category:
     end
   end
 
+  shared_examples 'SSRFFilter' do |disabled: false|
+    it 'does not include or disables SSRFFilter in the Workhorse send-dependency instructions' do
+      subject
+
+      _, send_data = workhorse_send_data
+
+      if disabled
+        expect(send_data['SSRFFilter']).to be(false)
+      else
+        expect(send_data).not_to include('SSRFFilter')
+      end
+    end
+  end
+
+  shared_examples 'Allowed endpoints' do
+    let(:allowed_endpoints) do
+      ['http://127.0.0.1:9000']
+    end
+
+    before do
+      allow(ObjectStoreSettings).to receive(:enabled_endpoint_uris).and_return(allowed_endpoints)
+    end
+
+    it 'sets AllowedEndpoints' do
+      subject
+
+      _, send_data = workhorse_send_data
+
+      expect(send_data['AllowedEndpoints']).to eq(allowed_endpoints)
+    end
+  end
+
+  shared_examples 'AllowLocalhost' do |disabled: false|
+    before do
+      allow(Gitlab).to receive(:dev_or_test_env?).and_return(false)
+      stub_application_setting(allow_local_requests_from_web_hooks_and_services: false)
+    end
+
+    it 'does not include or disables AllowLocalhost in the Workhorse send-dependency instructions' do
+      subject
+
+      _, send_data = workhorse_send_data
+
+      if disabled
+        expect(send_data['AllowLocalhost']).to be(false)
+      else
+        expect(send_data).not_to include('AllowLocalhost')
+      end
+    end
+  end
+
   before do
     allow(Gitlab.config.dependency_proxy)
       .to receive(:enabled).and_return(true)
@@ -312,6 +347,36 @@ RSpec.describe Groups::DependencyProxyForContainersController, feature_category:
         it_behaves_like 'a successful manifest pull'
         it_behaves_like 'a package tracking event', described_class.name, 'pull_manifest', false
 
+        context 'when remote object storage enabled' do
+          before do
+            allow(manifest.file).to receive(:file_storage?).and_return(false)
+          end
+
+          it 'returns Workhorse send-url instructions', :aggregate_failures do
+            subject
+
+            expect(response).to have_gitlab_http_status(:ok)
+
+            send_data_type, send_data = workhorse_send_data
+            url, ssrf_filter, allow_localhost, allowed_endpoints = send_data
+              .values_at('URL', 'SSRFFilter', 'AllowLocalhost', 'AllowedEndpoints')
+
+            expect(send_data_type).to eq('send-url')
+            expect(url).to eq(manifest.file.url)
+            expect(ssrf_filter).to be(true)
+            expect(allow_localhost).to be(true)
+            expect(allowed_endpoints).to eq([])
+          end
+
+          context 'when local requests are not allowed' do
+            it_behaves_like 'AllowLocalhost', disabled: true
+          end
+
+          context 'with allowed endpoints' do
+            it_behaves_like 'Allowed endpoints'
+          end
+        end
+
         context 'with workhorse response' do
           let(:pull_response) { { status: :success, manifest: nil, from_cache: false } }
 
@@ -321,7 +386,8 @@ RSpec.describe Groups::DependencyProxyForContainersController, feature_category:
             subject
 
             send_data_type, send_data = workhorse_send_data
-            header, url = send_data.values_at('Headers', 'Url')
+            header, url, ssrf_filter, allow_localhost, allowed_endpoints = send_data
+              .values_at('Headers', 'Url', 'SSRFFilter', 'AllowLocalhost', 'AllowedEndpoints')
 
             expect(send_data_type).to eq('send-dependency')
             expect(header).to eq(
@@ -329,10 +395,21 @@ RSpec.describe Groups::DependencyProxyForContainersController, feature_category:
               "Accept" => ::DependencyProxy::Manifest::ACCEPTED_TYPES
             )
             expect(url).to eq(DependencyProxy::Registry.manifest_url(image, tag))
+            expect(ssrf_filter).to be(true)
+            expect(allow_localhost).to be(true)
+            expect(allowed_endpoints).to be_nil
             expect(response.headers['Content-Type']).to eq('application/gzip')
             expect(response.headers['Content-Disposition']).to eq(
               ActionDispatch::Http::ContentDisposition.format(disposition: 'attachment', filename: manifest.file_name)
             )
+          end
+
+          context 'when local requests are not allowed' do
+            it_behaves_like 'AllowLocalhost'
+          end
+
+          context 'with allowed endpoints' do
+            it_behaves_like 'Allowed endpoints'
           end
         end
       end
@@ -395,6 +472,40 @@ RSpec.describe Groups::DependencyProxyForContainersController, feature_category:
         it_behaves_like 'a successful blob pull'
         it_behaves_like 'a package tracking event', described_class.name, 'pull_blob_from_cache', false
 
+        context 'when remote object storage enabled' do
+          before do
+            stub_dependency_proxy_object_storage(proxy_download: true)
+
+            allow_next_instance_of(::DependencyProxy::FileUploader) do |instance|
+              allow(instance).to receive(:file_storage?).and_return(false)
+            end
+          end
+
+          it 'returns Workhorse send-url instructions', :aggregate_failures do
+            subject
+
+            expect(response).to have_gitlab_http_status(:ok)
+
+            send_data_type, send_data = workhorse_send_data
+            url, ssrf_filter, allow_localhost, allowed_endpoints = send_data
+              .values_at('URL', 'SSRFFilter', 'AllowLocalhost', 'AllowedEndpoints')
+
+            expect(send_data_type).to eq('send-url')
+            expect(url).to eq(blob.file.url)
+            expect(ssrf_filter).to be(true)
+            expect(allow_localhost).to be(true)
+            expect(allowed_endpoints).to eq([])
+          end
+
+          context 'when local requests are not allowed' do
+            it_behaves_like 'AllowLocalhost', disabled: true
+          end
+
+          context 'with allowed endpoints' do
+            it_behaves_like 'Allowed endpoints'
+          end
+        end
+
         context 'when cache entry does not exist' do
           let(:blob_sha) { 'a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4' }
 
@@ -402,15 +513,24 @@ RSpec.describe Groups::DependencyProxyForContainersController, feature_category:
             subject
 
             send_data_type, send_data = workhorse_send_data
-            header, url = send_data.values_at('Headers', 'Url')
+            header, url, ssrf_filter = send_data.values_at('Headers', 'Url', 'SSRFFilter')
 
             expect(send_data_type).to eq('send-dependency')
             expect(header).to eq("Authorization" => ["Bearer abcd1234"])
             expect(url).to eq(DependencyProxy::Registry.blob_url('alpine', blob_sha))
+            expect(ssrf_filter).to be(true)
             expect(response.headers['Content-Type']).to eq('application/gzip')
             expect(response.headers['Content-Disposition']).to eq(
               ActionDispatch::Http::ContentDisposition.format(disposition: 'attachment', filename: blob.file_name)
             )
+          end
+
+          context 'when local requests are not allowed' do
+            it_behaves_like 'AllowLocalhost'
+          end
+
+          context 'with allowed endpoints' do
+            it_behaves_like 'Allowed endpoints'
           end
         end
       end

@@ -2,18 +2,22 @@
 stage: Fulfillment
 group: Utilization
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-title: License
+gitlab_dedicated: yes
+title: License API
 ---
 
 {{< details >}}
 
 - Tier: Free, Premium, Ultimate
-- Offering: GitLab Self-Managed
+- Offering: GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 
-To interact with license endpoints, you need to authenticate yourself as an
-administrator.
+Use this API to interact with license endpoints. For more information, see [activate GitLab EE with a license file or key](../administration/license_file.md).
+
+Prerequisites:
+
+- You must have administrator access to the instance.
 
 ## Retrieve information about the current license
 
@@ -130,7 +134,8 @@ Returns the following status codes:
 Example request:
 
 ```shell
-curl --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/license/:id"
+curl --header "PRIVATE-TOKEN: <your_access_token>" \
+--url "https://gitlab.example.com/api/v4/license/:id"
 ```
 
 Example response:
@@ -171,7 +176,9 @@ POST /license
 | `license` | string | yes | The license string |
 
 ```shell
-curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/license?license=eyJkYXRhIjoiMHM5Q...S01Udz09XG4ifQ=="
+curl --request POST \
+--header "PRIVATE-TOKEN: <your_access_token>" \
+--url "https://gitlab.example.com/api/v4/license?license=eyJkYXRhIjoiMHM5Q...S01Udz09XG4ifQ=="
 ```
 
 Example response:
@@ -217,7 +224,9 @@ DELETE /license/:id
 | `id` | integer | yes | ID of the GitLab license. |
 
 ```shell
-curl --request DELETE --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/license/:id"
+curl --request DELETE \
+--header "PRIVATE-TOKEN: <your_access_token>" \
+--url "https://gitlab.example.com/api/v4/license/:id"
 ```
 
 Returns:
@@ -237,7 +246,9 @@ PUT /license/:id/refresh_billable_users
 | `id` | integer | yes | ID of the GitLab license. |
 
 ```shell
-curl --request PUT --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/license/:id/refresh_billable_users"
+curl --request PUT \
+--header "PRIVATE-TOKEN: <your_access_token>" \
+--url "https://gitlab.example.com/api/v4/license/:id/refresh_billable_users"
 ```
 
 Example response:
@@ -267,7 +278,9 @@ GET /license/usage_export.csv
 ```
 
 ```shell
-curl --request GET --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/license/usage_export.csv"
+curl --request GET \
+--header "PRIVATE-TOKEN: <your_access_token>" \
+--url "https://gitlab.example.com/api/v4/license/usage_export.csv"
 ```
 
 Example response:

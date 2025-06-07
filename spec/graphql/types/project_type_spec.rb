@@ -1474,14 +1474,18 @@ RSpec.describe GitlabSchema.types['Project'], feature_category: :groups_and_proj
     end
   end
 
-  describe 'project adjourned deletion fields', feature_category: :groups_and_projects do
+  describe 'project adjourned deletion fields', time_travel_to: '2025-06-01', feature_category: :groups_and_projects do
     let_it_be(:user) { create(:user) }
-    let_it_be(:pending_delete_project) { create(:project, marked_for_deletion_at: Time.current) }
+    let_it_be(:project) { create(:project) }
+    let_it_be(:marked_for_deletion_at) { Time.new(2025, 5, 25) }
+    let_it_be(:pending_delete_project) { create(:project, marked_for_deletion_at: marked_for_deletion_at) }
 
-    let_it_be(:query) do
+    let(:project_full_path) { pending_delete_project.full_path }
+
+    let(:query) do
       %(
         query {
-          project(fullPath: "#{pending_delete_project.full_path}") {
+          project(fullPath: "#{project_full_path}") {
             markedForDeletionOn
             isAdjournedDeletionEnabled
             permanentDeletionDate
@@ -1492,6 +1496,7 @@ RSpec.describe GitlabSchema.types['Project'], feature_category: :groups_and_proj
 
     before do
       pending_delete_project.add_developer(user)
+      project.add_developer(user)
     end
 
     subject(:project_data) do
@@ -1540,9 +1545,22 @@ RSpec.describe GitlabSchema.types['Project'], feature_category: :groups_and_proj
         expect(project_data[:is_adjourned_deletion_enabled]).to be true
       end
 
-      it 'permanent_deletion_date returns correct date', :freeze_time do
-        expect(project_data[:permanent_deletion_date])
-          .to eq(::Gitlab::CurrentSettings.deletion_adjourned_period.days.since(Date.current).strftime('%F'))
+      context 'when project is scheduled for deletion' do
+        it 'returns date project will be permanently deleted for permanent_deletion_date' do
+          expect(project_data[:permanent_deletion_date])
+            .to eq(
+              ::Gitlab::CurrentSettings.deletion_adjourned_period.days.since(marked_for_deletion_at).strftime('%F')
+            )
+        end
+      end
+
+      context 'when project is not scheduled for deletion' do
+        let(:project_full_path) { project.full_path }
+
+        it 'returns theoretical date project will be permanently deleted for permanent_deletion_date' do
+          expect(project_data[:permanent_deletion_date])
+            .to eq(::Gitlab::CurrentSettings.deletion_adjourned_period.days.since(Date.current).strftime('%F'))
+        end
       end
     end
 
@@ -1553,10 +1571,65 @@ RSpec.describe GitlabSchema.types['Project'], feature_category: :groups_and_proj
         end
       end
 
-      it 'permanent_deletion_date returns correct date', :freeze_time do
+      it 'permanent_deletion_date returns correct date' do
         expect(project_data[:permanent_deletion_date])
-          .to eq(::Gitlab::CurrentSettings.deletion_adjourned_period.days.since(Date.current).strftime('%F'))
+          .to eq(::Gitlab::CurrentSettings.deletion_adjourned_period.days.since(marked_for_deletion_at).strftime('%F'))
       end
+    end
+  end
+
+  describe 'container_protection_tag_rules', unless: Gitlab.ee? do
+    let_it_be(:project) { create(:project) }
+    let_it_be(:user) { create(:user) }
+
+    let(:query) do
+      %(
+        query {
+          project(fullPath: "#{project.full_path}") {
+            containerProtectionTagRules {
+              nodes {
+                id
+                tagNamePattern
+                minimumAccessLevelForPush
+                minimumAccessLevelForDelete
+              }
+            }
+          }
+        }
+      )
+    end
+
+    before_all do
+      create(:container_registry_protection_tag_rule, :immutable,
+        project: project,
+        tag_name_pattern: 'immutable-1'
+      )
+
+      create(:container_registry_protection_tag_rule,
+        project: project,
+        minimum_access_level_for_push: Gitlab::Access::MAINTAINER,
+        minimum_access_level_for_delete: Gitlab::Access::OWNER,
+        tag_name_pattern: 'mutable'
+      )
+    end
+
+    subject do
+      GitlabSchema.execute(query, context: { current_user: user })
+        .as_json.dig('data', 'project', 'containerProtectionTagRules', 'nodes')
+    end
+
+    before do
+      project.add_maintainer(user)
+    end
+
+    it do
+      is_expected.to have_attributes(size: 1).and contain_exactly(
+        a_hash_including(
+          'tagNamePattern' => 'mutable',
+          'minimumAccessLevelForPush' => 'MAINTAINER',
+          'minimumAccessLevelForDelete' => 'OWNER'
+        )
+      )
     end
   end
 end

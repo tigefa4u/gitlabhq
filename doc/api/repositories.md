@@ -25,13 +25,6 @@ in the Git internals documentation.
 
 {{< alert type="warning" >}}
 
-This endpoint changed to [keyset-based pagination](rest/_index.md#keyset-based-pagination)
-in GitLab 15.0. Iterating pages of results with a number (`?page=2`) is unsupported.
-
-{{< /alert >}}
-
-{{< alert type="warning" >}}
-
 In version 17.7, the error handling behavior when a requested path is not found is updated.
 The endpoint now returns a status code `404 Not Found`. Previously, the status code was `200 OK`.
 
@@ -116,6 +109,8 @@ Allows you to receive information, such as size and content, about blobs in a re
 Blob content is Base64 encoded. This endpoint can be accessed without authentication,
 if the repository is publicly accessible.
 
+For blobs larger than 10 MB, this endpoint has a rate limit of 5 requests per minute.
+
 ```plaintext
 GET /projects/:id/repository/blobs/:sha
 ```
@@ -188,7 +183,7 @@ curl --header "PRIVATE-TOKEN: <your_access_token>" \
 
 This endpoint can be accessed without authentication if the repository is
 publicly accessible. Diffs can have an empty diff string if
-[diff limits](../development/merge_request_concepts/diffs/_index.md#diff-limits) are reached.
+diff limits are reached.
 
 ```plaintext
 GET /projects/:id/repository/compare
@@ -268,7 +263,7 @@ Supported attributes:
 | :--------- | :------------- | :------- | :---------- |
 | `id`       | integer or string | yes      | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths). |
 | `ref`      | string         | no       | The name of a repository branch or tag. If not given, the default branch. |
-| `order_by` | string         | no       | Return contributors ordered by `name`, `email`, or `commits` (orders by commit date) fields. Default is `commits`. |
+| `order_by` | string         | no       | Order contributors by `name`, `email`, or `commits` (number of commits). If not specified, contributors are ordered by commit date. |
 | `sort`     | string         | no       | Return contributors sorted in `asc` or `desc` order. Default is `asc`. |
 
 Example request:
@@ -339,8 +334,6 @@ Example response:
 
 {{< history >}}
 
-- Commit range limits [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/89032) in GitLab 15.1 [with a flag](../administration/feature_flags.md) named `changelog_commits_limitation`. Disabled by default.
-- [Enabled on GitLab.com and by default on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/33893) in GitLab 15.3.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/364101) in GitLab 17.3. Feature flag `changelog_commits_limitation` removed.
 
 {{< /history >}}
@@ -376,7 +369,7 @@ Changelogs support these attributes:
 | `file`    | string   | no | The file to commit the changes to. Defaults to `CHANGELOG.md`. |
 | `from`    | string   | no | The SHA of the commit that marks the beginning of the range of commits to include in the changelog. This commit isn't included in the changelog. |
 | `message` | string   | no | The commit message to use when committing the changes. Defaults to `Add changelog for version X`, where `X` is the value of the `version` argument. |
-| `to`      | string   | no | The SHA of the commit that marks the end of the range of commits to include in the changelog. This commit _is_ included in the changelog. Defaults to the branch specified in the `branch` attribute. Limited to 15000 commits. |
+| `to`      | string   | no | The SHA of the commit that marks the end of the range of commits to include in the changelog. This commit is included in the changelog. Defaults to the branch specified in the `branch` attribute. Limited to 15000 commits. |
 | `trailer` | string   | no | The Git trailer to use for including commits. Defaults to `Changelog`. Case-sensitive: `Example` does not match `example` or `eXaMpLE`. |
 
 ### Requirements for `from` attribute
@@ -508,7 +501,7 @@ Supported attributes:
 | `config_file` | string   | no | The path of changelog configuration file in the project's Git repository. Defaults to `.gitlab/changelog_config.yml`. |
 | `date`    | datetime | no | The date and time of the release. Uses ISO 8601 format. Example: `2016-03-11T03:45:40Z`. Defaults to the current time. |
 | `from`    | string   | no | The start of the range of commits (as a SHA) to use for generating the changelog. This commit itself isn't included in the list. |
-| `to`      | string   | no | The end of the range of commits (as a SHA) to use for the changelog. This commit _is_ included in the list. Defaults to the HEAD of the default project branch. |
+| `to`      | string   | no | The end of the range of commits (as a SHA) to use for the changelog. This commit is included in the list. Defaults to the HEAD of the default project branch. |
 | `trailer` | string   | no | The Git trailer to use for including commits. Defaults to `Changelog`. |
 
 ```shell
@@ -534,6 +527,7 @@ Example response, with line breaks added for readability:
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/182220) in GitLab 17.10. Guarded behind the
   [project_repositories_health](https://gitlab.com/gitlab-org/gitlab/-/issues/521115) feature flag.
+- New fields [added](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/191263) in GitLab 18.1.
 
 {{< /history >}}
 
@@ -560,23 +554,55 @@ Example response:
 
 ```json
 {
-  "size": 42002816,
+  "size": 2619748827,
   "references": {
-    "loose_count": 3,
-    "packed_size": 315703,
+    "loose_count": 13,
+    "packed_size": 333978,
     "reference_backend": "REFERENCE_BACKEND_FILES"
   },
   "objects": {
-    "size": 39651458,
-    "recent_size": 39461265,
-    "stale_size": 190193,
-    "keep_size": 0
+    "size": 2180475409,
+    "recent_size": 2180453999,
+    "stale_size": 21410,
+    "keep_size": 0,
+    "packfile_count": 1,
+    "reverse_index_count": 1,
+    "cruft_count": 0,
+    "keep_count": 0,
+    "loose_objects_count": 36,
+    "stale_loose_objects_count": 36,
+    "loose_objects_garbage_count": 0
   },
-  "updated_at": "2025-02-26T03:42:13.015Z"
+  "commit_graph": {
+    "commit_graph_chain_length": 1,
+    "has_bloom_filters": true,
+    "has_generation_data": true,
+    "has_generation_data_overflow": false
+  },
+  "bitmap": null,
+  "multi_pack_index": {
+    "packfile_count": 1,
+    "version": 1
+  },
+  "multi_pack_index_bitmap": {
+    "has_hash_cache": true,
+    "has_lookup_table": true,
+    "version": 1
+  },
+  "alternates": null,
+  "is_object_pool": false,
+  "last_full_repack": {
+    "seconds": 1745892013,
+    "nanos": 0
+  },
+  "updated_at": "2025-05-14T02:31:08.022Z"
 }
 ```
+
+For a description of each field in the response, see the
+[`RepositoryInfoResponse`](https://gitlab.com/gitlab-org/gitaly/blob/fcb986a6482f82b088488db3ed7ca35adfa42fdc/proto/repository.proto#L444)
+protobuf message.
 
 ## Related topics
 
 - User documentation for [changelogs](../user/project/changelogs.md)
-- Developer documentation for [changelog entries](../development/changelog.md) in GitLab

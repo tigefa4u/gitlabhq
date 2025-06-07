@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Sidekiq development guidelines
 ---
 
@@ -204,13 +204,13 @@ To determine an appropriate limit, you can use this PromQL query as a guide in [
 
 ```promql
 (
-  sum by (worker) (rate(sidekiq_enqueued_jobs_total{environment="gprd", worker="ElasticCommitIndexerWorker"}[1m]))
+  sum by (worker) (rate(sidekiq_enqueued_jobs_total{environment="gprd", worker="Search::Elastic::CommitIndexerWorker"}[1m]))
 )
 *
 (
-  sum by (worker) (rate(sidekiq_jobs_completion_seconds_sum{environment="gprd", worker="ElasticCommitIndexerWorker"}[1m]))
+  sum by (worker) (rate(sidekiq_jobs_completion_seconds_sum{environment="gprd", worker="Search::Elastic::CommitIndexerWorker"}[1m]))
   /
-  sum by (worker) (rate(sidekiq_jobs_completion_count{environment="gprd", worker="ElasticCommitIndexerWorker"}[1m]))
+  sum by (worker) (rate(sidekiq_jobs_completion_count{environment="gprd", worker="Search::Elastic::CommitIndexerWorker"}[1m]))
 )
 ```
 

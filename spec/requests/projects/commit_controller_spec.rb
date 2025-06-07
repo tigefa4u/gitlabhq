@@ -155,8 +155,8 @@ RSpec.describe Projects::CommitController, feature_category: :source_code_manage
           let(:expected_stats) do
             {
               visible_count: 6,
-              email_path: "/#{project.full_path}/-/commit/#{sha}.diff",
-              diff_path: "/#{project.full_path}/-/commit/#{sha}.patch"
+              email_path: "/#{project.full_path}/-/commit/#{sha}.patch",
+              diff_path: "/#{project.full_path}/-/commit/#{sha}.diff"
             }
           end
         end
@@ -228,6 +228,60 @@ RSpec.describe Projects::CommitController, feature_category: :source_code_manage
               params: { scope: request_ip }, env: { REMOTE_ADDR: request_ip }
           end
         end
+      end
+    end
+  end
+
+  describe 'GET #diff_file' do
+    let(:sha) { "913c66a37b4a45b9769037c55c2d238bd0942d2e" }
+    let(:commit) { project.commit_by(oid: sha) }
+    let(:diff_file_path) do
+      diff_file_namespace_project_commit_path(namespace_id: project.namespace, project_id: project, id: sha)
+    end
+
+    let(:diff_file) { commit.diffs.diff_files.first }
+    let(:old_path) { diff_file.old_path }
+    let(:new_path) { diff_file.new_path }
+    let(:ignore_whitespace_changes) { false }
+    let(:view) { 'inline' }
+
+    let(:params) do
+      {
+        old_path: old_path,
+        new_path: new_path,
+        ignore_whitespace_changes: ignore_whitespace_changes,
+        view: view
+      }.compact
+    end
+
+    let(:send_request) { get diff_file_path, params: params }
+
+    before do
+      sign_in(user)
+    end
+
+    include_examples 'diff file endpoint'
+
+    context 'with whitespace-only diffs' do
+      let(:ignore_whitespace_changes) { true }
+      let(:diffs_collection) { instance_double(Gitlab::Diff::FileCollection::Base, diff_files: [diff_file]) }
+
+      before do
+        allow(diff_file).to receive(:whitespace_only?).and_return(true)
+      end
+
+      it 'makes a call to diffs_resource with ignore_whitespace_change: false' do
+        expect_next_instance_of(described_class) do |instance|
+          allow(instance).to receive(:diffs_resource).and_return(diffs_collection)
+
+          expect(instance).to receive(:diffs_resource).with(
+            hash_including(ignore_whitespace_change: false)
+          ).and_return(diffs_collection)
+        end
+
+        send_request
+
+        expect(response).to have_gitlab_http_status(:success)
       end
     end
   end

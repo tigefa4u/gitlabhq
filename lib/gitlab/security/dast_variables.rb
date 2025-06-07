@@ -33,11 +33,13 @@ module Gitlab
               additional: true,
               auth: true,
               type: "string",
-              example: "click(on=id:remember-me),click(on=css:.continue)",
+              example: "select(option=id:accept-yes),click(on=css:.continue)",
               name: s_("DastProfiles|After-login actions"),
               description: s_(
-                "DastProfiles|A comma-separated list of actions to be run after login but before login " \
-                  "verification. Currently supports `click` actions."
+                "DastProfiles|A comma-separated list of actions to take after login but before login verification. " \
+                  "Supports `click` and `select` actions. " \
+                  "See [Taking additional actions after submitting the login form]" \
+                  "(authentication.md#taking-additional-actions-after-submitting-the-login-form)."
               )
             },
             DAST_AUTH_BEFORE_LOGIN_ACTIONS: {
@@ -481,7 +483,8 @@ module Gitlab
               description: s_(
                 "DastProfiles|Ensures that the provided paths are always scanned. " \
                   "Set to a file path containing a list of URL paths relative to `DAST_TARGET_URL`. " \
-                  "The file must be plain text with one path per line."
+                  "The file must be plain text with one path per line. When this is set, " \
+                  "`DAST_CRAWL_MAX_DEPTH` defaults to 1. To prevent this, set `DAST_OVERRIDE_MAX_DEPTH: false`."
               )
             },
             DAST_TARGET_PATHS: {
@@ -491,7 +494,8 @@ module Gitlab
               name: s_("DastProfiles|Target paths"),
               description: s_(
                 "DastProfiles|Ensures that the provided paths are always scanned. " \
-                  "Set to a comma-separated list of URL paths relative to `DAST_TARGET_URL`."
+                  "Set to a comma-separated list of URL paths relative to `DAST_TARGET_URL`. When this is set, " \
+                  "`DAST_CRAWL_MAX_DEPTH` defaults to 1. To prevent this, set `DAST_OVERRIDE_MAX_DEPTH: false`."
               )
             },
             DAST_TARGET_URL: {
@@ -509,7 +513,7 @@ module Gitlab
               description: s_(
                 "DastProfiles|Set to `false` to disable caching. " \
                   "Default: `true`. " \
-                  "**Note:** Disabling cache can cause OOM events or DAST job timeouts."
+                  "**Note**: Disabling cache can cause OOM events or DAST job timeouts."
               )
             }
           },

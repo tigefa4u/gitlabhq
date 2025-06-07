@@ -88,10 +88,10 @@ RSpec.describe UserPreference, feature_category: :user_profile do
     end
 
     describe 'organization_groups_projects_display' do
-      it 'is set to 0 by default' do
+      it 'is set to 1 by default' do
         pref = described_class.new
 
-        expect(pref.organization_groups_projects_display).to eq('projects')
+        expect(pref.organization_groups_projects_display).to eq('groups')
       end
 
       it { is_expected.to define_enum_for(:organization_groups_projects_display).with_values(projects: 0, groups: 1) }
@@ -123,6 +123,41 @@ RSpec.describe UserPreference, feature_category: :user_profile do
 
           expect(user_preference).to be_invalid
           expect(user_preference.errors.messages[:user].first).to eq(_("is not part of the given organization"))
+        end
+      end
+    end
+
+    describe 'timezone_valid' do
+      context 'when timezone is nil' do
+        it { is_expected.to be_valid }
+      end
+
+      context 'when timezone is valid' do
+        it do
+          user_preference.timezone = 'Hawaii'
+
+          is_expected.to be_valid
+        end
+      end
+
+      context 'when timezone is invalid' do
+        it 'adds a validation error for invalid timezones' do
+          user_preference.timezone = 'invalid-timezone'
+
+          expect(user_preference).not_to be_valid
+          expect(user_preference.errors.messages[:timezone].first).to eq("timezone is not valid")
+        end
+      end
+
+      context 'when updating a record with invalid timezone but not changing the timezone' do
+        it 'remains valid when other attributes change' do
+          user_preference.timezone = 'invalid-timezone'
+          user_preference.save!(validate: false)
+          user_preference.reload
+
+          user_preference.roadmaps_sort = 'created_desc'
+
+          expect(user_preference).to be_valid
         end
       end
     end
@@ -351,6 +386,17 @@ RSpec.describe UserPreference, feature_category: :user_profile do
 
       it 'returns correct value for text_editor' do
         expect(pref.text_editor).to eq(text_editor_type)
+      end
+    end
+  end
+
+  describe '#timezone=' do
+    context 'when timezone is blank' do
+      it 'sets the timezone to nil' do
+        user_preference.timezone = ''
+
+        expect(user_preference).to be_valid
+        expect(user_preference.timezone).to be_nil
       end
     end
   end

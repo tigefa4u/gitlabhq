@@ -1,7 +1,7 @@
 ---
 stage: Package
 group: Package Registry
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Developing support for a new package format
 ---
 
@@ -232,7 +232,7 @@ in your local development environment.
 #### File size limits
 
 Files uploaded to the GitLab package registry are [limited by format](../../administration/instance_limits.md#package-registry-limits).
-On GitLab.com, these are typically set to 5GB to help prevent timeout issues and abuse.
+On GitLab.com, these are typically set to 5 GB to help prevent timeout issues and abuse.
 
 When a new package type is added to the `Packages::Package` model, a size limit must be added
 similar to [this example](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/52639/diffs#382f879fb09b0212e3cedd99e6c46e2083867216),

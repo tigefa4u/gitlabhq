@@ -46,6 +46,7 @@ module Users
       migrate_snippets
       migrate_reviews
       migrate_releases
+      migrate_timelogs
     end
 
     def post_migrate_records
@@ -54,6 +55,7 @@ module Users
       # Rails attempts to load all related records into memory before
       # destroying: https://github.com/rails/rails/issues/22510
       # This ensures we delete records in batches.
+      user.delete_dependent_associations_in_batches(exclude: [:project_authorizations])
       user.destroy_dependent_associations_in_batches(exclude: [:snippets])
       user.nullify_dependent_associations_in_batches
 
@@ -111,6 +113,10 @@ module Users
     def migrate_user_achievements
       batched_migrate(Achievements::UserAchievement, :awarded_by_user_id)
       batched_migrate(Achievements::UserAchievement, :revoked_by_user_id)
+    end
+
+    def migrate_timelogs
+      batched_migrate(Timelog, :user_id)
     end
 
     # rubocop:disable CodeReuse/ActiveRecord

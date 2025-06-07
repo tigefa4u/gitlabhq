@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 description: Sometimes it is necessary to store large amounts of records at once, which can be inefficient when iterating collections and performing individual `save`s. With the arrival of `insert_all` in Rails 6, which operates at the row level (that is, using `Hash`es), GitLab has added a set of APIs that make it safe and simple to insert ActiveRecord objects in bulk.
 title: Insert into tables in batches
 ---
@@ -83,7 +83,7 @@ In those cases where the number of `records` is above a given threshold, inserti
 occur in multiple batches. The default batch size is defined in
 [`BulkInsertSafe::DEFAULT_BATCH_SIZE`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/app/models/concerns/bulk_insert_safe.rb).
 Assuming a default threshold of 500, inserting 950 records
-would result in two batches being written sequentially (of size 500 and 450 respectively.)
+would result in two batches being written sequentially (of size 500 and 450).
 You can override the default batch size via the `:batch_size` option:
 
 ```ruby

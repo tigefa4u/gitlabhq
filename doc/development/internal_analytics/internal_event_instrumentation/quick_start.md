@@ -1,7 +1,7 @@
 ---
 stage: Monitor
 group: Analytics Instrumentation
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Quick start for Internal Event Tracking
 ---
 
@@ -126,7 +126,7 @@ track_internal_event(
 )
 ```
 
-Please add custom properties only in addition to the built-in properties. Additional properties can only have string or numeric values.
+Add custom properties only in addition to the built-in properties. Additional properties can only have string or numeric values.
 
 {{< alert type="warning" >}}
 
@@ -222,17 +222,6 @@ Optionally, the context can contain:
 - `namespace`. If not provided, `project.namespace` will be used (if `project` is available).
 - `category`
 - `additional_properties`
-- `event_attribute_overrides` - is used when its necessary to override the attributes available in parent context. For example:
-
-```ruby
-let(:event) { 'create_new_issue' }
-
-it_behaves_like 'internal event tracking' do
-  let(:event_attribute_overrides) { { event: 'create_new_milestone'} }
-
-  subject(:service_action) { described_class.new(issue).save }
-end
-```
 
 If present in the context, the following legacy options will be respected by the shared example but are discouraged:
 

@@ -11,6 +11,7 @@ RSpec.describe Tooling::PredictiveTests, feature_category: :tooling do
   let(:instance)                       { described_class.new }
   let(:matching_tests_initial_content) { 'initial_matching_spec' }
   let(:fixtures_mapping_content)       { '{}' }
+  let(:event_tracker) { instance_double(Tooling::Events::TrackPipelineEvents, send_event: nil) }
 
   attr_accessor :changed_files, :changed_files_path, :fixtures_mapping,
     :matching_js_files, :matching_tests, :views_with_partials
@@ -54,7 +55,8 @@ RSpec.describe Tooling::PredictiveTests, feature_category: :tooling do
       'FRONTEND_FIXTURES_MAPPING_PATH' => fixtures_mapping.path,
       'RSPEC_MATCHING_JS_FILES_PATH' => matching_js_files.path,
       'RSPEC_TESTS_MAPPING_ENABLED' => "false",
-      'RSPEC_TESTS_MAPPING_PATH' => '/tmp/does-not-exist.out'
+      'RSPEC_TESTS_MAPPING_PATH' => '/tmp/does-not-exist.out',
+      'CI_JOB_ID' => '123'
     )
 
     # We write some data to later on verify that we only append to this file.
@@ -62,6 +64,7 @@ RSpec.describe Tooling::PredictiveTests, feature_category: :tooling do
     File.write(fixtures_mapping.path, fixtures_mapping_content)
 
     allow(Gitlab).to receive(:configure)
+    allow(Tooling::Events::TrackPipelineEvents).to receive(:new).and_return(event_tracker)
   end
 
   describe '#execute' do
@@ -135,6 +138,18 @@ RSpec.describe Tooling::PredictiveTests, feature_category: :tooling do
           expect { subject }.not_to change { File.read(views_with_partials.path) }
           expect { subject }.not_to change { File.read(fixtures_mapping.path) }
           expect { subject }.not_to change { File.read(matching_js_files.path) }
+        end
+
+        it "sends number of tests selected via internal events" do
+          subject
+
+          expect(event_tracker).to have_received(:send_event).with(
+            "glci_predictive_tests_count",
+            label: "test-count",
+            value: File.read(matching_tests.path).split(" ").length,
+            property: "described_class",
+            extra_properties: { ci_job_id: '123' }
+          )
         end
       end
     end

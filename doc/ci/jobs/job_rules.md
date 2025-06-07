@@ -222,12 +222,12 @@ Use the `CI_PIPELINE_SOURCE` variable to control when to add jobs for these pipe
 | `external_pull_request_event`   | When an [external pull request on GitHub](../ci_cd_for_external_repos/_index.md#pipelines-for-external-pull-requests) is created or updated. |
 | `merge_request_event`           | For pipelines created when a merge request is created or updated. Required to enable [merge request pipelines](../pipelines/merge_request_pipelines.md), [merged results pipelines](../pipelines/merged_results_pipelines.md), and [merge trains](../pipelines/merge_trains.md). |
 | `ondemand_dast_scan`            | For [DAST on-demand scan](../../user/application_security/dast/on-demand_scan.md) pipelines. |
-| `ondemand_dast_validation`      | For [DAST on-demand validation](../../user/application_security/dast/on-demand_scan.md#site-profile-validation) pipelines |
+| `ondemand_dast_validation`      | For [DAST on-demand validation](../../user/application_security/dast/profiles.md#site-profile-validation) pipelines |
 | `parent_pipeline`               | For pipelines triggered by a [parent/child pipeline](../pipelines/downstream_pipelines.md#parent-child-pipelines). Use this pipeline source in the child pipeline configuration so that it can be triggered by the parent pipeline. |
 | `pipeline`                      | For [multi-project pipelines](../pipelines/downstream_pipelines.md#multi-project-pipelines) created by [using the API with `CI_JOB_TOKEN`](../pipelines/downstream_pipelines.md#trigger-a-multi-project-pipeline-by-using-the-api), or the [`trigger`](../yaml/_index.md#trigger) keyword. |
 | `push`                          | For pipelines triggered by a Git push event, including for branches and tags. |
 | `schedule`                      | For [scheduled pipelines](../pipelines/schedules.md). |
-| `security_orchestration_policy` | For [security orchestration policy](../../user/application_security/policies/_index.md) pipelines. |
+| `security_orchestration_policy` | For [scheduled scan execution policies](../../user/application_security/policies/scan_execution_policies.md) pipelines. |
 | `trigger`                       | For pipelines created by using a [trigger token](../triggers/_index.md#configure-cicd-jobs-to-run-in-triggered-pipelines). |
 | `web`                           | For pipelines created by selecting **New pipeline** in the GitLab UI, from the project's **Build > Pipelines** section. |
 | `webide`                        | For pipelines created by using the [Web IDE](../../user/project/web_ide/_index.md). |
@@ -287,7 +287,7 @@ job:
     - when: always
 ```
 
-This job does not run when `$CUSTOM_VARIABLE` is false, but it *does* run in **all**
+This job does not run when `$CUSTOM_VARIABLE` is false, but it does run in **all**
 other pipelines, including **both** push (branch) and merge request pipelines. With
 this configuration, every push to an open merge request's source branch
 causes duplicated pipelines.
@@ -420,7 +420,7 @@ Variable pattern matching with regular expressions uses the
 Expressions evaluate as `true` if:
 
 - Matches are found when using `=~`.
-- Matches are *not* found when using `!~`.
+- Matches are not found when using `!~`.
 
 For example:
 

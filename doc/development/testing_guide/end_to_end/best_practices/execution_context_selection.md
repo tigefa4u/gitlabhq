@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Execution context selection
 ---
 
@@ -74,7 +74,7 @@ end
 
 ### Except
 
-Run tests in their typical contexts _except_ as specified.
+Run tests in their typical contexts except as specified.
 
 Matches use:
 

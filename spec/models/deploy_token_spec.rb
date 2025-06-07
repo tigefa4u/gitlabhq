@@ -96,13 +96,21 @@ RSpec.describe DeployToken, feature_category: :continuous_delivery do
   end
 
   describe '#valid_for_dependency_proxy?' do
-    let_it_be_with_reload(:deploy_token) { create(:deploy_token, :group, :dependency_proxy_scopes) }
-
     subject { deploy_token.valid_for_dependency_proxy? }
 
-    it { is_expected.to eq(true) }
-
     it_behaves_like 'invalid group deploy token'
+
+    context 'has legacy registry scopes' do
+      let_it_be_with_reload(:deploy_token) { create(:deploy_token, :group, :dependency_proxy_scopes) }
+
+      it { is_expected.to eq(true) }
+    end
+
+    context 'has virtual registry scopes' do
+      let_it_be_with_reload(:deploy_token) { create(:deploy_token, :group, :virtual_registry_scopes) }
+
+      it { is_expected.to eq(true) }
+    end
 
     context 'insufficient scopes' do
       before do
@@ -480,5 +488,32 @@ RSpec.describe DeployToken, feature_category: :continuous_delivery do
     subject(:plaintext) { create(:deploy_token, token_encrypted: nil).token }
 
     it { is_expected.to match(/gldt-[A-Za-z0-9_-]{20}/) }
+  end
+
+  describe '.with_encrypted_tokens' do
+    let(:deploy_token_1) { create(:deploy_token) }
+    let(:deploy_token_2) { create(:deploy_token) }
+    let(:deploy_token_3) { create(:deploy_token) }
+
+    it 'returns deploy tokens matching the given token values' do
+      encrypted_token_values = [deploy_token_1.token_encrypted, deploy_token_3.token_encrypted]
+
+      result = described_class.with_encrypted_tokens(encrypted_token_values)
+
+      expect(result).to contain_exactly(deploy_token_1, deploy_token_3)
+      expect(result).not_to include(deploy_token_2)
+    end
+
+    it 'returns an empty relation when no tokens match' do
+      result = described_class.with_encrypted_tokens(['non-existent-token'])
+
+      expect(result).to be_empty
+    end
+
+    it 'returns an empty relation when given an empty array' do
+      result = described_class.with_encrypted_tokens([])
+
+      expect(result).to be_empty
+    end
   end
 end

@@ -75,10 +75,31 @@ project and group.
 
 Notification scope is applied from the broadest to most specific levels:
 
-- Your **global**, or _default_, notification level applies if you
+- Your **global**, or default, notification level applies if you
   have not selected a notification level for the project or group in which the activity occurred.
 - Your **group** setting overrides your default setting.
 - Your **project** setting overrides the group setting.
+
+When you set the notification level to **Global** for a project or subgroup, it does not directly inherit your global notification settings.
+Instead, it goes up the hierarchy and inherits the next non-global notification level that is configured, in the following order:
+
+1. The project setting.
+1. The parent group setting.
+1. The ancestor groups' settings (going up the hierarchy).
+1. The global notification setting as the final fallback setting.
+
+#### Example
+
+You set your global notification setting to **Watch**, and your group and project notification levels as follows:
+
+```plaintext
+Group A: Global
+├── Subgroup B: Participate
+    └── Project C: Global
+```
+
+In this example, project C inherits the **Participate** notification level from subgroup B.
+It does not inherit the **Watch** notification level from your global notification settings.
 
 ### Notification levels
 
@@ -219,7 +240,7 @@ all the options.
 
 #### Events not included in the Watch level
 
-If you set the notification level to **Watch**, you get notified about _almost all_ events, with
+If you set the notification level to **Watch**, you get notified about almost all events, with
 these exceptions:
 
 - Somebody pushes to a merge request.
@@ -266,6 +287,12 @@ Learn how to [opt out of all emails from GitLab](#opt-out-of-all-gitlab-emails).
 
 ### Notification events on issues, merge requests, and epics
 
+{{< history >}}
+
+- Service account pipeline notifications [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/178740) in GitLab 18.1.
+
+{{< /history >}}
+
 The following table presents the events that generate notifications for issues, merge requests, and
 epics:
 
@@ -304,6 +331,9 @@ epics:
 | Pipeline | Failed | The author of the pipeline. |
 | Pipeline | Fixed | The author of the pipeline. Enabled by default. |
 | Pipeline | Successful | The author of the pipeline, with Custom notification level for successful pipelines. If the pipeline failed previously, a "Fixed pipeline" message is sent for the first successful pipeline after the failure, and then a "Successful pipeline" message for any further successful pipelines. |
+| Pipeline by service account | Failed | Custom notification level for failed pipelines triggered by service accounts. |
+| Pipeline by service account | Fixed | Custom notification level for fixed pipelines triggered by service accounts. |
+| Pipeline by service account | Successful | Custom notification level for successful pipelines triggered by service accounts. |
 
 By default, you don't receive notifications for issues, merge requests, or epics created by yourself.
 To always receive notifications on your own issues, merge requests, and so on, turn on

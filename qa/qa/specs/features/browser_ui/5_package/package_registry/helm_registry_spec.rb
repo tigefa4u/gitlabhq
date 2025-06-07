@@ -12,6 +12,10 @@ module QA
       let(:package_version) { '1.3.7' }
       let(:package_type) { 'helm' }
 
+      before do
+        Runtime::ApplicationSettings.set_application_settings(enforce_ci_inbound_job_token_scope_enabled: false)
+      end
+
       where(:case_name, :authentication_token_type, :testcase) do
         'using personal access token' | :personal_access_token | 'https://gitlab.com/gitlab-org/gitlab/-/quality/test_cases/347586'
         'using ci job token'          | :ci_job_token          | 'https://gitlab.com/gitlab-org/gitlab/-/quality/test_cases/347587'
@@ -72,7 +76,7 @@ module QA
           end
 
           Page::Project::Packages::Show.perform do |show|
-            expect(show).to have_package_info(package_name, package_version)
+            expect(show).to have_package_info(name: package_name, version: package_version)
           end
 
           helm_install_yaml = ERB.new(read_fixture('package_managers/helm',

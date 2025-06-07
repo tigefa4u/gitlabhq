@@ -47,6 +47,7 @@ format `field operator value`.
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/491246) in GitLab 17.8.
+- Support for querying epics [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192680) in GitLab 18.1.
 
 {{< /history >}}
 
@@ -58,17 +59,24 @@ format `field operator value`.
 
 **Allowed value types**:
 
-- `Enum` (one of `Issue`, `Incident`, `TestCase`, `Requirement`, `Task`, `Ticket`, `Objective`,
-  `KeyResult`, or `MergeRequest`)
-- `List` (containing one or more `enum` values above)
-
-**Allowed in columns of a GLQL view**: Only for issue and work item types.
+- `Enum`, one of:
+  - `Issue`
+  - `Incident`
+  - `Epic`
+  - `TestCase`
+  - `Requirement`
+  - `Task`
+  - `Ticket`
+  - `Objective`
+  - `KeyResult`
+  - `MergeRequest`
+- `List` (containing one or more `enum` values)
 
 **Additional details**:
 
 - If omitted when used inside a GLQL view, all issue and work item types are included by default.
-- Work item types (like `Issue`, `Task`, or `Objective`) cannot be used together with `MergeRequest` types.
-- The type field isn't allowed in columns of a GLQL view for `MergeRequest` types.
+- Certain work item types (like `Issue`, `Task`, or `Objective`) cannot be used together with `MergeRequest` and `Epic` types.
+- `type = Epic` queries can only be used together with the [group](#group) field.
 
 **Examples**:
 
@@ -90,17 +98,26 @@ format `field operator value`.
   type = MergeRequest and assignee = currentUser()
   ```
 
+- List all epics authored by the current user in the group `gitlab-org`
+
+  ```plaintext
+  group = "gitlab-org" and type = Epic and author = currentUser()
+  ```
+
 ### Approved by user
 
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/491246) in GitLab 17.8.
+- Aliases `approvedBy` and `approvers` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/137) in GitLab 18.0.
 
 {{< /history >}}
 
 **Description**: Query merge requests by one or more users who approved the merge request.
 
 **Field name**: `approver`
+
+**Aliases**: `approvedBy`, `approvers`
 
 **Allowed operators**: `=`, `!=`
 
@@ -123,9 +140,17 @@ format `field operator value`.
 
 ### Assignees
 
+{{< history >}}
+
+- Alias `assignees` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/137) in GitLab 18.0.
+
+{{< /history >}}
+
 **Description**: Query issues or merge requests by one or more users who are assigned to the issue or merge request.
 
 **Field name**: `assignee`
+
+**Aliases**: `assignees`
 
 **Allowed operators**: `=`, `in`, `!=`
 
@@ -142,7 +167,7 @@ format `field operator value`.
 - Work item types like `Task` or `Objective`
 - `MergeRequest`
 
-**Additional details:**
+**Additional details**:
 
 - `List` values and the `in` operator are not supported for `MergeRequest` types.
 
@@ -180,30 +205,29 @@ format `field operator value`.
 
 ### Author
 
+{{< history >}}
+
+- Support for querying epics by author [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192680) in GitLab 18.1.
+
+{{< /history >}}
+
 **Description**: Query issues or merge request by their author.
 
 **Field name**: `author`
 
-**Allowed operators**: `=`, `in`, `!=`
+**Allowed operators**: `=`, `!=`
 
 **Allowed value types**:
 
 - `String`
 - `User` (for example, `@username`)
-- `List` (containing `String` or `User` values)
-- `Nullable` (either of `null`, `none`, or `any`)
 
 **Supported for object types**:
 
 - `Issue`
+- `Epic`
 - Work item types like `Task` or `Objective`
 - `MergeRequest`
-
-**Additional details**:
-
-- Because an issue can have only one author, the `=` operator cannot be used with `List` type for
-  the `author` field.
-- `List` values and the `in` operator are not supported for `MergeRequest` types.
 
 **Examples**:
 
@@ -211,18 +235,6 @@ format `field operator value`.
 
   ```plaintext
   author = @johndoe
-  ```
-
-- List all issues where author is either of `@johndoe` or `@janedoe`:
-
-  ```plaintext
-  author in (@johndoe, @janedoe)
-  ```
-
-- List all issues where author is neither of `@johndoe` or `@janedoe`:
-
-  ```plaintext
-  author != (@johndoe, @janedoe)
   ```
 
 - List all merge requests where author is `@johndoe`:
@@ -276,11 +288,20 @@ format `field operator value`.
 
 ### Closed at
 
+{{< history >}}
+
+- Alias `closedAt` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/137) in GitLab 18.0.
+- Operators `>=` and `<=` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/work_items/58) in GitLab 18.0.
+
+{{< /history >}}
+
 **Description**: Query issues or merge requests by the date when they were closed.
 
 **Field name**: `closed`
 
-**Allowed operators**: `=`, `>`, `<`
+**Aliases**: `closedAt`
+
+**Allowed operators**: `=`, `>`, `<`, `>=`, `<=`
 
 **Allowed value types**:
 
@@ -296,6 +317,7 @@ format `field operator value`.
 **Additional details**:
 
 - For the `=` operator, the time range is considered from 00:00 to 23:59 in the user's time zone.
+- `>=` and `<=` operators are inclusive of the dates being queried, whereas `>` and `<` are not.
 
 **Examples**:
 
@@ -319,6 +341,12 @@ format `field operator value`.
 
 ### Confidential
 
+{{< history >}}
+
+- Support for querying epics by their confidentiality [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192680) in GitLab 18.1.
+
+{{< /history >}}
+
 **Description**: Query issues by their visibility to project members.
 
 **Field name**: `confidential`
@@ -332,6 +360,7 @@ format `field operator value`.
 **Supported for object types**:
 
 - `Issue`
+- `Epic`
 - Work item types like `Task` or `Objective`
 
 **Additional details**:
@@ -354,11 +383,21 @@ format `field operator value`.
 
 ### Created at
 
+{{< history >}}
+
+- Aliases `createdAt`, `opened`, and `openedAt` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/137) in GitLab 18.0.
+- Operators `>=` and `<=` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/work_items/58) in GitLab 18.0.
+- Support for querying epics by creation date [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192680) in GitLab 18.1.
+
+{{< /history >}}
+
 **Description**: Query issues or merge requests by the date when they were created.
 
 **Field name**: `created`
 
-**Allowed operators**: `=`, `>`, `<`
+**Aliases**: `createdAt`, `opened`, `openedAt`
+
+**Allowed operators**: `=`, `>`, `<`, `>=`, `<=`
 
 **Allowed value types**:
 
@@ -369,12 +408,14 @@ format `field operator value`.
 **Supported for object types**:
 
 - `Issue`
+- `Epic`
 - Work item types like `Task` or `Objective`
 - `MergeRequests`
 
 **Additional details**:
 
 - For the `=` operator, the time range is considered from 00:00 to 23:59 in the user's time zone.
+- `>=` and `<=` operators are inclusive of the dates being queried, whereas `>` and `<` are not.
 
 **Examples**:
 
@@ -401,6 +442,8 @@ format `field operator value`.
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/491246) in GitLab 17.8.
+- Alias `deployedAt` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/137) in GitLab 18.0.
+- Operators `>=` and `<=` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/work_items/58) in GitLab 18.0.
 
 {{< /history >}}
 
@@ -408,7 +451,9 @@ format `field operator value`.
 
 **Field name**: `deployed`
 
-**Allowed operators**: `=`, `>`, `<`
+**Aliases**: `deployedAt`
+
+**Allowed operators**: `=`, `>`, `<`, `>=`, `<=`
 
 **Allowed value types**:
 
@@ -421,6 +466,7 @@ format `field operator value`.
 **Additional details**:
 
 - For the `=` operator, the time range is considered from 00:00 to 23:59 in the user's time zone.
+- `>=` and `<=` operators are inclusive of the dates being queried, whereas `>` and `<` are not.
 
 **Examples**:
 
@@ -472,11 +518,20 @@ format `field operator value`.
 
 ### Due date
 
+{{< history >}}
+
+- Alias `dueDate` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/137) in GitLab 18.0.
+- Operators `>=` and `<=` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/work_items/58) in GitLab 18.0.
+
+{{< /history >}}
+
 **Description**: Query issues by the date when they are due.
 
 **Field name**: `due`
 
-**Allowed operators**: `=`, `>`, `<`
+**Aliases**: `dueDate`
+
+**Allowed operators**: `=`, `>`, `<`, `>=`, `<=`
 
 **Allowed value types**:
 
@@ -492,6 +547,7 @@ format `field operator value`.
 **Additional details**:
 
 - For the `=` operator, the time range is considered from 00:00 to 23:59 in the user's time zone.
+- `>=` and `<=` operators are inclusive of the dates being queried, whereas `>` and `<` are not.
 
 **Examples**:
 
@@ -545,13 +601,43 @@ format `field operator value`.
   environment = "production"
   ```
 
-### Group
+### Epic
 
 {{< history >}}
 
-- [Changed](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/106) in GitLab 17.10: Group queries no longer search the entire hierarchy by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/issues/30) in GitLab 18.1.
 
 {{< /history >}}
+
+**Description**: Query issues by their parent epic ID or reference.
+
+**Field name**: `epic`
+
+**Allowed operators**: `=`
+
+**Allowed value types**:
+
+- `Number` (epic ID)
+- `String` (containing an epic reference like `&123`)
+- `Epic` (for example, `&123`, `gitlab-org&123`)
+
+**Supported for object types**: `Issue`
+
+**Examples**:
+
+- List all issues that have epic `&123` as their parent in project `gitlab-org/gitlab`:
+
+  ```plaintext
+  project = "gitlab-org/gitlab" and epic = &123
+  ```
+
+- List all issues that have epic `gitlab-com&123` as their parent in project `gitlab-org/gitlab`:
+
+  ```plaintext
+  project = "gitlab-org/gitlab" and epic = gitlab-com&123
+  ```
+
+### Group
 
 **Description**: Query issues or merge requests within all projects in a given group.
 
@@ -593,9 +679,17 @@ format `field operator value`.
 
 ### Health status
 
+{{< history >}}
+
+- Alias `healthStatus` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/137) in GitLab 18.0.
+
+{{< /history >}}
+
 **Description**: Query issues by their health status.
 
 **Field name**: `health`
+
+**Aliases**: `healthStatus`
 
 **Allowed operators**: `=`
 
@@ -628,6 +722,7 @@ format `field operator value`.
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/92) in GitLab 17.8.
+- Support for querying epics by ID [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192680) in GitLab 18.1.
 
 {{< /history >}}
 
@@ -645,6 +740,7 @@ format `field operator value`.
 **Supported for object types**:
 
 - `Issue`
+- `Epic`
 - Work item types like `Task` or `Objective`
 - `MergeRequest`
 
@@ -673,6 +769,7 @@ format `field operator value`.
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/106) in GitLab 17.10.
+- Support for this field to be used with epics [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192680) in GitLab 18.1.
 
 {{< /history >}}
 
@@ -689,6 +786,7 @@ format `field operator value`.
 **Supported for object types**:
 
 - `Issue`
+- `Epic`
 - Work item types like `Task` or `Objective`
 - `MergeRequest`
 
@@ -781,12 +879,16 @@ format `field operator value`.
 {{< history >}}
 
 - Support for label value types [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/79) in GitLab 17.8.
+- Alias `labels` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/137) in GitLab 18.0.
+- Support for querying epics by labels [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192680) in GitLab 18.1.
 
 {{< /history >}}
 
 **Description**: Query issues or merge requests by their associated labels.
 
 **Field name**: `label`
+
+**Aliases**: `labels`
 
 **Allowed operators**: `=`, `in`, `!=`
 
@@ -800,6 +902,7 @@ format `field operator value`.
 **Supported for object types**:
 
 - `Issue`
+- `Epic`
 - Work item types like `Task` or `Objective`
 - `MergeRequest`
 
@@ -857,6 +960,8 @@ format `field operator value`.
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/491246) in GitLab 17.8.
+- Alias `mergedAt` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/137) in GitLab 18.0.
+- Operators `>=` and `<=` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/work_items/58) in GitLab 18.0.
 
 {{< /history >}}
 
@@ -864,7 +969,9 @@ format `field operator value`.
 
 **Field name**: `merged`
 
-**Allowed operators**: `=`, `>`, `<`
+**Aliases**: `mergedAt`
+
+**Allowed operators**: `=`, `>`, `<`, `>=`, `<=`
 
 **Allowed value types**:
 
@@ -877,6 +984,7 @@ format `field operator value`.
 **Additional details**:
 
 - For the `=` operator, the time range is considered from 00:00 to 23:59 in the user's time zone.
+- `>=` and `<=` operators are inclusive of the dates being queried, whereas `>` and `<` are not.
 
 **Examples**:
 
@@ -897,12 +1005,15 @@ format `field operator value`.
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/491246) in GitLab 17.8.
+- Alias `mergedBy` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/137) in GitLab 18.0.
 
 {{< /history >}}
 
 **Description**: Query merge requests by the user that merged the merge request.
 
 **Field name**: `merger`
+
+**Aliases**: `mergedBy`
 
 **Allowed operators**: `=`
 
@@ -928,6 +1039,7 @@ format `field operator value`.
 {{< history >}}
 
 - Support for milestone value types [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/77) in GitLab 17.8.
+- Support for querying epics by milestone [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192680) in GitLab 18.1.
 
 {{< /history >}}
 
@@ -947,6 +1059,7 @@ format `field operator value`.
 **Supported for object types**:
 
 - `Issue`
+- `Epic`
 - Work item types like `Task` or `Objective`
 - `MergeRequest`
 
@@ -1020,9 +1133,17 @@ format `field operator value`.
 
 ### Reviewers
 
+{{< history >}}
+
+- Aliases `reviewers` and `reviewedBy` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/137) in GitLab 18.0.
+
+{{< /history >}}
+
 **Description**: Query merge requests that were reviewed by one or more users.
 
 **Field name**: `reviewer`
+
+**Aliases**: `reviewers`, `reviewedBy`
 
 **Allowed operators**: `=`, `!=`
 
@@ -1048,6 +1169,7 @@ format `field operator value`.
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/96) in GitLab 17.8.
+- Support for querying epics by state [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192680) in GitLab 18.1.
 
 {{< /history >}}
 
@@ -1066,6 +1188,7 @@ format `field operator value`.
 **Supported for object types**:
 
 - `Issue`
+- `Epic`
 - Work item types like `Task` or `Objective`
 - `MergeRequest`
 
@@ -1101,11 +1224,20 @@ format `field operator value`.
 
 ### Updated at
 
+{{< history >}}
+
+- Alias `updatedAt` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/merge_requests/137) in GitLab 18.0.
+- Operators `>=` and `<=` [introduced](https://gitlab.com/gitlab-org/gitlab-query-language/glql-rust/-/work_items/58) in GitLab 18.0.
+
+{{< /history >}}
+
 **Description**: Query issues or merge requests by when they were last updated.
 
 **Field name**: `updated`
 
-**Allowed operators**: `=`, `>`, `<`
+**Aliases**: `updatedAt`
+
+**Allowed operators**: `=`, `>`, `<`, `>=`, `<=`
 
 **Allowed value types**:
 
@@ -1122,6 +1254,7 @@ format `field operator value`.
 **Additional details**:
 
 - For the `=` operator, the time range is considered from 00:00 to 23:59 in the user's time zone.
+- `>=` and `<=` operators are inclusive of the dates being queried, whereas `>` and `<` are not.
 
 **Examples**:
 
@@ -1207,7 +1340,7 @@ can be used to indicate what fields to include in the rendered GLQL view.
 
 **Aliases**: `assignees`
 
-**Supported for**: Merge requests, Issues
+**Supported for**: Issues, merge requests
 
 ### Author
 
@@ -1215,7 +1348,7 @@ can be used to indicate what fields to include in the rendered GLQL view.
 
 **Field name**: `author`
 
-**Supported for**: Merge requests, Issues
+**Supported for**: Issues, merge requests
 
 ### Closed at
 
@@ -1225,7 +1358,7 @@ can be used to indicate what fields to include in the rendered GLQL view.
 
 **Aliases**: `closedAt`
 
-**Supported for**: Merge requests, Issues
+**Supported for**: Issues, merge requests
 
 ### Confidential
 
@@ -1243,7 +1376,7 @@ can be used to indicate what fields to include in the rendered GLQL view.
 
 **Aliases**: `createdAt`
 
-**Supported for**: Merge requests, Issues
+**Supported for**: Issues, merge requests
 
 ### Deployed at
 
@@ -1275,6 +1408,14 @@ can be used to indicate what fields to include in the rendered GLQL view.
 
 **Supported for**: Merge requests
 
+### Description
+
+**Description**: Displays the description of an issue or a merge request listed in the view.
+
+**Field name**: `description`
+
+**Supported for**: Issues, merge requests
+
 ### Due date
 
 **Description**: Display relative time since today when an issue listed in the view is due.
@@ -1301,7 +1442,7 @@ can be used to indicate what fields to include in the rendered GLQL view.
 
 **Field name**: `id`
 
-**Supported for**: Merge requests, Issues
+**Supported for**: Issues, merge requests
 
 ### Iteration
 
@@ -1325,7 +1466,7 @@ can be used to indicate what fields to include in the rendered GLQL view.
 
 **Aliases**: `labels`
 
-**Supported for**: Merge requests, Issues
+**Supported for**: Issues, merge requests
 
 ### Last comment
 
@@ -1339,7 +1480,7 @@ can be used to indicate what fields to include in the rendered GLQL view.
 
 **Field name**: `lastComment`
 
-**Supported for**: Merge requests, Issues
+**Supported for**: Issues, merge requests
 
 ### Merged at
 
@@ -1363,7 +1504,7 @@ can be used to indicate what fields to include in the rendered GLQL view.
 
 **Field name**: `milestone`
 
-**Supported for**: Merge requests, Issues
+**Supported for**: Issues, merge requests
 
 ### Reviewers
 
@@ -1388,7 +1529,23 @@ the state values can include `Open` or `Closed`. For merge requests, these inclu
 
 **Field name**: `state`
 
-**Supported for**: Merge requests, Issues
+**Supported for**: Issues, merge requests
+
+### Title
+
+**Description**: Displays the title of an issue or a merge request listed in the view.
+
+**Field name**: `title`
+
+**Supported for**: Issues, merge requests
+
+### Type
+
+**Description**: Displays the type of the work item listed in the view, for example Issue, Task, Objective, or Key Result.
+
+**Field name**: `type`
+
+**Supported for**: Issues
 
 ### Updated at
 
@@ -1398,7 +1555,7 @@ the state values can include `Open` or `Closed`. For merge requests, these inclu
 
 **Aliases**: `updatedAt`
 
-**Supported for**: Merge requests, Issues
+**Supported for**: Issues, merge requests
 
 ### Weight
 

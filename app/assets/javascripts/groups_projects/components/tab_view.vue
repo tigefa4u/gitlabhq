@@ -1,29 +1,26 @@
 <script>
-import { GlLoadingIcon, GlKeysetPagination } from '@gitlab/ui';
+import { GlLoadingIcon, GlKeysetPagination, GlPagination } from '@gitlab/ui';
 import { get } from 'lodash';
 import { DEFAULT_PER_PAGE } from '~/api';
 import { __ } from '~/locale';
 import { createAlert } from '~/alert';
 import { TIMESTAMP_TYPES } from '~/vue_shared/components/resource_lists/constants';
-import { ACCESS_LEVELS_INTEGER_TO_STRING } from '~/access_level/constants';
 import { COMPONENT_NAME as NESTED_GROUPS_PROJECTS_LIST_COMPONENT_NAME } from '~/vue_shared/components/nested_groups_projects_list/constants';
-import {
-  FILTERED_SEARCH_TOKEN_LANGUAGE,
-  FILTERED_SEARCH_TOKEN_MIN_ACCESS_LEVEL,
-} from '../constants';
+import { InternalEvents } from '~/tracking';
+import { PAGINATION_TYPE_KEYSET, PAGINATION_TYPE_OFFSET } from '../constants';
 
-// Will be made more generic to work with groups and projects in future commits
+const trackingMixin = InternalEvents.mixin();
+
 export default {
+  PAGINATION_TYPE_KEYSET,
+  PAGINATION_TYPE_OFFSET,
   name: 'TabView',
-  i18n: {
-    errorMessage: __(
-      'An error occurred loading the projects. Please refresh the page to try again.',
-    ),
-  },
   components: {
     GlLoadingIcon,
     GlKeysetPagination,
+    GlPagination,
   },
+  mixins: [trackingMixin],
   props: {
     tab: {
       required: true,
@@ -39,6 +36,11 @@ export default {
       required: false,
       default: null,
     },
+    page: {
+      type: Number,
+      required: false,
+      default: 1,
+    },
     sort: {
       type: String,
       required: true,
@@ -47,9 +49,18 @@ export default {
       type: Object,
       required: true,
     },
+    filtersAsQueryVariables: {
+      type: Object,
+      required: true,
+    },
     filteredSearchTermKey: {
       type: String,
       required: true,
+    },
+    search: {
+      type: String,
+      required: false,
+      default: '',
     },
     timestampType: {
       type: String,
@@ -59,9 +70,19 @@ export default {
         return TIMESTAMP_TYPES.includes(value);
       },
     },
-    programmingLanguages: {
-      type: Array,
+    eventTracking: {
+      type: Object,
+      required: false,
+      default() {
+        return {};
+      },
+    },
+    paginationType: {
+      type: String,
       required: true,
+      validator(value) {
+        return [PAGINATION_TYPE_KEYSET, PAGINATION_TYPE_OFFSET].includes(value);
+      },
     },
   },
   data() {
@@ -77,11 +98,11 @@ export default {
           const { transformVariables } = this.tab;
 
           const variables = {
-            ...this.pagination,
+            ...(this.paginationType === PAGINATION_TYPE_KEYSET ? this.keysetPagination : {}),
+            ...(this.paginationType === PAGINATION_TYPE_OFFSET ? this.offsetPagination : {}),
             ...this.tab.variables,
+            ...this.filtersAsQueryVariables,
             sort: this.sort,
-            programmingLanguageName: this.programmingLanguageName,
-            minAccessLevel: this.minAccessLevel,
             search: this.search,
           };
           const transformedVariables = transformVariables
@@ -91,15 +112,19 @@ export default {
           return transformedVariables;
         },
         update(response) {
-          const { nodes, pageInfo } = get(response, this.tab.queryPath);
+          const { nodes, pageInfo, count } = get(response, this.tab.queryPath);
 
           return {
             nodes: this.tab.formatter(nodes),
             pageInfo,
+            count,
           };
         },
+        result() {
+          this.$emit('query-complete');
+        },
         error(error) {
-          createAlert({ message: this.$options.i18n.errorMessage, error, captureError: true });
+          createAlert({ message: this.queryErrorMessage, error, captureError: true });
         },
       };
     },
@@ -111,7 +136,7 @@ export default {
     pageInfo() {
       return this.items.pageInfo || {};
     },
-    pagination() {
+    keysetPagination() {
       if (!this.startCursor && !this.endCursor) {
         return {
           first: DEFAULT_PER_PAGE,
@@ -128,24 +153,11 @@ export default {
         before: this.startCursor,
       };
     },
+    offsetPagination() {
+      return { page: this.page };
+    },
     isLoading() {
       return this.$apollo.queries.items.loading;
-    },
-    search() {
-      return this.filters[this.filteredSearchTermKey];
-    },
-    minAccessLevel() {
-      const { [FILTERED_SEARCH_TOKEN_MIN_ACCESS_LEVEL]: minAccessLevelInteger } = this.filters;
-
-      return minAccessLevelInteger && ACCESS_LEVELS_INTEGER_TO_STRING[minAccessLevelInteger];
-    },
-    programmingLanguageName() {
-      const { [FILTERED_SEARCH_TOKEN_LANGUAGE]: programmingLanguageId } = this.filters;
-
-      return (
-        programmingLanguageId &&
-        this.programmingLanguages.find(({ id }) => id === parseInt(programmingLanguageId, 10))?.name
-      );
     },
     apolloClient() {
       return this.$apollo.provider.defaultClient;
@@ -172,20 +184,29 @@ export default {
 
       return baseProps;
     },
+    queryErrorMessage() {
+      return this.tab.queryErrorMessage || __('An error occurred. Refresh the page to try again.');
+    },
+  },
+  watch: {
+    'items.count': function watchCount(newCount) {
+      this.$emit('update-count', this.tab, newCount);
+    },
   },
   methods: {
-    onRefetch() {
-      this.apolloClient.resetStore();
+    async onRefetch() {
+      await this.apolloClient.clearStore();
       this.$apollo.queries.items.refetch();
+      this.$emit('refetch');
     },
-    onNext(endCursor) {
-      this.$emit('page-change', {
+    onKeysetNext(endCursor) {
+      this.$emit('keyset-page-change', {
         endCursor,
         startCursor: null,
       });
     },
-    onPrev(startCursor) {
-      this.$emit('page-change', {
+    onKeysetPrev(startCursor) {
+      this.$emit('keyset-page-change', {
         endCursor: null,
         startCursor,
       });
@@ -234,10 +255,70 @@ export default {
 
         item.children = this.tab.formatter(nodes);
       } catch (error) {
-        createAlert({ message: this.$options.i18n.errorMessage, error, captureError: true });
+        createAlert({ message: this.queryErrorMessage, error, captureError: true });
       } finally {
         item.childrenLoading = false;
       }
+    },
+    onHoverVisibility(visibility) {
+      if (!this.eventTracking?.hoverVisibility) {
+        return;
+      }
+
+      this.trackEvent(this.eventTracking.hoverVisibility, { label: visibility });
+    },
+    onHoverStat(stat) {
+      if (!this.eventTracking?.hoverStat) {
+        return;
+      }
+
+      this.trackEvent(this.eventTracking.hoverStat, { label: stat });
+    },
+    onClickStat(stat) {
+      if (!this.eventTracking?.clickStat) {
+        return;
+      }
+
+      this.trackEvent(this.eventTracking.clickStat, { label: stat });
+    },
+    onClickTopic() {
+      if (!this.eventTracking?.clickTopic) {
+        return;
+      }
+
+      this.trackEvent(this.eventTracking.clickTopic);
+    },
+    onOffsetInput(page) {
+      this.$emit('offset-page-change', page);
+    },
+    onClickAvatar() {
+      if (!this.eventTracking?.clickItemAfterFilter) {
+        return;
+      }
+
+      const activeFilters = Object.entries(this.filters).reduce((accumulator, [key, value]) => {
+        // Exclude filters that have no value.
+        if (!value) {
+          return accumulator;
+        }
+
+        if (key === this.filteredSearchTermKey) {
+          // For privacy reasons, don't keep track of user provided values
+          // eslint-disable-next-line @gitlab/require-i18n-strings
+          return { ...accumulator, search: 'user provided value' };
+        }
+
+        return { ...accumulator, [key]: value };
+      }, {});
+
+      if (!Object.keys(activeFilters).length) {
+        return;
+      }
+
+      this.trackEvent(this.eventTracking.clickItemAfterFilter, {
+        label: this.tab.value,
+        property: JSON.stringify(activeFilters),
+      });
     },
   },
 };
@@ -251,10 +332,28 @@ export default {
       v-bind="listComponentProps"
       @refetch="onRefetch"
       @load-children="onLoadChildren"
+      @hover-visibility="onHoverVisibility"
+      @hover-stat="onHoverStat"
+      @click-stat="onClickStat"
+      @click-avatar="onClickAvatar"
+      @click-topic="onClickTopic"
     />
-    <div v-if="pageInfo.hasNextPage || pageInfo.hasPreviousPage" class="gl-mt-5 gl-text-center">
-      <gl-keyset-pagination v-bind="pageInfo" @prev="onPrev" @next="onNext" />
-    </div>
+    <template v-if="paginationType === $options.PAGINATION_TYPE_OFFSET">
+      <div v-if="pageInfo.nextPage || pageInfo.previousPage" class="gl-mt-5">
+        <gl-pagination
+          :value="page"
+          :per-page="pageInfo.perPage"
+          :total-items="pageInfo.total"
+          align="center"
+          @input="onOffsetInput"
+        />
+      </div>
+    </template>
+    <template v-else-if="paginationType === $options.PAGINATION_TYPE_KEYSET">
+      <div v-if="pageInfo.hasNextPage || pageInfo.hasPreviousPage" class="gl-mt-5 gl-text-center">
+        <gl-keyset-pagination v-bind="pageInfo" @prev="onKeysetPrev" @next="onKeysetNext" />
+      </div>
+    </template>
   </div>
   <component :is="tab.emptyStateComponent" v-else v-bind="emptyStateComponentProps" />
 </template>

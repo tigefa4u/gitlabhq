@@ -23,8 +23,12 @@ module ContainerRegistry
         end
 
         protection_rule =
-          project.container_registry_protection_tag_rules.create(params.slice(*ALLOWED_ATTRIBUTES))
+          project.container_registry_protection_tag_rules.new(params.slice(*ALLOWED_ATTRIBUTES))
 
+        validation_error_msg = validate(protection_rule)
+        return service_response_error(message: validation_error_msg) if validation_error_msg
+
+        protection_rule.save
         return service_response_error(message: protection_rule.errors.full_messages) unless protection_rule.persisted?
 
         ServiceResponse.success(payload: { container_protection_tag_rule: protection_rule })
@@ -46,6 +50,11 @@ module ContainerRegistry
 
         project.container_registry_protection_tag_rules.limit(limit).count < limit
       end
+
+      # Overridden in EE
+      def validate(_protection_rule); end
     end
   end
 end
+
+ContainerRegistry::Protection::CreateTagRuleService.prepend_mod

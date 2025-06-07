@@ -31,6 +31,7 @@
 
 .rd-app-content {
   flex: 1 0;
+  min-width: 0;
 }
 
 // override .code styles because we can't apply .code directly on the diff file code class
@@ -40,12 +41,28 @@
 }
 
 .rd-app-diffs-list {
-  transition: opacity 0.2s;
+  position: relative;
 }
 
-.rd-app-diffs-list[data-loading] {
-  opacity: 0.5;
+.rd-app-diffs-list-loading-overlay {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.2s;
   pointer-events: none;
+  background: light-dark($white, $black);
+  opacity: 0;
+  z-index: 100;
+}
+
+.rd-app-diffs-list-loading-overlay[data-loading] {
+  opacity: 0.5;
+  pointer-events: all;
+}
+
+.rd-app-diffs-loading {
+  display: flex;
+  justify-content: center;
+  padding: $gl-spacing-scale-10 0;
 }
 
 .rd-app-sidebar {

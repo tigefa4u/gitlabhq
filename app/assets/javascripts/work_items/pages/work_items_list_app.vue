@@ -1,12 +1,9 @@
 <script>
 import { GlButton, GlFilteredSearchToken, GlLoadingIcon } from '@gitlab/ui';
-import { isEmpty } from 'lodash';
+import { capitalize, isEmpty, unionBy } from 'lodash';
 import * as Sentry from '~/sentry/sentry_browser_wrapper';
 import IssueCardStatistics from 'ee_else_ce/issues/list/components/issue_card_statistics.vue';
 import IssueCardTimeInfo from 'ee_else_ce/issues/list/components/issue_card_time_info.vue';
-import WorkItemHealthStatus from '~/work_items/components/work_item_health_status.vue';
-import CreateWorkItemModal from '~/work_items/components/create_work_item_modal.vue';
-import EmptyStateWithoutAnyIssues from '~/issues/list/components/empty_state_without_any_issues.vue';
 import {
   convertToApiParams,
   convertToSearchQuery,
@@ -27,6 +24,7 @@ import {
   WORKSPACE_PROJECT,
 } from '~/issues/constants';
 import { AutocompleteCache } from '~/issues/dashboard/utils';
+import EmptyStateWithoutAnyIssues from '~/issues/list/components/empty_state_without_any_issues.vue';
 import {
   CREATED_DESC,
   PARAM_FIRST_PAGE_SIZE,
@@ -39,13 +37,15 @@ import {
 import searchLabelsQuery from '~/issues/list/queries/search_labels.query.graphql';
 import setSortPreferenceMutation from '~/issues/list/queries/set_sort_preference.mutation.graphql';
 import { fetchPolicies } from '~/lib/graphql';
-import { scrollUp } from '~/lib/utils/scroll_utils';
 import { isPositiveInteger } from '~/lib/utils/number_utils';
+import { scrollUp } from '~/lib/utils/scroll_utils';
+import { getParameterByName, removeParams, updateHistory } from '~/lib/utils/url_utility';
 import { __, s__ } from '~/locale';
 import {
   OPERATOR_IS,
   OPERATORS_AFTER_BEFORE,
   OPERATORS_IS,
+  OPERATORS_IS_NOT,
   OPERATORS_IS_NOT_OR,
   TOKEN_TITLE_ASSIGNEE,
   TOKEN_TITLE_AUTHOR,
@@ -78,21 +78,27 @@ import {
   TOKEN_TYPE_TYPE,
   TOKEN_TYPE_UPDATED,
 } from '~/vue_shared/components/filtered_search_bar/constants';
+import DateToken from '~/vue_shared/components/filtered_search_bar/tokens/date_token.vue';
 import IssuableList from '~/vue_shared/issuable/list/components/issuable_list_root.vue';
-import WorkItemDrawer from '~/work_items/components/work_item_drawer.vue';
 import { DEFAULT_PAGE_SIZE, issuableListTabs } from '~/vue_shared/issuable/list/constants';
 import glFeatureFlagMixin from '~/vue_shared/mixins/gl_feature_flags_mixin';
-import DateToken from '~/vue_shared/components/filtered_search_bar/tokens/date_token.vue';
-import { getParameterByName, removeParams, updateHistory } from '~/lib/utils/url_utility';
+import CreateWorkItemModal from '../components/create_work_item_modal.vue';
+import WorkItemHealthStatus from '../components/work_item_health_status.vue';
+import WorkItemDrawer from '../components/work_item_drawer.vue';
+import WorkItemListHeading from '../components/work_item_list_heading.vue';
 import {
+  BASE_ALLOWED_CREATE_TYPES,
   DETAIL_VIEW_QUERY_PARAM_NAME,
+  NAME_TO_ENUM_MAP,
   STATE_CLOSED,
   STATE_OPEN,
-  WORK_ITEM_TYPE_ENUM_EPIC,
-  WORK_ITEM_TYPE_ENUM_ISSUE,
+  WORK_ITEM_TYPE_NAME_EPIC,
+  WORK_ITEM_TYPE_NAME_ISSUE,
+  WORK_ITEM_TYPE_NAME_KEY_RESULT,
+  WORK_ITEM_TYPE_NAME_OBJECTIVE,
 } from '../constants';
-import getWorkItemsQuery from '../graphql/list/get_work_items.query.graphql';
 import getWorkItemStateCountsQuery from '../graphql/list/get_work_item_state_counts.query.graphql';
+import getWorkItemsQuery from '../graphql/list/get_work_items.query.graphql';
 import { sortOptions, urlSortParams } from './list/constants';
 
 const EmojiToken = () =>
@@ -120,24 +126,30 @@ export default {
     IssuableList,
     IssueCardStatistics,
     IssueCardTimeInfo,
+    WorkItemBulkEditSidebar: () =>
+      import('~/work_items/components/work_item_bulk_edit/work_item_bulk_edit_sidebar.vue'),
     WorkItemDrawer,
     WorkItemHealthStatus,
     EmptyStateWithoutAnyIssues,
     CreateWorkItemModal,
     LocalBoard,
+    WorkItemListHeading,
   },
   mixins: [glFeatureFlagMixin()],
   inject: [
     'autocompleteAwardEmojisPath',
-    'fullPath',
+    'canBulkUpdate',
+    'canBulkEditEpics',
     'hasEpicsFeature',
+    'hasGroupBulkEditFeature',
+    'hasIssueDateFilterFeature',
     'hasOkrsFeature',
     'hasQualityManagementFeature',
     'initialSort',
     'isGroup',
     'isSignedIn',
+    'showNewWorkItem',
     'workItemType',
-    'hasIssueDateFilterFeature',
   ],
   props: {
     eeWorkItemUpdateCount: {
@@ -145,10 +157,15 @@ export default {
       required: false,
       default: 0,
     },
-    showBulkEditSidebar: {
-      type: Boolean,
+    eeEpicListFullQuery: {
+      type: Object,
       required: false,
-      default: false,
+      default: null,
+    },
+    eeEpicListSlimQuery: {
+      type: Object,
+      required: false,
+      default: null,
     },
     withTabs: {
       type: Boolean,
@@ -165,30 +182,42 @@ export default {
       required: false,
       default: () => [],
     },
+    rootPageFullPath: {
+      type: String,
+      required: true,
+    },
   },
   data() {
     return {
       error: undefined,
+      bulkEditInProgress: false,
       filterTokens: [],
       hasAnyIssues: false,
       isInitialLoadComplete: false,
       pageInfo: {},
       pageParams: {},
       pageSize: DEFAULT_PAGE_SIZE,
+      showBulkEditSidebar: false,
       sortKey: CREATED_DESC,
       state: STATUS_OPEN,
-      workItems: [],
+      workItemsFull: [],
+      workItemsSlim: [],
       workItemStateCounts: {},
       activeItem: null,
       isRefetching: false,
       hasStateToken: false,
       initialLoadWasFiltered: false,
       showLocalBoard: false,
+      namespaceId: null,
     };
   },
   apollo: {
-    workItems: {
-      query: getWorkItemsQuery,
+    workItemsFull: {
+      query() {
+        return this.isEpicsList && this.eeEpicListFullQuery
+          ? this.eeEpicListFullQuery
+          : getWorkItemsQuery;
+      },
       variables() {
         return this.queryVariables;
       },
@@ -199,16 +228,31 @@ export default {
         return isEmpty(this.pageParams);
       },
       result({ data }) {
-        this.pageInfo = data?.[this.namespace].workItems.pageInfo ?? {};
-
-        if (data?.[this.namespace]) {
-          document.title = this.calculateDocumentTitle(data);
-        }
-        if (!this.withTabs) {
-          this.hasAnyIssues = Boolean(data?.[this.namespace].workItems.nodes);
-          this.isInitialLoadComplete = true;
-        }
-        this.checkDrawerParams();
+        this.namespaceId = data?.[this.namespace]?.id;
+        this.handleListDataResults(data);
+      },
+      error(error) {
+        this.error = s__(
+          'WorkItem|Something went wrong when fetching work items. Please try again.',
+        );
+        Sentry.captureException(error);
+      },
+    },
+    workItemsSlim: {
+      query() {
+        return this.eeEpicListSlimQuery;
+      },
+      variables() {
+        return this.queryVariables;
+      },
+      update(data) {
+        return data?.[this.namespace].workItems.nodes ?? [];
+      },
+      skip() {
+        return !this.isEpicsList || this.eeEpicListSlimQuery === null || isEmpty(this.pageParams);
+      },
+      result({ data }) {
+        this.handleListDataResults(data);
       },
       error(error) {
         this.error = s__(
@@ -244,8 +288,49 @@ export default {
     },
   },
   computed: {
+    workItems() {
+      if (this.isEpicsList) {
+        if (this.workItemsFull.length > 0 && this.workItemsSlim.length > 0 && !this.detailLoading) {
+          return this.combineSlimAndFullLists(this.workItemsSlim, this.workItemsFull);
+        }
+        return this.workItemsSlim;
+      }
+      return this.workItemsFull;
+    },
+    shouldShowList() {
+      return (
+        this.hasAnyIssues || this.error || this.initialLoadWasFiltered || this.workItems.length > 0
+      );
+    },
+    detailLoading() {
+      return this.$apollo.queries.workItemsFull.loading;
+    },
     isItemSelected() {
       return !isEmpty(this.activeItem);
+    },
+    allowBulkEditing() {
+      if (this.isEpicsList) {
+        return this.canBulkEditEpics;
+      }
+      if (this.isGroup) {
+        return this.canBulkUpdate && this.hasGroupBulkEditFeature;
+      }
+      return this.canBulkUpdate;
+    },
+    // TODO: delete once https://gitlab.com/gitlab-org/gitlab/-/merge_requests/185081 is merged
+    allowedWorkItemTypes() {
+      if (this.isGroup) {
+        return [];
+      }
+
+      if (this.glFeatures.okrsMvc && this.hasOkrsFeature) {
+        return BASE_ALLOWED_CREATE_TYPES.concat(
+          WORK_ITEM_TYPE_NAME_KEY_RESULT,
+          WORK_ITEM_TYPE_NAME_OBJECTIVE,
+        );
+      }
+
+      return BASE_ALLOWED_CREATE_TYPES;
     },
     apiFilterParams() {
       return convertToApiParams(this.filterTokens);
@@ -264,13 +349,16 @@ export default {
       return this.isEpicsList ? this.glFeatures.epicsListDrawer : this.glFeatures.issuesListDrawer;
     },
     isEpicsList() {
-      return this.workItemType === WORK_ITEM_TYPE_ENUM_EPIC;
+      return this.workItemType === WORK_ITEM_TYPE_NAME_EPIC;
     },
     hasSearch() {
       return Boolean(this.searchQuery);
     },
     isLoading() {
-      return this.$apollo.queries.workItems.loading && !this.isRefetching;
+      if (this.isEpicsList) {
+        return this.$apollo.queries.workItemsSlim.loading && !this.isRefetching;
+      }
+      return this.detailLoading && !this.isRefetching;
     },
     isOpenTab() {
       return this.state === STATUS_OPEN;
@@ -280,8 +368,9 @@ export default {
     },
     queryVariables() {
       const hasGroupFilter = Boolean(this.urlFilterParams.group_path);
+      const singleWorkItemType = this.workItemType ? NAME_TO_ENUM_MAP[this.workItemType] : null;
       return {
-        fullPath: this.fullPath,
+        fullPath: this.rootPageFullPath,
         sort: this.sortKey,
         state: this.state,
         search: this.searchQuery,
@@ -289,7 +378,7 @@ export default {
         ...this.pageParams,
         excludeProjects: hasGroupFilter || this.isEpicsList,
         includeDescendants: !hasGroupFilter,
-        types: this.apiFilterParams.types || this.workItemType || this.defaultWorkItemTypes,
+        types: this.apiFilterParams.types || singleWorkItemType || this.defaultWorkItemTypes,
         isGroup: this.isGroup,
       };
     },
@@ -316,9 +405,9 @@ export default {
           token: UserToken,
           dataType: 'user',
           operators: OPERATORS_IS_NOT_OR,
-          fullPath: this.fullPath,
+          fullPath: this.rootPageFullPath,
           isProject: !this.isGroup,
-          recentSuggestionsStorageKey: `${this.fullPath}-issues-recent-tokens-assignee`,
+          recentSuggestionsStorageKey: `${this.rootPageFullPath}-issues-recent-tokens-assignee`,
           preloadedUsers,
         },
         {
@@ -329,9 +418,9 @@ export default {
           dataType: 'user',
           defaultUsers: [],
           operators: OPERATORS_IS_NOT_OR,
-          fullPath: this.fullPath,
+          fullPath: this.rootPageFullPath,
           isProject: !this.isGroup,
-          recentSuggestionsStorageKey: `${this.fullPath}-issues-recent-tokens-author`,
+          recentSuggestionsStorageKey: `${this.rootPageFullPath}-issues-recent-tokens-author`,
           preloadedUsers,
         },
         {
@@ -342,16 +431,16 @@ export default {
           operators: OPERATORS_IS_NOT_OR,
           fetchLabels: this.fetchLabels,
           fetchLatestLabels: this.glFeatures.frontendCaching ? this.fetchLatestLabels : null,
-          recentSuggestionsStorageKey: `${this.fullPath}-issues-recent-tokens-label`,
+          recentSuggestionsStorageKey: `${this.rootPageFullPath}-issues-recent-tokens-label`,
         },
         {
           type: TOKEN_TYPE_MILESTONE,
           title: TOKEN_TITLE_MILESTONE,
           icon: 'milestone',
           token: MilestoneToken,
-          recentSuggestionsStorageKey: `${this.fullPath}-issues-recent-tokens-milestone`,
+          recentSuggestionsStorageKey: `${this.rootPageFullPath}-issues-recent-tokens-milestone`,
           shouldSkipSort: true,
-          fullPath: this.fullPath,
+          fullPath: this.rootPageFullPath,
           isProject: !this.isGroup,
         },
         {
@@ -376,7 +465,7 @@ export default {
           unique: true,
           token: GroupToken,
           operators: OPERATORS_IS,
-          fullPath: this.fullPath,
+          fullPath: this.rootPageFullPath,
         });
       }
 
@@ -385,8 +474,9 @@ export default {
           type: TOKEN_TYPE_TYPE,
           title: TOKEN_TITLE_TYPE,
           icon: 'issues',
+          unique: true,
           token: GlFilteredSearchToken,
-          operators: OPERATORS_IS,
+          operators: OPERATORS_IS_NOT,
           options: this.typeTokenOptions,
         });
       }
@@ -412,7 +502,7 @@ export default {
           token: EmojiToken,
           unique: true,
           fetchEmojis: this.fetchEmojis,
-          recentSuggestionsStorageKey: `${this.fullPath}-issues-recent-tokens-my_reaction`,
+          recentSuggestionsStorageKey: `${this.rootPageFullPath}-issues-recent-tokens-my_reaction`,
         });
 
         tokens.push({
@@ -550,10 +640,11 @@ export default {
     enableClientSideBoardsExperiment() {
       return this.glFeatures.workItemsClientSideBoards;
     },
-    workItemTypeName() {
-      return this.workItemType === WORK_ITEM_TYPE_ENUM_EPIC
-        ? WORK_ITEM_TYPE_ENUM_EPIC
-        : WORK_ITEM_TYPE_ENUM_ISSUE;
+    isPlanningViewsEnabled() {
+      return this.glFeatures.workItemPlanningView;
+    },
+    preselectedWorkItemType() {
+      return this.isEpicsList ? WORK_ITEM_TYPE_NAME_EPIC : WORK_ITEM_TYPE_NAME_ISSUE;
     },
   },
   watch: {
@@ -562,13 +653,15 @@ export default {
       if (!this.hasAnyIssues) {
         this.isInitialLoadComplete = false;
       }
-      this.$apollo.queries.workItems.refetch();
+      this.$apollo.queries.workItemStateCounts.refetch();
+      this.$apollo.queries.workItemsFull.refetch();
+      this.$apollo.queries.workItemsSlim.refetch();
     },
     $route(newValue, oldValue) {
       if (newValue.fullPath !== oldValue.fullPath) {
         this.updateData(getParameterByName(PARAM_SORT));
       }
-      if (newValue.query[DETAIL_VIEW_QUERY_PARAM_NAME] && !this.$apollo.queries.workItems.loading) {
+      if (newValue.query[DETAIL_VIEW_QUERY_PARAM_NAME] && !this.detailLoading) {
         this.checkDrawerParams();
       } else {
         this.activeItem = null;
@@ -585,6 +678,37 @@ export default {
     window.removeEventListener('popstate', this.checkDrawerParams);
   },
   methods: {
+    combineSlimAndFullLists(slim, full) {
+      const findSlimItem = (id) => slim.find((item) => item.id === id);
+      return full.map((fullItem) => {
+        const slimVersion = findSlimItem(fullItem.id);
+        const combinedWidgets = unionBy(fullItem.widgets, slimVersion?.widgets, 'type');
+        return {
+          ...fullItem,
+          widgets: combinedWidgets.reduce((acc, widget) => {
+            const slimWidget = slimVersion?.widgets.find((w) => w.type === widget.type);
+            if (slimWidget && Object.keys(slimWidget).length > Object.keys(widget).length) {
+              acc.push(slimWidget);
+            } else {
+              acc.push(widget);
+            }
+            return acc;
+          }, []),
+        };
+      });
+    },
+    handleListDataResults(listData) {
+      this.pageInfo = listData?.[this.namespace].workItems.pageInfo ?? {};
+
+      if (listData?.[this.namespace]) {
+        document.title = this.calculateDocumentTitle(listData);
+      }
+      if (!this.withTabs) {
+        this.hasAnyIssues = Boolean(listData?.[this.namespace].workItems.nodes);
+        this.isInitialLoadComplete = true;
+      }
+      this.checkDrawerParams();
+    },
     handleToggle(item) {
       if (item && this.activeItem?.iid === item.iid) {
         this.activeItem = null;
@@ -600,7 +724,7 @@ export default {
     },
     calculateDocumentTitle(data) {
       const middleCrumb = this.isGroup ? data.group.name : data.project.name;
-      if (this.glFeatures.workItemPlanningView) {
+      if (this.isPlanningViewsEnabled) {
         return `${s__('WorkItem|Work items')} · ${middleCrumb} · GitLab`;
       }
       if (this.isGroup && this.isEpicsList) {
@@ -623,7 +747,7 @@ export default {
       return this.$apollo
         .query({
           query: searchLabelsQuery,
-          variables: { fullPath: this.fullPath, search, isProject: !this.isGroup },
+          variables: { fullPath: this.rootPageFullPath, search, isProject: !this.isGroup },
           fetchPolicy,
         })
         .then(({ data }) => {
@@ -641,6 +765,10 @@ export default {
     },
     getStatus(issue) {
       return issue.state === STATE_CLOSED ? __('Closed') : undefined;
+    },
+    async handleBulkEditSuccess(event) {
+      this.showBulkEditSidebar = false;
+      this.refetchItems(event);
     },
     handleClickTab(state) {
       if (this.state === state) {
@@ -716,20 +844,28 @@ export default {
     },
     deleteItem() {
       this.activeItem = null;
-      this.refetchItems();
+      this.refetchItems({ refetchCounts: true });
     },
     handleStatusChange(workItem) {
       if (this.state === STATUS_ALL) {
         return;
       }
       if (statusMap[this.state] !== workItem.state) {
-        this.refetchItems();
+        this.refetchItems({ refetchCounts: true });
       }
     },
-    async refetchItems() {
-      this.isRefetching = true;
-      await this.$apollo.queries.workItems.refetch();
-      this.isRefetching = false;
+    async refetchItems({ refetchCounts = false } = {}) {
+      if (refetchCounts) {
+        this.$apollo.queries.workItemStateCounts.refetch();
+      }
+
+      // evict the namespace's workItems cache to force a full refetch
+      const { cache } = this.$apollo.provider.defaultClient;
+      cache.evict({
+        id: cache.identify({ __typename: capitalize(this.namespace), id: this.namespaceId }),
+        fieldName: 'workItems',
+      });
+      cache.gc();
     },
     updateData(sort) {
       const firstPageSize = getParameterByName(PARAM_FIRST_PAGE_SIZE);
@@ -805,8 +941,7 @@ export default {
     },
     handleWorkItemCreated() {
       this.isInitialLoadComplete = false;
-      this.$apollo.queries.workItems.refetch();
-      this.$apollo.queries.workItemStateCounts.refetch();
+      this.refetchItems({ refetchCounts: true });
     },
   },
 };
@@ -815,7 +950,7 @@ export default {
 <template>
   <gl-loading-icon v-if="!isInitialLoadComplete && !error" class="gl-mt-5" size="lg" />
 
-  <div v-else-if="hasAnyIssues || error || initialLoadWasFiltered">
+  <div v-else-if="shouldShowList">
     <div v-if="showLocalBoard">
       <local-board :work-item-list-data="workItems" @back="showLocalBoard = false" />
     </div>
@@ -834,7 +969,6 @@ export default {
       />
       <issuable-list
         :active-issuable="activeItem"
-        :add-padding="!withTabs"
         :current-tab="state"
         :default-page-size="pageSize"
         :error="error"
@@ -846,7 +980,7 @@ export default {
         :issuables-loading="isLoading"
         :show-bulk-edit-sidebar="showBulkEditSidebar"
         namespace="work-items"
-        :full-path="fullPath"
+        :full-path="rootPageFullPath"
         recent-searches-storage-key="issues"
         :search-tokens="searchTokens"
         show-filtered-search-friendly-text
@@ -859,6 +993,7 @@ export default {
         :tabs="tabs"
         use-keyset-pagination
         :prevent-redirect="workItemDrawerEnabled"
+        :detail-loading="detailLoading"
         @click-tab="handleClickTab"
         @dismiss-alert="error = undefined"
         @filter="handleFilter"
@@ -868,18 +1003,72 @@ export default {
         @sort="handleSort"
         @select-issuable="handleToggle"
       >
-        <template #nav-actions>
-          <gl-button
-            v-if="enableClientSideBoardsExperiment"
-            data-testid="show-local-board-button"
-            @click="showLocalBoard = true"
-            >{{ __('Launch board') }}</gl-button
-          >
-          <slot name="nav-actions"> </slot>
+        <template v-if="!isPlanningViewsEnabled" #nav-actions>
+          <div class="gl-flex gl-gap-3">
+            <gl-button
+              v-if="enableClientSideBoardsExperiment"
+              data-testid="show-local-board-button"
+              @click="showLocalBoard = true"
+            >
+              {{ __('Launch board') }}
+            </gl-button>
+            <gl-button
+              v-if="allowBulkEditing"
+              :disabled="showBulkEditSidebar"
+              data-testid="bulk-edit-start-button"
+              @click="showBulkEditSidebar = true"
+            >
+              {{ __('Bulk edit') }}
+            </gl-button>
+            <create-work-item-modal
+              v-if="showNewWorkItem"
+              :allowed-work-item-types="allowedWorkItemTypes"
+              :always-show-work-item-type-select="!isEpicsList"
+              :full-path="rootPageFullPath"
+              :is-group="isGroup"
+              :preselected-work-item-type="preselectedWorkItemType"
+              @workItemCreated="refetchItems"
+            />
+          </div>
+        </template>
+
+        <template v-if="isPlanningViewsEnabled" #list-header>
+          <work-item-list-heading>
+            <div class="gl-flex gl-gap-3">
+              <gl-button
+                v-if="enableClientSideBoardsExperiment"
+                data-testid="show-local-board-button"
+                @click="showLocalBoard = true"
+              >
+                {{ __('Launch board') }}
+              </gl-button>
+              <gl-button
+                v-if="allowBulkEditing"
+                :disabled="showBulkEditSidebar"
+                data-testid="bulk-edit-start-button"
+                @click="showBulkEditSidebar = true"
+              >
+                {{ __('Bulk edit') }}
+              </gl-button>
+              <create-work-item-modal
+                v-if="showNewWorkItem"
+                :allowed-work-item-types="allowedWorkItemTypes"
+                :always-show-work-item-type-select="!isEpicsList"
+                :full-path="rootPageFullPath"
+                :is-group="isGroup"
+                :preselected-work-item-type="preselectedWorkItemType"
+                @workItemCreated="refetchItems"
+              />
+            </div>
+          </work-item-list-heading>
         </template>
 
         <template #timeframe="{ issuable = {} }">
-          <issue-card-time-info :issue="issuable" :is-work-item-list="true" />
+          <issue-card-time-info
+            :issue="issuable"
+            :is-work-item-list="true"
+            :detail-loading="detailLoading"
+          />
         </template>
 
         <template #status="{ issuable }">
@@ -899,11 +1088,31 @@ export default {
         </template>
 
         <template #bulk-edit-actions="{ checkedIssuables }">
-          <slot name="bulk-edit-actions" :checked-issuables="checkedIssuables"></slot>
+          <gl-button
+            :disabled="!checkedIssuables.length || bulkEditInProgress"
+            form="work-item-list-bulk-edit"
+            :loading="bulkEditInProgress"
+            type="submit"
+            variant="confirm"
+          >
+            {{ __('Update selected') }}
+          </gl-button>
+          <gl-button class="gl-float-right" @click="showBulkEditSidebar = false">
+            {{ __('Cancel') }}
+          </gl-button>
         </template>
 
         <template #sidebar-items="{ checkedIssuables }">
-          <slot name="sidebar-items" :checked-issuables="checkedIssuables"></slot>
+          <work-item-bulk-edit-sidebar
+            v-if="showBulkEditSidebar"
+            :checked-items="checkedIssuables"
+            :full-path="rootPageFullPath"
+            :is-epics-list="isEpicsList"
+            :is-group="isGroup"
+            @finish="bulkEditInProgress = false"
+            @start="bulkEditInProgress = true"
+            @success="handleBulkEditSuccess"
+          />
         </template>
 
         <template #health-status="{ issuable = {} }">
@@ -918,8 +1127,9 @@ export default {
       <empty-state-without-any-issues>
         <template #new-issue-button>
           <create-work-item-modal
+            :full-path="rootPageFullPath"
             :is-group="isGroup"
-            :preselected-work-item-type="workItemTypeName"
+            :preselected-work-item-type="preselectedWorkItemType"
             @workItemCreated="handleWorkItemCreated"
           />
         </template>
