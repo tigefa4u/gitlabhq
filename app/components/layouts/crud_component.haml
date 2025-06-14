@@ -1,5 +1,5 @@
 = content_tag @container_tag, **options_attrs, id: id do
-  %header.crud-header.gl-flex.gl-flex-wrap.gl-justify-between.gl-gap-x-5.gl-gap-y-2.gl-px-5.gl-py-4.gl-bg-section.gl-border-b.gl-border-section.gl-rounded-t-base.gl-relative{ class: ('gl-pr-10' if @is_collapsible) }
+  %header.crud-header.gl-flex.gl-flex-wrap.gl-justify-between.gl-gap-x-5.gl-gap-y-2.gl-p-4.gl-pl-5.gl-bg-section.gl-border-b.gl-border-section.gl-rounded-t-lg.gl-relative{ class: ('gl-pr-10' if @is_collapsible) }
     .gl-flex.gl-flex-col.gl-self-center
       %h2.gl-text-base.gl-font-bold.gl-leading-normal.gl-inline-flex.gl-gap-3.gl-m-0{ data: { testid: 'crud-title' } }
         = @title
@@ -25,8 +25,10 @@
             size: :small,
             button_text_classes: '!gl-overflow-visible',
             button_options: { class: '-gl-mr-2 js-crud-collapsible-button has-tooltip', title: _('Collapse'), 'aria-expanded': 'true', 'aria-controls': id, data: { collapse_title: _('Expand'), expand_title: _('Collapse') } }) do
-            = sprite_icon('chevron-lg-up', css_class: '!-gl-mx-2 js-crud-collapsible-collapse')
-            = sprite_icon('chevron-lg-down', css_class: '!-gl-mx-2 gl-hidden js-crud-collapsible-expand')
+            = render Pajamas::AnimatedIconComponent.new(icon: :chevron_lg_down_up,
+              variant: :current,
+              is_on: true,
+              icon_options: { class: 's16 !-gl-mx-2 js-crud-collapsible-icon' })
 
   - if form?
     .gl-p-5.gl-pt-4.gl-bg-subtle.gl-border-b.gl-border-section{ form_options_attrs }
@@ -40,5 +42,5 @@
         = pagination
 
   - if footer?
-    .gl-px-5.gl-py-4.gl-bg-section.gl-border-t.gl-border-section.gl-rounded-b-base{ footer_options_attrs }
+    .gl-px-5.gl-py-4.gl-bg-section.gl-border-t.gl-border-section.gl-rounded-b-lg{ footer_options_attrs }
       = footer

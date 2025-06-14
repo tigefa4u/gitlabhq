@@ -3,19 +3,18 @@
 require 'spec_helper'
 
 RSpec.describe 'getting a work item list for a project', feature_category: :team_planning do
-  include GraphqlHelpers
+  include_context 'with work items list request'
 
-  let_it_be(:group) { create(:group) }
-  let_it_be(:project) { create(:project, :repository, :public, group: group) }
-  let_it_be(:current_user) { create(:user) }
-  let_it_be(:reporter) { create(:user, reporter_of: project) }
   let_it_be(:label1) { create(:label, project: project) }
   let_it_be(:label2) { create(:label, project: project) }
-  let_it_be(:milestone1) { create(:milestone, project: project) }
-  let_it_be(:milestone2) { create(:milestone, project: project) }
+  let_it_be(:milestone1) { create(:milestone, project: project, due_date: 5.days.ago) }
+  let_it_be(:milestone2) { create(:milestone, project: project, due_date: 3.days.from_now) }
 
   let_it_be_with_reload(:item1) do
-    create(:work_item, project: project, discussion_locked: true, title: 'item1', labels: [label1])
+    create(
+      :work_item, project: project, discussion_locked: true,
+      title: 'item1', milestone: milestone2, labels: [label1]
+    )
   end
 
   let_it_be_with_reload(:item2) do
@@ -36,14 +35,6 @@ RSpec.describe 'getting a work item list for a project', feature_category: :team
   let(:items_data) { graphql_data['project']['workItems']['nodes'] }
   let(:item_filter_params) { {} }
 
-  let(:fields) do
-    <<~QUERY
-      nodes {
-        #{all_graphql_fields_for('workItems'.classify, max_depth: 2)}
-      }
-    QUERY
-  end
-
   before_all do
     # Ensure support bot user is created so creation doesn't count towards query limit
     # and we don't try to obtain an exclusive lease within a transaction.
@@ -51,7 +42,7 @@ RSpec.describe 'getting a work item list for a project', feature_category: :team
     Users::Internal.support_bot_id
   end
 
-  shared_examples 'work items resolver without N + 1 queries' do
+  shared_examples 'work items resolver without N + 1 queries' do |threshold: 0|
     it 'avoids N+1 queries', :use_sql_query_cache do
       post_graphql(query, current_user: current_user) # warm-up
 
@@ -72,7 +63,10 @@ RSpec.describe 'getting a work item list for a project', feature_category: :team
         author: reporter
       )
 
-      expect { post_graphql(query, current_user: current_user) }.not_to exceed_all_query_limit(control)
+      expect do
+        post_graphql(query, current_user: current_user)
+      end.not_to exceed_all_query_limit(control).with_threshold(threshold)
+
       expect_graphql_errors_to_be_empty
     end
   end
@@ -88,7 +82,8 @@ RSpec.describe 'getting a work item list for a project', feature_category: :team
 
   describe 'N + 1 queries' do
     context 'when querying root fields' do
-      it_behaves_like 'work items resolver without N + 1 queries'
+      # Issue to fix N+1 - https://gitlab.com/gitlab-org/gitlab/-/issues/548924
+      it_behaves_like 'work items resolver without N + 1 queries', threshold: 3
     end
 
     # We need a separate example since all_graphql_fields_for will not fetch fields from types
@@ -388,6 +383,14 @@ RSpec.describe 'getting a work item list for a project', feature_category: :team
         let(:all_records) { [confidential_item, item2, item1].map { |item| item.to_global_id.to_s } }
       end
     end
+
+    context 'when sorting by MILESTONE_DUE_ASC' do
+      it_behaves_like 'sorted paginated query' do
+        let(:sort_param) { :MILESTONE_DUE_ASC }
+        let(:first_param) { 2 }
+        let(:all_records) { [item2, item1, confidential_item].map { |item| item.to_global_id.to_s } }
+      end
+    end
   end
 
   context 'when fetching work item notifications widget' do
@@ -503,14 +506,16 @@ RSpec.describe 'getting a work item list for a project', feature_category: :team
       create(:work_item_link, source: item2, target: related_items[0], link_type: 'relates_to')
     end
 
-    it 'executes limited number of N+1 queries', :use_sql_query_cache do
+    it 'avoids N+1 queries', :use_sql_query_cache do
       post_graphql(query, current_user: current_user) # warm-up
 
       control = ActiveRecord::QueryRecorder.new(skip_cached: false) do
         post_graphql(query, current_user: current_user)
       end
 
-      [item1, item2].each do |item|
+      item3 = create(:work_item, project: project, discussion_locked: true, title: 'item1', labels: [label1])
+
+      [item1, item2, item3].each do |item|
         create(:work_item_link, source: item, target: related_items[1], link_type: 'relates_to')
         create(:work_item_link, source: item, target: related_items[2], link_type: 'relates_to')
       end

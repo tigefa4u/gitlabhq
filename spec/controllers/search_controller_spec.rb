@@ -252,9 +252,9 @@ RSpec.describe SearchController, feature_category: :global_search do
           end
         end
 
-        context 'when allow_anonymous_searches is disabled' do
+        context 'when anonymous_searches_allowed is disabled' do
           before do
-            stub_feature_flags(allow_anonymous_searches: false)
+            stub_application_setting(anonymous_searches_allowed: false)
           end
 
           context 'for unauthenticated user' do
@@ -439,6 +439,38 @@ RSpec.describe SearchController, feature_category: :global_search do
 
             get :show, params: { scope: 'issues' } # no search query
           end
+        end
+      end
+
+      context 'when search term is invalid' do
+        it 'sets @scope even when search_term_valid? returns false' do
+          long_search_term = 'a' * (Gitlab::Search::Params::SEARCH_CHAR_LIMIT + 1)
+
+          get :show, params: { search: long_search_term, scope: 'issues' }
+
+          expect(assigns(:scope)).to be_present
+          expect(assigns(:search_type)).to be_present
+          expect(assigns(:scope)).to eq('issues')
+
+          expect(flash[:alert]).to include('characters')
+        end
+
+        it 'sets @scope even when terms count is invalid' do
+          too_many_terms = Array.new(Gitlab::Search::Params::SEARCH_TERM_LIMIT + 1, 'term').join(' ')
+
+          get :show, params: { search: too_many_terms, scope: 'projects' }
+          expect(assigns(:scope)).to be_present
+          expect(assigns(:search_type)).to be_present
+          expect(assigns(:scope)).to eq('projects')
+
+          expect(flash[:alert]).to include('terms')
+        end
+
+        it 'debugs scope behavior when term is empty' do
+          get :show, params: { search: '', scope: 'blobs', project_id: 1 }
+
+          expect(assigns(:scope)).to be_present
+          expect(assigns(:search_type)).to be_present
         end
       end
     end
@@ -754,7 +786,7 @@ RSpec.describe SearchController, feature_category: :global_search do
     describe 'redirecting' do
       using RSpec::Parameterized::TableSyntax
 
-      where(:restricted_visibility_levels, :allow_anonymous_searches, :block_anonymous_global_searches, :redirect) do
+      where(:restricted_visibility_levels, :anonymous_searches_allowed, :block_anonymous_global_searches, :redirect) do
         [Gitlab::VisibilityLevel::PUBLIC]   | true  | false | true
         [Gitlab::VisibilityLevel::PRIVATE]  | true  | false | false
         nil                                 | true  | false | false
@@ -766,7 +798,7 @@ RSpec.describe SearchController, feature_category: :global_search do
       with_them do
         before do
           stub_application_setting(restricted_visibility_levels: restricted_visibility_levels)
-          stub_feature_flags(allow_anonymous_searches: allow_anonymous_searches)
+          stub_application_setting(anonymous_searches_allowed: anonymous_searches_allowed)
           stub_application_setting(global_search_block_anonymous_searches_enabled: block_anonymous_global_searches)
         end
 

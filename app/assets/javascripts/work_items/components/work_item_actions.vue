@@ -12,6 +12,7 @@ import {
   GlToggle,
 } from '@gitlab/ui';
 
+import { nextTick } from 'vue';
 import * as Sentry from '~/sentry/sentry_browser_wrapper';
 
 import { __, s__ } from '~/locale';
@@ -28,9 +29,7 @@ import {
   BASE_ALLOWED_CREATE_TYPES,
   WORK_ITEM_TYPE_NAME_KEY_RESULT,
   WORK_ITEM_TYPE_NAME_OBJECTIVE,
-  WORK_ITEM_TYPE_ENUM_EPIC,
   WORK_ITEM_TYPE_NAME_EPIC,
-  NAME_TO_ENUM_MAP,
   WORK_ITEM_TYPE_NAME_ISSUE,
 } from '../constants';
 import updateWorkItemMutation from '../graphql/update_work_item.mutation.graphql';
@@ -60,7 +59,6 @@ export default {
     reportAbuse: __('Report abuse'),
     changeWorkItemType: s__('WorkItem|Change type'),
   },
-  WORK_ITEM_TYPE_ENUM_EPIC,
   components: {
     GlDisclosureDropdown,
     GlDisclosureDropdownItem,
@@ -234,6 +232,11 @@ export default {
       type: Boolean,
       required: true,
     },
+    updateInProgress: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   data() {
     return {
@@ -242,6 +245,7 @@ export default {
       isCreateWorkItemModalVisible: false,
       isMoveWorkItemModalVisible: false,
       workItemTypes: [],
+      updateInProgressPromise: null,
     };
   },
   apollo: {
@@ -378,9 +382,6 @@ export default {
 
       return BASE_ALLOWED_CREATE_TYPES;
     },
-    workItemTypeNameEnum() {
-      return NAME_TO_ENUM_MAP[this.workItemType];
-    },
     showMoveButton() {
       return this.workItemType === WORK_ITEM_TYPE_NAME_ISSUE && this.canMove;
     },
@@ -392,6 +393,14 @@ export default {
       return shouldDisableShortcuts() ? null : `${modifierKey}/`;
     },
   },
+  watch: {
+    updateInProgress(newValue, oldValue) {
+      if (oldValue && !newValue && this.updateInProgressPromise) {
+        this.updateInProgressPromise.resolve();
+        this.updateInProgressPromise = null;
+      }
+    },
+  },
   methods: {
     copyToClipboard(text, message) {
       if (this.isModal) {
@@ -400,11 +409,21 @@ export default {
       toast(message);
       this.closeDropdown();
     },
-    handleToggleWorkItemConfidentiality() {
+    async handleToggleWorkItemConfidentiality() {
       this.track('click_toggle_work_item_confidentiality');
+      const message = this.confidentialityToggledText;
       this.$emit('toggleWorkItemConfidentiality', !this.isConfidential);
-      toast(this.confidentialityToggledText);
+
+      await nextTick();
+
+      if (this.updateInProgress) {
+        await new Promise((resolve) => {
+          this.updateInProgressPromise = { resolve };
+        });
+      }
+
       this.closeDropdown();
+      toast(message);
     },
     handleDelete() {
       this.$refs.modal.show();
@@ -480,6 +499,7 @@ export default {
         })
         .finally(() => {
           this.isLockDiscussionUpdating = false;
+          this.closeDropdown();
         });
     },
     async promoteToObjective() {
@@ -639,7 +659,7 @@ export default {
       >
         <template #list-item>
           <gl-loading-icon v-if="isLockDiscussionUpdating" class="gl-mr-2" inline />
-          <gl-icon :name="lockDiscussionIcon" class="gl-mr-2" variant="subtle" />
+          <gl-icon v-else :name="lockDiscussionIcon" class="gl-mr-2" variant="subtle" />
           {{ lockDiscussionText }}
         </template>
       </gl-disclosure-dropdown-item>
@@ -652,7 +672,9 @@ export default {
         @action="handleToggleWorkItemConfidentiality"
       >
         <template #list-item>
+          <gl-loading-icon v-if="updateInProgress" class="gl-mr-2" inline />
           <gl-icon
+            v-else
             :name="confidentialItemIcon"
             class="gl-mr-2"
             :variant="confidentialItemIconVariant"
@@ -685,39 +707,39 @@ export default {
         </template>
       </gl-disclosure-dropdown-item>
 
-      <gl-dropdown-divider />
-
-      <gl-disclosure-dropdown-item
-        v-if="!isAuthor"
-        data-testid="report-abuse-action"
-        @action="handleToggleReportAbuseModal"
-      >
-        <template #list-item>
-          <gl-icon name="abuse" class="gl-mr-2" variant="subtle" />
-          {{ $options.i18n.reportAbuse }}
-        </template>
-      </gl-disclosure-dropdown-item>
-
-      <gl-disclosure-dropdown-item
-        v-if="glFeatures.workItemsBeta && canReportSpam"
-        :item="submitAsSpamItem"
-        data-testid="submit-as-spam-item"
-      />
-
-      <template v-if="canDelete">
+      <gl-disclosure-dropdown-group bordered>
         <gl-disclosure-dropdown-item
-          data-testid="delete-action"
-          variant="danger"
-          @action="handleDelete"
+          v-if="!isAuthor"
+          data-testid="report-abuse-action"
+          @action="handleToggleReportAbuseModal"
         >
           <template #list-item>
-            <span>
-              <gl-icon name="remove" class="gl-mr-2" variant="current" />
-              {{ i18n.deleteWorkItem }}
-            </span>
+            <gl-icon name="abuse" class="gl-mr-2" variant="subtle" />
+            {{ $options.i18n.reportAbuse }}
           </template>
         </gl-disclosure-dropdown-item>
-      </template>
+
+        <gl-disclosure-dropdown-item
+          v-if="glFeatures.workItemsBeta && canReportSpam"
+          :item="submitAsSpamItem"
+          data-testid="submit-as-spam-item"
+        />
+
+        <template v-if="canDelete">
+          <gl-disclosure-dropdown-item
+            data-testid="delete-action"
+            variant="danger"
+            @action="handleDelete"
+          >
+            <template #list-item>
+              <span>
+                <gl-icon name="remove" class="gl-mr-2" variant="current" />
+                {{ i18n.deleteWorkItem }}
+              </span>
+            </template>
+          </gl-disclosure-dropdown-item>
+        </template>
+      </gl-disclosure-dropdown-group>
 
       <gl-disclosure-dropdown-group bordered>
         <template #group-label>
@@ -789,9 +811,10 @@ export default {
     <create-work-item-modal
       :allowed-work-item-types="allowedWorkItemTypes"
       :always-show-work-item-type-select="!isGroup"
+      :full-path="fullPath"
       :visible="isCreateWorkItemModalVisible"
       :related-item="relatedItemData"
-      :preselected-work-item-type="workItemTypeNameEnum"
+      :preselected-work-item-type="workItemType"
       :show-project-selector="!isEpic"
       :namespace-full-name="namespaceFullName"
       :is-group="isGroup"

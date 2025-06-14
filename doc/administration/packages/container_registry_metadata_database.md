@@ -39,7 +39,7 @@ in the Helm Charts documentation.
 
 ## Enhancements
 
-The metadata database architecture supports performance improvements, bug fixes, and new features 
+The metadata database architecture supports performance improvements, bug fixes, and new features
 that are not available with the object storage metadata architecture. These enhancements include:
 
 - Automatic [online garbage collection](../../user/packages/container_registry/delete_container_registry_images.md#garbage-collection)
@@ -52,8 +52,8 @@ that are not available with the object storage metadata architecture. These enha
 - Tracking and displaying tag publish timestamps (see [issue 290949](https://gitlab.com/gitlab-org/gitlab/-/issues/290949))
 - Sorting repository tags by additional attributes beyond name
 
-Due to technical constraints of the object storage metadata architecture, new features are only 
-implemented for the metadata database version. Non-security bug fixes might be limited to the 
+Due to technical constraints of the object storage metadata architecture, new features are only
+implemented for the metadata database version. Non-security bug fixes might be limited to the
 metadata database version.
 
 ## Known limitations
@@ -76,7 +76,7 @@ for the status of features related to the container registry database.
 Prerequisites:
 
 - GitLab 17.3 or later.
-- PostgreSQL database version 12 or later. It must be accessible from the registry node.
+- PostgreSQL database [version 14 or later](../../install/requirements.md#postgresql). It must be accessible from the registry node.
 
 Follow the instructions that match your situation:
 
@@ -118,7 +118,7 @@ To enable the database:
      'user' => '<registry_database_username_placeholder_change_me>',
      'password' => '<registry_database_placeholder_change_me>',
      'dbname' => '<registry_database_name_placeholder_change_me>',
-     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/current/libpq-ssl.html.
+     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/16/libpq-ssl.html.
      'sslcert' => '</path/to/cert.pem>',
      'sslkey' => '</path/to/private.key>',
      'sslrootcert' => '</path/to/ca.pem>'
@@ -137,7 +137,7 @@ To enable the database:
      'user' => '<registry_database_username_placeholder_change_me>',
      'password' => '<registry_database_placeholder_change_me>',
      'dbname' => '<registry_database_name_placeholder_change_me>',
-     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/current/libpq-ssl.html.
+     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/16/libpq-ssl.html.
      'sslcert' => '</path/to/cert.pem>',
      'sslkey' => '</path/to/private.key>',
      'sslrootcert' => '</path/to/ca.pem>'
@@ -189,7 +189,7 @@ and your registry contains a relatively small amount of data.
      'user' => '<registry_database_username_placeholder_change_me>',
      'password' => '<registry_database_placeholder_change_me>',
      'dbname' => '<registry_database_name_placeholder_change_me>',
-     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/current/libpq-ssl.html.
+     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/16/libpq-ssl.html.
      'sslcert' => '</path/to/cert.pem>',
      'sslkey' => '</path/to/private.key>',
      'sslrootcert' => '</path/to/ca.pem>'
@@ -237,7 +237,7 @@ and your registry contains a relatively small amount of data.
      'user' => '<registry_database_username_placeholder_change_me>',
      'password' => '<registry_database_placeholder_change_me>',
      'dbname' => '<registry_database_name_placeholder_change_me>',
-     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/current/libpq-ssl.html.
+     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/16/libpq-ssl.html.
      'sslcert' => '</path/to/cert.pem>',
      'sslkey' => '</path/to/private.key>',
      'sslrootcert' => '</path/to/ca.pem>'
@@ -298,7 +298,7 @@ If you must halt the operation, you have to restart this step.
      'user' => '<registry_database_username_placeholder_change_me>',
      'password' => '<registry_database_placeholder_change_me>',
      'dbname' => '<registry_database_name_placeholder_change_me>',
-     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/current/libpq-ssl.html.
+     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/16/libpq-ssl.html.
      'sslcert' => '</path/to/cert.pem>',
      'sslkey' => '</path/to/private.key>',
      'sslrootcert' => '</path/to/ca.pem>'
@@ -367,7 +367,7 @@ Allow enough time for downtime while step two is being executed.
      'user' => '<registry_database_username_placeholder_change_me>',
      'password' => '<registry_database_placeholder_change_me>',
      'dbname' => '<registry_database_name_placeholder_change_me>',
-     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/current/libpq-ssl.html.
+     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/16/libpq-ssl.html.
      'sslcert' => '</path/to/cert.pem>',
      'sslkey' => '</path/to/private.key>',
      'sslrootcert' => '</path/to/ca.pem>'
@@ -740,7 +740,7 @@ which can happen if you:
 - Attempted the [one step import](#one-step-import) and encountered errors.
 - Attempted the [three-step import](#three-step-import) process and encountered errors.
 - Stopped the import process on purpose.
-- Tried to run the import again after any of the above.
+- Tried to run the import again after any of the previous actions.
 - Ran the import against the wrong configuration file.
 
 To resolve this issue, you must delete the existing entries in the tags table.
@@ -756,7 +756,7 @@ You must truncate the table manually on your PostgreSQL instance:
      'user' => '<registry_database_username_placeholder_change_me>',
      'password' => '<registry_database_placeholder_change_me>',
      'dbname' => '<registry_database_name_placeholder_change_me>',
-     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/current/libpq-ssl.html.
+     'sslmode' => 'require', # See the PostgreSQL documentation for additional information https://www.postgresql.org/docs/16/libpq-ssl.html.
      'sslcert' => '</path/to/cert.pem>',
      'sslkey' => '</path/to/private.key>',
      'sslrootcert' => '</path/to/ca.pem>'
@@ -834,3 +834,21 @@ By default, the online garbage collector will only start deleting unreferenced l
 that all tags they were associated with were deleted. This delay ensures that the garbage collector does
 not interfere with long-running or interrupted image pushes, as layers are pushed to the registry before
 they are associated with an image and tag.
+
+### Error: `permission denied for schema public (SQLSTATE 42501)`
+
+During a registry migration, you might get one of the following errors:
+
+- `ERROR: permission denied for schema public (SQLSTATE 42501)`
+- `ERROR: relation "public.blobs" does not exist (SQLSTATE 42P01)` 
+
+These types of errors are due to a change in PostgreSQL 15+, which removes the default CREATE privileges on the public schema for security reasons. 
+By default, only database owners can create objects in the public schema in PostgreSQL 15+.
+
+To resolve the error, run the following command to give a registry user owner privileges of the registry database:
+
+```sql
+ALTER DATABASE <registry_database_name> OWNER TO <registry_user>;
+```
+
+This gives the registry user the necessary permissions to create tables and run migrations successfully.

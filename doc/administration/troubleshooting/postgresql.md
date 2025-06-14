@@ -109,13 +109,14 @@ This section is for links to information elsewhere in the GitLab documentation.
 
 - Consuming PostgreSQL from [within CI runners](../../ci/services/postgres.md).
 
-- Managing PostgreSQL versions on Linux package installations [from the development docs](https://docs.gitlab.com/omnibus/development/managing-postgresql-versions.html).
+- Managing PostgreSQL versions on Linux package installations from the Linux package development
+  documentation.
 
 - [PostgreSQL scaling](../postgresql/replication_and_failover.md)
   - Including [troubleshooting](../postgresql/replication_and_failover_troubleshooting.md)
     `gitlab-ctl patroni check-leader` and PgBouncer errors.
 
-- [Developer database documentation](../../development/database/_index.md),
+- Developer database documentation,
   some of which is absolutely not for production use. Including:
   - Understanding EXPLAIN plans.
 
@@ -245,7 +246,7 @@ To temporarily change the statement timeout:
    that this value is used:
 
    ```shell
-   sudo gitlab-rails runner "ActiveRecord::Base.connection_config[:variables]"
+   sudo gitlab-rails runner "ActiveRecord::Base.connection_db_config[:variables]"
    ```
 
 1. Perform the action for which you need a different timeout
@@ -262,7 +263,7 @@ Prerequisites:
 
 To observe a `CREATE INDEX` or `REINDEX` operation:
 
-- Use the built-in [`pg_stat_progress_create_index` view](https://www.postgresql.org/docs/current/progress-reporting.html#CREATE-INDEX-PROGRESS-REPORTING).
+- Use the built-in [`pg_stat_progress_create_index` view](https://www.postgresql.org/docs/16/progress-reporting.html#CREATE-INDEX-PROGRESS-REPORTING).
 
 For example, from a database console session, run the following command:
 
@@ -273,6 +274,22 @@ SELECT * FROM  pg_stat_progress_create_index \watch 0.2
 To learn more about producing human-friendly output and writing data to log files, see [this snippet](https://gitlab.com/-/snippets/3750940).
 
 ## Troubleshooting
+
+### Database connection is refused
+
+If you encounter the following errors, check if `max_connections` is high enough to ensure stable connections.
+
+```shell
+connection to server at "xxx.xxx.xxx.xxx", port 5432 failed: Connection refused
+      Is the server running on that host and accepting TCP/IP connections?
+```
+
+```shell
+psql: error: connection to server on socket "/var/opt/gitlab/postgresql/.s.PGSQL.5432" failed: 
+FATAL:  sorry, too many clients already
+```
+
+To adjust `max_connections`, see [configuring multiple database connections](https://docs.gitlab.com/omnibus/settings/database/#configuring-multiple-database-connections).
 
 ### Database is not accepting commands to avoid wraparound data loss
 

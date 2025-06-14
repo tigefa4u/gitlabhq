@@ -45,6 +45,22 @@ RSpec.describe ProjectCiCdSetting, feature_category: :continuous_integration do
         .is_less_than_or_equal_to(ChronicDuration.parse('1 year'))
         .with_message('must be between 1 day and 1 year')
     end
+
+    context 'with custom delete_pipelines_in_seconds limits' do
+      let(:limit) { ChronicDuration.parse('3 years, 2 months, 1 day') }
+
+      before do
+        stub_application_setting(ci_delete_pipelines_in_seconds_limit: limit)
+      end
+
+      it 'validates delete_pipelines_in_seconds' do
+        is_expected.to validate_numericality_of(:delete_pipelines_in_seconds)
+          .only_integer
+          .is_greater_than_or_equal_to(ChronicDuration.parse('1 day'))
+          .is_less_than_or_equal_to(limit)
+          .with_message('must be between 1 day and 38 months 16 days 18 hours')
+      end
+    end
   end
 
   describe '#pipeline_variables_minimum_override_role' do
@@ -54,7 +70,7 @@ RSpec.describe ProjectCiCdSetting, feature_category: :continuous_integration do
       it 'enables restrict_user_defined_variables' do
         setting.pipeline_variables_minimum_override_role = role if role
 
-        expect(project.restrict_user_defined_variables).to be_truthy
+        expect(project.restrict_user_defined_variables?).to be_truthy
       end
     end
 
@@ -64,7 +80,7 @@ RSpec.describe ProjectCiCdSetting, feature_category: :continuous_integration do
       it 'disables restrict_user_defined_variables' do
         setting.pipeline_variables_minimum_override_role = role if role
 
-        expect(project.restrict_user_defined_variables).to be_falsey
+        expect(project.restrict_user_defined_variables?).to be_falsey
       end
     end
 
@@ -92,7 +108,6 @@ RSpec.describe ProjectCiCdSetting, feature_category: :continuous_integration do
 
       before do
         setting.pipeline_variables_minimum_override_role = :maintainer
-        setting.restrict_user_defined_variables = true
       end
 
       it 'returns the set role' do
@@ -157,18 +172,17 @@ RSpec.describe ProjectCiCdSetting, feature_category: :continuous_integration do
       end
 
       it 'disables restrict_user_defined_variables' do
-        expect(setting.restrict_user_defined_variables).to be false
+        expect(setting.restrict_user_defined_variables?).to be false
       end
     end
 
     context 'when setting nil value' do
       before do
-        setting.restrict_user_defined_variables = false
         setting.pipeline_variables_minimum_override_role = nil
       end
 
       it 'does not change the current settings' do
-        expect(setting.restrict_user_defined_variables).to be false
+        expect(setting.restrict_user_defined_variables?).to be true
       end
     end
   end

@@ -38,7 +38,7 @@ the path to the file is incorrect, or the file was not created. You can check th
 log for other errors or warnings that specify the filename and why it wasn't
 generated.
 
-For more detailed job logs, you can [enable CI/CD debug logging](../variables/_index.md#enable-debug-logging)
+For more detailed job logs, you can [enable CI/CD debug logging](../variables/variables_troubleshooting.md#enable-debug-logging)
 and try the job again. This logging might provide more information about why the file
 wasn't created.
 
@@ -142,6 +142,8 @@ To troubleshoot this error, verify that:
 - The user running the job can access resources in `my-group/my-project`.
 - The `project`, `job`, and `ref` combination exists and results in the desired dependency.
 - Any variables in use evaluate to the correct values.
+
+If you use the `CI_JOB_TOKEN`, add the token to the project's [allowlist](ci_job_token.md#control-job-token-access-to-your-project) to pull artifacts from a different project.
 
 ### For a job configured with `needs:pipeline:job`
 

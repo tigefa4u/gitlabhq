@@ -12,6 +12,12 @@ title: SAML SSO for GitLab.com groups
 
 {{< /details >}}
 
+{{< alert type="note" >}}
+
+For GitLab Self-Managed, see [SAML SSO for GitLab Self-Managed](../../../integration/saml.md).
+
+{{< /alert >}}
+
 Users can sign in to GitLab through their SAML identity provider.
 
 [SCIM](scim_setup.md) synchronizes users with the group on GitLab.com.
@@ -390,7 +396,7 @@ The **NameID** must:
 - Be unique to each user.
 - Be a persistent value that never changes, such as a randomly generated unique user ID.
 - Match exactly on subsequent sign-in attempts, so it should not rely on user input
-  that could change between upper and lower case.
+  that could change between upper and lowercase.
 
 The **NameID** should not be an email address or username because:
 
@@ -616,9 +622,10 @@ When the **Enforce SSO-only authentication for web activity for this group** opt
     hidden if your SSO session has expired.
     [Issue 414475](https://gitlab.com/gitlab-org/gitlab/-/issues/414475) proposes to change this
     behavior so that issues are visible.
-  - SSO is not enforced when viewing lists of merge requests where you are the
-    assignee or your review is requested. You can see merge requests even if
+  - SSO is not enforced when viewing merge requests where you are the
+    assignee or reviewer. You can see merge requests even if
     your SSO session has expired.
+  - SSO is not enforced when viewing snippets for private projects where you have at least the Guest role.
 
 SSO enforcement for web activity has the following effects when enabled:
 
@@ -626,7 +633,7 @@ SSO enforcement for web activity has the following effects when enabled:
   group, even if the project is forked.
 - Git activity originating from CI/CD jobs do not have the SSO check enforced.
 - Credentials that are not tied to regular users (for example, project and group
-  access tokens, and deploy keys) do not have the SSO check enforced.
+  access tokens, service accounts, and deploy keys) do not have the SSO check enforced.
 - Users must be signed-in through SSO before they can pull images using the
   [Dependency Proxy](../../packages/dependency_proxy/_index.md).
 - When the **Enforce SSO-only authentication for Git and Dependency Proxy

@@ -205,14 +205,6 @@ $comparison-empty-state-height: 62px;
   }
 }
 
-.diffs.tab-pane {
-  @include media-breakpoint-up(md) {
-    // ensure consistent page height when selected file is loading
-    // https://gitlab.com/gitlab-org/gitlab/-/issues/426250
-    min-height: 100vh;
-  }
-}
-
 // Wrap MR tabs/buttons so you don't have to scroll on desktop
 @include media-breakpoint-down(md) {
   .merge-request-tabs-container {
@@ -294,9 +286,4 @@ $comparison-empty-state-height: 62px;
 .mr-widget-check-checking .gl-spinner {
   width: 12px;
   height: 12px;
-}
-
-.merge-request-review-drawer {
-  max-width: 680px;
-  width: 100%;
 }

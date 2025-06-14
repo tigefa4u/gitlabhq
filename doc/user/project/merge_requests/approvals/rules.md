@@ -39,12 +39,6 @@ Merge request approvals can be configured globally to apply across all (or a sub
 
 ## Add an approval rule
 
-{{< history >}}
-
-- Approval rules for all protected branches introduced in GitLab 15.3.
-
-{{< /history >}}
-
 Prerequisites:
 
 - You must have at least the Maintainer role for the project.
@@ -167,8 +161,8 @@ and select this event.
 
 ### Group approvers
 
-You can add a group of users as approvers. All **direct members** of this group
-can approve the rule. **Inherited members** cannot approve the rule.
+You can add a group of users as approvers. All direct members of this group
+can approve the rule. Inherited members cannot approve the rule.
 
 Typically the group is a subgroup in your top-level namespace, unless you are
 collaborating with an external group. If you are collaborating with another group,
@@ -179,7 +173,7 @@ A user's membership in an approver group determines their individual approval pe
 in the following ways:
 
 - Inherited members are not considered approvers. Only direct members can approve merge requests.
-- A user from a group approver group who is later _also_ added as an individual approver
+- A user from a group approver group who is later also added as an individual approver
   counts as one approver, not two.
 - Merge request authors do not count as eligible approvers on their own merge requests by default.
   To change this behavior, disable the
@@ -200,7 +194,7 @@ become eligible approvers in the project. To enable this merge request approval 
 1. In the **Approvals required** column, enter the number of approvals required.
 
 You can also
-[require code owner approval](../../repository/branches/protected.md#require-code-owner-approval-on-a-protected-branch)
+[require code owner approval](../../repository/branches/protected.md#require-code-owner-approval)
 for protected branches.
 
 ## Enable approval permissions for users with the Reporter role
@@ -212,7 +206,7 @@ oversight on proposed work.
 
 Prerequisites:
 
-- You must select a specific branch, as this method does **not** work with `All Branches` or `All protected branches` settings.
+- You must select a specific branch, as this method does not work with `All Branches` or `All protected branches` settings.
 - The shared group must be added to an approval rule and not individual users, even when the added user is part of the group.
 
 To enable approval permissions for these users without granting them push access:
@@ -281,12 +275,6 @@ To make an approval rule optional, you can also [use the API](../../../../api/me
 
 ## Approvals for protected branches
 
-{{< history >}}
-
-- **All protected branches** target branch option [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/360930) in GitLab 15.3.
-
-{{< /history >}}
-
 Approval rules are often relevant only to specific branches, like your
 [default branch](../../repository/branches/default.md). To configure an
 approval rule for certain branches:
@@ -298,7 +286,7 @@ approval rule for certain branches:
    - To apply the rule to all protected branches, select **All protected branches**.
    - To apply the rule to a specific branch, select it from the list.
 1. To enable this configuration, follow
-   [Require Code Owner approval on a protected branch](../../repository/branches/protected.md#require-code-owner-approval-on-a-protected-branch).
+   [Require Code Owner approval on a protected branch](../../repository/branches/protected.md#require-code-owner-approval).
 
 ## Security Approvals
 
@@ -311,7 +299,6 @@ approval rule for certain branches:
 
 {{< history >}}
 
-- Security approvals moved to merge request approvals settings [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/357021) in GitLab 15.0.
 - Bot comment for approvals [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/411656) in GitLab 16.2 [with a flag](../../../../administration/feature_flags.md) named `security_policy_approval_notification`. Enabled by default.
 - Bot comment for approvals [generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/130827) in GitLab 16.3. Feature flag `security_policy_approval_notification` removed.
 

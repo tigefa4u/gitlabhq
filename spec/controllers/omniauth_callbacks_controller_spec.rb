@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe OmniauthCallbacksController, type: :controller, feature_category: :system_access do
+RSpec.describe OmniauthCallbacksController, :with_current_organization, type: :controller, feature_category: :system_access do
   include LoginHelpers
 
   shared_examples 'stores value for provider_2FA to session according to saml response' do
@@ -820,7 +820,8 @@ RSpec.describe OmniauthCallbacksController, type: :controller, feature_category:
             step_up_auth: {
               admin_mode: {
                 id_token: {
-                  required: required_id_token_claims
+                  required: required_id_token_claims,
+                  included: included_id_token_claims
                 }
               }
             }
@@ -836,15 +837,26 @@ RSpec.describe OmniauthCallbacksController, type: :controller, feature_category:
           stub_omniauth_setting(enabled: true, auto_link_user: true, block_auto_created_users: false, providers: [ommiauth_provider_config_with_step_up_auth])
         end
 
-        where(:required_id_token_claims, :mock_auth_hash_extra_raw_info, :step_up_auth_authenticated) do
-          { claim_1: 'gold' } | { claim_1: 'gold' }                         | 'succeeded'
-          { claim_1: 'gold' } | { claim_1: 'gold', claim_2: 'mfa' }         | 'succeeded'
-          { claim_1: 'gold' } | { claim_1: 'gold', claim_2: 'other_amr' }   | 'succeeded'
-          { claim_1: 'gold' } | { claim_1: 'silver' }                       | 'failed'
-          { claim_1: 'gold' } | { claim_1: 'silver', claim_2: 'other_amr' } | 'failed'
-          { claim_1: 'gold' } | { claim_1: nil }                            | 'failed'
-          { claim_1: 'gold' } | { claim_3: 'other_value' }                  | 'failed'
-          { claim_1: 'gold' } | {}                                          | 'failed'
+        where(:required_id_token_claims, :included_id_token_claims, :mock_auth_hash_extra_raw_info, :step_up_auth_authenticated) do
+          { claim_1: 'gold' } | nil                          | { claim_1: 'gold' }                         | 'succeeded'
+          { claim_1: 'gold' } | nil                          | { claim_1: 'gold', claim_2: 'mfa' }         | 'succeeded'
+          { claim_1: 'gold' } | nil                          | { claim_1: 'silver' }                       | 'failed'
+          { claim_1: 'gold' } | nil                          | { claim_1: 'silver', claim_2: 'other_amr' } | 'failed'
+          { claim_1: 'gold' } | nil                          | { claim_1: nil }                            | 'failed'
+          { claim_1: 'gold' } | nil                          | { claim_3: 'other_value' }                  | 'failed'
+          { claim_1: 'gold' } | nil                          | {}                                          | 'failed'
+
+          nil                 | { claim_2: %w[mfa fpt] }     | { claim_2: 'mfa', claim_3: 'other_value' }  | 'succeeded'
+          nil                 | { claim_2: %w[mfa fpt] }     | { claim_2: 'fpt' }                          | 'succeeded'
+          nil                 | { claim_2: %w[mfa fpt] }     | { claim_2: 'other_amr' }                    | 'failed'
+
+          { claim_1: 'gold' } | { claim_1: ['gold'] }        | { claim_1: 'gold' }                         | 'succeeded'
+          { claim_1: 'gold' } | { claim_1: %w[gold silver] } | { claim_1: 'gold' }                         | 'succeeded'
+          { claim_1: 'gold' } | { claim_1: %w[gold silver] } | { claim_1: 'silver' }                       | 'failed'
+          { claim_1: 'gold' } | { claim_2: %w[mfa fpt] }     | { claim_1: 'gold', claim_2: 'mfa' }         | 'succeeded'
+          { claim_1: 'gold' } | { claim_2: %w[mfa fpt] }     | { claim_1: 'gold', claim_2: 'other_amr' }   | 'failed'
+          { claim_1: 'gold' } | { claim_2: %w[mfa fpt] }     | { claim_1: 'silver', claim_2: 'mfa' }       | 'failed'
+          { claim_1: 'gold' } | { claim_2: %w[mfa fpt] }     | { claim_1: 'silver', claim_2: 'other_amr' } | 'failed'
         end
 
         with_them do

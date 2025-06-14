@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Geo database replication
@@ -61,7 +61,7 @@ recover. See below for more details.
 The following guide assumes that:
 
 - You are using the Linux package (so are using PostgreSQL 12 or later),
-  which includes the [`pg_basebackup` tool](https://www.postgresql.org/docs/12/app-pgbasebackup.html).
+  which includes the [`pg_basebackup` tool](https://www.postgresql.org/docs/16/app-pgbasebackup.html).
 - You have a **primary** site already set up (the GitLab server you are
   replicating from), running PostgreSQL (or equivalent version) managed by your Linux package installation, and
   you have a new **secondary** site set up with the same
@@ -132,7 +132,7 @@ There is an [issue where support is being discussed](https://gitlab.com/gitlab-o
    gitlab_rails['db_password'] = '<your_db_password_here>'
    ```
 
-1. Define a password for the database [replication user](https://wiki.postgresql.org/wiki/Streaming_Replication).
+1. Define a password for the database [replication user](https://www.postgresql.org/docs/16/warm-standby.html#STREAMING-REPLICATION).
 
    Use the username defined in `/etc/gitlab/gitlab.rb` under the `postgresql['sql_replication_user']`
    setting. The default value is `gitlab_replicator`. If you changed the username to something else, adapt
@@ -216,7 +216,7 @@ There is an [issue where support is being discussed](https://gitlab.com/gitlab-o
    `postgresql['md5_auth_cidr_addresses']` and `postgresql['listen_address']`.
 
    The `listen_address` option opens PostgreSQL up to network connections with the interface
-   corresponding to the given address. See [the PostgreSQL documentation](https://www.postgresql.org/docs/12/runtime-config-connection.html)
+   corresponding to the given address. See [the PostgreSQL documentation](https://www.postgresql.org/docs/16/runtime-config-connection.html)
    for more details.
 
    {{< alert type="note" >}}
@@ -272,7 +272,7 @@ There is an [issue where support is being discussed](https://gitlab.com/gitlab-o
    ```
 
    You may also want to edit the `wal_keep_segments` and `max_wal_senders` to match your
-   database replication requirements. Consult the [PostgreSQL - Replication documentation](https://www.postgresql.org/docs/12/runtime-config-replication.html)
+   database replication requirements. Consult the [PostgreSQL - Replication documentation](https://www.postgresql.org/docs/16/runtime-config-replication.html)
    for more information.
 
 1. Save the file and reconfigure GitLab for the database listen changes and
@@ -336,8 +336,8 @@ There is an [issue where support is being discussed](https://gitlab.com/gitlab-o
    This allows you to use the `verify-full` SSL mode when replicating the database
    and get the extra benefit of verifying the full hostname in the CN.
 
-   You can use this certificate (that you have also set in `postgresql['ssl_cert_file']`) instead
-   of the certificate from the point above going forward. This allows you to use `verify-full`
+   Going forward, you can use this certificate (that you have also set in `postgresql['ssl_cert_file']`) instead
+   of the self-signed certificate automatically generated previously. This allows you to use `verify-full`
    without replication errors if the CN matches.
 
    On your primary database, open `/etc/gitlab/gitlab.rb` and search for `postgresql['ssl_ca_file']` (the CA certificate). Copy its value to your clipboard that you'll later paste into `server.crt`.
@@ -426,7 +426,7 @@ There is an [issue where support is being discussed](https://gitlab.com/gitlab-o
 
    {{< /alert >}}
 
-   When prompted, enter the _plaintext_ password you set in the first step for the
+   When prompted, enter the plaintext password you set in the first step for the
    `gitlab_replicator` user. If all worked correctly, you should see
    the list of the **primary** site's databases.
 
@@ -506,7 +506,7 @@ data before running `pg_basebackup`.
    sudo -i
    ```
 
-1. Choose a [database-friendly name](https://www.postgresql.org/docs/13/warm-standby.html#STREAMING-REPLICATION-SLOTS-MANIPULATION)
+1. Choose a [database-friendly name](https://www.postgresql.org/docs/16/warm-standby.html#STREAMING-REPLICATION-SLOTS-MANIPULATION)
    to use for your **secondary** site to
    use as the replication slot name. For example, if your domain is
    `secondary.geo.example.com`, use `secondary_example` as the slot
@@ -527,7 +527,7 @@ data before running `pg_basebackup`.
 
    {{< /alert >}}
 
-   When prompted, enter the _plaintext_ password you set up for the `gitlab_replicator`
+   When prompted, enter the plaintext password you set up for the `gitlab_replicator`
    user in the first step.
 
    ```shell
@@ -568,8 +568,8 @@ data before running `pg_basebackup`.
      (for example, you know the network path is secure, or you are using a site-to-site
      VPN). It is **not** safe over the public Internet!
    - You can read more details about each `sslmode` in the
-     [PostgreSQL documentation](https://www.postgresql.org/docs/12/libpq-ssl.html#LIBPQ-SSL-PROTECTION).
-     The instructions above are carefully written to ensure protection against
+     [PostgreSQL documentation](https://www.postgresql.org/docs/16/libpq-ssl.html#LIBPQ-SSL-PROTECTION).
+     The instructions listed previously are carefully written to ensure protection against
      both passive eavesdroppers and active "man-in-the-middle" attackers.
    - If you're repurposing an old site into a Geo **secondary** site, you must
      add `--force` to the command line.
@@ -598,7 +598,7 @@ see [the relevant documentation](../../postgresql/replication_and_failover.md).
 
 ### Changing the replication password
 
-To change the password for the [replication user](https://wiki.postgresql.org/wiki/Streaming_Replication)
+To change the password for the [replication user](https://www.postgresql.org/docs/16/warm-standby.html#STREAMING-REPLICATION)
 when using PostgreSQL instances managed by a Linux package installation:
 
 On the GitLab Geo **primary** site:
@@ -683,7 +683,7 @@ With Patroni, this support is now possible. To migrate the existing PostgreSQL t
 1. [Configure a Standby Cluster](#step-4-configure-a-standby-cluster-on-the-secondary-site)
    on that single node machine.
 
-You end up with a _Standby Cluster_ with a single node. That allows you to add additional Patroni nodes by following the same instructions above.
+You end up with a **Standby Cluster** with a single node. That allows you to add additional Patroni nodes by following the same instructions listed previously.
 
 ### Patroni support
 
@@ -722,7 +722,7 @@ database to the Patroni cluster on the secondary node.
 {{< tab title="Primary with Patroni cluster" >}}
 
 To set up database replication with Patroni on a secondary site, you must
-configure a _permanent replication slot_ on the primary site's Patroni cluster,
+configure a permanent replication slot on the primary site's Patroni cluster,
 and ensure password authentication is used.
 
 On each node running a Patroni instance on the primary site **starting on the Patroni
@@ -1099,7 +1099,8 @@ the secondary site.
 
 With Patroni, it's now possible to support HA setups. However, some restrictions in Patroni
 prevent the management of two different clusters on the same machine. You should set up a new
-Patroni cluster for the tracking database by following the same instructions above.
+Patroni cluster for the tracking database by following the same instructions describing how to
+[configure a Patroni cluster for a Geo secondary site](#configuring-patroni-cluster-for-a-geo-secondary-site).
 
 The secondary nodes backfill the new tracking database, and no data
 synchronization is required.

@@ -77,8 +77,7 @@ docker exec gitlab cat /etc/gitlab/initial_root_password
 
 {{< alert type="note" >}}
 
-If you receive `cat: /etc/gitlab/initialize_root_password: No such file or directory`,
-please wait for a bit for GitLab to boot and try again.
+If you receive `cat: /etc/gitlab/initialize_root_password: No such file or directory`, wait for a bit for GitLab to boot and try again.
 
 {{< /alert >}}
 
@@ -366,7 +365,7 @@ See the issue for [allowing parsing of raw Ruby objects](https://gitlab.com/gitl
 
 ## YAML Factories
 
-### Generator to generate _n_ amount of records
+### Generator to generate `n` amount of records
 
 ### Group Labels
 
@@ -410,7 +409,7 @@ group_milestones:
 
 #### Quirks
 
-- You _must_ specify `group:` and have it be empty. This is because the Milestones factory manipulates the factory in an `after(:build)`. If this is not present, the Milestone cannot be associated properly with the Group.
+- You must specify `group:` and have it be empty. This is because the Milestones factory manipulates the factory in an `after(:build)`. If this is not present, the Milestone cannot be associated properly with the Group.
 
 ### Epics
 

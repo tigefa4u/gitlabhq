@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Disaster Recovery (Geo)
@@ -324,7 +324,7 @@ changing Git remotes and API URLs.
 
 ### Step 5. (Optional) Add **secondary** Geo site to a promoted **primary** site
 
-Promoting a **secondary** site to **primary** site using the process above does not enable
+Promoting a **secondary** site to **primary** site using the previous process does not enable
 Geo on the new **primary** site.
 
 To bring a new **secondary** site online, follow the [Geo setup instructions](../setup/_index.md).
@@ -343,6 +343,8 @@ sudo rm -rf /var/opt/gitlab/geo-postgresql
 If you have any `geo_secondary[]` configuration options enabled in your `gitlab.rb`
 file, comment them out or remove them, and then [reconfigure GitLab](../../restart_gitlab.md#reconfigure-a-linux-package-installation)
 for the changes to take effect.
+
+At this point, your promoted site is a normal GitLab site without Geo configured. Optionally, you can [bring the old site back as a secondary](bring_primary_back.md#configure-the-former-primary-site-to-be-a-secondary-site).
 
 ## Promoting secondary Geo replica in multi-secondary configurations
 

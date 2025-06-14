@@ -46,7 +46,7 @@ offer a way for customers to enable or disable features for themselves on
 GitLab.com or self-managed and can remain in the codebase as long as needed. In
 contrast users have no way to enable or disable feature flags for themselves on
 GitLab.com and only self-managed admins can change the feature flags.
-Also note that
+Also,
 [feature flags are not supported in GitLab Dedicated](../enabling_features_on_dedicated.md#feature-flags)
 which is another reason you should not use them as a replacement for settings.
 
@@ -449,21 +449,61 @@ deleting feature flags.
 
 ## Migrate an `ops` feature flag to an application setting
 
+{{< alert type="warning" >}}
+
+The changes to backfill application settings and use the settings in the code must be merged in the same milestone.
+
+{{< /alert >}}
+
 To migrate an `ops` feature flag to an application setting:
 
 1. In application settings, create or identify an existing `JSONB` column to store the setting.
-1. Write a migration to backfill the column.
-   For an example, see [merge request 148014](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/148014).
-1. Optional. In application settings, update the documentation for the setting.
+1. The application setting default should match `default_enabled:` in the feature flag YAML definition
+1. Write a migration to backfill the column. This allows instances which have
+   opted out of the default behavior to remain in the same state. Avoid using `Feature.enabled?` or `Feature.disabled?`
+   in the migration. Use the `Gitlab::Database::MigrationHelpers::FeatureFlagMigratorHelpers` migration helpers. These
+   helpers will only migrate feature flags that are explicitly set to `true` or `false`. If a feature flag is set for a
+   percentage or specific actor, the default value will be used.
 1. In the **Admin** area, create a setting to enable or disable the feature.
 1. Replace the feature flag everywhere with the application setting.
-1. Update all the relevant documentation pages.
-1. Mark the backfill migration as a `NOOP` and remove the feature flag after the mandatory upgrade path is crossed.
-   For an example, see [merge request 151080](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/151080).
+1. Update all the relevant documentation pages. If frontend changes are merged in a later milestone, you should add
+   documentation about how to update the settings by using the [application settings API](../../api/settings.md) or
+   the Rails console.
 
-The changes to backfill application settings and use the settings in the code must be merged in the same milestone.
-If frontend changes are merged in a later milestone, you should add documentation about how to update the settings
-by using the [application settings API](../../api/settings.md) or the Rails console.
+An example migration for a `JSONB` column:
+
+```ruby
+# default_enabled copied from feature flag definition YAML before it is removed
+DEFAULT_ENABLED = true
+
+def up
+  up_migrate_to_jsonb_setting(feature_flag_name: :my_flag_name,
+    setting_name: :my_setting,
+    jsonb_column_name: :settings,
+    default_enabled: DEFAULT_ENABLED)
+end
+
+def down
+  down_migrate_to_jsonb_setting(setting_name: :my_setting, jsonb_column_name: :settings)
+end
+```
+
+An example migration for a boolean column:
+
+```ruby
+# default_enabled copied from feature flag definition YAML before it is removed
+DEFAULT_ENABLED = true
+
+def up
+  up_migrate_to_setting(feature_flag_name: :my_flag_name,
+    setting_name: :my_setting,
+    default_enabled: DEFAULT_ENABLED)
+end
+
+def down
+  down_migrate_to_setting(setting_name: :my_setting, default_enabled: DEFAULT_ENABLED)
+end
+```
 
 ## Develop with a feature flag
 
@@ -548,7 +588,7 @@ happens, we track a `Feature::RecursionError` exception to the error tracker.
 
 ### Frontend
 
-When using a feature flag for UI elements, make sure to _also_ use a feature
+When using a feature flag for UI elements, make sure to also use a feature
 flag for the underlying backend code, if there is any. This ensures there is
 absolutely no way to use the feature until it is enabled.
 

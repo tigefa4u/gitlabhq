@@ -5,6 +5,7 @@ fragment WikiPageNote on Note {
   author {
     ...Author
   }
+  maxAccessLevelOfAuthor
   body
   bodyHtml
   createdAt
@@ -25,10 +26,8 @@ fragment WikiPageNote on Note {
   userPermissions {
     adminNote
     awardEmoji
-    readNote
     createNote
     resolveNote
-    repositionNote
   }
   discussion {
     id

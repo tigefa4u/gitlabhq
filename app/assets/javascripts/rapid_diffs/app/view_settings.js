@@ -39,10 +39,12 @@ const initSettingsApp = (el, pinia) => {
           showWhitespace: this.showWhitespace,
           diffViewType: this.viewType,
           viewDiffsFileByFile: this.singleFileMode,
+          fileByFileSupported: false,
           isLoading: this.isLoading,
           addedLines: this.diffsStats?.addedLines,
           removedLines: this.diffsStats?.removedLines,
           diffsCount: this.diffsStats?.diffsCount,
+          hideOnNarrowScreen: false,
         },
         on: {
           updateDiffViewType: this.updateViewType,
@@ -55,14 +57,12 @@ const initSettingsApp = (el, pinia) => {
   });
 };
 
-export const initViewSettings = ({ pinia, streamUrl }) => {
-  const target = document.querySelector('[data-view-settings]');
-  const { showWhitespace, diffViewType, updateUserEndpoint } = target.dataset;
+export const initViewSettings = ({ pinia, target, appData }) => {
+  const { showWhitespace, diffViewType, updateUserEndpoint } = appData;
   useDiffsView(pinia).$patch({
     showWhitespace: parseBoolean(showWhitespace),
     viewType: diffViewType,
     updateUserEndpoint,
-    streamUrl,
   });
   useDiffsList(pinia).fillInLoadedFiles();
   return initSettingsApp(target, pinia);

@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Data Access
 group: Gitaly
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Monitoring Gitaly and Gitaly Cluster
@@ -16,21 +16,18 @@ Metric definitions are available:
 
 <!--- start_remove The following content will be removed on remove_date: '2025-08-01' -->
 
-## Monitor Gitaly rate limiting (deprecated)
+## Monitor Gitaly rate limiting (removed)
 
 {{< alert type="warning" >}}
 
 This feature was [deprecated](https://gitlab.com/gitlab-org/gitaly/-/issues/5011) in GitLab 17.7
-and is planned for removal in 18.0. Use [concurrency limiting](concurrency_limiting.md) instead.
+and was removed in 18.0. Use [concurrency limiting](concurrency_limiting.md) instead.
 
 {{< /alert >}}
 
-Gitaly can be configured to limit requests based on:
-
-- Concurrency of requests.
-- A rate limit.
-
 <!--- end_remove -->
+
+Gitaly can be configured to limit requests based on concurrency of requests (adaptive or non-adaptive).
 
 ## Monitor Gitaly concurrency limiting
 
@@ -254,7 +251,7 @@ The following are some queries for monitoring Gitaly:
   The only non-zero number should have `enforced="true",status="ok"`. If you have other non-zero
   numbers, something is wrong in your configuration.
 
-  The `status="ok"` number reflects your current request rate. In the example above, Gitaly is
+  The `status="ok"` number reflects your current request rate. In the previous example, Gitaly is
   handling about 4000 requests per second.
 
 - Use the following Prometheus query to observe the [Git protocol versions](../git_protocol.md)

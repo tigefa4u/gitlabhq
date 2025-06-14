@@ -244,6 +244,15 @@
 // to the top at different heights, which is a bad-looking defect
 $diff-file-header-top: 11px;
 
+.diffs.tab-pane .files {
+  @include media-breakpoint-up(md) {
+    // ensure consistent page height when selected file is loading
+    // https://gitlab.com/gitlab-org/gitlab/-/issues/426250
+    // also required for file browser to consume all available height
+    min-height: calc(100vh - (#{$calc-application-header-height} + #{$mr-sticky-header-height} + #{$diff-file-header-top} + #{$content-wrapper-padding}));
+  }
+}
+
 .diff-tree-list {
   --file-row-height: 32px;
   --file-tree-min-height: 300px;
@@ -291,11 +300,14 @@ $diff-file-header-top: 11px;
 
 .tree-list-holder {
   height: 100%;
+}
 
-  .file-row {
-    margin-left: 0;
-    margin-right: 0;
-  }
+.tree-list-holder .file-row {
+  width: calc(100% - #{$gl-spacing-scale-1} * 2);
+  margin: 0 0 0 $gl-spacing-scale-1;
+  border: 0;
+  min-width: 0;
+  background: transparent;
 }
 
 .tree-list-gutter {
@@ -445,7 +457,7 @@ $diff-file-header-top: 11px;
 }
 
 .mr-section-container {
-  @apply gl-bg-section gl-border gl-border-section gl-rounded-base;
+  @apply gl-bg-section gl-border gl-border-section gl-rounded-lg;
 
   &:not(:first-child) {
     @apply gl-mt-5;
@@ -463,14 +475,14 @@ $diff-file-header-top: 11px;
 
   > .mr-widget-section {
     &:first-child {
-      border-top-left-radius: $gl-border-radius-base-inner;
-      border-top-right-radius: $gl-border-radius-base-inner;
+      border-top-left-radius: $gl-border-radius-lg-inner;
+      border-top-right-radius: $gl-border-radius-lg-inner;
     }
 
     > :last-child,
     .deploy-heading:last-child {
-      border-bottom-left-radius: $gl-border-radius-base-inner;
-      border-bottom-right-radius: $gl-border-radius-base-inner;
+      border-bottom-left-radius: $gl-border-radius-lg-inner;
+      border-bottom-right-radius: $gl-border-radius-lg-inner;
     }
   }
 
@@ -483,7 +495,7 @@ $diff-file-header-top: 11px;
   color: var(--gl-text-color-default);
 
   .commit-message-edit {
-    border-radius: $gl-border-radius-base;
+    @apply gl-rounded-base;
   }
 
   .commits-list {
@@ -645,7 +657,7 @@ $diff-file-header-top: 11px;
     }
 
     &.mr-pipeline-suggest {
-      border-radius: $gl-border-radius-base;
+      @apply gl-rounded-base;
       line-height: 20px;
       border: 1px solid var(--gl-border-color-default);
 
@@ -871,6 +883,7 @@ $diff-file-header-top: 11px;
 .merge-request-sticky-header {
   z-index: calc($top-bar-z-index - 1);
   height: $mr-sticky-header-height;
+  @include translucent-glass-background;
 }
 
 .merge-request-notification-toggle {
@@ -945,8 +958,6 @@ $diff-file-header-top: 11px;
 }
 
 .review-preview-item-content {
-  width: 100%;
-
   p {
     display: block;
     width: 100%;

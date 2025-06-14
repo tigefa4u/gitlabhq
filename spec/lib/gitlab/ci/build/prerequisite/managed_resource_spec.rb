@@ -247,6 +247,15 @@ RSpec.describe Gitlab::Ci::Build::Prerequisite::ManagedResource, feature_categor
                   additional_properties: { label: deployment_project.namespace.actual_plan_name,
                                            property: environment.tier, value: environment.id })
 
+              expected_gvks = ['/v1/Namespace', 'rbac.authorization.k8s.io/v1/RoleBinding']
+              expected_gvks.each do |gvk|
+                expect(Gitlab::InternalEvents).to receive(:track_event)
+                  .with('ensure_gvk_resource_for_managed_resource', user: build.user, project: deployment_project,
+                    additional_properties: { label: gvk,
+                                             property: environment.tier,
+                                             value: environment.id })
+              end
+
               execute_complete
             end
           end
@@ -308,7 +317,7 @@ RSpec.describe Gitlab::Ci::Build::Prerequisite::ManagedResource, feature_categor
             end
 
             it 'tracks the error and creates the managed resource record with the failed status' do
-              error_message = 'Failed to ensure the environment. {"object":{"group":"group","apiVersion":"version",' \
+              error_message = 'Failed to ensure the environment. {"object":{"group":"group","version":"version",' \
                 '"kind":"kind","namespace":"namespace","name":"name"},"error":"error message"}'
               expect { execute_complete }.to raise_error(
                 Gitlab::Ci::Build::Prerequisite::ManagedResource::ManagedResourceError, error_message)

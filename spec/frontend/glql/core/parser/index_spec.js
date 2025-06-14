@@ -43,25 +43,25 @@ describe('parse', () => {
     ],
   },
   "query": "query GLQL {
-issues(assigneeUsernames: "root", first: 100) {
-nodes {
-id
-iid
-title
-webUrl
-reference
-state
-
-}
-pageInfo {
-startCursor
-endCursor
-hasNextPage
-hasPreviousPage
-}
-}
+  issues(assigneeUsernames: "root", first: 100) {
+    nodes {
+      id
+      iid
+      title
+      webUrl
+      reference
+      state
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
 }
 ",
+  "variables": [],
 }
 `);
   });
@@ -97,36 +97,35 @@ assignee = currentUser()`),
     ],
   },
   "query": "query GLQL {
-issues(assigneeUsernames: "root", first: 100) {
-nodes {
-id
-iid
-title
-webUrl
-reference
-state
-assignees {
-nodes {
-id
-avatarUrl
-username
-name
-webUrl
-}
-
-}
-dueDate
-
-}
-pageInfo {
-startCursor
-endCursor
-hasNextPage
-hasPreviousPage
-}
-}
+  issues(assigneeUsernames: "root", first: 100) {
+    nodes {
+      id
+      iid
+      title
+      webUrl
+      reference
+      state
+      assignees {
+        nodes {
+          id
+          avatarUrl
+          username
+          name
+          webUrl
+        }
+      }
+      dueDate
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
 }
 ",
+  "variables": [],
 }
 `);
   });
@@ -163,36 +162,35 @@ query: assignee = currentUser()
     "limit": 20,
   },
   "query": "query GLQL {
-issues(assigneeUsernames: "root", first: 20) {
-nodes {
-id
-iid
-title
-webUrl
-reference
-state
-assignees {
-nodes {
-id
-avatarUrl
-username
-name
-webUrl
-}
-
-}
-dueDate
-
-}
-pageInfo {
-startCursor
-endCursor
-hasNextPage
-hasPreviousPage
-}
-}
+  issues(assigneeUsernames: "root", first: 20) {
+    nodes {
+      id
+      iid
+      title
+      webUrl
+      reference
+      state
+      assignees {
+        nodes {
+          id
+          avatarUrl
+          username
+          name
+          webUrl
+        }
+      }
+      dueDate
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
 }
 ",
+  "variables": [],
 }
 `);
   });

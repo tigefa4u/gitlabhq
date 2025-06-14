@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: CI mirrored tables
 ---
 
@@ -10,7 +10,7 @@ title: CI mirrored tables
 As part of the database [decomposition work](https://gitlab.com/groups/gitlab-org/-/epics/6168),
 which had the goal of splitting the single database GitLab is using, into two databases: `main` and
 `ci`, came the big challenge of
-[removing all joins between the `main` and the `ci` tables](multiple_databases.md#removing-joins-between-ci-and-non-ci-tables).
+[removing all joins between the `main` and the `ci` tables](multiple_databases.md#removing-joins-between-main-and-non-main-tables).
 That is because PostgreSQL doesn't support joins between tables that belong to different databases.
 However, some core application models in the main database are queried very often by the CI side.
 For example:

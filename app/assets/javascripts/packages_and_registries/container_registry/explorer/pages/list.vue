@@ -16,7 +16,7 @@ import { fetchPolicies } from '~/lib/graphql';
 import Tracking from '~/tracking';
 import PersistedPagination from '~/packages_and_registries/shared/components/persisted_pagination.vue';
 import PersistedSearch from '~/packages_and_registries/shared/components/persisted_search.vue';
-import MetadataDatabaseAlert from '~/packages_and_registries/shared/components/container_registry_metadata_database_alert.vue';
+import MetadataDatabaseBanner from '~/packages_and_registries/shared/components/container_registry_metadata_database_banner.vue';
 import { FILTERED_SEARCH_TERM } from '~/vue_shared/components/filtered_search_bar/constants';
 import {
   getPageParams,
@@ -70,7 +70,7 @@ export default {
     GlSkeletonLoader,
     RegistryHeader,
     DeleteImage,
-    MetadataDatabaseAlert,
+    MetadataDatabaseBanner,
     PersistedPagination,
     PersistedSearch,
   },
@@ -141,6 +141,8 @@ export default {
       containerRepositoriesCount: 0,
       itemToDelete: {},
       deleteAlertType: null,
+      deleteAlertMessage: null,
+      deleteImageErrorMessages: [],
       sorting: null,
       name: null,
       mutationLoading: false,
@@ -197,11 +199,6 @@ export default {
     showConnectionError() {
       return this.config.connectionError || this.config.invalidPathError;
     },
-    deleteImageAlertMessage() {
-      return this.deleteAlertType === 'success'
-        ? DELETE_IMAGE_SUCCESS_MESSAGE
-        : DELETE_IMAGE_ERROR_MESSAGE;
-    },
   },
   methods: {
     deleteImage(item) {
@@ -210,7 +207,8 @@ export default {
       this.$refs.deleteModal.show();
     },
     dismissDeleteAlert() {
-      this.deleteAlertType = null;
+      this.setDeleteAlert(null, null);
+
       this.itemToDelete = {};
     },
     fetchNextPage() {
@@ -239,6 +237,20 @@ export default {
         }, 200);
       }
     },
+    setDeleteAlert(alertType, alertMessage) {
+      this.deleteAlertType = alertType;
+      this.deleteAlertMessage = alertMessage;
+    },
+    setDeleteErrorMessages(deleteErrorMessages = []) {
+      this.deleteImageErrorMessages = deleteErrorMessages ?? [];
+    },
+    handleDeleteImageSuccess() {
+      this.setDeleteAlert('success', DELETE_IMAGE_SUCCESS_MESSAGE);
+    },
+    handleDeleteImageError(errors = []) {
+      this.setDeleteAlert('danger', DELETE_IMAGE_ERROR_MESSAGE);
+      this.setDeleteErrorMessages(errors?.map(({ message }) => message));
+    },
   },
   containerRegistryHelpUrl: helpPagePath('user/packages/container_registry/_index'),
   dockerConnectionErrorHelpUrl: helpPagePath(
@@ -252,7 +264,7 @@ export default {
 
 <template>
   <div>
-    <metadata-database-alert v-if="!config.isMetadataDatabaseEnabled" />
+    <metadata-database-banner v-if="!config.isMetadataDatabaseEnabled" />
     <gl-alert
       v-if="showDeleteAlert"
       :variant="deleteAlertType"
@@ -260,11 +272,19 @@ export default {
       dismissible
       @dismiss="dismissDeleteAlert"
     >
-      <gl-sprintf :message="deleteImageAlertMessage">
+      <gl-sprintf :message="deleteAlertMessage">
         <template #title>
           {{ itemToDelete.path }}
         </template>
       </gl-sprintf>
+
+      <div v-if="deleteImageErrorMessages.length">
+        <ul>
+          <li v-for="(deleteImageErrorMessage, index) in deleteImageErrorMessages" :key="index">
+            {{ deleteImageErrorMessage }}
+          </li>
+        </ul>
+      </div>
     </gl-alert>
 
     <gl-empty-state
@@ -297,18 +317,20 @@ export default {
         :show-cleanup-policy-link="config.showCleanupPolicyLink"
       >
         <template #commands>
+          <gl-button
+            v-if="config.showContainerRegistrySettings"
+            v-gl-tooltip="$options.i18n.SETTINGS_TEXT"
+            icon="settings"
+            class="!gl-w-auto"
+            :href="config.settingsPath"
+            :aria-label="$options.i18n.SETTINGS_TEXT"
+          />
           <cli-commands
             v-if="showCommands"
             :docker-build-command="dockerBuildCommand"
             :docker-push-command="dockerPushCommand"
             :docker-login-command="dockerLoginCommand"
-          />
-          <gl-button
-            v-if="config.showContainerRegistrySettings"
-            v-gl-tooltip="$options.i18n.SETTINGS_TEXT"
-            icon="settings"
-            :href="config.settingsPath"
-            :aria-label="$options.i18n.SETTINGS_TEXT"
+            class="!gl-w-auto"
           />
         </template>
       </registry-header>
@@ -372,8 +394,8 @@ export default {
       <delete-image
         :id="itemToDelete.id"
         @start="startDelete"
-        @error="deleteAlertType = 'danger'"
-        @success="deleteAlertType = 'success'"
+        @error="handleDeleteImageError"
+        @success="handleDeleteImageSuccess"
         @end="mutationLoading = false"
       >
         <template #default="{ doDelete }">

@@ -447,11 +447,15 @@ module Gitlab
       end
 
       def ai_reviewable?
-        diffable? && !deleted_file?
+        diffable? && text?
       end
 
       def modified_file?
         new_file? || deleted_file? || content_changed?
+      end
+
+      def no_preview?
+        collapsed? || !modified_file?
       end
 
       def diffable_text?
@@ -460,6 +464,12 @@ module Gitlab
 
       def whitespace_only?
         !collapsed? && diff_lines_for_serializer.nil? && (added_lines != 0 || removed_lines != 0)
+      end
+
+      def image_diff?
+        return false if different_type? || external_storage_error?
+
+        DiffViewer::Image.can_render?(self, verify_binary: !stored_externally?)
       end
 
       private

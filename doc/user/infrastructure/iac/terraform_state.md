@@ -36,7 +36,7 @@ With GitLab-managed OpenTofu state, you:
 {{< alert type="warning" >}}
 
 **Disaster recovery planning**
-OpenTofu state files are encrypted with the lockbox Ruby gem when they are at rest on disk and in object storage with a key derived from the [db_key_base application setting](../../../development/application_secrets.md#secret-entries).
+OpenTofu state files are encrypted with the Lockbox Ruby gem when they are at rest on disk and in object storage with a key derived from the `db_key_base` application setting.
 [To decrypt a state file, GitLab must be available](https://gitlab.com/gitlab-org/gitlab/-/issues/335739).
 If it is offline, and you use GitLab to deploy infrastructure that GitLab requires (like virtual machines,
 Kubernetes clusters, or network components), you cannot access the state file easily or decrypt it.
@@ -94,7 +94,7 @@ To configure GitLab CI/CD as a backend:
    `gitlab-tofu plan` commands.
 1. Trigger the manual `deploy` job from the previous pipeline. This action runs the `gitlab-tofu apply` command, which provisions the defined infrastructure.
 
-The output from the above commands should be viewable in the job logs.
+The output from the previous commands should be viewable in the job logs.
 
 The `gitlab-tofu` CLI is a wrapper around the `tofu` CLI.
 

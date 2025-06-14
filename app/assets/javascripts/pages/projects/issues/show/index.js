@@ -8,15 +8,14 @@ const initLegacyIssuePage = async () => {
 const initWorkItemPage = async () => {
   const [{ initWorkItemsRoot }] = await Promise.all([import('~/work_items')]);
 
-  initWorkItemsRoot({ workItemType: 'issue' });
+  initWorkItemsRoot();
 };
 
 const issuableData = issuableInitialDataById('js-issuable-app');
 
 if (
   !isLegacyIssueType(issuableData) &&
-  (gon.features.workItemViewForIssues ||
-    (gon.features.workItemsViewPreference && gon.current_user_use_work_items_view))
+  (gon.features.workItemViewForIssues || gon.current_user_use_work_items_view)
 ) {
   initWorkItemPage();
 } else {

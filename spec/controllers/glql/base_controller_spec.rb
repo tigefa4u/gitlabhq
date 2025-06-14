@@ -164,25 +164,19 @@ RSpec.describe Glql::BaseController, feature_category: :integrations do
         expect(current_rate_limit_value(query_sha)).to be_nil
       end
     end
+
+    context 'when load balancing enabled', :db_load_balancing do
+      it 'uses the replica' do
+        expect(Gitlab::Database::LoadBalancing::SessionMap)
+          .to receive(:with_sessions).with(Gitlab::Database::LoadBalancing.base_models).and_call_original
+
+        execute_request
+      end
+    end
   end
 
   describe '#append_info_to_payload' do
     let(:log_payload) { {} }
-    let(:expected_logs) do
-      [
-        {
-          operation_name: 'GLQL',
-          complexity: 1,
-          depth: 1,
-          used_deprecated_arguments: [],
-          used_deprecated_fields: [],
-          used_fields: ['Query.__typename'],
-          variables: '{}',
-          glql_referer: 'path',
-          glql_query_sha: query_sha
-        }
-      ]
-    end
 
     before do
       RequestStore.clear!
@@ -194,11 +188,51 @@ RSpec.describe Glql::BaseController, feature_category: :integrations do
       end
     end
 
-    it 'appends glql-related metadata for logging' do
-      execute_request
+    context 'when GraphQL execution succeeds' do
+      let(:expected_logs) do
+        [
+          {
+            operation_name: 'GLQL',
+            complexity: 1,
+            depth: 1,
+            used_deprecated_arguments: [],
+            used_deprecated_fields: [],
+            used_fields: ['Query.__typename'],
+            variables: '{}',
+            glql_referer: 'path',
+            glql_query_sha: query_sha
+          }
+        ]
+      end
 
-      expect(controller).to have_received(:append_info_to_payload)
-      expect(log_payload.dig(:metadata, :graphql)).to match_array(expected_logs)
+      it 'appends glql-related metadata for logging' do
+        execute_request
+
+        expect(controller).to have_received(:append_info_to_payload)
+        expect(log_payload.dig(:metadata, :graphql)).to match_array(expected_logs)
+      end
+    end
+
+    context 'when GraphQL execution fails' do
+      let(:expected_error_logs) do
+        [
+          {
+            glql_referer: 'path',
+            glql_query_sha: query_sha
+          }
+        ]
+      end
+
+      it 'still appends glql-related metadata for logging' do
+        allow(controller).to receive(:execute) do
+          raise ActiveRecord::QueryAborted
+        end
+
+        execute_request
+
+        expect(controller).to have_received(:append_info_to_payload)
+        expect(log_payload.dig(:metadata, :graphql)).to match_array(expected_error_logs)
+      end
     end
   end
 
@@ -220,8 +254,47 @@ RSpec.describe Glql::BaseController, feature_category: :integrations do
     end
   end
 
-  def execute_request
-    post :execute, params: { query: query, operationName: 'GLQL' }
+  describe 'set_namespace_context' do
+    context 'when the `project` param is provided' do
+      let_it_be(:project) { create(:project) }
+
+      before do
+        execute_request({ project: project.full_path })
+      end
+
+      it 'sets @project variable and has the meta.project updated' do
+        expect(Gitlab::ApplicationContext.current['meta.project']).to eq(project.full_path)
+      end
+
+      it 'has the meta.root_namespace updated based on @project' do
+        expect(Gitlab::ApplicationContext.current['meta.root_namespace'])
+          .to eq(project.full_path_components.first)
+      end
+    end
+
+    context 'when the `group` param is provided' do
+      let_it_be(:group) { create(:group) }
+
+      it 'has the meta.root_namespace updated based on @group' do
+        execute_request({ group: group.full_path })
+
+        expect(Gitlab::ApplicationContext.current['meta.root_namespace'])
+          .to eq(group.full_path_components.first)
+      end
+    end
+
+    context 'when none of `group` and `project` params are provided' do
+      it 'does not set the application context meta fields' do
+        execute_request
+
+        expect(Gitlab::ApplicationContext.current['meta.root_namespace']).to be_nil
+        expect(Gitlab::ApplicationContext.current['meta.project']).to be_nil
+      end
+    end
+  end
+
+  def execute_request(extra_params = {})
+    post :execute, params: { query: query, operationName: 'GLQL' }.merge(extra_params)
   end
 
   def current_rate_limit_value(sha)

@@ -79,10 +79,11 @@ RSpec.describe Emails::Imports, feature_category: :importers do
 
         it 'sends success email with skipped rows info' do
           is_expected.to have_subject("#{group.name} | Placeholder reassignments completed successfully")
-          is_expected.to have_content("Items assigned to placeholder users were reassigned to users in #{group.name}")
-          is_expected.to have_content('1 placeholder user matched to user.')
-          is_expected.to have_content('1 placeholder user skipped.')
-          is_expected.not_to have_content('placeholder users not matched to users.')
+          is_expected.to have_content(
+            "Items assigned to placeholder users have been reassigned to users in #{group.name}")
+          is_expected.to have_content('1 placeholder user has been matched to a user.')
+          is_expected.to have_content('1 placeholder user has been skipped.')
+          is_expected.not_to have_content('placeholder users have not been matched to users.')
           is_expected.to have_body_text(group_group_members_url(group, tab: 'placeholders'))
         end
       end
@@ -98,11 +99,10 @@ RSpec.describe Emails::Imports, feature_category: :importers do
           is_expected.to have_subject("#{group.name} | Placeholder reassignments completed with errors")
           is_expected.to have_content('Placeholder reassignments completed with errors')
           is_expected.to have_content(
-            "Items assigned to placeholder users were reassigned to users in #{group.name}"
-          )
-          is_expected.to have_content('689 placeholder users matched to users.')
-          is_expected.to have_content('1 placeholder user not matched to user.')
-          is_expected.to have_content('25 placeholder users skipped.')
+            "Items assigned to placeholder users have been reassigned to users in #{group.name}")
+          is_expected.to have_content('689 placeholder users have been matched to users.')
+          is_expected.to have_content('1 placeholder user has not been matched to a user.')
+          is_expected.to have_content('25 placeholder users have been skipped.')
           is_expected.to have_body_text(group_group_members_url(group, tab: 'placeholders', status: 'failed'))
         end
       end
@@ -115,11 +115,10 @@ RSpec.describe Emails::Imports, feature_category: :importers do
           is_expected.to have_subject("#{group.name} | Placeholder reassignments completed with errors")
           is_expected.to have_content('Placeholder reassignments completed with errors')
           is_expected.to have_content(
-            "Items assigned to placeholder users were reassigned to users in #{group.name}"
-          )
-          is_expected.to have_content('689 placeholder users matched to users.')
-          is_expected.to have_content('362 placeholder users not matched to users.')
-          is_expected.not_to have_content('placeholder users skipped.')
+            "Items assigned to placeholder users have been reassigned to users in #{group.name}")
+          is_expected.to have_content('689 placeholder users have been matched to users.')
+          is_expected.to have_content('362 placeholder users have not been matched to users.')
+          is_expected.not_to have_content('placeholder users have been skipped.')
           is_expected.to have_body_text(group_group_members_url(group, tab: 'placeholders', status: 'failed'))
         end
       end
@@ -180,6 +179,65 @@ RSpec.describe Emails::Imports, feature_category: :importers do
       is_expected.to have_content('Reassignment rejected')
       is_expected.to have_content("#{user.name} (@#{user.username}) has declined your request")
       is_expected.to have_body_text(group_group_members_url(group, tab: 'placeholders'))
+    end
+
+    it_behaves_like 'appearance header and footer enabled'
+    it_behaves_like 'appearance header and footer not enabled'
+  end
+
+  describe '#import_source_user_complete' do
+    let(:user) { build_stubbed(:user) }
+    let(:group) { build_stubbed(:group) }
+    let(:source_user) do
+      build_stubbed(
+        :import_source_user, :completed, :with_reassigned_by_user, namespace: group, reassign_to_user: user
+      )
+    end
+
+    subject { Notify.import_source_user_complete('user_id') }
+
+    before do
+      allow(Import::SourceUser).to receive(:find).and_return(source_user)
+    end
+
+    it 'sends reassignment complete email with reference to group owners for help' do
+      is_expected.to have_subject("Reassignments in #{group.full_path} completed")
+      is_expected.to have_content("Imported from: #{source_user.source_hostname}")
+      is_expected.to have_content("Imported to: #{group.name}")
+      is_expected.to have_content("Reassigned from: #{source_user.source_name} (@#{source_user.source_username})")
+      is_expected.to have_content("Reassigned to: #{user.name} (@#{user.username})")
+      is_expected.to have_content(
+        "Reassigned by: #{source_user.reassigned_by_user.name} (@#{source_user.reassigned_by_user.username})"
+      )
+      is_expected.to have_content("contact #{source_user.reassigned_by_user.name} or another group owner.")
+      is_expected.to have_link(user.to_reference, href: user_url(user))
+      is_expected.to have_link(
+        source_user.reassigned_by_user.to_reference,
+        href: user_url(source_user.reassigned_by_user)
+      )
+    end
+
+    context 'when admin placeholder bypass is enabled' do
+      before do
+        stub_application_setting(allow_bypass_placeholder_confirmation: true)
+      end
+
+      it 'sends reassignment complete email with reference to admins for help' do
+        is_expected.to have_subject("Reassignments in #{group.full_path} completed")
+        is_expected.to have_content("Imported from: #{source_user.source_hostname}")
+        is_expected.to have_content("Imported to: #{group.name}")
+        is_expected.to have_content("Reassigned from: #{source_user.source_name} (@#{source_user.source_username})")
+        is_expected.to have_content("Reassigned to: #{user.name} (@#{user.username})")
+        is_expected.to have_content(
+          "Reassigned by: #{source_user.reassigned_by_user.name} (@#{source_user.reassigned_by_user.username})"
+        )
+        is_expected.to have_content("contact #{source_user.reassigned_by_user.name} or another administrator.")
+        is_expected.to have_link(user.to_reference, href: user_url(user))
+        is_expected.to have_link(
+          source_user.reassigned_by_user.to_reference,
+          href: user_url(source_user.reassigned_by_user)
+        )
+      end
     end
 
     it_behaves_like 'appearance header and footer enabled'

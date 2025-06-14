@@ -9,17 +9,6 @@ if Gitlab::Runtime.console?
       super
 
       IRB.conf[:SAVE_HISTORY] = false
-
-      init_autocomplete
-    end
-
-    unless ::Gitlab.next_rails?
-      def init_autocomplete
-        return unless Rails.env.production?
-
-        # IRB_USE_AUTOCOMPLETE was added in https://github.com/ruby/irb/pull/469
-        IRB.conf[:USE_AUTOCOMPLETE] = ENV.fetch("IRB_USE_AUTOCOMPLETE", "false") == "true"
-      end
     end
   end
 

@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Semantic Versioning of Database Records
 ---
 
@@ -13,8 +13,6 @@ In order to use SemanticVersionable you must first create a database migration t
 
 ```ruby
 class AddVersionPartsToModelVersions < Gitlab::Database::Migration[2.2]
-  enable_lock_retries!
-
   milestone '16.9'
 
   def up

@@ -106,7 +106,7 @@ describe('AdminRunnersApp', () => {
   const findRunnerPagination = () => extendedWrapper(wrapper.findComponent(RunnerPagination));
   const findRunnerPaginationNext = () => findRunnerPagination().findByText('Next');
   const findRunnerFilteredSearchBar = () => wrapper.findComponent(RunnerFilteredSearchBar);
-  const findNewInstanceRunnerButton = () => wrapper.findByText('New instance runner');
+  const findNewInstanceRunnerButton = () => wrapper.findByText('Create instance runner');
 
   const createComponent = ({
     props = {},
@@ -278,6 +278,7 @@ describe('AdminRunnersApp', () => {
     expect(runnerActions.props()).toEqual({
       runner,
       editUrl: runner.editAdminUrl,
+      size: 'medium',
     });
   });
 
@@ -493,6 +494,22 @@ describe('AdminRunnersApp', () => {
     createComponent();
     expect(findRunnerList().props('loading')).toBe(true);
     expect(findRunnerPagination().attributes('disabled')).toBeDefined();
+  });
+
+  describe('Bulk pause', () => {
+    describe('When runners are deleted', () => {
+      beforeEach(async () => {
+        await createComponent({ mountFn: mountExtended });
+      });
+      it('toast is shown', () => {
+        expect(showToast).toHaveBeenCalledTimes(0);
+
+        findRunnerList().vm.$emit('toggledPaused', { message: 'runners paused' });
+
+        expect(showToast).toHaveBeenCalledTimes(1);
+        expect(showToast).toHaveBeenCalledWith('runners paused');
+      });
+    });
   });
 
   describe('Bulk delete', () => {

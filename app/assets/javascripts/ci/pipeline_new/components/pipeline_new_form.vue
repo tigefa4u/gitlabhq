@@ -4,10 +4,8 @@ import * as Sentry from '~/sentry/sentry_browser_wrapper';
 import { visitUrl } from '~/lib/utils/url_utility';
 import { s__, __, n__ } from '~/locale';
 import { createAlert } from '~/alert';
-import glFeatureFlagsMixin from '~/vue_shared/mixins/gl_feature_flags_mixin';
 import SafeHtml from '~/vue_shared/directives/safe_html';
 import PipelineInputsForm from '~/ci/common/pipeline_inputs/pipeline_inputs_form.vue';
-import PipelineVariablesPermissionsMixin from '~/ci/mixins/pipeline_variables_permissions_mixin';
 import createPipelineMutation from '../graphql/mutations/create_pipeline.mutation.graphql';
 import RefsDropdown from './refs_dropdown.vue';
 import PipelineVariablesForm from './pipeline_variables_form.vue';
@@ -38,9 +36,9 @@ export default {
       import('ee_component/vue_shared/components/pipeline_account_verification_alert.vue'),
   },
   directives: { SafeHtml },
-  mixins: [glFeatureFlagsMixin(), PipelineVariablesPermissionsMixin],
   inject: [
     'canViewPipelineEditor',
+    'canSetPipelineVariables',
     'pipelineEditorPath',
     'pipelinesPath',
     'projectPath',
@@ -102,9 +100,6 @@ export default {
     identityVerificationRequiredError() {
       return this.error === __('Identity verification is required in order to run CI jobs');
     },
-    isPipelineInputsFeatureAvailable() {
-      return this.glFeatures.ciInputsForPipelines;
-    },
     isMaintainer() {
       return this.userRole?.toLowerCase() === this.$options.ROLE_MAINTAINER;
     },
@@ -146,7 +141,7 @@ export default {
               projectPath: this.projectPath,
               ref: this.refShortName,
               variables: this.pipelineVariables,
-              ...(this.isPipelineInputsFeatureAvailable && { inputs: this.pipelineInputs }),
+              inputs: this.pipelineInputs,
             },
           },
         });
@@ -260,13 +255,15 @@ export default {
         />
       </gl-form-group>
       <pipeline-inputs-form
-        v-if="isPipelineInputsFeatureAvailable"
+        emit-modified-only
+        preselect-all-inputs
         :project-path="projectPath"
         :query-ref="refQueryParam"
+        :empty-selection-text="s__('Pipeline|Select inputs to create a new pipeline.')"
         @update-inputs="handleInputsUpdated"
       />
       <pipeline-variables-form
-        v-if="canViewPipelineVariables"
+        v-if="canSetPipelineVariables"
         :file-params="fileParams"
         :is-maintainer="isMaintainer"
         :project-path="projectPath"

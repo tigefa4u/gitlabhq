@@ -21,12 +21,11 @@ An organization that's interested in using a software product may require an SBO
 
 If you're familiar with the GitLab package registry, you might wonder what the difference is between an SBOM and a [dependency list](../../application_security/dependency_list/_index.md). The following table highlights the key differences:
 
-| Differences | Dependency list | SBOM |
-|---|---|---|
-| **Scope** | Shows dependencies for individual projects. | Creates an inventory of all packages published across your group. |
-| **Direction** | Tracks what your projects depend on (incoming dependencies). | Tracks what your group publishes (outgoing packages). |
-| **Coverage** | Based on package manifests, like `package.json` or `pom.xml`. | Covers actual published artifacts in your package registry. |
-| **Format** | GitLab-specific feature. | Generates standard CycloneDX SBOMs that can be used with external tools. |
+| Differences   | Dependency list                                               | SBOM |
+|---------------|---------------------------------------------------------------|------|
+| **Scope**     | Shows dependencies for individual projects or groups.         | Creates an inventory of all packages published across your group. |
+| **Direction** | Tracks what your projects depend on (incoming dependencies).  | Tracks what your group publishes (outgoing packages). |
+| **Coverage**  | Based on package manifests, like `package.json` or `pom.xml`. | Covers actual published artifacts in your package registry. |
 
 ## What is CycloneDX?
 
@@ -528,7 +527,7 @@ If you experience memory issues:
 
 For optimal performance:
 
-- Use runners with at least 2GB of RAM.
+- Use runners with at least 2 GB of RAM.
 - Allow 5-10 minutes per 1,000 packages.
 - Increase the job timeout for groups with many packages.
 

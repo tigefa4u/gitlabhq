@@ -53,7 +53,6 @@ module Ci
     #                                                         is present in the commit body
     # @param [Boolean] save_on_errors                         Whether persisting an invalid pipeline when it encounters an
     #                                                         error during creation (e.g. invalid yaml)
-    # @param [Ci::TriggerRequest] trigger_request             The pipeline trigger triggers the pipeline creation.
     # @param [Ci::PipelineSchedule] schedule                  The pipeline schedule triggers the pipeline creation.
     # @param [MergeRequest] merge_request                     The merge request triggers the pipeline creation.
     # @param [Ci::ExternalPullRequest] external_pull_request  The external pull request triggers the pipeline creation.
@@ -66,7 +65,7 @@ module Ci
     # rubocop: disable Metrics/ParameterLists, Metrics/AbcSize
     def execute(
       source,
-      ignore_skip_ci: false, save_on_errors: true, trigger_request: nil, schedule: nil, merge_request: nil,
+      ignore_skip_ci: false, save_on_errors: true, schedule: nil, merge_request: nil,
       external_pull_request: nil, bridge: nil, inputs: {},
       **options, &block
     )
@@ -76,7 +75,7 @@ module Ci
 
       validate_options!(options)
 
-      command = Gitlab::Ci::Pipeline::Chain::Command.new(
+      @command = Gitlab::Ci::Pipeline::Chain::Command.new(
         source: source,
         origin_ref: params[:ref],
         checkout_sha: params[:checkout_sha],
@@ -84,7 +83,6 @@ module Ci
         before_sha: params[:before],          # The base SHA of the source branch (i.e merge_request.diff_base_sha).
         source_sha: params[:source_sha],      # The HEAD SHA of the source branch (i.e merge_request.diff_head_sha).
         target_sha: params[:target_sha],      # The HEAD SHA of the target branch.
-        trigger_request: trigger_request,
         schedule: schedule,
         merge_request: merge_request,
         external_pull_request: external_pull_request,
@@ -99,13 +97,13 @@ module Ci
         bridge: bridge,
         logger: @logger,
         partition_id: params[:partition_id],
-        inputs: ::Feature.enabled?(:ci_inputs_for_pipelines, project) ? inputs : {},
+        inputs: inputs,
         **extra_options(**options))
 
-      @pipeline.readonly! if command.readonly?
+      @pipeline.readonly! if @command.readonly?
 
       Gitlab::Ci::Pipeline::Chain::Sequence
-        .new(pipeline, command, SEQUENCE)
+        .new(pipeline, @command, SEQUENCE)
         .build!
 
       if pipeline.persisted?
@@ -131,7 +129,7 @@ module Ci
 
     ensure
       @logger.commit(pipeline: pipeline, caller: self.class.name)
-      @command_logger.commit(pipeline: pipeline, command: command) if command
+      @command_logger.commit(pipeline: pipeline, command: @command) if @command
     end
     # rubocop: enable Metrics/ParameterLists, Metrics/AbcSize
 
@@ -145,6 +143,10 @@ module Ci
       )
 
       ServiceResponse.success(payload: pipeline_creation_request['id'])
+    end
+
+    def yaml_processor_result
+      @command.yaml_processor_result
     end
 
     private

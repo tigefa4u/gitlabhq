@@ -2,7 +2,7 @@
 stage: Tenant Scale
 group: Organizations
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-title: Project features and permissions
+title: Project settings
 ---
 
 {{< details >}}
@@ -63,6 +63,12 @@ To toggle the availability of individual features in a project:
 1. Select **Save changes**.
 
 ## Turn off project analytics
+
+{{< alert type="note" >}}
+
+Turning off project analytics only removes the **Analyze** navigation item, but data is still being computed and available through the respective API endpoints.
+
+{{< /alert >}}
 
 By default, project analytics are displayed under the **Analyze** item in the left sidebar.
 To turn this feature off and remove the **Analyze** item from the left sidebar:

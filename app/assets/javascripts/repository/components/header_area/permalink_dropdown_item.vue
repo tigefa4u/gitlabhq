@@ -2,12 +2,12 @@
 import Vue from 'vue';
 import { GlDisclosureDropdownItem, GlToast } from '@gitlab/ui';
 import { __ } from '~/locale';
-import { keysFor, PROJECT_FILES_GO_TO_PERMALINK } from '~/behaviors/shortcuts/keybindings';
+import { InternalEvents } from '~/tracking';
+import { keysFor, PROJECT_FILES_COPY_FILE_PERMALINK } from '~/behaviors/shortcuts/keybindings';
 import { Mousetrap } from '~/lib/mousetrap';
 import { shouldDisableShortcuts } from '~/behaviors/shortcuts/shortcuts_toggle';
-import { getBaseURL, relativePathToAbsolute } from '~/lib/utils/url_utility';
-import { lineState } from '~/blob/state';
-import { getPageParamValue, getPageSearchString } from '~/blob/utils';
+import { hashState, updateHash } from '~/blob/state';
+import { getAbsolutePermalinkPath } from './utils';
 
 Vue.use(GlToast);
 
@@ -15,43 +15,58 @@ export default {
   components: {
     GlDisclosureDropdownItem,
   },
+  mixins: [InternalEvents.mixin()],
   props: {
     permalinkPath: {
       type: String,
       required: true,
     },
+    source: {
+      type: String,
+      required: true,
+      validator: (value) => ['blob', 'repository'].includes(value),
+    },
+  },
+  data() {
+    return {
+      mousetrap: null,
+    };
   },
   computed: {
     permalinkShortcutKey() {
-      return keysFor(PROJECT_FILES_GO_TO_PERMALINK)[0];
+      return keysFor(PROJECT_FILES_COPY_FILE_PERMALINK)[0];
     },
     shortcutsDisabled() {
       return shouldDisableShortcuts();
     },
     absolutePermalinkPath() {
-      const baseAbsolutePath = relativePathToAbsolute(this.permalinkPath, getBaseURL());
-      if (lineState.currentLineNumber) {
-        const page = getPageParamValue(lineState.currentLineNumber);
-        const searchString = getPageSearchString(baseAbsolutePath, page);
-        return `${baseAbsolutePath}${searchString}#L${lineState.currentLineNumber}`;
-      }
-      return baseAbsolutePath;
+      return getAbsolutePermalinkPath(this.permalinkPath, hashState.currentHash);
     },
   },
   mounted() {
-    Mousetrap.bind(keysFor(PROJECT_FILES_GO_TO_PERMALINK), this.triggerCopyPermalink);
+    this.mousetrap = new Mousetrap();
+    this.mousetrap.bind(keysFor(PROJECT_FILES_COPY_FILE_PERMALINK), this.triggerCopyPermalink);
+    window.addEventListener('hashchange', this.onHashChange);
   },
   beforeDestroy() {
-    Mousetrap.unbind(keysFor(PROJECT_FILES_GO_TO_PERMALINK));
+    this.mousetrap.unbind(keysFor(PROJECT_FILES_COPY_FILE_PERMALINK));
+    window.removeEventListener('hashchange', this.onHashChange);
   },
   methods: {
+    onHashChange() {
+      updateHash(window.location.hash || '');
+    },
     triggerCopyPermalink() {
       const buttonElement = this.$refs.copyPermalinkButton.$el;
       buttonElement.click();
-      this.onCopyPermalink();
+      this.onCopyPermalink('shortcut');
     },
-    onCopyPermalink() {
+    onCopyPermalink(method) {
       this.$toast.show(__('Permalink copied to clipboard.'));
+      this.trackEvent('click_permalink_button_in_overflow_menu', {
+        label: method,
+        property: this.source,
+      });
     },
   },
 };
@@ -64,7 +79,7 @@ export default {
     data-testid="permalink"
     :data-clipboard-text="absolutePermalinkPath"
     data-clipboard-handle-tooltip="false"
-    @action="onCopyPermalink"
+    @action="onCopyPermalink('click')"
   >
     <template #list-item>
       <span class="gl-flex gl-items-center gl-justify-between">

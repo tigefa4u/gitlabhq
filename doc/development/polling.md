@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Polling with ETag caching
 ---
 
@@ -27,7 +27,7 @@ Instead you should use polling mechanism with ETag caching in Redis.
    - requests should return status code 304
    - there should be no SQL queries logged in `log/development.log`
 
-## How it works
+## How polling with ETag caching works
 
 Cache Miss:
 

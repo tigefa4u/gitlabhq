@@ -17,10 +17,6 @@ module WikiHelper
     add_to_breadcrumbs(_('Wiki'), wiki_path(page.wiki))
   end
 
-  def link_to_wiki_page(page, **options)
-    link_to page.human_title, wiki_page_path(page.wiki, page), **options
-  end
-
   def wiki_sidebar_toggle_button
     render Pajamas::ButtonComponent.new(
       icon: 'chevron-double-lg-left',
@@ -76,6 +72,17 @@ module WikiHelper
       icon: "sort-#{icon_class}",
       button_options: { class: link_class, title: title }
     )
+  end
+
+  def wiki_404_messages
+    title = s_("Wiki404|This page doesn't exist")
+    writable_body = s_("Wiki404|Would you like to create it?")
+    readonly_body = s_('Wiki404|Use the sidebar to find a different page.')
+
+    {
+      writable: { title: title, body: writable_body },
+      readonly: { title: title, body: readonly_body }
+    }
   end
 
   def wiki_empty_state_messages(wiki)

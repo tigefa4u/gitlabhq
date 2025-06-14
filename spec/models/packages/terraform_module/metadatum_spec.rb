@@ -72,11 +72,12 @@ RSpec.describe Packages::TerraformModule::Metadatum, type: :model, feature_categ
       using RSpec::Parameterized::TableSyntax
 
       where(:version, :valid, :semver_major, :semver_minor, :semver_patch, :semver_prerelease) do
-        '1'          | false | nil | nil | nil | nil
-        '1.2'        | false | nil | nil | nil | nil
-        '1.2.3'      | true  | 1   | 2   | 3   | nil
-        '1.2.3-beta' | true  | 1   | 2   | 3   | 'beta'
-        '1.2.3.beta' | false | nil | nil | nil | nil
+        '1'                | false | nil | nil | nil          | nil
+        '1.2'              | false | nil | nil | nil          | nil
+        '1.2.3'            | true  | 1   | 2   | 3            | nil
+        '1.2.3-beta'       | true  | 1   | 2   | 3            | 'beta'
+        '1.2.3.beta'       | false | nil | nil | nil          | nil
+        '0.0.202503162134' | true  | 0   | 0   | 202503162134 | nil
       end
 
       with_them do
@@ -96,17 +97,11 @@ RSpec.describe Packages::TerraformModule::Metadatum, type: :model, feature_categ
         end
       end
 
-      context 'for semver_patch_convert_to_bigint' do
-        let(:metadatum) { create(:terraform_module_metadatum, semver: '1.2.3') }
-
-        subject do
-          metadatum.connection.execute(<<~SQL)
-            SELECT semver_patch_convert_to_bigint FROM packages_terraform_module_metadata WHERE package_id = #{metadatum.package_id}
-          SQL
-          .first['semver_patch_convert_to_bigint']
+      context 'when inserting bigint patch' do
+        it 'saves the record' do
+          expect { create(:terraform_module_metadatum, semver: '1.2.202503162134') }
+            .to change { described_class.count }.by(1)
         end
-
-        it { is_expected.to eq(metadatum.semver_patch) }
       end
     end
 
