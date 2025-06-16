@@ -18,8 +18,6 @@ module Ci
       belongs_to :project
       has_many :components, class_name: 'Ci::Catalog::Resources::Component', foreign_key: :catalog_resource_id,
         inverse_of: :catalog_resource
-      has_many :component_usages, class_name: 'Ci::Catalog::Resources::Components::Usage',
-        foreign_key: :catalog_resource_id, inverse_of: :catalog_resource
       has_many :versions, class_name: 'Ci::Catalog::Resources::Version', foreign_key: :catalog_resource_id,
         inverse_of: :catalog_resource
       has_many :sync_events, class_name: 'Ci::Catalog::Resources::SyncEvent', foreign_key: :catalog_resource_id,
@@ -27,7 +25,7 @@ module Ci
       has_many :component_last_usages, class_name: 'Ci::Catalog::Resources::Components::LastUsage',
         foreign_key: :catalog_resource_id, inverse_of: :catalog_resource
 
-      enum verification_level: VerifiedNamespace::VERIFICATION_LEVELS
+      enum :verification_level, VerifiedNamespace::VERIFICATION_LEVELS
 
       scope :for_projects, ->(project_ids) { where(project_id: project_ids) }
 
@@ -65,9 +63,9 @@ module Ci
       scope :order_by_last_30_day_usage_count_desc, -> { reorder(last_30_day_usage_count: :desc) }
       scope :order_by_last_30_day_usage_count_asc, -> { reorder(last_30_day_usage_count: :asc) }
 
-      delegate :avatar_path, :star_count, :full_path, to: :project
+      delegate :avatar_path, :star_count, :full_path, :archived, to: :project
 
-      enum state: { unpublished: 0, published: 1 }
+      enum :state, { unpublished: 0, published: 1 }
 
       before_create :sync_with_project
 

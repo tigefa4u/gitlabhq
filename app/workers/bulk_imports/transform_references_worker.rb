@@ -17,7 +17,7 @@ module BulkImports
 
       project = tracker.entity.project
 
-      klass.constantize.where(id: object_ids, project: project).find_each do |object|
+      klass.constantize.where(id: object_ids, project_id: project.id).find_each do |object|
         transform_and_save(object)
       end
     end
@@ -91,6 +91,8 @@ module BulkImports
         next unless parsed_url.path&.start_with?("/#{source_full_path}")
 
         array << [url, new_url(object, parsed_url)]
+      rescue URI::InvalidURIError
+        # Some strings like http://[127.0.0.1] are captured by URI.extract, but fail to parse. We can ignore these cases
       end
     end
 

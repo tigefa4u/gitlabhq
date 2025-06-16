@@ -47,6 +47,9 @@ module API
         end
       end
 
+      # It is always enabled since 18.0
+      expose :marked_for_deletion_on
+
       expose :root_storage_statistics, using: Entities::Namespace::RootStorageStatistics,
         if: ->(group, opts) {
               expose_root_storage_statistics?(group, opts)

@@ -198,8 +198,8 @@ The permissions of deployments can be illustrated in the following table:
 
 | Environment | Developer  | Operator | Category |
 |-------------|------------|----------|----------|
-| Development | Allowed    | Allowed  | Lower environment  |
-| Testing     | Allowed    | Allowed  | Lower environment  |
+| Development | Allowed    | Allowed  | Lower environment |
+| Testing     | Allowed    | Allowed  | Lower environment |
 | Staging     | Disallowed | Allowed  | Higher environment |
 | Production  | Disallowed | Allowed  | Higher environment |
 
@@ -241,7 +241,7 @@ configured:
   deployment ruleset.
 - Developers should be given no more than the Developer role
   for the top-level group, or explicitly given the Owner role for a child project.
-  They do *not* have access to the CI/CD configurations in the
+  They do not have access to the CI/CD configurations in the
   top-level group, so operators can ensure that the critical configuration won't
   be accidentally changed by the developers.
 - For subgroups and child projects:

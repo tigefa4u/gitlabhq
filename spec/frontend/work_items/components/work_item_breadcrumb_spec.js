@@ -1,7 +1,7 @@
 import { shallowMount } from '@vue/test-utils';
 import { GlBreadcrumb } from '@gitlab/ui';
 import WorkItemBreadcrumb from '~/work_items/components/work_item_breadcrumb.vue';
-import { WORK_ITEM_TYPE_ENUM_EPIC } from '~/work_items/constants';
+import { WORK_ITEM_TYPE_NAME_EPIC } from '~/work_items/constants';
 
 describe('WorkItemBreadcrumb', () => {
   let wrapper;
@@ -14,16 +14,17 @@ describe('WorkItemBreadcrumb', () => {
     $route = {},
     listPath = '/epics',
     isGroup = true,
-    workItemsViewPreference = false,
     workItemsAlpha = false,
+    workItemPlanningView = false,
+    props = {},
   } = {}) => {
     wrapper = shallowMount(WorkItemBreadcrumb, {
       provide: {
         workItemType,
         glFeatures: {
           workItemEpicsList,
-          workItemsViewPreference,
           workItemsAlpha,
+          workItemPlanningView,
         },
         listPath,
         isGroup,
@@ -31,12 +32,13 @@ describe('WorkItemBreadcrumb', () => {
       mocks: {
         $route,
       },
+      propsData: { staticBreadcrumbs: [], ...props },
     });
   };
 
   describe('when the workspace is a group', () => {
     it('renders a href to the legacy epics page if the workItemEpicsList feature is disabled', () => {
-      createComponent({ workItemType: WORK_ITEM_TYPE_ENUM_EPIC, workItemEpicsList: false });
+      createComponent({ workItemType: WORK_ITEM_TYPE_NAME_EPIC, workItemEpicsList: false });
 
       expect(findBreadcrumb().props('items')).toEqual([
         {
@@ -46,8 +48,8 @@ describe('WorkItemBreadcrumb', () => {
       ]);
     });
 
-    it('renders root `Work items` breadcrumb on work items list page', () => {
-      createComponent();
+    it('renders root `Work items` breadcrumb on work items list page when `workItemPlanningView` feature is enabled', () => {
+      createComponent({ workItemPlanningView: true });
 
       expect(findBreadcrumb().props('items')).toEqual([
         {
@@ -60,8 +62,22 @@ describe('WorkItemBreadcrumb', () => {
       ]);
     });
 
+    it('renders root `Issues` breadcrumb on work items list page', () => {
+      createComponent();
+
+      expect(findBreadcrumb().props('items')).toEqual([
+        {
+          text: 'Issues',
+          to: {
+            name: 'workItemList',
+            query: undefined,
+          },
+        },
+      ]);
+    });
+
     it('renders root `Epics` breadcrumb on epics list page', () => {
-      createComponent({ workItemType: WORK_ITEM_TYPE_ENUM_EPIC });
+      createComponent({ workItemType: WORK_ITEM_TYPE_NAME_EPIC });
 
       expect(findBreadcrumb().props('items')).toEqual([
         {
@@ -76,27 +92,9 @@ describe('WorkItemBreadcrumb', () => {
   });
 
   describe('when the workspace is a project', () => {
-    describe('when work item view preference FF is disabled', () => {
+    describe('when in issues mode', () => {
       it('renders root `Issues` breadcrumb with href on work items list page', () => {
         createComponent({ isGroup: false, listPath: '/issues', workItemEpicsList: false });
-
-        expect(findBreadcrumb().props('items')).toEqual([
-          {
-            text: 'Issues',
-            href: '/issues',
-          },
-        ]);
-      });
-    });
-
-    describe('when work item view preference FF is enabled', () => {
-      it('renders root breadcrumb with href if user turned work item view off', () => {
-        createComponent({
-          isGroup: false,
-          listPath: '/issues',
-          workItemEpicsList: false,
-          workItemsViewPreference: true,
-        });
 
         expect(findBreadcrumb().props('items')).toEqual([
           {
@@ -113,7 +111,6 @@ describe('WorkItemBreadcrumb', () => {
           isGroup: false,
           listPath: '/issues',
           workItemEpicsList: false,
-          workItemsViewPreference: true,
           workItemsAlpha: true,
         });
 
@@ -135,7 +132,6 @@ describe('WorkItemBreadcrumb', () => {
           isGroup: false,
           listPath: '/issues',
           workItemEpicsList: false,
-          workItemsViewPreference: true,
           workItemsAlpha: false,
         });
 
@@ -155,6 +151,21 @@ describe('WorkItemBreadcrumb', () => {
     expect(findBreadcrumb().props('items')).toEqual(
       expect.arrayContaining([{ text: 'New', to: 'new' }]),
     );
+  });
+
+  it('combines static and dynamic breadcrumbs', () => {
+    createComponent({
+      $route: { name: 'workItem', params: { iid: '1' }, path: '/1' },
+      props: {
+        staticBreadcrumbs: [{ text: 'Static', href: '/static' }],
+      },
+    });
+
+    expect(findBreadcrumb().props('items')).toEqual([
+      { text: 'Static', href: '/static' },
+      { text: 'Issues', to: { name: 'workItemList', query: undefined } },
+      { text: '#1', to: '/1' },
+    ]);
   });
 
   it('renders work item iid breadcrumb on work item detail page', () => {

@@ -46,7 +46,7 @@ Only users with at least the [Maintainer role](../../user/permissions.md) for th
 
 {{< /alert >}}
 
-## How it works
+## How web terminals work
 
 A detailed overview of the architecture of web terminals and how they work
 can be found in [this document](https://gitlab.com/gitlab-org/gitlab-workhorse/blob/master/doc/channel.md).
@@ -113,7 +113,7 @@ If you self-compiled your installation, you may need to make some changes to you
 for more details.
 
 To disable web terminal support in GitLab, stop passing
-the `Connection` and `Upgrade` hop-by-hop headers in the *first* HTTP reverse
+the `Connection` and `Upgrade` hop-by-hop headers in the first HTTP reverse
 proxy in the chain. For most users, this is the NGINX server bundled with
 Linux package installations. In this case, you need to:
 
@@ -122,7 +122,7 @@ Linux package installations. In this case, you need to:
   `Connection` and `Upgrade` lines.
 
 For your own load balancer, just reverse the configuration changes recommended
-by the above guides.
+by the previously listed guides.
 
 When these headers are not passed through, Workhorse returns a
 `400 Bad Request` response to users attempting to use a web terminal. In turn,

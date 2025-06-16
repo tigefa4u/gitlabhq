@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# This example group is deprecated in favor of composable matchers, it should not be used in any new code.
+# https://gitlab.com/gitlab-org/gitlab/-/issues/536223
+
 # Requires a context containing:
 # - subject
 # - event
@@ -9,7 +12,6 @@
 # - namespace
 # - category
 # - additional_properties
-# - event_attribute_overrides - is used when its necessary to override the attributes available in parent context.
 #
 # [Legacy] If present in the context, the following will be respected by the shared example but are discouraged:
 # - label
@@ -57,7 +59,7 @@ RSpec.shared_examples 'internal event tracking' do
           value: try(:value)
         }.compact
       }
-    }.merge(try(:event_attribute_overrides) || {})
+    }
 
     expect { subject }
       .to trigger_internal_events(event)

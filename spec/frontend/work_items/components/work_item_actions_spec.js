@@ -1,7 +1,6 @@
-import { GlDisclosureDropdown, GlModal, GlDisclosureDropdownItem } from '@gitlab/ui';
+import { GlDisclosureDropdown, GlModal, GlDisclosureDropdownItem, GlLoadingIcon } from '@gitlab/ui';
 import Vue, { nextTick } from 'vue';
 import VueApollo from 'vue-apollo';
-import namespaceWorkItemTypesQueryResponse from 'test_fixtures/graphql/work_items/namespace_work_item_types.query.graphql.json';
 
 import createMockApollo from 'helpers/mock_apollo_helper';
 import { stubComponent } from 'helpers/stub_component';
@@ -31,10 +30,11 @@ import namespaceWorkItemTypesQuery from '~/work_items/graphql/namespace_work_ite
 import convertWorkItemMutation from '~/work_items/graphql/work_item_convert.mutation.graphql';
 
 import {
+  convertWorkItemMutationErrorResponse,
   convertWorkItemMutationResponse,
+  namespaceWorkItemTypesQueryResponse,
   updateWorkItemMutationResponse,
   updateWorkItemNotificationsMutationResponse,
-  convertWorkItemMutationErrorResponse,
 } from 'ee_else_ce_jest/work_items/mock_data';
 
 jest.mock('~/lib/utils/common_utils');
@@ -91,6 +91,7 @@ describe('WorkItemActions component', () => {
   const findNotificationsToggle = () => wrapper.findByTestId('notifications-toggle-form');
   const findMoveButton = () => wrapper.findByTestId('move-action');
   const findMoveModal = () => wrapper.findComponent(MoveWorkItemModal);
+  const findLoadingIcon = () => wrapper.findComponent(GlLoadingIcon);
 
   const modalShowSpy = jest.fn();
   const $toast = {
@@ -144,6 +145,7 @@ describe('WorkItemActions component', () => {
     parentId = null,
     projectId = 'gid://gitlab/Project/1',
     namespaceFullName = 'GitLab.org / GitLab Test',
+    updateInProgress = false,
   } = {}) => {
     wrapper = shallowMountExtended(WorkItemActions, {
       isLoggedIn: isLoggedIn(),
@@ -183,6 +185,7 @@ describe('WorkItemActions component', () => {
         namespaceFullName,
         showSidebar: true,
         truncationEnabled: true,
+        updateInProgress,
       },
       mocks: {
         $toast,
@@ -272,7 +275,7 @@ describe('WorkItemActions component', () => {
         text: 'Copy issue email address',
       },
       {
-        divider: true,
+        group: true,
       },
       {
         testId: 'report-abuse-action',
@@ -382,12 +385,14 @@ describe('WorkItemActions component', () => {
       },
     );
 
-    it('emits `toggleWorkItemConfidentiality` event when clicked', () => {
+    it('emits `toggleWorkItemConfidentiality` event when clicked', async () => {
       createComponent();
 
       findConfidentialityToggleButton().vm.$emit('action');
 
       expect(wrapper.emitted('toggleWorkItemConfidentiality')[0]).toEqual([true]);
+
+      await nextTick();
       expect(toast).toHaveBeenCalledWith('Confidentiality turned on.');
     });
 
@@ -401,6 +406,12 @@ describe('WorkItemActions component', () => {
       expect(findConfidentialityToggleButton().props('item')).toMatchObject({
         extraAttrs: { disabled: true },
       });
+    });
+
+    it('shows loading icon badge when the work item is confidential', () => {
+      createComponent({ updateInProgress: true });
+
+      expect(findLoadingIcon().exists()).toBe(true);
     });
   });
 

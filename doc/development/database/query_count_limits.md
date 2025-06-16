@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Query Count Limits
 ---
 
@@ -27,12 +27,12 @@ than 100 SQL queries and no exceptions are made for this rule.
 
 ## Pipeline Stability
 
-If specs start getting a query limit error in default branch pipelines, please follow the [instruction](#disable-query-limiting) to disable the query limit.
+If specs start getting a query limit error in default branch pipelines, follow the [instruction](#disable-query-limiting) to disable the query limit.
 Disabling the limit should always associate and prioritize an issue, so the excessive amount of queries can be investigated.
 
 ## Disable query limiting
 
-In the event that you _have_ to disable query limits for a controller, you must first
+In the event that you have to disable query limits for a controller, you must first
 create an issue. This issue should (preferably in the title) mention the
 controller or endpoint and include the appropriate labels (`database`,
 `performance`, and at least a team specific label such as `Discussion`).

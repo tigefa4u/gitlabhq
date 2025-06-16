@@ -1,7 +1,7 @@
 ---
 stage: Monitor
 group: Analytics Instrumentation
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Metrics instrumentation guide
 ---
 
@@ -22,7 +22,7 @@ For a video tutorial, see the [Adding Service Ping metric via instrumentation cl
 - **Hardening**:
   Hardening a method is the process that ensures the method fails safe, returning a fallback value like -1.
 
-## How it works
+## How metrics instrumentation works
 
 A metric definition has the [`instrumentation_class`](metrics_dictionary.md) field, which can be set to a class.
 

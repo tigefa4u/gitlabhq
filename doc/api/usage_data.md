@@ -12,7 +12,7 @@ title: Service Ping API
 
 {{< /details >}}
 
-Use this API to interact with the GitLab Service Ping process. For more information, see the [Service Ping development guidelines](../development/internal_analytics/service_ping/_index.md).
+Use this API to interact with the GitLab Service Ping process.
 
 ## Export Service Ping data
 
@@ -26,7 +26,7 @@ Requires a personal access token with `read_service_ping` scope.
 
 Returns the JSON payload collected in Service Ping. If no payload data is available in the application cache, it returns empty response.
 If payload data is empty, make sure the [Service Ping feature is enabled](../administration/settings/usage_statistics.md#enable-or-disable-service-ping) and
-wait for the cron job to be executed, or [generate payload data manually](../development/internal_analytics/service_ping/troubleshooting.md#generate-service-ping).
+wait for the cron job to be executed, or generate payload data manually.
 
 Example request:
 
@@ -97,8 +97,6 @@ Example response:
 
 ## Export Service Ping SQL queries
 
-This action is behind the `usage_data_queries_api` feature flag and is available only for the GitLab instance [Administrator](../user/permissions.md) users.
-
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/57016) in GitLab 13.11.
@@ -106,7 +104,9 @@ This action is behind the `usage_data_queries_api` feature flag and is available
 
 {{< /history >}}
 
-Return all of the raw SQL queries used to compute Service Ping.
+Return all of the raw SQL queries used to compute Service Ping. This action is behind the
+`usage_data_queries_api` feature flag and is available only for the GitLab instance
+[Administrator](../user/permissions.md) users.
 
 ```plaintext
 GET /usage_data/queries
@@ -167,8 +167,6 @@ Example response:
 
 ## UsageDataNonSqlMetrics API
 
-This action is behind the `usage_data_non_sql_metrics` feature flag and is available only for the GitLab instance [Administrator](../user/permissions.md) users.
-
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/57050) in GitLab 13.11.
@@ -176,7 +174,9 @@ This action is behind the `usage_data_non_sql_metrics` feature flag and is avail
 
 {{< /history >}}
 
-Return all non-SQL metrics data used in the Service ping.
+Return all non-SQL metrics data used in the Service ping. This action is behind the
+`usage_data_non_sql_metrics` feature flag and is available only for the GitLab instance
+[Administrator](../user/permissions.md) users.
 
 Example request:
 

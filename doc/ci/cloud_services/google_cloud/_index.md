@@ -28,7 +28,7 @@ and Google Cloud. For more information on using OIDC with GitLab, read
 [Connect to cloud services](../_index.md).
 
 This tutorial assumes you have a Google Cloud account and a Google Cloud project.
-Your account must have at least the **Workload Identity Pool Admin** permission
+Your account must have at least the **workload identity pool Admin** permission
 on the Google Cloud project.
 
 {{< alert type="note" >}}
@@ -40,32 +40,32 @@ see [How OIDC can simplify authentication of GitLab CI/CD pipelines with Google 
 
 To complete this tutorial:
 
-1. [Create the Google Cloud Workload Identity Pool](#create-the-google-cloud-workload-identity-pool).
-1. [Create a Workload Identity Provider](#create-a-workload-identity-provider).
+1. [Create the Google Cloud workload identity pool](#create-the-google-cloud-workload-identity-pool).
+1. [Create a workload identity provider](#create-a-workload-identity-provider).
 1. [Grant permissions for service account impersonation](#grant-permissions-for-service-account-impersonation).
 1. [Retrieve a temporary credential](#retrieve-a-temporary-credential).
 
-## Create the Google Cloud Workload Identity Pool
+## Create the Google Cloud workload identity pool
 
-[Create a new Google Cloud Workload Identity Pool](https://cloud.google.com/iam/docs/workload-identity-federation-with-other-clouds#create_the_workload_identity_pool_and_provider) with the following options:
+[Create a new Google Cloud workload identity pool](https://cloud.google.com/iam/docs/workload-identity-federation-with-other-clouds#create_the_workload_identity_pool_and_provider) with the following options:
 
-- **Name**: Human-friendly name for the Workload Identity Pool, such as `GitLab`.
-- **Pool ID**: Unique ID in the Google Cloud project for the Workload Identity Pool,
+- **Name**: Human-friendly name for the workload identity pool, such as `GitLab`.
+- **Pool ID**: Unique ID in the Google Cloud project for the workload identity pool,
   such as `gitlab`. This value is used to refer to the pool and appears in URLs.
 - **Description**: Optional. A description of the pool.
 - **Enabled Pool**: Ensure this option is `true`.
 
-We recommend creating a single _pool_ per GitLab installation per Google Cloud project. If you have multiple GitLab repositories and CI/CD jobs on the same GitLab instance, they can authenticate using different _providers_ against the same _pool_.
+We recommend creating a single pool per GitLab installation per Google Cloud project. If you have multiple GitLab repositories and CI/CD jobs on the same GitLab instance, they can authenticate using different providers against the same pool.
 
-## Create a Workload Identity Provider
+## Create a workload identity provider
 
-[Create a new Google Cloud Workload Identity Provider](https://cloud.google.com/iam/docs/workload-identity-federation-with-other-clouds#create_the_workload_identity_pool_and_provider)
-inside the Workload Identity Pool created in the previous step, using the following options:
+[Create a new Google Cloud workload identity provider](https://cloud.google.com/iam/docs/workload-identity-federation-with-other-clouds#create_the_workload_identity_pool_and_provider)
+inside the workload identity pool created in the previous step, using the following options:
 
 - **Provider type**: OpenID Connect (OIDC).
-- **Provider name**: Human-friendly name for the Workload Identity Provider,
+- **Provider name**: Human-friendly name for the workload identity provider,
   such as `gitlab/gitlab`.
-- **Provider ID**: Unique ID in the pool for the Workload Identity Provider,
+- **Provider ID**: Unique ID in the pool for the workload identity provider,
   such as `gitlab-gitlab`. This value is used to refer to the provider, and appears in URLs.
 - **Issuer (URL)**: The address of your GitLab instance, such as `https://gitlab.com/` or
   `https://gitlab.example.com/`.
@@ -77,7 +77,7 @@ inside the Workload Identity Pool created in the previous step, using the follow
   - The address must not end in a trailing slash.
 - **Provider attributes mapping**: Create the following mappings, where `attribute.X` is the
   name of the attribute to be included as a claim in the Google token, and `assertion.X`
-  is the value to extract from the [GitLab claim](../_index.md#how-it-works):
+  is the value to extract from the [GitLab claim](../_index.md#id-token-authentication-for-cloud-services):
 
   | Attribute (on Google) | Assertion (from GitLab) |
   | --- | --- |
@@ -98,9 +98,9 @@ For projects hosted on GitLab.com, GCP requires you to
 
 ## Grant permissions for Service Account impersonation
 
-Creating the Workload Identity Pool and Workload Identity Provider defines the _authentication_
+Creating the workload identity pool and workload identity provider defines the authentication
 into Google Cloud. At this point, you can authenticate from GitLab CI/CD job into Google Cloud.
-However, you have no permissions on Google Cloud (_authorization_).
+However, you have no permissions on Google Cloud (authorization).
 
 To grant your GitLab CI/CD job permissions on Google Cloud, you must:
 
@@ -111,9 +111,9 @@ To grant your GitLab CI/CD job permissions on Google Cloud, you must:
    your use case. In general, grant this service account the permissions on your Google Cloud
    project and resources you want your GitLab CI/CD job to be able to use. For example, if you needed to upload a file to a Google Cloud Storage bucket in your GitLab CI/CD job, you would grant this Service Account the `roles/storage.objectCreator` role on your Cloud Storage bucket.
 1. [Grant the external identity permissions](https://cloud.google.com/iam/docs/workload-identity-federation-with-other-clouds#impersonate)
-   to impersonate that Service Account. This step enables a GitLab CI/CD job to _authorize_
+   to impersonate that Service Account. This step enables a GitLab CI/CD job to authorize
    to Google Cloud, via Service Account impersonation. This step grants an IAM permission
-   _on the Service Account itself_, giving the external identity permissions to act as that
+   on the Service Account itself, giving the external identity permissions to act as that
    service account. External identities are expressed using the `principalSet://` protocol.
 
 Much like the previous step, this step depends heavily on your desired configuration.
@@ -127,7 +127,7 @@ principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workl
 ```
 
 where `PROJECT_NUMBER` is your Google Cloud project number, and `POOL_ID` is the
-ID (not name) of the Workload Identity Pool created in the first section.
+ID (not name) of the workload identity pool created in the first section.
 
 This configuration also assumes you added `user_login` as an attribute mapped from
 the assertion in the previous section.
@@ -174,8 +174,8 @@ FEDERATED_TOKEN="$(curl --fail "https://sts.googleapis.com/v1/token" \
 Where:
 
 - `PROJECT_NUMBER` is your Google Cloud project number (not name).
-- `POOL_ID` is the ID of the Workload Identity Pool created in the first section.
-- `PROVIDER_ID` is the ID of the Workload Identity Provider created in the second section.
+- `POOL_ID` is the ID of the workload identity pool created in the first section.
+- `PROVIDER_ID` is the ID of the workload identity provider created in the second section.
 - `GITLAB_OIDC_TOKEN` is an OIDC [ID token](../../yaml/_index.md#id_tokens).
 
 You can then use the resulting federated token to impersonate the service account created

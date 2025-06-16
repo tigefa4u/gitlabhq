@@ -201,7 +201,9 @@ class UsersController < ApplicationController
     rescue StandardError
       Date.today
     end
+
     @events = contributions_calendar.events_by_date(@calendar_date).map(&:present)
+    Events::RenderService.new(current_user).execute(@events)
 
     render 'calendar_activities', layout: false
   end
@@ -292,7 +294,7 @@ class UsersController < ApplicationController
 
   def load_groups
     groups = JoinedGroupsFinder.new(user).execute(current_user)
-    @groups = groups.page(params[:page]).without_count
+    @groups = groups.with_namespace_details.page(params[:page]).without_count
 
     prepare_groups_for_rendering(@groups)
   end

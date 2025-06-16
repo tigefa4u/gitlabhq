@@ -3,18 +3,23 @@ package dependencyproxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"gitlab.com/gitlab-org/labkit/log"
 
+	"gitlab.com/gitlab-org/gitlab/workhorse/internal/metrics"
+
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/api"
+	"gitlab.com/gitlab-org/gitlab/workhorse/internal/forwardheaders"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/helper/fail"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/senddata"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/transport"
@@ -35,9 +40,9 @@ var defaultTransportOptions = []transport.Option{
 }
 
 type cacheKey struct {
-	ssrfFilter     bool
-	allowLocalhost bool
-	allowedURIs    string
+	ssrfFilter       bool
+	allowLocalhost   bool
+	allowedEndpoints string
 }
 
 var httpClients sync.Map
@@ -49,13 +54,14 @@ type Injector struct {
 }
 
 type entryParams struct {
-	URL             string
-	Headers         http.Header
-	ResponseHeaders http.Header
-	UploadConfig    uploadConfig
-	SSRFFilter      bool
-	AllowLocalhost  bool
-	AllowedURIs     []string
+	URL                              string
+	Headers                          http.Header
+	ResponseHeaders                  http.Header
+	UploadConfig                     uploadConfig
+	SSRFFilter                       bool
+	AllowLocalhost                   bool
+	AllowedEndpoints                 []string
+	RestrictForwardedResponseHeaders forwardheaders.Params
 }
 
 type uploadConfig struct {
@@ -119,6 +125,11 @@ func (p *Injector) SetUploadHandler(uploadHandler upload.BodyUploadHandler) {
 
 // Inject performs the injection of dependencies
 func (p *Injector) Inject(w http.ResponseWriter, r *http.Request, sendData string) {
+	// Get the tracker from context and set flags
+	if tracker, ok := metrics.FromContext(r.Context()); ok {
+		tracker.SetFlag(metrics.KeyFetchedExternalURL, strconv.FormatBool(true))
+	}
+
 	params, err := p.unpackParams(sendData)
 	if err != nil {
 		fail.Request(w, r, err)
@@ -160,8 +171,7 @@ func (p *Injector) Inject(w http.ResponseWriter, r *http.Request, sendData strin
 	}
 
 	forwardHeaders(dependencyResponse.Header, saveFileRequest)
-
-	p.forwardHeadersToResponse(w, dependencyResponse.Header, params.ResponseHeaders)
+	params.RestrictForwardedResponseHeaders.ForwardResponseHeaders(w, dependencyResponse, []string{}, params.ResponseHeaders)
 
 	// workhorse hijack overwrites the Content-Type header, but we need this header value
 	saveFileRequest.Header.Set("Workhorse-Proxy-Content-Type", dependencyResponse.Header.Get("Content-Type"))
@@ -184,9 +194,14 @@ func (p *Injector) Inject(w http.ResponseWriter, r *http.Request, sendData strin
 
 func handleFetchError(w http.ResponseWriter, r *http.Request, err error) {
 	status := http.StatusBadGateway
-	if os.IsTimeout(err) {
+	var allowedIPError *transport.AllowedIPError
+
+	if errors.As(err, &allowedIPError) {
+		status = http.StatusForbidden
+	} else if os.IsTimeout(err) {
 		status = http.StatusGatewayTimeout
 	}
+
 	fail.Request(w, r, err, fail.WithStatus(status))
 }
 
@@ -232,17 +247,6 @@ func (p *Injector) newUploadRequest(ctx context.Context, params *entryParams, or
 	}
 
 	return request, nil
-}
-
-func (p *Injector) forwardHeadersToResponse(w http.ResponseWriter, headers ...http.Header) {
-	for _, h := range headers {
-		for key, values := range h {
-			w.Header().Del(key)
-			for _, v := range values {
-				w.Header().Add(key, v)
-			}
-		}
-	}
 }
 
 func (p *Injector) unpackParams(sendData string) (*entryParams, error) {
@@ -291,9 +295,9 @@ func (p *Injector) uploadURLFrom(params *entryParams, originalRequest *http.Requ
 
 func cachedClient(params *entryParams) *http.Client {
 	key := cacheKey{
-		allowLocalhost: params.AllowLocalhost,
-		ssrfFilter:     params.SSRFFilter,
-		allowedURIs:    strings.Join(params.AllowedURIs, ","),
+		allowLocalhost:   params.AllowLocalhost,
+		ssrfFilter:       params.SSRFFilter,
+		allowedEndpoints: strings.Join(params.AllowedEndpoints, ","),
 	}
 	cachedClient, found := httpClients.Load(key)
 	if found {
@@ -303,7 +307,7 @@ func cachedClient(params *entryParams) *http.Client {
 	options := defaultTransportOptions
 
 	if params.SSRFFilter {
-		options = append(options, transport.WithSSRFFilter(params.AllowLocalhost, params.AllowedURIs))
+		options = append(options, transport.WithSSRFFilter(params.AllowLocalhost, params.AllowedEndpoints))
 	}
 
 	client := &http.Client{

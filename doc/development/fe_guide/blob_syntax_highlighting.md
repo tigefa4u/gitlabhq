@@ -1,7 +1,7 @@
 ---
 stage: Create
 group: Source Code
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Syntax highlighting development guidelines (repository blob viewer)
 ---
 
@@ -53,7 +53,7 @@ The method you choose depends on whether the language already has a Highlight.js
 
 We can add third-party dependencies to our [`package.json`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/package.json) and import the dependency in [`highlight_js_language_loader`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/app/assets/javascripts/content_editor/services/highlight_js_language_loader.js#L260).
 
-**Example:**
+Example:
 
 - Add the dependency to `package.json`:
 

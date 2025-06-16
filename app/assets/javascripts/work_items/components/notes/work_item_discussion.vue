@@ -2,6 +2,7 @@
 import { getIdFromGraphQLId } from '~/graphql_shared/utils';
 import { ASC } from '~/notes/constants';
 import TimelineEntryItem from '~/vue_shared/components/notes/timeline_entry_item.vue';
+import gfmEventHub from '~/vue_shared/components/markdown/eventhub';
 import toggleWorkItemNoteResolveDiscussion from '~/work_items/graphql/notes/toggle_work_item_note_resolve_discussion.mutation.graphql';
 import DiscussionNotesRepliesWrapper from '~/notes/components/discussion_notes_replies_wrapper.vue';
 import ToggleRepliesWidget from '~/notes/components/toggle_replies_widget.vue';
@@ -36,8 +37,9 @@ export default {
       required: true,
     },
     discussion: {
-      type: Array,
+      type: Object,
       required: true,
+      default: () => ({}),
     },
     sortOrder: {
       type: String,
@@ -109,23 +111,26 @@ export default {
     };
   },
   computed: {
-    note() {
-      return this.discussion[0];
+    notes() {
+      return this.discussion.notes.nodes;
     },
-    noteId() {
-      return getIdFromGraphQLId(this.note.id);
+    firstNote() {
+      return this.notes[0];
+    },
+    firstNoteId() {
+      return getIdFromGraphQLId(this.firstNote.id);
     },
     hasReplies() {
       return Boolean(this.replies?.length);
     },
     replies() {
-      if (this.discussion?.length > 1) {
-        return this.discussion.slice(1);
+      if (this.notes?.length > 1) {
+        return this.notes.slice(1);
       }
       return null;
     },
     discussionId() {
-      return this.firstComment?.id || '';
+      return this.discussion.id || '';
     },
     shouldShowReplyForm() {
       return this.showForm || this.hasReplies;
@@ -133,27 +138,48 @@ export default {
     isOnlyCommentOfAThread() {
       return !this.hasReplies && !this.showForm;
     },
-    firstComment() {
-      return this.discussion[0]?.discussion;
-    },
     isDiscussionResolved() {
-      return this.firstComment?.resolved;
+      return this.discussion.resolved;
     },
     isDiscussionResolvable() {
-      return this.firstComment?.resolvable && this.note?.userPermissions?.resolveNote;
+      return this.discussion.resolvable && this.firstNote?.userPermissions?.resolveNote;
     },
   },
   watch: {
     discussion: {
       handler(newDiscussion) {
-        if (newDiscussion[0].discussion.resolved === false) {
+        if (newDiscussion.resolved === false) {
           this.isExpanded = true;
         }
       },
       deep: true,
     },
   },
+  mounted() {
+    gfmEventHub.$on('quote-reply', this.handleQuoteReply);
+  },
+  beforeDestroy() {
+    gfmEventHub.$off('quote-reply', this.handleQuoteReply);
+  },
   methods: {
+    handleQuoteReply({ event, discussionId, text }) {
+      // Ensure we're using correct discussion block for reply form.
+      if (this.discussion.id === discussionId) {
+        // Prevent 'r' being written.
+        if (event && typeof event.preventDefault === 'function') {
+          event.preventDefault();
+        }
+
+        // Show reply form if not open already.
+        if (!this.showForm) this.showReplyForm();
+
+        // Wait for form rendering.
+        this.$nextTick(() => {
+          // We're using `append` method from ~/vue_shared/components/markdown/markdown_editor.vue
+          this.$refs.addNote.appendText(text);
+        });
+      }
+    },
     showReplyForm() {
       this.showForm = true;
       this.isExpanded = true;
@@ -189,21 +215,11 @@ export default {
           __typename: 'UserCore',
         };
       }
-      const toggledDiscussionNotes = [...this.discussion].map((note) => {
-        return {
-          ...note,
-          discussion: {
-            ...note.discussion,
-            resolved,
-            resolvedBy,
-          },
-        };
-      });
+
       return {
-        id: this.discussionId,
-        notes: {
-          nodes: [...toggledDiscussionNotes],
-        },
+        ...this.discussion,
+        resolved,
+        resolvedBy,
       };
     },
     async resolveDiscussion() {
@@ -234,7 +250,7 @@ export default {
   <work-item-note
     v-if="isOnlyCommentOfAThread"
     :is-first-note="true"
-    :note="note"
+    :note="firstNote"
     :discussion-id="discussionId"
     :full-path="fullPath"
     :has-replies="hasReplies"
@@ -251,17 +267,23 @@ export default {
     :work-item-id="workItemId"
     :work-item-iid="workItemIid"
     :is-resolving="isResolving"
+    :resolved-by="discussion.resolvedBy"
     :hide-fullscreen-markdown-button="hideFullscreenMarkdownButton"
     :uploads-path="uploadsPath"
     @startEditing="$emit('startEditing')"
     @resolve="resolveDiscussion"
     @startReplying="showReplyForm"
-    @deleteNote="$emit('deleteNote', note)"
-    @reportAbuse="$emit('reportAbuse', note)"
+    @deleteNote="$emit('deleteNote', firstNote)"
+    @reportAbuse="$emit('reportAbuse', firstNote)"
     @cancelEditing="$emit('cancelEditing')"
     @error="$emit('error', $event)"
   />
-  <timeline-entry-item v-else :data-note-id="noteId" class="note note-discussion gl-px-0">
+  <timeline-entry-item
+    v-else
+    :data-note-id="firstNoteId"
+    :data-discussion-id="discussionId"
+    class="note note-discussion gl-px-0"
+  >
     <div class="timeline-content">
       <div class="discussion">
         <div class="discussion-body">
@@ -270,7 +292,7 @@ export default {
               <ul class="notes" data-testid="note-container">
                 <work-item-note
                   is-first-note
-                  :note="note"
+                  :note="firstNote"
                   :discussion-id="discussionId"
                   :full-path="fullPath"
                   :has-replies="hasReplies"
@@ -287,12 +309,13 @@ export default {
                   :is-discussion-resolved="isDiscussionResolved"
                   :is-discussion-resolvable="isDiscussionResolvable"
                   :is-resolving="isResolving"
+                  :resolved-by="discussion.resolvedBy"
                   :hide-fullscreen-markdown-button="hideFullscreenMarkdownButton"
                   :uploads-path="uploadsPath"
                   @startReplying="showReplyForm"
                   @startEditing="$emit('startEditing')"
-                  @deleteNote="$emit('deleteNote', note)"
-                  @reportAbuse="$emit('reportAbuse', note)"
+                  @deleteNote="$emit('deleteNote', firstNote)"
+                  @reportAbuse="$emit('reportAbuse', firstNote)"
                   @cancelEditing="$emit('cancelEditing')"
                   @resolve="resolveDiscussion"
                   @error="$emit('error', $event)"
@@ -305,41 +328,42 @@ export default {
                     @toggle="toggleDiscussion({ discussionId })"
                   />
                   <template v-if="isExpanded">
-                    <template v-for="reply in replies">
-                      <work-item-note
-                        :key="threadKey(reply)"
-                        :discussion-id="discussionId"
-                        :full-path="fullPath"
-                        :note="reply"
-                        :work-item-type="workItemType"
-                        :is-modal="isModal"
-                        :autocomplete-data-sources="autocompleteDataSources"
-                        :markdown-preview-path="markdownPreviewPath"
-                        :new-comment-template-paths="newCommentTemplatePaths"
-                        :assignees="assignees"
-                        :work-item-id="workItemId"
-                        :work-item-iid="workItemIid"
-                        :can-set-work-item-metadata="canSetWorkItemMetadata"
-                        :is-discussion-resolved="isDiscussionResolved"
-                        :is-discussion-resolvable="isDiscussionResolvable"
-                        :is-resolving="isResolving"
-                        :hide-fullscreen-markdown-button="hideFullscreenMarkdownButton"
-                        :uploads-path="uploadsPath"
-                        @startReplying="showReplyForm"
-                        @deleteNote="$emit('deleteNote', reply)"
-                        @reportAbuse="$emit('reportAbuse', reply)"
-                        @startEditing="$emit('startEditing')"
-                        @cancelEditing="$emit('cancelEditing')"
-                        @error="$emit('error', $event)"
-                      />
-                    </template>
+                    <work-item-note
+                      v-for="reply in replies"
+                      :key="threadKey(reply)"
+                      :discussion-id="discussionId"
+                      :full-path="fullPath"
+                      :note="reply"
+                      :work-item-type="workItemType"
+                      :is-modal="isModal"
+                      :autocomplete-data-sources="autocompleteDataSources"
+                      :markdown-preview-path="markdownPreviewPath"
+                      :new-comment-template-paths="newCommentTemplatePaths"
+                      :assignees="assignees"
+                      :work-item-id="workItemId"
+                      :work-item-iid="workItemIid"
+                      :can-set-work-item-metadata="canSetWorkItemMetadata"
+                      :is-discussion-resolved="isDiscussionResolved"
+                      :is-discussion-resolvable="isDiscussionResolvable"
+                      :is-resolving="isResolving"
+                      :resolved-by="discussion.resolvedBy"
+                      :hide-fullscreen-markdown-button="hideFullscreenMarkdownButton"
+                      :uploads-path="uploadsPath"
+                      @startReplying="showReplyForm"
+                      @deleteNote="$emit('deleteNote', reply)"
+                      @reportAbuse="$emit('reportAbuse', reply)"
+                      @startEditing="$emit('startEditing')"
+                      @cancelEditing="$emit('cancelEditing')"
+                      @error="$emit('error', $event)"
+                    />
                     <work-item-note-replying
                       v-if="isReplying"
-                      :is-internal-note="note.internal"
+                      :is-internal-note="firstNote.internal"
                       :body="replyingText"
                     />
                     <work-item-add-note
                       v-if="shouldShowReplyForm"
+                      ref="addNote"
                       :notes-form="false"
                       :autofocus="autofocus"
                       :full-path="fullPath"
@@ -353,7 +377,7 @@ export default {
                       :markdown-preview-path="markdownPreviewPath"
                       :new-comment-template-paths="newCommentTemplatePaths"
                       :is-discussion-locked="isDiscussionLocked"
-                      :is-internal-thread="note.internal"
+                      :is-internal-thread="firstNote.internal"
                       :is-work-item-confidential="isWorkItemConfidential"
                       :is-discussion-resolved="isDiscussionResolved"
                       :is-discussion-resolvable="isDiscussionResolvable"

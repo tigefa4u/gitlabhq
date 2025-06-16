@@ -67,7 +67,7 @@ When running manual jobs you can supply additional job specific variables.
 
 You can do this from the job page of the manual job you want to run with
 additional variables. To access this page, select the **name** of the manual job in
-the pipeline view, *not* **Run** ({{< icon name="play" >}}).
+the pipeline view, not **Run** ({{< icon name="play" >}}).
 
 Define CI/CD variables here when you want to alter the execution of a job that uses
 [CI/CD variables](../variables/_index.md).
@@ -385,3 +385,13 @@ The jobs have three paths of execution:
 - macOS path: The `mac:rspec` job runs as soon as the `mac:build: [gcp, data]` and
   `mac:build: [vultr, data]` jobs finish, without waiting for `linux:build` to finish.
 - The `production` job runs as soon as all previous jobs finish.
+
+## Troubleshooting
+
+### Inconsistent user assignment when running manual jobs
+
+In some edge cases, the user that runs a manual job does not get assigned as the user for later jobs
+that depend on the manual job.
+
+If you need strict security over who is assigned as the user for jobs that depend on a manual job,
+you should [protect the manual job](#protect-manual-jobs).

@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Migrations for Multiple databases
 ---
 
@@ -16,9 +16,9 @@ that all decomposed databases have **the same structure** (for example, schema),
 
 Depending on the used constructs, we can classify migrations to be either:
 
-1. Modifying structure ([DDL - Data Definition Language](https://www.postgresql.org/docs/current/ddl.html)) (for example, `ALTER TABLE`).
-1. Modifying data ([DML - Data Manipulation Language](https://www.postgresql.org/docs/current/dml.html)) (for example, `UPDATE`).
-1. Performing [other queries](https://www.postgresql.org/docs/current/queries.html) (for example, `SELECT`) that are treated as **DML** for the purposes of our migrations.
+1. Modifying structure ([DDL - Data Definition Language](https://www.postgresql.org/docs/16/ddl.html)) (for example, `ALTER TABLE`).
+1. Modifying data ([DML - Data Manipulation Language](https://www.postgresql.org/docs/16/dml.html)) (for example, `UPDATE`).
+1. Performing [other queries](https://www.postgresql.org/docs/16/queries.html) (for example, `SELECT`) that are treated as **DML** for the purposes of our migrations.
 
 **The usage of `Gitlab::Database::Migration[2.0]` requires migrations to always be of a single purpose**.
 Migrations cannot mix **DDL** and **DML** changes as the application requires the structure

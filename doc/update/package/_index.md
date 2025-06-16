@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Upgrading Linux package instances
 ---
@@ -14,6 +14,20 @@ title: Upgrading Linux package instances
 
 Upgrading Linux package instances to a later version of GitLab requires several steps, many specific to Linux package
 installations.
+
+## Upgrade the operating system (optional)
+
+If required, you should upgrade to a [supported operating system](../../administration/package_information/supported_os.md) before upgrading GitLab itself.
+
+After upgrading the operating system, you might also need to update the GitLab package source URL in your package manager's configuration.
+If your package manager reports that no further updates are available, but you know that updates exist, repeat the instructions on the
+[Linux package install guide](https://about.gitlab.com/install/#content) to add the GitLab package repository. Future GitLab upgrades are fetched
+according to your upgraded operating system.
+
+### Corrupted PostgresSQL indexes after upgrading the OS
+
+As part of upgrading the operating system, if your `glibc` version changes, then you must follow
+[Upgrading operating systems for PostgreSQL](../../administration/postgresql/upgrading_os.md) to avoid corrupted indexes.
 
 ## Downtime
 
@@ -52,7 +66,7 @@ To upgrade a Linux package instance:
 1. [Complete the initial steps](../_index.md#upgrade-gitlab) in the main GitLab upgrade documentation.
 1. If you are upgrading from a non-package installation to a GitLab package installation, follow the steps in
    [Upgrading from a non-package installation to a GitLab package installation](https://docs.gitlab.com/omnibus/update/convert_to_omnibus.html).
-1. Continue the upgrade by following the sections below.
+1. Continue the upgrade by following the next sections.
 
 ### Required services
 
@@ -68,7 +82,7 @@ Six repositories are maintained:
   [Enterprise Edition](https://about.gitlab.com/pricing/) ones.
 - [`gitlab/gitlab-ce`](https://packages.gitlab.com/gitlab/gitlab-ce): A stripped
   down package that contains only the Community Edition features.
-- [`gitlab/gitlab-fips`](https://packages.gitlab.com/gitlab/gitlab-fips): [FIPS-compliant](../../development/fips_gitlab.md) builds.
+- [`gitlab/gitlab-fips`](https://packages.gitlab.com/gitlab/gitlab-fips): FIPS-compliant builds.
 - [`gitlab/unstable`](https://packages.gitlab.com/gitlab/unstable): Release candidates and other unstable versions.
 - [`gitlab/nightly-builds`](https://packages.gitlab.com/gitlab/nightly-builds): Nightly builds.
 - [`gitlab/raspberry-pi2`](https://packages.gitlab.com/gitlab/raspberry-pi2): Official Community Edition releases built for [Raspberry Pi](https://www.raspberrypi.org) packages.

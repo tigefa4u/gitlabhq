@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: SQL views
 ---
 
@@ -78,5 +78,5 @@ end
 
 ## Further Reading
 
-- [PostgreSQL System Catalogs](https://www.postgresql.org/docs/current/catalogs.html)
-- [PostgreSQL Views](https://www.postgresql.org/docs/current/sql-createview.html)
+- [PostgreSQL System Catalogs](https://www.postgresql.org/docs/16/catalogs.html)
+- [PostgreSQL Views](https://www.postgresql.org/docs/16/sql-createview.html)

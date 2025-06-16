@@ -9,6 +9,7 @@ module Gitlab
         MAXIMUM_FAILED_RATIO = 0.5
         MINIMUM_JOBS = 50
         FINISHED_PROGRESS_VALUE = 100
+        MINIMUM_PAUSE_MS = 100
 
         self.table_name = :batched_background_migrations
 
@@ -20,6 +21,7 @@ module Gitlab
           class_name: 'Gitlab::Database::BackgroundMigration::BatchedJob',
           foreign_key: :batched_background_migration_id
 
+        validates :pause_ms, numericality: { greater_than_or_equal_to: MINIMUM_PAUSE_MS }
         validates :job_arguments, uniqueness: {
           scope: [:job_class_name, :table_name, :column_name]
         }
@@ -37,6 +39,7 @@ module Gitlab
 
         scope :created_after, ->(time) { where('created_at > ?', time) }
 
+        scope :for_job_class, ->(job_class_name) { where(job_class_name: job_class_name) }
         scope :for_configuration, ->(
           gitlab_schema, job_class_name, table_name, column_name, job_arguments, include_compatible: false
         ) do

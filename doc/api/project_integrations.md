@@ -324,7 +324,7 @@ Parameters:
 | --------- | ---- | -------- | ----------- |
 | `token` | string | yes | Token you get after you create a Buildkite pipeline with a GitLab repository. |
 | `project_url` | string | yes | Pipeline URL (for example, `https://buildkite.com/example/pipeline`). |
-| `enable_ssl_verification` | boolean | no | **Deprecated:** This parameter has no effect because SSL verification is always enabled. |
+| `enable_ssl_verification` | boolean | no | **Deprecated**: This parameter has no effect because SSL verification is always enabled. |
 | `push_events` | boolean | no | Enable notifications for push events. |
 | `merge_requests_events` | boolean | no | Enable notifications for merge request events. |
 | `tag_push_events` | boolean | no | Enable notifications for tag push events. |
@@ -1017,7 +1017,7 @@ Parameters:
 | --------- | ---- | -------- | ----------- |
 | `channel` | string | no | Default channel to use if no other channel is configured. |
 | `notify_only_broken_pipelines` | boolean | no | Send notifications for broken pipelines. |
-| `notify_only_default_branch` | boolean | no | **Deprecated:** This parameter has been replaced with `branches_to_be_notified`. |
+| `notify_only_default_branch` | boolean | no | **Deprecated**: This parameter has been replaced with `branches_to_be_notified`. |
 | `branches_to_be_notified` | string | no | Branches to send notifications for. Valid options are `all`, `default`, `protected`, and `default_and_protected`. The default value is `default`. |
 | `alert_events` | boolean | no | Enable notifications for alert events. |
 | `issues_events` | boolean | no | Enable notifications for issue events. |
@@ -1088,7 +1088,7 @@ Parameters:
 | --------- | ---- | -------- | ----------- |
 | `webhook` | string | yes | The Hangouts Chat webhook (for example, `https://chat.googleapis.com/v1/spaces...`). |
 | `notify_only_broken_pipelines` | boolean | no | Send notifications for broken pipelines. |
-| `notify_only_default_branch` | boolean | no | **Deprecated:** This parameter has been replaced with `branches_to_be_notified`. |
+| `notify_only_default_branch` | boolean | no | **Deprecated**: This parameter has been replaced with `branches_to_be_notified`. |
 | `branches_to_be_notified` | string | no | Branches to send notifications for. Valid options are `all`, `default`, `protected`, and `default_and_protected`. The default value is `default`. |
 | `push_events` | boolean | no | Enable notifications for push events. |
 | `issues_events` | boolean | no | Enable notifications for issue events. |
@@ -1206,8 +1206,8 @@ Parameters:
 | --------- | ---- | -------- | ----------- |
 | `workload_identity_federation_project_id` | string | yes | Google Cloud project ID for the Workload Identity Federation. |
 | `workload_identity_federation_project_number` | integer | yes | Google Cloud project number for the Workload Identity Federation. |
-| `workload_identity_pool_id` | string | yes | ID of the Workload Identity Pool. |
-| `workload_identity_pool_provider_id` | string | yes | ID of the Workload Identity Pool provider. |
+| `workload_identity_pool_id` | string | yes | ID of the workload identity pool. |
+| `workload_identity_pool_provider_id` | string | yes | ID of the workload identity pool provider. |
 | `use_inherited_settings` | boolean | no | Indicates whether to inherit the default settings. Defaults to `false`. |
 
 ### Disable Google Cloud Identity and Access Management
@@ -1489,6 +1489,10 @@ Parameters:
 | `issues_enabled` | boolean | no | Enable viewing Jira issues in GitLab. [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/267015) in GitLab 17.0. |
 | `project_keys` | array of strings | no | Keys of Jira projects. When `issues_enabled` is `true`, this setting specifies which Jira projects to view issues from in GitLab. [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/267015) in GitLab 17.0. |
 | `use_inherited_settings` | boolean | no | Indicates whether to inherit the default settings. Defaults to `false`. |
+| `vulnerabilities_enabled` | boolean | no | Available only in GitLab EE. When set to `true`, creates Jira issues for GitLab vulnerabilities.|
+| `vulnerabilities_issuetype` | number | no | Available only in GitLab EE. ID of the Jira issue type to use when creating issues from vulnerabilities. |
+| `project_key` | string | no | Available only in GitLab EE. Key of the project to use when creating issues from vulnerabilities. This parameter is required if using the integration to create issues from vulnerabilities. |
+| `customize_jira_issue_enabled` | boolean | no | Available only in GitLab EE. When set to `true`, opens a prefilled form on the Jira instance when creating a Jira issue from a vulnerability. |
 
 ### Disable Jira
 
@@ -1584,7 +1588,7 @@ Parameters:
 | `username` | string | no | Mattermost notifications username. |
 | `channel` | string | no | Default channel to use if no other channel is configured. |
 | `notify_only_broken_pipelines` | boolean | no | Send notifications for broken pipelines. |
-| `notify_only_default_branch` | boolean | no | **Deprecated:** This parameter has been replaced with `branches_to_be_notified`. |
+| `notify_only_default_branch` | boolean | no | **Deprecated**: This parameter has been replaced with `branches_to_be_notified`. |
 | `branches_to_be_notified` | string | no | Branches to send notifications for. Valid options are `all`, `default`, `protected`, and `default_and_protected`. The default value is `default`. |
 | `labels_to_be_notified` | string | no | Labels to send notifications for. Leave blank to receive notifications for all events. |
 | `labels_to_be_notified_behavior` | string | no | Labels to be notified for. Valid options are `match_any` and `match_all`. The default value is `match_any`. |
@@ -1687,7 +1691,7 @@ Parameters:
 | --------- | ---- | -------- | ----------- |
 | `webhook` | string | yes | The Microsoft Teams webhook (for example, `https://outlook.office.com/webhook/...`). |
 | `notify_only_broken_pipelines` | boolean | no | Send notifications for broken pipelines. |
-| `notify_only_default_branch` | boolean | no | **Deprecated:** This parameter has been replaced with `branches_to_be_notified`. |
+| `notify_only_default_branch` | boolean | no | **Deprecated**: This parameter has been replaced with `branches_to_be_notified`. |
 | `branches_to_be_notified` | string | no | Branches to send notifications for. Valid options are `all`, `default`, `protected`, and `default_and_protected`. The default value is `default`. |
 | `push_events` | boolean | no | Enable notifications for push events. |
 | `issues_events` | boolean | no | Enable notifications for issue events. |
@@ -2094,7 +2098,7 @@ Parameters:
 | `username` | string | no | Slack notifications username. |
 | `channel` | string | no | Default channel to use if no other channel is configured. |
 | `notify_only_broken_pipelines` | boolean | no | Send notifications for broken pipelines. |
-| `notify_only_default_branch` | boolean | no | **Deprecated:** This parameter has been replaced with `branches_to_be_notified`. |
+| `notify_only_default_branch` | boolean | no | **Deprecated**: This parameter has been replaced with `branches_to_be_notified`. |
 | `branches_to_be_notified` | string | no | Branches to send notifications for. Valid options are `all`, `default`, `protected`, and `default_and_protected`. The default value is `default`. |
 | `labels_to_be_notified` | string | no | Labels to send notifications for. Leave blank to receive notifications for all events. |
 | `labels_to_be_notified_behavior` | string | no | Labels to be notified for. Valid options are `match_any` and `match_all`. The default value is `match_any`. |

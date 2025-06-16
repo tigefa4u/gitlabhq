@@ -3,17 +3,15 @@ import { mount, shallowMount } from '@vue/test-utils';
 // eslint-disable-next-line no-restricted-imports
 import Vuex from 'vuex';
 import Vue, { nextTick } from 'vue';
-import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import VueApollo from 'vue-apollo';
+import axios from '~/lib/utils/axios_utils';
 import createMockApollo from 'helpers/mock_apollo_helper';
 import waitForPromises from 'helpers/wait_for_promises';
 import { createAlert } from '~/alert';
 import BlobContent from '~/blob/components/blob_content.vue';
-import BlobHeader from '~/blob/components/blob_header.vue';
-import BlobButtonGroup from '~/repository/components/blob_button_group.vue';
+import BlobHeader from 'ee_else_ce/blob/components/blob_header.vue';
 import BlobContentViewer from '~/repository/components/blob_content_viewer.vue';
-import ForkSuggestion from '~/repository/components/fork_suggestion.vue';
 import { loadViewer } from '~/repository/components/blob_viewers';
 import DownloadViewer from '~/repository/components/blob_viewers/download_viewer.vue';
 import EmptyViewer from '~/repository/components/blob_viewers/empty_viewer.vue';
@@ -43,6 +41,7 @@ import {
   projectMock,
   getProjectMockWithOverrides,
 } from 'ee_else_ce_jest/repository/mock_data';
+import { mockTracking } from 'helpers/tracking_helper';
 
 jest.mock('~/repository/components/blob_viewers');
 jest.mock('~/lib/utils/url_utility');
@@ -53,6 +52,7 @@ jest.mock('~/alert');
 let wrapper;
 let blobInfoMockResolver;
 let projectInfoMockResolver;
+let trackingSpy;
 
 Vue.use(Vuex);
 
@@ -135,6 +135,7 @@ const createComponent = async (mockData = {}, mountFn = shallowMount, mockRoute 
       },
     }),
   );
+  trackingSpy = mockTracking(undefined, wrapper.element, jest.spyOn);
 
   await waitForPromises();
 };
@@ -147,8 +148,6 @@ describe('Blob content viewer component', () => {
   const findLoadingIcon = () => wrapper.findComponent(GlLoadingIcon);
   const findBlobHeader = () => wrapper.findComponent(BlobHeader);
   const findBlobContent = () => wrapper.findComponent(BlobContent);
-  const findBlobButtonGroup = () => wrapper.findComponent(BlobButtonGroup);
-  const findForkSuggestion = () => wrapper.findComponent(ForkSuggestion);
   const findCodeIntelligence = () => wrapper.findComponent(CodeIntelligence);
   const findSourceViewer = () => wrapper.findComponent(SourceViewer);
 
@@ -175,9 +174,7 @@ describe('Blob content viewer component', () => {
       expect(findBlobHeader().props('hasRenderError')).toEqual(false);
       expect(findBlobHeader().props('hideViewerSwitcher')).toEqual(false);
       expect(findBlobHeader().props('blob')).toEqual(simpleViewerMock);
-      expect(findBlobHeader().props('showForkSuggestion')).toEqual(false);
       expect(findBlobHeader().props('showBlameToggle')).toEqual(true);
-      expect(findBlobHeader().props('projectPath')).toEqual(propsMock.projectPath);
       expect(findBlobHeader().props('projectId')).toEqual(projectMock.id);
       expect(mockRouterPush).not.toHaveBeenCalled();
     });
@@ -420,7 +417,7 @@ describe('Blob content viewer component', () => {
       language  | size             | tooLarge | renderError    | expectedTooLarge
       ${'ruby'} | ${100}           | ${false} | ${null}        | ${false}
       ${'ruby'} | ${FILE_SIZE_3MB} | ${false} | ${null}        | ${true}
-      ${'nyan'} | ${null}          | ${true}  | ${null}        | ${true}
+      ${'nyan'} | ${FILE_SIZE_3MB} | ${true}  | ${null}        | ${true}
       ${'nyan'} | ${null}          | ${false} | ${'collapsed'} | ${true}
     `(
       'correctly handles file size limits when language=$language, size=$size, tooLarge=$tooLarge, renderError=$renderError',
@@ -437,6 +434,13 @@ describe('Blob content viewer component', () => {
             },
           },
         });
+
+        if (tooLarge) {
+          expect(trackingSpy).toHaveBeenCalledWith(undefined, 'view_source', {
+            label: 'repository_file_size_limit_exceeded',
+            property: { label: language, property: size },
+          });
+        }
 
         await waitForPromises();
         expect(loadViewer).toHaveBeenCalledWith('text', false, expectedTooLarge);
@@ -493,40 +497,6 @@ describe('Blob content viewer component', () => {
         expect(findBlobHeader().props('isBinary')).toBe(true);
       });
     });
-
-    describe('BlobButtonGroup', () => {
-      const { name, path, replacePath, webPath } = simpleViewerMock;
-      const {
-        userPermissions: { pushCode, downloadCode },
-        repository: { empty },
-      } = projectMock;
-
-      it('renders component', async () => {
-        window.gon.current_user_id = 'gid://gitlab/User/1';
-        window.gon.current_username = 'root';
-
-        await createComponent({ pushCode, downloadCode, empty }, mount);
-
-        expect(findBlobButtonGroup().props()).toMatchObject({
-          name,
-          path,
-          replacePath,
-          deletePath: webPath,
-          canPushCode: pushCode,
-          canLock: true,
-          isLocked: false,
-          emptyRepo: empty,
-        });
-      });
-
-      it('does not render if not logged in', async () => {
-        isLoggedIn.mockReturnValueOnce(false);
-
-        await createComponent();
-
-        expect(findBlobButtonGroup().exists()).toBe(false);
-      });
-    });
   });
 
   describe('blob info query', () => {
@@ -571,76 +541,6 @@ describe('Blob content viewer component', () => {
       findBlobHeader().vm.$emit('edit', 'ide');
       expect(urlUtility.visitUrl).toHaveBeenCalledWith(simpleViewerMock.ideEditPath);
     });
-
-    it.each`
-      loggedIn | canModifyBlob | isUsingLfs | createMergeRequestIn | forkProject | showSingleFileEditorForkSuggestion
-      ${true}  | ${true}       | ${false}   | ${true}              | ${true}     | ${false}
-      ${true}  | ${false}      | ${false}   | ${true}              | ${true}     | ${true}
-      ${false} | ${false}      | ${false}   | ${true}              | ${true}     | ${false}
-      ${true}  | ${false}      | ${false}   | ${false}             | ${true}     | ${false}
-      ${true}  | ${false}      | ${false}   | ${true}              | ${false}    | ${false}
-      ${true}  | ${false}      | ${true}    | ${true}              | ${true}     | ${false}
-    `(
-      'shows/hides a fork suggestion according to a set of conditions',
-      async ({
-        loggedIn,
-        canModifyBlob,
-        isUsingLfs,
-        createMergeRequestIn,
-        forkProject,
-        showSingleFileEditorForkSuggestion,
-      }) => {
-        isLoggedIn.mockReturnValueOnce(loggedIn);
-        await createComponent(
-          {
-            blob: { ...simpleViewerMock, canModifyBlob, storedExternally: isUsingLfs },
-            createMergeRequestIn,
-            forkProject,
-          },
-          mount,
-        );
-
-        findBlobHeader().vm.$emit('edit', 'simple');
-        await nextTick();
-
-        expect(findForkSuggestion().exists()).toBe(showSingleFileEditorForkSuggestion);
-      },
-    );
-
-    it.each`
-      loggedIn | canModifyBlobWithWebIde | isUsingLfs | createMergeRequestIn | forkProject | showWebIdeForkSuggestion
-      ${true}  | ${true}                 | ${false}   | ${true}              | ${true}     | ${false}
-      ${true}  | ${false}                | ${false}   | ${true}              | ${true}     | ${true}
-      ${false} | ${false}                | ${false}   | ${true}              | ${true}     | ${false}
-      ${true}  | ${false}                | ${false}   | ${false}             | ${true}     | ${false}
-      ${true}  | ${false}                | ${false}   | ${true}              | ${false}    | ${false}
-      ${true}  | ${false}                | ${true}    | ${true}              | ${true}     | ${false}
-    `(
-      'shows/hides a fork suggestion for WebIDE according to a set of conditions',
-      async ({
-        loggedIn,
-        canModifyBlobWithWebIde,
-        isUsingLfs,
-        createMergeRequestIn,
-        forkProject,
-        showWebIdeForkSuggestion,
-      }) => {
-        isLoggedIn.mockReturnValueOnce(loggedIn);
-        await createComponent(
-          {
-            blob: { ...simpleViewerMock, canModifyBlobWithWebIde, storedExternally: isUsingLfs },
-            createMergeRequestIn,
-            forkProject,
-          },
-          mount,
-        );
-
-        findBlobHeader().vm.$emit('edit', 'ide');
-        await nextTick();
-
-        expect(findForkSuggestion().exists()).toBe(showWebIdeForkSuggestion);
-      },
-    );
   });
 
   describe('active viewer based on plain attribute', () => {

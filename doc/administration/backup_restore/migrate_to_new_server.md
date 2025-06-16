@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Geo
+stage: Data Access
+group: Durability
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Migrate to a new server
 ---
@@ -150,7 +150,7 @@ To prepare the new server:
    sudo gitlab-ctl status
    ```
 
-1. Stop Redis on the **new server** before transferring the Redis database backup:
+1. Stop Redis on the new server before transferring the Redis database backup:
 
    ```shell
    sudo gitlab-ctl stop redis

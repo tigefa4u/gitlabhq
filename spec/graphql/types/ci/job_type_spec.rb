@@ -67,14 +67,26 @@ RSpec.describe Types::Ci::JobType, feature_category: :continuous_integration do
   end
 
   describe '#web_path' do
-    subject { resolve_field(:web_path, build, current_user: user, object_type: described_class) }
+    subject { resolve_field(:web_path, job, current_user: user, object_type: described_class) }
 
-    let(:project) { create(:project) }
-    let(:user) { create(:user) }
-    let(:build) { create(:ci_build, project: project, user: user) }
+    let_it_be(:user) { create(:user) }
+    let_it_be(:project) { create(:project, :repository) }
 
-    it 'returns the web path of the job' do
-      is_expected.to eq("/#{project.full_path}/-/jobs/#{build.id}")
+    context 'when the job is a regular build' do
+      let(:job) { create(:ci_build, project: project, user: user) }
+
+      it 'returns the project job path' do
+        expected_path = "/#{project.full_path}/-/jobs/#{job.id}"
+        is_expected.to eq(expected_path)
+      end
+    end
+
+    context 'when the job is a bridge' do
+      let(:job) { create(:ci_bridge, project: project, user: user) }
+
+      it 'returns nil' do
+        is_expected.to be_nil
+      end
     end
   end
 
@@ -104,41 +116,16 @@ RSpec.describe Types::Ci::JobType, feature_category: :continuous_integration do
         expect(build.pipeline).to receive(:trigger_id).and_call_original
         is_expected.to be(false)
       end
-
-      context 'when ff ci_read_trigger_from_ci_pipeline is disabled' do
-        before do
-          stub_feature_flags(ci_read_trigger_from_ci_pipeline: false)
-        end
-
-        it 'returns false' do
-          expect(build).to receive(:trigger_request).and_call_original
-          is_expected.to be(false)
-        end
-      end
     end
 
     context 'when triggered' do
       let_it_be(:trigger) { create(:ci_trigger, project: project) }
-      let_it_be(:trigger_request) { create(:ci_trigger_request, trigger: trigger) }
       let_it_be(:pipeline) { create(:ci_empty_pipeline, trigger: trigger, project: project) }
-      let_it_be(:build) do
-        create(:ci_build, trigger_request: trigger_request, pipeline: pipeline, project: project, user: user)
-      end
+      let_it_be(:build) { create(:ci_build, pipeline: pipeline, project: project, user: user) }
 
       it 'returns true' do
         expect(build.pipeline).to receive(:trigger_id).and_call_original
         is_expected.to be(true)
-      end
-
-      context 'when ff ci_read_trigger_from_ci_pipeline is disabled' do
-        before do
-          stub_feature_flags(ci_read_trigger_from_ci_pipeline: false)
-        end
-
-        it 'returns true' do
-          expect(build).to receive(:trigger_request).and_call_original
-          is_expected.to be(true)
-        end
       end
     end
   end

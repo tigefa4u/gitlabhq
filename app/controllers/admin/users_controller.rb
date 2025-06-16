@@ -212,7 +212,7 @@ class Admin::UsersController < Admin::ApplicationController
 
   def create
     opts = user_params.merge(reset_password: true, skip_confirmation: true)
-    opts[:organization_id] ||= Current.organization&.id
+    opts[:organization_id] ||= Current.organization.id
 
     response = Users::CreateService.new(current_user, opts).execute
     @user = response.payload[:user]
@@ -327,7 +327,7 @@ class Admin::UsersController < Admin::ApplicationController
   end
 
   def users_with_included_associations(users)
-    users.includes(:authorized_projects, :trusted_with_spam_attribute) # rubocop: disable CodeReuse/ActiveRecord
+    users.includes(:authorized_projects, :trusted_with_spam_attribute, :identities) # rubocop: disable CodeReuse/ActiveRecord
   end
 
   def admin_making_changes_for_another_user?
@@ -406,6 +406,7 @@ class Admin::UsersController < Admin::ApplicationController
       :twitter,
       :username,
       :website_url,
+      :github,
       { credit_card_validation_attributes: [:credit_card_validated_at] },
       { organization_users_attributes: [:id, :organization_id, :access_level] }
     ]

@@ -1,7 +1,7 @@
 ---
 stage: Monitor
 group: Platform Insights
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 description: Documentation for developers interested in contributing features or bugfixes for GitLab Observability.
 title: GitLab Observability development guidelines
 ---
@@ -58,10 +58,10 @@ How to enable:
       - GCK: `make console`
       - GitLab Distribution: [Start a Rails console session](../../administration/operations/rails_console.md#starting-a-rails-console-session)
    1. Run `Feature.enable(:observability_features);`
-1. Restart your instance (e.g. `gdk restart`).
+1. Restart your instance (for example, `gdk restart`).
 1. Follow the [instructions to activate your new license](../../administration/license.md#activate-gitlab-ee).
 1. Test out the GitLab Observability feature by navigating to a project and selecting Tracing, Metrics, or Logs from the Monitor section of the navigation menu.
-1. If you are seeing 404 errors you might need to manually [refresh](../../subscriptions/self_managed/_index.md#manually-synchronize-subscription-data) your license data.
+1. If you are seeing 404 errors you might need to manually [refresh](../../subscriptions/manage_subscription.md#manually-synchronize-subscription-data) your license data.
 
 ### Use the purpose built `devvm`
 

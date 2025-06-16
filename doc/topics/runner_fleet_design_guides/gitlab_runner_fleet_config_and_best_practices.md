@@ -155,13 +155,13 @@ Based on the metrics collected, for this job profile, you can limit the Kubernet
 
 If you use a cluster with a node pool of three `e2-standard-4` nodes to run jobs, the `1 CPU` limit allows only **12 jobs** to run simultaneously (an `e2-standard-4`  node has **4 vCPU** and **16 GB** of memory). Additional jobs wait for the running jobs to complete and free up the resources before starting.
 
-The memory requested is critical because Kubernetes terminates any pod that uses more memory than the limit set or available on the cluster. However, the CPU limit is more flexible but impacts the job duration. A lower CPU limit set increases the time it takes for a job to complete. In the above example, setting the CPU limit to `250m` (or `0.25`) instead `1` increased the job duration by four times (from about two minutes to eight to ten minutes).
+The memory requested is critical because Kubernetes terminates any pod that uses more memory than the limit set or available on the cluster. However, the CPU limit is more flexible but impacts the job duration. A lower CPU limit set increases the time it takes for a job to complete. In the previous example, setting the CPU limit to `250m` (or `0.25`) instead `1` increased the job duration by four times (from about two minutes to eight to ten minutes).
 
 As the metrics collection method uses a polling mechanism, you should round up the maximum usage identified. For example, instead of `303 Mi` for the memory usage, round it to `400 Mi`.
 
-Important considerations for the above example:
+Important considerations for the previous example:
 
-- The metrics above were collected on the local machine, which doesn't have the same CPU configuration than a Google Kubernetes Engine Cluster. However, these metrics were validated by monitoring them on a Kubernetes cluster with an `e2-standard-4` node.
+- The metrics were collected on the local machine, which doesn't have the same CPU configuration than a Google Kubernetes Engine Cluster. However, these metrics were validated by monitoring them on a Kubernetes cluster with an `e2-standard-4` node.
 - To get an accurate representation of those metrics, run the tests described in the [Assess phase](#assess-the-expected-cicd-workloads) on a Google Compute Engine VM.
 
 ## Plan the runner fleet configuration
@@ -194,9 +194,9 @@ The configuration in the table demonstrates the flexibility available when confi
 
 | Runner Type | Runner Tag | Scope | Count of Runner type to offer | Runner Worker Specification | Runner Host Environment | Environment Configuration |
 | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
-| Instance | ci-runner-small | Available to run CI/CD jobs for all groups and projects by default. | 5 | 2 vCPU, 8GB RAM | Kubernetes | → 3 nodes <br> → Runner worker compute node \= **e2-standard-2**  |
-| Instance | ci-runner-medium | Available to run CI/CD jobs for all groups and projects by default. | 2 | 4 vCPU, 16GB RAM | Kubernetes | → 3 nodes <br> → Runner worker compute node \= **e2-standard-4**   |
-| Instance | ci-runner-large | Available to run CI/CD jobs for all groups and projects by default. | 1 | 8 vCPU, 32GB RAM | Kubernetes | → 3 nodes <br> → Runner worker compute node \= **e2-standard-8**   |
+| Instance | ci-runner-small | Available to run CI/CD jobs for all groups and projects by default. | 5 | 2 vCPU, 8 GB RAM | Kubernetes | → 3 nodes <br> → Runner worker compute node \= **e2-standard-2**  |
+| Instance | ci-runner-medium | Available to run CI/CD jobs for all groups and projects by default. | 2 | 4 vCPU, 16 GB RAM | Kubernetes | → 3 nodes <br> → Runner worker compute node \= **e2-standard-4**   |
+| Instance | ci-runner-large | Available to run CI/CD jobs for all groups and projects by default. | 1 | 8 vCPU, 32 GB RAM | Kubernetes | → 3 nodes <br> → Runner worker compute node \= **e2-standard-8**   |
 
 In the runner fleet configuration example, there are a total of three runner configurations and eight runners actively running CI/CD jobs.
 
@@ -282,7 +282,7 @@ node_pools = {
   "worker-pool" = {
     node_count = 3,
     node_config = {
-      machine_type = "e2-standard-4",    #4vCPU, 16GB each
+      machine_type = "e2-standard-4",    #4 vCPU, 16 GB each
       image_type   = "cos_containerd",   #Linux OS container only. Change to windows_ltsc_containerd for Windows OS container
       disk_size_gb = 150,
       disk_type    = "pd-balanced",
@@ -294,7 +294,7 @@ node_pools = {
 }
 ```
 
-In the configuration above:
+In the previous configuration:
 
 - The `runner-manager` block refers to the node pool where GitLab Runner is installed. In our example, a `e2-standard-2` is more than enough.
 - The labels sections in the `runner-manager` block is useful when installing GitLab Runner on GitLab. A node selector is configured through the operator configuration to make sure that GitLab Runner is installed on a node of this node pool.
@@ -351,7 +351,7 @@ EOT
 ]
 ```
 
-In the configuration above:
+In the previous configuration:
 
 - The `pod_spec` parameter allows us to set a node selector for the pod running GitLab Runner. In the configuration, the node selector is set to `"app" = "gitlab-runner"` to ensure that GitLab Runner is installed on the runner-manager node pool.
 - The `config_template` parameters provides a default limit for all jobs run by the GitLab Runner Manager. It also allows an overwrite of those limits as long as the value set is not greater than the default values.
@@ -405,7 +405,7 @@ node_pools = {
   "medium-pool" = {
     node_count = 3,
     node_config = {
-      machine_type = "e2-standard-4",    #4vCPU, 16GB each
+      machine_type = "e2-standard-4",    #4 vCPU, 16 GB each
       image_type   = "cos_containerd",   #Linux OS container only. Change to windows_ltsc_containerd for Windows OS container
       disk_size_gb = 150,
       disk_type    = "pd-balanced",
@@ -417,7 +417,7 @@ node_pools = {
   "cpu-intensive-pool" = {
     node_count = 1,
     node_config = {
-      machine_type = "e2-highcpu-32", #32vCPU, 32GB each
+      machine_type = "e2-highcpu-32", #32 vCPU, 32 GB each
       image_type   = "cos_containerd",
       disk_size_gb = 150,
       disk_type    = "pd-balanced",

@@ -24,7 +24,6 @@ RSpec.describe Gitlab::Ci::Pipeline::Chain::Build::Associations, feature_categor
       checkout_sha: project.commit.id,
       after_sha: nil,
       before_sha: nil,
-      trigger_request: nil,
       schedule: nil,
       merge_request: nil,
       project: project,
@@ -100,7 +99,7 @@ RSpec.describe Gitlab::Ci::Pipeline::Chain::Build::Associations, feature_categor
 
   context 'when project setting restrict_user_defined_variables is enabled' do
     before do
-      project.update!(restrict_user_defined_variables: true, ci_pipeline_variables_minimum_override_role: :maintainer)
+      project.update!(ci_pipeline_variables_minimum_override_role: :maintainer)
     end
 
     context 'when user is developer' do

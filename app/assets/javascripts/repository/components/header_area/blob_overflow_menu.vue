@@ -1,6 +1,7 @@
 <script>
 import { GlDisclosureDropdown, GlTooltipDirective } from '@gitlab/ui';
 import { computed } from 'vue';
+import glFeatureFlagMixin from '~/vue_shared/mixins/gl_feature_flags_mixin';
 import { __ } from '~/locale';
 import { createAlert } from '~/alert';
 import { isLoggedIn } from '~/lib/utils/common_utils';
@@ -31,6 +32,7 @@ export default {
   directives: {
     GlTooltipDirective,
   },
+  mixins: [glFeatureFlagMixin()],
   inject: ['blobInfo', 'currentRef'],
   provide() {
     return {
@@ -65,17 +67,22 @@ export default {
     eeCanModifyFile: {
       type: Boolean,
       required: false,
-      default: undefined,
+      default: false,
     },
-    eeCanLock: {
+    eeCanCreateLock: {
       type: Boolean,
       required: false,
-      default: undefined,
+      default: false,
+    },
+    eeCanDestroyLock: {
+      type: Boolean,
+      required: false,
+      default: false,
     },
     eeIsLocked: {
       type: Boolean,
       required: false,
-      default: undefined,
+      default: false,
     },
   },
   apollo: {
@@ -88,7 +95,7 @@ export default {
         };
       },
       update({ project }) {
-        this.userPermissions = project?.userPermissions;
+        this.userPermissions = project?.userPermissions || DEFAULT_BLOB_INFO.userPermissions;
       },
       error() {
         createAlert({ message: this.$options.i18n.fetchError });
@@ -98,21 +105,13 @@ export default {
   data() {
     return {
       userPermissions: DEFAULT_BLOB_INFO.userPermissions,
+      activeViewerType: SIMPLE_BLOB_VIEWER,
       isLoggedIn: isLoggedIn(),
     };
   },
   computed: {
     isLoading() {
       return this.$apollo?.queries.projectInfo.loading;
-    },
-    activeViewerType() {
-      if (this.$route?.query?.plain !== '1') {
-        const richViewer = document.querySelector('.blob-viewer[data-type="rich"]');
-        if (richViewer) {
-          return RICH_BLOB_VIEWER;
-        }
-      }
-      return SIMPLE_BLOB_VIEWER;
     },
     viewer() {
       return this.activeViewerType === RICH_BLOB_VIEWER
@@ -123,16 +122,33 @@ export default {
       return Boolean(this.viewer.renderError);
     },
     canModifyFile() {
-      return this.eeCanModifyFile !== undefined ? this.eeCanModifyFile : true;
-    },
-    canLock() {
-      return this.eeCanLock !== undefined ? this.eeCanLock : false;
+      return this.glFeatures.fileLocks ? this.eeCanModifyFile : true;
     },
     isLocked() {
-      return this.eeIsLocked !== undefined ? this.eeIsLocked : false;
+      return this.glFeatures.fileLocks ? this.eeIsLocked : false;
     },
   },
+  watch: {
+    // Watch the URL 'plain' query value to know if the viewer needs changing.
+    // This is the case when the user switches the viewer and then goes back through the history
+    '$route.query.plain': {
+      handler(plainValue) {
+        this.updateViewerFromQueryParam(plainValue);
+      },
+    },
+  },
+  mounted() {
+    this.updateViewerFromQueryParam(this.$route?.query?.plain);
+  },
   methods: {
+    updateViewerFromQueryParam(plainValue) {
+      const hasRichViewer = Boolean(this.blobInfo.richViewer);
+      const useSimpleViewer = plainValue === '1' || !hasRichViewer;
+      this.switchViewer(useSimpleViewer ? SIMPLE_BLOB_VIEWER : RICH_BLOB_VIEWER);
+    },
+    switchViewer(newViewer) {
+      this.activeViewerType = newViewer || SIMPLE_BLOB_VIEWER;
+    },
     onCopy() {
       if (this.overrideCopy) {
         this.$emit('copy');
@@ -163,7 +179,8 @@ export default {
       :is-using-lfs="isUsingLfs"
       :user-permissions="userPermissions"
       :is-loading="isLoading"
-      :can-lock="canLock"
+      :can-create-lock="eeCanCreateLock"
+      :can-destroy-lock="eeCanDestroyLock"
       :is-replace-disabled="!canModifyFile && isLocked"
       :is-locked="isLocked"
       @showForkSuggestion="onShowForkSuggestion"

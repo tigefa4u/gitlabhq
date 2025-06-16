@@ -3,17 +3,18 @@ stage: Fulfillment
 group: Subscription Management
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: Seat usage, compute minutes, storage limits, renewal info.
+gitlab_dedicated: yes
 title: Troubleshooting GitLab subscription
 ---
 
 {{< details >}}
 
 - Tier: Premium, Ultimate
-- Offering: GitLab.com, GitLab Self-Managed
+- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 
-When you purchase or use subscriptions for GitLab.com or GitLab Self-Managed, you might encounter the following issues.
+When you purchase or use subscriptions for GitLab, you might encounter the following issues.
 
 ## Credit card declined
 
@@ -89,11 +90,11 @@ To be added as a contact, [create a ticket with the GitLab Support team](https:/
 ## Unable to link subscription to namespace
 
 On GitLab.com, if you cannot link a subscription to your namespace, you might have insufficient permissions.
-Ensure that you have the Owner role for that namespace, and review the [transfer restrictions](_index.md#transfer-restrictions).
+Ensure that you have the Owner role for that namespace, and review the [transfer restrictions](../manage_subscription.md#transfer-restrictions).
 
 ## Subscription data fails to synchronize
 
-On GitLab Self-Managed, your subscription data might fail to synchronize.
+On GitLab Self-Managed or GitLab Dedicated, your subscription data might fail to synchronize.
 This issue can occur when network traffic between your GitLab instance and certain
 IP addresses is not allowed.
 

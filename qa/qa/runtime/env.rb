@@ -98,6 +98,10 @@ module QA
         enabled?(ENV['COVERBAND_ENABLED'], default: false)
       end
 
+      def istanbul_coverage_enabled?
+        ENV['BABEL_ENV'] == 'istanbul'
+      end
+
       def selective_execution_improved_enabled?
         enabled?(ENV['SELECTIVE_EXECUTION_IMPROVED'], default: false)
       end
@@ -125,7 +129,7 @@ module QA
       # set to 'false' to have the browser run visibly instead of headless
       def webdriver_headless?
         if ENV.key?('CHROME_HEADLESS')
-          ActiveSupport::Deprecation.warn("CHROME_HEADLESS is deprecated. Use WEBDRIVER_HEADLESS instead.")
+          Rails.application.deprecators[:qa].warn("CHROME_HEADLESS is deprecated. Use WEBDRIVER_HEADLESS instead.")
         end
 
         return enabled?(ENV['WEBDRIVER_HEADLESS']) unless ENV['WEBDRIVER_HEADLESS'].nil?

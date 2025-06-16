@@ -173,7 +173,7 @@ export function toggleLoader(state) {
 }
 
 export function getActionFromHref(pathName) {
-  let action = pathName.match(/\/(\d+)\/(commits|diffs|pipelines|reports).*$/);
+  let action = pathName.match(/\/(\d+|new)\/(commits|diffs|pipelines|reports).*$/);
 
   if (action) {
     action = action.at(-1).replace(/(^\/|\.html)/g, '');
@@ -337,6 +337,7 @@ export default class MergeRequestTabs {
       }
 
       this.expandSidebar?.forEach((el) => el.classList.toggle('!gl-hidden', action !== 'show'));
+      this.rapidDiffsApp?.hide?.();
 
       if (action === 'commits') {
         if (!this.commitsLoaded) {
@@ -535,8 +536,10 @@ export default class MergeRequestTabs {
     if (this.createRapidDiffsApp) {
       if (!this.rapidDiffsApp) {
         this.rapidDiffsApp = this.createRapidDiffsApp();
-        this.rapidDiffsApp.reloadDiffs();
+        this.rapidDiffsApp.reloadDiffs(true);
         this.rapidDiffsApp.init();
+      } else {
+        this.rapidDiffsApp.show();
       }
     } else {
       this.loadDiff(options);

@@ -32,14 +32,16 @@ RSpec.describe Ci::Runner, type: :model, factory_default: :keep, feature_categor
 
   it_behaves_like 'having unique enum values'
 
-  it_behaves_like 'it has loose foreign keys' do
-    let(:factory_name) { :ci_runner }
-  end
+  describe 'loose foreign keys' do
+    it_behaves_like 'it has loose foreign keys' do
+      let(:factory_name) { :ci_runner }
+    end
 
-  context 'loose foreign key on ci_runners.creator_id' do
-    it_behaves_like 'cleanup by a loose foreign key' do
-      let!(:parent) { create(:user) }
-      let!(:model) { create(:ci_runner, creator: parent) }
+    context 'with loose foreign key on users.id' do
+      it_behaves_like 'cleanup by a loose foreign key' do
+        let!(:parent) { create(:user) }
+        let!(:model) { create(:ci_runner, creator: parent) }
+      end
     end
   end
 
@@ -1889,21 +1891,6 @@ RSpec.describe Ci::Runner, type: :model, factory_default: :keep, feature_categor
 
     include_context 'with token authenticatable routable token context'
 
-    shared_examples 'an encrypted non-routable token' do |prefix|
-      context 'when :routable_runner_token feature flag is disabled' do
-        before do
-          stub_feature_flags(routable_runner_token: false)
-        end
-
-        it_behaves_like 'an encrypted token' do
-          let(:expected_token) { token }
-          let(:expected_token_payload) { devise_token }
-          let(:expected_token_prefix) { prefix }
-          let(:expected_encrypted_token) { token_owner_record.token_encrypted }
-        end
-      end
-    end
-
     shared_examples 'an encrypted routable token for resource' do |prefix|
       let(:resource_payload) do
         case resource
@@ -1929,19 +1916,6 @@ RSpec.describe Ci::Runner, type: :model, factory_default: :keep, feature_categor
         routing_payload.map { |pairs| pairs.join(':') }.join("\n")
       end
 
-      context 'when :routable_runner_token feature flag is enabled for the resource' do
-        before do
-          stub_feature_flags(routable_runner_token: resource)
-        end
-
-        it_behaves_like 'an encrypted routable token' do
-          let(:expected_token) { token }
-          let(:expected_random_bytes) { random_bytes }
-          let(:expected_token_prefix) { prefix }
-          let(:expected_encrypted_token) { token_owner_record.token_encrypted }
-        end
-      end
-
       it_behaves_like 'an encrypted routable token' do
         let(:expected_token) { token }
         let(:expected_random_bytes) { random_bytes }
@@ -1953,7 +1927,6 @@ RSpec.describe Ci::Runner, type: :model, factory_default: :keep, feature_categor
     shared_examples 'an instance runner encrypted token' do |prefix|
       let(:runner_type) { :instance_type }
 
-      it_behaves_like 'an encrypted non-routable token', prefix
       it_behaves_like 'an encrypted routable token for resource', prefix do
         let(:resource) { nil }
       end
@@ -1963,7 +1936,6 @@ RSpec.describe Ci::Runner, type: :model, factory_default: :keep, feature_categor
       let(:runner_type) { :group_type }
       let(:attrs) { { groups: [group], sharding_key_id: group.id } }
 
-      it_behaves_like 'an encrypted non-routable token', prefix
       it_behaves_like 'an encrypted routable token for resource', prefix do
         let(:resource) { group }
       end
@@ -1973,7 +1945,6 @@ RSpec.describe Ci::Runner, type: :model, factory_default: :keep, feature_categor
       let(:runner_type) { :project_type }
       let(:attrs) { { projects: [project], sharding_key_id: project.id } }
 
-      it_behaves_like 'an encrypted non-routable token', prefix
       it_behaves_like 'an encrypted routable token for resource', prefix do
         let(:resource) { project }
       end
@@ -2189,6 +2160,48 @@ RSpec.describe Ci::Runner, type: :model, factory_default: :keep, feature_categor
         end
 
         it_behaves_like 'expiring token', interval: 1.day
+      end
+    end
+  end
+
+  describe '#ensure_organization_id' do
+    context 'with group runner' do
+      let(:runner) { build(:ci_runner, :group, groups: [group]) }
+
+      specify { expect(runner).to be_valid }
+
+      context 'when organization_id is not present' do
+        before do
+          runner.save!
+
+          # Simulate a pre-existing record with a NULL organization_id value
+          runner.update_columns(organization_id: nil)
+        end
+
+        it 'populates organization_id from owner on save', :aggregate_failures do
+          expect { runner.save! }
+            .to change { runner.organization_id }.from(nil).to(runner.owner.organization_id)
+        end
+      end
+    end
+
+    context 'with project runner' do
+      let(:runner) { build(:ci_runner, :project, projects: [project]) }
+
+      specify { expect(runner).to be_valid }
+
+      context 'when organization_id is not present' do
+        before do
+          runner.save!
+
+          # Simulate a pre-existing record with a NULL organization_id value
+          runner.update_columns(organization_id: nil)
+        end
+
+        it 'populates organization_id from owner on save', :aggregate_failures do
+          expect { runner.save! }
+            .to change { runner.organization_id }.from(nil).to(runner.owner.organization_id)
+        end
       end
     end
   end
@@ -2576,6 +2589,20 @@ RSpec.describe Ci::Runner, type: :model, factory_default: :keep, feature_categor
 
         it { is_expected.to eq [] }
       end
+    end
+  end
+
+  describe '.encode' do
+    let(:token_string) { 'test_token_123' }
+
+    it 'encodes the provided token' do
+      expect(Authn::TokenField::EncryptionHelper).to receive(:encrypt_token)
+        .with(token_string)
+        .and_return('fake_encrypted_token')
+
+      encoded_token = described_class.encode(token_string)
+
+      expect(encoded_token).to eq('fake_encrypted_token')
     end
   end
 end

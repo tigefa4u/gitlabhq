@@ -29,12 +29,15 @@
 #     created_before: datetime
 #     updated_after: datetime
 #     updated_before: datetime
+#     review_states: 'unreviewed', 'reviewed', 'requested_changes' or 'approved'
 #     not:
 #       only_reviewer: boolean
 #       reviewer_username: string
+#       review_states: 'unreviewed', 'reviewed', 'requested_changes' or 'approved'
 #     or:
 #       only_reviewer_username: boolean
 #       reviewer_wildcard: string
+#       review_states: 'unreviewed', 'reviewed', 'requested_changes' or 'approved'
 #
 class MergeRequestsFinder < IssuableFinder
   extend ::Gitlab::Utils::Override
@@ -91,6 +94,8 @@ class MergeRequestsFinder < IssuableFinder
     items = by_assignee_or_reviewer(items)
     items = by_blob_path(items)
     items = by_no_review_requested_or_only_user(items)
+    items = by_review_states_or_no_reviewer(items)
+    items = by_valid_or_no_reviewers(items)
 
     by_approved(items)
   end
@@ -272,13 +277,13 @@ class MergeRequestsFinder < IssuableFinder
     return items unless params.review_state.present?
     return items if params.reviewer_id? || params.reviewer_username?
 
-    items.review_states(params.review_state)
+    items.review_states(params.review_state, params.ignored_reviewer)
   end
 
   def by_negated_review_states(items)
     return items unless params.not_review_states.present?
 
-    items.no_review_states(params.not_review_states)
+    items.no_review_states(params.not_review_states, params.ignored_reviewer)
   end
 
   def by_negated_reviewer(items)
@@ -299,16 +304,31 @@ class MergeRequestsFinder < IssuableFinder
     items.not_only_reviewer(not_params.reviewer)
   end
 
-  def by_no_review_requested_or_only_user(items)
+  def by_review_states_or_no_reviewer(items)
     return items unless or_params&.fetch(:reviewer_wildcard, false).present?
-    return items unless or_params&.fetch(:only_reviewer_username, false).present?
-    return items unless or_params[:reviewer_wildcard].to_s.casecmp('NONE') == 0
+    return items unless or_params[:reviewer_wildcard].to_s.casecmp?('NONE')
+    return items unless or_params[:review_states]
+    return items if or_params&.fetch(:only_reviewer_username, false).present?
 
-    only_user = User.find_by_username(or_params[:only_reviewer_username])
+    states = or_params[:review_states].map { |state| MergeRequestReviewer.states[state] }
 
-    return items unless only_user
+    items.with_review_states_or_no_reviewer(states)
+  end
 
-    items.no_review_requested_or_only_user(only_user)
+  def by_no_review_requested_or_only_user(items)
+    return items unless should_apply_reviewer_filter?
+    return items if or_params[:review_states]
+
+    items.no_review_requested_or_only_user(or_only_user)
+  end
+
+  def by_valid_or_no_reviewers(items)
+    return items unless should_apply_reviewer_filter?
+    return items unless or_params[:review_states]
+
+    states = or_params[:review_states].map { |state| MergeRequestReviewer.states[state] }
+
+    items.with_valid_or_no_reviewers(states, or_only_user)
   end
 
   def by_assignee_or_reviewer(items)
@@ -350,6 +370,20 @@ class MergeRequestsFinder < IssuableFinder
 
   def or_params
     params[:or]
+  end
+
+  def or_only_user
+    User.find_by_username(or_params[:only_reviewer_username])
+  end
+  strong_memoize_attr :or_only_user
+
+  def should_apply_reviewer_filter?
+    return false unless or_params&.fetch(:reviewer_wildcard, false).present?
+    return false unless or_params&.fetch(:only_reviewer_username, false).present?
+    return false unless or_params[:reviewer_wildcard].to_s.casecmp?('NONE')
+    return false unless or_only_user
+
+    true
   end
 end
 

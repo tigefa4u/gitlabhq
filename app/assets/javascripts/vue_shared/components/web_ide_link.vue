@@ -3,9 +3,10 @@ import {
   GlDisclosureDropdown,
   GlDisclosureDropdownGroup,
   GlDisclosureDropdownItem,
+  GlTooltipDirective,
 } from '@gitlab/ui';
 import { s__, __ } from '~/locale';
-import { visitUrl } from '~/lib/utils/url_utility';
+import { visitUrl, appendLineRangeHashToUrl } from '~/lib/utils/url_utility';
 import Tracking from '~/tracking';
 import ConfirmForkModal from '~/vue_shared/components/web_ide/confirm_fork_modal.vue';
 import { keysFor, GO_TO_PROJECT_WEBIDE } from '~/behaviors/shortcuts/keybindings';
@@ -31,6 +32,9 @@ export default {
     GlDisclosureDropdownGroup,
     GlDisclosureDropdownItem,
     ConfirmForkModal,
+  },
+  directives: {
+    GlTooltip: GlTooltipDirective,
   },
   i18n,
   mixins: [Tracking.mixin(), glFeatureFlagsMixin()],
@@ -135,6 +139,11 @@ export default {
       required: false,
       default: 'sm:gl-ml-3',
     },
+    disabled: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   data() {
     return {
@@ -224,7 +233,8 @@ export default {
           }
         : {
             handle: () => {
-              visitUrl(this.webIdeUrl, true);
+              const url = appendLineRangeHashToUrl(this.webIdeUrl);
+              visitUrl(url, true);
             },
           };
 
@@ -293,6 +303,9 @@ export default {
 
       return showWebIdeButton || showEditButton;
     },
+    tooltipText() {
+      return this.disabled ? __('Editing this file is not supported') : '';
+    },
   },
   methods: {
     showModal(dataKey) {
@@ -309,9 +322,12 @@ export default {
 <template>
   <div v-if="hasActions" :class="cssClasses">
     <gl-disclosure-dropdown
+      v-gl-tooltip="tooltipText"
       :variant="editButtonVariant"
       :category="isBlob ? 'primary' : 'secondary'"
       :toggle-text="$options.i18n.toggleText"
+      :disabled="disabled"
+      :aria-label="tooltipText"
       data-testid="action-dropdown"
       fluid-width
       block

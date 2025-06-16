@@ -129,7 +129,7 @@ curl --request GET \
 
 {{< /history >}}
 
-Creates a project access token for a specified project. You cannot create a token with an access level greater than your account. For example, a user with the Maintainer role cannot create a project access token with the Owner role. 
+Creates a project access token for a specified project. You cannot create a token with an access level greater than your account. For example, a user with the Maintainer role cannot create a project access token with the Owner role.
 
 You must use a personal access token with this endpoint. You cannot authenticate with a project access token. There is an [open feature request](https://gitlab.com/gitlab-org/gitlab/-/issues/359953) to add this functionality.
 
@@ -143,7 +143,7 @@ POST projects/:id/access_tokens
 | `name`         | string            | yes      | Name of the token. |
 | `description`  | string            | no       | Description of the project access token. |
 | `scopes`       | `Array[String]`   | yes      | List of [scopes](../user/project/settings/project_access_tokens.md#scopes-for-a-project-access-token) available to the token. |
-| `access_level` | integer           | no       | [Access level](../development/permissions/predefined_roles.md#members) for the token. Possible values: `10` (Guest), `15` (Planner), `20` (Reporter), `30` (Developer), `40` (Maintainer), and `50` (Owner). Default value: `40`. |
+| `access_level` | integer           | no       | Role for the token. Possible values: `10` (Guest), `15` (Planner), `20` (Reporter), `30` (Developer), `40` (Maintainer), and `50` (Owner). Default value: `40`. |
 | `expires_at`   | date              | yes      | Expiration date of the token in ISO format (`YYYY-MM-DD`). If undefined, the date is set to the [maximum allowable lifetime limit](../user/profile/personal_access_tokens.md#access-token-expiration). |
 
 ```shell
@@ -199,7 +199,7 @@ POST /projects/:id/access_tokens/:token_id/rotate
 | ------------ | ----------------- | -------- | ----------- |
 | `id`         | integer or string | yes      | ID or [URL-encoded path](rest/_index.md#namespaced-paths) of a project. |
 | `token_id`   | integer or string | yes      | ID of a project access token or the keyword `self`. |
-| `expires_at` | date              | no       | Expiration date of the access token in ISO format (`YYYY-MM-DD`). The date must be one year or less from the rotation date. If undefined, the token expires after one week. |
+| `expires_at` | date              | no       | Expiration date of the access token in ISO format (`YYYY-MM-DD`). If the token requires an expiration date, defaults to 1 week. If not required, defaults to the [maximum allowable lifetime limit](../user/profile/personal_access_tokens.md#access-token-expiration). |
 
 ```shell
 curl --request POST \

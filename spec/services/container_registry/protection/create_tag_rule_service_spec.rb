@@ -28,8 +28,8 @@ RSpec.describe ContainerRegistry::Protection::CreateTagRuleService, '#execute', 
             be_a(ContainerRegistry::Protection::TagRule)
             .and(have_attributes(
               tag_name_pattern: params[:tag_name_pattern],
-              minimum_access_level_for_push: params[:minimum_access_level_for_push].to_s,
-              minimum_access_level_for_delete: params[:minimum_access_level_for_delete].to_s
+              minimum_access_level_for_push: params[:minimum_access_level_for_push]&.to_s,
+              minimum_access_level_for_delete: params[:minimum_access_level_for_delete]&.to_s
             ))
           }
         )
@@ -144,6 +144,37 @@ RSpec.describe ContainerRegistry::Protection::CreateTagRuleService, '#execute', 
 
     it_behaves_like 'an erroneous service response',
       message: 'Maximum number of protection rules have been reached.'
+  end
+
+  describe 'user roles' do
+    using RSpec::Parameterized::TableSyntax
+
+    where(:user_role, :success) do
+      :owner      | true
+      :maintainer | true
+      :developer  | false
+      :reporter   | false
+      :guest      | false
+    end
+
+    with_them do
+      before do
+        project.send(:"add_#{user_role}", current_user)
+      end
+
+      if params[:success]
+        it_behaves_like 'a successful service response'
+      else
+        it_behaves_like 'an erroneous service response',
+          message: 'Unauthorized to create a protection rule for container image tags'
+      end
+    end
+
+    context 'when the current user is an admin', :enable_admin_mode do
+      let(:current_user) { build_stubbed(:admin) }
+
+      it_behaves_like 'a successful service response'
+    end
   end
 
   context 'when the GitLab API is not supported' do

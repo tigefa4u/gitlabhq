@@ -153,8 +153,6 @@ export default {
       service: store && this.createService(store),
       machineState: store?.machineValue || STATE_MACHINE.definition.initial,
       loading: true,
-      recomputeComponentName: 0,
-      issuableId: false,
       startingPollInterval: STATE_QUERY_POLLING_INTERVAL_DEFAULT,
       pollInterval: STATE_QUERY_POLLING_INTERVAL_DEFAULT,
     };
@@ -530,7 +528,6 @@ export default {
     <mr-widget-migrate-jenkins
       v-if="showRenderMigrateFromJenkins"
       class="mr-widget-workflow"
-      :human-access="formattedHumanAccess"
       :path="mr.userCalloutsPath"
       :feature-id="mr.migrateJenkinsFeatureId"
       @dismiss="dismissMigrateFromJenkins"

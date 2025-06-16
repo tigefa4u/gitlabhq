@@ -1,7 +1,7 @@
 ---
 stage: Plan
 group: Optimize
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Value stream analytics development guidelines
 ---
 
@@ -31,20 +31,20 @@ Apart from the durations, we expose the record count within a stage.
 - Project level (licensed): We are continually adding features to project level VSA to bring it in line with group level VSA.
 - Project level (FOSS): Keep it as is.
 
-|Feature|Group level (licensed)|Project level (licensed)|Project level (FOSS)|
-|-|-|-|-|
-|Create custom value streams|Yes|No, only one value stream (default) is present with the default stages|no, only one value stream (default) is present with the default stages|
-|Create custom stages|Yes|No|No|
-|Filtering (author, label, milestone, etc.)|Yes|Yes|Yes|
-|Stage time chart|Yes|No|No|
-|Total time chart|Yes|No|No|
-|Task by type chart|Yes|No|No|
-|DORA Metrics|Yes|Yes|No|
-|Cycle time and lead time summary (Lifecycle metrics)|Yes|Yes|No|
-|New issues, commits and deploys (Lifecycle metrics)|Yes, excluding commits|Yes|Yes|
-|Uses aggregated backend|Yes|No|No|
-|Date filter behavior|Filters items [finished within the date range](https://gitlab.com/groups/gitlab-org/-/epics/6046)|Filters items by creation date.|Filters items by creation date.|
-|Authorization|At least reporter|At least reporter|Can be public.|
+| Feature                                              | Group level (licensed)                                                                        | Project level (licensed)                                               | Project level (FOSS) |
+|------------------------------------------------------|-----------------------------------------------------------------------------------------------|------------------------------------------------------------------------|----------------------|
+| Create custom value streams                          | Yes                                                                                           | No, only one value stream (default) is present with the default stages | No, only one value stream (default) is present with the default stages |
+| Create custom stages                                 | Yes                                                                                           | No                                                                     | No                   |
+| Filtering (author, label, milestone, etc.)           | Yes                                                                                           | Yes                                                                    | Yes                  |
+| Stage time chart                                     | Yes                                                                                           | No                                                                     | No                   |
+| Total time chart                                     | Yes                                                                                           | No                                                                     | No                   |
+| Task by type chart                                   | Yes                                                                                           | No                                                                     | No                   |
+| DORA Metrics                                         | Yes                                                                                           | Yes                                                                    | No                   |
+| Cycle time and lead time summary (Lifecycle metrics) | Yes                                                                                           | Yes                                                                    | No                   |
+| New issues, commits and deploys (Lifecycle metrics)  | Yes, excluding commits                                                                        | Yes                                                                    | Yes                  |
+| Uses aggregated backend                              | Yes                                                                                           | No                                                                     | No                   |
+| Date filter behavior                                 | Filters items [finished in the date range](https://gitlab.com/groups/gitlab-org/-/epics/6046) | Filters items by creation date.                                        | Filters items by creation date. |
+| Authorization                                        | At least reporter                                                                             | At least reporter                                                      | Can be public.       |
 
 ## VSA core domain objects
 
