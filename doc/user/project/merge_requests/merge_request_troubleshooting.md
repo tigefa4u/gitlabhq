@@ -3,7 +3,7 @@ stage: Create
 group: Code Review
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: Troubleshooting help for merge requests.
-title: Merge request troubleshooting
+title: Troubleshooting merge requests
 ---
 
 {{< details >}}
@@ -253,7 +253,7 @@ You can open the file with:
 git config -e
 ```
 
-Now add the following line to the above section:
+Now add the following line to the previous section:
 
 ```plaintext
 fetch = +refs/merge-requests/*/head:refs/remotes/origin/merge-requests/*
@@ -286,7 +286,7 @@ To check out a particular merge request:
 git checkout origin/merge-requests/1
 ```
 
-All the above can be done with the [`git-mr`](https://gitlab.com/glensc/git-mr) script.
+These commands can be also be done with the [`git-mr`](https://gitlab.com/glensc/git-mr) script.
 
 ## Error: "source branch `<branch_name>` does not exist." when the branch exists
 
@@ -322,3 +322,11 @@ To force a cache update:
    ```
 
 1. Reload the merge request.
+
+## Approvals reset when automation approves a merge request
+
+If you automate the creation of merge requests, or pushing to them, you might want to build automated
+approvals for those merge requests. In GitLab Premium and Ultimate, by default, all approvals are removed
+[when commits are added to the source branch](approvals/settings.md#remove-all-approvals-when-commits-are-added-to-the-source-branch).
+To avoid this problem, add logic to your automation that ensures
+[commits are processed before approving](../../../api/merge_request_approvals.md#approvals-for-automated-merge-requests) the merge request.

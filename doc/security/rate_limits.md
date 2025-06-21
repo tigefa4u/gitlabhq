@@ -1,6 +1,6 @@
 ---
-stage: Software Supply Chain Security
-group: Authentication
+stage: none
+group: unassigned
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Rate limits
 ---
@@ -140,7 +140,7 @@ The **rate limit** is 20 calls per minute per IP address.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/382985) in GitLab 15.7 [with a flag](../administration/feature_flags.md) named `ci_enforce_rate_limits_jobs_api`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/382985) in GitLab 15.7 [with a flag](../administration/feature_flags/_index.md) named `ci_enforce_rate_limits_jobs_api`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/384186) in GitLab 16.0. Feature flag `ci_enforce_rate_limits_jobs_api` removed.
 
 {{< /history >}}
@@ -173,11 +173,28 @@ There is a rate limit for [removing project or group members using the API endpo
 
 The **rate limit** is 60 deletions per minute.
 
+### Repository blob and file access
+
+{{< history >}}
+
+- [Introduced](https://gitlab.com/gitlab-org/security/gitlab/-/issues/1302) in GitLab 18.1.
+
+{{< /history >}}
+
+Rate limits apply when accessing large files through specific repository API endpoints.
+For files larger than 10 MB, the rate limit is 5 calls per minute per object per project for:
+
+- [Repository blob endpoint](../api/repositories.md#get-a-blob-from-repository): `/projects/:id/repository/blobs/:sha`
+- [Repository file endpoint](../api/repository_files.md#get-file-from-repository): `/projects/:id/repository/files/:file_path`
+
+These limits help prevent excessive resource usage when accessing large repository files through
+the API.
+
 ### Notification emails
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/439101) in GitLab 17.1 [with a flag](../administration/feature_flags.md) named `rate_limit_notification_emails`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/439101) in GitLab 17.1 [with a flag](../administration/feature_flags/_index.md) named `rate_limit_notification_emails`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/439101) in GitLab 17.2. Feature flag `rate_limit_notification_emails` removed.
 
 {{< /history >}}
@@ -185,6 +202,12 @@ The **rate limit** is 60 deletions per minute.
 There is a rate limit for notification emails related to a project or group.
 
 The **rate limit** is 1,000 notifications per 24 hours per project or group per user.
+
+### GitHub import
+
+There is a rate limit for triggering project imports from GitHub.
+
+The **rate limit** is 6 triggered imports per minute per user.
 
 ### FogBugz import
 
@@ -238,7 +261,7 @@ To remove a blocked IP:
    grep "Rack_Attack" /var/log/gitlab/gitlab-rails/auth.log
    ```
 
-1. Since the denylist is stored in Redis, you must open up `redis-cli`:
+1. The denylist is stored in Redis, so you must open up `redis-cli`:
 
    ```shell
    /opt/gitlab/embedded/bin/redis-cli -s /var/opt/gitlab/redis/redis.socket

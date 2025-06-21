@@ -3,6 +3,7 @@ stage: Package
 group: Package Registry
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Packages and Registries
+description: Package management, container registry, artifact storage, and dependency management.
 ---
 
 {{< details >}}
@@ -23,6 +24,10 @@ The GitLab [Container Registry](container_registry/_index.md) is a secure and pr
 ## Terraform Module Registry
 
 The GitLab [Terraform Module Registry](terraform_module_registry/_index.md) is a secure and private registry for Terraform modules. You can use GitLab CI/CD to create and publish modules.
+
+## Virtual Registry
+
+The GitLab [virtual registry](virtual_registry/_index.md) provides advanced caching, proxying, and distribution features to improve package management from external registries in GitLab.
 
 ## Dependency Proxy
 

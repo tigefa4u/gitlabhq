@@ -1,6 +1,6 @@
 ---
-stage: Create
-group: Source Code
+stage: Tenant Scale
+group: Organizations
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Project badges API
 ---
@@ -12,25 +12,22 @@ title: Project badges API
 
 {{< /details >}}
 
-## Placeholder tokens
+Use this API to manage and review [project badges](../user/project/badges.md).
 
-[Badges](../user/project/badges.md) support placeholders that are replaced in real-time in both the link and image URL. The allowed placeholders are:
+Badges can include placeholders that are replaced in both the
+link and image URL. The available placeholders are:
 
-<!-- vale gitlab_base.Spelling = NO -->
-
-- **%{project_path}**: Replaced by the project path.
-- **%{project_title}**: Replaced by the project title.
-- **%{project_name}**: Replaced by the project name.
-- **%{project_id}**: Replaced by the project ID.
-- **%{project_namespace}**: Replaced by the project's namespace full path.
-- **%{group_name}**: Replaced by the project's top-level group name.
-- **%{gitlab_server}**: Replaced by the project's server name.
-- **%{gitlab_pages_domain}**: Replaced by the domain name hosting GitLab Pages.
-- **%{default_branch}**: Replaced by the project default branch.
-- **%{commit_sha}**: Replaced by the project's last commit SHA.
-- **%{latest_tag}**: Replaced by the project's last tag.
-
-<!-- vale gitlab_base.Spelling = YES -->
+- `%{project_path}`: Replaced by the project path.
+- `%{project_title}`: Replaced by the project title.
+- `%{project_name}`: Replaced by the project name.
+- `%{project_id}`: Replaced by the project ID.
+- `%{project_namespace}`: Replaced by the project's namespace full path.
+- `%{group_name}`: Replaced by the project's top-level group name.
+- `%{gitlab_server}`: Replaced by the project's server name.
+- `%{gitlab_pages_domain}`: Replaced by the domain name hosting GitLab Pages.
+- `%{default_branch}`: Replaced by the project default branch.
+- `%{commit_sha}`: Replaced by the project's last commit SHA.
+- `%{latest_tag}`: Replaced by the project's last tag.
 
 ## List all badges of a project
 
@@ -42,7 +39,7 @@ GET /projects/:id/badges
 
 | Attribute | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `id`      | integer/string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
+| `id`      | integer or string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
 | `name`    | string         | no  | Name of the badges to return (case-sensitive). |
 
 ```shell
@@ -85,7 +82,7 @@ GET /projects/:id/badges/:badge_id
 
 | Attribute | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `id`      | integer/string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
+| `id`      | integer or string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
 | `badge_id` | integer | yes   | The badge ID |
 
 ```shell
@@ -117,7 +114,7 @@ POST /projects/:id/badges
 
 | Attribute | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `id`      | integer/string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
+| `id`      | integer or string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
 | `link_url` | string         | yes | URL of the badge link |
 | `image_url` | string | yes | URL of the badge image |
 | `name` | string | no | Name of the badge |
@@ -153,7 +150,7 @@ PUT /projects/:id/badges/:badge_id
 
 | Attribute | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `id`      | integer/string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
+| `id`      | integer or string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
 | `badge_id` | integer | yes   | The badge ID |
 | `link_url` | string         | no | URL of the badge link |
 | `image_url` | string | no | URL of the badge image |
@@ -189,7 +186,7 @@ DELETE /projects/:id/badges/:badge_id
 
 | Attribute | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `id`      | integer/string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
+| `id`      | integer or string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
 | `badge_id` | integer | yes   | The badge ID |
 
 ```shell
@@ -208,7 +205,7 @@ GET /projects/:id/badges/render
 
 | Attribute | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `id`      | integer/string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
+| `id`      | integer or string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
 | `link_url` | string         | yes | URL of the badge link|
 | `image_url` | string | yes | URL of the badge image |
 

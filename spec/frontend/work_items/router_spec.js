@@ -74,6 +74,10 @@ describe('Work items router', () => {
         hasIssuableHealthStatusFeature: false,
         labelsManagePath: 'test-project-path/labels',
         reportAbusePath: '/report/abuse/path',
+        workItemPlanningViewEnabled: false,
+      },
+      propsData: {
+        rootPageFullPath: '/',
       },
       stubs: {
         WorkItemWeight: true,
@@ -87,6 +91,7 @@ describe('Work items router', () => {
         WorkItemDevelopment: true,
         WorkItemChangeTypeModal: true,
         WorkItemErrorTracking: true,
+        WorkItemMetadataProvider: true,
       },
     });
   };

@@ -8,6 +8,7 @@ RSpec.describe Gitlab::BitbucketServerImport::Stage::ImportPullRequestsWorker, f
   subject(:worker) { described_class.new }
 
   it_behaves_like Gitlab::BitbucketServerImport::StageMethods
+  it_behaves_like Import::ResumableImportJob
 
   describe '#perform' do
     context 'when the import succeeds' do
@@ -69,7 +70,7 @@ RSpec.describe Gitlab::BitbucketServerImport::Stage::ImportPullRequestsWorker, f
           ).and_call_original
 
         expect { worker.perform(project.id) }
-          .to change { Gitlab::BitbucketServerImport::AdvanceStageWorker.jobs.size }.by(0)
+          .to not_change { Gitlab::BitbucketServerImport::AdvanceStageWorker.jobs.size }
           .and raise_error(exception)
       end
     end

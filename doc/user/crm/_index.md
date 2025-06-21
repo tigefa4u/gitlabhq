@@ -3,6 +3,7 @@ stage: Plan
 group: Project Management
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Customer relations management (CRM)
+description: Customer management, organizations, contacts, and permissions.
 ---
 
 {{< details >}}
@@ -14,7 +15,7 @@ title: Customer relations management (CRM)
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/2256) in GitLab 14.6 [with a flag](../../administration/feature_flags.md) named `customer_relations`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/2256) in GitLab 14.6 [with a flag](../../administration/feature_flags/_index.md) named `customer_relations`. Disabled by default.
 - In GitLab 14.8 and later, you can [create contacts and organizations only in top-level groups](https://gitlab.com/gitlab-org/gitlab/-/issues/350634).
 - [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/346082) in GitLab 15.0.
 - [Feature flag removed](https://gitlab.com/gitlab-org/gitlab/-/issues/346082) in GitLab 15.1.
@@ -282,7 +283,7 @@ API.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/2256) in GitLab 14.8 [with a flag](../../administration/feature_flags.md) named `contacts_autocomplete`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/2256) in GitLab 14.8 [with a flag](../../administration/feature_flags/_index.md) named `contacts_autocomplete`. Disabled by default.
 - [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/352123) in GitLab 15.0.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/352123) in GitLab 15.2. [Feature flag `contacts_autocomplete`](https://gitlab.com/gitlab-org/gitlab/-/issues/352123) removed.
 

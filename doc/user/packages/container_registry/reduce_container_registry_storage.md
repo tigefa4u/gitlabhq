@@ -185,6 +185,7 @@ The cleanup policy:
 1. Excludes the N tags based on the `keep_n` value (Number of tags to retain).
 1. Excludes the tags more recent than the `older_than` value (Expiration interval).
 1. Excludes [protected tags](protected_container_tags.md).
+1. Excludes [immutable tags](immutable_container_tags.md).
 1. Deletes the remaining tags in the list from the container registry.
 
 {{< alert type="warning" >}}
@@ -261,7 +262,7 @@ To create a cleanup policy in the UI:
    |----------------------------|-------------|
    | **Toggle**                 | Turn the policy on or off. |
    | **Run cleanup**            | How often the policy should run. |
-   | **Keep the most recent**   | How many tags to _always_ keep for each image. |
+   | **Keep the most recent**   | How many tags to always keep for each image. |
    | **Keep tags matching**     | A regex pattern that determines which tags to preserve. The `latest` tag is always preserved. For all tags, use `.*`. See other [regex pattern examples](#regex-pattern-examples). |
    | **Remove tags older than** | Remove only tags older than X days. |
    | **Remove tags matching**   | A regex pattern that determines which tags to remove. This value cannot be blank. For all tags, use `.*`. See other [regex pattern examples](#regex-pattern-examples). |
@@ -346,7 +347,7 @@ You can use the following application settings to prevent server resource starva
   start with a low number and increase it after verifying that container images are properly
   deleted. The default value is `200`.
 - `container_registry_expiration_policies_caching`: enable or disable tag creation timestamp caching
-  during execution of policies. Cached timestamps are stored in [Redis](../../../development/architecture.md#redis).
+  during execution of policies. Cached timestamps are stored in Redis.
   Enabled by default.
 
 For GitLab Self-Managed instances, those settings can be updated in the [Rails console](../../../administration/operations/rails_console.md#starting-a-rails-console-session):

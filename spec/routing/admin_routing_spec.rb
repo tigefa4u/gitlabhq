@@ -170,6 +170,8 @@ RSpec.describe Admin::GroupsController, "routing" do
 
   it "to #index" do
     expect(get("/admin/groups")).to route_to('admin/groups#index')
+    expect(get("/admin/groups/all")).to route_to('admin/groups#index')
+    expect(get("/admin/groups/inactive")).to route_to('admin/groups#index')
   end
 
   it "to #show" do
@@ -182,7 +184,7 @@ RSpec.describe Admin::GroupsController, "routing" do
   end
 end
 
-RSpec.describe Admin::OrganizationsController, "routing", feature_category: :cell do
+RSpec.describe Admin::OrganizationsController, "routing", feature_category: :organization do
   it "to #index" do
     expect(get("/admin/organizations")).to route_to('admin/organizations#index')
   end

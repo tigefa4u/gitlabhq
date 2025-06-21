@@ -448,15 +448,9 @@ RSpec.describe API::Internal::Base, feature_category: :system_access do
       let(:actor) { key }
       let(:rate_limiter) { double(:rate_limiter, ip: "127.0.0.1", trusted_ip?: false) }
 
-      before do
-        allow(::Gitlab::Auth::IpRateLimiter).to receive(:new).with("127.0.0.1").and_return(rate_limiter)
-      end
-
       it 'is throttled by rate limiter' do
         allow(::Gitlab::ApplicationRateLimiter).to receive(:threshold).and_return(1)
-
         expect(::Gitlab::ApplicationRateLimiter).to receive(:throttled?).with(:gitlab_shell_operation, scope: [action, project.full_path, actor]).twice.and_call_original
-        expect(::Gitlab::ApplicationRateLimiter).to receive(:throttled?).with(:gitlab_shell_operation, scope: [action, project.full_path, "127.0.0.1"]).and_call_original
 
         request
 
@@ -465,6 +459,7 @@ RSpec.describe API::Internal::Base, feature_category: :system_access do
         request
 
         expect(response).to have_gitlab_http_status(:too_many_requests)
+
         expect(json_response['message']['error']).to eq('This endpoint has been requested too many times. Try again later.')
       end
 
@@ -1437,6 +1432,65 @@ RSpec.describe API::Internal::Base, feature_category: :system_access do
             it_behaves_like 'pushes fail for ssh and http'
           end
         end
+      end
+    end
+
+    context 'workhorse circuit breaker header' do
+      let(:request) do
+        post(api('/internal/allowed'),
+          params: {
+            key_id: key.id,
+            project: project.full_path,
+            gl_repository: gl_repository,
+            protocol: protocol
+          }, headers: headers
+        )
+      end
+
+      shared_examples 'a response with no circuit breaker header' do
+        it 'does not add a Enable-Workhorse-Circuit-Breaker header to the response' do
+          request
+
+          expect(response.headers['Enable-Workhorse-Circuit-Breaker']).to be_nil
+        end
+      end
+
+      context 'with the feature flag enabled' do
+        context 'with a ssh protocol and Gitlab-Shell-Api-Request header' do
+          let(:protocol) { 'ssh' }
+          let(:headers) { gitlab_shell_internal_api_request_header }
+
+          it 'adds a Enable-Workhorse-Circuit-Breaker header to the response' do
+            request
+
+            expect(response.headers['Enable-Workhorse-Circuit-Breaker']).to eq('true')
+          end
+        end
+
+        context 'without ssh protocol' do
+          let(:protocol) { 'http' }
+          let(:headers) { gitlab_shell_internal_api_request_header }
+
+          it_behaves_like 'a response with no circuit breaker header'
+        end
+
+        context 'without the Gitlab-Shell-Api-Request header' do
+          let(:protocol) { 'ssh' }
+          let(:headers) { {} }
+
+          it_behaves_like 'a response with no circuit breaker header'
+        end
+      end
+
+      context 'with the feature flag disabled' do
+        let(:protocol) { 'ssh' }
+        let(:headers) { gitlab_shell_internal_api_request_header }
+
+        before do
+          stub_feature_flags(workhorse_circuit_breaker: false)
+        end
+
+        it_behaves_like 'a response with no circuit breaker header'
       end
     end
   end

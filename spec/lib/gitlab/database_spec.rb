@@ -158,12 +158,19 @@ RSpec.describe Gitlab::Database, feature_category: :database do
       it 'returns single-database-ci-connection if ci is shared with main database' do
         skip_if_multiple_databases_not_setup(:ci)
         skip_if_database_exists(:ci)
+        skip_if_database_exists(:sec)
 
         expect(described_class.database_mode).to eq(::Gitlab::Database::MODE_SINGLE_DATABASE_CI_CONNECTION)
       end
 
       it 'returns multiple-database if ci has its own database' do
         skip_if_shared_database(:ci)
+
+        expect(described_class.database_mode).to eq(::Gitlab::Database::MODE_MULTIPLE_DATABASES)
+      end
+
+      it 'returns multiple-database if both ci and sec have their own database' do
+        skip_if_shared_database(:sec)
 
         expect(described_class.database_mode).to eq(::Gitlab::Database::MODE_MULTIPLE_DATABASES)
       end
@@ -177,7 +184,7 @@ RSpec.describe Gitlab::Database, feature_category: :database do
     let(:superuser) { Gitlab::Database::PgUser.new(usename: 'bar', usesuper: true) }
 
     it 'prints user details if not superuser' do
-      allow(Gitlab::Database::PgUser).to receive(:find_by).with('usename = CURRENT_USER').and_return(non_superuser)
+      allow(described_class::PgUser).to receive(:find_by).with('usename = CURRENT_USER').and_return(non_superuser)
 
       expect(Gitlab::AppLogger).to receive(:info).with("Account details: User: \"foo\", UseSuper: (false)")
 
@@ -185,14 +192,14 @@ RSpec.describe Gitlab::Database, feature_category: :database do
     end
 
     it 'raises an exception if superuser' do
-      allow(Gitlab::Database::PgUser).to receive(:find_by).with('usename = CURRENT_USER').and_return(superuser)
+      allow(described_class::PgUser).to receive(:find_by).with('usename = CURRENT_USER').and_return(superuser)
 
       expect(Gitlab::AppLogger).to receive(:info).with("Account details: User: \"bar\", UseSuper: (true)")
       expect { subject }.to raise_error('Error: detected superuser')
     end
 
     it 'catches exception if find_by fails' do
-      allow(Gitlab::Database::PgUser).to receive(:find_by).with('usename = CURRENT_USER').and_raise(ActiveRecord::StatementInvalid)
+      allow(described_class::PgUser).to receive(:find_by).with('usename = CURRENT_USER').and_raise(ActiveRecord::StatementInvalid)
 
       expect { subject }.to raise_error('User CURRENT_USER not found')
     end
@@ -594,32 +601,6 @@ RSpec.describe Gitlab::Database, feature_category: :database do
         event = events.first
         expect(event).not_to be_nil
         expect(event.duration).to be > 0.0
-
-        unless ::Gitlab.next_rails?
-          expect(event.payload).to a_hash_including(
-            connection: be_a(Gitlab::Database::LoadBalancing::ConnectionProxy)
-          )
-        end
-      end
-    end
-
-    unless ::Gitlab.next_rails?
-      context 'within an empty transaction block' do
-        it 'publishes a transaction event' do
-          events = subscribe_events do
-            ApplicationRecord.transaction {}
-            Ci::ApplicationRecord.transaction {}
-          end
-
-          expect(events.length).to be(2)
-
-          event = events.first
-          expect(event).not_to be_nil
-          expect(event.duration).to be > 0.0
-          expect(event.payload).to a_hash_including(
-            connection: be_a(Gitlab::Database::LoadBalancing::ConnectionProxy)
-          )
-        end
       end
     end
 

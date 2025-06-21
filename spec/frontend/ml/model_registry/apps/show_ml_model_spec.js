@@ -134,7 +134,7 @@ describe('ml/model_registry/apps/show_ml_model', () => {
 
     it('sets model metadata correctly', () => {
       expect(findModelMetadata().findComponent(GlIcon).props('name')).toBe('machine-learning');
-      expect(findModelMetadata().text()).toBe('Model created in 3 years by Root');
+      expect(findModelMetadata().text()).toBe('Model created Dec 6, 2023 by Root');
 
       expect(findTimeAgoTooltip().props('time')).toBe(model.createdAt);
       expect(findTimeAgoTooltip().props('tooltipPlacement')).toBe('top');
@@ -269,7 +269,8 @@ describe('ml/model_registry/apps/show_ml_model', () => {
     it('shows model version list when clicks versions tabs', async () => {
       await createWrapper({ mountFn: mountExtended });
 
-      await findVersionsTab().vm.$emit('click');
+      findVersionsTab().vm.$emit('click');
+      await waitForPromises();
 
       expect(findTabs().props('value')).toBe(1);
       expect(findModelDetail().exists()).toBe(false);
@@ -280,7 +281,8 @@ describe('ml/model_registry/apps/show_ml_model', () => {
     it('shows candidate list when user clicks candidates tab', async () => {
       await createWrapper({ mountFn: mountExtended });
 
-      await findCandidateTab().vm.$emit('click');
+      findCandidateTab().vm.$emit('click');
+      await waitForPromises();
 
       expect(findTabs().props('value')).toBe(2);
       expect(findModelDetail().exists()).toBe(false);
@@ -309,7 +311,8 @@ describe('ml/model_registry/apps/show_ml_model', () => {
       });
 
       it(`on click on ${tab}, navigates to ${JSON.stringify(navigatedTo)}`, async () => {
-        await tab().vm.$emit('click');
+        tab().vm.$emit('click');
+        await waitForPromises();
 
         expect(findTabs().props('value')).toBe(navigatedTo);
       });
@@ -359,8 +362,8 @@ describe('ml/model_registry/apps/show_ml_model', () => {
     const findAvatar = () => wrapper.findComponent(GlAvatar);
     const findLatestVersionLink = () => wrapper.findByTestId('sidebar-latest-version-link');
     const findVersionCount = () => wrapper.findByTestId('sidebar-version-count');
-    const findExperimentTitle = () => wrapper.findByTestId('sidebar-experiment-title');
-    const findExperiment = () => wrapper.findByTestId('sidebar-experiment-label');
+    const findExperiment = () => wrapper.findByTestId('sidebar-experiment');
+    const findExperimentLabel = () => wrapper.findByTestId('sidebar-experiment-label');
 
     it('displays sidebar author link', () => {
       expect(findSidebarAuthorLink().attributes('href')).toBe('path/to/user');
@@ -391,16 +394,16 @@ describe('ml/model_registry/apps/show_ml_model', () => {
     });
 
     describe('displays experiment information', () => {
-      it('displays experiment title', () => {
-        expect(findExperimentTitle().text()).toBe('Experiment');
+      it('displays experiment', () => {
+        expect(findExperiment().exists()).toBe(true);
       });
 
       it('displays experiment label', () => {
-        expect(findExperiment().text()).toBe('Default experiment');
+        expect(findExperimentLabel().text()).toBe('Default experiment');
       });
 
       it('shows a link to the default experiment', () => {
-        expect(findExperiment().findComponent(GlLink).attributes('href')).toBe(
+        expect(findExperimentLabel().findComponent(GlLink).attributes('href')).toBe(
           'path/to/experiment',
         );
       });
@@ -423,7 +426,6 @@ describe('ml/model_registry/apps/show_ml_model', () => {
       });
 
       it('does not display sidebar experiment information', () => {
-        expect(findExperimentTitle().exists()).toBe(false);
         expect(findExperiment().exists()).toBe(false);
       });
     });

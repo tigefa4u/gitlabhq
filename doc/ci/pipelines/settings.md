@@ -208,7 +208,7 @@ You can choose how your repository is fetched from GitLab when a job runs.
      for every job. However, the local working copy is always pristine.
    - `git fetch` is faster because it re-uses the local working copy (and falls
      back to clone if it doesn't exist). This is recommended, especially for
-     [large repositories](../../user/project/repository/monorepos/_index.md#git-strategy).
+     [large repositories](../../user/project/repository/monorepos/_index.md#use-git-fetch-in-cicd-operations).
 
 The configured Git strategy can be overridden by the [`GIT_STRATEGY` variable](../runners/configure_runners.md#git-strategy)
 in the `.gitlab-ci.yml` file.
@@ -227,7 +227,7 @@ a repository.
 
 Newly created projects have a default `git depth` value of `20`.
 
-This value can be overridden by the [`GIT_DEPTH` variable](../../user/project/repository/monorepos/_index.md#shallow-cloning)
+This value can be overridden by the [`GIT_DEPTH` variable](../../user/project/repository/monorepos/_index.md#use-shallow-clones-in-cicd-processes)
 in the `.gitlab-ci.yml` file.
 
 ## Set a limit for how long jobs can run
@@ -243,7 +243,10 @@ You can define how long a job can run before it times out.
 
 Jobs that exceed the timeout are marked as failed.
 
-You can override this value [for individual runners](../runners/configure_runners.md#set-the-maximum-job-timeout).
+When both a project timeout and a [runner timeout](../runners/configure_runners.md#set-the-maximum-job-timeout)
+are set, the lower value takes precedence.
+
+Jobs without an output for one hour are dropped regardless of the timeout. To prevent this from happening, add a script to continuously output progress. For more information, see [issue 25359](https://gitlab.com/gitlab-org/gitlab/-/issues/25359#workaround).
 
 ## Pipeline badges
 
@@ -284,7 +287,7 @@ These changes do not apply to projects in an [external integration](../../user/p
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/498969) in GitLab 17.7 [with a flag](../../administration/feature_flags.md) named `ci_delete_old_pipelines`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/498969) in GitLab 17.7 [with a flag](../../administration/feature_flags/_index.md) named `ci_delete_old_pipelines`. Disabled by default.
 - [Feature flag `ci_delete_old_pipelines`](https://gitlab.com/gitlab-org/gitlab/-/issues/503153) removed in GitLab 17.9.
 
 {{< /history >}}

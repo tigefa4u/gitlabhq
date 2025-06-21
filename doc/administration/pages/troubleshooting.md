@@ -30,7 +30,7 @@ For more information, see [Getting the correlation ID from your logs](../logs/tr
 
 The following sequence diagram illustrates how GitLab Pages requests are served.
 For more information on how a GitLab Pages site is deployed and serves static content from Object Storage,
-see [GitLab Pages Architecture](https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/cloud_native_gitlab_pages/#new-gitlab-pages-architecture).
+see the GitLab Pages Architecture documentation.
 
 ```mermaid
 %%{init: { "fontFamily": "GitLab Sans" }}%%
@@ -317,10 +317,10 @@ container.
 
 ## 500 error with `securecookie: failed to generate random iv` and `Failed to save the session`
 
-This problem most likely results from an [out-dated operating system](../package_information/supported_os.md#os-versions-that-are-no-longer-supported).
+This problem most likely results from an out-dated operating system.
 The [Pages daemon uses the `securecookie` library](https://gitlab.com/search?group_id=9970&project_id=734943&repository_ref=master&scope=blobs&search=securecookie&snippets=false) to get random strings via [`crypto/rand` in Go](https://pkg.go.dev/crypto/rand#pkg-variables).
 This requires the `getrandom` system call or `/dev/urandom` to be available on the host OS.
-Upgrading to an [officially supported operating system](https://about.gitlab.com/install/) is recommended.
+Upgrading to an [officially supported operating system](../../install/package/_index.md#supported-platforms) is recommended.
 
 ## The requested scope is invalid, malformed, or unknown
 

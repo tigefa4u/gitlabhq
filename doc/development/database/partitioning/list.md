@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: List partition
 ---
 
@@ -28,8 +28,6 @@ Add the partitioning key column. For example, in a rails migration:
 
 ```ruby
 class AddPartitionNumberForPartitioning < Gitlab::Database::Migration[2.1]
-  enable_lock_retries!
-
   TABLE_NAME = :table_name
   COLUMN_NAME = :partition_id
   DEFAULT_VALUE = 100
@@ -340,8 +338,6 @@ For example:
 ```ruby
 class EnsureIdUniquenessForPCiBuilds < Gitlab::Database::Migration[2.1]
   include Gitlab::Database::PartitioningMigrationHelpers::UniquenessHelpers
-
-  enable_lock_retries!
 
   TABLE_NAME = :p_ci_builds
   SEQ_NAME = :ci_builds_id_seq

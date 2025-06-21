@@ -174,6 +174,14 @@ RSpec.describe Gitlab::Import::SourceUserMapper, :request_store, feature_categor
         end
       end
 
+      context 'when source host name has userinfo credentials' do
+        let(:source_hostname) { 'https://user:password@myhost.com/path' }
+
+        it 'normalizes the base URI and removes the userinfo credentials' do
+          expect(find_or_create_source_user.source_hostname).to eq('https://myhost.com')
+        end
+      end
+
       context 'when source host name has a subdomain' do
         let(:source_hostname) { 'https://subdomain.github.com/path' }
 
@@ -231,7 +239,10 @@ RSpec.describe Gitlab::Import::SourceUserMapper, :request_store, feature_categor
       it 'rescue the exception and raises DuplicatedUserError' do
         create(:user, email: 'user@example.com')
         user = build(:user, email: 'user@example.com').tap(&:valid?)
-        allow(User).to receive(:new).and_return(user)
+
+        allow_next_instance_of(Users::AuthorizedBuildService) do |build_service|
+          allow(build_service).to receive(:execute).and_return(user)
+        end
 
         expect { find_or_create_source_user }.to raise_error(described_class::DuplicatedUserError)
       end
@@ -240,7 +251,10 @@ RSpec.describe Gitlab::Import::SourceUserMapper, :request_store, feature_categor
     context 'when ActiveRecord::RecordInvalid exception raises for another reason' do
       it 'bubbles up the ActiveRecord::RecordInvalid exception' do
         user = build(:user, email: nil)
-        allow(User).to receive(:new).and_return(user)
+
+        allow_next_instance_of(Users::AuthorizedBuildService) do |build_service|
+          allow(build_service).to receive(:execute).and_return(user)
+        end
 
         expect { find_or_create_source_user }.to raise_error(ActiveRecord::RecordInvalid)
       end

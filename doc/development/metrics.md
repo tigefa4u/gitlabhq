@@ -21,8 +21,8 @@ This feature is not under active development.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/124966) in GitLab 16.7 [with a flag](../administration/feature_flags.md) named `observability_metrics`. Disabled by default. This feature is an [experiment](../policy/development_stages_support.md#experiment).
-- Feature flag [changed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/158786) in GitLab 17.3 to the `observability_features` [feature flag](../administration/feature_flags.md), disabled by default. The previous feature flag (`observability_metrics`) was removed.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/124966) in GitLab 16.7 [with a flag](../administration/feature_flags/_index.md) named `observability_metrics`. Disabled by default. This feature is an [experiment](../policy/development_stages_support.md#experiment).
+- Feature flag [changed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/158786) in GitLab 17.3 to the `observability_features` [feature flag](../administration/feature_flags/_index.md), disabled by default. The previous feature flag (`observability_metrics`) was removed.
 - [Introduced](https://gitlab.com/groups/gitlab-org/opstrace/-/epics/100) for GitLab Self-Managed in GitLab 17.3.
 - [Changed](https://gitlab.com/gitlab-com/marketing/digital-experience/buyer-experience/-/issues/4198) to internal beta in GitLab 17.7.
 
@@ -109,12 +109,12 @@ For example, if you search for more than seven days of data, the API returns onl
 
 The following table shows what type of aggregation is used for each search period:
 
-|Period|Aggregation used|
-|---|---|
-| Less than 30 minutes | Raw data as ingested |
-| More than 30 minutes and less than one hour | By minute |
-| More than one hour and less than 72 hours | Hourly |
-| More than 72 hours | Daily |
+| Period                                      | Aggregation used |
+|---------------------------------------------|------------------|
+| Less than 30 minutes                        | Raw data as ingested |
+| More than 30 minutes and less than one hour | By minute        |
+| More than one hour and less than 72 hours   | Hourly           |
+| More than 72 hours                          | Daily            |
 
 ### Metrics ingestion limits
 

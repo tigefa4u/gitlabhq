@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: Data access
+group: Durability
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Run multiple Sidekiq processes
 ---
@@ -159,7 +159,7 @@ Instead of a queue, a queue namespace can also be provided, to have the process
 automatically listen on all queues in that namespace without needing to
 explicitly list all the queue names. For more information about queue namespaces,
 see the relevant section in the
-[Sidekiq development documentation](../../development/sidekiq/_index.md#queue-namespaces).
+Sidekiq development part of the GitLab development documentation.
 
 ### Monitor the `sidekiq-cluster` command
 

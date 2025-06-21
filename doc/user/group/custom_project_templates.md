@@ -52,7 +52,7 @@ Projects in nested subgroups are not included in the template list.
 A [known issue](https://gitlab.com/gitlab-org/gitlab/-/issues/480779) exists:
 [Inherited members](../project/members/_index.md#membership-types) can't select project templates,
 unless the `project_templates_without_min_access` feature flag is enabled.
-This feature flag [is disabled](https://gitlab.com/gitlab-org/gitlab/-/issues/425452)
+This feature flag [is disabled](https://gitlab.com/gitlab-org/gitlab/-/issues/480779)
 on GitLab.com, and so users must be granted direct membership of the template project.
 
 ## Example structure
@@ -82,21 +82,26 @@ gitlab.com/myorganization/
 
 ## What is copied from the templates
 
-The entire custom project templates repository configured for your instance is copied, including:
+When you create a project from a template, all exportable project items are copied from the template
+to the new project. These items include:
 
-- Branches
-- Commits
-- Tags
+- Repository branches, commits, and tags.
+- Project uploads.
+- Project configuration.
+- Issues and merge requests with their comments and other metadata.
+- Labels, milestones, snippets, and releases.
+- CI/CD pipeline configuration.
 
-If the user:
+For a complete list of what is copied, see [Project items that are exported](../project/settings/import_export.md#project-items-that-are-exported).
 
-- Has the Owner role on the project that contains the custom templates for the instance, or is a GitLab administrator:
+### Permissions and sensitive data
+
+The copying behavior might differ based on your permissions:
+
+- If you have the Owner role for the project that contains the custom templates for the instance or if you're a GitLab administrator:
   all project settings, including project members, are copied over to the new project.
-- Doesn't have the Owner role, or is not a GitLab administrator:
-  project deploy keys and project webhooks aren't copied over because they contain sensitive data.
-
-To learn more about what is migrated, see
-[Items that are exported](../project/settings/import_export.md#project-items-that-are-exported).
+- If you do not have the Owner role for the project or if you're not a GitLab administrator:
+  project deploy keys and project webhooks are not copied over because they contain sensitive data.
 
 ## User assignments in templates
 
@@ -105,8 +110,8 @@ to a user in the template are reassigned to you. It's important to understand
 this reassignment when you configure security features like protected branches
 and tags. For example, if the template contains a protected branch:
 
-- In the template, the branch allows the _template owner_ to merge into the default branch.
-- In the project created from the template, the branch allows _you_ to merge into
+- In the template, the branch allows the template owner to merge into the default branch.
+- In the project created from the template, the branch allows you to merge into
   the default branch.
 
 ## Troubleshooting

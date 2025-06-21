@@ -65,18 +65,19 @@ GITLAB_LOG_LEVEL=info
 For some services, other log levels are in place that are not affected by this setting.
 Some of these services have their own environment variables to override the log level. For example:
 
-| Service              | Log level | Environment variable |
-|:---------------------|:----------|:---------------------|
-| GitLab Cleanup       | `INFO`    | `DEBUG`              |
-| GitLab Doctor        | `INFO`    | `VERBOSE`            |
-| GitLab Export        | `INFO`    | `EXPORT_DEBUG`       |
-| GitLab Import        | `INFO`    | `IMPORT_DEBUG`       |
-| GitLab QA Runtime    | `INFO`    | `QA_LOG_LEVEL`       |
-| Google APIs          | `INFO`    |                      |
-| Rack Timeout         | `ERROR`   |                      |
-| Snowplow Tracker     | `FATAL`   |                      |
-| gRPC Client (Gitaly) | `WARN`    | `GRPC_LOG_LEVEL`     |
-| LLM                  | `INFO`    | `LLM_DEBUG`          |
+| Service                   | Log level | Environment variable |
+|:--------------------------|:----------|:---------------------|
+| GitLab Cleanup            | `INFO`    | `DEBUG`              |
+| GitLab Doctor             | `INFO`    | `VERBOSE`            |
+| GitLab Export             | `INFO`    | `EXPORT_DEBUG`       |
+| GitLab Import             | `INFO`    | `IMPORT_DEBUG`       |
+| GitLab QA Runtime         | `INFO`    | `QA_LOG_LEVEL`       |
+| GitLab Product Usage Data | `INFO`    |                      |
+| Google APIs               | `INFO`    |                      |
+| Rack Timeout              | `ERROR`   |                      |
+| Snowplow Tracker          | `FATAL`   |                      |
+| gRPC Client (Gitaly)      | `WARN`    | `GRPC_LOG_LEVEL`     |
+| LLM                       | `INFO`    | `LLM_DEBUG`          |
 
 ## Log Rotation
 
@@ -107,6 +108,7 @@ except those captured by `runit`.
 | [LogRotate logs](#logrotate-logs)               | {{< icon name="dotted-circle" >}} No  | {{< icon name="check-circle" >}} Yes  |
 | [Mailroom](#mail_room_jsonlog-default)          | {{< icon name="check-circle" >}} Yes  | {{< icon name="check-circle" >}} Yes  |
 | [NGINX](#nginx-logs)                            | {{< icon name="check-circle" >}} Yes  | {{< icon name="check-circle" >}} Yes  |
+| [Patroni logs](#patroni-logs)                   | {{< icon name="dotted-circle" >}} No  | {{< icon name="check-circle" >}} Yes  |
 | [PgBouncer logs](#pgbouncer-logs)               | {{< icon name="dotted-circle" >}} No  | {{< icon name="check-circle" >}} Yes  |
 | [PostgreSQL logs](#postgresql-logs)             | {{< icon name="dotted-circle" >}} No  | {{< icon name="check-circle" >}} Yes  |
 | [Praefect logs](#praefect-logs)                 | {{< icon name="dotted-circle" >}} Yes | {{< icon name="check-circle" >}} Yes  |
@@ -114,6 +116,7 @@ except those captured by `runit`.
 | [Puma](#puma-logs)                              | {{< icon name="check-circle" >}} Yes  | {{< icon name="check-circle" >}} Yes  |
 | [Redis logs](#redis-logs)                       | {{< icon name="dotted-circle" >}} No  | {{< icon name="check-circle" >}} Yes  |
 | [Registry logs](#registry-logs)                 | {{< icon name="dotted-circle" >}} No  | {{< icon name="check-circle" >}} Yes  |
+| [Sentinel logs](#sentinel-logs)                 | {{< icon name="dotted-circle" >}} No  | {{< icon name="check-circle" >}} Yes  |
 | [Workhorse logs](#workhorse-logs)               | {{< icon name="check-circle" >}} Yes  | {{< icon name="check-circle" >}} Yes  |
 
 ## `production_json.log`
@@ -491,7 +494,7 @@ only. For example:
 {{< details >}}
 
 - Tier: Free, Premium, Ultimate
-- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
+- Offering: GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 
@@ -616,7 +619,7 @@ processing them, such as before being enqueued.
 
 This log file follows the same structure as
 [`sidekiq.log`](#sidekiqlog), so it is structured as JSON if
-you've configured this for Sidekiq as mentioned above.
+you've configured this for Sidekiq as mentioned previously.
 
 ## `gitlab-shell.log`
 
@@ -746,7 +749,7 @@ This file is located at:
 - `/var/log/gitlab/gitlab-rails/features_json.log` on Linux package installations.
 - `/home/git/gitlab/log/features_json.log` on self-compiled installations.
 
-The modification events from [Feature flags in development of GitLab](../../development/feature_flags/_index.md)
+The modification events from Feature flags in development of GitLab
 are recorded in this file. For example:
 
 ```json
@@ -860,7 +863,8 @@ This file is located at:
 - `/home/git/gitlab/log/mail_room_json.log` on self-compiled installations.
 
 This structured log file records internal activity in the `mail_room` gem.
-Its name and path are configurable, so the name and path may not match the above.
+Its name and path are configurable, so the name and path may not match this one
+documented previously.
 
 ## `web_hooks.log`
 
@@ -986,7 +990,7 @@ Line breaks have been added to the following example line for clarity:
 
 This file logs the information about exceptions being tracked by
 `Gitlab::ErrorTracking`, which provides a standard and consistent way of
-[processing rescued exceptions](https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/development/logging.md#exception-handling).
+processing rescued exceptions.
 This file is located at:
 
 - `/var/log/gitlab/gitlab-rails/exceptions_json.log` on Linux package installations.
@@ -1103,7 +1107,7 @@ The `llm.log` file logs information related to
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/13401) in GitLab 17.2 [with a flag](../feature_flags.md) named `expanded_ai_logging`. Disabled by default.
+- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/13401) in GitLab 17.2 [with a flag](../feature_flags/_index.md) named `expanded_ai_logging`. Disabled by default.
 
 {{< /history >}}
 
@@ -1119,7 +1123,6 @@ LLM prompt input and response output can be logged by enabling the `expanded_ai_
 This flag is disabled by default and can only be enabled:
 
 - For GitLab.com, when you provide consent through a GitLab [Support Ticket](https://about.gitlab.com/support/portal/).
-- For GitLab Self-Managed, when you enable this feature flag.
 
 By default, the log does not contain LLM prompt input and response output to support [data retention policies](../../user/gitlab_duo/data_usage.md#data-retention) of AI feature data.
 
@@ -1228,6 +1231,53 @@ For example:
 }
 ```
 
+## Product Usage Data log
+
+{{< alert type="note" >}}
+
+We recommend against using the raw logs for analysing feature usage, as the data quality has not yet been certified for accuracy. 
+
+The list of events can change in each version based on new features or changes to existing features. Certified in-product adoption reports will be available after the data is ready for analysis.
+
+{{< /alert >}}
+
+This file is located at:
+
+- `/var/log/gitlab/gitlab-rails/product_usage_data.log` on Linux package installations.
+- `/home/git/gitlab/log/product_usage_data.log` on self-compiled installations.
+
+It contains JSON-formatted logs of product usage events tracked through Snowplow. Each line in the file contains a separate JSON entry that can be ingested by services like Elasticsearch or Splunk. Line breaks were added to examples for legibility:
+
+```json
+{
+  "severity":"INFO",
+  "time":"2025-04-09T13:43:40.254Z",
+  "message":"sending event",
+  "payload":"{
+  \"e\":\"se\",
+  \"se_ca\":\"projects:merge_requests:diffs\",
+  \"se_ac\":\"i_code_review_user_searches_diff\",
+  \"cx\":\"eyJzY2hlbWEiOiJpZ2x1OmNvbS5zbm93cGxvd2FuYWx5dGljcy5zbm93cGxvdy9jb250ZXh0cy9qc29uc2NoZW1hLzEtMC0xIiwiZGF0YSI6W3sic2NoZW1hIjoiaWdsdTpjb20uZ2l0bGFiL2dpdGxhYl9zdGFuZGFyZC9qc29uc2NoZW1hLzEtMS0xIiwiZGF0YSI6eyJlbnZpcm9ubWVudCI6ImRldmVsb3BtZW50Iiwic291cmNlIjoiZ2l0bGFiLXJhaWxzIiwiY29ycmVsYXRpb25faWQiOiJlNDk2NzNjNWI2MGQ5ODc0M2U4YWI0MjZiMTZmMTkxMiIsInBsYW4iOiJkZWZhdWx0IiwiZXh0cmEiOnt9LCJ1c2VyX2lkIjpudWxsLCJnbG9iYWxfdXNlcl9pZCI6bnVsbCwiaXNfZ2l0bGFiX3RlYW1fbWVtYmVyIjpudWxsLCJuYW1lc3BhY2VfaWQiOjMxLCJwcm9qZWN0X2lkIjo2LCJmZWF0dXJlX2VuYWJsZWRfYnlfbmFtZXNwYWNlX2lkcyI6bnVsbCwicmVhbG0iOiJzZWxmLW1hbmFnZWQiLCJpbnN0YW5jZV9pZCI6IjJkMDg1NzBkLWNmZGItNDFmMy1iODllLWM3MTM5YmFjZTI3NSIsImhvc3RfbmFtZSI6ImpsYXJzZW4tLTIwMjIxMjE0LVBWWTY5IiwiaW5zdGFuY2VfdmVyc2lvbiI6IjE3LjExLjAiLCJjb250ZXh0X2dlbmVyYXRlZF9hdCI6IjIwMjUtMDQtMDkgMTM6NDM6NDAgVVRDIn19LHsic2NoZW1hIjoiaWdsdTpjb20uZ2l0bGFiL2dpdGxhYl9zZXJ2aWNlX3BpbmcvanNvbnNjaGVtYS8xLTAtMSIsImRhdGEiOnsiZGF0YV9zb3VyY2UiOiJyZWRpc19obGwiLCJldmVudF9uYW1lIjoiaV9jb2RlX3Jldmlld191c2VyX3NlYXJjaGVzX2RpZmYifX1dfQ==\",
+  \"p\":\"srv\",
+  \"dtm\":\"1744206220253\",
+  \"tna\":\"gl\",
+  \"tv\":\"rb-0.8.0\",
+  \"eid\":\"4f067989-d10d-40b0-9312-ad9d7355be7f\"
+}
+```
+
+To inspect these logs, you can use the [Rake task](../../raketasks/_index.md) `product_usage_data:format` which formats the JSON output and decodes base64-encoded context data for better readability:
+
+```shell
+gitlab-rake "product_usage_data:format[log/product_usage_data.log]"
+# or pipe the logs directly
+cat log/product_usage_data.log | gitlab-rake product_usage_data:format
+# or tail the logs in real-time
+tail -f log/product_usage_data.log | gitlab-rake product_usage_data:format
+```
+
+You can disable this log by setting the `GITLAB_DISABLE_PRODUCT_USAGE_EVENT_LOGGING` environment variable to any value.
+
 ## Let's Encrypt logs
 
 For Linux package installations, Let's Encrypt [auto-renew](https://docs.gitlab.com/omnibus/settings/ssl/#renew-the-certificates-automatically) logs are in `/var/log/gitlab/lets-encrypt/`.
@@ -1243,6 +1293,10 @@ For Linux package installations, Mattermost logs are in these locations:
 
 For Linux package installations, Workhorse logs are in `/var/log/gitlab/gitlab-workhorse/current`.
 
+## Patroni logs
+
+For Linux package installations, Patroni logs are in `/var/log/gitlab/patroni/current`.
+
 ## PgBouncer logs
 
 For Linux package installations, PgBouncer logs are in `/var/log/gitlab/pgbouncer/current`.
@@ -1251,6 +1305,8 @@ For Linux package installations, PgBouncer logs are in `/var/log/gitlab/pgbounce
 
 For Linux package installations, PostgreSQL logs are in `/var/log/gitlab/postgresql/current`.
 
+If Patroni is being used, the PostgreSQL logs are stored in the [Patroni logs](#patroni-logs) instead.
+
 ## Prometheus logs
 
 For Linux package installations, Prometheus logs are in `/var/log/gitlab/prometheus/current`.
@@ -1258,6 +1314,10 @@ For Linux package installations, Prometheus logs are in `/var/log/gitlab/prometh
 ## Redis logs
 
 For Linux package installations, Redis logs are in `/var/log/gitlab/redis/current`.
+
+## Sentinel logs
+
+For Linux package installations, Sentinel logs are in `/var/log/gitlab/sentinel/current`.
 
 ## Alertmanager logs
 
@@ -1346,12 +1406,10 @@ sudo gitlab-ctl tail | tee /tmp/<case-ID-and-keywords>.log
 
 Conclude the log gathering with <kbd>Control</kbd> + <kbd>C</kbd>.
 
-### GitLabSOS
+### Gathering SOS logs
 
 If performance degradations or cascading errors occur that can't readily be attributed to one
-of the previously listed GitLab components, [GitLabSOS](https://gitlab.com/gitlab-com/support/toolbox/gitlabsos/)
-can provide a broader perspective of the GitLab instance. For more details and instructions
-to run it, read [the GitLabSOS documentation](https://gitlab.com/gitlab-com/support/toolbox/gitlabsos/#gitlabsos).
+of the previously listed GitLab components, [use our SOS scripts](../troubleshooting/diagnostics_tools.md#sos-scripts).
 
 ### Fast-stats
 

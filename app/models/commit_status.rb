@@ -9,6 +9,8 @@ class CommitStatus < Ci::ApplicationRecord
   include BulkInsertableAssociations
   include TaggableQueries
 
+  ignore_column :environment_auto_stop_in, remove_with: '18.4', remove_after: '2025-09-01'
+
   self.table_name = :p_ci_builds
   self.sequence_name = :ci_builds_id_seq
   self.primary_key = :id
@@ -35,10 +37,10 @@ class CommitStatus < Ci::ApplicationRecord
 
   attribute :retried, default: false
 
-  enum scheduling_type: { stage: 0, dag: 1 }, _prefix: true
+  enum :scheduling_type, { stage: 0, dag: 1 }, prefix: true
   # We use `Enums::Ci::CommitStatus.failure_reasons` here so that EE can more easily
   # extend this `Hash` with new values.
-  enum failure_reason: Enums::Ci::CommitStatus.failure_reasons
+  enum :failure_reason, Enums::Ci::CommitStatus.failure_reasons
 
   delegate :commit, to: :pipeline
   delegate :sha, :short_sha, :before_sha, to: :pipeline
@@ -49,7 +51,9 @@ class CommitStatus < Ci::ApplicationRecord
   validates :ref, :target_url, :description, length: { maximum: 255 }
   validates :project, presence: true
 
-  alias_attribute :author, :user
+  alias_method :author, :user
+  alias_method :author=, :user=
+
   alias_attribute :pipeline_id, :commit_id
 
   scope :failed_but_allowed, -> do
@@ -274,7 +278,7 @@ class CommitStatus < Ci::ApplicationRecord
 
   # Time spent in the pending state.
   def queued_duration
-    calculate_duration(queued_at, started_at)
+    calculate_duration(queued_at, started_at || finished_at)
   end
 
   def latest?
@@ -297,8 +301,8 @@ class CommitStatus < Ci::ApplicationRecord
     false
   end
 
-  def archived?
-    pipeline.archived?
+  def archived?(...)
+    pipeline.archived?(...)
   end
 
   def stuck?
@@ -361,6 +365,10 @@ class CommitStatus < Ci::ApplicationRecord
   # For AiAction
   def to_ability_name
     'build'
+  end
+
+  def test_suite_name
+    nil
   end
 
   # For AiAction

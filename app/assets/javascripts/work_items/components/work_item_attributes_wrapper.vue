@@ -13,7 +13,6 @@ import {
   WIDGET_TYPE_ITERATION,
   WIDGET_TYPE_LABELS,
   WIDGET_TYPE_MILESTONE,
-  WIDGET_TYPE_STATUS,
   WIDGET_TYPE_PARTICIPANTS,
   WIDGET_TYPE_PROGRESS,
   WIDGET_TYPE_START_AND_DUE_DATE,
@@ -24,6 +23,7 @@ import {
   WORK_ITEM_TYPE_NAME_EPIC,
   NAME_TO_ENUM_MAP,
   WIDGET_TYPE_CUSTOM_FIELDS,
+  WIDGET_TYPE_STATUS,
 } from '../constants';
 import { findHierarchyWidgetDefinition } from '../utils';
 import workItemParticipantsQuery from '../graphql/work_item_participants.query.graphql';
@@ -134,14 +134,14 @@ export default {
     canUpdateMetadata() {
       return this.workItem?.userPermissions?.setWorkItemMetadata;
     },
-    canDelete() {
-      return this.workItem?.userPermissions?.deleteWorkItem;
-    },
     workItemAssignees() {
       return this.isWidgetPresent(WIDGET_TYPE_ASSIGNEES);
     },
     workItemLabels() {
       return this.isWidgetPresent(WIDGET_TYPE_LABELS);
+    },
+    workItemStatus() {
+      return this.isWidgetPresent(WIDGET_TYPE_STATUS);
     },
     workItemStartAndDueDate() {
       return this.isWidgetPresent(WIDGET_TYPE_START_AND_DUE_DATE);
@@ -167,9 +167,6 @@ export default {
     workItemMilestone() {
       return this.isWidgetPresent(WIDGET_TYPE_MILESTONE);
     },
-    showRolledupDates() {
-      return this.workItemType === WORK_ITEM_TYPE_NAME_EPIC;
-    },
     isParentEnabled() {
       return this.workItemType === WORK_ITEM_TYPE_NAME_EPIC ? this.hasSubepicsFeature : true;
     },
@@ -185,26 +182,18 @@ export default {
     workItemColor() {
       return this.isWidgetPresent(WIDGET_TYPE_COLOR);
     },
-    workItemStatus() {
-      return this.isWidgetPresent(WIDGET_TYPE_STATUS);
-    },
-    workItemAuthor() {
-      return this.workItem?.author;
-    },
     hasParent() {
       return this.workItemHierarchy?.hasParent;
     },
     workItemCrmContacts() {
-      return this.isWidgetPresent(WIDGET_TYPE_CRM_CONTACTS);
+      const crmContactsWidget = this.isWidgetPresent(WIDGET_TYPE_CRM_CONTACTS);
+      return crmContactsWidget && crmContactsWidget.contactsAvailable ? crmContactsWidget : null;
     },
     customFields() {
       return this.isWidgetPresent(WIDGET_TYPE_CUSTOM_FIELDS)?.customFieldValues;
     },
-    showWorkItemCustomFields() {
-      return this.glFeatures.customFieldsFeature && this.customFields;
-    },
     showWorkItemStatus() {
-      return this.glFeatures.workItemStatusFeatureFlag;
+      return this.glFeatures.workItemStatusFeatureFlag && this.workItemStatus;
     },
   },
   methods: {
@@ -216,7 +205,7 @@ export default {
 </script>
 
 <template>
-  <div class="work-item-attributes-wrapper">
+  <div class="work-item-attributes-wrapper work-item-sidebar-container">
     <work-item-status
       v-if="showWorkItemStatus"
       class="work-item-attributes-item"
@@ -226,6 +215,7 @@ export default {
       :work-item-type="workItemType"
       :full-path="fullPath"
       @error="$emit('error', $event)"
+      @statusUpdated="$emit('attributesUpdated', { type: $options.ListType.status, ids: [$event] })"
     />
     <work-item-assignees
       v-if="workItemAssignees"
@@ -236,7 +226,6 @@ export default {
       :work-item-id="workItem.id"
       :assignees="workItemAssignees.assignees.nodes"
       :participants="workItemParticipants"
-      :work-item-author="workItemAuthor"
       :allows-multiple-assignees="workItemAssignees.allowsMultipleAssignees"
       :work-item-type="workItemType"
       :can-invite-members="workItemAssignees.canInviteMembers"
@@ -257,6 +246,19 @@ export default {
       @error="$emit('error', $event)"
       @labelsUpdated="$emit('attributesUpdated', { type: $options.ListType.label, ids: $event })"
     />
+    <work-item-parent
+      v-if="showParent"
+      class="work-item-attributes-item"
+      :can-update="canUpdateMetadata"
+      :full-path="fullPath"
+      :work-item-id="workItem.id"
+      :work-item-type="workItemType"
+      :parent="workItemParent"
+      :has-parent="hasParent"
+      :group-path="groupPath"
+      :is-group="isGroup"
+      @error="$emit('error', $event)"
+    />
     <work-item-weight
       v-if="workItemWeight"
       class="work-item-attributes-item"
@@ -266,19 +268,6 @@ export default {
       :work-item-id="workItem.id"
       :work-item-iid="workItem.iid"
       :work-item-type="workItemType"
-      @error="$emit('error', $event)"
-    />
-    <work-item-dates
-      v-if="workItemStartAndDueDate"
-      class="work-item-attributes-item"
-      :can-update="canUpdateMetadata"
-      :full-path="fullPath"
-      :start-date="workItemStartAndDueDate.startDate"
-      :due-date="workItemStartAndDueDate.dueDate"
-      :is-fixed="workItemStartAndDueDate.isFixed"
-      :should-roll-up="canWorkItemRollUp"
-      :work-item-type="workItemType"
-      :work-item="workItem"
       @error="$emit('error', $event)"
     />
     <work-item-milestone
@@ -310,6 +299,19 @@ export default {
         $emit('attributesUpdated', { type: $options.ListType.iteration, ids: [$event] })
       "
     />
+    <work-item-dates
+      v-if="workItemStartAndDueDate"
+      class="work-item-attributes-item"
+      :can-update="canUpdateMetadata"
+      :full-path="fullPath"
+      :start-date="workItemStartAndDueDate.startDate"
+      :due-date="workItemStartAndDueDate.dueDate"
+      :is-fixed="workItemStartAndDueDate.isFixed"
+      :should-roll-up="canWorkItemRollUp"
+      :work-item-type="workItemType"
+      :work-item="workItem"
+      @error="$emit('error', $event)"
+    />
     <work-item-progress
       v-if="workItemProgress"
       class="work-item-attributes-item"
@@ -337,25 +339,12 @@ export default {
       @error="$emit('error', $event)"
     />
     <work-item-custom-fields
-      v-if="showWorkItemCustomFields"
+      v-if="customFields"
       :work-item-id="workItem.id"
       :work-item-type="workItemType"
       :custom-fields="customFields"
       :full-path="fullPath"
       :can-update="canUpdateMetadata"
-      :is-group="isGroup"
-      @error="$emit('error', $event)"
-    />
-    <work-item-parent
-      v-if="showParent"
-      class="work-item-attributes-item"
-      :can-update="canUpdateMetadata"
-      :work-item-id="workItem.id"
-      :work-item-type="workItemType"
-      :parent="workItemParent"
-      :has-parent="hasParent"
-      :group-path="groupPath"
-      :is-group="isGroup"
       @error="$emit('error', $event)"
     />
     <work-item-time-tracking

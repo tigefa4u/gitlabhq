@@ -25,13 +25,16 @@ information:
 - The `committed_date` and `authored_date` fields are generated from different sources,
   and may not be identical.
 
+### Pagination response headers
+
+For performance reasons, GitLab does not return the following headers in Commits API responses:
+
+- `x-total`
+- `x-total-pages`
+
+For more information, see [issue 389582](https://gitlab.com/gitlab-org/gitlab/-/issues/389582).
+
 ## List repository commits
-
-{{< history >}}
-
-- Commits by author [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/114417) in GitLab 15.10.
-
-{{< /history >}}
 
 Get a list of repository commits in a project.
 
@@ -47,7 +50,7 @@ GET /projects/:id/repository/commits
 | `until` | string | no | Only commits before or on this date are returned in ISO 8601 format `YYYY-MM-DDTHH:MM:SSZ` |
 | `path` | string | no | The file path |
 | `author` | string | no | Search commits by commit author.|
-| `all` | boolean | no | Retrieve every commit from the repository |
+| `all` | boolean | no | Retrieve every commit from the repository. When set to `true`, the `ref_name` parameter is ignored |
 | `with_stats` | boolean | no | Stats about each commit are added to the response |
 | `first_parent` | boolean | no | Follow only the first parent commit upon seeing a merge commit |
 | `order` | string | no | List commits in order. Possible values: `default`, [`topo`](https://git-scm.com/docs/git-log#Documentation/git-log.txt---topo-order). Defaults to `default`, the commits are shown in reverse chronological order. |
@@ -95,8 +98,15 @@ Example response:
       "ae1d9fb46aa2b07ee9836d49862ec4e2c46fbbba"
     ],
     "web_url": "https://gitlab.example.com/janedoe/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746",
-    "trailers": { "Cc": "Jane Doe <janedoe@gitlab.com>" },
-    "extended_trailers": { "Cc": ["John Doe <johndoe@gitlab.com>", "Jane Doe <janedoe@gitlab.com>"] }
+    "trailers": {
+      "Cc": "Jane Doe <janedoe@gitlab.com>"
+    },
+    "extended_trailers": {
+      "Cc": [
+        "John Doe <johndoe@gitlab.com>",
+        "Jane Doe <janedoe@gitlab.com>"
+      ]
+    }
   }
 ]
 ```
@@ -268,7 +278,7 @@ Example response:
   "parent_ids": [
     "ae1d9fb46aa2b07ee9836d49862ec4e2c46fbbba"
   ],
-  "last_pipeline" : {
+  "last_pipeline": {
     "id": 8,
     "ref": "main",
     "sha": "2dc6aa325a317eda67812f05600bdf0fcdc70ab0",
@@ -310,12 +320,23 @@ Example response:
 
 ```json
 [
-  {"type": "branch", "name": "'test'"},
-  {"type": "branch", "name": "add-balsamiq-file"},
-  {"type": "branch", "name": "wip"},
-  {"type": "tag", "name": "v1.1.0"}
- ]
-
+  {
+    "type": "branch",
+    "name": "'test'"
+  },
+  {
+    "type": "branch",
+    "name": "add-balsamiq-file"
+  },
+  {
+    "type": "branch",
+    "name": "wip"
+  },
+  {
+    "type": "tag",
+    "name": "v1.1.0"
+  }
+]
 ```
 
 ## Get the sequence of a commit
@@ -460,18 +481,20 @@ Example response:
 
 ```json
 {
-  "id":"8b090c1b79a14f2bd9e8a738f717824ff53aebad",
+  "id": "8b090c1b79a14f2bd9e8a738f717824ff53aebad",
   "short_id": "8b090c1b",
-  "title":"Revert \"Feature added\"",
-  "created_at":"2018-11-08T15:55:26.000Z",
-  "parent_ids":["a738f717824ff53aebad8b090c1b79a14f2bd9e8"],
-  "message":"Revert \"Feature added\"\n\nThis reverts commit a738f717824ff53aebad8b090c1b79a14f2bd9e8",
-  "author_name":"Administrator",
-  "author_email":"admin@example.com",
-  "authored_date":"2018-11-08T15:55:26.000Z",
-  "committer_name":"Administrator",
-  "committer_email":"admin@example.com",
-  "committed_date":"2018-11-08T15:55:26.000Z",
+  "title": "Revert \"Feature added\"",
+  "created_at": "2018-11-08T15:55:26.000Z",
+  "parent_ids": [
+    "a738f717824ff53aebad8b090c1b79a14f2bd9e8"
+  ],
+  "message": "Revert \"Feature added\"\n\nThis reverts commit a738f717824ff53aebad8b090c1b79a14f2bd9e8",
+  "author_name": "Administrator",
+  "author_email": "admin@example.com",
+  "authored_date": "2018-11-08T15:55:26.000Z",
+  "committer_name": "Administrator",
+  "committer_email": "admin@example.com",
+  "committed_date": "2018-11-08T15:55:26.000Z",
   "web_url": "https://gitlab.example.com/janedoe/gitlab-foss/-/commit/8b090c1b79a14f2bd9e8a738f717824ff53aebad"
 }
 ```
@@ -586,13 +609,13 @@ To post a comment in a particular line of a particular file, you must specify
 the full commit SHA, the `path`, the `line`, and `line_type` should be `new`.
 
 The comment is added at the end of the last commit if at least one of the
-cases below is valid:
+following cases is valid:
 
 - the `sha` is instead a branch or a tag and the `line` or `path` are invalid
 - the `line` number is invalid (does not exist)
 - the `path` is invalid (does not exist)
 
-In any of the above cases, the response of `line`, `line_type` and `path` is
+In any of the previous cases, the response of `line`, `line_type` and `path` is
 set to `null`.
 
 For other approaches to commenting on a merge request, see
@@ -627,19 +650,19 @@ Example response:
 
 ```json
 {
-   "author" : {
-      "web_url" : "https://gitlab.example.com/janedoe",
-      "avatar_url" : "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png",
-      "username" : "janedoe",
-      "state" : "active",
-      "name" : "Jane Doe",
-      "id" : 28
-   },
-   "created_at" : "2016-01-19T09:44:55.600Z",
-   "line_type" : "new",
-   "path" : "README.md",
-   "line" : 11,
-   "note" : "Nice picture!"
+  "author": {
+    "web_url": "https://gitlab.example.com/janedoe",
+    "avatar_url": "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png",
+    "username": "janedoe",
+    "state": "active",
+    "name": "Jane Doe",
+    "id": 28
+  },
+  "created_at": "2016-01-19T09:44:55.600Z",
+  "line_type": "new",
+  "path": "README.md",
+  "line": 11,
+  "note": "Nice picture!"
 }
 ```
 
@@ -676,13 +699,13 @@ Example response:
         "type": null,
         "body": "Nice piece of code!",
         "attachment": null,
-        "author" : {
-          "id" : 28,
-          "name" : "Jane Doe",
-          "username" : "janedoe",
-          "web_url" : "https://gitlab.example.com/janedoe",
-          "state" : "active",
-          "avatar_url" : "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png"
+        "author": {
+          "id": 28,
+          "name": "Jane Doe",
+          "username": "janedoe",
+          "web_url": "https://gitlab.example.com/janedoe",
+          "state": "active",
+          "avatar_url": "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png"
         },
         "created_at": "2020-04-30T18:48:11.432Z",
         "updated_at": "2020-04-30T18:48:11.432Z",
@@ -697,7 +720,6 @@ Example response:
     ]
   }
 ]
-
 ```
 
 ## Commit status
@@ -740,52 +762,50 @@ Example response:
 
 ```json
 [
-   ...
-
-   {
-      "status" : "pending",
-      "created_at" : "2016-01-19T08:40:25.934Z",
-      "started_at" : null,
-      "name" : "bundler:audit",
-      "allow_failure" : true,
-      "author" : {
-         "username" : "janedoe",
-         "state" : "active",
-         "web_url" : "https://gitlab.example.com/janedoe",
-         "avatar_url" : "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png",
-         "id" : 28,
-         "name" : "Jane Doe"
-      },
-      "description" : null,
-      "sha" : "18f3e63d05582537db6d183d9d557be09e1f90c8",
-      "target_url" : "https://gitlab.example.com/janedoe/gitlab-foss/builds/91",
-      "finished_at" : null,
-      "id" : 91,
-      "ref" : "main"
-   },
-   {
-      "started_at" : null,
-      "name" : "test",
-      "allow_failure" : false,
-      "status" : "pending",
-      "created_at" : "2016-01-19T08:40:25.832Z",
-      "target_url" : "https://gitlab.example.com/janedoe/gitlab-foss/builds/90",
-      "id" : 90,
-      "finished_at" : null,
-      "ref" : "main",
-      "sha" : "18f3e63d05582537db6d183d9d557be09e1f90c8",
-      "author" : {
-         "id" : 28,
-         "name" : "Jane Doe",
-         "username" : "janedoe",
-         "web_url" : "https://gitlab.example.com/janedoe",
-         "state" : "active",
-         "avatar_url" : "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png"
-      },
-      "description" : null
-   },
-
-   ...
+  ...
+  {
+    "status": "pending",
+    "created_at": "2016-01-19T08:40:25.934Z",
+    "started_at": null,
+    "name": "bundler:audit",
+    "allow_failure": true,
+    "author": {
+      "username": "janedoe",
+      "state": "active",
+      "web_url": "https://gitlab.example.com/janedoe",
+      "avatar_url": "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png",
+      "id": 28,
+      "name": "Jane Doe"
+    },
+    "description": null,
+    "sha": "18f3e63d05582537db6d183d9d557be09e1f90c8",
+    "target_url": "https://gitlab.example.com/janedoe/gitlab-foss/builds/91",
+    "finished_at": null,
+    "id": 91,
+    "ref": "main"
+  },
+  {
+    "started_at": null,
+    "name": "test",
+    "allow_failure": false,
+    "status": "pending",
+    "created_at": "2016-01-19T08:40:25.832Z",
+    "target_url": "https://gitlab.example.com/janedoe/gitlab-foss/builds/90",
+    "id": 90,
+    "finished_at": null,
+    "ref": "main",
+    "sha": "18f3e63d05582537db6d183d9d557be09e1f90c8",
+    "author": {
+      "id": 28,
+      "name": "Jane Doe",
+      "username": "janedoe",
+      "web_url": "https://gitlab.example.com/janedoe",
+      "state": "active",
+      "avatar_url": "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png"
+    },
+    "description": null
+  }
+  ...
 ]
 ```
 
@@ -793,6 +813,11 @@ Example response:
 
 Add or update the pipeline status of a commit. If the commit is associated with a merge request,
 the API call must target the commit in the merge request's source branch.
+
+If a pipeline already exists and it exceeds the [maximum number of jobs in a single pipeline limit](../administration/instance_limits.md#maximum-number-of-jobs-in-a-pipeline):
+
+- If `pipeline_id` is specified, a `422` error is returned: `The number of jobs has exceeded the limit`.
+- Otherwise, a new pipeline is created.
 
 ```plaintext
 POST /projects/:id/statuses/:sha
@@ -820,30 +845,36 @@ Example response:
 
 ```json
 {
-   "author" : {
-      "web_url" : "https://gitlab.example.com/janedoe",
-      "name" : "Jane Doe",
-      "avatar_url" : "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png",
-      "username" : "janedoe",
-      "state" : "active",
-      "id" : 28
-   },
-   "name" : "default",
-   "sha" : "18f3e63d05582537db6d183d9d557be09e1f90c8",
-   "status" : "success",
-   "coverage": 100.0,
-   "description" : null,
-   "id" : 93,
-   "target_url" : null,
-   "ref" : null,
-   "started_at" : null,
-   "created_at" : "2016-01-19T09:05:50.355Z",
-   "allow_failure" : false,
-   "finished_at" : "2016-01-19T09:05:50.365Z"
+  "author": {
+    "web_url": "https://gitlab.example.com/janedoe",
+    "name": "Jane Doe",
+    "avatar_url": "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png",
+    "username": "janedoe",
+    "state": "active",
+    "id": 28
+  },
+  "name": "default",
+  "sha": "18f3e63d05582537db6d183d9d557be09e1f90c8",
+  "status": "success",
+  "coverage": 100.0,
+  "description": null,
+  "id": 93,
+  "target_url": null,
+  "ref": null,
+  "started_at": null,
+  "created_at": "2016-01-19T09:05:50.355Z",
+  "allow_failure": false,
+  "finished_at": "2016-01-19T09:05:50.365Z"
 }
 ```
 
 ## List merge requests associated with a commit
+
+{{< history >}}
+
+- `state` attribute [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/191169) in GitLab 18.2.
+
+{{< /history >}}
 
 Returns information about the merge request that originally introduced a specific commit.
 
@@ -851,65 +882,66 @@ Returns information about the merge request that originally introduced a specifi
 GET /projects/:id/repository/commits/:sha/merge_requests
 ```
 
-| Attribute | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `id`      | integer/string | yes | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
-| `sha`     | string  | yes   | The commit SHA |
+| Attribute | Type           | Required | Description |
+|-----------|----------------|----------|-------------|
+| `id`      | integer/string | Yes      | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
+| `sha`     | string         | Yes      | The commit SHA |
+| `state`   | string         | No       | Returns merge requests with the specified state: `opened`, `closed`, `locked`, or `merged`. Omit this parameter to get all merge requests regardless of state. |
 
 ```shell
 curl --header "PRIVATE-TOKEN: <your_access_token>" \
-  --url "https://gitlab.example.com/api/v4/projects/5/repository/commits/af5b13261899fb2c0db30abdd0af8b07cb44fdc5/merge_requests"
+  --url "https://gitlab.example.com/api/v4/projects/5/repository/commits/af5b13261899fb2c0db30abdd0af8b07cb44fdc5/merge_requests?state=opened"
 ```
 
 Example response:
 
 ```json
 [
-   {
-      "id":45,
-      "iid":1,
-      "project_id":35,
-      "title":"Add new file",
-      "description":"",
-      "state":"opened",
-      "created_at":"2018-03-26T17:26:30.916Z",
-      "updated_at":"2018-03-26T17:26:30.916Z",
-      "target_branch":"main",
-      "source_branch":"test-branch",
-      "upvotes":0,
-      "downvotes":0,
-      "author" : {
-        "web_url" : "https://gitlab.example.com/janedoe",
-        "name" : "Jane Doe",
-        "avatar_url" : "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png",
-        "username" : "janedoe",
-        "state" : "active",
-        "id" : 28
-      },
-      "assignee":null,
-      "source_project_id":35,
-      "target_project_id":35,
-      "labels":[ ],
-      "draft":false,
-      "work_in_progress":false,
-      "milestone":null,
-      "merge_when_pipeline_succeeds":false,
-      "merge_status":"can_be_merged",
-      "sha":"af5b13261899fb2c0db30abdd0af8b07cb44fdc5",
-      "merge_commit_sha":null,
-      "squash_commit_sha":null,
-      "user_notes_count":0,
-      "discussion_locked":null,
-      "should_remove_source_branch":null,
-      "force_remove_source_branch":false,
-      "web_url":"https://gitlab.example.com/root/test-project/merge_requests/1",
-      "time_stats":{
-         "time_estimate":0,
-         "total_time_spent":0,
-         "human_time_estimate":null,
-         "human_total_time_spent":null
-      }
-   }
+  {
+    "id": 45,
+    "iid": 1,
+    "project_id": 35,
+    "title": "Add new file",
+    "description": "",
+    "state": "opened",
+    "created_at": "2018-03-26T17:26:30.916Z",
+    "updated_at": "2018-03-26T17:26:30.916Z",
+    "target_branch": "main",
+    "source_branch": "test-branch",
+    "upvotes": 0,
+    "downvotes": 0,
+    "author": {
+      "web_url": "https://gitlab.example.com/janedoe",
+      "name": "Jane Doe",
+      "avatar_url": "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png",
+      "username": "janedoe",
+      "state": "active",
+      "id": 28
+    },
+    "assignee": null,
+    "source_project_id": 35,
+    "target_project_id": 35,
+    "labels": [],
+    "draft": false,
+    "work_in_progress": false,
+    "milestone": null,
+    "merge_when_pipeline_succeeds": false,
+    "merge_status": "can_be_merged",
+    "sha": "af5b13261899fb2c0db30abdd0af8b07cb44fdc5",
+    "merge_commit_sha": null,
+    "squash_commit_sha": null,
+    "user_notes_count": 0,
+    "discussion_locked": null,
+    "should_remove_source_branch": null,
+    "force_remove_source_branch": false,
+    "web_url": "https://gitlab.example.com/root/test-project/merge_requests/1",
+    "time_stats": {
+      "time_estimate": 0,
+      "total_time_spent": 0,
+      "human_time_estimate": null,
+      "human_total_time_spent": null
+    }
+  }
 ]
 ```
 

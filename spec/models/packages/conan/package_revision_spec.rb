@@ -5,6 +5,8 @@ require 'spec_helper'
 RSpec.describe Packages::Conan::PackageRevision, type: :model, feature_category: :package_registry do
   using RSpec::Parameterized::TableSyntax
 
+  it { is_expected.to be_a(Packages::Conan::PackageFileable) }
+
   describe 'associations' do
     it 'belongs to package' do
       is_expected.to belong_to(:package).class_name('Packages::Conan::Package').inverse_of(:conan_package_revisions)
@@ -57,6 +59,43 @@ RSpec.describe Packages::Conan::PackageRevision, type: :model, feature_category:
             expect(package_revision).not_to be_valid
             expect(package_revision.errors).to contain_exactly(error_message)
           end
+        end
+      end
+    end
+  end
+
+  describe 'scopes' do
+    describe '.order_by_id_desc' do
+      let_it_be(:revision_1) { create(:conan_package_revision) }
+      let_it_be(:revision_2) { create(:conan_package_revision) }
+
+      subject { described_class.order_by_id_desc }
+
+      it { is_expected.to eq([revision_2, revision_1]) }
+    end
+
+    describe '.by_recipe_revision_and_package_reference' do
+      let_it_be(:package) { create(:conan_package) }
+      let_it_be(:recipe_revision) { package.conan_recipe_revisions.first }
+      let_it_be(:package_reference) { package.conan_package_references.first }
+      let_it_be(:package_revision) { package.conan_package_revisions.first }
+
+      let(:revision_value) { recipe_revision.revision }
+      let(:reference_value) { package_reference.reference }
+
+      subject { described_class.by_recipe_revision_and_package_reference(revision_value, reference_value) }
+
+      it { is_expected.to contain_exactly(package_revision) }
+
+      context 'when recipe revision does not match' do
+        it 'returns empty relation' do
+          expect(described_class.by_recipe_revision_and_package_reference('nonexistent', reference_value)).to be_empty
+        end
+      end
+
+      context 'when package reference does not match' do
+        it 'returns empty relation' do
+          expect(described_class.by_recipe_revision_and_package_reference(revision_value, 'nonexistent')).to be_empty
         end
       end
     end

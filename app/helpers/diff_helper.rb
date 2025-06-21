@@ -45,10 +45,8 @@ module DiffHelper
     options
   end
 
-  def rapid_diffs?
-    return false unless defined? current_user
-
-    ::Feature.enabled?(:rapid_diffs, current_user, type: :wip)
+  def with_custom_diff_options
+    yield diff_options.dup
   end
 
   def diff_match_line(old_pos, new_pos, text: '', view: :inline, bottom: false)
@@ -67,21 +65,13 @@ module DiffHelper
       expand_data[:expand_prev_line] = true
     end
 
-    if rapid_diffs?
-      expand_button = content_tag(:button, '...', class: 'gl-bg-transparent gl-border-0 gl-p-0', data: { visible_when_loading: false, **expand_data })
-      spinner = render(Pajamas::SpinnerComponent.new(size: :sm, class: 'gl-hidden gl-text-align-right', data: { visible_when_loading: true }))
-      expand_html = content_tag(:div, [expand_button, spinner].join.html_safe, data: { expand_wrapper: true })
-    else
-      expand_html = '...'
-    end
-
     if old_pos
-      html << content_tag(:td, expand_html, class: [*line_num_class, 'old_line'], data: { linenumber: old_pos })
+      html << content_tag(:td, '...', class: [*line_num_class, 'old_line'], data: { linenumber: old_pos })
       html << content_tag(:td, text, class: [*content_line_class, 'left-side']) if view == :parallel
     end
 
     if new_pos
-      html << content_tag(:td, expand_html, class: [*line_num_class, 'new_line'], data: { linenumber: new_pos })
+      html << content_tag(:td, '...', class: [*line_num_class, 'new_line'], data: { linenumber: new_pos })
       html << content_tag(:td, text, class: [*content_line_class, ('right-side' if view == :parallel)])
     end
 
@@ -299,6 +289,10 @@ module DiffHelper
 
   def params_with_whitespace
     hide_whitespace? ? safe_params.except(:w) : safe_params.merge(w: 1)
+  end
+
+  def file_heading_id(diff_file)
+    "#{diff_file.file_hash[0..8]}-heading"
   end
 
   private

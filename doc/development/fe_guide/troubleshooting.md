@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Troubleshooting frontend development issues
 ---
 
@@ -98,7 +98,7 @@ VueApollo will skip manually running `provide()` if it sees that an `apolloProvi
 
 If you see errors like `Missing field 'descriptionHtml' while writing result` , it means we are not adhering to the GraphQL response structure while writing to the Apollo client cache. It seems you're encountering a GraphQL error ("Missing field 'description'") within your web application, likely related to how you're handling Apollo Client's cache and data updates. The error stack trace provides clues about the specific parts of the Apollo Client code where the problem occurs.
 
-**The Core Issue:**
+**The Core Issue**:
 
 The error "Missing field 'description'" indicates that your GraphQL query expects a field named "description" in the response, but the data you're receiving from your backend (or how it's being processed by Apollo Client) is missing that field. This is causing Apollo Client's cache to fail when it tries to update the store with the incomplete data.
 
@@ -120,7 +120,7 @@ Missing field 'description' while writing result {
 1. The backend might not be returning the "description" field in the response for the "WorkItemWidgetDescription" type. Verify that your backend API is correctly sending the data as expected.
 1. Use the `cache.readQuery` method to inspect the contents of the Apollo Client cache. Verify that the "description" field is present in the cached data for the relevant query
 1. Open the error stack trace suggesting that the issue might be related to how Apollo Client is writing data to its cache. It's possible that the cache is not being updated correctly, leading to missing fields
-1. Add console logs within your Apollo Client code (e.g., before and after writing to the cache) to track the data being processed and identify where the "description" field might be missing.
+1. Add console logs within your Apollo Client code (for example, before and after writing to the cache) to track the data being processed and identify where the "description" field might be missing.
 
 **Solution**
 

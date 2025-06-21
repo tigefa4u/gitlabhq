@@ -9,7 +9,7 @@ import {
   GlTooltipDirective,
   GlTruncate,
 } from '@gitlab/ui';
-import { s__, n__ } from '~/locale';
+import { s__, n__, sprintf } from '~/locale';
 import { getIdFromGraphQLId } from '~/graphql_shared/utils';
 import { formatDate, getTimeago } from '~/lib/utils/datetime_utility';
 import { toNounSeriesText } from '~/lib/utils/grammar';
@@ -25,6 +25,8 @@ import ProjectVisibilityIcon from '../shared/project_visibility_icon.vue';
 export default {
   i18n: {
     components: s__('CiCatalog|Components:'),
+    lastRelease: s__('CiCatalog|Released %{date}'),
+    lastReleaseMissing: s__('CiCatalog|No release available'),
     releasedMessage: s__('CiCatalog|Released %{timeAgo} by %{author}'),
     unreleased: s__('CiCatalog|Unreleased'),
   },
@@ -103,6 +105,14 @@ export default {
     isVerified() {
       return this.resource?.verificationLevel !== VERIFICATION_LEVEL_UNVERIFIED;
     },
+    lastReleaseText() {
+      if (this.latestVersion?.createdAt) {
+        const date = formatDate(this.latestVersion.createdAt);
+        return sprintf(this.$options.i18n.lastRelease, { date });
+      }
+
+      return this.$options.i18n.lastReleaseMissing;
+    },
     latestVersion() {
       return this.resource?.versions?.nodes[0] || [];
     },
@@ -137,6 +147,9 @@ export default {
     },
     truncatedDescription() {
       return truncate(this.resource.description, this.$options.descriptionTruncateWidth);
+    },
+    isArchived() {
+      return Boolean(this.resource.archived);
     },
   },
   methods: {
@@ -192,7 +205,25 @@ export default {
         </gl-link>
         <project-visibility-icon v-if="isPrivate" />
         <div class="gl-flex gl-grow md:gl-justify-between">
-          <gl-badge class="gl-h-5 gl-self-center" variant="info">{{ name }}</gl-badge>
+          <div class="gl-flex gl-items-center">
+            <gl-badge
+              v-gl-tooltip.top
+              class="gl-h-5 gl-self-center"
+              variant="info"
+              :href="hasReleasedVersion ? latestVersion.path : undefined"
+              :title="hasReleasedVersion ? lastReleaseText : undefined"
+            >
+              {{ name }}
+            </gl-badge>
+            <gl-badge
+              v-if="isArchived"
+              data-testid="archive-badge"
+              class="gl-ml-2 gl-h-5 gl-self-center"
+              variant="info"
+            >
+              {{ __('Archived') }}
+            </gl-badge>
+          </div>
           <div class="gl-ml-3 gl-flex gl-items-center">
             <div v-gl-tooltip.top class="gl-mr-3 gl-flex gl-items-center" :title="usageText">
               <gl-icon name="chart" :size="16" />

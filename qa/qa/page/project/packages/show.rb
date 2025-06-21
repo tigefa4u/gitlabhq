@@ -11,11 +11,16 @@ module QA
             element 'package-information-content'
           end
 
-          def has_package_info?(name, version)
-            has_element?('package-information-content', text: /#{name}.*#{version}/)
+          def has_package_info?(name: nil, version: nil)
+            if name && version
+              has_element?('package-information-content', text: /#{name}.*#{version}/)
+            else
+              has_element?('package-information-content', text: /#{version}/)
+            end
           end
 
           def click_delete
+            click_element('package-options-dropdown')
             click_element('delete-package')
             wait_for_animated_element('delete-modal-button')
             click_element('delete-modal-button')

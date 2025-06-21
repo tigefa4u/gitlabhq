@@ -11,7 +11,6 @@ const makeGroup = ({ name, fullName, childrenToLoad = [] }) => {
   return {
     type: LIST_ITEM_TYPE_GROUP,
     markedForDeletionOn: null,
-    isAdjournedDeletionEnabled: true,
     permanentDeletionDate: '2025-02-26',
     fullPath,
     descriptionHtml:
@@ -33,7 +32,8 @@ const makeGroup = ({ name, fullName, childrenToLoad = [] }) => {
     availableActions: [ACTION_EDIT, ACTION_DELETE],
     children: [],
     childrenToLoad: childrenToLoad.map((child) => ({ ...child, parent: { id } })),
-    hasChildren: childrenToLoad.length,
+    hasChildren: childrenToLoad.length > 0,
+    childrenCount: childrenToLoad.length,
     childrenLoading: false,
   };
 };
@@ -44,7 +44,6 @@ const makeProject = ({ name, nameWithNamespace }) => {
   return {
     type: LIST_ITEM_TYPE_PROJECT,
     markedForDeletionOn: null,
-    isAdjournedDeletionEnabled: true,
     permanentDeletionDate: '2025-02-26',
     fullPath,
     archived: false,

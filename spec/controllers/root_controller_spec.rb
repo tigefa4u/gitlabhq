@@ -182,13 +182,89 @@ RSpec.describe RootController, feature_category: :shared do
         end
       end
 
+      context 'who has customized their dashboard setting for personal homepage' do
+        before do
+          user.dashboard = 'homepage'
+        end
+
+        context 'with `personal_homepage` feature flag disabled (default)' do
+          before do
+            stub_feature_flags(personal_homepage: false)
+          end
+
+          it 'renders the default dashboard' do
+            get :index
+
+            expect(response).to render_template 'dashboard/projects/index'
+          end
+
+          context 'when the `merge_request_dashboard` feature flag is enabled' do
+            before do
+              stub_feature_flags(merge_request_dashboard: true)
+            end
+
+            it 'passes the correct data to the view' do
+              get :index
+
+              expect(assigns[:homepage_app_data]).to eq({
+                review_requested_path: "/dashboard/merge_requests",
+                assigned_to_you_path: "/dashboard/merge_requests"
+              })
+            end
+          end
+
+          context 'when the `merge_request_dashboard` feature flag is disabled' do
+            before do
+              stub_feature_flags(merge_request_dashboard: false)
+            end
+
+            it 'passes the correct data to the view' do
+              get :index
+
+              expect(assigns[:homepage_app_data]).to eq({
+                review_requested_path: "/dashboard/merge_requests?reviewer_username=#{user.username}",
+                assigned_to_you_path: "/dashboard/merge_requests?assignee_username=#{user.username}"
+              })
+            end
+          end
+        end
+
+        context 'with `personal_homepage` feature flag enabled' do
+          before do
+            stub_feature_flags(personal_homepage: true)
+          end
+
+          it 'renders the new homepage' do
+            get :index
+
+            expect(response).to render_template 'root/index'
+          end
+        end
+      end
+
       context 'who uses the default dashboard setting', :aggregate_failures do
-        render_views
+        context 'with `personal_homepage` feature flag disabled (default)' do
+          before do
+            stub_feature_flags(personal_homepage: false)
+          end
 
-        it 'renders the default dashboard' do
-          get :index
+          it 'renders the default dashboard' do
+            get :index
 
-          expect(response).to render_template 'dashboard/projects/index'
+            expect(response).to render_template 'dashboard/projects/index'
+          end
+        end
+
+        context 'with `personal_homepage` feature flag enabled' do
+          before do
+            stub_feature_flags(personal_homepage: true)
+          end
+
+          it 'redirects to the default dashboard' do
+            get :index
+
+            expect(response).to redirect_to dashboard_projects_path
+          end
         end
       end
     end

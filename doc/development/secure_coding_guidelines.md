@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Secure coding development guidelines
 ---
 
@@ -14,24 +14,24 @@ goal of reducing the number of vulnerabilities released over time.
 
 For each of the vulnerabilities listed in this document, AppSec aims to have a SAST rule either in the form of a semgrep rule (or a RuboCop rule) that runs in the CI pipeline. Below is a table of all existing guidelines and their coverage status:
 
-| Guideline | Rule | Status |
-|---|---|---|
-| [Regular Expressions](#regular-expressions-guidelines)  | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_regex.yml)  | ✅ |
-| [ReDOS](#denial-of-service-redos--catastrophic-backtracking) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_redos_1.yml), [2](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_redos_2.yml)  | ✅ |
-| [JWT](#json-web-tokens-jwt) | Pending | ❌ |
-| [SSRF](#server-side-request-forgery-ssrf) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_url-1.yml), [2](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_http.yml?ref_type=heads)  | ✅ |
-| [XSS](#xss-guidelines) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xss_redirect.yml), [2](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xss_html_safe.yml)  | ✅ |
-| [XXE](#xml-external-entities) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xml_injection_change_unsafe_nokogiri_parse_option.yml?ref_type=heads), [2](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xml_injection_initialize_unsafe_nokogiri_parse_option.yml?ref_type=heads), [3](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xml_injection_set_unsafe_nokogiri_parse_option.yml?ref_type=heads), [4](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xml_injection_unsafe_xml_libraries.yml?ref_type=heads)  | ✅ |
-| [Path traversal](#path-traversal-guidelines) (Ruby) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_path_traversal.yml?ref_type=heads) | ✅ |
-| [Path traversal](#path-traversal-guidelines) (Go) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/merge_requests/39)  | ✅ |
-| [OS command injection](#os-command-injection-guidelines) (Ruby) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_command_injection.yml?ref_type=heads) | ✅ |
-| [OS command injection](#os-command-injection-guidelines) (Go) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/go/go_dangerous_exec_command.yml?ref_type=heads) | ✅ |
-| [Insecure TLS ciphers](#tls-minimum-recommended-version) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_ciphers.yml?ref_type=heads)  | ✅ |
-| [Archive operations](#working-with-archive-files) (Ruby) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_archive_operations.yml?ref_type=heads)  | ✅ |
-| [Archive operations](#working-with-archive-files) (Go) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/go/go_insecure_archive_operations.yml)  | ✅ |
-| [URL spoofing](#url-spoofing) | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_url_spoofing.yml)  | ✅ |
-| [Request Parameter Typing](#request-parameter-typing) | `StrongParams` RuboCop | ✅ |
-| [Paid tiers for vulnerability mitigation](#paid-tiers-for-vulnerability-mitigation) | N/A <!-- This cannot be validated programmatically //--> | |
+| Guideline                                                                           | Status | Rule |
+|-------------------------------------------------------------------------------------|--------|------|
+| [Regular Expressions](#regular-expressions-guidelines)                              | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_regex.yml) |
+| [ReDOS](#denial-of-service-redos--catastrophic-backtracking)                        | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_redos_1.yml), [2](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_redos_2.yml), [3](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/merge_requests/59#note_2443657926) |
+| [JWT](#json-web-tokens-jwt)                                                         | ❌      | Pending |
+| [SSRF](#server-side-request-forgery-ssrf)                                           | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_url-1.yml), [2](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_http.yml?ref_type=heads) |
+| [XSS](#xss-guidelines)                                                              | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xss_redirect.yml), [2](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xss_html_safe.yml) |
+| [XXE](#xml-external-entities)                                                       | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xml_injection_change_unsafe_nokogiri_parse_option.yml?ref_type=heads), [2](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xml_injection_initialize_unsafe_nokogiri_parse_option.yml?ref_type=heads), [3](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xml_injection_set_unsafe_nokogiri_parse_option.yml?ref_type=heads), [4](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_xml_injection_unsafe_xml_libraries.yml?ref_type=heads) |
+| [Path traversal](#path-traversal-guidelines) (Ruby)                                 | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_path_traversal.yml?ref_type=heads) |
+| [Path traversal](#path-traversal-guidelines) (Go)                                   | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/merge_requests/39) |
+| [OS command injection](#os-command-injection-guidelines) (Ruby)                     | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_command_injection.yml?ref_type=heads) |
+| [OS command injection](#os-command-injection-guidelines) (Go)                       | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/go/go_dangerous_exec_command.yml?ref_type=heads) |
+| [Insecure TLS ciphers](#tls-minimum-recommended-version)                            | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_ciphers.yml?ref_type=heads) |
+| [Archive operations](#working-with-archive-files) (Ruby)                            | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_insecure_archive_operations.yml?ref_type=heads) |
+| [Archive operations](#working-with-archive-files) (Go)                              | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/go/go_insecure_archive_operations.yml) |
+| [URL spoofing](#url-spoofing)                                                       | ✅      | [1](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/sast-custom-rules/-/blob/main/secure-coding-guidelines/ruby/ruby_url_spoofing.yml) |
+| [Request Parameter Typing](#request-parameter-typing)                               | ✅      | `StrongParams` RuboCop |
+| [Paid tiers for vulnerability mitigation](#paid-tiers-for-vulnerability-mitigation) |        | N/A <!-- This cannot be validated programmatically //--> |
 
 ## Process for creating new guidelines and accompanying rules
 
@@ -100,7 +100,7 @@ Some example of well implemented access controls and tests:
 1. [example2](https://dev.gitlab.org/gitlab/gitlabhq/-/merge_requests/2511/diffs#ed3aaab1510f43b032ce345909a887e5b167e196_142_155)
 1. [example3](https://dev.gitlab.org/gitlab/gitlabhq/-/merge_requests/3170/diffs?diff_id=17494)
 
-**NB:** any input from development team is welcome, for example, about RuboCop rules.
+**NB**: any input from development team is welcome, for example, about RuboCop rules.
 
 ## CI/CD development
 
@@ -161,7 +161,7 @@ In most cases the anchors `\A` for beginning of text and `\z` for end of text sh
 
 ### Escape sequences in Go
 
-When a character in a string literal or regular expression literal is preceded by a backslash, it is interpreted as part of an escape sequence. For example, the escape sequence `\n` in a string literal corresponds to a single `newline` character, and not the <code>&#92;</code> and `n` characters.
+When a character in a string literal or regular expression literal is preceded by a backslash, it is interpreted as part of an escape sequence. For example, the escape sequence `\n` in a string literal corresponds to a single `newline` character, and not the ` \ ` and `n` characters.
 
 There are two Go escape sequences that could produce surprising results. First, `regexp.Compile("\a")` matches the bell character, whereas `regexp.Compile("\\A")` matches the start of text and `regexp.Compile("\\a")` is a Vim (but not Go) regular expression matching any alphabetic character. Second, `regexp.Compile("\b")` matches a backspace, whereas `regexp.Compile("\\b")` matches the start of a word. Confusing one for the other could lead to a regular expression passing or failing much more often than expected, with potential security consequences.
 
@@ -269,7 +269,7 @@ end
 
 #### Ruby from 3.2.0
 
-Ruby released [Regexp improvements against ReDoS in 3.2.0](https://www.ruby-lang.org/en/news/2022/12/25/ruby-3-2-0-released/). ReDoS will no longer be an issue, with the exception of _"some kind of regular expressions, such as those including advanced features (e.g., back-references or look-around), or with a huge fixed number of repetitions"_.
+Ruby released [Regexp improvements against ReDoS in 3.2.0](https://www.ruby-lang.org/en/news/2022/12/25/ruby-3-2-0-released/). ReDoS will no longer be an issue, with the exception of _"some kind of regular expressions, such as those including advanced features (like back-references or look-around), or with a huge fixed number of repetitions"_.
 
 [Until GitLab enforces a global Regexp timeout](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/145679) you should pass an explicit timeout parameter, particularly when using advanced features or a large number of repetitions. For example:
 
@@ -300,6 +300,37 @@ For other regular expressions, here are a few guidelines:
 #### Go
 
 Go's [`regexp`](https://pkg.go.dev/regexp) package uses `re2` and isn't vulnerable to backtracking issues.
+
+#### Python Regular Expression Denial of Service (ReDoS) Prevention
+
+Python offers three main regular expression libraries:
+
+| Library | Security            | Notes                                                                 |
+|---------|---------------------|-----------------------------------------------------------------------|
+| `re`    | Vulnerable to ReDoS | Built-in library. Must use timeout parameter.                        |
+| `regex` | Vulnerable to ReDoS | Third-party library with extended features. Must use timeout parameter. |
+| `re2`   | Secure by default   | Wrapper for the Google RE2 engine. Prevents backtracking by design.     |
+
+Both `re` and `regex` use backtracking algorithms that can cause exponential execution time with certain patterns.
+
+```python
+evil_input = 'a' * 30 + '!'
+
+# Vulnerable - can cause exponential execution time with nested quantifiers
+# 30 'a's -> ~30 seconds
+# 31 'a's -> ~60 seconds
+re.match(r'^(a+)+$', evil_input)
+regex.match(r'^(a|aa)+$', evil_input)
+
+# Secure - adds timeout to limit execution time
+re.match(r'^(a+)+$', evil_input, timeout=1.0)
+regex.match(r'^(a|aa)+$', evil_input, timeout=1.0)
+
+# Preferred - re2 prevents catastrophic backtracking by design
+re2.match(r'^(a+)+$', evil_input)
+```
+
+When working with regular expressions in Python, use `re2` when possible or always include timeouts with `re` and `regex`.
 
 ### Further Links
 
@@ -909,6 +940,44 @@ path.Clean("/../../etc/passwd")
 path.Clean("../../etc/passwd")
 // renders the path to "../../etc/passwd"; the file path will look back up to two parent directories!
 ```
+
+#### Safe File Operations in Go
+
+The Go standard library provides basic file operations like `os.Open`, `os.ReadFile`, `os.WriteFile`, and `os.Readlink`. However, these functions do not prevent path traversal attacks, where user-supplied paths can escape the intended directory and access sensitive system files.
+
+Example of unsafe usage:
+
+```go
+// Vulnerable: user input is directly used in the path
+os.Open(filepath.Join("/app/data", userInput))
+os.ReadFile(filepath.Join("/app/data", userInput))
+os.WriteFile(filepath.Join("/app/data", userInput), []byte("data"), 0644)
+os.Readlink(filepath.Join("/app/data", userInput))
+```
+
+To mitigate these risks, use the  [`safeopen`](https://pkg.go.dev/github.com/google/safeopen) library functions. These functions enforce a secure root directory and sanitize file paths:
+
+Example of safe usage:
+
+```go
+safeopen.OpenBeneath("/app/data", userInput)
+safeopen.ReadFileBeneath("/app/data", userInput)
+safeopen.WriteFileBeneath("/app/data", []byte("data"), 0644)
+safeopen.ReadlinkBeneath("/app/data", userInput)
+```
+
+Benefits:
+
+- Prevents path traversal attacks (`../` sequences).
+- Restricts file operations to trusted root directories.
+- Secures against unauthorized file reads, writes, and symlink resolutions.
+- Provides simple, developer-friendly replacements.
+
+References:
+
+- [Go Standard Library os Package](https://pkg.go.dev/os)
+- [Safe Go Libraries Announcement](https://bughunters.google.com/blog/4925068200771584/the-family-of-safe-golang-libraries-is-growing)
+- [OWASP Path Traversal Cheat Sheet](https://owasp.org/www-community/attacks/Path_Traversal)
 
 ## OS command injection guidelines
 
@@ -1590,15 +1659,15 @@ These types of bugs are often seen in environments which allow multi-threading a
 
 ### Examples
 
-**Example 1:** you have a model which accepts a URL as input. When the model is created you verify that the URL host resolves to a public IP address, to prevent attackers making internal network calls. But DNS records can change ([DNS rebinding](#server-side-request-forgery-ssrf)]). An attacker updates the DNS record to `127.0.0.1`, and when your code resolves those URL host it results in sending a potentially malicious request to a server on the internal network. The property was valid at the "time of check", but invalid and malicious at "time of use".
+**Example 1**: you have a model which accepts a URL as input. When the model is created you verify that the URL host resolves to a public IP address, to prevent attackers making internal network calls. But DNS records can change ([DNS rebinding](#server-side-request-forgery-ssrf)]). An attacker updates the DNS record to `127.0.0.1`, and when your code resolves those URL host it results in sending a potentially malicious request to a server on the internal network. The property was valid at the "time of check", but invalid and malicious at "time of use".
 
 GitLab-specific example can be found in [this issue](https://gitlab.com/gitlab-org/gitlab/-/issues/214401) where, although `Gitlab::HTTP_V2::UrlBlocker.validate!` was called, the returned value was not used. This made it vulnerable to TOCTOU bug and SSRF protection bypass through [DNS rebinding](#server-side-request-forgery-ssrf). The fix was to [use the validated IP address](https://gitlab.com/gitlab-org/gitlab/-/commit/85c6a73598e72ab104ab29b72bf83661cd961646).
 
-**Example 2:** you have a feature which schedules jobs. When the user schedules the job, they have permission to do so. But imagine if, between the time they schedule the job and the time it is run, their permissions are restricted. Unless you re-check permissions at time of use, you could inadvertently allow unauthorized activity.
+**Example 2**: you have a feature which schedules jobs. When the user schedules the job, they have permission to do so. But imagine if, between the time they schedule the job and the time it is run, their permissions are restricted. Unless you re-check permissions at time of use, you could inadvertently allow unauthorized activity.
 
-**Example 3:** you need to fetch a remote file, and perform a `HEAD` request to get and validate the content length and content type. When you subsequently make a `GET` request, the file delivered is a different size or different file type. (This is stretching the definition of TOCTOU, but things _have_ changed between time of check and time of use).
+**Example 3**: you need to fetch a remote file, and perform a `HEAD` request to get and validate the content length and content type. When you subsequently make a `GET` request, the file delivered is a different size or different file type. (This is stretching the definition of TOCTOU, but things have changed between time of check and time of use).
 
-**Example 4:** you allow users to upvote a comment if they haven't already. The server is multi-threaded, and you aren't using transactions or an applicable database index. By repeatedly selecting upvote in quick succession a malicious user is able to add multiple upvotes: the requests arrive at the same time, the checks run in parallel and confirm that no upvote exists yet, and so each upvote is written to the database.
+**Example 4**: you allow users to upvote a comment if they haven't already. The server is multi-threaded, and you aren't using transactions or an applicable database index. By repeatedly selecting upvote in quick succession a malicious user is able to add multiple upvotes: the requests arrive at the same time, the checks run in parallel and confirm that no upvote exists yet, and so each upvote is written to the database.
 
 Here's some pseudocode showing an example of a potential TOCTOU bug:
 
@@ -1650,7 +1719,7 @@ This sensitive data must be handled carefully to avoid leaks which could lead to
 - Never commit credentials to repositories.
   - The [Gitleaks Git hook](https://gitlab.com/gitlab-com/gl-security/security-research/gitleaks-endpoint-installer) is recommended for preventing credentials from being committed.
 - Never log credentials under any circumstance. Issue [#353857](https://gitlab.com/gitlab-org/gitlab/-/issues/353857) is an example of credential leaks through log file.
-- When credentials are required in a CI/CD job, use [masked variables](../ci/variables/_index.md#mask-a-cicd-variable) to help prevent accidental exposure in the job logs. Be aware that when [debug logging](../ci/variables/_index.md#enable-debug-logging) is enabled, all masked CI/CD variables are visible in job logs. Also consider using [protected variables](../ci/variables/_index.md#protect-a-cicd-variable) when possible so that sensitive CI/CD variables are only available to pipelines running on protected branches or protected tags.
+- When credentials are required in a CI/CD job, use [masked variables](../ci/variables/_index.md#mask-a-cicd-variable) to help prevent accidental exposure in the job logs. Be aware that when [debug logging](../ci/variables/variables_troubleshooting.md#enable-debug-logging) is enabled, all masked CI/CD variables are visible in job logs. Also consider using [protected variables](../ci/variables/_index.md#protect-a-cicd-variable) when possible so that sensitive CI/CD variables are only available to pipelines running on protected branches or protected tags.
 - Proper scanners must be enabled depending on what data those credentials are protecting. See the [Application Security Inventory Policy](https://handbook.gitlab.com/handbook/security/product-security/application-security/inventory/#policies) and our [Data Classification Standards](https://handbook.gitlab.com/handbook/security/data-classification-standard/#standard).
 - To store and/or share credentials between teams, refer to [1Password for Teams](https://handbook.gitlab.com/handbook/security/password-guidelines/#1password-for-teams) and follow [the 1Password Guidelines](https://handbook.gitlab.com/handbook/security/password-guidelines/#1password-guidelines).
 - If you need to share a secret with a team member, use 1Password. Do not share a secret over email, Slack, or other service on the Internet.
@@ -1896,7 +1965,7 @@ Logging helps track events for debugging. Logging also allows the application to
 
 - Personal data, except for integer-based identifiers and UUIDs, or IP address, which can be logged when necessary.
 - Credentials like access tokens or passwords. If credentials must be captured for debugging purposes, log the internal ID of the credential (if available) instead. Never log credentials under any circumstances.
-  - When [debug logging](../ci/variables/_index.md#enable-debug-logging) is enabled, all masked CI/CD variables are visible in job logs. Consider using [protected variables](../ci/variables/_index.md#protect-a-cicd-variable) when possible so that sensitive CI/CD variables are only available to pipelines running on protected branches or protected tags.
+  - When [debug logging](../ci/variables/variables_troubleshooting.md#enable-debug-logging) is enabled, all masked CI/CD variables are visible in job logs. Consider using [protected variables](../ci/variables/_index.md#protect-a-cicd-variable) when possible so that sensitive CI/CD variables are only available to pipelines running on protected branches or protected tags.
 - Any data supplied by the user without proper validation.
 - Any information that might be considered sensitive (for example, credentials, passwords, tokens, keys, or secrets). Here is an [example](https://gitlab.com/gitlab-org/gitlab/-/issues/383142) of sensitive information being leaked through logs.
 
@@ -1931,7 +2000,7 @@ helper method to redirect the user to a warning page first. For example:
 ```ruby
 # Bad :(
 # This URL comes from User-Land and may not be safe...
-# We need the user to *see* where they are going.
+# We need the user to see where they are going.
 link_to foo_social_url(@user), title: "Foo Social" do
   sprite_icon('question-o')
 end

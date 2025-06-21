@@ -15,7 +15,7 @@ title: Merge request dependencies
 
 {{< history >}}
 
-- Support for complex merge dependencies [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/11393) in GitLab 16.6 [with a flag](../../../administration/feature_flags.md) named `remove_mr_blocking_constraints`. Disabled by default.
+- Support for complex merge dependencies [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/11393) in GitLab 16.6 [with a flag](../../../administration/feature_flags/_index.md) named `remove_mr_blocking_constraints`. Disabled by default.
 - Support for complex merge dependencies [generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/136775) in GitLab 16.7. Feature flag `remove_mr_blocking_constraints` removed.
 
 {{< /history >}}
@@ -60,11 +60,11 @@ if your merge request relies on several others in different projects. Instead, y
 - Track the readiness of an individual merge request with **Draft** or **Ready** status.
 - Enforce the order merge requests merge with a merge request dependency.
 
-Merge request dependencies are a **PREMIUM** feature, but GitLab enforces this restriction
-only for the *dependent* merge request:
+Merge request dependencies are a feature in GitLab Premium, but GitLab enforces this restriction
+only for the dependent merge request:
 
-- A **PREMIUM** project's merge request can depend on any other merge request, even in a **FREE** project.
-- A **FREE** project's merge request cannot depend on other merge requests.
+- A GitLab Premium project's merge request can depend on any other merge request, even in a GitLab Free project.
+- A GitLab Free project's merge request cannot depend on other merge requests.
 
 ## Nested dependencies
 
@@ -104,7 +104,7 @@ To view dependency information on a merge request:
 1. Select **Code > Merge requests** and identify your merge request.
 1. Scroll to the merge request reports area. Dependent merge requests display information
    about the total number of dependencies set, such as
-   **(status-warning)** **Depends on 1 merge request being merged**.
+   **Depends on 1 merge request being merged**.
 1. Select **Expand** to view the title, milestone, assignee, and pipeline status
    of each dependency.
 

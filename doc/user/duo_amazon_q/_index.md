@@ -10,33 +10,36 @@ title: GitLab Duo with Amazon Q
 - Tier: Ultimate
 - Add-on: GitLab Duo with Amazon Q
 - Offering: GitLab Self-Managed
-- Status: Preview/Beta
 
 {{< /details >}}
 
 {{< history >}}
 
-- Introduced as [beta](../../policy/development_stages_support.md#beta) in GitLab 17.7 [with a flag](../../administration/feature_flags.md) named `amazon_q_integration`. Disabled by default.
+- Introduced as [beta](../../policy/development_stages_support.md#beta) in GitLab 17.7 [with a flag](../../administration/feature_flags/_index.md) named `amazon_q_integration`. Disabled by default.
 - Feature flag `amazon_q_integration` removed in GitLab 17.8.
+- Generally available in GitLab 17.11.
 
 {{< /history >}}
 
 {{< alert type="note" >}}
 
-If you have a GitLab Duo Pro or Duo Enterprise add-on, this feature is not available.
+GitLab Duo with Amazon Q cannot be combined with other GitLab Duo add-ons.
 
 {{< /alert >}}
 
 At Re:Invent 2024, Amazon announced the GitLab Duo with Amazon Q integration.
 With this integration, you can automate tasks and increase productivity.
 
-Select GitLab customers have been invited to a test GitLab instance
-so they can start to experiment right away.
+For a click-through demo, see [the GitLab Duo with Amazon Q Product Tour](https://gitlab.navattic.com/duo-with-q).
+<!-- Demo published on 2025-04-23 -->
+
+To get a subscription to GitLab Duo with Amazon Q, contact your Account Executive.
 
 ## Set up GitLab Duo with Amazon Q
 
 To access GitLab Duo with Amazon Q, request [access to a lab environment](https://about.gitlab.com/partners/technology-partners/aws/#interest).
-Alternately, if you have GitLab 17.8 or later, you can
+
+Alternately, if you have GitLab 17.11 or later, you can
 [set it up on your GitLab Self-Managed instance](setup.md).
 
 ## Use GitLab Duo with Amazon Q in an issue
@@ -49,8 +52,6 @@ Turn an idea in an issue into a merge request that contains the proposed impleme
 
 Amazon Q uses the issue title and description, along with project context, to create a merge request
 with code to address the issue.
-
-[View a walkthrough](https://gitlab.navattic.com/duo-q).
 
 #### From the issue description
 
@@ -96,6 +97,11 @@ To invoke GitLab Duo with Amazon Q for a merge request, you will use [quick acti
 Amazon Q can analyze your merge request and suggest improvements to your code.
 It can find things like security issues, quality issues, inefficiencies,
 and other errors.
+
+[You can have Amazon Q review automatically](setup.md#enter-the-arn-in-gitlab-and-enable-amazon-q)
+when you open or reopen a merge request, or you can manually start a review.
+
+To manually start:
 
 1. Open your merge request.
 1. On the **Overview** tab, in a comment, type `/q review`.
@@ -163,3 +169,6 @@ In addition, these features are available on GitLab Duo with Amazon Q.
 
 - [Set up GitLab Duo with Amazon Q](setup.md)
 - [GitLab Duo authentication and authorization](../gitlab_duo/security.md)
+- <i class="fa fa-youtube-play youtube" aria-hidden="true"></i> [GitLab Duo with Amazon Q - From idea to merge request](https://youtu.be/jxxzNst3jpo?si=QHO8JnPgMoFIllbL) <!-- Video published on 2025-04-17 -->
+- <i class="fa fa-youtube-play youtube" aria-hidden="true"></i> [GitLab Duo with Amazon Q - Code review optimization](https://youtu.be/4gFIgyFc02Q?si=S-jO2M2jcXnukuN_) <!-- Video published on 2025-05-20 -->
+- <i class="fa fa-youtube-play youtube" aria-hidden="true"></i> [GitLab Duo with Amazon Q - Make code changes based on feedback](https://youtu.be/31E9X9BrK5s?si=v232hBDmlGpv6fqC) <!-- Video published on 2025-05-30 -->

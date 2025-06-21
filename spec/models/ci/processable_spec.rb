@@ -8,7 +8,6 @@ RSpec.describe Ci::Processable, feature_category: :continuous_integration do
 
   describe 'associations' do
     it { is_expected.to have_one(:trigger).through(:pipeline) }
-    it { is_expected.to belong_to(:trigger_request) }
   end
 
   describe 'delegations' do
@@ -61,7 +60,7 @@ RSpec.describe Ci::Processable, feature_category: :continuous_integration do
       let_it_be(:internal_job_variable) { create(:ci_job_variable, job: processable) }
 
       let(:clone_accessors) do
-        %i[pipeline project ref tag options name allow_failure stage_idx trigger_request yaml_variables
+        %i[pipeline project ref tag options name allow_failure stage_idx yaml_variables
            when environment coverage_regex description tag_list protected needs_attributes job_variables_attributes
            resource_group scheduling_type ci_stage partition_id id_tokens interruptible]
       end
@@ -89,7 +88,7 @@ RSpec.describe Ci::Processable, feature_category: :continuous_integration do
       let(:ignore_accessors) do
         %i[type namespace lock_version target_url base_tags trace_sections
            commit_id deployment erased_by_id project_id project_mirror
-           runner_id taggings tags trigger_request_id trigger trigger_id
+           runner_id taggings tags trigger trigger_id
            user_id auto_canceled_by_id retried failure_reason
            sourced_pipelines sourced_pipeline artifacts_file_store artifacts_metadata_store
            metadata runner_manager_build runner_manager runner_session trace_chunks
@@ -688,16 +687,14 @@ RSpec.describe Ci::Processable, feature_category: :continuous_integration do
       expect(processable.trigger).to receive(:short_token)
       processable.trigger_short_token
     end
+  end
 
-    context 'when ff ci_read_trigger_from_ci_pipeline is disabled' do
-      before do
-        stub_feature_flags(ci_read_trigger_from_ci_pipeline: false)
-      end
+  describe '#redis_state' do
+    let(:processable) { build_stubbed(:ci_processable, pipeline: pipeline) }
 
-      it 'delegates to trigger_request' do
-        expect(processable.trigger_request).to receive(:trigger_short_token)
-        processable.trigger_short_token
-      end
+    it 'is a memoized Ci::JobRedisState record' do
+      expect(processable.redis_state).to be_an_instance_of(Ci::JobRedisState)
+      expect(processable.strong_memoized?(:redis_state)).to be(true)
     end
   end
 end

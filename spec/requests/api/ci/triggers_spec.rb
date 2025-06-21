@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 RSpec.describe API::Ci::Triggers, feature_category: :pipeline_composition do
-  let_it_be(:user) { create(:user) }
+  let_it_be_with_reload(:user) { create(:user) }
   let_it_be(:user2) { create(:user) }
   let_it_be_with_reload(:project) { create(:project, :repository, creator: user) }
   let_it_be_with_reload(:project2) { create(:project, :repository) }
@@ -13,7 +13,6 @@ RSpec.describe API::Ci::Triggers, feature_category: :pipeline_composition do
   let_it_be(:developer) { create(:project_member, :developer, user: user2, project: project) }
   let_it_be(:trigger) { create(:ci_trigger, project: project, token: trigger_token, owner: user) }
   let_it_be(:trigger2) { create(:ci_trigger, project: project, token: trigger_token_2, owner: user2) }
-  let_it_be(:trigger_request) { create(:ci_trigger_request, trigger: trigger, created_at: '2015-01-01 12:13:14') }
 
   before do
     project.update!(ci_pipeline_variables_minimum_override_role: :maintainer)
@@ -128,6 +127,10 @@ RSpec.describe API::Ci::Triggers, feature_category: :pipeline_composition do
     end
 
     it_behaves_like 'logs inbound authorizations via job token', :created, :not_found do
+      before do
+        allow(::Gitlab::CurrentSettings).to receive(:enforce_ci_inbound_job_token_scope_enabled?).and_return(false)
+      end
+
       let(:accessed_project) { project }
       let(:origin_project) { project2 }
 
@@ -150,7 +153,6 @@ RSpec.describe API::Ci::Triggers, feature_category: :pipeline_composition do
 
       context 'when triggered from another running job' do
         let!(:trigger) {}
-        let!(:trigger_request) {}
 
         context 'when other job is triggered by a user' do
           let(:trigger_token) { create(:ci_build, :running, project: project, user: user).token }
@@ -279,37 +281,15 @@ RSpec.describe API::Ci::Triggers, feature_category: :pipeline_composition do
         expect(json_response.dig(1, 'token')).to eq trigger_token_2[0..3]
       end
 
-      context 'for multiple pipelines and trigger requests' do
+      context 'for multiple pipelines' do
         it 'does not generate N+1 queries' do
           control = ActiveRecord::QueryRecorder.new { get api("/projects/#{project.id}/triggers", user) }
 
-          trigger3 = create(:ci_trigger, project: project, token: 'trigger_token_3', owner: user2)
-          create(:ci_trigger_request, trigger: trigger3)
-          create(:ci_trigger_request, trigger: trigger3)
-          create(:ci_empty_pipeline, trigger: trigger2, project: project)
-          create(:ci_empty_pipeline, trigger: trigger3, project: project)
-          create(:ci_empty_pipeline, trigger: trigger3, project: project)
+          create(:ci_trigger, project: project, token: 'trigger_token_3', owner: user2)
 
-          expect { get api("/projects/#{project.id}/triggers", user) }.not_to exceed_query_limit(control)
-        end
-
-        context 'when ff ci_read_trigger_from_ci_pipeline is disabled' do
-          before do
-            stub_feature_flags(ci_read_trigger_from_ci_pipeline: false)
-          end
-
-          it 'does not generate N+1 queries' do
-            control = ActiveRecord::QueryRecorder.new { get api("/projects/#{project.id}/triggers", user) }
-
-            trigger3 = create(:ci_trigger, project: project, token: 'trigger_token_3', owner: user2)
-            create(:ci_trigger_request, trigger: trigger3)
-            create(:ci_trigger_request, trigger: trigger3)
-            create(:ci_empty_pipeline, trigger: trigger2, project: project)
-            create(:ci_empty_pipeline, trigger: trigger3, project: project)
-            create(:ci_empty_pipeline, trigger: trigger3, project: project)
-
-            expect { get api("/projects/#{project.id}/triggers", user) }.not_to exceed_query_limit(control)
-          end
+          control2 = ActiveRecord::QueryRecorder.new { get api("/projects/#{project.id}/triggers", user) }
+          expect(control.log.grep(/"p_ci_pipelines"."created_at"/).count)
+            .to eq(control2.log.grep(/"p_ci_pipelines"."created_at"/).count)
         end
       end
     end

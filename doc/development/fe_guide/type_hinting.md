@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Type hinting overview
 ---
 
@@ -87,11 +87,10 @@ Consult [JSDoc official website](https://jsdoc.app/) for more syntax details.
 
 ### Tips for using JSDoc
 
-#### Use lower-case names for basic types
+#### Use lowercase names for basic types
 
-While both uppercase `Boolean` and lowercase `boolean` are acceptable, in most cases when we need a
-primitive or an object — lower case versions are the right choice: `boolean`, `number`, `string`,
-`symbol`, `object`.
+Both uppercase and lowercase are acceptable, but in most cases use lowercase
+for a primitive or an object: `boolean`, `number`, `string`, `symbol`, or `object`.
 
 ```javascript
 /**
@@ -191,12 +190,12 @@ memory the TS server is allowed to use. To do this, add the following to your `s
 ### Aliases
 
 Our codebase uses many aliases for imports. For example, `import Api from '~/api';` would import a
-`app/assets/javascripts/api.js` file. But IDEs might not know that alias and thus might not know the
-type of the `Api`. To fix that for most IDEs — we need to create a
+`app/assets/javascripts/api.js` file. But IDEs might not know that alias and so might not know the
+type of the `Api`. To fix that for most IDEs, we need to create a
 [`jsconfig.json`](https://code.visualstudio.com/docs/languages/jsconfig) file.
 
 There is a script in the GitLab project that can generate a `jsconfig.json` file based on webpack
-configuration and current environment variables. To generate or update the `jsconfig.json` file —
+configuration and current environment variables. To generate or update the `jsconfig.json` file,
 run from the GitLab project root:
 
 ```shell

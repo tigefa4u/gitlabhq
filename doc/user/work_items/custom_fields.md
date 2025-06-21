@@ -10,23 +10,16 @@ title: Custom fields
 
 - Tier: Premium, Ultimate
 - Offering: GitLab.com, GitLab Self-Managed
-- Status: Beta
 
 {{< /details >}}
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/479571) in GitLab 17.11 [with a flag](../../administration/feature_flags.md) named `custom_fields_feature`.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/479571) in GitLab 17.11 [with a flag](../../administration/feature_flags/_index.md) named `custom_fields_feature`.
   Enabled on GitLab.com, GitLab Self-Managed, and GitLab Dedicated.
+- [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/479571) in GitLab 18.0. Feature flag `custom_fields_feature` removed.
 
 {{< /history >}}
-
-{{< alert type="flag" >}}
-
-The availability of this feature is controlled by a feature flag.
-For more information, see the history.
-
-{{< /alert >}}
 
 Custom fields add specialized information to work items, such as issues and epics, that match your specific planning needs.
 Configure custom fields for a group to track data points like business value, risk assessment, priority ranking, or team attributes.
@@ -79,6 +72,7 @@ To create a custom field:
    - In **Options** (on single-select and multi-select fields), enter the possible select options.
      A single-select or multi-select field can have at most 50 select options.
      - Reorder options by dragging the grip icon ({{< icon name="grip" >}}) to the left of each option.
+     - To add multiple options at once, select the input and paste a list of items, one per line.
 1. Select **Save**.
 
 ### Edit a custom field

@@ -103,6 +103,7 @@ Audit event types belong to the following product categories.
 
 | Type name | Event triggered when | Saved to database | Introduced in | Scope |
 |:----------|:---------------------|:------------------|:--------------|:------|
+| [`oauth_application_created`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/194557) | User creates an OAuth application | {{< icon name="check-circle" >}} Yes | GitLab [18.2](https://gitlab.com/gitlab-org/gitlab/-/issues/550321) | User |
 | [`secure_ci_job_token_policies_updated`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/170930) | Permissions are updated for a CI_JOB_TOKEN scope | {{< icon name="check-circle" >}} Yes | GitLab [17.6](https://gitlab.com/gitlab-org/gitlab/-/issues/495144) | Project |
 | [`user_authorized_oauth_application`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/179187) | User authorized an OAuth application | {{< icon name="check-circle" >}} Yes | GitLab [17.9](https://gitlab.com/gitlab-org/gitlab/-/issues/514152) | User |
 
@@ -456,7 +457,10 @@ Audit event types belong to the following product categories.
 | Type name | Event triggered when | Saved to database | Introduced in | Scope |
 |:----------|:---------------------|:------------------|:--------------|:------|
 | [`admin_role_assigned_to_user`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/186570) | A custom admin role is assigned to a user | {{< icon name="check-circle" >}} Yes | GitLab [18.0](https://gitlab.com/gitlab-org/gitlab/-/issues/507958) | User |
+| [`admin_role_created`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/188367) | A custom admin role is created | {{< icon name="check-circle" >}} Yes | GitLab [18.0](https://gitlab.com/gitlab-org/gitlab/-/issues/536131) | Instance |
+| [`admin_role_deleted`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/188367) | A custom admin role is deleted | {{< icon name="check-circle" >}} Yes | GitLab [18.0](https://gitlab.com/gitlab-org/gitlab/-/issues/536131) | Instance |
 | [`admin_role_unassigned_from_user`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/186570) | A custom admin role is unassigned from a user | {{< icon name="check-circle" >}} Yes | GitLab [18.0](https://gitlab.com/gitlab-org/gitlab/-/issues/507958) | User |
+| [`admin_role_updated`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/188367) | A custom admin role is updated | {{< icon name="check-circle" >}} Yes | GitLab [18.0](https://gitlab.com/gitlab-org/gitlab/-/issues/536131) | Instance |
 | [`member_role_created`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/137087) | A custom role is created | {{< icon name="check-circle" >}} Yes | GitLab [16.7](https://gitlab.com/gitlab-org/gitlab/-/issues/388934) | Group, Instance |
 | [`member_role_deleted`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/141630) | A custom role is deleted | {{< icon name="check-circle" >}} Yes | GitLab [16.9](https://gitlab.com/gitlab-org/gitlab/-/issues/437672) | Group, Instance |
 | [`member_role_updated`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/141630) | A custom role is updated | {{< icon name="check-circle" >}} Yes | GitLab [16.9](https://gitlab.com/gitlab-org/gitlab/-/issues/437672) | Group, Instance |
@@ -527,6 +531,10 @@ Audit event types belong to the following product categories.
 | Type name | Event triggered when | Saved to database | Introduced in | Scope |
 |:----------|:---------------------|:------------------|:--------------|:------|
 | [`policy_project_updated`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/102154) | The security policy project is updated for a project | {{< icon name="check-circle" >}} Yes | GitLab [15.6](https://gitlab.com/gitlab-org/gitlab/-/issues/377877) | Group, Project |
+| [`security_policy_create`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192797) | A security policy is created | {{< icon name="check-circle" >}} Yes | GitLab [18.1](https://gitlab.com/gitlab-org/gitlab/-/issues/539230) | Project |
+| [`security_policy_delete`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192797) | A security policy is deleted | {{< icon name="check-circle" >}} Yes | GitLab [18.1](https://gitlab.com/gitlab-org/gitlab/-/issues/539230) | Project |
+| [`security_policy_update`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192797) | A security policy is updated | {{< icon name="check-circle" >}} Yes | GitLab [18.1](https://gitlab.com/gitlab-org/gitlab/-/issues/539230) | Project |
+| [`policy_violations_detected`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/193482) | Security policy violation is detected in the merge request | {{< icon name="dotted-circle" >}} No | GitLab [18.2](https://gitlab.com/gitlab-org/gitlab/-/work_items/549811) | Project |
 
 ### Security testing configuration
 
@@ -538,6 +546,7 @@ Audit event types belong to the following product categories.
 
 | Type name | Event triggered when | Saved to database | Introduced in | Scope |
 |:----------|:---------------------|:------------------|:--------------|:------|
+| [`model_selection_feature_changed`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/194862) | A model selection feature had its configuration changed | {{< icon name="check-circle" >}} Yes | GitLab [18.2](https://gitlab.com/gitlab-org/gitlab/-/issues/547982) | Instance, Group, Project, User |
 | [`self_hosted_model_created`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/165303) | A new self-hosted model configuration was added | {{< icon name="check-circle" >}} Yes | GitLab [17.4](https://gitlab.com/gitlab-org/gitlab/-/issues/477999) | Instance |
 | [`self_hosted_model_destroyed`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/165321) | A new self-hosted model configuration was destroyed | {{< icon name="check-circle" >}} Yes | GitLab [17.4](https://gitlab.com/gitlab-org/gitlab/-/issues/477999) | Instance |
 | [`self_hosted_model_feature_changed`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/165489) | A self-hosted model feature had its configuration changed | {{< icon name="check-circle" >}} Yes | GitLab [17.4](https://gitlab.com/gitlab-org/gitlab/-/issues/463215) | Instance |

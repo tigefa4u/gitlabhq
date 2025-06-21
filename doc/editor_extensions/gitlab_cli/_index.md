@@ -33,7 +33,7 @@ glab auth login --stdin < token.txt
 # View a list of issues
 glab issue list
 
-# Create merge request for issue 123 
+# Create merge request for issue 123
 glab mr create 123
 
 # Check out the branch for merge request 243
@@ -50,33 +50,40 @@ glab mr merge
 
 ## Core commands
 
-- [`glab alias`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/alias)
-- [`glab api`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/api)
-- [`glab auth`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/auth)
-- [`glab changelog`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/changelog)
-- [`glab check-update`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/check-update)
-- [`glab ci`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/ci)
-- [`glab cluster`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/cluster)
-- [`glab completion`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/completion)
-- [`glab config`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/config)
-- [`glab duo`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/duo)
-- [`glab incident`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/incident)
-- [`glab issue`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/issue)
-- [`glab label`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/label)
-- [`glab mr`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/mr)
-- [`glab release`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/release)
-- [`glab repo`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/repo)
-- [`glab schedule`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/schedule)
-- [`glab snippet`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/snippet)
-- [`glab ssh-key`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/ssh-key)
-- [`glab user`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/user)
-- [`glab variable`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/variable)
+- [`glab alias`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/alias): Create, list, and delete aliases.
+- [`glab api`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/api): Make authenticated requests to the GitLab API.
+- [`glab auth`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/auth): Manage the authentication state of the CLI.
+- [`glab changelog`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/changelog): Interact with the changelog API.
+- [`glab check-update`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/check-update): Check for updates to the CLI.
+- [`glab ci`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/ci): Work with GitLab CI/CD pipelines and jobs.
+- [`glab cluster`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/cluster): Manage GitLab Agents for Kubernetes and their clusters.
+- [`glab completion`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/completion): Generate shell completion scripts.
+- [`glab config`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/config): Set and get CLI settings.
+- [`glab deploy-key`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/deploy-key): Manage deploy keys.
+- [`glab duo`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/duo): Generate terminal commands from natural language.
+- [`glab incident`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/incident): Work with GitLab incidents.
+- [`glab issue`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/issue): Work with GitLab issues.
+- [`glab iteration`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/iteration): Retrieve iteration information.
+- [`glab job`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/job): Work with GitLab CI/CD jobs.
+- [`glab label`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/label): Manage labels for your project.
+- [`glab mr`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/mr): Create, view, and manage merge requests.
+- [`glab release`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/release): Manage GitLab releases.
+- [`glab repo`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/repo): Work with GitLab repositories and projects.
+- [`glab schedule`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/schedule): Work with GitLab CI/CD schedules.
+- [`glab securefile`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/securefile): Manage secure files for a project.
+- [`glab snippet`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/snippet): Create, view and manage snippets.
+- [`glab ssh-key`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/ssh-key): Manage SSH keys registered with your GitLab account.
+- [`glab stack`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/stack): Create, manage, and work with stacked diffs.
+- [`glab token`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/token): Manage personal, project, or group tokens.
+- [`glab user`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/user): Interact with a GitLab user account.
+- [`glab variable`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/variable): Manage variables for a GitLab project or group.
+- [`glab version`](https://gitlab.com/gitlab-org/cli/-/tree/main/docs/source/version): Show version information for the CLI.
 
 ## GitLab Duo for the CLI
 
 {{< details >}}
 
-- Tier: Ultimate
+- Tier: Premium, Ultimate
 - Add-on: GitLab Duo Enterprise
 - Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
 - LLM: Anthropic [Claude 3 Haiku](https://console.cloud.google.com/vertex-ai/publishers/anthropic/model-garden/claude-3-haiku)
@@ -86,6 +93,7 @@ glab mr merge
 {{< history >}}
 
 - Changed to require GitLab Duo add-on in GitLab 17.6 and later.
+- Changed to include Premium in GitLab 18.0.
 
 {{< /history >}}
 
@@ -112,6 +120,56 @@ To authenticate with your GitLab account, run `glab auth login`.
 
 `glab` also integrates with the [1Password shell plugin](https://developer.1password.com/docs/cli/shell-plugins/gitlab/)
 for secure authentication.
+
+## Examples
+
+### Run a CI/CD pipeline with variables from a file
+
+The `glab ci run` command, when run with the `-f` (`--variables-from-string`) flag, uses values stored
+in an external file. For example, add this code to your `.gitlab-ci.yml` file
+to reference two variables:
+
+```yaml
+stages:
+  - build
+
+# $EXAMPLE_VARIABLE_1 and $EXAMPLE_VARIABLE_2 are stored in another file
+build-job:
+  stage: build
+  script:
+    - echo $EXAMPLE_VARIABLE_1
+    - echo $EXAMPLE_VARIABLE_2
+    - echo $CI_JOB_ID
+```
+
+Then, create a file named `variables.json` to contain those variables:
+
+```json
+[
+  {
+    "key": "EXAMPLE_VARIABLE_1",
+    "value": "example value 1"
+  },
+  {
+    "key": "EXAMPLE_VARIABLE_2",
+    "value": "example value 2"
+  }
+]
+```
+
+To start a CI/CD pipeline that includes the contents of `variables.json`, run this command, editing
+the path to the file as needed:
+
+```shell
+$ glab ci run --variables-file /tmp/variables.json`
+
+$ echo $EXAMPLE_VARIABLE_1
+example value 1
+$ echo $EXAMPLE_VARIABLE_2
+example value 2
+$ echo $CI_JOB_ID
+9811701914
+```
 
 ## Report issues
 

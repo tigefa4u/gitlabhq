@@ -1,9 +1,9 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
-description: 'Development Guidelines: learn how to contribute to GitLab.'
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Contribute to development
+description: Learn how to contribute to the development of the GitLab product.
 ---
 
 Learn how to contribute to the development of the GitLab product.

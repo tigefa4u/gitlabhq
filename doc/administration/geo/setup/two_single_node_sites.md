@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Set up Geo for two single-node sites
@@ -29,7 +29,7 @@ Prerequisites:
 Prerequisites:
 
 - You use PostgreSQL 12 or later,
-  which includes the [`pg_basebackup` tool](https://www.postgresql.org/docs/12/app-pgbasebackup.html).
+  which includes the [`pg_basebackup` tool](https://www.postgresql.org/docs/16/app-pgbasebackup.html).
 
 ### Configure the primary site
 
@@ -96,7 +96,7 @@ Prerequisites:
       gitlab_rails['db_password'] = '<your_db_password_here>'
       ```
 
-1. Define a password for the database [replication user](https://wiki.postgresql.org/wiki/Streaming_Replication).
+1. Define a password for the database [replication user](https://www.postgresql.org/docs/16/warm-standby.html#STREAMING-REPLICATION).
    Use the username defined in `/etc/gitlab/gitlab.rb` under the `postgresql['sql_replication_user']`
    setting. The default value is `gitlab_replicator`.
 
@@ -592,7 +592,7 @@ You must manually replicate the secret file across all of your secondary sites, 
    1. Select **Geo > Sites**.
    1. Select **Add site**.
 
-      ![Form to add a new site with three input fields: Name, External URL, and Internal URL (optional).](../replication/img/adding_a_secondary_v15_8.png)
+      ![Form to add a new site with three input fields: Name, External URL, and Internal URL (optional).](img/adding_a_secondary_v15_8.png)
 
    1. In **Name**, enter the value for `gitlab_rails['geo_node_name']` in
       `/etc/gitlab/gitlab.rb`. The values must match exactly.
@@ -667,7 +667,7 @@ The initial replication might take some time.
 You can monitor the synchronization process on each Geo site from the primary
 site **Geo Sites** dashboard in your browser.
 
-![The Geo Sites dashboard displaying the synchronization status.](../replication/img/geo_dashboard_v14_0.png)
+![The Geo Sites dashboard displaying the synchronization status.](img/geo_dashboard_v14_0.png)
 
 ## Related topics
 

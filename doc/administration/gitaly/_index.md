@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Data Access
 group: Gitaly
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Gitaly and Gitaly Cluster
@@ -12,7 +12,7 @@ title: Gitaly and Gitaly Cluster
 
 {{< /details >}}
 
-[Gitaly](https://gitlab.com/gitlab-org/gitaly) provides high-level RPC access to Git repositories.
+[Gitaly](https://gitlab.com/gitlab-org/gitaly) provides high-level remote procedure call (RPC) access to Git repositories.
 It is used by GitLab to read and write Git data.
 
 Gitaly is present in every GitLab installation and coordinates Git repository
@@ -65,7 +65,7 @@ If you have not yet migrated to Gitaly Cluster, you have two options:
 - A sharded Gitaly instance.
 - Gitaly Cluster.
 
-Contact your [Customer Success Manager](https://handbook.gitlab.com/job-families/sales/customer-success-management/) or customer support if you have any questions.
+Contact your Customer Success Manager or customer support if you have any questions.
 
 ### Known issues
 
@@ -96,17 +96,46 @@ Contact customer support for immediate help in restoration or recovery.
 
 ## Disk requirements
 
-Gitaly and Gitaly Cluster require fast local storage to perform effectively because they are heavy I/O-based processes. Therefore,
-we strongly recommend that all Gitaly nodes use solid-state drives (SSDs).
+Gitaly and Gitaly Cluster require fast local storage to perform effectively because they are heavy
+I/O-based processes. Therefore, we strongly recommend that all Gitaly nodes use solid-state drives
+(SSDs). These SSDs should have high read and write throughput as Gitaly operates on many small files
+concurrently.
 
-These SSDs should have a throughput of at least:
+As a reference, the following charts show the P99 disk IOPS across the Gitaly production fleet on
+GitLab.com at a one-minute granularity. The data were queried from a seven-day representative
+period, starting and ending on a Monday morning. Note the regular spikes in IOPS as traffic
+becomes more intense during the work week. The raw data shows even larger spikes, with writes
+peaking at 8000 IOPS. The available disk throughput must be able to handle these spikes to avoid
+disruptions to Gitaly requests.
 
-- 8,000 input/output operations per second (IOPS) for read operations.
-- 2,000 IOPS for write operations.
+- P99 disk IOPS (reads):
 
-These IOPS values are initial recommendations, and may be adjusted to greater or lesser values
-depending on the scale of your environment's workload. If you're running the environment on a
-cloud provider, refer to their documentation about how to configure IOPS correctly.
+  ![Chart showing P99 disk IOPS for reads.](img/disk_iops_read_v18_2.png)
+
+- P99 disk IOPS (writes):
+
+  ![Chart showing P99 disk IOPS for writes.](img/disk_iops_write_v18_2.png)
+
+We typically see:
+
+- Between 500 - 1000 reads per second, with peaks of 3500 reads per second.
+- Around 500 writes per second, with peaks of over 3000 writes per second.
+
+The majority of the Gitaly fleet as of the time of writing are `t2d-standard-32` instances
+with `pd-ssd` disks. The [advertised](https://cloud.google.com/compute/docs/disks/performance#t2d_instances)
+maximum write and read IOPS are 60,000.
+
+GitLab.com also employs stricter [concurrency limits](concurrency_limiting.md) on expensive
+Git operations that aren't enabled by default on GitLab Self-Managed installations. Relaxed concurrency
+limits, operations against particularly large monorepos, or the use of the
+[pack-objects cache](configure_gitaly.md#pack-objects-cache) can also significantly increase
+disk activity.
+
+In practice for your own environment, the disk activity you observe on your Gitaly instances may vary
+greatly from these published results. If you are running on a cloud environment, choosing larger
+instances typically increases the available disk IOPS. You may also choose to select a provisioned IOPS
+disk type with guaranteed throughput. Refer to the documentation of your cloud provider about how to
+configure IOPS correctly.
 
 For repository data, only local storage is supported for Gitaly and Gitaly Cluster for performance and consistency reasons.
 Alternatives such as [NFS](../nfs.md) or [cloud-based file systems](../nfs.md#avoid-using-cloud-based-file-systems) are not supported.
@@ -265,14 +294,14 @@ In this example:
 
 The availability objectives for Gitaly clusters assuming a single node failure are:
 
-- **Recovery Point Objective (RPO):** Less than 1 minute.
+- Recovery Point Objective (RPO): Less than 1 minute.
 
   Writes are replicated asynchronously. Any writes that have not been replicated
   to the newly promoted primary are lost.
 
   [Strong consistency](#strong-consistency) prevents loss in some circumstances.
 
-- **Recovery Time Objective (RTO):** Less than 10 seconds.
+- Recovery Time Objective (RTO): Less than 10 seconds.
   Outages are detected by a health check run by each Praefect node every
   second. Failover requires ten consecutive failed health checks on each
   Praefect node.
@@ -282,7 +311,7 @@ Improvements to RPO and RTO are proposed in epic [8903](https://gitlab.com/group
 {{< alert type="warning" >}}
 
 If complete cluster failure occurs, disaster recovery plans should be executed. These can affect the
-RPO and RTO discussed above.
+RPO and RTO discussed previously.
 
 {{< /alert >}}
 
@@ -382,7 +411,7 @@ follow the [hashed storage](../repository_storage_paths.md#hashed-storage) schem
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitaly/-/issues/4218) in GitLab 15.0 [with a flag](../feature_flags.md) named `gitaly_praefect_generated_replica_paths`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitaly/-/issues/4218) in GitLab 15.0 [with a flag](../feature_flags/_index.md) named `gitaly_praefect_generated_replica_paths`. Disabled by default.
 - [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitaly/-/issues/4218) in GitLab 15.2.
 - [Enabled on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitaly/-/merge_requests/4809) in GitLab 15.3.
 - [Generally available](https://gitlab.com/gitlab-org/gitaly/-/merge_requests/4941) in GitLab 15.6. Feature flag `gitaly_praefect_generated_replica_paths` removed.
@@ -458,7 +487,7 @@ conflict. The first to complete creates the metadata record and the other operat
 The failing creation leaves leftover repositories on the storages. There is on-going work on a
 [background crawler](https://gitlab.com/gitlab-org/gitaly/-/issues/3719) that clean up the leftover repositories from the storages.
 
-The repository IDs are generated from the `repositories_repository_id_seq` in PostgreSQL. In the above example, the failing operation took
+The repository IDs are generated from the `repositories_repository_id_seq` in PostgreSQL. In the previous example, the failing operation took
 one repository ID without successfully creating a repository with it. Failed repository creations are expected lead to gaps in the repository IDs.
 
 ##### Repository deletions
@@ -515,10 +544,10 @@ the [virtual storage](#virtual-storage).
 All RPCs marked with the `ACCESSOR` option are redirected to an up to date and healthy Gitaly node.
 For example, [`GetBlob`](https://gitlab.com/gitlab-org/gitaly/-/blob/v12.10.6/proto/blob.proto#L16).
 
-_Up to date_ in this context means that:
+"Up to date" in this context means that:
 
 - There is no replication operations scheduled for this Gitaly node.
-- The last replication operation is in _completed_ state.
+- The last replication operation is in a completed state.
 
 The primary node is chosen to serve the request if:
 
@@ -587,7 +616,7 @@ To downgrade a Gitaly Cluster (assuming multiple Praefect nodes):
    ```
 
 1. Count the number of migrations with `unknown migration` in the `APPLIED` column.
-1. On a Praefect node that has **not** been downgraded, perform a dry run of the rollback to validate which migrations to revert. `<CT_UNKNOWN>`
+1. On a Praefect node that has not been downgraded, perform a dry run of the rollback to validate which migrations to revert. `<CT_UNKNOWN>`
    is the number of unknown migrations reported by the downgraded node.
 
    ```shell
@@ -640,17 +669,3 @@ off Gitaly Cluster to a sharded Gitaly instance:
 1. Create and configure a new [Gitaly server](configure_gitaly.md#run-gitaly-on-its-own-server).
 1. [Move the repositories](../operations/moving_repositories.md#moving-repositories) to the newly created storage. You can
    move them by shard or by group, which gives you the opportunity to spread them over multiple Gitaly servers.
-
-### Transition to Gitaly Cluster
-
-For the sake of removing complexity, we must remove direct Git access in GitLab. However, we can't
-remove it as long some GitLab installations require Git repositories on NFS.
-
-Two facets of our efforts to remove direct Git access in GitLab are:
-
-- Reduce the number of inefficient Gitaly queries made by GitLab.
-- Persuade administrators of fault-tolerant or horizontally-scaled GitLab instances to migrate off
-  NFS.
-
-The second facet presents the only real solution. For this, we developed
-[Gitaly Cluster](#gitaly-cluster).

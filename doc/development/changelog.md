@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Changelog entries
 ---
 
@@ -17,25 +17,16 @@ when they contain the `Changelog` [Git trailer](https://git-scm.com/docs/git-int
 When generating the changelog, author and merge request details are added
 automatically.
 
-The `Changelog` trailer accepts the following values:
-
-- `added`: New feature
-- `fixed`: Bug fix
-- `changed`: Feature change
-- `deprecated`: New deprecation
-- `removed`: Feature removal
-- `security`: Security fix
-- `performance`: Performance improvement
-- `other`: Other
+For a list of trailers, see [Add a trailer to a Git commit](../user/project/changelogs.md#add-a-trailer-to-a-git-commit).
 
 An example of a Git commit to include in the changelog is the following:
 
 ```plaintext
-Update git vendor to gitlab
+Update git vendor to GitLab
 
-Now that we are using gitaly to compile git, the git version isn't known
-from the manifest, instead we are getting the gitaly version. Update our
-vendor field to be `gitlab` to avoid cve matching old versions.
+Now that we are using Gitaly to compile Git, the Git version isn't known
+from the manifest. Instead, we are getting the Gitaly version. Update our
+vendor field to be `gitlab` to avoid CVE matching old versions.
 
 Changelog: changed
 ```
@@ -115,31 +106,31 @@ A good changelog entry should be descriptive and concise. It should explain the
 change to a reader who has _zero context_ about the change. If you have trouble
 making it both concise and descriptive, err on the side of descriptive.
 
-- **Bad:** Go to a project order.
-- **Good:** Show a user's starred projects at the top of the "Go to project"
+- **Bad**: Go to a project order.
+- **Good**: Show a user's starred projects at the top of the "Go to project"
   dropdown list.
 
 The first example provides no context of where the change was made, or why, or
 how it benefits the user.
 
-- **Bad:** Copy (some text) to clipboard.
-- **Good:** Update the "Copy to clipboard" tooltip to indicate what's being
+- **Bad**: Copy (some text) to clipboard.
+- **Good**: Update the "Copy to clipboard" tooltip to indicate what's being
   copied.
 
 Again, the first example is too vague and provides no context.
 
-- **Bad:** Fixes and Improves CSS and HTML problems in mini pipeline graph and
+- **Bad**: Fixes and Improves CSS and HTML problems in mini pipeline graph and
   builds dropdown list.
-- **Good:** Fix tooltips and hover states in mini pipeline graph and builds
+- **Good**: Fix tooltips and hover states in mini pipeline graph and builds
   dropdown list.
 
 The first example is too focused on implementation details. The user doesn't
 care that we changed CSS and HTML, they care about the _end result_ of those
 changes.
 
-- **Bad:** Strip out `nil`s in the Array of Commit objects returned from
+- **Bad**: Strip out `nil`s in the Array of Commit objects returned from
   `find_commits_by_message_with_elastic`
-- **Good:** Fix 500 errors caused by Elasticsearch results referencing
+- **Good**: Fix 500 errors caused by Elasticsearch results referencing
   garbage-collected commits
 
 The first example focuses on _how_ we fixed something, not on _what_ it fixes.
@@ -172,8 +163,8 @@ git push -f origin your-branch-name
 ```
 
 To edit older (or multiple commits), use `git rebase -i HEAD~N` where `N` is the
-last N number of commits to rebase. Let's say you have 3 commits on your branch:
-A, B, and C. If you want to update commit B, you need to run:
+last N number of commits to rebase. For example, if you have three commits on your branch,
+and only want to update the second commit, you need to run:
 
 ```shell
 git rebase -i HEAD~2

@@ -42,21 +42,27 @@ an integrated GitLab workflow experience.
 
 [GitLab Duo Code Suggestions](../user/project/repository/code_suggestions/_index.md) provide AI-assisted coding capabilities:
 
-- **Code completion**: Suggests completions to the current line you are typing.
+- Code completion: Suggests completions to the current line you are typing.
   Use it to complete one or a few lines of code.
-- **Code generation**: Generates code based on a natural language code comment block.
+- Code generation: Generates code based on a natural language code comment block.
   Write a comment, then press <kbd>Enter</kbd> to generate code based on the context of your
   comment, and the rest of your code.
-- **Context-aware suggestions**: Uses open files in your IDE, content before and after the cursor,
+- Context-aware suggestions: Uses open files in your IDE, content before and after the cursor,
   filename, and extension type to provide relevant suggestions.
-- **Support for multiple languages**: Works with various programming languages supported by your development environment.
+- Support for multiple languages: Works with various programming languages supported by your development environment.
 
 ### GitLab Duo Chat
 
 Use [GitLab Duo Chat](../user/gitlab_duo_chat/_index.md) to interact with an AI assistant directly in your development environment.
 
-- **Ask about GitLab**: Get answers about how GitLab works, concepts, and step-by-step instructions.
-- **Code-related queries**: Ask for explanations of code snippets, generate tests, or refactor selected code in your IDE.
+- Ask about GitLab: Get answers about how GitLab works, concepts, and step-by-step instructions.
+- Code-related queries: Ask for explanations of code snippets, generate tests, or refactor selected code in your IDE.
+
+## Editor Extensions team runbook
+
+Use the [Editor Extensions team runbook](https://gitlab.com/gitlab-com/runbooks/-/tree/master/docs/editor-extensions)
+to learn more about debugging all supported editor extensions. For internal users, this runbook contains instructions
+for requesting internal help.
 
 ## Feedback and contributions
 

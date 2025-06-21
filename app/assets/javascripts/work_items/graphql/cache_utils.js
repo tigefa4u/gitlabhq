@@ -1,14 +1,11 @@
 import { produce } from 'immer';
-import VueApollo from 'vue-apollo';
 import { map, isEqual } from 'lodash';
-import { apolloProvider } from '~/graphql_shared/issuable_client';
-import { issuesListClient } from '~/issues/list';
+import { getApolloProvider } from '~/issues/list/issue_client';
 import { TYPENAME_USER } from '~/graphql_shared/constants';
 import { convertToGraphQLId } from '~/graphql_shared/utils';
 import { getBaseURL } from '~/lib/utils/url_utility';
 import { convertEachWordToTitleCase } from '~/lib/utils/text_utility';
 import { getDraft, clearDraft } from '~/lib/utils/autosave';
-import { findWidget } from '~/issues/list/utils';
 import {
   newWorkItemOptimisticUserPermissions,
   WIDGET_TYPE_ASSIGNEES,
@@ -29,16 +26,31 @@ import {
   WIDGET_TYPE_LINKED_ITEMS,
   STATE_CLOSED,
   WIDGET_TYPE_CUSTOM_FIELDS,
+  WIDGET_TYPE_STATUS,
 } from 'ee_else_ce/work_items/constants';
 import {
   findCurrentUserTodosWidget,
+  findDescriptionWidget,
+  findAssigneesWidget,
+  findLabelsWidget,
+  findWeightWidget,
+  findCrmContactsWidget,
+  findMilestoneWidget,
+  findIterationWidget,
+  findStartAndDueDateWidget,
+  findHealthStatusWidget,
+  findCustomFieldsWidget,
   findHierarchyWidget,
   findHierarchyWidgetChildren,
   findNotesWidget,
   getNewWorkItemAutoSaveKey,
+  getNewWorkItemWidgetsAutoSaveKey,
   isNotesWidget,
   newWorkItemFullPath,
   newWorkItemId,
+  findColorWidget,
+  findStatusWidget,
+  getWorkItemWidgets,
 } from '../utils';
 import workItemByIidQuery from './work_item_by_iid.query.graphql';
 import workItemByIdQuery from './work_item_by_id.query.graphql';
@@ -304,55 +316,24 @@ export const updateWorkItemCurrentTodosWidget = ({ cache, fullPath, iid, todos }
   cache.writeQuery({ ...query, data: newData });
 };
 
-export const setNewWorkItemCache = async (
-  fullPath,
+export const getNewWorkItemSharedCache = ({
+  workItemAttributesWrapperOrder,
   widgetDefinitions,
+  fullPath,
   workItemType,
-  workItemTypeId,
-  workItemTypeIconName,
-  workItemTitle = '',
+  isValidWorkItemDescription,
   workItemDescription = '',
-  // eslint-disable-next-line max-params
-) => {
-  const workItemAttributesWrapperOrder = [
-    WIDGET_TYPE_ASSIGNEES,
-    WIDGET_TYPE_LABELS,
-    WIDGET_TYPE_WEIGHT,
-    WIDGET_TYPE_MILESTONE,
-    WIDGET_TYPE_ITERATION,
-    WIDGET_TYPE_START_AND_DUE_DATE,
-    WIDGET_TYPE_PROGRESS,
-    WIDGET_TYPE_HEALTH_STATUS,
-    WIDGET_TYPE_LINKED_ITEMS,
-    WIDGET_TYPE_COLOR,
-    WIDGET_TYPE_CUSTOM_FIELDS,
-    WIDGET_TYPE_HIERARCHY,
-    WIDGET_TYPE_TIME_TRACKING,
-    WIDGET_TYPE_PARTICIPANTS,
-    WIDGET_TYPE_CRM_CONTACTS,
-  ];
+}) => {
+  const widgetsAutosaveKey = getNewWorkItemWidgetsAutoSaveKey({ fullPath });
+  const fullDraftAutosaveKey = getNewWorkItemAutoSaveKey({ fullPath, workItemType });
+  const workItemTypeSpecificWidgets =
+    getWorkItemWidgets(JSON.parse(getDraft(fullDraftAutosaveKey))) || {};
+  const sharedCacheWidgets = JSON.parse(getDraft(widgetsAutosaveKey)) || {};
 
-  if (!widgetDefinitions) {
-    return;
-  }
-
-  const workItemTitleCase = convertEachWordToTitleCase(workItemType.split('_').join(' '));
   const availableWidgets = widgetDefinitions?.flatMap((i) => i.type) || [];
-  const currentUserId = convertToGraphQLId(TYPENAME_USER, gon?.current_user_id);
-  const baseURL = getBaseURL();
-  const isValidWorkItemTitle = workItemTitle.trim().length > 0;
-  const isValidWorkItemDescription = workItemDescription.trim().length > 0;
-
+  const draftTitle = sharedCacheWidgets.TITLE || '';
+  const draftDescription = sharedCacheWidgets[WIDGET_TYPE_DESCRIPTION]?.description || null;
   const widgets = [];
-
-  const autosaveKey = getNewWorkItemAutoSaveKey(fullPath, workItemType);
-  const getStorageDraftString = getDraft(autosaveKey);
-  const draftData = JSON.parse(getDraft(autosaveKey));
-
-  const draftTitle = draftData?.workspace?.workItem?.title || '';
-  const draftDescriptionWidget =
-    findWidget(WIDGET_TYPE_DESCRIPTION, draftData?.workspace?.workItem) || {};
-  const draftDescription = draftDescriptionWidget?.description || null;
 
   widgets.push({
     type: WIDGET_TYPE_DESCRIPTION,
@@ -375,7 +356,9 @@ export const setNewWorkItemCache = async (
           allowsMultipleAssignees: assigneesWidgetData.allowsMultipleAssignees || false,
           canInviteMembers: assigneesWidgetData.canInviteMembers || false,
           assignees: {
-            nodes: [],
+            nodes: sharedCacheWidgets[WIDGET_TYPE_ASSIGNEES]
+              ? sharedCacheWidgets[WIDGET_TYPE_ASSIGNEES]?.assignees.nodes || []
+              : [],
             __typename: 'UserCoreConnection',
           },
           __typename: 'WorkItemWidgetAssignees',
@@ -385,6 +368,8 @@ export const setNewWorkItemCache = async (
       if (widgetName === WIDGET_TYPE_LINKED_ITEMS) {
         widgets.push({
           type: WIDGET_TYPE_LINKED_ITEMS,
+          blockingCount: 0,
+          blockedByCount: 0,
           linkedItems: {
             nodes: [],
           },
@@ -395,8 +380,11 @@ export const setNewWorkItemCache = async (
       if (widgetName === WIDGET_TYPE_CRM_CONTACTS) {
         widgets.push({
           type: 'CRM_CONTACTS',
+          contactsAvailable: false,
           contacts: {
-            nodes: [],
+            nodes: sharedCacheWidgets[WIDGET_TYPE_CRM_CONTACTS]
+              ? sharedCacheWidgets[WIDGET_TYPE_CRM_CONTACTS]?.contacts.nodes || []
+              : [],
             __typename: 'CustomerRelationsContactConnection',
           },
           __typename: 'WorkItemWidgetCrmContacts',
@@ -411,7 +399,9 @@ export const setNewWorkItemCache = async (
           type: 'LABELS',
           allowsScopedLabels: labelsWidgetData.allowsScopedLabels,
           labels: {
-            nodes: [],
+            nodes: sharedCacheWidgets[WIDGET_TYPE_LABELS]
+              ? sharedCacheWidgets[WIDGET_TYPE_LABELS]?.labels.nodes || []
+              : [],
             __typename: 'LabelConnection',
           },
           __typename: 'WorkItemWidgetLabels',
@@ -425,7 +415,9 @@ export const setNewWorkItemCache = async (
 
         widgets.push({
           type: 'WEIGHT',
-          weight: null,
+          weight: sharedCacheWidgets[WIDGET_TYPE_WEIGHT]
+            ? sharedCacheWidgets[WIDGET_TYPE_WEIGHT]?.weight || null
+            : null,
           rolledUpWeight: 0,
           rolledUpCompletedWeight: 0,
           widgetDefinition: {
@@ -439,7 +431,9 @@ export const setNewWorkItemCache = async (
       if (widgetName === WIDGET_TYPE_MILESTONE) {
         widgets.push({
           type: 'MILESTONE',
-          milestone: null,
+          milestone: sharedCacheWidgets[WIDGET_TYPE_MILESTONE]
+            ? sharedCacheWidgets[WIDGET_TYPE_MILESTONE]?.milestone || null
+            : null,
           projectMilestone: false,
           __typename: 'WorkItemWidgetMilestone',
         });
@@ -447,18 +441,22 @@ export const setNewWorkItemCache = async (
 
       if (widgetName === WIDGET_TYPE_ITERATION) {
         widgets.push({
-          iteration: null,
+          iteration: sharedCacheWidgets[WIDGET_TYPE_ITERATION]
+            ? sharedCacheWidgets[WIDGET_TYPE_ITERATION]?.iteration || null
+            : null,
           type: 'ITERATION',
           __typename: 'WorkItemWidgetIteration',
         });
       }
 
       if (widgetName === WIDGET_TYPE_START_AND_DUE_DATE) {
+        const startDueDateDraft = sharedCacheWidgets[WIDGET_TYPE_START_AND_DUE_DATE] || {};
+
         widgets.push({
           type: 'START_AND_DUE_DATE',
-          dueDate: null,
-          startDate: null,
-          isFixed: false,
+          dueDate: startDueDateDraft?.dueDate || null,
+          startDate: startDueDateDraft?.startDate || null,
+          isFixed: startDueDateDraft?.isFixed || false,
           rollUp: false,
           __typename: 'WorkItemWidgetStartAndDueDate',
         });
@@ -476,7 +474,9 @@ export const setNewWorkItemCache = async (
       if (widgetName === WIDGET_TYPE_HEALTH_STATUS) {
         widgets.push({
           type: 'HEALTH_STATUS',
-          healthStatus: null,
+          healthStatus: sharedCacheWidgets[WIDGET_TYPE_HEALTH_STATUS]
+            ? sharedCacheWidgets[WIDGET_TYPE_HEALTH_STATUS]?.healthStatus || null
+            : null,
           rolledUpHealthStatus: [],
           __typename: 'WorkItemWidgetHealthStatus',
         });
@@ -485,9 +485,24 @@ export const setNewWorkItemCache = async (
       if (widgetName === WIDGET_TYPE_COLOR) {
         widgets.push({
           type: 'COLOR',
-          color: '#1068bf',
+          color: sharedCacheWidgets[WIDGET_TYPE_COLOR]
+            ? sharedCacheWidgets[WIDGET_TYPE_COLOR]?.color || '#1068bf'
+            : '#1068bf',
           textColor: '#FFFFFF',
           __typename: 'WorkItemWidgetColor',
+        });
+      }
+
+      if (widgetName === WIDGET_TYPE_STATUS) {
+        const { defaultOpenStatus } = widgetDefinitions.find(
+          (widget) => widget.type === WIDGET_TYPE_STATUS,
+        );
+        widgets.push({
+          type: 'STATUS',
+          status: sharedCacheWidgets[WIDGET_TYPE_STATUS]
+            ? sharedCacheWidgets[WIDGET_TYPE_STATUS]?.status || defaultOpenStatus
+            : defaultOpenStatus,
+          __typename: 'WorkItemWidgetStatus',
         });
       }
 
@@ -496,7 +511,11 @@ export const setNewWorkItemCache = async (
           type: 'HIERARCHY',
           hasChildren: false,
           hasParent: false,
-          parent: null,
+          // We're not using `sharedCacheWidgets` for hierarchy parent as
+          // each work item type can have its own allowed hierarchy parent types.
+          parent: workItemTypeSpecificWidgets[WIDGET_TYPE_HIERARCHY]
+            ? workItemTypeSpecificWidgets[WIDGET_TYPE_HIERARCHY]?.parent || null
+            : null,
           depthLimitReachedByType: [],
           rolledUpCountsByType: [],
           children: {
@@ -527,20 +546,313 @@ export const setNewWorkItemCache = async (
 
         widgets.push({
           type: WIDGET_TYPE_CUSTOM_FIELDS,
-          customFieldValues: customFieldsWidgetData?.customFieldValues ?? [],
+          // We're not using `sharedCacheWidgets` for custom fields as
+          // each work item type can have its own allowed custom fields.
+          customFieldValues: workItemTypeSpecificWidgets[WIDGET_TYPE_CUSTOM_FIELDS]
+            ? workItemTypeSpecificWidgets[WIDGET_TYPE_CUSTOM_FIELDS]?.customFieldValues || []
+            : customFieldsWidgetData?.customFieldValues ?? [],
           __typename: 'WorkItemWidgetCustomFields',
         });
       }
     }
   });
 
-  const issuesListApolloProvider = new VueApollo({
-    defaultClient: await issuesListClient(),
-  });
+  return {
+    draftTitle,
+    draftDescription,
+    widgets,
+  };
+};
 
-  const cacheProvider = document.querySelector('.js-issues-list-app')
-    ? issuesListApolloProvider
-    : apolloProvider;
+export const setNewWorkItemCache = async ({
+  fullPath,
+  widgetDefinitions,
+  workItemType,
+  workItemTypeId,
+  workItemTypeIconName,
+  workItemTitle = '',
+  workItemDescription = '',
+  confidential = false,
+}) => {
+  const workItemAttributesWrapperOrder = [
+    WIDGET_TYPE_STATUS,
+    WIDGET_TYPE_ASSIGNEES,
+    WIDGET_TYPE_LABELS,
+    WIDGET_TYPE_WEIGHT,
+    WIDGET_TYPE_MILESTONE,
+    WIDGET_TYPE_ITERATION,
+    WIDGET_TYPE_START_AND_DUE_DATE,
+    WIDGET_TYPE_PROGRESS,
+    WIDGET_TYPE_HEALTH_STATUS,
+    WIDGET_TYPE_LINKED_ITEMS,
+    WIDGET_TYPE_COLOR,
+    WIDGET_TYPE_CUSTOM_FIELDS,
+    WIDGET_TYPE_HIERARCHY,
+    WIDGET_TYPE_TIME_TRACKING,
+    WIDGET_TYPE_PARTICIPANTS,
+    WIDGET_TYPE_CRM_CONTACTS,
+  ];
+
+  if (!widgetDefinitions) {
+    return;
+  }
+
+  const workItemTitleCase = convertEachWordToTitleCase(workItemType.split('_').join(' '));
+  const availableWidgets = widgetDefinitions?.flatMap((i) => i.type) || [];
+  const currentUserId = convertToGraphQLId(TYPENAME_USER, gon?.current_user_id);
+  const baseURL = getBaseURL();
+  const isValidWorkItemTitle = workItemTitle.trim().length > 0;
+  const isValidWorkItemDescription = workItemDescription.trim().length > 0;
+
+  const autosaveKey = getNewWorkItemAutoSaveKey({ fullPath, workItemType });
+  const getStorageDraftString = getDraft(autosaveKey);
+
+  const draftData = JSON.parse(getDraft(autosaveKey));
+  const widgets = [];
+  let draftTitle = '';
+  let draftDescription = '';
+
+  // Experimental support for shared widget data across work item types
+  if (gon.features.workItemsAlpha) {
+    const sharedCache = getNewWorkItemSharedCache({
+      workItemAttributesWrapperOrder,
+      widgetDefinitions,
+      fullPath,
+      workItemType,
+      isValidWorkItemDescription,
+      workItemDescription,
+    });
+
+    draftTitle = sharedCache.draftTitle;
+    draftDescription = sharedCache.draftDescription;
+    widgets.push(...sharedCache.widgets);
+  } else {
+    const draftDescriptionWidget = findDescriptionWidget(draftData?.workspace?.workItem) || {};
+    draftTitle = draftData?.workspace?.workItem?.title || '';
+    draftDescription = draftDescriptionWidget?.description || null;
+
+    widgets.push({
+      type: WIDGET_TYPE_DESCRIPTION,
+      description: isValidWorkItemDescription ? workItemDescription : draftDescription,
+      descriptionHtml: '',
+      lastEditedAt: null,
+      lastEditedBy: null,
+      taskCompletionStatus: null,
+      __typename: 'WorkItemWidgetDescription',
+    });
+
+    workItemAttributesWrapperOrder.forEach((widgetName) => {
+      if (availableWidgets.includes(widgetName)) {
+        if (widgetName === WIDGET_TYPE_ASSIGNEES) {
+          const assigneesWidgetData = widgetDefinitions.find(
+            (definition) => definition.type === WIDGET_TYPE_ASSIGNEES,
+          );
+          widgets.push({
+            type: 'ASSIGNEES',
+            allowsMultipleAssignees: assigneesWidgetData.allowsMultipleAssignees || false,
+            canInviteMembers: assigneesWidgetData.canInviteMembers || false,
+            assignees: {
+              nodes: draftData
+                ? findAssigneesWidget(draftData?.workspace?.workItem)?.assignees.nodes || []
+                : [],
+              __typename: 'UserCoreConnection',
+            },
+            __typename: 'WorkItemWidgetAssignees',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_LINKED_ITEMS) {
+          widgets.push({
+            type: WIDGET_TYPE_LINKED_ITEMS,
+            blockingCount: 0,
+            blockedByCount: 0,
+            linkedItems: {
+              nodes: [],
+            },
+            __typename: 'WorkItemWidgetLinkedItems',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_CRM_CONTACTS) {
+          widgets.push({
+            type: 'CRM_CONTACTS',
+            contactsAvailable: false,
+            contacts: {
+              nodes: draftData
+                ? findCrmContactsWidget(draftData?.workspace?.workItem)?.contacts.nodes || []
+                : [],
+              __typename: 'CustomerRelationsContactConnection',
+            },
+            __typename: 'WorkItemWidgetCrmContacts',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_LABELS) {
+          const labelsWidgetData = widgetDefinitions.find(
+            (definition) => definition.type === WIDGET_TYPE_LABELS,
+          );
+          widgets.push({
+            type: 'LABELS',
+            allowsScopedLabels: labelsWidgetData.allowsScopedLabels,
+            labels: {
+              nodes: draftData
+                ? findLabelsWidget(draftData?.workspace?.workItem)?.labels.nodes || []
+                : [],
+              __typename: 'LabelConnection',
+            },
+            __typename: 'WorkItemWidgetLabels',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_WEIGHT) {
+          const weightWidgetData = widgetDefinitions.find(
+            (definition) => definition.type === WIDGET_TYPE_WEIGHT,
+          );
+
+          widgets.push({
+            type: 'WEIGHT',
+            weight: draftData
+              ? findWeightWidget(draftData?.workspace?.workItem)?.weight || null
+              : null,
+            rolledUpWeight: 0,
+            rolledUpCompletedWeight: 0,
+            widgetDefinition: {
+              editable: weightWidgetData?.editable,
+              rollUp: weightWidgetData?.rollUp,
+            },
+            __typename: 'WorkItemWidgetWeight',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_MILESTONE) {
+          widgets.push({
+            type: 'MILESTONE',
+            milestone: draftData
+              ? findMilestoneWidget(draftData?.workspace?.workItem)?.milestone || null
+              : null,
+            projectMilestone: false,
+            __typename: 'WorkItemWidgetMilestone',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_ITERATION) {
+          widgets.push({
+            iteration: draftData
+              ? findIterationWidget(draftData?.workspace?.workItem)?.iteration || null
+              : null,
+            type: 'ITERATION',
+            __typename: 'WorkItemWidgetIteration',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_START_AND_DUE_DATE) {
+          const startDueDateDraft = draftData
+            ? findStartAndDueDateWidget(draftData?.workspace?.workItem)
+            : {};
+
+          widgets.push({
+            type: 'START_AND_DUE_DATE',
+            dueDate: startDueDateDraft?.dueDate || null,
+            startDate: startDueDateDraft?.startDate || null,
+            isFixed: startDueDateDraft?.isFixed || false,
+            rollUp: false,
+            __typename: 'WorkItemWidgetStartAndDueDate',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_PROGRESS) {
+          widgets.push({
+            type: 'PROGRESS',
+            progress: null,
+            updatedAt: null,
+            __typename: 'WorkItemWidgetProgress',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_HEALTH_STATUS) {
+          widgets.push({
+            type: 'HEALTH_STATUS',
+            healthStatus: draftData
+              ? findHealthStatusWidget(draftData?.workspace?.workItem)?.healthStatus || null
+              : null,
+            rolledUpHealthStatus: [],
+            __typename: 'WorkItemWidgetHealthStatus',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_COLOR) {
+          widgets.push({
+            type: 'COLOR',
+            color: draftData
+              ? findColorWidget(draftData?.workspace?.workItem)?.color || '#1068bf'
+              : '#1068bf',
+            textColor: '#FFFFFF',
+            __typename: 'WorkItemWidgetColor',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_STATUS) {
+          const { defaultOpenStatus } = widgetDefinitions.find(
+            (widget) => widget.type === WIDGET_TYPE_STATUS,
+          );
+          widgets.push({
+            type: 'STATUS',
+            status: draftData
+              ? findStatusWidget(draftData?.workspace?.workItem)?.status || defaultOpenStatus
+              : defaultOpenStatus,
+            __typename: 'WorkItemWidgetStatus',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_HIERARCHY) {
+          widgets.push({
+            type: 'HIERARCHY',
+            hasChildren: false,
+            hasParent: false,
+            parent: draftData
+              ? findHierarchyWidget(draftData?.workspace?.workItem)?.parent || null
+              : null,
+            depthLimitReachedByType: [],
+            rolledUpCountsByType: [],
+            children: {
+              nodes: [],
+              __typename: 'WorkItemConnection',
+            },
+            __typename: 'WorkItemWidgetHierarchy',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_TIME_TRACKING) {
+          widgets.push({
+            type: 'TIME_TRACKING',
+            timeEstimate: 0,
+            timelogs: {
+              nodes: [],
+              __typename: 'WorkItemTimelogConnection',
+            },
+            totalTimeSpent: 0,
+            __typename: 'WorkItemWidgetTimeTracking',
+          });
+        }
+
+        if (widgetName === WIDGET_TYPE_CUSTOM_FIELDS) {
+          const customFieldsWidgetData = widgetDefinitions.find(
+            (definition) => definition.type === WIDGET_TYPE_CUSTOM_FIELDS,
+          );
+
+          widgets.push({
+            type: WIDGET_TYPE_CUSTOM_FIELDS,
+            customFieldValues: draftData
+              ? findCustomFieldsWidget(draftData?.workspace?.workItem)?.customFieldValues || []
+              : customFieldsWidgetData?.customFieldValues ?? [],
+            __typename: 'WorkItemWidgetCustomFields',
+          });
+        }
+      }
+    });
+  }
+
+  const cacheProvider = await getApolloProvider();
 
   const newWorkItemPath = newWorkItemFullPath(fullPath, workItemType);
 
@@ -580,9 +892,10 @@ export const setNewWorkItemCache = async (
           iid: NEW_WORK_ITEM_IID,
           archived: false,
           title: isValidWorkItemTitle ? workItemTitle : draftTitle,
+          titleHtml: null,
           state: 'OPEN',
           description: null,
-          confidential: false,
+          confidential,
           createdAt: null,
           updatedAt: null,
           closedAt: null,
@@ -617,6 +930,7 @@ export const setNewWorkItemCache = async (
             __typename: 'WorkItemType',
           },
           userPermissions: newWorkItemOptimisticUserPermissions,
+          commentTemplatesPaths: [],
           widgets,
           __typename: 'WorkItem',
         },

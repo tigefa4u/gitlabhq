@@ -21,6 +21,7 @@
 #                                 Both parent and include_parent_descendants params must be present.
 #     include_ancestors: boolean (defaults to true)
 #     organization: Scope the groups to the Organizations::Organization
+#     active: boolean - filters for active groups.
 #
 # Users with full private access can see all groups. The `owned` and `parent`
 # params can be used to restrict the groups that are returned.
@@ -103,6 +104,7 @@ class GroupsFinder < UnionFinder
 
   def filter_groups(groups)
     groups = by_organization(groups)
+    groups = by_active(groups)
     groups = by_parent(groups)
     groups = by_custom_attributes(groups)
     groups = filter_group_ids(groups)
@@ -110,7 +112,7 @@ class GroupsFinder < UnionFinder
     groups = by_visibility(groups)
     groups = by_ids(groups)
     groups = top_level_only(groups)
-    groups = by_marked_for_deletion_on(groups)
+    groups = marked_for_deletion_on(groups)
     by_search(groups)
   end
 
@@ -143,10 +145,10 @@ class GroupsFinder < UnionFinder
     groups.by_parent(parent)
   end
 
-  def by_marked_for_deletion_on(groups)
+  def marked_for_deletion_on(groups)
     return groups unless params[:marked_for_deletion_on].present?
 
-    groups.by_marked_for_deletion_on(params[:marked_for_deletion_on])
+    groups.marked_for_deletion_on(params[:marked_for_deletion_on])
   end
 
   def filter_group_ids(groups)
@@ -159,6 +161,12 @@ class GroupsFinder < UnionFinder
     return groups unless params[:exclude_group_ids]
 
     groups.id_not_in(params[:exclude_group_ids])
+  end
+
+  def by_active(groups)
+    return groups if params[:active].nil?
+
+    params[:active] ? groups.self_and_ancestors_active : groups.self_or_ancestors_inactive
   end
 
   def include_parent_shared_groups?

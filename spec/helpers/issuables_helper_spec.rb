@@ -6,6 +6,13 @@ RSpec.describe IssuablesHelper, feature_category: :team_planning do
   let(:label)  { build_stubbed(:label) }
   let(:label2) { build_stubbed(:label) }
 
+  before do
+    # TODO: When removing the feature flag,
+    # we won't need the tests for the issues listing page, since we'll be using
+    # the work items listing page.
+    stub_feature_flags(work_item_planning_view: false)
+  end
+
   describe '#users_dropdown_label' do
     let(:user) { build_stubbed(:user) }
     let(:user2) { build_stubbed(:user) }
@@ -94,29 +101,6 @@ RSpec.describe IssuablesHelper, feature_category: :team_planning do
 
       it 'returns assignee label only with include_value: false' do
         expect(helper.assignees_label(issuable, include_value: false)).to eq("Assignees")
-      end
-    end
-  end
-
-  describe '#assigned_issuables_count', feature_category: :team_planning do
-    context 'when issuable is issues' do
-      let_it_be(:user) { create(:user) }
-      let_it_be(:project) { create(:project, developers: user) }
-
-      subject { helper.assigned_issuables_count(:issues) }
-
-      before do
-        allow(helper).to receive(:current_user).and_return(user)
-      end
-
-      context 'when assigned issues count is over MAX_LIMIT_FOR_ASSIGNEED_ISSUES_COUNT' do
-        before do
-          stub_const('User::MAX_LIMIT_FOR_ASSIGNEED_ISSUES_COUNT', 2)
-        end
-
-        let_it_be(:issues) { create_list(:issue, 3, project: project, assignees: [user]) }
-
-        it { is_expected.to eq 2 }
       end
     end
   end

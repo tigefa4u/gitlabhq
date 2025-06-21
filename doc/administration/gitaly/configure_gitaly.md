@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Data Access
 group: Gitaly
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Configure Gitaly
@@ -55,7 +55,7 @@ tokens.
 ## Run Gitaly on its own server
 
 By default, Gitaly is run on the same server as Gitaly clients and is
-configured as above. Single-server installations are best served by
+configured as described previously. Single-server installations are best served by
 this default configuration used by:
 
 - [Linux package installations](https://docs.gitlab.com/omnibus/).
@@ -95,7 +95,7 @@ The following list depicts the network architecture of Gitaly:
 - A `(Gitaly address, Gitaly token)` corresponds to a Gitaly server.
 - A Gitaly server hosts one or more storages.
 - A Gitaly client can use one or more Gitaly servers.
-- Gitaly addresses must be specified in such a way that they resolve correctly for **all** Gitaly
+- Gitaly addresses must be specified in such a way that they resolve correctly for all Gitaly
   clients.
 - Gitaly clients are:
   - Puma.
@@ -104,7 +104,7 @@ The following list depicts the network architecture of Gitaly:
   - GitLab Shell.
   - Elasticsearch indexer.
   - Gitaly itself.
-- A Gitaly server must be able to make RPC calls **to itself** by using its own
+- A Gitaly server must be able to make RPC calls to itself by using its own
   `(Gitaly address, Gitaly token)` pair as specified in `/config/gitlab.yml`.
 - Authentication is done through a static token which is shared among the Gitaly and GitLab Rails
   nodes.
@@ -141,7 +141,7 @@ You can use as few as one server with one repository storage if desired.
 Install Gitaly on each Gitaly server using either:
 
 - A Linux package installation. [Download and install](https://about.gitlab.com/install/) the Linux package you want
-  but **do not** provide the `EXTERNAL_URL=` value.
+  but do not provide the `EXTERNAL_URL=` value.
 - A self-compiled installation. Follow the steps at [Install Gitaly](../../install/installation.md#install-gitaly).
 
 ### Configure Gitaly servers
@@ -772,7 +772,7 @@ Because `enforced="false"`, it is safe to start rolling out the new token.
 
 ### Update Gitaly authentication token
 
-To update to a new Gitaly authentication token, on each Gitaly client **and** Gitaly server:
+To update to a new Gitaly authentication token, on each Gitaly client and Gitaly server:
 
 1. Update the configuration:
 
@@ -805,7 +805,7 @@ After the new token is set, and all services involved have been restarted, you w
 - `status="denied"`.
 
 After the new token is picked up by all Gitaly clients and Gitaly servers, the
-**only non-zero rate** should be `enforced="false",status="would be ok"`.
+only non-zero rate should be `enforced="false",status="would be ok"`.
 
 ### Disable auth transitioning mode
 
@@ -825,7 +825,7 @@ gitaly['configuration'] = {
 
 {{< alert type="warning" >}}
 
-Without completing this step, you have **no Gitaly authentication**.
+Without completing this step, you have no Gitaly authentication.
 
 {{< /alert >}}
 
@@ -1101,7 +1101,7 @@ Configure the `cat-file` cache in the [Gitaly configuration file](reference.md).
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/19185) in GitLab 15.4.
-- Displaying **Verified** badge for signed GitLab UI commits [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/124218) in GitLab 16.3 [with a flag](../feature_flags.md) named `gitaly_gpg_signing`. Disabled by default.
+- Displaying **Verified** badge for signed GitLab UI commits [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/124218) in GitLab 16.3 [with a flag](../feature_flags/_index.md) named `gitaly_gpg_signing`. Disabled by default.
 - Verifying the signatures using multiple keys specified in `rotated_signing_keys` option [introduced](https://gitlab.com/gitlab-org/gitaly/-/merge_requests/6163) in GitLab 16.3.
 - [Enabled by default](https://gitlab.com/gitlab-org/gitaly/-/merge_requests/6876) on GitLab Self-Managed and GitLab Dedicated in GitLab 17.0.
 
@@ -1110,7 +1110,7 @@ Configure the `cat-file` cache in the [Gitaly configuration file](reference.md).
 {{< alert type="flag" >}}
 
 On GitLab Self-Managed, by default this feature is available. To hide the feature,
-an administrator can [disable the feature flag](../feature_flags.md) named `gitaly_gpg_signing`.
+an administrator can [disable the feature flag](../feature_flags/_index.md) named `gitaly_gpg_signing`.
 On GitLab.com, this feature is not available. On GitLab Dedicated, this feature is available.
 
 {{< /alert >}}

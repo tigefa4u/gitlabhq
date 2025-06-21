@@ -18,7 +18,7 @@ It can differ slightly from one instance to another due to compression, housekee
 
 ## Size calculation
 
-The **Project overview** page shows the size of all files in the repository, including repository files,
+The project overview page shows the size of all files in the repository, including repository files,
 artifacts, and LFS. This size is updated every 15 minutes.
 
 The size of a repository is determined by computing the accumulated size of all files in the repository.
@@ -121,7 +121,7 @@ GitLab sends an email notification with the recalculated repository size after t
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/450701) in GitLab 17.1 [with a flag](../../../administration/feature_flags.md) named `rewrite_history_ui`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/450701) in GitLab 17.1 [with a flag](../../../administration/feature_flags/_index.md) named `rewrite_history_ui`. Disabled by default.
 - [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/462999) in GitLab 17.2.
 - [Enabled on GitLab Self-Managed and GitLab Dedicated](https://gitlab.com/gitlab-org/gitlab/-/issues/462999) in GitLab 17.3.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/472018) in GitLab 17.9. Feature flag `rewrite_history_ui` removed.
@@ -157,6 +157,13 @@ Prerequisites:
   - A fork of a public upstream project.
   - A public upstream project with downstream forks.
 
+{{< alert type="note" >}}
+
+To ensure successful blob removal, consider temporarily restricting repository access during the
+process. New commits pushed during blob removal can cause the operation to fail.
+
+{{< /alert >}}
+
 To remove blobs from your repository:
 
 1. On the left sidebar, select **Search or go to** and find your project.
@@ -172,6 +179,16 @@ To remove blobs from your repository:
 1. Select **Run housekeeping**. Wait at least 30 minutes for the operation to complete.
 1. In the same **Settings > General > Advanced** section, select **Prune unreachable objects**.
    This operation takes approximately 5-10 minutes to complete.
+
+{{< alert type="note" >}}
+
+If the project containing the sensitive information has been forked, the housekeeping task might
+succeed without completing this process. Housekeeping must maintain the integrity of the
+[special object pool repository](../../../administration/housekeeping.md#object-pool-repositories),
+which contains the forked data.
+For help, contact GitLab Support.
+
+{{< /alert >}}
 
 #### Get a list of object IDs
 
@@ -223,7 +240,7 @@ exported `.tar.gz` or local repository:
 
    ```ruby
    p.repository.expire_all_method_caches
-   UpdateProjectStatisticsWorker.perform_async(p.id, ["commit_count","repository_size","storage_size","lfs_objects_size"])
+   UpdateProjectStatisticsWorker.perform_async(p.id, ["commit_count","repository_size","storage_size","lfs_objects_size","container_registry_size"])
    ```
 
 1. To check the total artifact storage space:
@@ -247,6 +264,31 @@ If you've completed a repository cleanup process but the storage usage remains u
 - These objects are not included in exports but still occupy file system space.
 - After two weeks, these objects are automatically pruned, which updates storage usage statistics.
 - To expedite this process, ask an administrator to run the ['Prune Unreachable Objects' housekeeping task](../../../administration/housekeeping.md).
+
+### Blobs are not removed
+
+When blobs are successfully removed, GitLab adds an entry in the project audit logs and sends an
+email notification to the person who initiated the action.
+
+If the blob removal fails, GitLab sends an email notification to the initiator with the subject
+`<project_name> | Project history rewrite failure`. The email body contains the full error message.
+
+Possible errors and solutions:
+
+- `validating object ID: invalid object ID`:
+
+  The object ID list contains a syntax error or an incorrect object ID. To resolve this:
+
+    1. Regenerate the [object IDs list](#get-a-list-of-object-ids).
+    1. Re-run the [blob removal steps](#remove-blobs).
+
+- `source repository checksum altered`:
+
+  This occurs when someone pushes a commit during the blob removal process. To resolve this:
+
+    1. Temporarily block all pushes to the repository.
+    1. Re-run the [blob removal steps](#remove-blobs).
+    1. Re-enable pushes after the process completes successfully.
 
 ### Repository size limit reached
 

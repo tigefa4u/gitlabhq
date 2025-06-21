@@ -38,7 +38,7 @@ module Ci
         project.ci_forward_deployment_enabled? &&
         (!project.ci_forward_deployment_rollback_allowed? || incomplete?) &&
         deployment&.persisted? &&
-        deployment&.older_than_last_successful_deployment?
+        deployment.older_than_last_successful_deployment?
     end
     strong_memoize_attr :has_outdated_deployment?
 
@@ -106,6 +106,10 @@ module Ci
       strong_memoize(:expanded_kubernetes_namespace) do
         ExpandVariables.expand(namespace, -> { simple_variables })
       end
+    end
+
+    def environment_auto_stop_in
+      options.dig(:environment, :auto_stop_in) if options
     end
 
     def expanded_auto_stop_in

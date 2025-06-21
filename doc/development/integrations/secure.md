@@ -1,7 +1,7 @@
 ---
 stage: Application Security Testing
 group: Static Analysis
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Security scanner integration
 ---
 
@@ -26,7 +26,7 @@ in the [CI documentation](../../ci/yaml/_index.md#image).
 
 ### Name
 
-For consistency, scanning jobs should be named after the scanner, in lower case.
+For consistency, scanning jobs should be named after the scanner, in lowercase.
 The job name is suffixed after the type of scanning:
 
 - `_dependency_scanning`
@@ -80,6 +80,7 @@ Valid reports are:
 - `api_fuzzing`
 - `coverage_fuzzing`
 - `sast`
+- `secret_detection`
 
 For example, here is the definition of a SAST job that generates a file named `gl-sast-report.json`,
 and uploads it as a SAST report:

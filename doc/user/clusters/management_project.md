@@ -28,7 +28,7 @@ with the [Cluster Management Project Template](management_project_template.md).
 
 {{< alert type="flag" >}}
 
-On GitLab Self-Managed, by default this feature is not available. To make it available, an administrator can [enable the feature flag](../../administration/feature_flags.md) named `certificate_based_clusters`.
+On GitLab Self-Managed, by default this feature is not available. To make it available, an administrator can [enable the feature flag](../../administration/feature_flags/_index.md) named `certificate_based_clusters`.
 
 {{< /alert >}}
 
@@ -103,7 +103,7 @@ project.
 
 Each scope can only be used by a single cluster for a management project.
 
-For example, let's say the following Kubernetes clusters are associated
+For example, the following Kubernetes clusters are associated
 to a management project:
 
 | Cluster     | Environment scope |

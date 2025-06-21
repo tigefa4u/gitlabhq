@@ -1,9 +1,9 @@
 import Vue, { nextTick } from 'vue';
 import { GlForm, GlModal } from '@gitlab/ui';
 import { shallowMount } from '@vue/test-utils';
-import axios from 'axios';
 import VueApollo from 'vue-apollo';
 import MockAdapter from 'axios-mock-adapter';
+import axios from '~/lib/utils/axios_utils';
 import createMockApollo from 'helpers/mock_apollo_helper';
 import waitForPromises from 'helpers/wait_for_promises';
 import ModalCopyButton from '~/vue_shared/components/modal_copy_button.vue';
@@ -49,10 +49,8 @@ describe('CreateBranchMergeRequestModal', () => {
   });
 
   const createWrapper = ({
-    workItemId = 'gid://gitlab/WorkItem/1',
     workItemIid = '1',
     showBranchFlow = true,
-    showMergeRequestFlow = false,
     showModal = true,
     workItemType = 'Issue',
     workItemFullPath = 'fullPath',
@@ -65,11 +63,9 @@ describe('CreateBranchMergeRequestModal', () => {
     wrapper = shallowMount(WorkItemCreateBranchMergeRequestModal, {
       apolloProvider: mockApollo,
       propsData: {
-        workItemId,
         workItemIid,
         workItemType,
         showBranchFlow,
-        showMergeRequestFlow,
         showModal,
         workItemFullPath,
         projectId,
@@ -213,7 +209,7 @@ describe('CreateBranchMergeRequestModal', () => {
 
     describe('Merge request creation', () => {
       it('redirects to the the create merge branch request url with the correct parameters', async () => {
-        createWrapper({ showBranchFlow: false, showMergeRequestFlow: true });
+        createWrapper({ showBranchFlow: false });
         await waitForPromises();
 
         jest.spyOn(axios, 'post');
@@ -246,11 +242,7 @@ describe('CreateBranchMergeRequestModal', () => {
 
       describe('confidential merge request', () => {
         beforeEach(() => {
-          createWrapper({
-            showBranchFlow: false,
-            showMergeRequestFlow: true,
-            isConfidentialWorkItem: true,
-          });
+          createWrapper({ showBranchFlow: false, isConfidentialWorkItem: true });
           return waitForPromises();
         });
 

@@ -62,33 +62,21 @@ can still run `build` jobs concurrently for maximizing the pipeline efficiency.
 
 ## Prerequisites
 
-- The basic knowledge of the [GitLab CI/CD pipelines](../pipelines/_index.md)
-- The basic knowledge of the [GitLab Environments and Deployments](../environments/_index.md)
+- Familiarity with [GitLab CI/CD pipelines](../pipelines/_index.md)
+- Familiarity with [GitLab environments and deployments](../environments/_index.md)
 - At least the Developer role for the project to configure CI/CD pipelines.
 
 ## Process modes
 
-You can choose a process mode to strategically control the job concurrency for your deployment preferences.
+You can select a process mode to control the job concurrency for your deployment preferences.
 The following modes are supported:
 
-- **Unordered:** This is the default process mode that limits the concurrency on running jobs.
-  It's the easiest option to use when you don't care about the execution order
-  of the jobs. It starts processing the jobs whenever a job is ready to run.
-- **Oldest first:** This process mode limits the concurrency of the jobs. When a resource is free,
-  it picks the first job from the list of upcoming jobs (`created`, `scheduled`, or `waiting_for_resource` state)
-  that are sorted by pipeline ID in ascending order.
-
-  This mode is efficient when you want to ensure that the jobs are executed from the oldest pipeline.
-  It is less efficient compared to the `unordered` mode in terms of the pipeline efficiency,
-  but safer for continuous deployments.
-
-- **Newest first:** This process mode limits the concurrency of the jobs. When a resource is free,
-  it picks the first job from the list of upcoming jobs (`created`, `scheduled` or `waiting_for_resource` state)
-  that are sorted by pipeline ID in descending order.
-
-  This mode is efficient when you want to ensure that the jobs are executed from the newest pipeline and
-  prevent all of the old deploy jobs with the [prevent outdated deployment jobs](../environments/deployment_safety.md#prevent-outdated-deployment-jobs) feature.
-  This is the most efficient option in terms of the pipeline efficiency, but you must ensure that each deployment job is idempotent.
+| Process mode | Description | When to use  |
+|---------------|-------------|-------------|
+| `unordered` | The default process mode. Processes jobs whenever a job is ready to run. | The execution order of jobs is not important. The easiest option to use. |
+| `oldest_first` | When a resource is free, picks the first job from the list of upcoming jobs sorted by pipeline ID in ascending order. | You want to execute jobs from the oldest pipeline first. Less efficient than `unordered` mode, but safer for continuous deployments. |
+| `newest_first` | When a resource is free, picks the first job from the list of upcoming jobs that are sorted by pipeline ID in descending order. | You want to execute jobs from the newest pipeline and [prevent outdated deployment jobs](../environments/deployment_safety.md#prevent-outdated-deployment-jobs). Each job must be idempotent. |
+| `newest_ready_first` | When a resource is free, picks the first job from the list of upcoming jobs waiting on this resource. Jobs are sorted by pipeline ID in descending order. | You want to prevent `newest_first` from prioritizing new pipelines before deploying the current pipeline. Faster than `newest_first`. Each job must be idempotent. |
 
 ### Change the process mode
 
@@ -99,6 +87,7 @@ by specifying the `process_mode`:
 - `unordered`
 - `oldest_first`
 - `newest_first`
+- `newest_ready_first`
 
 ### An example of difference between the process modes
 
@@ -205,7 +194,7 @@ there is a case that it doesn't work well with the other CI features.
 
 For example, when you run [a child pipeline](../pipelines/downstream_pipelines.md#parent-child-pipelines)
 that requires the same resource group with the parent pipeline,
-a dead lock could happen. Here is an example of a _bad_ setup:
+a dead lock could happen. Here is an example of a bad setup:
 
 ```yaml
 # BAD
@@ -260,7 +249,7 @@ first check that the resource group is working correctly:
    - If the status is `running` or `pending`, the feature is working correctly. Wait until the job finishes and releases the resource.
    - If the status is `created` and the [process mode](#process-modes) is either **Oldest first** or **Newest first**, the feature is working correctly.
      Visit the pipeline page of the job and check which upstream stage or job is blocking the execution.
-   - If none of the above conditions are met, the feature might not be working correctly. [Report the issue to GitLab](#report-an-issue).
+   - If none of the previous conditions are met, the feature might not be working correctly. [Report the issue to GitLab](#report-an-issue).
 
 1. If **View job currently using resource** is not available, the resource is not assigned to a job. Instead, check the resource's upcoming jobs.
 
@@ -289,7 +278,7 @@ As a temporary workaround, you can:
 - Re-run a finished job that has the same resource group as the stuck job.
 
   For example, if you have a `setup_job` and a `deploy_job` with the same resource group,
-  the `setup_job` might finish while the `deploy_job` is stuck at "waiting for resource".
+  the `setup_job` might finish while the `deploy_job` is stuck `waiting for resource`.
   Re-run the `setup_job` to restart the whole process and allow `deploy_job` to finish.
 
 #### Get job details through GraphQL

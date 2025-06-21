@@ -105,6 +105,11 @@ To change the frequency of the pipeline schedule worker:
 For example, to set the maximum frequency of pipelines to twice a day, set `pipeline_schedule_worker_cron`
 to a cron value of `0 */12 * * *` (`00:00` and `12:00` every day).
 
+When many pipeline schedules run at the same time, additional delays can occur.
+The pipeline schedule worker processes pipelines in [batches](https://gitlab.com/gitlab-org/gitlab/-/blob/3426be1b93852c5358240c5df40970c0ddfbdb2a/app/workers/pipeline_schedule_worker.rb#L13-14)
+with a small delay between each batch to distribute system load. This can cause pipeline 
+schedules to start several minutes after their scheduled time.
+
 ## Disaster recovery
 
 You can disable some important but computationally expensive parts of the application
@@ -113,7 +118,7 @@ to relieve stress on the database during ongoing downtime.
 ### Disable fair scheduling on instance runners
 
 When clearing a large backlog of jobs, you can temporarily enable the `ci_queueing_disaster_recovery_disable_fair_scheduling`
-[feature flag](../feature_flags.md). This flag disables fair scheduling
+[feature flag](../feature_flags/_index.md). This flag disables fair scheduling
 on instance runners, which reduces system resource usage on the `jobs/request` endpoint.
 
 When enabled, jobs are processed in the order they were put in the system, instead of
@@ -122,7 +127,7 @@ balanced across many projects.
 ### Disable compute quota enforcement
 
 To disable the enforcement of [compute minutes quotas](compute_minutes.md) on instance runners, you can temporarily
-enable the `ci_queueing_disaster_recovery_disable_quota` [feature flag](../feature_flags.md).
+enable the `ci_queueing_disaster_recovery_disable_quota` [feature flag](../feature_flags/_index.md).
 This flag reduces system resource usage on the `jobs/request` endpoint.
 
 When enabled, jobs created in the last hour can run in projects which are out of quota.

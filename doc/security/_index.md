@@ -55,7 +55,7 @@ You can find all those directories listed in the [Linux package configuration do
 
 ### Data access
 
-- [Information exclusivity](information_exclusivity.md).
+- [Security considerations for project membership](../user/project/members/_index.md#security-considerations).
 - [Protecting and removing user file uploads](user_file_uploads.md).
 - [Proxying linked images for user privacy](asset_proxy.md).
 
@@ -82,7 +82,6 @@ GitLab Self-Managed customers and administrators are responsible for the securit
 - [How to use correlation ID to trace logs](../administration/logs/tracing_correlation_id.md).
 - [Logging configuration and access](https://docs.gitlab.com/omnibus/settings/logs.html).
 - [How to configure audit event streaming](../administration/audit_event_streaming/_index.md).
-- [Providing assistance to GitLab.com customers during customer-based security incidents](https://handbook.gitlab.com/handbook/security/customer-requests/#conditions-and-requirements).
 
 ## Response
 

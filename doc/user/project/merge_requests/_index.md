@@ -4,6 +4,7 @@ group: Code Review
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: Propose, review, and collaborate on changes to a project.
 title: Merge requests
+description: Code review, collaboration, branch merging, and commits.
 ---
 
 {{< details >}}
@@ -283,8 +284,8 @@ the code added or changed in another merge request. To support keeping individua
 merge requests small, GitLab can update up to four open merge requests when their
 target branch merges into `main`. For example:
 
-- **Merge request 1**: merge `feature-alpha` into `main`.
-- **Merge request 2**: merge `feature-beta` into `feature-alpha`.
+- Merge request 1: merge `feature-alpha` into `main`.
+- Merge request 2: merge `feature-beta` into `feature-alpha`.
 
 If these merge requests are open at the same time, and merge request 1 (`feature-alpha`)
 merges into `main`, GitLab updates the destination of merge request 2 from `feature-alpha`
@@ -335,8 +336,7 @@ For a web developer writing a webpage for your company's website:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/115383) in GitLab 15.11 [with a flag](../../../administration/feature_flags.md) named `mr_activity_filters`. Disabled by default.
-- [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/387070) in GitLab 16.0.
+- Feature flag `mr_activity_filters` [enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/387070) in GitLab 16.0.
 - [Enabled on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/126998) in GitLab 16.3 by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/132355) in GitLab 16.5. Feature flag `mr_activity_filters` removed.
 - Filtering bot comments [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/128473) in GitLab 16.9.
@@ -378,7 +378,7 @@ When you want to finish a conversation in a merge request,
 [resolve a thread](../../discussions/_index.md#resolve-a-thread).
 
 GitLab shows the number of unresolved threads in the top right corner of a
-merge request, like this: **7 unresolved threads**.
+merge request, like this: `7 unresolved threads`.
 
 ### Move all unresolved threads in a merge request to an issue
 
@@ -446,14 +446,14 @@ Threads on lines that don't change and top-level resolvable threads are not reso
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/132678) in GitLab 16.5 [with a flag](../../../administration/feature_flags.md) named `notifications_todos_buttons`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/132678) in GitLab 16.5 [with a flag](../../../administration/feature_flags/_index.md) named `notifications_todos_buttons`. Disabled by default.
 - [Issues, incidents](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/133474), and [epics](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/133881) also updated.
 
 {{< /history >}}
 
 {{< alert type="flag" >}}
 
-On GitLab Self-Managed, by default this feature is not available. To make it available, an administrator can [enable the feature flag](../../../administration/feature_flags.md) named `notifications_todos_buttons`.
+On GitLab Self-Managed, by default this feature is not available. To make it available, an administrator can [enable the feature flag](../../../administration/feature_flags/_index.md) named `notifications_todos_buttons`.
 On GitLab.com and GitLab Dedicated, this feature is not available.
 
 {{< /alert >}}

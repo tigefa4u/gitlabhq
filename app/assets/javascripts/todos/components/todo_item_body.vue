@@ -19,8 +19,7 @@ import {
   TODO_ACTION_TYPE_UNMERGEABLE,
   TODO_ACTION_TYPE_SSH_KEY_EXPIRED,
   TODO_ACTION_TYPE_SSH_KEY_EXPIRING_SOON,
-  TODO_ACTION_TYPE_DUO_PRO_ACCESS_GRANTED,
-  TODO_ACTION_TYPE_DUO_ENTERPRISE_ACCESS_GRANTED,
+  DUO_ACCESS_GRANTED_ACTIONS,
 } from '../constants';
 
 export default {
@@ -32,11 +31,8 @@ export default {
   directives: {
     SafeHtml,
   },
+  inject: ['currentUserId'],
   props: {
-    currentUserId: {
-      type: String,
-      required: true,
-    },
     todo: {
       type: Object,
       required: true,
@@ -61,14 +57,14 @@ export default {
         this.todo.action !== TODO_ACTION_TYPE_UNMERGEABLE &&
         this.todo.action !== TODO_ACTION_TYPE_SSH_KEY_EXPIRED &&
         this.todo.action !== TODO_ACTION_TYPE_SSH_KEY_EXPIRING_SOON &&
-        this.todo.action !== TODO_ACTION_TYPE_DUO_PRO_ACCESS_GRANTED &&
-        this.todo.action !== TODO_ACTION_TYPE_DUO_ENTERPRISE_ACCESS_GRANTED
+        !DUO_ACCESS_GRANTED_ACTIONS.includes(this.todo.action)
       );
     },
     showAvatarOnNote() {
+      // do not show avatar on duo todo's which were authored by the user
       return (
-        this.todo.action !== TODO_ACTION_TYPE_DUO_PRO_ACCESS_GRANTED &&
-        this.todo.action !== TODO_ACTION_TYPE_DUO_ENTERPRISE_ACCESS_GRANTED
+        !DUO_ACCESS_GRANTED_ACTIONS.includes(this.todo.action) ||
+        this.todo.author.id !== this.currentUserId
       );
     },
     author() {
@@ -162,16 +158,8 @@ export default {
         name = s__('Todos|Your SSH key is expiring soon');
       }
 
-      if (this.todo.action === TODO_ACTION_TYPE_DUO_PRO_ACCESS_GRANTED) {
-        name = s__(
-          'Todos|You now have access to AI-powered features. Learn how to set up Code Suggestions and Chat in your IDE',
-        );
-      }
-
-      if (this.todo.action === TODO_ACTION_TYPE_DUO_ENTERPRISE_ACCESS_GRANTED) {
-        name = s__(
-          'Todos|You now have access to AI-powered features. Learn how to set up Code Suggestions and Chat in your IDE',
-        );
+      if (DUO_ACCESS_GRANTED_ACTIONS.includes(this.todo.action)) {
+        name = this.todo.body;
       }
 
       if (!name) {

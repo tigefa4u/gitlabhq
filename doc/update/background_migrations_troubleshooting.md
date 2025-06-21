@@ -2,7 +2,7 @@
 stage: Data Access
 group: Database Frameworks
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-title: Troubleshooting
+title: Troubleshooting background migrations
 ---
 
 {{< details >}}
@@ -45,7 +45,7 @@ To resolve this error:
 To roll back and follow the required upgrade path:
 
 1. [Roll back and restore the previously installed version](../administration/backup_restore/_index.md).
-1. Update to either 14.0.5 or 14.1 **before** updating to 14.2+.
+1. Update to either 14.0.5 or 14.1 before updating to 14.2+.
 1. [Check the status](background_migrations.md#check-the-status-of-batched-background-migrations) of the batched
    background migrations and make sure they are all marked as finished before attempting to upgrade again. If any remain
    marked as active, [manually finish them](background_migrations.md#finish-a-failed-migration-manually).

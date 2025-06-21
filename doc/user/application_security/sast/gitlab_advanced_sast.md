@@ -20,6 +20,7 @@ title: GitLab Advanced SAST
 - Support for JavaScript, TypeScript, and C# added in 17.3.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/474094) in GitLab 17.3.
 - Support for Java Server Pages (JSP) added in GitLab 17.4.
+- Support for PHP [added](https://gitlab.com/groups/gitlab-org/-/epics/14273) in GitLab 18.1.
 
 {{< /history >}}
 
@@ -77,12 +78,12 @@ After enabling Advanced SAST scanning in the **default branch** (see [Enable Git
 
 #### Conditions for deduplication
 
-1. **Matching Identifier:**
+1. **Matching Identifier**:
    - At least one of the GitLab Advanced SAST vulnerability's identifiers (excluding CWE and OWASP) must match the **primary identifier** of an existing Semgrep vulnerability.
    - The primary identifier is the first identifier in the vulnerability's identifiers array in the [SAST report](_index.md#download-a-sast-report).
    - For example, if a GitLab Advanced SAST vulnerability has identifiers including `bandit.B506` and a Semgrep vulnerability's primary identifier is also `bandit.B506`, this condition is met.
 
-1. **Matching Location:**
+1. **Matching Location**:
    - The vulnerabilities must be associated with the **same location** in the code. This is determined using one of the following fields in a vulnerability in the [SAST report](_index.md#download-a-sast-report):
      - Tracking field (if present)
      - Location field (if the Tracking field is absent)
@@ -99,7 +100,7 @@ When the conditions are met, the existing Semgrep vulnerability is converted int
 
 In some cases, Semgrep vulnerabilities may still appear as duplicates if the [deduplication conditions](#conditions-for-deduplication) are not met. To resolve this in the [Vulnerability Report](../vulnerability_report/_index.md):
 
-1. [Filter vulnerabilities](../vulnerability_report/_index.md#filtering-vulnerabilities) by Advanced SAST scanner and [export the results in CSV format](../vulnerability_report/_index.md#export-details-in-csv-format).
+1. [Filter vulnerabilities](../vulnerability_report/_index.md#filtering-vulnerabilities) by Advanced SAST scanner and [export the results in CSV format](../vulnerability_report/_index.md#export-details).
 1. [Filter vulnerabilities](../vulnerability_report/_index.md#filtering-vulnerabilities) by Semgrep scanner. These are likely the vulnerabilities that were not deduplicated.
 1. For each Semgrep vulnerability, check if it has a corresponding match in the exported Advanced SAST results.
 1. If a duplicate exists, resolve the Semgrep vulnerability appropriately.
@@ -112,8 +113,16 @@ GitLab Advanced SAST supports the following languages with cross-function and cr
 - Go
 - Java, including Java Server Pages (JSP)
 - JavaScript, TypeScript
+- PHP
 - Python
 - Ruby
+
+### PHP known issues
+
+When analyzing PHP code, GitLab Advanced SAST has the following limitations:
+
+- **Dynamic file inclusion**: Dynamic file inclusion statements (`include`, `include_once`, `require`, `require_once`) using variables for file paths are not supported in this release. Only static file inclusion paths are supported for cross-file analysis. See [issue 527341](https://gitlab.com/gitlab-org/gitlab/-/issues/527341).
+- **Case sensitivity**: PHP's case-insensitive nature for function names, class names, and method names is not fully supported in cross-file analysis. See [issue 526528](https://gitlab.com/gitlab-org/gitlab/-/issues/526528).
 
 ## Configuration
 
@@ -121,16 +130,25 @@ Enable the GitLab Advanced SAST analyzer to discover vulnerabilities in your app
 cross-function and cross-file taint analysis. You can then adjust its behavior by using CI/CD
 variables.
 
+### Available CI/CD variables
+
+GitLab Advanced SAST can be configured using the following CI/CD variables.
+
+| CI/CD variable                 | Default | Description                                                                   |
+|--------------------------------|---------|-------------------------------------------------------------------------------|
+| `GITLAB_ADVANCED_SAST_ENABLED` | `false` | Set to `true` to enable GitLab Advanced SAST scanning, or `false` to disable. |
+| `FF_GLAS_ENABLE_PHP_SUPPORT`   | `true`  | Set to `true` to analyze PHP files, or false to disable.                      |
+
 ### Requirements
 
-Like other GitLab SAST analyzers, the GitLab Advanced SAST analyzer requires a runner and a CI/CD pipeline; see [SAST requirements](_index.md#requirements) for details.
+Like other GitLab SAST analyzers, the GitLab Advanced SAST analyzer requires a runner and a CI/CD pipeline; see [SAST requirements](_index.md#getting-started) for details.
 
 On GitLab Self-Managed, you must also use a GitLab version that supports GitLab Advanced SAST:
 
 - You should use GitLab 17.4 or later if possible. GitLab 17.4 includes a new code-flow view, vulnerability deduplication, and further updates to the SAST CI/CD template.
 - The [SAST CI/CD templates](_index.md#stable-vs-latest-sast-templates) were updated to include GitLab Advanced SAST in the following releases:
   - The stable template includes GitLab Advanced SAST in GitLab 17.3 or later.
-  - The latest template includes GitLab Advanced SAST in GitLab 17.2 or later. Note that you [should not mix latest and stable templates](../detect/roll_out_security_scanning.md#template-editions) in a single project.
+  - The latest template includes GitLab Advanced SAST in GitLab 17.2 or later. Don't mix [latest and stable templates](../detect/security_configuration.md#template-editions) in a single project.
 - At a minimum, GitLab Advanced SAST requires version 17.1 or later.
 
 ### Enable GitLab Advanced SAST scanning
@@ -141,7 +159,8 @@ You can set this variable in different ways depending on how you manage your CI/
 
 #### Edit the CI/CD pipeline definition manually
 
-If you've already enabled GitLab SAST scanning in your project, add a new CI/CD variable to enable GitLab SAST.
+If you've already enabled GitLab SAST scanning in your project, add a CI/CD variable to enable
+GitLab Advanced SAST.
 
 This minimal YAML file includes the [stable SAST template](_index.md#stable-vs-latest-sast-templates) and enables GitLab Advanced SAST:
 
@@ -171,11 +190,11 @@ To enable GitLab Advanced SAST by using the pipeline editor:
 1. Update the CI/CD configuration to:
    - Include one of the GitLab-managed [SAST CI/CD templates](_index.md#stable-vs-latest-sast-templates) if it is not [already included](_index.md#configure-sast-in-your-cicd-yaml).
        - In GitLab 17.3 or later, you should use the stable template, `Jobs/SAST.gitlab-ci.yml`.
-       - In GitLab 17.2, GitLab Advanced SAST is only available in the latest template, `Jobs/SAST.latest.gitlab-ci.yml`. Note that you [should not mix latest and stable templates](../detect/roll_out_security_scanning.md#template-editions) in a single project.
+       - In GitLab 17.2, GitLab Advanced SAST is only available in the latest template, `Jobs/SAST.latest.gitlab-ci.yml`. Don't mix [latest and stable templates](../detect/security_configuration.md#template-editions) in a single project.
        - In GitLab 17.1, you must manually copy the contents of the GitLab Advanced SAST job into your CI/CD pipeline definition.
    - Set the CI/CD variable `GITLAB_ADVANCED_SAST_ENABLED` to `true`.
 
-   See the [minimal YAML example above](#edit-the-cicd-pipeline-definition-manually).
+   See the [minimal YAML example](#edit-the-cicd-pipeline-definition-manually).
 1. Select the **Validate** tab, then select **Validate pipeline**.
 
    The message **Simulation completed successfully** confirms the file is valid.
@@ -200,7 +219,7 @@ You can set this variable anywhere you can configure CI/CD variables, including 
 
 {{< history >}}
 
-- Introduced in GitLab 17.3 [with several flags](../../../administration/feature_flags.md). Enabled by default.
+- Introduced in GitLab 17.3 [with several flags](../../../administration/feature_flags/_index.md). Enabled by default.
 - Enabled on GitLab Self-Managed and GitLab Dedicated in GitLab 17.7.
 - Generally available in GitLab 17.7. All feature flags removed.
 
@@ -221,15 +240,68 @@ The code flow information is shown the **Code flow** tab and includes:
 - The steps from source to sink.
 - The relevant files, including code snippets.
 
-![A code flow of a Python application across two files](../vulnerabilities/img/code_flow_view_v17_7.png)
+![A code flow of a Python application across two files](img/code_flow_view_v17_7.png)
+
+## Customize GitLab Advanced SAST
+
+You can disable GitLab Advanced SAST rules or edit their metadata, just as you can other analyzers.
+For details, see [Customize rulesets](customize_rulesets.md#disable-predefined-gitlab-advanced-sast-rules).
+
+## Request source code of LGPL-licensed components in GitLab Advanced SAST
+
+To request information about the source code of LGPL-licensed components in GitLab Advanced SAST,
+[contact GitLab Support](https://about.gitlab.com/support/).
+
+To ensure a quick response, include the GitLab Advanced SAST analyzer version in your request.
+
+Because this feature is only available at the Ultimate tier, you must be associated with an organization with that level of support entitlement.
+
+## Feedback
+
+Feel free to add your feedback in the dedicated [issue 466322](https://gitlab.com/gitlab-org/gitlab/-/issues/466322).
 
 ## Troubleshooting
 
-If you encounter issues while using GitLab Advanced SAST, refer to the [troubleshooting guide](troubleshooting.md#slow-scans-or-timeouts-with-advanced-sast).
+When working with GitLab Advanced SAST, you might encounter the following issues.
 
-### Locate the GitLab Advanced SAST analyzer version
+### Slow scans or timeouts with Advanced SAST
 
-To locate the GitLab Advanced SAST analyzer version:
+Because [Advanced SAST](gitlab_advanced_sast.md) scans your program in detail, scans can sometimes
+take a long time to complete, especially for large repositories. If you're experiencing performance
+issues, consider following the recommendations here.
+
+#### Reduce scan time by excluding files
+
+Because each file is analyzed against all applicable rules, you can reduce the number of files
+scanned to decrease scan time. To do this, use the
+[SAST_EXCLUDED_PATHS](_index.md#vulnerability-filters) variable to exclude folders that do not need
+to be scanned. Effective exclusions vary, but might include:
+
+- Database migrations
+- Unit tests
+- Dependency directories, such as `node_modules/`
+- Build directories
+
+#### Optimize scans with multi-core scanning
+
+Multi-core scanning is enabled by default in the Advanced SAST (analyzer version v1.1.10 and later).
+You can increase the runner size to make more resources available for scanning. For self-hosted
+runners, you may need to customize the `--multi-core` flag in the
+[security scanner configuration](_index.md#security-scanner-configuration).
+
+#### When to seek support
+
+If you've followed these optimization steps and your Advanced SAST scan is still running longer than
+expected, reach out to GitLab Support for further assistance with the following information:
+
+- [GitLab Advanced SAST analyzer version](#identify-the-gitlab-advanced-sast-analyzer-version)
+- Programming language used in your repository
+- [Debug logs](../troubleshooting_application_security.md#debug-level-logging)
+- [Performance debugging artifact](#generate-a-performance-debugging-artifact)
+
+##### Identify the GitLab Advanced SAST analyzer version
+
+To identify the GitLab Advanced SAST analyzer version:
 
 1. On the left sidebar, select **Search or go to** and find your project.
 1. Select **Build > Jobs**.
@@ -244,20 +316,29 @@ You should find the version at the end of line with that string. For example:
 
 In this example, the version is `1.1.1`.
 
-## Customize GitLab Advanced SAST
+##### Generate a performance debugging artifact
 
-You can disable GitLab Advanced SAST rules or edit their metadata, just as you can other analyzers.
-For details, see [Customize rulesets](customize_rulesets.md#disable-predefined-gitlab-advanced-sast-rules).
+To generate the `trace.ctf` artifact, add the following to your `.gitlab-ci.yml`.
 
-## Request source code of LGPL-licensed components in GitLab Advanced SAST
+Set `RUNNER_SCRIPT_TIMEOUT` to at least 10 minutes shorter than `timeout` to ensure the artifact has
+time to upload.
 
-To request information about the source code of LGPL-licensed components in GitLab Advanced SAST, please
-[contact GitLab Support](https://about.gitlab.com/support/).
+```yaml
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
 
-To ensure a quick response, include the GitLab Advanced SAST analyzer version in your request.
+variables:
+  GITLAB_ADVANCED_SAST_ENABLED: 'true'
+  MEMTRACE: 'trace.ctf'
+  DISABLE_MULTI_CORE: true # Disable multi core when collecting memtrace
 
-Because this feature is only available at the Ultimate tier, you must be associated with an organization with that level of support entitlement.
-
-## Feedback
-
-Feel free to add your feedback in the dedicated [issue 466322](https://gitlab.com/gitlab-org/gitlab/-/issues/466322).
+gitlab-advanced-sast:
+  artifacts:
+    paths:
+      - '**/trace.ctf'  # Collects all trace.ctf files generated by this job
+    expire_in: 1 week   # Sets retention for artifacts
+    when: always        # Ensures artifact export even if the job fails
+  variables:
+    RUNNER_SCRIPT_TIMEOUT: 50m
+  timeout: 1h
+```

@@ -43,6 +43,7 @@ import {
   TOKEN_TYPE_ENVIRONMENT,
   TOKEN_TYPE_STATE,
   TOKEN_TYPE_SUBSCRIBED,
+  TOKEN_TYPE_STATUS,
 } from '~/vue_shared/components/filtered_search_bar/constants';
 
 export const ISSUE_REFERENCE = /^#\d+$/;
@@ -105,13 +106,11 @@ export const i18n = {
   closedMoved: CLOSED_MOVED,
   confidentialNo: __('No'),
   confidentialYes: __('Yes'),
-  downvotes: __('Downvotes'),
   errorFetchingCounts: __('An error occurred while getting issue counts'),
   errorFetchingIssues: __('An error occurred while loading issues'),
   issueRepositioningMessage: __(
     'Issues are being rebalanced at the moment, so manual reordering is disabled.',
   ),
-  upvotes: __('Upvotes'),
   titles: __('Titles'),
   descriptions: __('Descriptions'),
   subscribedExplicitly: __('Explicitly subscribed'),
@@ -138,6 +137,8 @@ export const urlSortParams = {
   [RELATIVE_POSITION_ASC]: RELATIVE_POSITION,
   [TITLE_ASC]: 'title_asc',
   [TITLE_DESC]: 'title_desc',
+  [START_DATE_ASC]: 'start_date_asc',
+  [START_DATE_DESC]: 'start_date_desc',
   [HEALTH_STATUS_ASC]: 'health_status_asc',
   [HEALTH_STATUS_DESC]: 'health_status_desc',
   [WEIGHT_ASC]: 'weight',
@@ -595,6 +596,16 @@ export const filtersMap = {
     [URL_PARAM]: {
       [OPERATOR_IS]: {
         [NORMAL_FILTER]: 'subscribed',
+      },
+    },
+  },
+  [TOKEN_TYPE_STATUS]: {
+    [API_PARAM]: {
+      [NORMAL_FILTER]: 'status',
+    },
+    [URL_PARAM]: {
+      [OPERATOR_IS]: {
+        [NORMAL_FILTER]: 'status',
       },
     },
   },

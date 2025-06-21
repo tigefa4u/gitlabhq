@@ -67,6 +67,8 @@ class Projects::CommitController < Projects::ApplicationController
   def pipelines
     @pipelines = @commit.pipelines.order(id: :desc)
     @pipelines = @pipelines.where(ref: params[:ref]) if params[:ref]
+    # Capture total count before pagination to ensure accurate count regardless of current page
+    @pipelines_count = @pipelines.count
     @pipelines = @pipelines.page(params[:page])
 
     respond_to do |format|
@@ -80,7 +82,7 @@ class Projects::CommitController < Projects::ApplicationController
             .with_pagination(request, response)
             .represent(@pipelines),
           count: {
-            all: @pipelines.count
+            all: @pipelines_count
           }
         }
       end
@@ -159,13 +161,15 @@ class Projects::CommitController < Projects::ApplicationController
   end
 
   def rapid_diffs
-    return render_404 unless ::Feature.enabled?(:rapid_diffs, current_user, type: :wip)
+    return render_404 unless ::Feature.enabled?(:rapid_diffs, current_user, type: :wip) &&
+      ::Feature.enabled?(:rapid_diffs_on_commit_show, current_user, type: :wip)
 
     streaming_offset = 5
     @reload_stream_url = diffs_stream_url(@commit)
     @stream_url = diffs_stream_url(@commit, streaming_offset, diff_view)
     @diffs_slice = @commit.first_diffs_slice(streaming_offset, commit_diff_options)
     @diff_files_endpoint = diff_files_metadata_namespace_project_commit_path
+    @diff_file_endpoint = diff_file_namespace_project_commit_path
     @diffs_stats_endpoint = diffs_stats_namespace_project_commit_path
     @update_current_user_path = expose_path(api_v4_user_preferences_path)
 
@@ -303,16 +307,16 @@ class Projects::CommitController < Projects::ApplicationController
     check_rate_limit!(:expanded_diff_files, scope: current_user || request.ip)
   end
 
-  def diffs_resource
-    commit&.diffs(commit_diff_options)
+  def diffs_resource(options = {})
+    commit&.diffs(commit_diff_options.merge(options))
   end
 
   def complete_diff_path
-    project_commit_path(project, commit, format: :patch)
+    project_commit_path(project, commit, format: :diff)
   end
 
   def email_format_path
-    project_commit_path(project, commit, format: :diff)
+    project_commit_path(project, commit, format: :patch)
   end
 end
 

@@ -3,6 +3,7 @@ stage: Plan
 group: Project Management
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Time tracking
+description: Estimates, time spent, and reporting.
 ---
 
 {{< details >}}
@@ -205,14 +206,14 @@ The breakdown of spent time displayed is limited to a maximum of 100 entries.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/344002) in GitLab 15.11 [with a flag](../../administration/feature_flags.md) named `global_time_tracking_report`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/344002) in GitLab 15.11 [with a flag](../../administration/feature_flags/_index.md) named `global_time_tracking_report`. Disabled by default.
 - Enabled on GitLab.com in GitLab 16.5.
 
 {{< /history >}}
 
 {{< alert type="flag" >}}
 
-On GitLab Self-Managed, by default this feature is not available. To make it available, an administrator can [enable the feature flag](../../administration/feature_flags.md) named `global_time_tracking_report`.
+On GitLab Self-Managed, by default this feature is not available. To make it available, an administrator can [enable the feature flag](../../administration/feature_flags/_index.md) named `global_time_tracking_report`.
 On GitLab.com, this feature is available. On GitLab Dedicated, this feature is not available.
 This feature is not ready for production use.
 

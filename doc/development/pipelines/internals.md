@@ -1,7 +1,7 @@
 ---
 stage: none
 group: Engineering Productivity
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: CI configuration internals
 ---
 
@@ -194,7 +194,7 @@ that are scoped to a single [configuration keyword](../../ci/yaml/_index.md#job-
 |------------------|-------------|
 | `.default-retry` | Allows a job to [retry](../../ci/yaml/_index.md#retry) upon `unknown_failure`, `api_failure`, `runner_system_failure`, `job_execution_timeout`, or `stuck_or_timeout_failure`. |
 | `.default-before_script` | Allows a job to use a default `before_script` definition suitable for Ruby/Rails tasks that may need a database running (for example, tests). |
-| `.repo-from-artifacts` | Allows a job to fetch the repository from artifacts in `clone-gitlab-repo` instead of cloning. This should reduce GitLab.com Gitaly load and also slightly improve the speed because downloading from artifacts is faster than cloning. Note that this should be avoided to be used with jobs having `needs: []` because otherwise it'll start later and we normally want all jobs to start as soon as possible. Use this only on jobs which has other dependencies so that we don't wait longer than just cloning. Note that this behavior can be controlled via `CI_FETCH_REPO_GIT_STRATEGY`. See [Fetch repository via artifacts instead of cloning/fetching from Gitaly](performance.md#fetch-repository-via-artifacts-instead-of-cloningfetching-from-gitaly) for more details. |
+| `.repo-from-artifacts` | Allows a job to fetch the repository from artifacts in `clone-gitlab-repo` instead of cloning. This should reduce GitLab.com Gitaly load and also slightly improve the speed because downloading from artifacts is faster than cloning. Note that this should be avoided to be used with jobs having `needs: []` because otherwise it'll start later and we usually want all jobs to start as soon as possible. Use this only on jobs which has other dependencies so that we don't wait longer than just cloning. Note that this behavior can be controlled via `CI_FETCH_REPO_GIT_STRATEGY`. See [Fetch repository via artifacts instead of cloning/fetching from Gitaly](performance.md#fetch-repository-via-artifacts-instead-of-cloningfetching-from-gitaly) for more details. |
 | `.setup-test-env-cache` | Allows a job to use a default `cache` definition suitable for setting up test environment for subsequent Ruby/Rails tasks. |
 | `.ruby-cache` | Allows a job to use a default `cache` definition suitable for Ruby tasks. |
 | `.static-analysis-cache` | Allows a job to use a default `cache` definition suitable for static analysis tasks. |
@@ -376,7 +376,7 @@ This applies to the parent sections the job extends from as well.
 
 You can just extend the `.fast-no-clone-job`:
 
-**Before:**
+**Before**:
 
 ```yaml
   # Note: No `extends:` is present in the job
@@ -386,7 +386,7 @@ You can just extend the `.fast-no-clone-job`:
       - echo "No need for a git clone!"
 ```
 
-**After:**
+**After**:
 
 ```yaml
   # Note: No `extends:` is present in the job
@@ -409,7 +409,7 @@ For this scenario, you have to:
 1. Extend the `.fast-no-clone-job` as in the first scenario (this will merge the `FILES_TO_DOWNLOAD` variable with the other variables)
 1. Make sure the `before_script` section from `.fast-no-clone-job` is referenced in the `before_script` we use for this job.
 
-**Before:**
+**Before**:
 
 ```yaml
   .base-job:
@@ -424,7 +424,7 @@ For this scenario, you have to:
       - echo "No need for a git clone!"
 ```
 
-**After:**
+**After**:
 
 ```yaml
   .base-job:

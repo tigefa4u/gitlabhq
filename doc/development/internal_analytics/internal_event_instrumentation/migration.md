@@ -1,7 +1,7 @@
 ---
 stage: Monitor
 group: Analytics Instrumentation
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Migrating existing tracking to internal event tracking
 ---
 
@@ -109,7 +109,7 @@ For raw JavaScript:
    });
 ```
 
-If you are using `data-track-action` in the component, you have to change it to `data-event-tracking` to migrate to Internal Events Tracking. If there are additional tracking attributes like `data-track-label`, `data-track-property` and `data-track-value` then you can replace them with `data-event-label`, `data-event-property` and `data-event-value` respectively. If you want to pass any additional property as a custom key-value pair, you can use `data-event-additional` attribute.
+If you are using `data-track-action` in the component, you have to change it to `data-event-tracking` to migrate to Internal Events Tracking. If there are additional tracking attributes like `data-track-label`, `data-track-property` and `data-track-value` then you can replace them with `data-event-label`, `data-event-property` and `data-event-value`. If you want to pass any additional property as a custom key-value pair, you can use `data-event-additional` attribute.
 
 For example, if a button is defined like this:
 

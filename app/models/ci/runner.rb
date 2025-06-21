@@ -25,9 +25,7 @@ module Ci
       expires_at: :compute_token_expiration,
       format_with_prefix: :prefix_for_new_and_legacy_runner,
       routable_token: {
-        if: ->(token_owner_record) {
-          token_owner_record.owner && Feature.enabled?(:routable_runner_token, token_owner_record.owner)
-        },
+        if: ->(token_owner_record) { token_owner_record.owner },
         payload: {
           o: ->(token_owner_record) { token_owner_record.owner.try(:organization_id) },
           g: ->(token_owner_record) { token_owner_record.group_type? ? token_owner_record.sharding_key_id : nil },
@@ -37,26 +35,26 @@ module Ci
         }
       }
 
-    enum access_level: {
+    enum :access_level, {
       not_protected: 0,
       ref_protected: 1
     }
 
-    enum runner_type: {
+    enum :runner_type, {
       instance_type: 1,
       group_type: 2,
       project_type: 3
     }
 
-    enum creation_state: {
+    enum :creation_state, {
       started: 0,
       finished: 100
-    }, _suffix: true
+    }, suffix: true
 
-    enum registration_type: {
+    enum :registration_type, {
       registration_token: 0,
       authenticated_user: 1
-    }, _suffix: true
+    }, suffix: true
 
     # Prefix assigned to runners created from the UI, instead of registered via the command line
     CREATED_RUNNER_TOKEN_PREFIX = 'glrt-'
@@ -112,6 +110,7 @@ module Ci
 
     belongs_to :creator, class_name: 'User', optional: true
 
+    before_validation :ensure_organization_id, on: :update
     before_save :ensure_token
     after_destroy :cleanup_runner_queue
 
@@ -229,8 +228,10 @@ module Ci
         .project_type
     end
 
-    scope :order_contacted_at_asc, -> { order(contacted_at: :asc) }
-    scope :order_contacted_at_desc, -> { order(contacted_at: :desc) }
+    # Never contacted runners (NULL contacted_at) appear first when sorting ascending
+    scope :order_contacted_at_asc, -> { order(arel_table[:contacted_at].asc.nulls_first) }
+    # Never contacted runners (NULL contacted_at) appear last when sorting descending
+    scope :order_contacted_at_desc, -> { order(arel_table[:contacted_at].desc.nulls_last) }
     scope :order_created_at_asc, -> { order(created_at: :asc) }
     scope :order_created_at_desc, -> { order(created_at: :desc) }
     scope :order_token_expires_at_asc, -> { order(token_expires_at: :asc) }
@@ -238,6 +239,8 @@ module Ci
 
     scope :with_tags, -> { preload(:tags) }
     scope :with_creator, -> { preload(:creator) }
+
+    scope :with_api_entity_associations, -> { preload(:creator) }
 
     validate :tag_constraints
     validates :sharding_key_id, presence: true, unless: :instance_type?
@@ -547,6 +550,7 @@ module Ci
       RunnerManager.safe_find_or_create_by!(runner_id: id, system_xid: system_xid.to_s) do |m|
         m.runner_type = runner_type
         m.sharding_key_id = sharding_key_id
+        m.organization_id = organization_id
       end
       # rubocop: enable Performance/ActiveRecordSubtransactionMethods
     end
@@ -617,6 +621,12 @@ module Ci
       Project.id_in(runner_projects.map(&:project_id))
         .filter_map(&:effective_runner_token_expiration_interval)
         .min&.from_now
+    end
+
+    def ensure_organization_id
+      return unless instance_type? || owner.present?
+
+      self.organization_id = instance_type? ? nil : owner.organization_id
     end
 
     def cleanup_runner_queue

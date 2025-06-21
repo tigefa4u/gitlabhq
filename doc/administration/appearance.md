@@ -2,14 +2,15 @@
 stage: none
 group: unassigned
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+gitlab_dedicated: yes
 description: Customize your GitLab instance appearance, including logos, favicons, sign-in pages, Progressive Web App settings, system messages, and color themes.
-title: GitLab Appearance
+title: GitLab appearance
 ---
 
 {{< details >}}
 
 - Tier: Free, Premium, Ultimate
-- Offering: GitLab Self-Managed
+- Offering: GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 
@@ -22,15 +23,15 @@ To open the **Appearance** settings:
 
 ## Customize your homepage button
 
-Customize the appearance of your **Homepage** button.
+Customize the appearance of your homepage button.
 
-The **Homepage** button is located on the upper-left corner of the left sidebar.
-Replace the default **GitLab logo** {{< icon name="tanuki" >}} with any image.
+The homepage button is located on the upper-left corner of the left sidebar.
+Replace the default GitLab logo {{< icon name="tanuki" >}} with any image.
 
 - The file should be less than 1 MB.
 - The image should be 24 pixels high. Images more than 24 px high will be resized.
 
-To customize your **Homepage** icon image:
+To customize your homepage icon image:
 
 1. On the left sidebar, at the bottom, select **Admin**.
 1. Select **Settings > Appearance**.
@@ -41,7 +42,7 @@ Pipeline status emails also show your custom logo. However, some email applicati
 
 ## Customize the favicon
 
-Customize the appearance of the favicon. A favicon is the icon for a website that shows in your browser tabs. The **GitLab logo** {{< icon name="tanuki" >}} is the default browser and CI/CD status favicon. Replace the default icon with any image that is `32 x 32` pixels and in `.png` or `.ico` format.
+Customize the appearance of the favicon. A favicon is the icon for a website that shows in your browser tabs. The GitLab logo {{< icon name="tanuki" >}} is the default browser and CI/CD status favicon. Replace the default icon with any image that is `32 x 32` pixels and in `.png` or `.ico` format.
 
 To change the favicon:
 
@@ -103,6 +104,12 @@ You can add also add a [customized help message](settings/help_page.md) below th
 
 ### Disable cookie-based language selector
 
+{{< details >}}
+
+- Offering: GitLab Self-Managed
+
+{{< /details >}}
+
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/144484) in GitLab 16.10.
@@ -111,7 +118,7 @@ You can add also add a [customized help message](settings/help_page.md) below th
 
 {{< alert type="flag" >}}
 
-On GitLab Self-Managed, by default this feature is not available. To make it available, an administrator can [enable the feature flag](feature_flags.md) named `disable_preferred_language_cookie`.
+On GitLab Self-Managed, by default this feature is not available. To make it available, an administrator can [enable the feature flag](feature_flags/_index.md) named `disable_preferred_language_cookie`.
 On GitLab.com and GitLab Dedicated, this feature is not available.
 
 {{< /alert >}}
@@ -195,7 +202,13 @@ GitLab supports [Libravatar](https://www.libravatar.org) is for avatar images, b
 
 ## Change the color theme for all new users
 
-To [change the default color theme](../user/profile/preferences.md#change-the-color-theme) for all new users:
+{{< details >}}
+
+- Offering: GitLab Self-Managed
+
+{{< /details >}}
+
+To [change the default navigation theme](../user/profile/preferences.md#change-the-navigation-theme) for all new users:
 
 1. Add `gitlab_rails['gitlab_default_theme']` to your GitLab configuration file at `/etc/gitlab/gitlab.rb`:
 
@@ -219,15 +232,3 @@ As of GitLab 17.8, `gitlab_default_theme` can specify [a value from 1 to 10](htt
 | 8       |Light Green|
 | 9       |Red|
 | 10       |Light Red|
-
-<!-- ## Troubleshooting
-
-Include any troubleshooting steps that you can foresee. If you know beforehand what issues
-one might have when setting this up, or when something is changed, or on upgrading, it's
-important to describe those, too. Think of things that may go wrong and include them here.
-This is important to minimize requests for support, and to avoid doc comments with
-questions that you know someone might ask.
-
-Each scenario can be a third-level heading, for example `### Getting error message X`.
-If you have none to add when creating a doc, leave this section in place
-but commented out to help encourage others to add to it in the future. -->

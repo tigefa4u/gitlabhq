@@ -50,6 +50,30 @@ export default {
       },
       deep: true,
     },
+    /**
+     * Data flow:
+     * 1. Initial: created/mounted → mountedWithCss becomes true → initGridStack() → grid.load(gridConfig) →
+     *    grid.getGridItems() → initGridPanelSlots → gridPanels populated with DOM references
+     * 2. Updates: value.panels changes → two parallel paths:
+     *    a. gridConfig changes → grid.load() updates grid layout (but not gridPanels)
+     *    b. this watcher updates gridPanels with new panel properties
+     */
+    'value.panels': {
+      handler(newPanels) {
+        if (this.gridPanels.length === 0) return;
+
+        // Only update panels that have changed to improve performance
+        newPanels.forEach((updatedPanel) => {
+          const panel = this.gridPanels.find((p) => p.id === updatedPanel.id);
+          if (panel) {
+            // Exclude `gridAttributes` from being updated
+            const { gridAttributes, ...panelPropsWithoutGridAttributes } = updatedPanel;
+            panel.props = { ...panelPropsWithoutGridAttributes };
+          }
+        });
+      },
+      deep: true,
+    },
   },
   mounted() {
     this.mounted = true;
@@ -98,10 +122,13 @@ export default {
       this.mountGridComponents(this.gridPanels);
     },
     initGridStack() {
-      this.grid = GridStack.init({
-        ...GRIDSTACK_BASE_CONFIG,
-        staticGrid: !this.editing,
-      }).load(this.gridConfig);
+      this.grid = GridStack.init(
+        {
+          ...GRIDSTACK_BASE_CONFIG,
+          staticGrid: !this.editing,
+        },
+        this.$refs.grid,
+      ).load(this.gridConfig);
 
       // Sync Vue components array with gridstack items
       this.initGridPanelSlots(this.grid.getGridItems());
@@ -162,7 +189,7 @@ export default {
 </script>
 
 <template>
-  <div class="grid-stack" data-testid="gridstack-grid">
+  <div ref="grid" class="grid-stack" data-testid="gridstack-grid">
     <div
       v-for="panel in gridPanels"
       :id="panel.id"

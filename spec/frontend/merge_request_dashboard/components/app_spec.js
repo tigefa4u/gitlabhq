@@ -1,5 +1,4 @@
 import Vue from 'vue';
-import VueRouter from 'vue-router';
 import VueApollo from 'vue-apollo';
 import { createMockSubscription } from 'mock-apollo-client';
 import { GlLink } from '@gitlab/ui';
@@ -17,7 +16,6 @@ import assigneeCountQuery from '~/merge_request_dashboard/queries/assignee_count
 import { createMockMergeRequest } from '../mock_data';
 
 Vue.use(VueApollo);
-Vue.use(VueRouter);
 
 describe('Merge requests app component', () => {
   let wrapper;
@@ -27,9 +25,12 @@ describe('Merge requests app component', () => {
   const findMergeRequests = () => wrapper.findAllComponents(MergeRequest);
   const findLoadMoreButton = () => wrapper.findByTestId('load-more');
   const findCountExplanation = () => wrapper.findByTestId('merge-request-count-explanation');
-  const findFeedbackLink = () => wrapper.findAllComponents(GlLink).at(0);
 
-  function createComponent(lists = null, listTypeToggleEnabled = false) {
+  const $router = {
+    push: jest.fn(),
+  };
+
+  function createComponent(lists = null) {
     subscriptionHandler = createMockSubscription();
     assigneeQueryMock = jest.fn().mockResolvedValue({
       data: {
@@ -79,11 +80,11 @@ describe('Merge requests app component', () => {
 
     wrapper = shallowMountExtended(App, {
       apolloProvider,
-      router: new VueRouter({}),
       propsData: {
         tabs: [
           {
             title: 'Needs attention',
+            key: '',
             lists: lists || [
               [
                 {
@@ -95,16 +96,24 @@ describe('Merge requests app component', () => {
               ],
             ],
           },
+          {
+            title: 'merged',
+            key: 'merged',
+            lists: [],
+          },
         ],
       },
       provide: {
         mergeRequestsSearchDashboardPath: '/search',
-        listTypeToggleEnabled,
       },
       stubs: {
         MergeRequestsQuery,
         CollapsibleSection,
         GlLink,
+      },
+      mocks: {
+        $router,
+        $route: { params: { filter: '' } },
       },
     });
   }
@@ -175,6 +184,22 @@ describe('Merge requests app component', () => {
     expect(findCountExplanation().exists()).toBe(true);
   });
 
+  it('does not call $router.push if clicking the current tab', async () => {
+    createComponent();
+
+    await wrapper.findByTestId('merge-request-dashboard-tab').vm.$emit('click');
+
+    expect($router.push).not.toHaveBeenCalled();
+  });
+
+  it('calls $router.push when clicking different tab to current tab', async () => {
+    createComponent();
+
+    await wrapper.findAllByTestId('merge-request-dashboard-tab').at(1).vm.$emit('click');
+
+    expect($router.push).toHaveBeenCalledWith({ path: 'merged' });
+  });
+
   describe('subscription updates', () => {
     it('emits refetch.mergeRequests with assignedMergeRequests when current user is an assignee', async () => {
       createComponent();
@@ -192,12 +217,17 @@ describe('Merge requests app component', () => {
                 },
               ],
             },
+            author: { id: 'gid://gitlab/User/1' },
             reviewers: { nodes: [] },
           },
         },
       });
 
       expect(eventHub.$emit).toHaveBeenCalledWith('refetch.mergeRequests', 'assignedMergeRequests');
+      expect(eventHub.$emit).toHaveBeenCalledWith(
+        'refetch.mergeRequests',
+        'authorOrAssigneeMergeRequests',
+      );
     });
 
     it('emits refetch.mergeRequests with assignedMergeRequests when current user is a reviewer', async () => {
@@ -216,6 +246,7 @@ describe('Merge requests app component', () => {
                 },
               ],
             },
+            author: { id: 'gid://gitlab/User/1' },
             assignees: { nodes: [] },
           },
         },
@@ -224,24 +255,6 @@ describe('Merge requests app component', () => {
       expect(eventHub.$emit).toHaveBeenCalledWith(
         'refetch.mergeRequests',
         'reviewRequestedMergeRequests',
-      );
-    });
-  });
-
-  describe('feedback link', () => {
-    it('shows the default feedback link when feature flag is off', async () => {
-      createComponent();
-      await waitForPromises();
-      expect(findFeedbackLink().attributes('href')).toBe(
-        'https://gitlab.com/gitlab-org/gitlab/-/issues/515912',
-      );
-    });
-
-    it('shows the new feedback link when feature flag is on', async () => {
-      createComponent(null, { listTypeToggleEnabled: true });
-      await waitForPromises();
-      expect(findFeedbackLink().attributes('href')).toBe(
-        'https://gitlab.com/gitlab-org/gitlab/-/issues/533850',
       );
     });
   });

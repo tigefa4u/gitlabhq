@@ -49,6 +49,7 @@ describe('WorkItemLinkChildContents', () => {
   const findScopedLabel = () => findAllLabels().at(1);
   const findRemoveButton = () => wrapper.findComponent(GlButton);
   const findRelationshipIconsComponent = () => wrapper.findComponent(WorkItemRelationshipIcons);
+  const findIssuableCardLinkOverlay = () => wrapper.findByTestId('issuable-card-link-overlay');
 
   const createComponent = ({
     canUpdate = true,
@@ -57,6 +58,8 @@ describe('WorkItemLinkChildContents', () => {
     workItemFullPath = 'test-project-path',
     isGroup = false,
     getRoutesMock = defaultGetRoutesMock,
+    contextualViewEnabled = false,
+    workItemStatusFeatureFlag = false,
   } = {}) => {
     wrapper = shallowMountExtended(WorkItemLinkChildContents, {
       propsData: {
@@ -64,9 +67,13 @@ describe('WorkItemLinkChildContents', () => {
         childItem,
         showLabels,
         workItemFullPath,
+        contextualViewEnabled,
       },
       provide: {
         isGroup,
+        glFeatures: {
+          workItemStatusFeatureFlag,
+        },
       },
       mocks: {
         $router: {
@@ -82,13 +89,19 @@ describe('WorkItemLinkChildContents', () => {
   });
 
   it.each`
-    status      | childItem             | workItemState | rawTimestamp                   | tooltipContents
-    ${'open'}   | ${workItemTask}       | ${'OPEN'}     | ${workItemTask.createdAt}      | ${'Created'}
-    ${'closed'} | ${closedWorkItemTask} | ${'CLOSED'}   | ${closedWorkItemTask.closedAt} | ${'Closed'}
+    status      | childItem             | workItemState | rawTimestamp                   | tooltipContents | workItemStatusFeatureFlagEnabled
+    ${'open'}   | ${workItemTask}       | ${'OPEN'}     | ${workItemTask.createdAt}      | ${'Created'}    | ${true}
+    ${'closed'} | ${closedWorkItemTask} | ${'CLOSED'}   | ${closedWorkItemTask.closedAt} | ${'Closed'}     | ${false}
   `(
     'renders item status icon and tooltip when item status is `$status`',
-    ({ childItem, workItemState, rawTimestamp, tooltipContents }) => {
-      createComponent({ childItem });
+    ({
+      childItem,
+      workItemState,
+      rawTimestamp,
+      tooltipContents,
+      workItemStatusFeatureFlagEnabled,
+    }) => {
+      createComponent({ childItem, workItemStatusFeatureFlag: workItemStatusFeatureFlagEnabled });
 
       expect(findStatusBadgeComponent().props('workItemState')).toBe(workItemState);
       expect(findStatusTooltipComponent().props('rawTimestamp')).toBe(rawTimestamp);
@@ -205,7 +218,6 @@ describe('WorkItemLinkChildContents', () => {
       });
 
       expect(findMetadataComponent().props()).toMatchObject({
-        iid: '12',
         reference: '#12',
         metadataWidgets: workItemObjectiveMetadataWidgets,
       });
@@ -215,10 +227,7 @@ describe('WorkItemLinkChildContents', () => {
         childItem: otherNamespaceChild,
       });
 
-      expect(findMetadataComponent().props()).toMatchObject({
-        iid: '24',
-        reference: 'test-project-path/other#24',
-      });
+      expect(findMetadataComponent().props('reference')).toBe('test-project-path/other#24');
     });
   });
 
@@ -278,6 +287,22 @@ describe('WorkItemLinkChildContents', () => {
       createComponent({ showLabels, childItem: workItemObjectiveWithChild });
 
       expect(findAllLabels().exists()).toBe(showLabels);
+    });
+  });
+
+  describe('Anchor overlay rendering based on contextual view state', () => {
+    it('renders anchor overlay on card when contextual view is enabled', () => {
+      createComponent({
+        contextualViewEnabled: true,
+      });
+      expect(findIssuableCardLinkOverlay().exists()).toBe(true);
+      expect(findIssuableCardLinkOverlay().element.tagName).toBe('A');
+      expect(findIssuableCardLinkOverlay().attributes('href')).toBe(workItemTask.webUrl);
+    });
+
+    it('does not render anchor overlay when contextual view is disabled', () => {
+      createComponent();
+      expect(findIssuableCardLinkOverlay().exists()).toBe(false);
     });
   });
 });

@@ -1,7 +1,7 @@
 ---
 stage: AI-powered
 group: AI Framework
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: AI features based on 3rd-party integrations
 ---
 
@@ -11,27 +11,63 @@ For detailed instructions on setting up GitLab Duo licensing in your development
 
 ## Instructions for setting up GitLab Duo features in the local development environment
 
-For complete setup instructions, see [GitLab Duo licensing for local development](ai_development_license.md).
+### Required: Configure licenses
+
+See [GitLab Duo licensing for local development](ai_development_license.md).
 
 ### Required: Install AI gateway
 
-**Why:** Duo features (except for Duo Workflow) route LLM requests through the AI gateway.
+**Why**: Duo features (except for Duo Workflow) route LLM requests through the AI gateway.
 
-**How:**
-Follow [these instructions](https://gitlab.com/gitlab-org/gitlab-development-kit/-/blob/main/doc/howto/gitlab_ai_gateway.md#install)
-to install the AI gateway with GDK. We recommend this route for most users.
+**How**:
+Follow [these instructions](https://gitlab.com/gitlab-org/gitlab-development-kit/-/blob/main/doc/howto/gitlab_ai_gateway.md)
+to install the AI gateway with GDK.
 
-You can also install AI gateway by:
+### Required: Run `gitlab:duo:setup` script
 
-1. [Cloning the repository directly](https://gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist).
-1. [Running the server locally](https://gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist#how-to-run-the-server-locally).
+**Why**: This ensures that your instance or group has the correct licenses, settings, and feature flags to test Duo features locally.
 
-We only recommend this for users who have a specific reason for *not* running
-the AI gateway through GDK.
+**How**:
 
-### Set up and run GDK
+1. GitLab.com (SaaS) mode
 
-For detailed instructions on setting up your GDK for GitLab Duo development, see [GitLab Duo licensing for local development](ai_development_license.md).
+   ```shell
+   GITLAB_SIMULATE_SAAS=1 bundle exec 'rake gitlab:duo:setup'
+   ```
+
+   This:
+
+   - Creates a test group called `gitlab-duo`, which contains a project called `test`
+   - Applies an Ultimate license to the group
+   - Sets up Duo Enterprise seats for the group
+   - Enables all feature flags for the group
+   - Updates group settings to enable all available GitLab Duo features
+
+   Alternatively, if you want to add GitLab Duo Pro licenses for the group instead (which only enables a subset of features), you can run:
+
+   ```shell
+   GITLAB_SIMULATE_SAAS=1 bundle exec 'rake gitlab:duo:setup[duo_pro]'
+   ```
+
+1. GitLab Self-Managed / Dedicated mode
+
+   ```shell
+   GITLAB_SIMULATE_SAAS=0 bundle exec 'rake gitlab:duo:setup'
+   ```
+
+   This:
+
+   - Creates a test group called `gitlab-duo`, which contains a project called `test`
+   - Applies an Ultimate license to the instance
+   - Sets up Duo Enterprise seats for the instance
+   - Enables all feature flags for the instance
+   - Updates instance settings to enable all available GitLab Duo features
+
+   Alternatively, if you want to add GitLab Duo Pro add-on for the instance instead (which only enables a subset of features), you can run:
+
+   ```shell
+   GITLAB_SIMULATE_SAAS=0 bundle exec 'rake gitlab:duo:setup[duo_pro]'
+   ```
 
 ## Tips for local development
 
@@ -50,7 +86,6 @@ For detailed instructions on setting up your GDK for GitLab Duo development, see
 
 Apply the following feature flags to any AI feature work:
 
-- A general flag (`ai_duo_chat_switch`) that applies to all GitLab Duo Chat features. It's enabled by default.
 - A general flag (`ai_global_switch`) that applies to all other AI features. It's enabled by default.
 - A flag specific to that feature. The feature flag name [must be different](../feature_flags/_index.md#feature-flags-for-licensed-features) than the licensed feature name.
 
@@ -78,12 +113,12 @@ else:
   # Build a prompt from the old prompt template
 ```
 
-**IMPORTANT:** At the [cleaning up](../feature_flags/controls.md#cleaning-up) step, remove the feature flag in AI gateway repository **before** removing the flag in GitLab-Rails repository.
+**IMPORTANT**: At the [cleaning up](../feature_flags/controls.md#cleaning-up) step, remove the feature flag in AI gateway repository **before** removing the flag in GitLab-Rails repository.
 If you clean up the flag in GitLab-Rails repository at first, the feature flag in AI gateway will be disabled immediately as it's the default state, hence you might encounter a surprising behavior.
 
-**IMPORTANT:** Cleaning up the feature flag in AI gateway will immediately distribute the change to all GitLab instances, including GitLab.com, GitLab Self-Managed, and GitLab Dedicated.
+**IMPORTANT**: Cleaning up the feature flag in AI gateway will immediately distribute the change to all GitLab instances, including GitLab.com, GitLab Self-Managed, and GitLab Dedicated.
 
-**Technical details:**
+**Technical details**:
 
 - When `push_feature_flag` runs on an enabled feature flag, the name of the flag is cached in the current context,
   which is later attached to the `x-gitlab-enabled-feature-flags` HTTP header when `GitLab-Sidekiq/Rails` sends requests to AI gateway.

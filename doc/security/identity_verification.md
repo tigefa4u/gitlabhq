@@ -14,7 +14,7 @@ title: Identity verification
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/95722) in GitLab 15.4 [with a flag](../administration/feature_flags.md) named `identity_verification`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/95722) in GitLab 15.4 [with a flag](../administration/feature_flags/_index.md) named `identity_verification`. Disabled by default.
 - [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/371389) in GitLab 16.0.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/371389) in GitLab 16.11. Feature flag `identity_verification` removed.
 
@@ -101,9 +101,7 @@ Users with phone numbers from partially supported countries can try [credit card
 
 In addition to email and phone number verification, you might have to provide a valid credit card number.
 
+To verify your account, you might need to provide a valid credit card number in addition to your
+email address and phone number. GitLab does not store your card details directly or make any charges.
+
 You cannot verify an account with a credit card number associated with a banned user.
-
-## Related topics
-
-- [Identity verification development documentation](../development/identity_verification.md)
-- [Changing risk assessment support](https://handbook.gitlab.com/handbook/support/workflows/reinstating-blocked-accounts/#change-risk-assessment-credit-card-verification)

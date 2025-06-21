@@ -41,7 +41,7 @@ Event type                                   | Trigger
 [Project or group access token event](#project-and-group-access-token-events) | A project or group access token will expire in seven days.
 [Vulnerability event](#vulnerability-events) | A vulnerability is created or updated.
 
-**Footnotes:**
+**Footnotes**:
 
 1. Comment events triggered when the comment is edited [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/127169) in GitLab 16.11.
 
@@ -1469,7 +1469,7 @@ Payload example:
 
 ## Job events
 
-Job events are triggered when the status of a job changes.
+Job events are triggered when the status of a job changes. Trigger jobs are excluded.
 
 The `commit.id` in the payload is the ID of the pipeline, not the ID of the commit.
 
@@ -1578,7 +1578,7 @@ Payload example:
 
 {{< history >}}
 
-- `retries_count` [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/382046) in GitLab 15.6 [with a flag](../../../administration/feature_flags.md) named `job_webhook_retries_count`. Disabled by default.
+- `retries_count` [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/382046) in GitLab 15.6 [with a flag](../../../administration/feature_flags/_index.md) named `job_webhook_retries_count`. Disabled by default.
 - `retries_count` [enabled on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/382046) in GitLab 16.2.
 
 {{< /history >}}
@@ -1774,7 +1774,7 @@ Payload example:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/163094) in GitLab 17.4 [with a flag](../../../administration/feature_flags.md) named `group_access_request_webhooks`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/163094) in GitLab 17.4 [with a flag](../../../administration/feature_flags/_index.md) named `group_access_request_webhooks`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/479877) in GitLab 17.5. Feature flag `group_access_request_webhooks` removed.
 
 {{< /history >}}
@@ -1809,7 +1809,7 @@ Payload example:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/163094) in GitLab 17.4 [with a flag](../../../administration/feature_flags.md) named `group_access_request_webhooks`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/163094) in GitLab 17.4 [with a flag](../../../administration/feature_flags/_index.md) named `group_access_request_webhooks`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/479877) in GitLab 17.5. Feature flag `group_access_request_webhooks` removed.
 
 {{< /history >}}
@@ -2141,7 +2141,7 @@ Payload example:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/123952) in GitLab 16.2 [with a flag](../../../administration/feature_flags.md) named `emoji_webhooks`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/123952) in GitLab 16.2 [with a flag](../../../administration/feature_flags/_index.md) named `emoji_webhooks`. Disabled by default.
 - [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/417288) in GitLab 16.3.
 - [Enabled by default](https://gitlab.com/gitlab-org/gitlab/-/issues/417288) in GitLab 16.4.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/417288) in GitLab 17.5. Feature flag `emoji_webhooks` removed.
@@ -2286,7 +2286,7 @@ Payload example:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/141907) in GitLab 16.10 [with a flag](../../../administration/feature_flags.md) named `access_token_webhooks`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/141907) in GitLab 16.10 [with a flag](../../../administration/feature_flags/_index.md) named `access_token_webhooks`. Disabled by default.
 - [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/439379) in GitLab 16.11.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/454642) in GitLab 16.11. Feature flag `access_token_webhooks` removed.
 - `full_path` attribute [added](https://gitlab.com/gitlab-org/gitlab/-/issues/465421) in GitLab 17.4.
@@ -2372,7 +2372,7 @@ Payload example for group:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/169701) in GitLab 17.7 [with a flag](../../../administration/feature_flags.md) named `vulnerabilities_as_webhook_events`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/169701) in GitLab 17.7 [with a flag](../../../administration/feature_flags/_index.md) named `vulnerabilities_as_webhook_events`. Disabled by default.
 - Creating an event when a vulnerability is created or when an issue is linked to a vulnerability [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/176064) in GitLab 17.8.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/528397) in GitLab 17.11. Feature flag `vulnerabilities_as_webhook_events` removed.
 

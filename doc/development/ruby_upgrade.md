@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Ruby upgrade guidelines
 ---
 
@@ -113,7 +113,7 @@ There are two places that require changes:
    depends on the scope.
    - For [patch level updates](https://gitlab.com/gitlab-org/gitlab-build-images/-/merge_requests/418), it should suffice to increment the patch level of `RUBY_VERSION`.
      All projects building against the same minor release automatically download the new patch release.
-   - For [major and minor updates](https://gitlab.com/gitlab-org/gitlab-build-images/-/merge_requests/320), create a new set of Docker images that can be used side-by-side with existing images during the upgrade process. **Important:** Make sure to copy over all Ruby patch files
+   - For [major and minor updates](https://gitlab.com/gitlab-org/gitlab-build-images/-/merge_requests/320), create a new set of Docker images that can be used side-by-side with existing images during the upgrade process. **Important**: Make sure to copy over all Ruby patch files
      in the `/patches` directory to a new folder matching the Ruby version you upgrade to, or they aren't applied.
 1. **[GitLab Development Kit (GDK)](https://gitlab.com/gitlab-org/gitlab-development-kit).**
    Update GDK to add the new Ruby as an additional option for
@@ -195,7 +195,7 @@ via `gdk update`.
 
 This pause is a good time to assess the risk of this upgrade for GitLab SaaS.
 For Ruby upgrades that are high risk, such as major version upgrades, it is recommended to
-coordinate the changes with the infrastructure team through a [change management request](https://handbook.gitlab.com/handbook/engineering/infrastructure/change-management/).
+coordinate the changes with the infrastructure team through a [change management request](https://handbook.gitlab.com/handbook/engineering/infrastructure-platforms/change-management/).
 Create this issue early to give everyone enough time to schedule and prepare changes.
 
 ### Make it the default Ruby

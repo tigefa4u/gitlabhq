@@ -455,7 +455,7 @@ these keywords:
 
 {{< history >}}
 
-- Support for `when: never` and `when:always` [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/348146) in GitLab 16.1 [with a flag](../../administration/feature_flags.md) named `ci_support_include_rules_when_never`. Disabled by default.
+- Support for `when: never` and `when:always` [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/348146) in GitLab 16.1 [with a flag](../../administration/feature_flags/_index.md) named `ci_support_include_rules_when_never`. Disabled by default.
 - Support for `when: never` and `when:always` [generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/414517) in GitLab 16.2. Feature flag `ci_support_include_rules_when_never` removed.
 
 {{< /history >}}
@@ -489,7 +489,7 @@ test:
 
 {{< history >}}
 
-- Support for `when: never` and `when:always` [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/348146) in GitLab 16.1 [with a flag](../../administration/feature_flags.md) named `ci_support_include_rules_when_never`. Disabled by default.
+- Support for `when: never` and `when:always` [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/348146) in GitLab 16.1 [with a flag](../../administration/feature_flags/_index.md) named `ci_support_include_rules_when_never`. Disabled by default.
 - Support for `when: never` and `when:always` [generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/414517) in GitLab 16.2. Feature flag `ci_support_include_rules_when_never` removed.
 
 {{< /history >}}
@@ -522,7 +522,7 @@ test:
 In this example, GitLab checks for the existence of `file.md` in the current project.
 
 Review your configuration carefully if you use `include` with `rules:exists` in an include file
-from a different project. GitLab checks for the existence of the file in the _other_ project.
+from a different project. GitLab checks for the existence of the file in the other project.
 For example:
 
 ```yaml
@@ -649,7 +649,7 @@ limit is reached. You can remove one included file at a time to try to narrow do
 which configuration file is the source of the loop or excessive included files.
 
 In [GitLab 16.0 and later](https://gitlab.com/gitlab-org/gitlab/-/issues/207270) users on GitLab Self-Managed can
-change the [maximum includes](../../administration/settings/continuous_integration.md#maximum-includes) value.
+change the [maximum includes](../../administration/settings/continuous_integration.md#set-maximum-includes) value.
 
 ### `SSL_connect SYSCALL returned=5 errno=0 state=SSLv3/TLS write client hello` and other network failures
 

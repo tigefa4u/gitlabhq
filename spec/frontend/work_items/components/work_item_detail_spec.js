@@ -140,6 +140,7 @@ describe('WorkItemDetail component', () => {
   const findDesignDropzone = () => wrapper.findComponent(DesignDropzone);
   const findWorkItemDetailInfo = () => wrapper.findByTestId('info-alert');
   const findShowSidebarButton = () => wrapper.findByTestId('work-item-show-sidebar-button');
+  const findRootNode = () => wrapper.findByTestId('work-item-detail');
 
   const mockDragEvent = ({ types = ['Files'], files = [], items = [] }) => {
     return { dataTransfer: { types, files, items } };
@@ -163,6 +164,7 @@ describe('WorkItemDetail component', () => {
     uploadDesignMutationHandler = uploadSuccessDesignMutationHandler,
     hasLinkedItemsEpicsFeature = true,
     showSidebar = true,
+    newCommentTemplatePaths = [],
   } = {}) => {
     wrapper = shallowMountExtended(WorkItemDetail, {
       apolloProvider: createMockApollo([
@@ -177,11 +179,13 @@ describe('WorkItemDetail component', () => {
       ]),
       isLoggedIn: isLoggedIn(),
       propsData: {
+        workItemFullPath: 'group/project',
         workItemId,
         isModal,
         workItemIid,
         isDrawer,
         modalIsGroup,
+        newCommentTemplatePaths,
       },
       data() {
         return {
@@ -195,7 +199,6 @@ describe('WorkItemDetail component', () => {
           workItemsAlpha: workItemsAlphaEnabled,
         },
         hasSubepicsFeature,
-        fullPath: 'group/project',
         groupPath: 'group',
         hasLinkedItemsEpicsFeature,
       },
@@ -275,7 +278,7 @@ describe('WorkItemDetail component', () => {
     });
 
     it('updates the document title', () => {
-      expect(document.title).toEqual('Updated title (#1) · Task · test-project-path');
+      expect(document.title).toEqual('Updated _title_ (#1) · Task · test-project-path');
     });
 
     it('renders todos widget if logged in', () => {
@@ -355,7 +358,7 @@ describe('WorkItemDetail component', () => {
       findWorkItemActions().vm.$emit('toggleWorkItemConfidentiality', true);
       await nextTick();
 
-      expect(findCreatedUpdated().props('updateInProgress')).toBe(true);
+      expect(findWorkItemActions().props('updateInProgress')).toBe(true);
     });
 
     it('emits workItemUpdated when mutation is successful', async () => {
@@ -498,7 +501,7 @@ describe('WorkItemDetail component', () => {
       });
 
       it('does not show title in the header when parent exists', () => {
-        expect(findWorkItemType().classes()).toEqual(['sm:!gl-hidden', 'gl-mt-3']);
+        expect(findWorkItemType().classes()).toEqual(['sm:!gl-hidden', '!gl-mt-3']);
       });
     });
 
@@ -515,7 +518,7 @@ describe('WorkItemDetail component', () => {
       });
 
       it('does not show title in the header when parent exists', () => {
-        expect(findWorkItemType().classes()).toEqual(['sm:!gl-hidden', 'gl-mt-3']);
+        expect(findWorkItemType().classes()).toEqual(['sm:!gl-hidden', '!gl-mt-3']);
       });
     });
   });
@@ -853,6 +856,71 @@ describe('WorkItemDetail component', () => {
 
       expect(findNotesWidget().exists()).toBe(true);
       expect(findNotesWidget().props('isWorkItemConfidential')).toBe(confidential);
+      expect(findNotesWidget().props('canCreateNote')).toBeDefined();
+    });
+
+    describe('comment templates', () => {
+      const mockCommentTemplatePaths = [
+        {
+          text: 'Your comment templates',
+          href: '/-/profile/comment_templates',
+          __typename: 'CommentTemplatePathType',
+        },
+        {
+          text: 'Project comment templates',
+          href: '/gitlab-org/gitlab-test/-/comment_templates',
+          __typename: 'CommentTemplatePathType',
+        },
+        {
+          text: 'Group comment templates',
+          href: '/groups/gitlab-org/-/comment_templates',
+          __typename: 'CommentTemplatePathType',
+        },
+      ];
+      const newCommentTemplatePaths = [
+        { text: 'Default template', href: '/groups/gitlab-org/-/comment_templates' },
+      ];
+
+      it('passes fetched comment template paths to WorkItemNotes component', async () => {
+        const commentTemplateQueryResponse = workItemByIidResponseFactory({
+          commentTemplatesPaths: mockCommentTemplatePaths,
+        });
+
+        const commentTemplateHandler = jest.fn().mockResolvedValue(commentTemplateQueryResponse);
+
+        createComponent({ handler: commentTemplateHandler });
+        await waitForPromises();
+
+        expect(findNotesWidget().props('newCommentTemplatePaths')).toEqual(
+          mockCommentTemplatePaths,
+        );
+      });
+
+      it('uses prop `newCommentTemplatePaths` value  if the query returns empty array', async () => {
+        const commentTemplateQueryResponse = workItemByIidResponseFactory({
+          commentTemplatesPaths: [],
+        });
+
+        const commentTemplateHandler = jest.fn().mockResolvedValue(commentTemplateQueryResponse);
+
+        createComponent({ handler: commentTemplateHandler, newCommentTemplatePaths });
+        await waitForPromises();
+
+        expect(findNotesWidget().props('newCommentTemplatePaths')).toEqual(newCommentTemplatePaths);
+      });
+
+      it('uses prop `newCommentTemplatePaths` value  if the query returns null', async () => {
+        const commentTemplateQueryResponse = workItemByIidResponseFactory({
+          commentTemplatesPaths: null,
+        });
+
+        const commentTemplateHandler = jest.fn().mockResolvedValue(commentTemplateQueryResponse);
+
+        createComponent({ handler: commentTemplateHandler, newCommentTemplatePaths });
+        await waitForPromises();
+
+        expect(findNotesWidget().props('newCommentTemplatePaths')).toEqual(newCommentTemplatePaths);
+      });
     });
   });
 
@@ -928,11 +996,11 @@ describe('WorkItemDetail component', () => {
           items: [{ type: 'image/png' }],
         });
 
-        wrapper.trigger('dragenter', dragEvent);
+        findRootNode().trigger('dragenter', dragEvent);
         glIntersectionObserver.vm.$emit('appear');
         await nextTick();
 
-        wrapper.trigger('dragover', dragEvent);
+        findRootNode().trigger('dragover', dragEvent);
         glIntersectionObserver.vm.$emit('appear');
         await nextTick();
 
@@ -1221,13 +1289,6 @@ describe('WorkItemDetail component', () => {
   describe('work item parent id', () => {
     const parentId = 'gid://gitlab/Issue/1';
 
-    it('passes the `parentWorkItemId` value down to the `WorkItemStickyHeader` component', async () => {
-      createComponent();
-      await waitForPromises();
-
-      expect(findStickyHeader().props('parentId')).toBe(parentId);
-    });
-
     it('passes the `parentWorkItemId` value down to the `WorkItemActions` component', async () => {
       createComponent();
       await waitForPromises();
@@ -1379,5 +1440,32 @@ describe('WorkItemDetail component', () => {
         expect(findWorkItemDescription().props('uploadsPath')).toBe(uploadsPath);
       },
     );
+  });
+
+  it('sets `canPasteDesign` to true on work item notes focus event', async () => {
+    createComponent();
+    await waitForPromises();
+
+    expect(findWorkItemDesigns().props('canPasteDesign')).toBe(true);
+
+    findNotesWidget().vm.$emit('focus');
+    await nextTick();
+
+    expect(findWorkItemDesigns().props('canPasteDesign')).toBe(false);
+  });
+
+  it('sets `canPasteDesign` to false on work item notes blur event', async () => {
+    createComponent();
+    await waitForPromises();
+
+    findNotesWidget().vm.$emit('focus');
+    await nextTick();
+
+    expect(findWorkItemDesigns().props('canPasteDesign')).toBe(false);
+
+    findNotesWidget().vm.$emit('blur');
+    await nextTick();
+
+    expect(findWorkItemDesigns().props('canPasteDesign')).toBe(true);
   });
 });

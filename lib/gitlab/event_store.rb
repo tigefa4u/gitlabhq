@@ -44,6 +44,8 @@ module Gitlab
         store.subscribe ::Namespaces::UpdateRootStatisticsWorker, to: ::Projects::ProjectDeletedEvent
         store.subscribe ::Ci::Runners::UpdateProjectRunnersOwnerWorker, to: ::Projects::ProjectDeletedEvent
 
+        store.subscribe ::MergeRequests::ProcessAutoMergeFromEventWorker,
+          to: ::MergeRequests::AutoMerge::TitleDescriptionUpdateEvent
         store.subscribe ::MergeRequests::ProcessAutoMergeFromEventWorker, to: ::MergeRequests::DraftStateChangeEvent
         store.subscribe ::MergeRequests::ProcessAutoMergeFromEventWorker, to: ::MergeRequests::DiscussionsResolvedEvent
         store.subscribe ::MergeRequests::ProcessAutoMergeFromEventWorker, to: ::MergeRequests::MergeableEvent
@@ -57,6 +59,7 @@ module Gitlab
         store.subscribe ::Ci::InitializePipelinesIidSequenceWorker, to: ::Projects::ProjectCreatedEvent
         store.subscribe ::Pages::DeletePagesDeploymentWorker, to: ::Projects::ProjectArchivedEvent
         store.subscribe ::Pages::ResetPagesDefaultDomainRedirectWorker, to: ::Pages::Domains::PagesDomainDeletedEvent
+        store.subscribe ::MergeRequests::ProcessDraftNotePublishedWorker, to: ::MergeRequests::DraftNotePublishedEvent
 
         subscribe_to_member_destroyed_events(store)
       end

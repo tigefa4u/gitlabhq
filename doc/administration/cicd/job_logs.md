@@ -167,7 +167,7 @@ For more details, see [Maximum file size for job logs](../instance_limits.md#max
 If you want to avoid any local disk usage for job logs,
 you can do so using one of the following options:
 
-- Turn on [incremental logging](#incremental-logging).
+- Turn on [incremental logging](#configure-incremental-logging).
 - Set the [job logs location](#changing-the-job-logs-local-location)
   to an NFS drive.
 
@@ -250,7 +250,7 @@ The incremental logging process uses Redis as temporary storage and follows this
 1. The runner sends a piece of log to GitLab.
 1. GitLab appends the data to Redis in the `Gitlab::Redis::TraceChunks` namespace.
 1. After the data in Redis reaches 128 KB, the data is flushed to a persistent store.
-1. The above steps repeat until the job is finished.
+1. The previous steps repeat until the job is finished.
 1. After the job is finished, GitLab schedules a Sidekiq worker to archive the log.
 1. The Sidekiq worker archives the log to object storage and cleans up temporary data.
 
@@ -267,4 +267,4 @@ When you turn off incremental logging, running jobs continue to use incremental 
 
 To configure incremental logging:
 
-- Use the setting in the [Admin area](../settings/continuous_integration.md#incremental-logging) or the [Settings API](../../api/settings.md).
+- Use the setting in the [Admin area](../settings/continuous_integration.md#access-job-log-settings) or the [Settings API](../../api/settings.md).

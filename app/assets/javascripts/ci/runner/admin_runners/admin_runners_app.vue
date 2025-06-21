@@ -24,7 +24,6 @@ import RunnerStats from '../components/stat/runner_stats.vue';
 import RunnerPagination from '../components/runner_pagination.vue';
 import RunnerTypeTabs from '../components/runner_type_tabs.vue';
 import RunnerActionsCell from '../components/cells/runner_actions_cell.vue';
-import RunnerJobStatusBadge from '../components/runner_job_status_badge.vue';
 
 import { pausedTokenConfig } from '../components/search_tokens/paused_token_config';
 import { statusTokenConfig } from '../components/search_tokens/status_token_config';
@@ -36,7 +35,6 @@ import {
   INSTANCE_TYPE,
   I18N_FETCH_ERROR,
   FILTER_CSS_CLASSES,
-  JOBS_ROUTE_PATH,
 } from '../constants';
 import { captureException } from '../sentry_utils';
 
@@ -55,7 +53,6 @@ export default {
     RunnerPagination,
     RunnerTypeTabs,
     RunnerActionsCell,
-    RunnerJobStatusBadge,
     RunnerDashboardLink: () =>
       import('ee_component/ci/runner/components/runner_dashboard_link.vue'),
   },
@@ -91,7 +88,10 @@ export default {
   apollo: {
     runners: {
       query: allRunnersQuery,
-      fetchPolicy: fetchPolicies.NETWORK_ONLY,
+      // Runners can be updated by users directly in this list.
+      // A "cache and network" policy prevents outdated filtered
+      // results.
+      fetchPolicy: fetchPolicies.CACHE_AND_NETWORK,
       variables() {
         return this.variables;
       },
@@ -177,20 +177,14 @@ export default {
     },
   },
   methods: {
-    jobsUrl(runner) {
-      const url = new URL(runner.adminUrl);
-      url.hash = `#${JOBS_ROUTE_PATH}`;
-
-      return url.href;
-    },
-    onToggledPaused() {
-      // When a runner becomes Paused, the tab count can
+    onUpdated(event) {
+      // When a runner becomes paused or is deleted, the tab count can
       // become stale, refetch outdated counts.
       this.refetchCounts();
-    },
-    onDeleted({ message }) {
-      this.refetchCounts();
-      this.$root.$toast?.show(message);
+
+      if (event?.message) {
+        this.$root.$toast?.show(event.message);
+      }
     },
     refetchCounts() {
       this.$apollo.getClient().refetchQueries({ include: [allRunnersCountQuery] });
@@ -214,7 +208,7 @@ export default {
       <template #actions>
         <runner-dashboard-link />
         <gl-button v-if="canAdminRunners" :href="newRunnerPath" variant="confirm">
-          {{ s__('Runners|New instance runner') }}
+          {{ s__('Runners|Create instance runner') }}
         </gl-button>
         <registration-dropdown
           v-if="canAdminRunners"
@@ -251,14 +245,9 @@ export default {
         :runners="runners.items"
         :loading="runnersLoading"
         :checkable="canAdminRunners"
-        @deleted="onDeleted"
+        @toggledPaused="onUpdated"
+        @deleted="onUpdated"
       >
-        <template #runner-job-status-badge="{ runner }">
-          <runner-job-status-badge
-            :href="jobsUrl(runner)"
-            :job-status="runner.jobExecutionStatus"
-          />
-        </template>
         <template #runner-name="{ runner }">
           <gl-link :href="runner.adminUrl">
             <runner-name :runner="runner" />
@@ -268,8 +257,8 @@ export default {
           <runner-actions-cell
             :runner="runner"
             :edit-url="runner.editAdminUrl"
-            @toggledPaused="onToggledPaused"
-            @deleted="onDeleted"
+            @toggledPaused="onUpdated"
+            @deleted="onUpdated"
           />
         </template>
       </runner-list>
