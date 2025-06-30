@@ -6,11 +6,6 @@ RSpec.describe UserDetail, feature_category: :system_access do
   it { is_expected.to belong_to(:user) }
   it { is_expected.to belong_to(:bot_namespace).inverse_of(:bot_user_details) }
 
-  specify do
-    values = [:basics, :move_repository, :code_storage, :exploring, :ci, :other, :joining_team]
-    is_expected.to define_enum_for(:registration_objective).with_values(values).with_suffix
-  end
-
   describe 'validations' do
     context 'for onboarding_status json schema' do
       let(:step_url) { '_some_string_' }
@@ -299,10 +294,6 @@ RSpec.describe UserDetail, feature_category: :system_access do
       it { is_expected.to validate_length_of(:twitter).is_at_most(500) }
     end
 
-    describe '#skype' do
-      it { is_expected.to validate_length_of(:skype).is_at_most(500) }
-    end
-
     describe '#discord' do
       it { is_expected.to validate_length_of(:discord).is_at_most(500) }
 
@@ -390,6 +381,62 @@ RSpec.describe UserDetail, feature_category: :system_access do
       end
     end
 
+    describe '#orcid' do
+      context 'when orcid is set' do
+        let_it_be(:user_detail) { create(:user).user_detail }
+
+        it 'accepts a valid orcid username' do
+          user_detail.orcid = '1234-1234-1234-1234'
+
+          expect(user_detail).to be_valid
+        end
+
+        it 'accepts a valid orcid username' do
+          user_detail.orcid = '1234-1234-1234-123X'
+
+          expect(user_detail).to be_valid
+        end
+
+        context 'when orcid is wrong' do
+          shared_examples 'throws an error' do
+            before do
+              user_detail.orcid = orcid
+            end
+
+            it 'throws an error' do
+              expect(user_detail).not_to be_valid
+              expect(user_detail.errors.full_messages)
+                .to match_array([_('Orcid must contain only a valid ORCID.')])
+            end
+          end
+
+          context 'when the format is too long' do
+            let(:orcid) { '1234-1234-1234-1234-1234' }
+
+            it_behaves_like 'throws an error'
+          end
+
+          context 'when the format is too short' do
+            let(:orcid) { '1234-1234' }
+
+            it_behaves_like 'throws an error'
+          end
+
+          context 'when the format is letters' do
+            let(:orcid) { 'abcd-abcd-abcd-abcd' }
+
+            it_behaves_like 'throws an error'
+          end
+
+          context 'when the format end with another letter than X' do
+            let(:orcid) { '1234-1234-1234-123Y' }
+
+            it_behaves_like 'throws an error'
+          end
+        end
+      end
+    end
+
     describe '#location' do
       it { is_expected.to validate_length_of(:location).is_at_most(500) }
     end
@@ -428,9 +475,9 @@ RSpec.describe UserDetail, feature_category: :system_access do
         linkedin: 'linkedin',
         location: 'location',
         bluesky: 'did:plc:ewvi7nxzyoun6zhxrhs64oiz',
+        orcid: '1234-1234-1234-1234',
         mastodon: '@robin@example.com',
         organization: 'organization',
-        skype: 'skype',
         twitter: 'twitter',
         website_url: 'https://example.com'
       }
@@ -452,9 +499,9 @@ RSpec.describe UserDetail, feature_category: :system_access do
     it_behaves_like 'prevents `nil` value', :linkedin
     it_behaves_like 'prevents `nil` value', :location
     it_behaves_like 'prevents `nil` value', :bluesky
+    it_behaves_like 'prevents `nil` value', :orcid
     it_behaves_like 'prevents `nil` value', :mastodon
     it_behaves_like 'prevents `nil` value', :organization
-    it_behaves_like 'prevents `nil` value', :skype
     it_behaves_like 'prevents `nil` value', :twitter
     it_behaves_like 'prevents `nil` value', :website_url
   end
@@ -477,7 +524,7 @@ RSpec.describe UserDetail, feature_category: :system_access do
       end
     end
 
-    %i[linkedin skype twitter website_url].each do |attr|
+    %i[linkedin twitter website_url].each do |attr|
       it_behaves_like 'sanitizes html', attr
 
       it 'encodes HTML entities' do

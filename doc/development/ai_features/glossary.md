@@ -166,47 +166,81 @@ sufficient or if an additional tool must be used to answer the question.
 
 [Zero-shot agent in action](https://gitlab.com/gitlab-org/gitlab/-/issues/427979).
 
-## GitLab Duo Workflow terminology
+## GitLab Duo Agent Platform terminology
+
+## Core Layer Concepts (GitLab-specific)
+
+### Flow 
+
+A **goal-oriented, structured graph** that orchestrates agents and tools to deliver a single, economically-valuable outcome (e.g., *create a code-review MR*, *triage issues*).
+
+- **Structure** – Explicit phases: planning → execution → completion  
+- **Nodes** – Each node is an *Agent* (decision-maker) or *Deterministic step*: CRUD, Boolean decision
+- **Trigger & Terminator** – Every flow has one or many defined start trigger(s) and a defined end state  
+- **Input** - Each Flow must have an input. Inputs set the context for the Flow run and will differentiate different flows in outcomes. Inputs can be: Free text, Entities (GitLab or from 3rd party)
+- **Run** – One execution of an flow; runs carry user-specific goals and data  
+
+> **Analogy:** *competency / job description* – the "what & when" of getting work done.
 
 ### Agent
 
-A general term for a software entity that performs tasks. Agents can range from simple, rule-based systems to complex AI-driven entities that learn and adapt over time. For our purposes, we typically use "Agent" to refer to an AI-driven entity.
+A **specialized, LLM-powered decision-maker** that owns a single node inside an flow. Can be defined independently and reused across multiple flows as a reusable component.
 
-### Autonomous Agents
+- **Prompt (Goal)** – Receives the run-specific objective from the flow
+- **Prompt (System)** - Sets the overall behavior, guardrails and persona for the agents    
+- **Tools** – May call only the tools granted by the flow node definition and the user/company definition of available tools
+- **Agents / Flows** - Agents can invoke other agents or Flows to achieve their goal if these were made available 
+- **Reasoning** – Uses an LLM to decompose its goal into dynamic subtasks  
+- **Context awareness** – Gains project / repo / issue data through tool calls  
 
-Agents that operate independently without direct input or supervision from humans. They make decisions and perform actions based on their programming and the data they perceive from their environment. These often receive instructions from a Supervisor Agent.
-
-### Frameworks
-
-These are platforms or environments that support the development and operation of multi-agent systems. Frameworks provide the necessary infrastructure, tools, and libraries that developers can use to build, deploy, and manage agents. Langchain, for example, is a framework that facilitates building language-based agents integrated with different AI technologies.
-
-### General Agent or Generic Agent
-
-An agent capable of performing a variety of tasks, not limited to a specific domain or set of actions. This type of agent usually has broader capabilities and can adapt to a wide range of scenarios.
-
-### Hand-crafted Agents
-
-These are agents specifically designed by developers with tailored rules and behaviors to perform specific tasks. They are usually fine-tuned to operate within well-defined scenarios.
-
-### Multi-agent Workflows
-
-A system or process where multiple agents interact or collaborate to complete tasks or solve problems. Each agent in the workflow might have a specific role or expertise, contributing to a collective outcome.
-
-### Specialized Agents
-
-Agents designed to perform specific, often complex tasks where specialized knowledge or skills are required. These agents are usually highly effective within their domain of expertise but may not perform well outside of it.
-
-### Subagent
-
-A term used to describe an agent that operates under the supervision of another agent. Subagents typically handle specific tasks or components of a larger process within a multi-agent system.
-
-### Supervisor Agent
-
-An agent tasked with overseeing and coordinating the actions of other agents within a workflow. This type of agent ensures that tasks are assigned appropriately, and that the workflow progresses smoothly and efficiently.
+GitLab agents are **specialists**, not generalists, to maximize reliability and UX.
 
 ### Tool
 
-In the context of multi-agent workflows, a tool is a utility or application that agents can use to perform tasks. Tools are used to communicate with the outside world, and are an interface to something other than an LLM, like reading GitLab issues, cloning a repository, or reading documentation.
+A **discrete, deterministic capability** an agent (or flow step) invokes to perform read/write actions. Tools can be used to perform these in GitLab or in 3rd party applications via MCP or other protocols.
+
+*Examples:* read GitLab issues, clone a repository, commit & push changes, call a REST API.  
+Tools expose data or side-effects; they themselves perform **no reasoning**.
+
+## Flow types 
+
+### Current implementation 
+
+- **Sequence** - The Flow is executing agents that handover their output to the next agent in a pre set manner 
+
+### Future implementations 
+
+- **Single Agent** - A single agent is executing the entire flow to completion, suitable for small defined tasks with latency considerations  
+- **Multi Agent** - A pool of agents are working to complete a task in a manner where each agent is getting a chance to solve it, and/or a supervisor chooses the final solution. Can support different graph topologies
+
+## Supporting Terminology
+
+| Term | Definition |
+| ---- | ---------- |
+| **Node (Flow node)** | A single step in the flow graph. GitLab currently supports *Agent*, *Tool Executor*, *Agent Handover*, *Supervisor*, and *Terminator* nodes. |
+| **Run** | One instantiation of an flow with concrete user input and data context. |
+| **Task** | A formal object representing a unit of work inside a run. At present only the *Executor* agent persists tasks, but the concept is extensible. |
+| **Trigger** | An event that starts an flow run (e.g., slash command, schedule, issue label). |
+| **Agent Handover** | Node type that packages context from one agent and passes it to another. |
+| **Supervisor Agent** | An agent node that monitors other agents' progress and enforces run-level constraints (timeout, max tokens, etc.). |
+| **Subagent** | Shorthand for an agent that operates under a Supervisor within the same run. |
+| **Autonomous Agent** | Historical term for an agent that can loop without human approval. In GitLab, autonomy level is governed by flow design, not by a separate agent type. |
+| **Framework** | A platform for building multi-agent systems. GitLab Duo Agent Platform uses **LangGraph**, an extension to LangChain that natively models agent graphs. |
+
+## Execution 
+
+Flows are executed in the following ways:
+
+- **Local** - The Flow is executed in relation to a project or a folder (future)
+- **Remote** - The Flow is executed in CI Runners in relation to a project, Group (future), Namespace (future)
+
+## Quick Reference Matrix
+
+| Layer | Human Analogy | Key Question Answered |
+| ----- | ------------- | --------------------- |
+| **Tool** | Capability | "What concrete action can I perform?" |
+| **Agent** | Skill / Specialist | "How do I use my tools to reach my goal?" |
+| **Flow** | Competency / Job | "When and in what order should skills be applied to deliver value?" |
 
 ## AI Context Terminology
 
@@ -221,12 +255,63 @@ By providing advanced context, the resolver providers the LLM with a more
 holistic understanding of the project structure, enabling more accurate and
 context-aware code suggestions and generation.
 
+### AI Context Abstraction Layer
+
+A [Ruby gem](https://gitlab.com/gitlab-org/gitlab/-/tree/master/gems/gitlab-active-context) that provides a unified interface for Retrieval Augmented Generation (RAG) across multiple vector databases within GitLab. The system abstracts away the differences between Elasticsearch, OpenSearch, and PostgreSQL with pgvector, enabling AI features to work regardless of the underlying storage solution.
+
+Key components include collections that define data schemas and reference classes that handle serialization, migrations for schema management, and preprocessors for chunking and embedding generation. The layer supports automatic model migration between different LLMs without downtime, asynchronous processing through Redis-backed queues, and permission-aware search with automatic redaction.
+
+This [architecture](https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/ai_context_abstraction_layer/) prevents vendor lock-in and enables GitLab customers without Elasticsearch to access RAG-powered features through pgvector.
+
 ### AI Context Policies
 
 A user-defined and user-managed mechanism allowing precise control over the
 content that can be sent to LLMs as contextual information.
 GitLab has an [architecture document](https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/ai_context_management/)
 that proposes a format for AI Context Policies.
+
+### Codebase as Chat Context
+
+This refers to a repository that the user explicitly provides using the `/include` command. The user may narrow the scope by choosing a directory within a repository.
+This feature allows the user to ask questions about an entire repository, or a subset of that repository by selecting specific directories.
+
+This is automatically enhanced by performing a semantic search of the user's question over the [Code Embeddings](#code-embeddings) of the included repository,
+with the search results then added to the context sent to the LLM. This gives the LLM information about the included repository or directory that is specifically
+targeted to the user's question, allowing the LLM to generate a more helpful response.
+
+This [architecture document](https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/codebase_as_chat_context/) proposes
+Codebase as Chat Context enhanced by semantic search over Code Embeddings.
+
+In the future, the repository or directory context may also be enhanced by a [Knowledge Graph](#knowledge-graph) search.
+
+### Code Embeddings
+
+The [Code Embeddings initiative](https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/codebase_as_chat_context/code_embeddings/)
+aims to build vector embeddings representation of files in a repository. The file contents are chunked into logical segments, then embeddings are generated
+for the chunked content and stored in a vector store.
+
+With Code Embeddings, we can perform a semantic search over a given repository, with the search results then used as additional context for an LLM.
+(See [Codebase as Chat Context](#codebase-as-chat-context) for how Code Embeddings will be used in Duo Chat.)
+
+### GitLab Zoekt
+
+A scalable exact code search service and file-based database system, with flexible architecture supporting various AI context use cases beyond traditional search. It's built on top of open-source code search engine Zoekt.
+
+The system consists of a unified `gitlab-zoekt` binary that can operate in both indexer and webserver modes, managing index files on persistent storage for fast searches. Key features include bi-directional communication with GitLab and self-registering node [architecture](https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/code_search_with_zoekt/) for easy scaling.
+
+The system is designed to handle enterprise-scale deployments, with GitLab.com successfully operating over 48 TiB of indexed data.
+
+Most likely, this distributed database system will be used to power [Knowledge Graph](#knowledge-graph). Also, we might leverage Exact Code Search to provide additional context and/or tools for GitLab Duo.
+
+### Knowledge Graph
+
+The [Knowledge Graph](https://gitlab.com/gitlab-org/rust/knowledge-graph) project aims to create a structured, queryable graph database from code repositories to power AI features and enhance developer productivity within GitLab.
+
+Think of it like creating a detailed blueprint that shows which functions call other functions, how classes relate to each other, and where variables are used throughout the codebase. Instead of GitLab Duo having to read through thousands of files every time you ask it something, it can quickly navigate this pre-built map to give you better code suggestions, find related code snippets, or help debug issues. It gives Duo a much smarter way to understand your codebase so it can assist you more effectively with things like code reviews, refactoring, or finding where to make changes when you're working on a feature.
+
+### One Parser (GitLab Code Parser)
+
+The [GitLab Code Parser](https://gitlab.com/gitlab-org/code-creation/gitlab-code-parser#) establishes a single, efficient, and reliable static code analysis library. This library will serve as the foundation for diverse code intelligence features across GitLab, from server-side indexing (Knowledge Graph, Embeddings) to client-side analysis (Language Server, Web IDE). Initially scoped to AI and Editor Features.
 
 ### Supplementary User Context
 

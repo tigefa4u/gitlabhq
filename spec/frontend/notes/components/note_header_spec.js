@@ -111,7 +111,7 @@ describe('NoteHeader component', () => {
         createdAt: '2017-08-02T10:51:58.559Z',
         noteId: 123,
       });
-      findTimestampLink().trigger('click');
+      findTimestampLink().vm.$emit('click');
 
       expect(actions.setTargetNoteHash).toHaveBeenCalled();
     });
@@ -204,13 +204,13 @@ describe('NoteHeader component', () => {
     it('renders with "comment" when note is imported', () => {
       createComponent({ isImported: true });
 
-      expect(findImportedBadge().props('importableType')).toBe('comment');
+      expect(findImportedBadge().exists()).toBe(true);
     });
 
     it('renders with "activity" when note is imported and is system note', () => {
       createComponent({ isImported: true, isSystemNote: true });
 
-      expect(findImportedBadge().props('importableType')).toBe('activity');
+      expect(findImportedBadge().exists()).toBe(true);
     });
 
     it('does not render when note is not imported', () => {

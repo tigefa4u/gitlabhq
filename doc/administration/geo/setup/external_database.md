@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Geo with external PostgreSQL instances
@@ -24,7 +24,7 @@ in case a Geo site has to be rebuilt.
 
 {{< alert type="note" >}}
 
-If you’re using GitLab Geo, we strongly recommend running instances installed by using the Linux package or using
+If you're using GitLab Geo, we strongly recommend running instances installed by using the Linux package or using
 [validated cloud-managed instances](../../reference_architectures/_index.md#recommended-cloud-providers-and-services),
 as we actively develop and test based on those.
 We cannot guarantee compatibility with other external databases.
@@ -73,7 +73,7 @@ We cannot guarantee compatibility with other external databases.
 
 To set up an external database, you can either:
 
-- Set up [streaming replication](https://www.postgresql.org/docs/12/warm-standby.html#STREAMING-REPLICATION-SLOTS) yourself (for example Amazon RDS, or bare metal not managed by the Linux package).
+- Set up [streaming replication](https://www.postgresql.org/docs/16/warm-standby.html#STREAMING-REPLICATION-SLOTS) yourself (for example Amazon RDS, or bare metal not managed by the Linux package).
 - Manually perform the configuration of your Linux package installations as follows.
 
 #### Leverage your cloud provider's tools to replicate the primary database
@@ -279,7 +279,7 @@ Configure GitLab to use this database. These steps are for Linux package and Doc
 
 #### Set up the database schema
 
-The reconfigure in the [steps above](#configure-gitlab) for Linux package and Docker deployments should handle these steps automatically.
+The reconfigure command in the [previously listed steps](#configure-gitlab) for Linux package and Docker deployments should handle these steps automatically.
 
 1. This task creates the database schema. It requires the database user to be a superuser.
 

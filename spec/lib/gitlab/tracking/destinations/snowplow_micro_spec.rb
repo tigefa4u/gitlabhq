@@ -20,59 +20,35 @@ RSpec.describe Gitlab::Tracking::Destinations::SnowplowMicro, feature_category: 
 
   it { is_expected.to delegate_method(:flush).to(:tracker) }
 
-  describe '#hostname' do
-    context 'when snowplow_micro config is set' do
-      let(:address) { '127.0.0.1:9091' }
-
-      before do
-        stub_config(snowplow_micro: snowplow_micro_settings)
-      end
-
-      it 'returns proper URI' do
-        expect(subject.hostname).to eq('127.0.0.1:9091')
-        expect(subject.uri.scheme).to eq('http')
-      end
-
-      context 'when gitlab config has https scheme' do
-        before do
-          stub_config_setting(https: true)
-        end
-
-        it 'returns proper URI' do
-          expect(subject.hostname).to eq('127.0.0.1:9091')
-          expect(subject.uri.scheme).to eq('https')
-        end
-      end
-    end
-
-    context 'when snowplow_micro config is not set' do
-      before do
-        allow(Gitlab.config).to receive(:snowplow_micro).and_raise(GitlabSettings::MissingSetting)
-      end
-
-      it 'returns localhost hostname' do
-        expect(subject.hostname).to eq('localhost:9090')
-      end
-    end
-  end
-
-  describe '#options' do
+  describe '#snowplow_options' do
     let_it_be(:group) { create :group }
 
     before do
       stub_config(snowplow_micro: snowplow_micro_settings)
     end
 
-    it 'includes protocol with the correct value' do
-      expect(subject.options(group)[:protocol]).to eq 'http'
-    end
+    it 'adds Snowplow micro specific options to the parent Snowplow options' do
+      base_options = {
+        namespace: 'gl',
+        hostname: subject.hostname,
+        cookieDomain: '.gitlab.com',
+        appId: nil,
+        formTracking: true,
+        linkClickTracking: true
+      }
 
-    it 'includes port with the correct value' do
-      expect(subject.options(group)[:port]).to eq 9091
-    end
+      allow_next_instance_of(Gitlab::Tracking::Destinations::Snowplow) do |snowplow_instance|
+        allow(snowplow_instance).to receive(:snowplow_options).with(group).and_return(base_options)
+      end
 
-    it 'includes forceSecureTracker with value false' do
-      expect(subject.options(group)[:forceSecureTracker]).to eq false
+      options = subject.snowplow_options(group)
+
+      expect(options).to include(
+        protocol: 'http',
+        port: 9091,
+        forceSecureTracker: false
+      )
+      expect(options).to include(base_options)
     end
   end
 end

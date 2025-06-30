@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 RSpec.describe ViteHelper, feature_category: :tooling do
-  describe '#vite_page_entrypoint_path' do
+  describe '#vite_page_entrypoint_paths' do
     using RSpec::Parameterized::TableSyntax
 
     where(:path, :action, :result) do
@@ -62,20 +62,6 @@ RSpec.describe ViteHelper, feature_category: :tooling do
       it 'uses vite_stylesheet_tag' do
         expect(link_tag[:rel]).to eq('stylesheet')
         expect(link_tag[:href]).to eq('/vite-dev/stylesheets/styles.application.scss.css')
-      end
-
-      context 'when asset_host is set' do
-        before do
-          allow(helper).to receive_message_chain(:config, :asset_host).and_return('http://localhost')
-
-          allow(ViteRuby.config).to receive(:host).and_return('localhost')
-          allow(ViteRuby.config).to receive(:port).and_return(3808)
-        end
-
-        it 'replaces the asset_host with the configured Vite host' do
-          expect(link_tag[:rel]).to eq('stylesheet')
-          expect(link_tag[:href]).to eq('http://localhost:3808/vite-dev/stylesheets/styles.application.scss.css')
-        end
       end
     end
   end

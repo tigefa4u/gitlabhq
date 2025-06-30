@@ -14,6 +14,11 @@ title: Custom permissions
   To make changes to the output of the Rake task,
   edit `tooling/custom_roles/docs/templates/custom_abilities.md.erb`.
 -->
+{{< history >}}
+
+- Custom admin roles [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/181346) in GitLab 17.9 [with a flag](../../administration/feature_flags/_index.md) named `custom_admin_roles`. Disabled by default.
+
+{{< /history >}}
 
 You can create a [custom role](_index.md) by adding one or more custom permissions to a base role.
 
@@ -24,6 +29,15 @@ For example, the `admin_vulnerability` permission requires you to also include t
 Any dependencies are noted in the `Description` column for each permission.
 
 {{< /alert >}}
+
+## Admin
+
+| Permission | Description | API Attribute | Scope | Introduced |
+|:-----------|:------------|:--------------|:------|:-----------|
+| View CI/CD | Read CI/CD details for runners and jobs in the Admin Area. | [`read_admin_cicd`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/177233) | Instance | GitLab [17.9](https://gitlab.com/gitlab-org/gitlab/-/issues/507960) |
+| View subscription details | Read subscription details in the Admin area. | [`read_admin_subscription`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/178230) | Instance | GitLab [17.9](https://gitlab.com/gitlab-org/gitlab/-/issues/507961) |
+| View system monitoring | Read system information such as background migrations, health checks, audit logs, and Gitaly in the Admin Area. | [`read_admin_monitoring`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/179439) | Instance | GitLab [17.9](https://gitlab.com/gitlab-org/gitlab/-/issues/507959) |
+| View users | Read the user list and user details in the Admin area. | [`read_admin_users`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/177514) | Instance | GitLab [17.9](https://gitlab.com/gitlab-org/gitlab/-/issues/508782) |
 
 ## Code review workflow
 
@@ -43,6 +57,7 @@ Any dependencies are noted in the `Description` column for each permission.
 | Permission | Description | API Attribute | Scope | Introduced |
 |:-----------|:------------|:--------------|:------|:-----------|
 | Manage deploy tokens | Manage deploy tokens at the group or project level. | [`manage_deploy_tokens`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/151677) | Group,<br> Project | GitLab [17.0](https://gitlab.com/gitlab-org/gitlab/-/issues/448843) |
+| Manage Protected Environments | Create, read, update, and delete protected environments | [`admin_protected_environments`](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/178283) | Group,<br> Project | GitLab [17.9](https://gitlab.com/gitlab-org/gitlab/-/issues/471385) |
 
 ## Groups and projects
 

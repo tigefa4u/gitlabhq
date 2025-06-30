@@ -23,6 +23,7 @@ export async function mountIssuesDashboardApp() {
     emptyStateWithoutFilterSvgPath,
     hasBlockedIssuesFeature,
     hasIssuableHealthStatusFeature,
+    hasIterationsFeature,
     hasIssueDateFilterFeature,
     hasIssueWeightsFeature,
     hasOkrsFeature,
@@ -32,6 +33,7 @@ export async function mountIssuesDashboardApp() {
     isPublicVisibilityRestricted,
     isSignedIn,
     rssPath,
+    isStatusFeatureEnabledOnInstance,
   } = el.dataset;
 
   return new Vue({
@@ -50,6 +52,7 @@ export async function mountIssuesDashboardApp() {
       emptyStateWithoutFilterSvgPath,
       hasBlockedIssuesFeature: parseBoolean(hasBlockedIssuesFeature),
       hasIssuableHealthStatusFeature: parseBoolean(hasIssuableHealthStatusFeature),
+      hasIterationsFeature: parseBoolean(hasIterationsFeature),
       hasIssueDateFilterFeature: parseBoolean(hasIssueDateFilterFeature),
       hasIssueWeightsFeature: parseBoolean(hasIssueWeightsFeature),
       hasOkrsFeature: parseBoolean(hasOkrsFeature),
@@ -59,6 +62,7 @@ export async function mountIssuesDashboardApp() {
       isPublicVisibilityRestricted: parseBoolean(isPublicVisibilityRestricted),
       isSignedIn: parseBoolean(isSignedIn),
       rssPath,
+      isStatusFeatureEnabledOnInstance: parseBoolean(isStatusFeatureEnabledOnInstance),
     },
     render: (createComponent) => createComponent(IssuesDashboardApp),
   });

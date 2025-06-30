@@ -14,7 +14,7 @@ title: Job artifacts
 
 Jobs can output an archive of files and directories. This output is known as a job artifact.
 
-You can download job artifacts by using the GitLab UI or the [API](../../api/job_artifacts.md#get-job-artifacts).
+You can download job artifacts by using the GitLab UI or the [API](../../api/job_artifacts.md).
 
 <i class="fa fa-youtube-play youtube" aria-hidden="true"></i>
 For an overview of job artifacts, watch the video [GitLab CI pipelines, artifacts, and environments](https://www.youtube.com/watch?v=PCKDICEe10s).
@@ -67,7 +67,7 @@ pdf:
     expire_in: 1 week
 ```
 
-If `expire_in` is not defined, the [instance-wide setting](../../administration/settings/continuous_integration.md#default-artifacts-expiration)
+If `expire_in` is not defined, the [instance-wide setting](../../administration/settings/continuous_integration.md#set-default-artifacts-expiration)
 is used.
 
 To prevent artifacts from expiring, you can select **Keep** from the job details page.
@@ -235,7 +235,7 @@ unless the report is added as a regular artifact with `artifacts:paths`.
 ### From a URL
 
 You can download the artifacts archive for a specific job with a publicly accessible
-URL for the [job artifacts API](../../api/job_artifacts.md#download-the-artifacts-archive).
+URL for the [job artifacts API](../../api/job_artifacts.md#download-job-artifacts-by-reference-name).
 
 For example:
 
@@ -254,7 +254,7 @@ For example:
   Files returned by this endpoint always have the `plain/text` content type.
 
 In both examples, replace `<project-id>` with a valid project ID. You can find the project ID on the
-[project overview page](../../user/project/working_with_projects.md#access-a-project-by-using-the-project-id).
+[project overview page](../../user/project/working_with_projects.md#find-the-project-id).
 
 Artifacts for [parent and child pipelines](../pipelines/downstream_pipelines.md#parent-child-pipelines)
 are searched in hierarchical order from parent to child. For example, if both parent and
@@ -299,13 +299,13 @@ you must enable [GitLab Pages access control](../../administration/pages/_index.
 
 The following extensions are supported:
 
-| File extension | GitLab.com             | Linux package with built-in NGINX |
-|----------------|------------------------|-----------------------------------|
-| `.html`        | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes            |
-| `.json`        | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes            |
-| `.xml`         | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes            |
-| `.txt`         | {{< icon name="dotted-circle" >}} No | {{< icon name="check-circle" >}} Yes            |
-| `.log`         | {{< icon name="dotted-circle" >}} No | {{< icon name="check-circle" >}} Yes            |
+| File extension | GitLab.com                           | Linux package with built-in NGINX |
+|----------------|--------------------------------------|-----------------------------------|
+| `.html`        | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes |
+| `.json`        | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes |
+| `.xml`         | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes |
+| `.txt`         | {{< icon name="dotted-circle" >}} No | {{< icon name="check-circle" >}} Yes |
+| `.log`         | {{< icon name="dotted-circle" >}} No | {{< icon name="check-circle" >}} Yes |
 
 ### From a URL
 
@@ -347,7 +347,7 @@ You can also delete individual artifacts from the [**Artifacts** page](#bulk-del
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/33348) in GitLab 15.10 [with a flag](../../administration/feature_flags.md) named `ci_job_artifact_bulk_destroy`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/33348) in GitLab 15.10 [with a flag](../../administration/feature_flags/_index.md) named `ci_job_artifact_bulk_destroy`. Disabled by default.
 - [Feature flag removed](https://gitlab.com/gitlab-org/gitlab/-/issues/398581) in GitLab 16.1.
 
 {{< /history >}}
@@ -389,7 +389,7 @@ By default, artifacts are always kept for the most recent successful pipeline on
 
 When a new pipeline on the same ref completes successfully, the previous pipeline's artifacts are deleted according to the `expire_in` configuration. The artifacts of the new pipeline are kept automatically.
 
-A pipeline’s artifacts are only deleted according to the `expire_in` configuration if a new pipeline runs for the same ref and:
+A pipeline's artifacts are only deleted according to the `expire_in` configuration if a new pipeline runs for the same ref and:
 
 - Succeeds.
 - Stops running due to being blocked by a manual job.
@@ -408,4 +408,4 @@ Artifacts in old pipelines continue to be kept until a new pipeline runs for the
 Then the artifacts in the earlier pipeline for that ref are allowed to expire too.
 
 You can disable this behavior for all projects on GitLab Self-Managed in the
-[instance's CI/CD settings](../../administration/settings/continuous_integration.md#keep-the-latest-artifacts-for-all-jobs-in-the-latest-successful-pipelines).
+[instance's CI/CD settings](../../administration/settings/continuous_integration.md#keep-artifacts-from-latest-successful-pipelines).

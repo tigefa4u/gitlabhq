@@ -1,7 +1,7 @@
 include:
   - local: .gitlab/ci/rails/shared.gitlab-ci.yml
 
-db:setup pg16:
+.db:setup pg16:
   stage: prepare
   needs: []
   extends:
@@ -17,6 +17,16 @@ db:setup pg16:
   artifacts:
     paths:
       - pg_dumpall.sql
+
+db:setup pg16:
+  extends:
+    - .db:setup pg16
+
+# Job name is detected in scripts/utils.sh to set up EE-only databases.
+db:setup-ee pg16:
+  extends:
+    - .db:setup pg16
+    - .rails:rules:setup-test-env-ee
 
 db:rollback single-db-ci-connection:
   extends:
@@ -85,7 +95,7 @@ db:rollback:
   script:
     - |
       function db_rollback() {
-        bundle exec rake db:migrate VERSION=20231220225325 # First 16-9-stable-ee migration
+        bundle exec rake db:migrate VERSION=20240116205430 # First 16-11-stable-ee migration
         bundle exec rake db:migrate
       }
 
@@ -118,11 +128,11 @@ db:migrate:multi-version-upgrade:
 
       run_with_custom_exit_code db_migrate_multi_version_upgrade
 
-# Validate minimum PG version supported by GitLab
-db:migrate:multi-version-upgrade-pg14:
+# Validate PG version supported by GitLab
+db:migrate:multi-version-upgrade-pg17:
   extends:
     - db:migrate:multi-version-upgrade
-    - .use-pg14
+    - .use-pg17
 
 db:migrate:reset:
   extends: .db-job-base
@@ -158,7 +168,7 @@ db:check-schema-single-db:
 db:check-migrations:
   extends:
     - .db-job-base
-    - .use-pg14  # Should match the db same version used by GDK
+    - .use-pg16  # Should match the db same version used by GDK
     - .rails:rules:ee-and-foss-mr-with-migration
   script:
     - |
@@ -269,3 +279,15 @@ db:docs-up-to-date:
       }
 
       run_with_custom_exit_code db_docs_up_to_date
+
+db:invalidate-old-pipeline-results:
+  extends:
+    - .db-job-base
+    - .db:rules:invalidate-old-pipeline-results
+  stage: post-test
+  needs: []
+  script:
+    - |
+      git fetch origin $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+      export MOST_RECENT_COMMIT_TIMESTAMP="$(git log origin/$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME --pretty=format:"%at" | head -n 1)"
+      bundle exec ruby scripts/database/mark_pipeline_comments.rb $CI_MERGE_REQUEST_IID $MOST_RECENT_COMMIT_TIMESTAMP

@@ -2,13 +2,14 @@
 stage: Fulfillment
 group: Provision
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+gitlab_dedicated: yes
 title: Moderate users
 ---
 
 {{< details >}}
 
 - Tier: Free, Premium, Ultimate
-- Offering: GitLab Self-Managed
+- Offering: GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 
@@ -20,9 +21,29 @@ This topic is specifically related to user moderation in GitLab Self-Managed. Fo
 
 {{< /alert >}}
 
+## View users by type
+
+{{< history >}}
+
+- Filter users by type [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/541186) in GitLab 18.1.
+
+{{< /history >}}
+
+Established GitLab instances can often have large numbers of human and bot users. You can filter the list of users
+to display only human or [bot users](internal_users.md).
+
+To view users by type:
+
+1. On the left sidebar, at the bottom, select **Admin**.
+1. Select **Overview > Users**.
+1. In the search box, enter a filter.
+   - To display human users, enter **Type=Humans**.
+   - To display bot users, enter **Type=Bots**.
+1. Press <kbd>Enter</kbd>.
+
 ## Users pending approval
 
-A user in _pending approval_ state requires action by an administrator. A user sign up can be in a
+A user in a pending approval state requires action by an administrator. A user sign up can be in a
 pending approval state because an administrator has enabled any of the following options:
 
 - [Require administrator approval for new sign-ups](settings/sign_up_restrictions.md#require-administrator-approval-for-new-sign-ups) setting.
@@ -228,6 +249,9 @@ When this feature is enabled, GitLab runs a daily job to deactivate the dormant 
 
 A maximum of 100,000 users can be deactivated per day.
 
+By default, users receive an email notification when their account is deactivated.
+You can disable [user deactivation emails](settings/email.md#user-deactivation-emails).
+
 {{< alert type="note" >}}
 
 GitLab generated bots are excluded from the automatic deactivation of dormant users.
@@ -245,7 +269,7 @@ GitLab generated bots are excluded from the automatic deactivation of dormant us
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/352514) in GitLab 16.1 [with a flag](feature_flags.md) named `delete_unconfirmed_users_setting`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/352514) in GitLab 16.1 [with a flag](feature_flags/_index.md) named `delete_unconfirmed_users_setting`. Disabled by default.
 - [Enabled by default](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/124982) in GitLab 16.2.
 
 {{< /history >}}
@@ -304,9 +328,10 @@ Users can also be reactivated using the [GitLab API](../api/user_moderation.md#r
 
 {{< history >}}
 
-- Hiding merge requests of banned users [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/107836) in GitLab 15.8 [with a flag](feature_flags.md) named `hide_merge_requests_from_banned_users`. Disabled by default.
-- Hiding comments of banned users [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/112973) in GitLab 15.11 [with a flag](feature_flags.md) named `hidden_notes`. Disabled by default.
-- Hiding projects of banned users [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/121488) in GitLab 16.2 [with a flag](feature_flags.md) named `hide_projects_of_banned_users`. Disabled by default.
+- Hiding merge requests of banned users [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/107836) in GitLab 15.8 [with a flag](feature_flags/_index.md) named `hide_merge_requests_from_banned_users`. Disabled by default.
+- Hiding comments of banned users [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/112973) in GitLab 15.11 [with a flag](feature_flags/_index.md) named `hidden_notes`. Disabled by default.
+- Hiding projects of banned users [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/121488) in GitLab 16.2 [with a flag](feature_flags/_index.md) named `hide_projects_of_banned_users`. Disabled by default.
+- Hiding merge requests of banned users [generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/188770) in GitLab 18.0. Feature flag `hide_merge_requests_from_banned_users` removed.
 
 {{< /history >}}
 
@@ -427,6 +452,12 @@ The user is untrusted.
 {{< /tabs >}}
 
 ## Troubleshooting
+
+{{< details >}}
+
+- Offering: GitLab Self-Managed
+
+{{< /details >}}
 
 When moderating users, you may need to perform bulk actions on them based on certain conditions. The following rails console scripts show some examples of this. You may [start a rails console session](operations/rails_console.md#starting-a-rails-console-session) and use scripts similar to the following:
 

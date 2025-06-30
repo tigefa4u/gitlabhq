@@ -40,6 +40,7 @@ class GraphqlController < ApplicationController
   before_action :track_neovim_plugin_usage
   before_action :disable_query_limiting
   before_action :limit_query_size
+  before_action :enforce_language_server_restrictions
 
   before_action :disallow_mutations_for_get
 
@@ -78,6 +79,12 @@ class GraphqlController < ApplicationController
     else
       render_error("Internal server error")
     end
+  end
+
+  rescue_from Gitlab::Auth::RestrictedLanguageServerClientError do |exception|
+    log_exception(exception)
+
+    render_error(exception.message, status: :unauthorized)
   end
 
   rescue_from Gitlab::Auth::DpopValidationError do |exception|
@@ -147,6 +154,15 @@ class GraphqlController < ApplicationController
       request: current_request).execute
   end
 
+  def enforce_language_server_restrictions
+    response = Gitlab::Auth::EditorExtensions::LanguageServerClientVerifier.new(
+      current_user: current_user,
+      request: current_request
+    ).execute
+
+    raise Gitlab::Auth::RestrictedLanguageServerClientError, response.message if response.error?
+  end
+
   def permitted_params
     @permitted_params ||= multiplex? ? permitted_multiplex_params : permitted_standalone_query_params
   end
@@ -180,7 +196,7 @@ class GraphqlController < ApplicationController
 
   def any_mutating_query?
     if multiplex?
-      multiplex_queries.any? { |q| mutation?(q[:query], q[:operation_name]) }
+      multiplex_param.any? { |q| mutation?(q[:query], q[:operationName]) }
     else
       mutation?(query)
     end
@@ -254,7 +270,7 @@ class GraphqlController < ApplicationController
   end
 
   def query
-    GraphQL::Language.escape_single_quoted_newlines(permitted_params.fetch(:query, ''))
+    GraphQL::Language.escape_single_quoted_newlines(permitted_params.fetch(:query, '').to_s)
   end
 
   def multiplex_param
@@ -279,6 +295,7 @@ class GraphqlController < ApplicationController
     @context ||= {
       current_user: current_user,
       is_sessionless_user: api_user,
+      current_organization: Current.organization,
       request: request,
       scope_validator: ::Gitlab::Auth::ScopeValidator.new(api_user, request_authenticator),
       remove_deprecated: Gitlab::Utils.to_boolean(permitted_params[:remove_deprecated], default: false)

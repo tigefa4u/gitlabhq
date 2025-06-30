@@ -10,6 +10,8 @@ RSpec.describe Ci::RunnerTagging, feature_category: :runner do
 
   describe 'validations' do
     it { is_expected.to validate_presence_of(:runner_type) }
+    it { is_expected.to validate_presence_of(:sharding_key_id) }
+    it { is_expected.to validate_presence_of(:organization_id).on([:create, :update]) }
 
     describe 'sharding_key_id' do
       subject(:runner_tagging) { runner.taggings.first }
@@ -42,6 +44,38 @@ RSpec.describe Ci::RunnerTagging, feature_category: :runner do
         end
       end
     end
+
+    describe 'organization_id' do
+      subject(:runner_tagging) { runner.taggings.first }
+
+      context 'when runner_type is instance_type' do
+        let(:runner) { create(:ci_runner, :instance, tag_list: ['postgres']) }
+
+        it { is_expected.to be_valid }
+
+        context 'and organization_id is not nil' do
+          before do
+            runner_tagging.organization_id = non_existing_record_id
+          end
+
+          it { is_expected.to be_invalid }
+        end
+      end
+
+      context 'when runner_type is group_type' do
+        let(:runner) { create(:ci_runner, :group, groups: [group], tag_list: ['postgres']) }
+
+        it { is_expected.to be_valid }
+
+        context 'and organization_id is nil' do
+          before do
+            runner_tagging.organization_id = nil
+          end
+
+          it { is_expected.to be_invalid }
+        end
+      end
+    end
   end
 
   describe 'partitioning' do
@@ -58,6 +92,45 @@ RSpec.describe Ci::RunnerTagging, feature_category: :runner do
 
         it 'does not change the runner_type value' do
           expect { runner_tagging.valid? }.not_to change { runner_tagging.runner_type }
+        end
+      end
+    end
+  end
+
+  describe 'loose foreign keys' do
+    context 'with loose foreign key on tags.id' do
+      it_behaves_like 'cleanup by a loose foreign key' do
+        let(:lfk_column) { :tag_id }
+        let_it_be(:runner) { create(:ci_runner, :group, groups: [group]) }
+        let_it_be(:parent) { create(:ci_tag, name: 'ruby') }
+        let_it_be(:model) { create(:ci_runner_tagging, runner: runner, tag_id: parent.id) }
+      end
+    end
+
+    context 'with loose foreign key on namespaces.id' do
+      it_behaves_like 'cleanup by a loose foreign key' do
+        let(:model_table_name) { 'ci_runner_taggings_group_type' }
+        let(:lfk_column) { :sharding_key_id }
+        let_it_be(:parent) { create(:group) }
+        let_it_be(:runner) { create(:ci_runner, :group, groups: [parent]) }
+        let_it_be(:tag) { create(:ci_tag, name: 'ruby') }
+        let_it_be(:model) do
+          create(:ci_runner_tagging, runner: runner, runner_type: runner.runner_type, sharding_key_id: parent.id,
+            tag_id: tag.id)
+        end
+      end
+    end
+
+    context 'with loose foreign key on projects.id' do
+      it_behaves_like 'cleanup by a loose foreign key' do
+        let(:model_table_name) { 'ci_runner_taggings_project_type' }
+        let(:lfk_column) { :sharding_key_id }
+        let_it_be(:parent) { create(:project, group: group) }
+        let_it_be(:runner) { create(:ci_runner, :project, projects: [parent]) }
+        let_it_be(:tag) { create(:ci_tag, name: 'ruby') }
+        let_it_be(:model) do
+          create(:ci_runner_tagging, runner: runner, runner_type: runner.runner_type, sharding_key_id: parent.id,
+            tag_id: tag.id)
         end
       end
     end

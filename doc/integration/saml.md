@@ -12,14 +12,18 @@ title: SAML SSO for GitLab Self-Managed
 
 {{< /details >}}
 
+{{< alert type="note" >}}
+
+For GitLab.com, see [SAML SSO for GitLab.com groups](../user/group/saml_sso/_index.md).
+
+{{< /alert >}}
+
 This page describes how to set up instance-wide SAML single sign on (SSO) for
 GitLab Self-Managed.
 
 You can configure GitLab to act as a SAML service provider (SP). This allows
 GitLab to consume assertions from a SAML identity provider (IdP), such as
 Okta, to authenticate users.
-
-To set up SAML on GitLab.com, see [SAML SSO for GitLab.com groups](../user/group/saml_sso/_index.md).
 
 For more information on:
 
@@ -70,7 +74,7 @@ For more information on:
    ```ruby
    gitlab_rails['omniauth_providers'] = [
      {
-       name: "saml",
+       name: "saml", # This must be lowercase.
        label: "Provider name", # optional label for login button, defaults to "Saml"
        args: {
          assertion_consumer_service_url: "https://gitlab.example.com/users/auth/saml/callback",
@@ -1101,6 +1105,9 @@ Example configuration:
        args: {
                assertion_consumer_service_url: 'https://gitlab.example.com/users/auth/saml/callback',
                idp_cert_fingerprint: '2f:cb:19:57:68:c3:9e:9a:94:ce:c2:c2:e3:2c:59:c0:aa:d7:a3:36:5c:10:89:2e:81:16:b5:d8:3d:40:96:b6',
+               # or
+               # idp_cert: '-----BEGIN CERTIFICATE-----\n ... \n-----END CERTIFICATE-----',
+
                idp_sso_target_url: 'https://login.example.com/idp',
                issuer: 'https://gitlab.example.com',
                name_identifier_format: 'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent'
@@ -1130,6 +1137,8 @@ Example configuration:
    args:
      assertion_consumer_service_url: 'https://gitlab.example.com/users/auth/saml/callback'
      idp_cert_fingerprint: '2f:cb:19:57:68:c3:9e:9a:94:ce:c2:c2:e3:2c:59:c0:aa:d7:a3:36:5c:10:89:2e:81:16:b5:d8:3d:40:96:b6'
+     # or
+     # idp_cert: '-----BEGIN CERTIFICATE-----\n ... \n-----END CERTIFICATE-----',
      idp_sso_target_url: 'https://login.example.com/idp'
      issuer: 'https://gitlab.example.com'
      name_identifier_format: 'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent'
@@ -1265,6 +1274,9 @@ Example configuration:
        args: {
                assertion_consumer_service_url: 'https://gitlab.example.com/users/auth/saml/callback',
                idp_cert_fingerprint: '2f:cb:19:57:68:c3:9e:9a:94:ce:c2:c2:e3:2c:59:c0:aa:d7:a3:36:5c:10:89:2e:81:16:b5:d8:3d:40:96:b6',
+               # or
+               # idp_cert: '-----BEGIN CERTIFICATE-----\n ... \n-----END CERTIFICATE-----',
+
                idp_sso_target_url: 'https://login.example.com/idp',
                issuer: 'https://gitlab.example.com',
                name_identifier_format: 'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent'
@@ -1578,7 +1590,7 @@ For information on automatically managing GitLab group membership, see [SAML Gro
 
 {{< history >}}
 
-- Bypass 2FA enforcement [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/122109) in GitLab 16.1 [with a flag](../administration/feature_flags.md) named `by_pass_two_factor_current_session`.
+- Bypass 2FA enforcement [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/122109) in GitLab 16.1 [with a flag](../administration/feature_flags/_index.md) named `by_pass_two_factor_current_session`.
 - [Enabled](https://gitlab.com/gitlab-org/gitlab/-/issues/416535) in GitLab 17.8.
 
 {{< /history >}}
@@ -1772,7 +1784,7 @@ membership is required.
 
 ### Using `idp_cert_fingerprint`
 
-You configure the response signature validation using `idp_cert_fingerprint`.
+You can configure the response signature validation using `idp_cert_fingerprint`.
 An example configuration:
 
 {{< tabs >}}
@@ -1918,8 +1930,7 @@ An example configuration:
 
 ### Using `idp_cert`
 
-If your IdP does not support configuring this using `idp_cert_fingerprint`, you
-can instead configure GitLab directly using `idp_cert`.
+You can also configure GitLab directly using `idp_cert`.
 An example configuration:
 
 {{< tabs >}}
@@ -3025,16 +3036,8 @@ In the following example, the value of `uid` attribute in the SAML response is s
 
 ## Assertion encryption (optional)
 
-GitLab requires the use of TLS encryption with SAML 2.0. Sometimes, GitLab needs
-additional assertion encryption. For example, if you:
-
-- Terminate TLS encryption early at a load balancer.
-- Include sensitive details in assertions that you do not want appearing in logs.
-
-Most organizations should not need additional encryption at this layer.
-
-Your IdP encrypts the assertion with the public certificate of GitLab.
-GitLab decrypts the `EncryptedAssertion` with its private key.
+Encrypting the SAML assertion is optional but recommended. This adds an additional layer of protection
+to prevent unencrypted data being logged or intercepted by malicious actors. 
 
 {{< alert type="note" >}}
 
@@ -3043,9 +3046,9 @@ assertion encryption and request signing.
 
 {{< /alert >}}
 
-The SAML integration supports `EncryptedAssertion`. To encrypt your assertions,
-define the private key and the public certificate of your GitLab instance in the
-SAML settings.
+To encrypt your SAML assertions, define the private key and the public certificate in the GitLab
+SAML settings. Your IdP encrypts the assertion with the public certificate and
+GitLab decrypts the assertion with the private key.
 
 When you define the key and certificate, replace all line feeds in the key file with `\n`.
 This makes the key file one long string with no line feeds.

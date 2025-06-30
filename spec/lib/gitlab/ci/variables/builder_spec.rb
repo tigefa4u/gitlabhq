@@ -34,7 +34,7 @@ RSpec.describe Gitlab::Ci::Variables::Builder, :clean_gitlab_redis_cache, featur
       { key: 'GITLAB_CI',
         value: 'true' },
       { key: 'CI_SERVER_FQDN',
-        value: Gitlab.config.gitlab_ci.server_fqdn },
+        value: Gitlab.config.gitlab.server_fqdn },
       { key: 'CI_SERVER_URL',
         value: Gitlab.config.gitlab.url },
       { key: 'CI_SERVER_HOST',
@@ -91,6 +91,8 @@ RSpec.describe Gitlab::Ci::Variables::Builder, :clean_gitlab_redis_cache, featur
         value: project.external_authorization_classification_label },
       { key: 'CI_DEFAULT_BRANCH',
         value: project.default_branch },
+      { key: 'CI_DEFAULT_BRANCH_SLUG',
+        value: Gitlab::Utils.slugify(project.default_branch.to_s) },
       { key: 'CI_CONFIG_PATH',
         value: project.ci_config_path_or_default },
       { key: 'CI_PAGES_DOMAIN',
@@ -215,7 +217,8 @@ RSpec.describe Gitlab::Ci::Variables::Builder, :clean_gitlab_redis_cache, featur
         allow(builder).to receive(:secret_project_variables) { [var('L', 12), var('M', 12)] }
         allow(pipeline).to receive(:variables) { [var('M', 13), var('N', 13)] }
         allow(pipeline).to receive(:pipeline_schedule) { double(job_variables: [var('N', 14), var('O', 14)]) }
-        allow(builder).to receive(:release_variables) { [var('P', 15), var('Q', 15)] }
+        allow(job).to receive(:manual_variables) { [var('O', 15), var('P', 15)] }
+        allow(builder).to receive(:release_variables) { [var('P', 16), var('Q', 16)] }
       end
 
       it 'returns variables in order depending on resource hierarchy' do
@@ -233,7 +236,8 @@ RSpec.describe Gitlab::Ci::Variables::Builder, :clean_gitlab_redis_cache, featur
            var('L', 12), var('M', 12),
            var('M', 13), var('N', 13),
            var('N', 14), var('O', 14),
-           var('P', 15), var('Q', 15)])
+           var('O', 15), var('P', 15),
+           var('P', 16), var('Q', 16)])
       end
 
       it 'overrides duplicate keys depending on resource hierarchy' do
@@ -245,8 +249,8 @@ RSpec.describe Gitlab::Ci::Variables::Builder, :clean_gitlab_redis_cache, featur
           'I' => '9', 'J' => '10',
           'K' => '11', 'L' => '12',
           'M' => '13', 'N' => '14',
-          'O' => '14', 'P' => '15',
-          'Q' => '15')
+          'O' => '15', 'P' => '16',
+          'Q' => '16')
       end
     end
 
@@ -382,22 +386,6 @@ RSpec.describe Gitlab::Ci::Variables::Builder, :clean_gitlab_redis_cache, featur
           'CI_TRIGGER_SHORT_TOKEN' => trigger.trigger_short_token
         )
       end
-
-      context 'when ff ci_read_trigger_from_ci_pipeline is disabled' do
-        let!(:trigger_request) { create(:ci_trigger_request, trigger: trigger, pipeline: pipeline) }
-
-        before do
-          stub_feature_flags(ci_read_trigger_from_ci_pipeline: false)
-          job.update!(trigger_request: trigger_request)
-        end
-
-        it 'includes CI_PIPELINE_TRIGGERED and CI_TRIGGER_SHORT_TOKEN' do
-          expect(subject.to_hash).to include(
-            'CI_PIPELINE_TRIGGERED' => 'true',
-            'CI_TRIGGER_SHORT_TOKEN' => trigger_request.trigger_short_token
-          )
-        end
-      end
     end
   end
 
@@ -431,7 +419,7 @@ RSpec.describe Gitlab::Ci::Variables::Builder, :clean_gitlab_redis_cache, featur
     let(:environment_name) { 'test/master' }
     let(:kubernetes_namespace) { nil }
     let(:extra_attributes) { {} }
-    let(:trigger_or_request) { nil }
+    let(:trigger) { nil }
     let(:yaml_variables) { [{ key: 'YAML_VARIABLE', value: 'value' }] }
 
     let(:predefined_variables) do
@@ -519,7 +507,7 @@ RSpec.describe Gitlab::Ci::Variables::Builder, :clean_gitlab_redis_cache, featur
         environment: environment_name,
         kubernetes_namespace: kubernetes_namespace,
         user: user,
-        trigger_or_request: trigger_or_request
+        trigger: trigger
       )
     end
 
@@ -661,23 +649,12 @@ RSpec.describe Gitlab::Ci::Variables::Builder, :clean_gitlab_redis_cache, featur
 
     context 'when pipeline has trigger request' do
       context 'for trigger' do
-        let!(:trigger_or_request) { create(:ci_trigger, project: project) }
+        let!(:trigger) { create(:ci_trigger, project: project) }
 
         it 'includes CI_PIPELINE_TRIGGERED and CI_TRIGGER_SHORT_TOKEN' do
           expect(subject.to_hash).to include(
             'CI_PIPELINE_TRIGGERED' => 'true',
-            'CI_TRIGGER_SHORT_TOKEN' => trigger_or_request.trigger_short_token
-          )
-        end
-      end
-
-      context 'for trigger_request' do
-        let!(:trigger_or_request) { create(:ci_trigger_request, pipeline: pipeline) }
-
-        it 'includes CI_PIPELINE_TRIGGERED and CI_TRIGGER_SHORT_TOKEN' do
-          expect(subject.to_hash).to include(
-            'CI_PIPELINE_TRIGGERED' => 'true',
-            'CI_TRIGGER_SHORT_TOKEN' => trigger_or_request.trigger_short_token
+            'CI_TRIGGER_SHORT_TOKEN' => trigger.trigger_short_token
           )
         end
       end

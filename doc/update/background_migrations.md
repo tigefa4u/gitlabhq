@@ -17,14 +17,12 @@ When upgrading GitLab, there are two types of migrations to check:
 - Database migrations.
 - Advanced search migrations.
 
-Read below for detailed information about the two types of migrations.
-
 ## Database background migrations
 
 {{< history >}}
 
-- Feature [flag](../user/feature_flags.md) `execute_batched_migrations_on_schedule` [enabled by default](https://gitlab.com/gitlab-org/gitlab/-/issues/329511) in GitLab 13.12.
-- For GitLab Self-Managed, administrators can opt to [disable it](../development/database/batched_background_migrations.md#enable-or-disable-background-migrations).
+- Feature [flag](../administration/feature_flags/_index.md) `execute_batched_migrations_on_schedule` [enabled by default](https://gitlab.com/gitlab-org/gitlab/-/issues/329511) in GitLab 13.12.
+- For GitLab Self-Managed, administrators can opt to disable it.
 
 {{< /history >}}
 
@@ -49,7 +47,7 @@ limited in scope to help with migrating some `integer` database columns to `bigi
 prevent integer overflow for some tables.
 
 Batched background migrations are handled by Sidekiq and
-[run in isolation](../development/database/batched_background_migrations.md#isolation),
+run in isolation,
 so an instance can remain operational while the migrations are processed. However,
 performance might degrade on larger instances that are heavily used while
 batched background migrations are run. You should
@@ -129,13 +127,13 @@ advanced users who understand the risks of doing so.
 
 {{< alert type="warning" >}}
 
-There can be [risks when disabling released features](../administration/feature_flags.md#risks-when-disabling-released-features).
+There can be [risks when disabling released features](../administration/feature_flags/_index.md#risks-when-disabling-released-features).
 Refer to each feature's history for more details.
 
 {{< /alert >}}
 
 To pause an ongoing batched background migration,
-[disable the batched background migrations feature](../development/database/batched_background_migrations.md#enable-or-disable-background-migrations).
+disable the batched background migrations feature.
 Disabling the feature completes the current batch of migrations, then waits to start
 the next batch until after the feature is enabled again.
 
@@ -180,27 +178,27 @@ Use the following database queries to see the state of the current batched backg
    If no new row has been added, the migration has been paused.
 
 1. After confirming the migration has paused, restart the migration (using the `enable`
-   command above) to proceed with the batch when ready. On larger instances,
+   command mentioned previously) to proceed with the batch when ready. On larger instances,
    background migrations can take as long as 48 hours to complete each batch.
 
 ##### Automatic batch size optimization
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/60133) in GitLab 13.2 [with a flag](../administration/feature_flags.md) named `optimize_batched_migrations`. Enabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/60133) in GitLab 13.2 [with a flag](../administration/feature_flags/_index.md) named `optimize_batched_migrations`. Enabled by default.
 
 {{< /history >}}
 
 {{< alert type="warning" >}}
 
-There can be [risks when disabling released features](../administration/feature_flags.md#risks-when-disabling-released-features).
+There can be [risks when disabling released features](../administration/feature_flags/_index.md#risks-when-disabling-released-features).
 Refer to this feature's history for more details.
 
 {{< /alert >}}
 
 {{< alert type="flag" >}}
 
-On GitLab Self-Managed, by default this feature is available. To hide the feature, ask an administrator to [disable the feature flag](../administration/feature_flags.md) named `optimize_batched_migrations`.
+On GitLab Self-Managed, by default this feature is available. To hide the feature, ask an administrator to [disable the feature flag](../administration/feature_flags/_index.md) named `optimize_batched_migrations`.
 On GitLab.com, this feature is available. On GitLab Dedicated, this feature is not available.
 
 {{< /alert >}}
@@ -211,7 +209,7 @@ To maximize throughput of batched background migrations (in terms of the number 
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/104027) in GitLab 15.7 [with a flag](../administration/feature_flags.md) named `batched_migrations_parallel_execution`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/104027) in GitLab 15.7 [with a flag](../administration/feature_flags/_index.md) named `batched_migrations_parallel_execution`. Disabled by default.
 - [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/372316) in GitLab 15.11.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/120808) in GitLab 16.1. Feature flag `batched_migrations_parallel_execution` removed.
 
@@ -219,14 +217,14 @@ To maximize throughput of batched background migrations (in terms of the number 
 
 {{< alert type="warning" >}}
 
-There can be [risks when disabling released features](../administration/feature_flags.md#risks-when-disabling-released-features).
+There can be [risks when disabling released features](../administration/feature_flags/_index.md#risks-when-disabling-released-features).
 Refer to this feature's history for more details.
 
 {{< /alert >}}
 
 To speed up the execution of batched background migrations, two migrations are executed at the same time.
 
-[GitLab administrators with access to the GitLab Rails console](../administration/feature_flags.md) can change
+[GitLab administrators with access to the GitLab Rails console](../administration/feature_flags/_index.md) can change
 the number of batched background migrations executed in parallel:
 
 ```ruby
@@ -248,10 +246,10 @@ version of GitLab. If you [check the status](#check-the-status-of-batched-backgr
 of batched background migrations, some migrations might display in the **Failed** tab
 with a **failed** status:
 
-![failed batched background migrations table](img/batched_background_migrations_failed_v14_3.png)
+![A failed batched background migrations table.](img/batched_background_migrations_failed_v14_3.png)
 
 To determine why the batched background migration failed,
-[view the failure error logs](../development/database/batched_background_migrations.md#viewing-failure-error-logs)
+view the failure error logs
 or view error information in the UI.
 
 Prerequisites:
@@ -291,7 +289,7 @@ use the information in the failure error logs or the database:
 
 {{< tab title="From the failure error logs" >}}
 
-1. [View the failure error logs](../development/database/batched_background_migrations.md#viewing-failure-error-logs)
+1. View the failure error logs
    and look for an `An error has occurred, all later migrations canceled` error message, like this:
 
    ```plaintext
@@ -314,7 +312,7 @@ use the information in the failure error logs or the database:
    ```
 
    When dealing with multiple arguments, such as `[["id"],["id_convert_to_bigint"]]`, escape the
-   comma between each argument with a backslash <code>&#92;</code> to prevent an invalid character error.
+   comma between each argument with a backslash ` \ ` to prevent an invalid character error.
    For example, to finish the migration from the previous step:
 
    ```shell
@@ -342,7 +340,7 @@ use the information in the failure error logs or the database:
      - `job_arguments`: `[["id"], ["id_convert_to_bigint"]]`
 
    When dealing with multiple arguments, such as `[["id"],["id_convert_to_bigint"]]`, escape the
-   comma between each argument with a backslash <code>&#92;</code> to prevent an invalid character error.
+   comma between each argument with a backslash ` \ ` to prevent an invalid character error.
    Every comma in the `job_arguments` parameter value must be escaped with a backslash.
 
    For example:
@@ -394,6 +392,34 @@ Gitlab::Database::SharedModel.using_connection(connection) do
   # mark all jobs completed
   migration.batched_jobs.update_all(status: Gitlab::Database::BackgroundMigration::BatchedJob.state_machine.states['succeeded'].value)
   migration.update_attribute(:status, Gitlab::Database::BackgroundMigration::BatchedMigration.state_machine.states[:finished].value)
+end
+```
+
+#### Run all background migrations synchronously
+
+There may be cases where you want to force background migrations to run in the foreground during a maintenance window.
+
+This script may timeout/exit before all migrations are completed. You can run it again until all migrations are complete.
+
+```ruby
+# Start the rails console
+
+databases = ActiveRecord::Tasks::DatabaseTasks.setup_initial_database_yaml
+
+Gitlab::Database.database_base_models.each do |database_name, model|
+  Gitlab::Database::SharedModel.using_connection(model.connection) do
+    Gitlab::Database::BackgroundMigration::BatchedMigration.with_status([:paused, :active]).find_each(batch_size: 100) do |migration|
+      puts "#{database_name}: Finalizing migration #{migration.job_class_name} (ID: #{migration.id})... "
+      Gitlab::Database::BackgroundMigration::BatchedMigrationRunner.finalize(
+        migration.job_class_name,
+        migration.table_name,
+        migration.column_name,
+        Gitlab::Json.parse(migration.job_arguments),
+        connection: model.connection
+      )
+      puts("done!\n")
+    end
+  end
 end
 ```
 

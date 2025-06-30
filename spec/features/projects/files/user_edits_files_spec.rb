@@ -6,6 +6,7 @@ RSpec.describe 'Projects > Files > User edits files', :js, feature_category: :so
   include Features::SourceEditorSpecHelpers
   include ProjectForksHelper
   include Features::BlobSpecHelpers
+  include Features::WebIdeSpecHelpers
   include TreeHelper
 
   let_it_be(:json_text) { '{"name":"Best package ever!"}' }
@@ -23,25 +24,24 @@ RSpec.describe 'Projects > Files > User edits files', :js, feature_category: :so
   let_it_be(:project_with_crlf) { create(:project, :custom_repo, name: 'Project with crlf', files: { 'crlf_file.txt' => crlf_text }) }
 
   before do
-    stub_feature_flags(vscode_web_ide: false)
-    stub_feature_flags(blob_overflow_menu: false)
-
     sign_in(user)
   end
 
   shared_examples 'unavailable for an archived project' do
-    it 'does not show the edit link for an archived project', :js do
+    it 'shows disabled edit link for an archived project', :js do
       project.update!(archived: true)
       visit project_tree_path(project, project.repository.root_ref)
 
       click_link('.gitignore')
 
       aggregate_failures 'available edit buttons' do
-        expect(page).not_to have_text('Edit')
-        expect(page).not_to have_text('Web IDE')
+        expect(page).to have_button('Edit', disabled: true)
 
-        expect(page).not_to have_text('Replace')
-        expect(page).not_to have_text('Delete')
+        within_testid('blob-controls') do
+          click_button 'File actions'
+          expect(page).not_to have_text('Replace')
+          expect(page).not_to have_text('Delete')
+        end
       end
     end
   end
@@ -172,8 +172,8 @@ RSpec.describe 'Projects > Files > User edits files', :js, feature_category: :so
       expect(page).to have_selector(:link_or_button, 'Fork')
       expect(page).to have_selector(:link_or_button, 'Cancel')
       expect(page).to have_content(
-        "You can’t edit files directly in this project. "\
-        "Fork this project and submit a merge request with your changes."
+        "You're not allowed to make changes to this project directly. "\
+        "Create a fork to make changes and submit a merge request."
       )
     end
 
@@ -194,6 +194,8 @@ RSpec.describe 'Projects > Files > User edits files', :js, feature_category: :so
 
       expect_fork_status
 
+      edit_in_single_file_editor
+
       find('.file-editor', match: :first)
 
       editor_set_value('*.rbca')
@@ -212,8 +214,20 @@ RSpec.describe 'Projects > Files > User edits files', :js, feature_category: :so
 
       expect_fork_status
 
-      expect(page).to have_css('.ide-sidebar-project-title', text: "#{project2.name} #{user.namespace.full_path}/#{project2.path}")
-      expect(page).to have_css('.ide .multi-file-tab', text: '.gitignore')
+      click_button 'Edit'
+
+      new_tab = window_opened_by { click_link_or_button 'Web IDE' }
+
+      switch_to_window new_tab
+
+      wait_for_requests
+
+      within_window new_tab do
+        within_web_ide do
+          expect(page).to have_text(project2.path.upcase)
+          expect(page).to have_text('.gitignore')
+        end
+      end
     end
 
     it 'commits an edited file in a forked project', :sidekiq_might_not_need_inline do
@@ -222,6 +236,8 @@ RSpec.describe 'Projects > Files > User edits files', :js, feature_category: :so
 
       expect_fork_prompt
       click_link_or_button('Fork')
+
+      edit_in_single_file_editor
 
       find('.file-editor', match: :first)
 

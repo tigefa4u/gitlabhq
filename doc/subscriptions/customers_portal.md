@@ -2,14 +2,17 @@
 stage: Fulfillment
 group: Subscription Management
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-description: Payment and company details.
+description: Customers Portal is a comprehensive self-service hub for purchasing and managing GitLab subscriptions and billing.
 title: The Customers Portal
 ---
 
-For some management tasks for your subscription and account, such as purchasing additional seats or storage and viewing invoices, you use the Customers Portal. See the following pages for specific instructions on managing your subscription:
+The Customers Portal is your comprehensive self-service hub for managing GitLab subscriptions and billing. You can purchase GitLab products, manage your subscriptions throughout the entire subscription lifecycle, view and pay invoices, and access your billing details and contact information.
+
+See the following pages for specific instructions on managing your subscription:
 
 - [GitLab SaaS subscription](gitlab_com/_index.md)
 - [GitLab Self-Managed subscription](self_managed/_index.md)
+- [Manage subscription](manage_subscription.md)
 
 If you made your purchase through an authorized reseller, you must contact them directly to make changes to your subscription.
 For more information, see [Customers that purchased through a reseller](#customers-that-purchased-through-a-reseller).
@@ -65,10 +68,7 @@ To change profile details, including name and email address:
 1. Edit **Your personal details**.
 1. Select **Save changes**.
 
-If you want to transfer ownership of the Customers Portal profile
-to another person, after you enter that person's personal details, you must also:
-
-- [Change the linked GitLab.com account](#change-the-linked-account), if you have one linked.
+You can also [transfer ownership of the Customers Portal profile and billing account](https://support.gitlab.com/hc/en-us/articles/17767356437148-How-to-transfer-subscription-ownership) to another person.
 
 ## Change your company details
 
@@ -95,12 +95,24 @@ To change the subscription contact:
 1. Edit the contact details.
 1. Select **Save changes**.
 
-### Add a secondary contact
+### Add a billing account manager
 
-To add a secondary contact for your account:
+Billing account managers can view and edit subscriptions, payment methods, and account settings, as well as pay and download invoices.
+
+To add another billing account manager for your account:
 
 1. Ensure an account exists in the [Customers Portal](https://customers.gitlab.com/customers/sign_in) for the user you want to add.
-1. [Create a ticket with the Support team](https://support.gitlab.com/hc/en-us/requests/new?ticket_form_id=360000071293). Include any relevant material in your request.
+1. Sign in to the [Customers Portal](https://customers.gitlab.com/customers/sign_in).
+1. On the left sidebar, select **Billing account settings**.
+1. Scroll to the **Billing account managers** section.
+1. Select **Invite billing account manager**.
+1. Enter the email address of the user you want to add.
+1. Select **Invite**.
+
+The invited user receives an email with an invitation to the Customers Portal.
+The invitation is valid for seven days.
+If the user does not accept the invitation before it expires, you can send them a new invitation.
+You can have maximum 15 pending invitations at a time.
 
 ### Change your billing contact
 
@@ -169,6 +181,10 @@ method as the default:
 1. **Edit** the selected payment method and check the **Make default payment method** checkbox.
 1. Select **Save Changes**.
 
+### Delete a default payment method
+
+You cannot delete your default payment method directly through the Customers Portal. To delete a default payment method, [contact our Billing team](https://customers.gitlab.com/contact_us) for assistance.
+
 ## Pay for an invoice
 
 You can pay for your invoices in the Customers Portal with a credit card.
@@ -214,6 +230,16 @@ To change the GitLab.com account linked to your Customers Portal profile:
 1. On the Customers Portal page, select **My profile > Profile settings**.
 1. Under **Your GitLab.com account**, select **Change linked account**.
 1. Sign in to the [GitLab.com](https://gitlab.com/users/sign_in) account you want to link to the Customers Portal profile.
+
+## Tax ID for non-US customers
+
+A Tax ID is a unique number assigned by tax authorities to businesses registered for Value Added Tax (VAT), Goods and Services Tax (GST), or similar indirect taxes.
+
+Providing a valid Tax ID may reduce your tax burden by allowing us to apply reverse charge mechanisms instead of charging VAT/GST on your invoices. Without a valid Tax ID, we charge applicable VAT/GST rates based on your location.
+
+If your business isn't registered for indirect taxes (due to size thresholds or other reasons), we apply the standard VAT/GST rate according to local regulations.
+
+For detailed Tax ID formats by country and additional information, see our [complete Tax ID reference guide](https://handbook.gitlab.com/handbook/finance/tax/#frequently-asked-questions---tax-id-for-non-us-customers).
 
 ## Customers that purchased through a reseller
 

@@ -1,13 +1,5 @@
 <script>
-import {
-  GlEmptyState,
-  GlSprintf,
-  GlLink,
-  GlAlert,
-  GlDisclosureDropdown,
-  GlDisclosureDropdownItem,
-  GlModalDirective,
-} from '@gitlab/ui';
+import { GlEmptyState, GlSprintf, GlLink, GlAlert } from '@gitlab/ui';
 import CLUSTER_EMPTY_SVG from '@gitlab/svgs/dist/illustrations/empty-state/empty-environment-md.svg';
 import { isEmpty } from 'lodash';
 import { s__, __ } from '~/locale';
@@ -25,17 +17,13 @@ import {
 import fluxKustomizationQuery from '~/environments/graphql/queries/flux_kustomization.query.graphql';
 import fluxHelmReleaseQueryStatus from '~/environments/graphql/queries/flux_helm_release.query.graphql';
 import {
-  CLUSTER_HEALTH_SUCCESS,
-  CLUSTER_HEALTH_ERROR,
   HELM_RELEASES_RESOURCE_TYPE,
   KUSTOMIZATIONS_RESOURCE_TYPE,
   FLUX_RECONCILE_ACTION,
   FLUX_SUSPEND_ACTION,
   FLUX_RESUME_ACTION,
 } from '~/environments/constants';
-import { CONNECT_MODAL_ID } from '~/clusters_list/constants';
 import WorkloadDetailsDrawer from '~/kubernetes_dashboard/components/workload_details_drawer.vue';
-import ConnectToAgentModal from '~/clusters_list/components/connect_to_agent_modal.vue';
 import updateFluxResourceMutation from '~/environments/graphql/mutations/update_flux_resource.mutation.graphql';
 import KubernetesStatusBar from './kubernetes_status_bar.vue';
 import KubernetesAgentInfo from './kubernetes_agent_info.vue';
@@ -54,13 +42,7 @@ export default {
     GlSprintf,
     GlLink,
     GlAlert,
-    GlDisclosureDropdown,
-    GlDisclosureDropdownItem,
     DeletePodModal,
-    ConnectToAgentModal,
-  },
-  directives: {
-    GlModalDirective,
   },
   mixins: [trackingMixin],
   inject: ['kasTunnelUrl'],
@@ -128,9 +110,8 @@ export default {
   data() {
     return {
       error: null,
-      failedState: {},
-      podsLoading: false,
       activeTab: k8sResourceType.k8sPods,
+      clusterHealthStatus: '',
       fluxApiError: '',
       podToDelete: {},
       fluxHelmRelease: {},
@@ -146,15 +127,6 @@ export default {
         kasTunnelUrl: this.kasTunnelUrl,
         gitlabAgentId: this.gitlabAgentId,
       });
-    },
-    clusterHealthStatus() {
-      if (this.podsLoading) {
-        return '';
-      }
-      return this.hasFailedState ? CLUSTER_HEALTH_ERROR : CLUSTER_HEALTH_SUCCESS;
-    },
-    hasFailedState() {
-      return Object.values(this.failedState).some((item) => item);
     },
     fluxResourceStatus() {
       const conditions = this.fluxKustomization.conditions || this.fluxHelmRelease.conditions || [];
@@ -173,9 +145,6 @@ export default {
         this.fluxKustomization?.metadata?.namespace || this.fluxHelmRelease?.metadata?.namespace
       );
     },
-    agentProjectPath() {
-      return this.clusterAgent.project?.fullPath || '';
-    },
   },
   methods: {
     handleError(message) {
@@ -185,12 +154,6 @@ export default {
         },
       });
       this.error = message;
-    },
-    handleFailedState(event) {
-      this.failedState = {
-        ...this.failedState,
-        ...event,
-      };
     },
     transformFluxResourceData(item) {
       return {
@@ -294,12 +257,11 @@ export default {
   learnMoreLink: helpPagePath('user/clusters/agent/_index'),
   getStartedLink: helpPagePath('ci/environments/kubernetes_dashboard'),
   CLUSTER_EMPTY_SVG,
-  CONNECT_MODAL_ID,
 };
 </script>
 <template>
   <div v-if="clusterAgent" class="-gl-mt-3 gl-bg-subtle gl-p-5">
-    <div class="gl-flex gl-flex-wrap gl-items-center gl-justify-between">
+    <div class="gl-flex gl-flex-wrap gl-items-start gl-justify-between">
       <kubernetes-agent-info :cluster-agent="clusterAgent" class="gl-mb-2 gl-mr-5 gl-grow" />
       <kubernetes-status-bar
         ref="status_bar"
@@ -315,26 +277,6 @@ export default {
         @error="handleError"
         @show-flux-resource-details="showFluxResourceDetails"
       />
-
-      <gl-disclosure-dropdown
-        :title="$options.i18n.actions"
-        category="tertiary"
-        icon="ellipsis_v"
-        text-sr-only
-        no-caret
-      >
-        <gl-disclosure-dropdown-item v-gl-modal-directive="$options.CONNECT_MODAL_ID">
-          <template #list-item>
-            {{ $options.i18n.connectButtonText }}
-          </template>
-        </gl-disclosure-dropdown-item>
-      </gl-disclosure-dropdown>
-
-      <connect-to-agent-modal
-        :agent-id="clusterAgent.id"
-        :project-path="agentProjectPath"
-        :is-configured="true"
-      />
     </div>
 
     <gl-alert v-if="error" variant="danger" :dismissible="false" class="gl-my-5">
@@ -347,8 +289,7 @@ export default {
       :flux-kustomization="fluxKustomization"
       class="gl-mb-5"
       @cluster-error="handleError"
-      @loading="podsLoading = $event"
-      @update-failed-state="handleFailedState"
+      @update-cluster-state="clusterHealthStatus = $event"
       @select-item="toggleDetailsDrawer"
       @remove-selection="closeDetailsDrawer"
       @delete-pod="onDeletePod"

@@ -35,9 +35,12 @@ $crud-header-min-height: px-to-rem(49px);
         border-right-style: none;
       }
 
+      > [data-label]::before {
+        text-align: left;
+      }
+
       > th {
         border-top-width: $gl-border-size-1;
-        border-bottom-width: 0;
       }
 
       &::after {
@@ -63,10 +66,6 @@ $crud-header-min-height: px-to-rem(49px);
     tr:last-of-type td {
       border-bottom-width: 0;
     }
-
-    tr th, tr td {
-      @apply gl-border-subtle;
-    }
   }
 
   table.gl-table.b-table.b-table-stacked-sm {
@@ -88,12 +87,39 @@ $crud-header-min-height: px-to-rem(49px);
   }
 }
 
+// GLQL: This prevents double borders.
+// The body contains a scrollable table.
+// Remove left and right table borders,
+// as Crud already renders outer borders.
+.crud-body .gl-table-shadow > table {
+  td:first-of-type,
+  th:first-of-type {
+    @apply gl-border-l-0;
+  }
+
+  td:last-of-type,
+  th:last-of-type {
+    @apply gl-border-r-0 #{!important};
+  }
+
+  tr:first-of-type th {
+    @apply gl-border-t-0;
+  }
+
+  tr:last-of-type td {
+    @apply gl-border-b-0;
+  }
+
+  tr:hover td {
+    @apply gl-bg-strong dark:gl-bg-neutral-700;
+  }
+}
+
 .crud-body:has(.content-list) {
   margin: 0;
 
   .content-list > li {
-    padding-inline: $gl-spacing-scale-5;
-    @apply gl-border-b-section #{!important};
+    @apply gl-mx-3 gl-px-3;
   }
 }
 

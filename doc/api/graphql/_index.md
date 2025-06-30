@@ -1,6 +1,6 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Create
+group: Import
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: Programmatic interaction with GitLab.
 title: GraphQL API
@@ -20,7 +20,7 @@ GraphQL data is arranged in types, so your client can use
 [client-side GraphQL libraries](https://graphql.org/community/tools-and-libraries/)
 to consume the API and avoid manual parsing.
 
-The GraphQL API is [versionless](https://graphql.org/learn/best-practices/#versioning).
+The GraphQL API is [versionless](https://graphql.org/learn/schema-design/#versioning).
 
 ## Getting started
 
@@ -211,8 +211,6 @@ To avoid having a breaking change affect your integrations, you should:
 - Familiarize yourself with the [deprecation and removal process](#deprecation-and-removal-process).
 - Frequently [verify your API calls against the future breaking-change schema](#verify-against-the-future-breaking-change-schema).
 
-For more information, see [Deprecating GitLab features](../../development/deprecation_guidelines/_index.md).
-
 For GitLab Self-Managed, [downgrading](../../downgrade_ee_to_ce/_index.md) from an EE instance to CE causes breaking changes.
 
 ### Breaking change exemptions
@@ -296,7 +294,7 @@ The following limits apply to the GitLab GraphQL API.
 
 ### Maximum query complexity
 
-The GitLab GraphQL API scores the _complexity_ of a query. Generally, larger
+The GitLab GraphQL API scores the complexity of a query. Generally, larger
 queries have a higher complexity score. This limit is designed to protecting
 the API from performing queries that could negatively impact its overall performance.
 

@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Using review apps in the development of GitLab
 ---
 
@@ -167,7 +167,7 @@ subgraph "CNG-mirror pipeline"
    use your review app thanks to the direct link to it from the MR widget. To log
    into the review app, see "Sign in to my review app?" below.
 
-**Additional notes:**
+**Additional notes**:
 
 - If the `review-deploy` job keeps failing (and a manual retry didn't help),
   post a message in the `#g_qe_engineering_productivity` channel and/or create a `~"Engineering Productivity"` `~"dx::review apps"` `~"type::bug"`

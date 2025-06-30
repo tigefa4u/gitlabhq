@@ -1,4 +1,4 @@
-import { GlAvatar, GlDisclosureDropdown, GlLoadingIcon, GlLink } from '@gitlab/ui';
+import { GlAvatar, GlDisclosureDropdown, GlLoadingIcon } from '@gitlab/ui';
 import VueApollo from 'vue-apollo';
 import Vue from 'vue';
 
@@ -109,7 +109,7 @@ describe('OrganizationSwitcher', () => {
         await waitForPromises();
 
         expect(findDropdownItemByIndex(1).text()).toContain(firstOrganization.name);
-        expect(findDropdownItemByIndex(1).element.firstChild.getAttribute('href')).toBe(
+        expect(findDropdownItemByIndex(1).find('a').attributes('href')).toBe(
           firstOrganization.webUrl,
         );
         expect(findDropdownItemByIndex(1).findComponent(GlAvatar).props()).toMatchObject({
@@ -119,7 +119,7 @@ describe('OrganizationSwitcher', () => {
         });
 
         expect(findDropdownItemByIndex(2).text()).toContain(secondOrganization.name);
-        expect(findDropdownItemByIndex(2).element.firstChild.getAttribute('href')).toBe(
+        expect(findDropdownItemByIndex(2).find('a').attributes('href')).toBe(
           secondOrganization.webUrl,
         );
         expect(findDropdownItemByIndex(2).findComponent(GlAvatar).props()).toMatchObject({
@@ -184,7 +184,7 @@ describe('OrganizationSwitcher', () => {
         expect(wrapper.text()).toContain(
           'Switching between organizations is not currently supported.',
         );
-        expect(wrapper.findComponent(GlLink).attributes('href')).toBe(
+        expect(wrapper.findByTestId('switching-docs-link').attributes('href')).toBe(
           helpPagePath('user/organization/_index.md', {
             anchor: 'switch-organizations',
           }),

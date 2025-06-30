@@ -11,7 +11,6 @@ module Sidebars
           add_item(general_menu_item)
           add_item(integrations_menu_item)
           add_item(access_tokens_menu_item)
-          add_item(group_projects_menu_item)
           add_item(repository_menu_item)
           add_item(ci_cd_menu_item)
           add_item(applications_menu_item)
@@ -72,15 +71,6 @@ module Sidebars
           )
         end
 
-        def group_projects_menu_item
-          ::Sidebars::MenuItem.new(
-            title: _('Projects'),
-            link: projects_group_path(context.group),
-            active_routes: { path: 'groups#projects' },
-            item_id: :group_projects
-          )
-        end
-
         def repository_menu_item
           ::Sidebars::MenuItem.new(
             title: _('Repository'),
@@ -114,7 +104,7 @@ module Sidebars
           ::Sidebars::MenuItem.new(
             title: s_('UsageQuota|Usage Quotas'),
             link: group_usage_quotas_path(context.group),
-            active_routes: { path: 'usage_quotas#index' },
+            active_routes: { path: 'usage_quotas#root' },
             item_id: :usage_quotas
           )
         end

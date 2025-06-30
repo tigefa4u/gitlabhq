@@ -4,6 +4,7 @@ group: Source Code
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: How to create, clone, and use GitLab repositories.
 title: Repository
+description: Version control, code storage, Git repositories, and repository monitoring.
 ---
 
 {{< details >}}
@@ -13,9 +14,12 @@ title: Repository
 
 {{< /details >}}
 
-A [repository](https://git-scm.com/book/en/v2/Git-Basics-Getting-a-Git-Repository)
-is where you store your code, make changes, and track changes using version control.
-Each [project](../_index.md) contains a repository and a repository cannot exist without a project.
+Your [repository](https://git-scm.com/book/en/v2/Git-Basics-Getting-a-Git-Repository) is a component
+of your GitLab project. You store your code in your repository, and track changes to it with version
+control.
+
+Each repository is part of a [GitLab project](../_index.md), and cannot exist without a GitLab project.
+Your project provides the configuration options for your repository.
 
 ## Create a repository
 
@@ -79,17 +83,17 @@ To download the source code stored in a repository:
 1. Above the file list, select **Code**.
 1. From the options, select the files you want to download:
 
-   - **Source code:**
+   - **Source code**:
 
      Download the source code from the current branch you're viewing.
      Available extensions: `zip`, `tar`, `tar.gz`, and `tar.bz2`.
 
-   - **Directory:**
+   - **Directory**:
 
      Download a specific directory. Visible only when you view a subdirectory.
      Available extensions: `zip`, `tar`, `tar.gz`, and `tar.bz2`.
 
-   - **Artifacts:**
+   - **Artifacts**:
 
      Download the artifacts from the latest CI/CD job.
 

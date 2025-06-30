@@ -39,12 +39,6 @@ Merge request approvals can be configured globally to apply across all (or a sub
 
 ## Add an approval rule
 
-{{< history >}}
-
-- Approval rules for all protected branches introduced in GitLab 15.3.
-
-{{< /history >}}
-
 Prerequisites:
 
 - You must have at least the Maintainer role for the project.
@@ -127,11 +121,13 @@ For an overview, see [Multiple Approvers](https://www.youtube.com/watch?v=8JQJ58
 
 ## Eligible approvers
 
-To be eligible as an approver for a project, a user must be a member of at least one of the following:
+To be eligible as an approver for your project, a user must be a direct member of at least one of the following:
 
-- The project.
-- The project's immediate parent [group](#group-approvers).
-- A group that has been [shared](../../members/sharing_projects_groups.md) with the project.
+- Your project.
+- Your project's group.
+- Any of your project's group's parent groups.
+- Another group that has been [shared with your project](../../members/sharing_projects_groups.md#sharing-projects).
+- Another group that has been [shared with your project's group or any of the group's parents](../../members/sharing_projects_groups.md#sharing-groups).
 - A [group added as approvers](#group-approvers).
 
 Users with the Developer role can approve merge requests if one of the following is true:
@@ -140,13 +136,12 @@ Users with the Developer role can approve merge requests if one of the following
 - Users who are [Code owners](#code-owners-as-eligible-approvers) of the files
   changed in the merge request.
 
-Users with the Reporter role can approve only if both of the following are true:
+Users with the Reporter role can approve only if all of the following are true:
 
 - The users are part of a group that has been [shared](../../members/sharing_projects_groups.md) with the project.
   The group must have at least the Reporter role.
 - The group has been added as merge request approvers.
-
-For detailed instructions, see [Merge request approval segregation of duties](#enable-approval-permissions-for-users-with-the-reporter-role).
+- Approval permissions for users with the reporter role [are enabled](#enable-approval-permissions-for-users-with-the-reporter-role).
 
 To show who has participated in the merge request review, the Approvals widget in
 a merge request displays a **Commented by** column. This column lists eligible approvers
@@ -163,30 +158,33 @@ users were not explicitly listed in the approval rules.
 To get email notifications every time a merge request you're eligible to approve is created:
 
 - [Set your notification level](../../../profile/notifications.md#edit-notification-settings) to **Custom**
-and select this event.
+and select the **Merge request you're eligible to approve is created** event.
 
 ### Group approvers
 
-You can add a group of users as approvers. All **direct members** of this group
-can approve the rule. **Inherited members** cannot approve the rule.
+You can add a group of users as approvers. All direct members of this group
+can approve the rule. Inherited members cannot approve the rule.
 
 Typically the group is a subgroup in your top-level namespace, unless you are
-collaborating with an external group. If you are collaborating with another group,
-you must [share access to the project](../../members/sharing_projects_groups.md)
-before assigning the group as a group approver.
+collaborating with an external group. If you are collaborating with another group
+and want to use members of that group as approvers, you can either:
+
+- [Share access to the project](../../members/sharing_projects_groups.md#sharing-projects).
+- [Share access to your project's group](../../members/sharing_projects_groups.md#sharing-groups),
+  which gives the external group approval access to all projects in your project's group.
 
 A user's membership in an approver group determines their individual approval permissions
 in the following ways:
 
 - Inherited members are not considered approvers. Only direct members can approve merge requests.
-- A user from a group approver group who is later _also_ added as an individual approver
+- A user from a group approver group who is later also added as an individual approver
   counts as one approver, not two.
 - Merge request authors do not count as eligible approvers on their own merge requests by default.
   To change this behavior, disable the
   [**Prevent author approval**](settings.md#prevent-approval-by-author)
   project setting.
-- Committers to merge requests can approve a merge request. To change this behavior, enable the
-  [**Prevent committers approval**](settings.md#prevent-approvals-by-users-who-add-commits)
+- By default, committers to merge requests can approve a merge request. To change this behavior, enable
+  the [**Prevent committers approval**](settings.md#prevent-approvals-by-users-who-add-commits)
   project setting.
 
 ### Code owners as eligible approvers
@@ -200,7 +198,7 @@ become eligible approvers in the project. To enable this merge request approval 
 1. In the **Approvals required** column, enter the number of approvals required.
 
 You can also
-[require code owner approval](../../repository/branches/protected.md#require-code-owner-approval-on-a-protected-branch)
+[require code owner approval](../../repository/branches/protected.md#require-code-owner-approval)
 for protected branches.
 
 ## Enable approval permissions for users with the Reporter role
@@ -210,9 +208,13 @@ permission to approve merge requests.
 Some users (like managers) might not need permission to push or merge code, but still need
 oversight on proposed work.
 
+Users with the Reporter role can approve merge requests only through regular approval rules.
+Code owner approval rules require users to have at least the Developer role. For more information,
+see [Eligible approvers](#eligible-approvers).
+
 Prerequisites:
 
-- You must select a specific branch, as this method does **not** work with `All Branches` or `All protected branches` settings.
+- You must select a specific branch, as this method does not work with `All Branches` or `All protected branches` settings.
 - The shared group must be added to an approval rule and not individual users, even when the added user is part of the group.
 
 To enable approval permissions for these users without granting them push access:
@@ -281,12 +283,6 @@ To make an approval rule optional, you can also [use the API](../../../../api/me
 
 ## Approvals for protected branches
 
-{{< history >}}
-
-- **All protected branches** target branch option [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/360930) in GitLab 15.3.
-
-{{< /history >}}
-
 Approval rules are often relevant only to specific branches, like your
 [default branch](../../repository/branches/default.md). To configure an
 approval rule for certain branches:
@@ -298,7 +294,7 @@ approval rule for certain branches:
    - To apply the rule to all protected branches, select **All protected branches**.
    - To apply the rule to a specific branch, select it from the list.
 1. To enable this configuration, follow
-   [Require Code Owner approval on a protected branch](../../repository/branches/protected.md#require-code-owner-approval-on-a-protected-branch).
+   [Require Code Owner approval on a protected branch](../../repository/branches/protected.md#require-code-owner-approval).
 
 ## Security Approvals
 
@@ -311,8 +307,7 @@ approval rule for certain branches:
 
 {{< history >}}
 
-- Security approvals moved to merge request approvals settings [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/357021) in GitLab 15.0.
-- Bot comment for approvals [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/411656) in GitLab 16.2 [with a flag](../../../../administration/feature_flags.md) named `security_policy_approval_notification`. Enabled by default.
+- Bot comment for approvals [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/411656) in GitLab 16.2 [with a flag](../../../../administration/feature_flags/_index.md) named `security_policy_approval_notification`. Enabled by default.
 - Bot comment for approvals [generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/130827) in GitLab 16.3. Feature flag `security_policy_approval_notification` removed.
 
 {{< /history >}}

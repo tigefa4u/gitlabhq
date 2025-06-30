@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Set up Geo for two single-node sites (with external PostgreSQL services)
@@ -29,7 +29,7 @@ Prerequisites:
 Prerequisites:
 
 - You use PostgreSQL 12 or later,
-  which includes the [`pg_basebackup` tool](https://www.postgresql.org/docs/12/app-pgbasebackup.html).
+  which includes the [`pg_basebackup` tool](https://www.postgresql.org/docs/16/app-pgbasebackup.html).
 
 ### Configure the primary site
 
@@ -67,7 +67,7 @@ Prerequisites:
 
 To set up an external database, you can either:
 
-- Set up [streaming replication](https://www.postgresql.org/docs/12/warm-standby.html#STREAMING-REPLICATION-SLOTS) yourself (for example Amazon RDS, or bare metal not managed by the Linux package).
+- Set up [streaming replication](https://www.postgresql.org/docs/16/warm-standby.html#STREAMING-REPLICATION-SLOTS) yourself (for example Amazon RDS, or bare metal not managed by the Linux package).
 - Manually perform the configuration of your Linux package installations as follows.
 
 #### Leverage your cloud provider's tools to replicate the primary database
@@ -322,7 +322,7 @@ secondary site is a read-only copy.
    1. Select **Geo > Sites**.
    1. Select **Add site**.
 
-      ![Form to add a new secondary Geo site](../replication/img/adding_a_secondary_v15_8.png)
+      ![Form to add a new secondary Geo site](img/adding_a_secondary_v15_8.png)
 
    1. In **Name**, enter the value for `gitlab_rails['geo_node_name']` in
       `/etc/gitlab/gitlab.rb`. The values must match exactly.
@@ -397,7 +397,7 @@ The initial replication might take some time.
 You can monitor the synchronization process on each Geo site from the primary
 site **Geo Sites** dashboard in your browser.
 
-![Geo admin dashboard showing the synchronization status of a secondary site.](../replication/img/geo_dashboard_v14_0.png)
+![Geo admin dashboard showing the synchronization status of a secondary site.](img/geo_dashboard_v14_0.png)
 
 ## Configure the tracking database
 
@@ -488,7 +488,7 @@ Configure GitLab to use this database. These steps are for Linux package and Doc
 
 #### Manually set up the database schema (optional)
 
-The reconfigure in the [steps above](#configure-gitlab) handles these steps automatically. These steps are provided in case something went wrong.
+The reconfigure command in the [previously listed steps](#configure-gitlab) handles these steps automatically. These steps are provided in case something went wrong.
 
 1. This task creates the database schema. It requires the database user to be a superuser.
 

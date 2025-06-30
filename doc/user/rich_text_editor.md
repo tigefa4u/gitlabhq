@@ -14,7 +14,7 @@ title: Rich text editor
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/371931) for editing issue descriptions in GitLab 15.5 [with a flag](../administration/feature_flags.md) named `content_editor_on_issues`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/371931) for editing issue descriptions in GitLab 15.5 [with a flag](../administration/feature_flags/_index.md) named `content_editor_on_issues`. Disabled by default.
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/382636) for [discussions](discussions/_index.md), and creating and editing issues and merge requests in GitLab 15.11 with the same flag.
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/407507) for epics in GitLab 16.1 with the same flag.
 - Feature flag `content_editor_on_issues` enabled by default in GitLab 16.2.
@@ -78,7 +78,7 @@ Supported input rules:
 | `~~strike~~`                                              | Strikethrough        |
 | `[link](https://example.com)`                             | Hyperlink            |
 | `code`                                                    | Inline code          |
-| <code>&#96;&#96;&#96;rb</code> + <kbd>Enter</kbd> <br> <code>&#96;&#96;&#96;js</code> + <kbd>Enter</kbd> | Code block           |
+| ` ```rb ` + <kbd>Enter</kbd> <br> ` ```js ` + <kbd>Enter</kbd> | Code block      |
 | `* List item`, or<br> `- List item`, or<br> `+ List item` | Unordered list       |
 | `1. List item`                                            | Numbered list        |
 | `<details>`                                               | Collapsible section  |

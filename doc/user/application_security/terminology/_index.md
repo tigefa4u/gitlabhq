@@ -3,6 +3,7 @@ stage: Application Security Testing
 group: Static Analysis
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Security glossary
+description: Definitions for terms related to security features in GitLab.
 ---
 
 {{< details >}}
@@ -21,7 +22,7 @@ a report containing findings. Reports adhere to the [Secure report format](#secu
 
 Analyzers integrate into GitLab using a CI job. The report produced by the analyzer is published as
 an artifact after the job is complete. GitLab ingests this report, allowing users to visualize and
-manage found vulnerabilities. For more information, see [Security Scanner Integration](../../../development/integrations/secure.md).
+manage found vulnerabilities.
 
 Many GitLab analyzers follow a standard approach using Docker to run a wrapped scanner. For example,
 the image `semgrep` is an analyzer that wraps the scanner `Semgrep`.
@@ -71,7 +72,7 @@ you can use to identify and describe these weaknesses in terms of CWEs.
 ## Deduplication
 
 When a category's process deems findings to be the same, or if they are similar enough that a noise reduction is
-required, only one finding is kept and the others are eliminated. Read more about the [deduplication process](../vulnerability_report/pipeline.md#deduplication-process).
+required, only one finding is kept and the others are eliminated. Read more about the [deduplication process](../detect/vulnerability_deduplication.md).
 
 ## Dependency graph export
 
@@ -129,8 +130,8 @@ incorporates file path and line number.
 ## Lock file
 
 A lock file exhaustively lists both the direct and indirect dependencies of an application to ensure reproducible builds
-by a package manager. It _may_ also be a [dependency graph export](#dependency-graph-export) like in the case of a
-`Gemfile.lock` file, but listing dependency relationships is _not_ a requirement or guaranteed.
+by a package manager. It may also be a [dependency graph export](#dependency-graph-export) like in the case of a
+`Gemfile.lock` file, but listing dependency relationships is not a requirement or guaranteed.
 
 ## Package managers and package types
 
@@ -243,7 +244,7 @@ A page that displays findings discovered in the associated CI pipeline.
 A software component that is possibly affected by vulnerability. For example, when scanning a
 project for known vulnerabilities, components are first evaluated to see if they match the name
 and [package type](https://github.com/package-url/purl-spec/blob/master/PURL-TYPES.rst).
-During this stage, they're _possibly_ affected by the vulnerability, and are only [known to be affected](#known-affected-component)
+During this stage, they're possibly affected by the vulnerability, and are only [known to be affected](#known-affected-component)
 after it's confirmed that they fall in the affected version range.
 
 ## Post-filter

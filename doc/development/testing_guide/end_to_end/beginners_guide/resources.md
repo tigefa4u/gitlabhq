@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Resource classes in GitLab QA
 ---
 
@@ -336,7 +336,7 @@ module QA
 end
 ```
 
-**Notes on attributes precedence:**
+**Notes on attributes precedence**:
 
 - resource instance variables have the highest precedence
 - attributes from the API response take precedence over attributes from the

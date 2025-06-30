@@ -29,6 +29,8 @@ module Environments
       end
 
       if environment.stopped? || environment.stopping?
+        delete_managed_resources(environment)
+
         ServiceResponse.success(payload: { environment: environment, actions: actions })
       else
         ServiceResponse.error(
@@ -52,17 +54,32 @@ module Environments
       created_environments = merge_request.created_environments
 
       if created_environments.any?
-        # This log message can be removed with https://gitlab.com/gitlab-org/gitlab/-/issues/372965
-        Gitlab::AppJsonLogger.info(message: 'Running new dynamic environment stop logic', project_id: project.id)
-        created_environments.each { |env| execute(env) }
+        created_environments.each do |env|
+          # This log message can be removed with https://gitlab.com/gitlab-org/gitlab/-/issues/372965
+          Gitlab::AppJsonLogger.info(
+            message: 'Running new dynamic environment stop logic',
+            project_id: project.id,
+            environment_id: env.id,
+            merge_request_id: merge_request.id,
+            pipeline_id: merge_request.diff_head_pipeline.id
+          )
+
+          execute(env)
+        end
       else
         environments_in_head_pipeline = merge_request.environments_in_head_pipeline(deployment_status: :success)
-        environments_in_head_pipeline.each { |env| execute(env) }
 
-        if environments_in_head_pipeline.any?
-          # If we don't see a message often, we'd be able to remove this path. (or likely in GitLab 16.0)
-          # See https://gitlab.com/gitlab-org/gitlab/-/issues/372965
-          Gitlab::AppJsonLogger.info(message: 'Running legacy dynamic environment stop logic', project_id: project.id)
+        environments_in_head_pipeline.each do |env|
+          # This log message can be removed with https://gitlab.com/gitlab-org/gitlab/-/issues/372965
+          Gitlab::AppJsonLogger.info(
+            message: 'Running legacy dynamic environment stop logic',
+            project_id: project.id,
+            environment_id: env.id,
+            merge_request_id: merge_request.id,
+            pipeline_id: merge_request.diff_head_pipeline.id
+          )
+
+          execute(env)
         end
       end
     end
@@ -73,6 +90,10 @@ module Environments
       @environments ||= Environments::EnvironmentsByDeploymentsFinder
         .new(project, current_user, ref: @ref, recently_updated: true)
         .execute
+    end
+
+    def delete_managed_resources(environment)
+      Environments::DeleteManagedResourcesService.new(environment, current_user:).execute
     end
   end
 end

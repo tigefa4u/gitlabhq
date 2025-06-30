@@ -31,7 +31,6 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
   end
 
   it { is_expected.to belong_to(:runner) }
-  it { is_expected.to belong_to(:trigger_request) }
   it { is_expected.to belong_to(:erased_by) }
   it { is_expected.to belong_to(:pipeline).inverse_of(:builds) }
   it { is_expected.to belong_to(:execution_config).class_name('Ci::BuildExecutionConfig').inverse_of(:builds) }
@@ -117,6 +116,14 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
       end
     end
 
+    describe 'created_before' do
+      subject { described_class.created_before(1.day.ago) }
+
+      it 'returns the builds created before the given time' do
+        is_expected.to contain_exactly(old_build)
+      end
+    end
+
     describe 'updated_after' do
       subject { described_class.updated_after(1.day.ago) }
 
@@ -145,6 +152,16 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
         is_expected.to contain_exactly(new_build)
       end
     end
+
+    describe 'with_token_present' do
+      it 'returns the builds with a non nil token' do
+        expect(described_class.with_token_present).to include(old_build)
+
+        old_build.remove_token!
+
+        expect(described_class.with_token_present).not_to include(old_build)
+      end
+    end
   end
 
   describe 'callbacks' do
@@ -170,6 +187,18 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
             project: project,
             additional_properties: { property: name }
           )
+      end
+    end
+
+    describe 'job status update subscription trigger' do
+      %w[cancel! drop! run! skip! success!].each do |action|
+        context "when build receives #{action} event" do
+          it 'triggers GraphQL subscription ciJobStatusUpdated' do
+            expect(GraphqlTriggers).to receive(:ci_job_status_updated).with(build)
+
+            build.public_send(action)
+          end
+        end
       end
     end
   end
@@ -301,6 +330,10 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
   describe '.with_live_trace' do
     subject { described_class.with_live_trace }
 
+    before do
+      stub_application_setting(ci_job_live_trace_enabled: true)
+    end
+
     context 'when build has live trace' do
       let!(:build) { create(:ci_build, :success, :trace_live, pipeline: pipeline) }
 
@@ -320,6 +353,10 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
 
   describe '.with_stale_live_trace' do
     subject { described_class.with_stale_live_trace }
+
+    before do
+      stub_application_setting(ci_job_live_trace_enabled: true)
+    end
 
     context 'when build has a stale live trace' do
       let!(:build) { create(:ci_build, :success, :trace_live, finished_at: 1.day.ago, pipeline: pipeline) }
@@ -2524,7 +2561,7 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
           { key: 'CI_NODE_TOTAL', value: '1', public: true, masked: false },
           { key: 'CI', value: 'true', public: true, masked: false },
           { key: 'GITLAB_CI', value: 'true', public: true, masked: false },
-          { key: 'CI_SERVER_FQDN', value: Gitlab.config.gitlab_ci.server_fqdn, public: true, masked: false },
+          { key: 'CI_SERVER_FQDN', value: Gitlab.config.gitlab.server_fqdn, public: true, masked: false },
           { key: 'CI_SERVER_URL', value: Gitlab.config.gitlab.url, public: true, masked: false },
           { key: 'CI_SERVER_HOST', value: Gitlab.config.gitlab.host, public: true, masked: false },
           { key: 'CI_SERVER_PORT', value: Gitlab.config.gitlab.port.to_s, public: true, masked: false },
@@ -2553,6 +2590,7 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
           { key: 'CI_PROJECT_REPOSITORY_LANGUAGES', value: project.repository_languages.map(&:name).join(',').downcase, public: true, masked: false },
           { key: 'CI_PROJECT_CLASSIFICATION_LABEL', value: project.external_authorization_classification_label, public: true, masked: false },
           { key: 'CI_DEFAULT_BRANCH', value: project.default_branch, public: true, masked: false },
+          { key: 'CI_DEFAULT_BRANCH_SLUG', value: Gitlab::Utils.slugify(project.default_branch.to_s), public: true, masked: false },
           { key: 'CI_CONFIG_PATH', value: project.ci_config_path_or_default, public: true, masked: false },
           { key: 'CI_PAGES_DOMAIN', value: Gitlab.config.pages.host, public: true, masked: false },
           { key: 'CI_PAGES_HOSTNAME', value: pages_hostname, public: true, masked: false },
@@ -3315,8 +3353,6 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
     end
 
     context 'for deploy tokens' do
-      let(:deploy_token) { create(:deploy_token, :gitlab_deploy_token) }
-
       let(:deploy_token_variables) do
         [
           { key: 'CI_DEPLOY_USER', value: deploy_token.username, public: true, masked: false },
@@ -3325,9 +3361,7 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
       end
 
       context 'when gitlab-deploy-token exists for project' do
-        before do
-          project.deploy_tokens << deploy_token
-        end
+        let!(:deploy_token) { create(:deploy_token, :gitlab_deploy_token, projects: [project]) }
 
         it 'includes deploy token variables' do
           is_expected.to include(*deploy_token_variables)
@@ -3341,9 +3375,7 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
         end
 
         context 'when gitlab-deploy-token exists for group' do
-          before do
-            group.deploy_tokens << deploy_token
-          end
+          let!(:deploy_token) { create(:deploy_token, :gitlab_deploy_token, :group, groups: [group]) }
 
           it 'includes deploy token variables' do
             is_expected.to include(*deploy_token_variables)
@@ -4938,77 +4970,8 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
     end
   end
 
-  describe '#degenerated?' do
-    context 'when build is degenerated' do
-      subject { create(:ci_build, :degenerated, pipeline: pipeline) }
-
-      it { is_expected.to be_degenerated }
-    end
-
-    context 'when build is valid' do
-      subject { create(:ci_build, pipeline: pipeline) }
-
-      it { is_expected.not_to be_degenerated }
-
-      context 'and becomes degenerated' do
-        before do
-          subject.degenerate!
-        end
-
-        it { is_expected.to be_degenerated }
-      end
-    end
-  end
-
-  describe 'degenerate!' do
-    let(:build) { create(:ci_build, pipeline: pipeline) }
-
-    subject { build.degenerate! }
-
-    before do
-      build.ensure_metadata
-      build.needs.create!(name: 'another-job')
-    end
-
-    it 'drops metadata' do
-      subject
-
-      expect(build.reload).to be_degenerated
-      expect(build.metadata).to be_nil
-      expect(build.needs).to be_empty
-    end
-  end
-
-  describe '#archived?' do
-    before do
-      pipeline.update!(created_at: 1.day.ago)
-    end
-
-    context 'when build is degenerated' do
-      subject { build_stubbed(:ci_build, :degenerated, pipeline: pipeline) }
-
-      it { is_expected.to be_archived }
-    end
-
-    context 'for old pipelines' do
-      subject { build_stubbed(:ci_build, pipeline: pipeline) }
-
-      context 'when archive_builds_in is set' do
-        before do
-          stub_application_setting(archive_builds_in_seconds: 3600)
-        end
-
-        it { is_expected.to be_archived }
-      end
-
-      context 'when archive_builds_in is not set' do
-        before do
-          stub_application_setting(archive_builds_in_seconds: nil)
-        end
-
-        it { is_expected.not_to be_archived }
-      end
-    end
+  it_behaves_like 'a degenerable job' do
+    subject(:job) { create(:ci_build, pipeline: pipeline) }
   end
 
   describe '#read_metadata_attribute' do
@@ -5310,12 +5273,23 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
       it { is_expected.to eq false }
     end
 
-    context 'when metadata does not exist' do
+    context 'when metadata does not exist but job is not degenerated' do
       before do
-        build.metadata.destroy!
+        # Very old jobs populated this column instead of metadata
+        build.update_column(:options, { my_config: 'value' })
+        build.metadata.delete
+        build.reload
       end
 
       it { is_expected.to eq false }
+    end
+
+    context 'when job is degenerated' do
+      before do
+        build.degenerate!
+      end
+
+      it { is_expected.to eq true }
     end
   end
 
@@ -5664,7 +5638,7 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
     it 'delegates to Ci::BuildTraceMetadata' do
       expect(Ci::BuildTraceMetadata)
         .to receive(:find_or_upsert_for!)
-        .with(build.id, build.partition_id)
+        .with(build.id, build.partition_id, build.project_id)
 
       build.ensure_trace_metadata!
     end
@@ -5782,13 +5756,31 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
     end
   end
 
-  it_behaves_like 'it has loose foreign keys' do
-    let(:factory_name) { :ci_build }
-  end
+  describe 'loose foreign keys' do
+    it_behaves_like 'it has loose foreign keys' do
+      let(:factory_name) { :ci_build }
+    end
 
-  it_behaves_like 'cleanup by a loose foreign key' do
-    let!(:model) { create(:ci_build, user: create(:user), pipeline: pipeline) }
-    let!(:parent) { model.user }
+    context 'with loose foreign key on users.id' do
+      it_behaves_like 'cleanup by a loose foreign key' do
+        let!(:model) { create(:ci_build, user: create(:user), pipeline: pipeline) }
+        let!(:parent) { model.user }
+      end
+    end
+
+    context 'with loose foreign key on projects.id' do
+      it_behaves_like 'cleanup by a loose foreign key' do
+        let!(:model) { create(:ci_build, pipeline: pipeline) }
+        let!(:parent) { model.project }
+      end
+    end
+
+    context 'with loose foreign key on ci_runners.id' do
+      it_behaves_like 'cleanup by a loose foreign key' do
+        let!(:model) { create(:ci_build, runner: create(:ci_runner), pipeline: pipeline) }
+        let!(:parent) { model.runner }
+      end
+    end
   end
 
   describe '#clone' do
@@ -6155,7 +6147,7 @@ RSpec.describe Ci::Build, feature_category: :continuous_integration, factory_def
     before do
       allow(::Ci::JobToken::Jwt).to receive(:encode).with(build).and_return(jwt_token)
       build.set_token(database_token)
-      allow(build).to receive_message_chain(:user, :has_composite_identity?).and_return(composite_identity?)
+      allow(build).to receive_message_chain(:user, :composite_identity_enforced?).and_return(composite_identity?)
       allow(build).to receive_message_chain(:namespace, :root_ancestor, :namespace_settings, :jwt_ci_cd_job_token_enabled?)
         .and_return(jwt_enabled?)
     end

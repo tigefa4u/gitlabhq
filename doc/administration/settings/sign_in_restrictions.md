@@ -2,17 +2,18 @@
 stage: none
 group: unassigned
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+gitlab_dedicated: yes
 title: Sign-in restrictions
 ---
 
 {{< details >}}
 
 - Tier: Free, Premium, Ultimate
-- Offering: GitLab Self-Managed
+- Offering: GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 
-You can use **Sign-in restrictions** to customize authentication restrictions for web interfaces as well as Git over HTTP(S).
+Use sign-in restrictions to customize authentication restrictions for web interfaces, and Git over HTTP(S).
 
 ## Settings
 
@@ -57,7 +58,7 @@ When Admin Mode is enabled, it applies to all administrators on the instance.
 When Admin Mode is enabled for an instance, administrators:
 
 - Are allowed to access group and projects for which they are members.
-- Cannot access the **Admin area**.
+- Cannot access the **Admin** area.
 
 ### Enable Admin Mode for your instance
 
@@ -76,6 +77,12 @@ Replace `<gitlab.example.com>` with your instance URL.
 For more information, see the [list of settings that can be accessed through API calls](../../api/settings.md).
 
 #### Use the Rails console to enable Admin Mode
+
+{{< details >}}
+
+- Offering: GitLab Self-Managed
+
+{{< /details >}}
 
 Open the [Rails console](../operations/rails_console.md) and run the following:
 
@@ -115,7 +122,7 @@ authentication are supported by Admin Mode. Admin Mode status is stored in the c
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/438674) in GitLab 16.10 [with a flag](../feature_flags.md) named `show_admin_mode_within_active_sessions`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/438674) in GitLab 16.10 [with a flag](../feature_flags/_index.md) named `show_admin_mode_within_active_sessions`. Disabled by default.
 - [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/444188) in GitLab 16.10.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/438674) in GitLab 17.0. Feature flag `show_admin_mode_within_active_sessions` removed.
 
@@ -140,7 +147,7 @@ To turn off Admin Mode for your current session:
 
 Admin Mode times out after six hours, and you cannot change this timeout limit.
 
-The following access methods are **not** protected by Admin Mode:
+The following access methods are not protected by Admin Mode:
 
 - Git client access (SSH using public keys or HTTPS using Personal access tokens).
 
@@ -159,13 +166,13 @@ on a secondary node. A fix is proposed when projects ([issue 367926](https://git
 
 If necessary, you can disable **Admin Mode** as an administrator by using one of these two methods:
 
-- **API**:
+- API:
 
   ```shell
   curl --request PUT --header "PRIVATE-TOKEN:$ADMIN_TOKEN" "<gitlab-url>/api/v4/application/settings?admin_mode=false"
   ```
 
-- [**Rails console**](../operations/rails_console.md#starting-a-rails-console-session):
+- [Rails console](../operations/rails_console.md#starting-a-rails-console-session):
 
   ```ruby
   ::Gitlab::CurrentSettings.update!(admin_mode: false)
@@ -207,6 +214,12 @@ To add a help message to the sign-in page, [customize your sign-in and register 
 ## Troubleshooting
 
 ### Re-enable standard web sign-in form in rails console
+
+{{< details >}}
+
+- Offering: GitLab Self-Managed
+
+{{< /details >}}
 
 Re-enable the standard username and password-based sign-in form if it was disabled as a [Sign-in restriction](#password-authentication-enabled).
 

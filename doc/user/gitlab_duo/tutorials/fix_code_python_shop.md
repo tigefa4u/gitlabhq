@@ -17,8 +17,9 @@ errors and delayed updates. Your team needs to create a web application that can
 - Prevent common data entry errors, like negative prices or quantities.
 - Provide a foundation for future customer-facing features.
 
-This tutorial guides you through creating and debugging a [Python](https://www.python.org/)
-web application with a database backend that meets these requirements.
+This tutorial is part one in a series, and guides you through creating and debugging
+a [Python](https://www.python.org/) web application with a database backend
+that meets these requirements.
 
 You'll use [GitLab Duo Chat](../../gitlab_duo_chat/_index.md)
 and [GitLab Duo Code Suggestions](../../project/repository/code_suggestions/_index.md)
@@ -39,9 +40,7 @@ to help you:
 
 - [Install the latest version of Python](https://www.python.org/downloads/) on your system.
   You can ask Chat how to do that for your operating system.
-- Make sure your organization has purchased a
-  [GitLab Duo add-on subscription (either GitLab Duo Pro or Duo Enterprise)](https://about.gitlab.com/gitlab-duo/#pricing),
-  and your administrator has [assigned you a seat](../../../subscriptions/subscription-add-ons.md#assign-gitlab-duo-seats).
+- Confirm with an administrator, group owner, or project owner that you have access to GitLab Duo.
 - Install an extension in your preferred IDE:
   - [Web IDE](../../project/web_ide/_index.md): Access through your GitLab instance
   - [VS Code](../../../editor_extensions/visual_studio_code/setup.md)
@@ -59,7 +58,7 @@ web application. Multiple ways exist to use these features.
 
 ### Use GitLab Duo Chat
 
-You can use Chat in the GitLab UI, the Web IDE, or in your IDE.
+Depending on your subscription add-on, you can use Chat in the GitLab UI, the Web IDE, or your IDE.
 
 #### Use Chat in the GitLab UI
 
@@ -531,17 +530,17 @@ python-shop-app/
 1. Open the `shop.py` file. To use Code Suggestions, enter this comment
    at the top of the file:
 
-  ```plaintext
-  # Create Flask routes for a bookstore inventory system
-  # Include routes for:
-  # - Getting all books (GET /books)
-  # - Getting a single book by ID (GET /books/<id>)
-  # - Adding a new book (POST /books)
-  # - Updating a book (PUT /books/<id>)
-  # - Deleting a book (DELETE /books/<id>)
-  # Use the Article class from models.article and database from database.py
-  # Include proper error handling and HTTP status codes
-  ```
+   ```plaintext
+   # Create Flask routes for a bookstore inventory system
+   # Include routes for:
+   # - Getting all books (GET /books)
+   # - Getting a single book by ID (GET /books/<id>)
+   # - Adding a new book (POST /books)
+   # - Updating a book (PUT /books/<id>)
+   # - Deleting a book (DELETE /books/<id>)
+   # Use the Article class from models.article and database from database.py
+   # Include proper error handling and HTTP status codes
+   ```
 
 1. Review the generated code. It should include:
 
@@ -560,25 +559,25 @@ python-shop-app/
 1. If the generated code doesn't fully meet your needs, or you want to understand
    how to improve it, you can ask Chat from within the `shop.py` file:
 
-  ```plaintext
-  Can you suggest improvements for my Flask routes in this shop.py file?
-  I want to ensure that:
-  1. The routes follow RESTful API design principles
-  2. Responses include appropriate HTTP status codes
-  3. Input validation is handled properly
-  4. The code follows Flask best practices
-  ```
+   ```plaintext
+   Can you suggest improvements for my Flask routes in this shop.py file?
+   I want to ensure that:
+   1. The routes follow RESTful API design principles
+   2. Responses include appropriate HTTP status codes
+   3. Input validation is handled properly
+   4. The code follows Flask best practices
+   ```
 
 1. You also need to create the Flask application instance in the `__init__.py`
    file inside the `app` directory. Open this file and use Code Suggestions to
    generate the appropriate code:
 
-  ```plaintext
-  # Create a Flask application factory
-  # Configure the app with settings from environment variables
-  # Register the shop blueprint
-  # Return the configured app
-  ```
+   ```plaintext
+   # Create a Flask application factory
+   # Configure the app with settings from environment variables
+   # Register the shop blueprint
+   # Return the configured app
+   ```
 
 1. Save both files.
 
@@ -1396,8 +1395,11 @@ GitLab Duo Chat and Code Suggestions to build working online shop application.
 If it is not working, then you need to find out why. Chat and Code Suggestions
 can help you create tests to ensure your application works as expected and
 identify any issues that need to be fixed.
-[Issue 1284](https://gitlab.com/gitlab-org/technical-writing/team-tasks/-/issues/1284)
-exists to create this tutorial.
+
+<!-- markdownlint-disable -->
+<i class="fa-youtube-play" aria-hidden="true"></i>
+For more information, see [Using Duo /fix](https://youtu.be/agTqx__j6Ko?si=vpLfVvmFVcBivB1g).
+<!-- Video published on 2025-02-13 -->
 
 ## Related topics
 
@@ -1411,4 +1413,7 @@ exists to create this tutorial.
 - <i class="fa-youtube-play" aria-hidden="true"></i>
   [GitLab Duo Code Suggestions](https://youtu.be/ds7SG1wgcVM?si=MfbzPIDpikGhoPh7)
 <!-- Video published on 2024-01-24 -->
+- <i class="fa-youtube-play" aria-hidden="true"></i>
+  [Application modernization with GitLab Duo (C++ to Java)](https://youtu.be/FjoAmt5eeXA?si=SLv9Mv8eSUAVwW5Z)
+<!-- Video published on 2025-03-18 -->
 <!-- markdownlint-enable -->

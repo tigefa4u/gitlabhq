@@ -4,6 +4,7 @@ import { GlCollapsibleListbox, GlButton, GlAvatar, GlIcon } from '@gitlab/ui';
 import { __ } from '~/locale';
 import { InternalEvents } from '~/tracking';
 import { DEFAULT_DEBOUNCE_AND_THROTTLE_MS } from '~/lib/utils/constants';
+import { uuids } from '~/lib/utils/uuids';
 import { TYPENAME_MERGE_REQUEST } from '~/graphql_shared/constants';
 import { convertToGraphQLId } from '~/graphql_shared/utils';
 import userAutocompleteWithMRPermissionsQuery from '~/graphql_shared/queries/project_autocomplete_users_with_mr_permissions.query.graphql';
@@ -14,6 +15,11 @@ import {
   SEARCH_SELECT_REVIEWER_EVENT,
   SELECT_REVIEWER_EVENT,
 } from '../../constants';
+import {
+  getReviewersForList,
+  suggestedPosition,
+  setReviewersForList,
+} from '../../utils/reviewer_positions';
 
 import UpdateReviewers from './update_reviewers.vue';
 import userPermissionsQuery from './queries/user_permissions.query.graphql';
@@ -56,7 +62,8 @@ export default {
       required: false,
       default: () => [],
     },
-    visibleReviewers: {
+    // Any user eligible to be a reviewer for this list (based on approval rule, etc.)
+    eligibleReviewers: {
       type: Array,
       required: false,
       default: () => [],
@@ -65,6 +72,11 @@ export default {
       type: String,
       required: false,
       default: () => 'complex',
+    },
+    uniqueId: {
+      type: String,
+      required: false,
+      default: () => uuids()[0],
     },
   },
   data() {
@@ -92,10 +104,10 @@ export default {
       const items = [];
       const users = this.usersForList;
 
-      if (this.selectedReviewersToShow.length && !this.search) {
+      if (this.visibleReviewers.length && !this.search) {
         items.push({
           text: __('Reviewers'),
-          options: this.selectedReviewersToShow.map((user) => this.mapUser(user)),
+          options: this.visibleReviewers.map((user) => this.mapUser(user)),
         });
       }
 
@@ -111,9 +123,10 @@ export default {
 
       return items;
     },
-    selectedReviewersToShow() {
+    visibleReviewers() {
+      // Eligible users filtered to only show the previously selected users
       return this.selectedReviewers.filter((user) =>
-        this.visibleReviewers.map((gqlUser) => gqlUser.id).includes(user.id),
+        this.eligibleReviewers.map((gqlUser) => gqlUser.id).includes(user.id),
       );
     },
   },
@@ -159,6 +172,20 @@ export default {
         },
       });
 
+      if (!search) {
+        const eligibleReviewers = toUsernames(users);
+        const unselectedEligibleReviewers = difference(
+          eligibleReviewers,
+          this.currentSelectedReviewers,
+        );
+
+        setReviewersForList({
+          issuableId: this.issuableId,
+          listId: this.uniqueId,
+          reviewers: unselectedEligibleReviewers,
+        });
+      }
+
       this.fetchedUsers = users;
       this.searching = false;
     },
@@ -169,6 +196,10 @@ export default {
       const telemetryEvent = this.search ? SEARCH_SELECT_REVIEWER_EVENT : SELECT_REVIEWER_EVENT;
       const previousUsernames = toUsernames(this.selectedReviewers);
       const listUsernames = toUsernames(this.usersForList);
+      const suggested = getReviewersForList({
+        issuableId: this.issuableId,
+        listId: this.uniqueId,
+      });
       // Reviewers are always shown first if they are in the list,
       // so we should exclude them for when we check the position
       const selectableList = difference(listUsernames, previousUsernames);
@@ -177,9 +208,11 @@ export default {
       additions.forEach((added) => {
         // Convert from 0- to 1-index
         const listPosition = selectableList.findIndex((user) => user === added) + 1;
+        const suggestedPos = suggestedPosition({ username: added, list: suggested });
 
         this.trackEvent(telemetryEvent, {
           value: listPosition,
+          suggested_position: suggestedPos,
           selectable_reviewers_count: selectableList.length,
         });
       });
@@ -195,7 +228,7 @@ export default {
   },
   i18n: {
     selectReviewer: __('Select reviewer'),
-    unassign: __('Unassign'),
+    unassign: __('Unassign all'),
   },
 };
 </script>

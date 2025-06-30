@@ -186,6 +186,30 @@ describe('RunnerProjects', () => {
 
         expect(mockRunnerProjectsQuery).toHaveBeenCalledTimes(1);
       });
+
+      describe('No results', () => {
+        beforeEach(() => {
+          runnerProjectsData.data.runner.projectCount = 1;
+          runnerProjectsData.data.runner.projects = {
+            nodes: [],
+            pageInfo: {
+              hasNextPage: false,
+              hasPreviousPage: false,
+              startCursor: '',
+              endCursor: '',
+            },
+          };
+
+          mockRunnerProjectsQuery.mockResolvedValueOnce(runnerProjectsData);
+
+          findGlSearchBoxByType().vm.$emit('input', 'my search');
+          return waitForPromises();
+        });
+
+        it('renders the list', () => {
+          expect(findCrud().exists()).toBe(true);
+        });
+      });
     });
   });
 
@@ -226,6 +250,29 @@ describe('RunnerProjects', () => {
 
     it('Shows a "None" label', () => {
       expect(wrapper.findByText(I18N_NO_PROJECTS_FOUND).exists()).toBe(true);
+    });
+  });
+
+  describe('When runner.projectCount > 0 but runner.projects.nodes is empty', () => {
+    beforeEach(() => {
+      runnerProjectsData.data.runner.projectCount = 1;
+      runnerProjectsData.data.runner.projects = {
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: '',
+          endCursor: '',
+        },
+      };
+
+      mockRunnerProjectsQuery.mockResolvedValueOnce(runnerProjectsData);
+      createComponent();
+      return waitForPromises();
+    });
+
+    it('does not render anything', () => {
+      expect(findCrud().exists()).toBe(false);
     });
   });
 

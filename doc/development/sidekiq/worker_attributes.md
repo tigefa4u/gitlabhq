@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Sidekiq worker attributes
 ---
 
@@ -388,7 +388,7 @@ end
 
 {{< alert type="warning" >}}
 
-In case you want to remove the middleware for a worker, please set the strategy to `:deprecated` to disable it and wait until
+In case you want to remove the middleware for a worker, set the strategy to `:deprecated` to disable it and wait until
 a required stop before removing it completely. That ensures that all paused jobs are resumed correctly.
 
 {{< /alert >}}

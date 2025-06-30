@@ -55,8 +55,8 @@ module Tooling
         def auto_generated_comment
           <<-MD.strip_heredoc
             ---
-            stage: Foundations
-            group: Import and Integrate
+            stage: Create
+            group: Import
             info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
             title: GraphQL API resources
             ---
@@ -326,7 +326,7 @@ module Tooling
           buff << if deprecation
                     deprecation.markdown(context: context)
                   else
-                    "**Deprecated:** #{object[:deprecation_reason]}"
+                    "**Deprecated**: #{object[:deprecation_reason]}"
                   end
 
           buff << original_description if context == :inline && deprecation&.experiment?

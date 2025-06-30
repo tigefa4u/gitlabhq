@@ -25,8 +25,8 @@ preserving your team's preferences while standardizing how results are displayed
 Different features are available in different [GitLab tiers](https://about.gitlab.com/pricing/),
 as shown in the following table:
 
-| Feature                                                                                     | In Free                | In Premium             | In Ultimate            |
-|:--------------------------------------------------------------------------------------------|:-----------------------|:-----------------------|:-----------------------|
+| Feature                                                                                     | In Free                              | In Premium                           | In Ultimate |
+|:--------------------------------------------------------------------------------------------|:-------------------------------------|:-------------------------------------|:------------|
 | [Import Code Quality results from CI/CD jobs](#import-code-quality-results-from-a-cicd-job) | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes |
 | [Use CodeClimate-based scanning](#use-the-built-in-code-quality-cicd-template-deprecated)   | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes |
 | [See findings in a merge request widget](#merge-request-widget)                             | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes |
@@ -68,7 +68,7 @@ Now, after the pipeline runs, the quality tool's results are [processed and disp
 
 {{< alert type="warning" >}}
 
-This feature was [deprecated](../../update/deprecations.md#codeclimate-based-code-quality-scanning-will-be-removed) in GitLab 17.3 and is planned for removal in 18.0.
+This feature was [deprecated](../../update/deprecations.md#codeclimate-based-code-quality-scanning-will-be-removed) in GitLab 17.3 and is planned for removal in 19.0.
 [Integrate the results from a supported tool directly](#import-code-quality-results-from-a-cicd-job) instead.
 
 {{< /alert >}}
@@ -89,19 +89,19 @@ The CodeClimate engine uses a customizable set of [analysis plugins](code_qualit
 Some are on by default; others must be explicitly enabled.
 The following integrations are available to replace the built-in plugins:
 
-| Plugin       | On by default                                | Replacement                                                                                                                                                                          |
-|--------------|----------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Duplication  | {{< icon name="check-circle" >}} Yes                       | [Integrate PMD Copy/Paste Detector](#pmd-copypaste-detector).                                                                                                                        |
-| ESLint       | {{< icon name="check-circle" >}} Yes                       | [Integrate ESLint](#eslint).                                                                                                                                                         |
-| gofmt        | {{< icon name="dotted-circle" >}} No                       | [Integrate golangci-lint](#golangci-lint) and enable the [gofmt linter](https://golangci-lint.run/usage/linters#gofmt).                                                              |
+| Plugin       | On by default                                              | Replacement |
+|--------------|------------------------------------------------------------|-------------|
+| Duplication  | {{< icon name="check-circle" >}} Yes                       | [Integrate PMD Copy/Paste Detector](#pmd-copypaste-detector). |
+| ESLint       | {{< icon name="check-circle" >}} Yes                       | [Integrate ESLint](#eslint). |
+| gofmt        | {{< icon name="dotted-circle" >}} No                       | [Integrate golangci-lint](#golangci-lint) and enable the [gofmt linter](https://golangci-lint.run/usage/linters#gofmt). |
 | golint       | {{< icon name="dotted-circle" >}} No                       | [Integrate golangci-lint](#golangci-lint) and enable one of the included linters that replaces golint. golint is [deprecated and frozen](https://github.com/golang/go/issues/38968). |
-| govet        | {{< icon name="dotted-circle" >}} No                       | [Integrate golangci-lint](#golangci-lint). golangci-lint [includes govet by default](https://golangci-lint.run/usage/linters#enabled-by-default).                                    |
-| markdownlint | {{< icon name="dotted-circle" >}} No (community-supported) | [Integrate markdownlint-cli2](#markdownlint-cli2).                                                                                                                                   |
-| pep8         | {{< icon name="dotted-circle" >}} No                       | Integrate an alternative Python linter like [Flake8](#flake8), [Pylint](#pylint), or [Ruff](#ruff).                                                                                  |
-| RuboCop      | {{< icon name="dotted-circle" >}} Yes                      | [Integrate RuboCop](#rubocop).                                                                               |
-| SonarPython  | {{< icon name="dotted-circle" >}} No                       | Integrate an alternative Python linter like [Flake8](#flake8), [Pylint](#pylint), or [Ruff](#ruff).                                                                                  |
-| Stylelint    | {{< icon name="dotted-circle" >}} No (community-supported) | [Integrate Stylelint](#stylelint).                                                                                                                                                   |
-| SwiftLint    | {{< icon name="dotted-circle" >}} No                       | [Integrate SwiftLint](#swiftlint).                                                                                                                                                   |
+| govet        | {{< icon name="dotted-circle" >}} No                       | [Integrate golangci-lint](#golangci-lint). golangci-lint [includes govet by default](https://golangci-lint.run/usage/linters#enabled-by-default). |
+| markdownlint | {{< icon name="dotted-circle" >}} No (community-supported) | [Integrate markdownlint-cli2](#markdownlint-cli2). |
+| pep8         | {{< icon name="dotted-circle" >}} No                       | Integrate an alternative Python linter like [Flake8](#flake8), [Pylint](#pylint), or [Ruff](#ruff). |
+| RuboCop      | {{< icon name="dotted-circle" >}} Yes                      | [Integrate RuboCop](#rubocop). |
+| SonarPython  | {{< icon name="dotted-circle" >}} No                       | Integrate an alternative Python linter like [Flake8](#flake8), [Pylint](#pylint), or [Ruff](#ruff). |
+| Stylelint    | {{< icon name="dotted-circle" >}} No (community-supported) | [Integrate Stylelint](#stylelint). |
+| SwiftLint    | {{< icon name="dotted-circle" >}} No                       | [Integrate SwiftLint](#swiftlint). |
 
 ## View Code Quality results
 
@@ -163,11 +163,11 @@ that were found on the branch it was run on.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/72724) in GitLab 14.5 [with a flag](../../administration/feature_flags.md) named `project_quality_summary_page`. This feature is in [beta](../../policy/development_stages_support.md). Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/72724) in GitLab 14.5 [with a flag](../../administration/feature_flags/_index.md) named `project_quality_summary_page`. This feature is in [beta](../../policy/development_stages_support.md). Disabled by default.
 
 {{< /history >}}
 
-The project quality view displays an overview of the code quality findings. The view can be found under **Analyze > CI/CD analytics**, and requires [`project_quality_summary_page`](../../user/feature_flags.md) feature flag to be enabled for this particular project.
+The project quality view displays an overview of the code quality findings. The view can be found under **Analyze > CI/CD analytics**, and requires [`project_quality_summary_page`](../../administration/feature_flags/_index.md) feature flag to be enabled for this particular project.
 
 ![Total number of issues, called violations, followed by the number of issues of each severity](img/code_quality_summary_v15_9.png)
 
@@ -179,18 +179,18 @@ This format is a version of the [CodeClimate report format](https://github.com/c
 The file you provide as [Code Quality report artifact](../yaml/artifacts_reports.md#artifactsreportscodequality) must contain a single JSON array.
 Each object in that array must have at least the following properties:
 
-| Name                                                      | Description                                                                                                              | Type                                                                         |
-|-----------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------|
-| `description`                                             | A human-readable description of the code quality violation.                                                              | String                                                                       |
-| `check_name`                                              | A unique name representing the check, or rule, associated with this violation.                                           | String                                                                       |
-| `fingerprint`                                             | A unique fingerprint to identify this specific code quality violation, such as a hash of its contents.                   | String                                                                       |
-| `severity`                                                | The severity of the violation.                                                                                           | String. Valid values are `info`, `minor`, `major`, `critical`, or `blocker`. |
-| `location.path`                                           | The file containing the code quality violation, expressed as a relative path in the repository. Do not prefix with `./`. | String                                                                       |
-| `location.lines.begin` or `location.positions.begin.line` | The line on which the code quality violation occurred.                                                                   | Integer                                                                      |
+| Name                                                      | Type    | Description |
+|-----------------------------------------------------------|---------|-------------|
+| `description`                                             | String  | A human-readable description of the code quality violation. |
+| `check_name`                                              | String  | A unique name representing the check, or rule, associated with this violation. |
+| `fingerprint`                                             | String  | A unique fingerprint to identify this specific code quality violation, such as a hash of its contents. |
+| `location.path`                                           | String  | The file containing the code quality violation, expressed as a relative path in the repository. Do not prefix with `./`. |
+| `location.lines.begin` or `location.positions.begin.line` | Integer | The line on which the code quality violation occurred. |
+| `severity`                                                | String  | The severity of the violation, can be one of `info`, `minor`, `major`, `critical`, or `blocker`. |
 
 The format is different from the [CodeClimate report format](https://github.com/codeclimate/platform/blob/master/spec/analyzers/SPEC.md#data-types) in the following ways:
 
-- Although the [CodeClimate report format](https://github.com/codeclimate/platform/blob/master/spec/analyzers/SPEC.md#data-types) supports more properties, Code Quality only processes the fields listed above.
+- Although the [CodeClimate report format](https://github.com/codeclimate/platform/blob/master/spec/analyzers/SPEC.md#data-types) supports more properties, Code Quality only processes the fields listed previously.
 - The GitLab parser does not allow a [byte order mark](https://en.wikipedia.org/wiki/Byte_order_mark) at the beginning of the file.
 
 For example, this is a compliant report:
@@ -310,7 +310,12 @@ You can also use or adapt the [documented Ruff GitLab CI/CD integration](https:/
 If you already have a [`golangci-lint`](https://golangci-lint.run/) job in your CI/CD pipelines, you should add a report to send its output to Code Quality.
 To integrate its output:
 
-1. Add the arguments `--out-format code-climate:gl-code-quality-report.json,line-number` to the command you use to run golangci-lint.
+1. Add the arguments to the command you use to run `golangci-lint`.
+
+   For v1 add  `--out-format code-climate:gl-code-quality-report.json,line-number`.
+
+   For v2 add  `--output.code-climate.path=gl-code-quality-report.json`.
+
 1. Declare a [`codequality` report artifact](../yaml/artifacts_reports.md#artifactsreportscodequality) that points to the location of the report file.
 
 You can also use or adapt the [golangci-lint CI/CD component](https://gitlab.com/explore/catalog/components/code-quality-oss/codequality-os-scanners-integration) to run the scan and integrate its output with Code Quality.

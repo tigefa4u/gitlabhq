@@ -3,10 +3,14 @@ require 'mime/types'
 
 module API
   class Commits < ::API::Base
+    include ::API::Concerns::AiWorkflowsAccess
+    include APIGuard
     include PaginationParams
     include Helpers::Unidiff
 
     helpers ::API::Helpers::NotesHelpers
+
+    allow_ai_workflows_access
 
     feature_category :source_code_management
 
@@ -468,9 +472,25 @@ module API
         commit = user_project.commit(params[:sha])
         not_found!('Commit') unless commit
 
-        refs = []
-        refs.concat(user_project.repository.branch_names_contains(commit.id).map { |name| { type: 'branch', name: name } }) unless params[:type] == 'tag'
-        refs.concat(user_project.repository.tag_names_contains(commit.id).map { |name| { type: 'tag', name: name } }) unless params[:type] == 'branch'
+        page = params[:page] > 0 ? params[:page] : 1
+        per_page = params[:per_page] > 0 ? params[:per_page] : Kaminari.config.default_per_page
+
+        # Gitaly RPC doesn't support pagination, but we still can limit the number of requested records
+        # Example: per_page = 50, page = 3
+        # Limit will be set to 150 to capture enough records for Kaminari pagination to extract the right slice
+        limit = [per_page, Kaminari.config.max_per_page].min * page
+
+        args = {
+          type: declared_params[:type],
+          limit: limit
+        }.compact
+
+        refs = ::Gitlab::Repositories::ContainingCommitFinder.new(
+          user_project.repository,
+          commit.id,
+          args
+        ).execute
+
         refs = Kaminari.paginate_array(refs)
 
         present paginate(refs), with: Entities::BasicRef
@@ -547,6 +567,7 @@ module API
       end
       params do
         requires :sha, type: String, desc: 'A commit sha, or the name of a branch or tag on which to find Merge Requests'
+        optional :state, type: String, desc: 'Filter merge-requests by state', documentation: { example: 'merged' }
         use :pagination
       end
       get ':id/repository/commits/:sha/merge_requests', requirements: API::COMMIT_ENDPOINT_REQUIREMENTS, urgency: :low do
@@ -558,7 +579,8 @@ module API
         commit_merge_requests = MergeRequestsFinder.new(
           current_user,
           project_id: user_project.id,
-          commit_sha: commit.sha
+          commit_sha: commit.sha,
+          state: params[:state]
         ).execute.with_api_entity_associations
 
         present paginate(commit_merge_requests), with: Entities::MergeRequestBasic

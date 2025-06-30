@@ -1,6 +1,6 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Create
+group: Import
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Run GraphQL API queries and mutations
 ---
@@ -13,10 +13,6 @@ title: Run GraphQL API queries and mutations
 {{< /details >}}
 
 This guide demonstrates basic usage of the GitLab GraphQL API.
-
-Read the [GraphQL API style guide](../../development/api_graphql_styleguide.md)
-for implementation details aimed at developers who wish to work on developing
-the API itself.
 
 ## Running examples
 
@@ -60,7 +56,7 @@ curl "https://gitlab.com/api/graphql" --header "Authorization: Bearer $GRAPHQL_T
 ```
 
 To nest strings in the query string,
-wrap the data in single quotes or escape the strings with <code>&#92;&#92;</code>:
+wrap the data in single quotes or escape the strings with ` \\ `:
 
 ```shell
 curl "https://gitlab.com/api/graphql" --header "Authorization: Bearer $GRAPHQL_TOKEN" \
@@ -397,7 +393,7 @@ query {
 
 Pagination is a way of only asking for a subset of the records, such as the
 first ten. If we want more of them, we can make another request for the next
-ten from the server in the form of something like `please give me the next ten records`.
+ten from the server in the form of something like `give me the next ten records`.
 
 By default, the GitLab GraphQL API returns 100 records per page. To change this
 behavior, use `first` or `last` arguments. Both arguments take a value, so

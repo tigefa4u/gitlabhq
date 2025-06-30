@@ -306,6 +306,18 @@ RSpec.describe API::PersonalAccessTokens, :aggregate_failures, feature_category:
         expect(json_response.map { |r| r['user_id'] }.uniq).to contain_exactly(current_user.id)
       end
 
+      context 'when a token is recently used from an IP' do
+        let(:request_ip_address) { '192.168.1.2' }
+
+        it 'returns IPs' do
+          get api("/personal_access_tokens/#{current_users_token.id}", personal_access_token: current_users_token),
+            headers: { 'REMOTE_ADDR' => request_ip_address }
+
+          expect(response).to have_gitlab_http_status(:ok)
+          expect(json_response['last_used_ips']).to match_array([request_ip_address])
+        end
+      end
+
       context 'filtered with user_id parameter' do
         let_it_be(:user) { create(:user) }
 
@@ -477,14 +489,14 @@ RSpec.describe API::PersonalAccessTokens, :aggregate_failures, feature_category:
         expect(json_response['id']).to eq(user_token.id)
       end
 
-      context 'when an ip is recently used' do
-        let(:current_ip_address) { '127.0.0.1' }
+      context 'when a token is recently used from an IP' do
+        let(:request_ip_address) { '192.168.1.2' }
 
-        it 'returns ips used' do
-          get api(user_token_path, current_user)
+        it 'returns IPs' do
+          get api(user_token_path, personal_access_token: user_token), headers: { 'REMOTE_ADDR' => request_ip_address }
 
           expect(response).to have_gitlab_http_status(:ok)
-          expect(json_response['last_used_ips']).to match_array(user_token.last_used_ips)
+          expect(json_response['last_used_ips']).to match_array([request_ip_address])
         end
       end
 
@@ -493,7 +505,7 @@ RSpec.describe API::PersonalAccessTokens, :aggregate_failures, feature_category:
           get api(user_token_path, current_user)
 
           expect(response).to have_gitlab_http_status(:ok)
-          expect(json_response['last_used_ip']).to be_nil
+          expect(json_response['last_used_ips']).to be_empty
         end
       end
 

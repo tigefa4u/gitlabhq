@@ -3,6 +3,7 @@ stage: Software Supply Chain Security
 group: Authentication
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: User account
+description: Profile settings, preferences, authentication, and notifications.
 ---
 
 {{< details >}}
@@ -18,10 +19,30 @@ Your profile also includes settings, which you use to customize your GitLab expe
 
 ## Access your user profile
 
+{{< history >}}
+
+- Accessing the profile with the user ID was [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/185387) in GitLab 17.11.
+
+{{< /history >}}
+
 To access your profile:
 
 1. On the left sidebar, select your avatar.
 1. Select your name or username.
+
+You can also access a users' profile page by using the ID instead of the username at `https://gitlab.example.com/-/u/<id>`.
+For example, if your username is `gitlab-user` has an ID `12345`, you can access the profile page either at
+`https://gitlab.example.com/gitlab-user` or `https://gitlab.example.com/-/u/12345`.
+
+## Find the user ID
+
+You might need the user ID if you want to interact with it using the [GitLab API](../../api/_index.md).
+
+To find the user ID:
+
+1. Go to the users' profile page.
+1. On the profile page, in the upper-right corner, select **Actions** ({{< icon name="ellipsis_v" >}}).
+1. Select **Copy user ID**.
 
 ## Access your user settings
 
@@ -64,8 +85,7 @@ Prerequisites:
 
 - Your namespace must not:
   - Contain a project with [Container Registry](../packages/container_registry/_index.md) tags.
-  - Have a project that hosts [GitLab Pages](../project/pages/_index.md). For more information,
-    see [changing your username in the GitLab Team Handbook](https://handbook.gitlab.com/handbook/tools-and-tips/#change-your-username-at-gitlabcom).
+  - Have a project that hosts [GitLab Pages](../project/pages/_index.md).
 - Your username:
   - Must be between 2 and 255 characters in length.
   - Must only include non-accented letters, digits, `_`, `-`, and `.`.
@@ -220,7 +240,7 @@ to match your username.
 
 {{< /history >}}
 
-You can add links to certain other external accounts you might have, like Skype and X (formerly Twitter).
+You can add links to certain other external accounts you might have, like Discord and X (formerly Twitter).
 They can help other users connect with you on other platforms.
 
 To add links to other accounts:
@@ -232,8 +252,9 @@ To add links to other accounts:
    - LinkedIn profile name.
    - Bluesky [did:plc identifier](https://atproto.com/specs/did). To find your identifier, [resolve your user handle](https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=USER_HANDLE).
    - Mastodon handle. In GitLab 17.4 and later, you can use your [GitLab profile](#access-your-user-profile) to verify your Mastodon account.
-   - Skype username.
+   - Discord username.
    - X (formerly Twitter) @username.
+   - [ORCID](https://orcid.org/).
 
    Your user ID or username must be 500 characters or less.
 1. Select **Update profile settings**.
@@ -457,7 +478,7 @@ To disconnect a sign-in service used for signing in to GitLab:
 
 ## Session duration
 
-### Stay signed in for two weeks
+### Stay signed in for one week
 
 By default, you are signed out of GitLab after seven days (10080 minutes) of inactivity or until you close your browser
 window, whichever comes first.

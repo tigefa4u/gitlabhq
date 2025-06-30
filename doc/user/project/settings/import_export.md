@@ -1,6 +1,6 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Create
+group: Import
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Migrate projects and groups by using file exports
 ---
@@ -48,8 +48,8 @@ then imported into another GitLab instance.
 
 ### Preserving user contributions
 
-The requirements for preserving user contribution depends on whether you're migrating to GitLab.com or to a GitLab
-Self-Managed instance.
+The requirements for preserving user contribution depends on whether you're migrating to GitLab.com
+or to a GitLab Self-Managed instance.
 
 #### When migrating from GitLab Self-Managed to GitLab.com
 
@@ -162,6 +162,8 @@ Prerequisites:
 
 - Review the list of [items that are exported](#project-items-that-are-exported). Not all items are exported.
 - You must have at least the Maintainer role for the project.
+- For significantly improved performance for repositories with a large number of Git references, use GitLab 18.0 or later. For more information, see our
+  [blog post about decreasing GitLab repository backup times](https://about.gitlab.com/blog/2025/06/05/how-we-decreased-gitlab-repo-backup-times-from-48-hours-to-41-minutes/).
 
 To export a project and its data, follow these steps:
 
@@ -235,6 +237,7 @@ Items that are **not** exported include:
 - Build traces and artifacts
 - Package and container registry images
 - CI/CD variables
+- CI/CD job token allowlist
 - Webhooks
 - Any encrypted tokens
 - [Number of required approvals](https://gitlab.com/gitlab-org/gitlab/-/issues/221087)
@@ -246,9 +249,6 @@ Items that are **not** exported include:
 - Links between issues and linked items
 - Links to related merge requests
 - Pipeline schedule variables
-
-Migrating projects with file exports uses the same export and import mechanisms as creating projects from templates at the [group](../../group/custom_project_templates.md) and
-[instance](../../../administration/custom_project_templates.md) levels. Therefore, the list of exported items is the same.
 
 ### Import a project and its data
 
@@ -423,7 +423,7 @@ for your version of GitLab to check which items can be imported to the destinati
 Group items that are exported include:
 
 - Milestones
-- Group Labels (_without_ associated label priorities)
+- Group Labels (without associated label priorities)
 - Boards and Board Lists
 - Badges
 - Subgroups (including all the aforementioned data)

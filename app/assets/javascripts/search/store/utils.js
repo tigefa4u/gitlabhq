@@ -1,12 +1,8 @@
-import { isEqual, orderBy, isEmpty } from 'lodash';
+import { isEqual, orderBy } from 'lodash';
 import AccessorUtilities from '~/lib/utils/accessor';
 import { formatNumber } from '~/locale';
 import { joinPaths, queryToObject, objectToQuery, getBaseURL } from '~/lib/utils/url_utility';
-import {
-  LABEL_AGREGATION_NAME,
-  LANGUAGE_FILTER_PARAM,
-  SCOPE_BLOB,
-} from '~/search/sidebar/constants';
+import { LABEL_AGREGATION_NAME, LANGUAGE_FILTER_PARAM } from '~/search/sidebar/constants';
 import {
   SEARCH_SCOPE,
   USER_HANDLE,
@@ -187,17 +183,36 @@ export const addCountOverLimit = (count = '') => {
   return count.includes('+') ? '+' : '';
 };
 
-/** @param { string } link */
-export const injectRegexSearch = (link) => {
+/**
+ * Adds or changes query string params
+ * @param {string} link - should be url (absolute or relative)
+ * @param {object} newProperty - should be url (absolute or relative)
+ * @returns {string} - url string
+ */
+export const modifySearchQuery = (link, newProperty) => {
   const urlObject = new URL(link, getBaseURL());
   const queryObject = queryToObject(urlObject.search);
-  if (loadDataFromLS(LS_REGEX_HANDLE) && (queryObject?.project_id || queryObject?.group_id)) {
-    queryObject[REGEX_PARAM] = true;
+
+  return `${urlObject.pathname}?${objectToQuery({ ...queryObject, ...newProperty })}`;
+};
+
+/**
+ * Inject regex query param if it's saved in local storage
+ * @param {string} link - should be url (absolute or relative)
+ * @param {boolean} [objectOnly=false] - should return object only instead of the link string
+ * @returns {T extends true ? object : string} - Conditional return based on objectOnly parameter
+ * @template T
+ */
+export const injectRegexSearch = (link, objectOnly = false) => {
+  const regexSearch =
+    loadDataFromLS(LS_REGEX_HANDLE) === null
+      ? {}
+      : { [REGEX_PARAM]: loadDataFromLS(LS_REGEX_HANDLE) };
+
+  if (objectOnly) {
+    return regexSearch;
   }
-  if (isEmpty(queryObject)) {
-    return urlObject.pathname;
-  }
-  return `${urlObject.pathname}?${objectToQuery(queryObject)}`;
+  return modifySearchQuery(link, regexSearch);
 };
 
 /** @param { string } link */
@@ -225,14 +240,6 @@ export const scopeCrawler = (navigation, parentScope = null) => {
 
   return null;
 };
-
-export const skipBlobESCount = (state, itemScope) =>
-  !(
-    (state.query?.group_id || state.query?.project_id) &&
-    window.gon.features?.zoektMultimatchFrontend &&
-    state.zoektAvailable &&
-    itemScope === SCOPE_BLOB
-  );
 
 export const buildDocumentTitle = (title) => {
   const prevTitle = document.title;

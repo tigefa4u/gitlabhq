@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Zero-downtime upgrades
 ---
@@ -20,18 +20,18 @@ At a high level, this process is done by sequentially upgrading GitLab nodes in 
 Load Balancing, HA systems and graceful reloads to minimize the disruption.
 
 For the purposes of this guide it will only pertain to the core GitLab components where applicable. For upgrades
-or management of third party services, such as AWS RDS, please refer to the respective documentation.
+or management of third party services, such as AWS RDS, refer to the respective documentation.
 
 ## Before you start
 
-Achieving _true_ zero downtime as part of an upgrade is notably difficult for any distributed application. The process detailed in
+Achieving true zero downtime as part of an upgrade is notably difficult for any distributed application. The process detailed in
 this guide has been tested as given against our HA [Reference Architectures](../administration/reference_architectures/_index.md)
-and was found to result in effectively no observable downtime, but please be aware your mileage may vary dependent on the specific system makeup.
+and was found to result in effectively no observable downtime, but be aware your mileage may vary dependent on the specific system makeup.
 
 For additional confidence, some customers have found success with further techniques such as the
 manually draining nodes by using specific load balancer or infrastructure capabilities. These techniques depend greatly
 on the underlying infrastructure capabilities and as a result are not covered in this guide.
-For any additional information please reach out to your GitLab representative
+For any additional information reach out to your GitLab representative
 or the [Support team](https://about.gitlab.com/support/).
 
 ## Requirements and considerations
@@ -45,10 +45,10 @@ The zero-downtime upgrade process has the following requirements:
     - Any of these components that are not deployed in a HA fashion need to be upgraded separately with downtime.
     - For databases, the [Linux package only supports HA for the main GitLab database](https://gitlab.com/groups/gitlab-org/-/epics/7814). For any other databases, such as the [Praefect database](#praefect-gitaly-cluster), a third party database solution is required to achieve HA and subsequently to avoid downtime.
 - **You can only upgrade one minor release at a time**. So from `16.1` to `16.2`, not to `16.3`. If you skip releases, database modifications may be run in the wrong sequence [and leave the database schema in a broken state](https://gitlab.com/gitlab-org/gitlab/-/issues/321542).
-- You have to use [post-deployment migrations](../development/database/post_deployment_migrations.md).
+- You have to use post-deployment migrations.
 - [Zero-downtime upgrades are not available with the GitLab Charts](https://docs.gitlab.com/charts/installation/upgrade.html). Support is available with the [GitLab Operator](https://docs.gitlab.com/operator/gitlab_upgrades.html) but there are [known limitations](https://docs.gitlab.com/operator/#known-issues) with this deployment method and as such it's not covered in this guide at this time.
 
-In addition to the above, please be aware of the following considerations:
+In addition to the previous, be aware of the following considerations:
 
 - Most of the time, you can safely upgrade from a patch release to the next minor release if the patch release is not the latest.
   For example, upgrading from `16.3.2` to `16.4.1` should be safe even if `16.3.3` has been released. You should verify the
@@ -57,7 +57,7 @@ In addition to the above, please be aware of the following considerations:
   - [GitLab 16 changes](versions/gitlab_16_changes.md)
   - [GitLab 15 changes](versions/gitlab_15_changes.md)
 - Some releases may include [background migrations](background_migrations.md). These migrations are performed in the background by Sidekiq and are often used for migrating data. Background migrations are only added in the monthly releases.
-  - Certain major or minor releases may require a set of background migrations to be finished. While this doesn't require downtime (if the above conditions are met), it's required that you [wait for background migrations to complete](background_migrations.md) between each major or minor release upgrade.
+  - Certain major or minor releases may require a set of background migrations to be finished. While this doesn't require downtime (if the previous conditions are met), it's required that you [wait for background migrations to complete](background_migrations.md) between each major or minor release upgrade.
   - The time necessary to complete these migrations can be reduced by increasing the number of Sidekiq workers that can process jobs in the
     `background_migration` queue. To see the size of this queue, [check for background migrations before upgrading](background_migrations.md).
 - Zero downtime upgrades can be performed for [Gitaly](#gitaly) when it's set up in its Cluster or Sharded setups due to a graceful reload mechanism. For the [Praefect (Gitaly Cluster)](#praefect-gitaly-cluster) component it can also be directly upgraded without downtime, however the GitLab Linux package does not offer HA and subsequently Zero Downtime support for it's database - A third party database solution is required to avoid downtime.
@@ -75,7 +75,7 @@ If you want to upgrade multiple releases or do not meet these requirements [upgr
 
 We recommend a "back to front" approach for the order of what components to upgrade with zero downtime.
 Generally this would be stateful backends first, their dependents next and then the frontends accordingly.
-While the order of deployment can be changed, it is best to deploy the components running GitLab application code (Rails, Sidekiq) together. If possible, upgrade the supporting infrastructure (PostgreSQL, PgBouncer, Consul, Gitaly, Praefect, Redis) separately since these components do not have dependencies on changes made in version updates within a major release.
+While the order of deployment can be changed, it is best to deploy the components running GitLab application code (Rails, Sidekiq) together. If possible, upgrade the supporting infrastructure (PostgreSQL, PgBouncer, Consul, Gitaly, Praefect, Redis) separately because these components do not have dependencies on changes introduced in a version update within a major release.
 As such, we generally recommend the following order:
 
 1. Consul
@@ -113,14 +113,36 @@ Run through the following steps sequentially on each component's node to perform
 
    ```shell
    sudo gitlab-ctl reconfigure
+   ```
+
+   {{< tabs >}}
+
+   {{< tab title="For PostgreSQL nodes only" >}}
+   
+   Restart the Consul client first, then restart all other services to ensure PostgreSQL failover occurs gracefully:
+
+   ```shell
+   sudo gitlab-ctl restart consul
+   sudo gitlab-ctl restart-except consul
+   ```
+
+   {{< /tab >}}
+
+   {{< tab title="For all other component nodes" >}}
+
+   ```shell
    sudo gitlab-ctl restart
    ```
+
+   {{< /tab >}}
+
+   {{< /tabs >}}
 
 ### Gitaly
 
 [Gitaly](../administration/gitaly/_index.md) follows the same core process when it comes to upgrading but with a key difference
 that the Gitaly process itself is not restarted as it has a built-in process to gracefully reload
-at the earliest opportunity. Note that any other component will still need to be restarted.
+at the earliest opportunity. Other components will still need to be restarted.
 
 {{< alert type="note" >}}
 
@@ -173,9 +195,10 @@ This section focuses exclusively on the Praefect component, not its [required Po
 
 {{< /alert >}}
 
-One additional step though for Praefect is that it will also need to run through its database migrations to upgrade its data.
-Migrations need to be run on only one Praefect node to avoid clashes. This is best done by selecting one of the
-nodes to be a deploy node. This target node will be configured to run migrations while the rest are not. We'll refer to this as the **Praefect deploy node** below:
+Praefect must also perform database migrations to upgrade any existing data. To avoid clashes,
+migrations should run on only one Praefect node. To do this, designate a specific node as a
+deploy node that runs the migrations. This is referred to as
+the **Praefect deploy node** in the following steps:
 
 1. On the **Praefect deploy node**:
 
@@ -229,14 +252,14 @@ nodes to be a deploy node. This target node will be configured to run migrations
 
 ### Rails
 
-Rails as a webserver consists primarily of [Puma](../administration/operations/puma.md), [Workhorse](../development/workhorse/_index.md), and [NGINX](../development/architecture.md#nginx).
+Rails as a webserver consists primarily of [Puma](../administration/operations/puma.md), Workhorse, and NGINX.
 
 Each of these components have different behaviours when it comes to doing a live upgrade. While Puma can allow
 for a graceful reload, Workhorse doesn't. The best approach is to drain the node gracefully through other means,
 such as by using your load balancer. You can also do this by using NGINX on the node through its graceful shutdown
 functionality. This section explains the NGINX approach.
 
-In addition to the above, Rails is where the main database migrations need to be executed. Like Praefect, the best approach is by using the deploy node. If PgBouncer is currently being used, it also needs to be bypassed as Rails uses an advisory lock when attempting to run a migration to prevent concurrent migrations from running on the same database. These locks are not shared across transactions, resulting in `ActiveRecord::ConcurrentMigrationError` and other issues when running database migrations using PgBouncer in transaction pooling mode.
+In addition to the previous, Rails is where the main database migrations need to be executed. Like Praefect, the best approach is by using the deploy node. If PgBouncer is currently being used, it also needs to be bypassed as Rails uses an advisory lock when attempting to run a migration to prevent concurrent migrations from running on the same database. These locks are not shared across transactions, resulting in `ActiveRecord::ConcurrentMigrationError` and other issues when running database migrations using PgBouncer in transaction pooling mode.
 
 1. On the **Rails deploy node**:
 
@@ -377,7 +400,7 @@ deployment with Geo.
 Overall, the approach is largely the same as the
 [normal process](#multi-node--ha-deployment) with some additional steps required
 for each secondary site. The required order is upgrading the primary first, then
-the secondaries. You must also run any post-deployment migrations on the primary _after_
+the secondaries. You must also run any post-deployment migrations on the primary after
 all secondaries have been updated.
 
 {{< alert type="note" >}}
@@ -393,13 +416,10 @@ not to run the post-deployment migrations until after all the secondaries have b
 
 Run through the same steps for the Primary site as described but stopping at the Rails node step of running the post-deployment migrations.
 
-### Secondary site(s)
+### Secondary sites
 
 The upgrade process for any Secondary sites follow the same steps as the normal process except for the Rails nodes
-where several additional steps are required as detailed below.
-
-To upgrade the site proceed through the normal process steps as normal until the Rails node and instead follow the steps
-below:
+The upgrade process is the same for both primary and secondary sites. However, you must perform the following additional steps for Rails nodes on secondary sites.
 
 #### Rails
 
@@ -413,10 +433,10 @@ below:
       # Send QUIT to NGINX master process to drain and exit
       NGINX_PID=$(cat /var/opt/gitlab/nginx/nginx.pid)
       kill -QUIT $NGINX_PID
- 
+
       # Wait for drain to complete
       while kill -0 $NGINX_PID 2>/dev/null; do sleep 1; done
- 
+
       # Stop NGINX service to prevent automatic restarts
       gitlab-ctl stop nginx
       ```
@@ -463,10 +483,10 @@ below:
       # Send QUIT to NGINX master process to drain and exit
       NGINX_PID=$(cat /var/opt/gitlab/nginx/nginx.pid)
       kill -QUIT $NGINX_PID
- 
+
       # Wait for drain to complete
       while kill -0 $NGINX_PID 2>/dev/null; do sleep 1; done
- 
+
       # Stop NGINX service to prevent automatic restarts
       gitlab-ctl stop nginx
       ```

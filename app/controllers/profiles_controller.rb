@@ -98,12 +98,12 @@ class ProfilesController < Profiles::ApplicationController
       :pronunciation,
       :public_email,
       :role,
-      :skype,
       :timezone,
       :twitter,
       :username,
       :validation_password,
       :website_url,
+      :github,
       { status: [:emoji, :message, :availability, :clear_status_after] }
     ]
   end

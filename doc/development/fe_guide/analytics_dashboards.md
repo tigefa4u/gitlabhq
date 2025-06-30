@@ -1,7 +1,7 @@
 ---
 stage: Monitor
 group: Platform Insights
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Analytics dashboards
 ---
 
@@ -21,14 +21,21 @@ Analytics dashboards is intended for Premium and Ultimate subscriptions.
 
 {{< /alert >}}
 
-## Customizable dashboard framework
+## Customizable dashboard framework (deprecated)
 
-Analytics dashboards utilize a set of standardized UI components that ensure a consistent user experience. These components are modular and can be integrated into other dashboard interfaces where basic visualization capabilities are needed, without advanced features like data fetching, filtering, or editing.
+{{< history >}}
 
-Note that we are currently migrating these components to GitLab UI. During this transition period, components may be located in either the legacy system or the new GitLab UI framework.
+- [Deprecated](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/191174) in GitLab 18.1.
 
-- [vue_shared/components/customizable_dashboard](https://gitlab.com/gitlab-org/gitlab/-/tree/master/app/assets/javascripts/vue_shared/components/customizable_dashboard)
-- [GlDashboardPanel](https://gitlab-org.gitlab.io/gitlab-ui/?path=/docs/dashboards-dashboards-panel--docs)
+{{< /history >}}
+
+Analytics dashboards utilizes a deprecated component, [customizable_dashboard.vue](https://gitlab.com/gitlab-org/gitlab/-/tree/master/app/assets/javascripts/vue_shared/components/customizable_dashboard), 
+to render the dashboard layout. As part the dashboard foundations epic [#18072](https://gitlab.com/groups/gitlab-org/-/epics/18072)
+we are updating Analytics dashboards to utilize a new customizable dashboard component that uses
+the new [dashboard layout framework](dashboard_layout_framework.md) in issue [#542166](https://gitlab.com/gitlab-org/gitlab/-/issues/542166).
+
+Note that we are currently migrating the dashboard layout framework components to GitLab UI as part of issue [#542162](https://gitlab.com/gitlab-org/gitlab/-/issues/542162).
+During this transition period, components may be located in either the legacy system or in GitLab UI.
 
 ## Overview
 
@@ -189,56 +196,56 @@ To create a built-in analytics dashboard:
 1. To add panels to your dashboard that reference your visualizations, use either:
    - Recommended. Use an inline visualization within the dashboard configuration file:
 
-      ```yaml
-      # cool_dashboard/dashboard.yaml
-      ---
-      title: My dashboard
-      description: My cool dashboard
-      panels:
-        - title: "My cool panel"
-          visualization:
-            version: 1
-            slug: 'cool_viz' # Recommended to define a slug when a visualization is inline
-            type: LineChart    # The render type of the visualization.
-            data:
-              type: my_datasource    # The name of the datasource
-              query: {}
-            options: {}
-          gridAttributes:
-            yPos: 0
-            xPos: 0
-            width: 3
-            height: 1
-      ```
+     ```yaml
+     # cool_dashboard/dashboard.yaml
+     ---
+     title: My dashboard
+     description: My cool dashboard
+     panels:
+       - title: "My cool panel"
+         visualization:
+           version: 1
+           slug: 'cool_viz' # Recommended to define a slug when a visualization is inline
+           type: LineChart    # The render type of the visualization.
+           data:
+             type: my_datasource    # The name of the datasource
+             query: {}
+           options: {}
+         gridAttributes:
+           yPos: 0
+           xPos: 0
+           width: 3
+           height: 1
+     ```
 
-      Both `query` and `options` objects will be passed to the data source and used to build the proper query.
+     Both `query` and `options` objects will be passed to the data source and used to build the proper query.
 
-      Refer to [Data source](#data-source) for a list of supported data sources, and [Visualization](#visualization) for a list of supported visualization render types.
+     Refer to [Data source](#data-source) for a list of supported data sources, and [Visualization](#visualization) for a list of supported visualization render types.
 
    - Use a visualization template:
 
-      ```yaml
-      # cool_dashboard/dashboard.yaml
-      ---
-      title:  My dashboard
-      description: My cool dashboard
+     ```yaml
+     # cool_dashboard/dashboard.yaml
+     ---
+     title:  My dashboard
+     description: My cool dashboard
 
-      panels:
-        - title: "My cool panel"
-          visualization: cool_viz    # Must match the visualization config filename
-          gridAttributes:
-            yPos: 0
-            xPos: 0
-            width: 3
-            height: 1
-      ```
+     panels:
+       - title: "My cool panel"
+         visualization: cool_viz    # Must match the visualization config filename
+         gridAttributes:
+           yPos: 0
+           xPos: 0
+           width: 3
+           height: 1
+     ```
 
    The `gridAttributes` position the panel within a 12x12 dashboard grid, powered by [gridstack](https://github.com/gridstack/gridstack.js/tree/master/doc#item-options).
 
-1. Register the dashboard by adding it to `builtin_dashboards` in [ee/app/models/product_analytics/dashboard.rb](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/app/models/product_analytics/dashboard.rb).
+1. Register the dashboard by adding it to `builtin_dashboards` in [ee/app/models/analytics/dashboard.rb](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/app/models/analytics/dashboard.rb).
    Here you can make your dashboard available at project-level or group-level (or both), restrict access based on feature flags, license or user role etc.
 
-1. Optional. Register visualization templates by adding them to `get_path_for_visualization` in [ee/app/models/product_analytics/visualization.rb](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/app/models/product_analytics/visualization.rb).
+1. Optional. Register visualization templates by adding them to `get_path_for_visualization` in [ee/app/models/analytics/visualization.rb](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/app/models/analytics/visualization.rb).
 
 For a complete example, refer to the AI Impact [dashboard config](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/lib/gitlab/analytics/ai_impact_dashboard/dashboard.yaml).
 
@@ -281,7 +288,7 @@ See [`value_stream.js`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/ap
 
 While developing new visualizations we can use [feature flags](../feature_flags/_index.md#create-a-new-feature-flag) to mitigate risks of disruptions or incorrect data for users.
 
-The [`from_data`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/app/models/product_analytics/panel.rb) method builds the panel objects for a dashboard. Using the `filter_map` method, we can add a condition to skip rendering panels that include the visualization we are developing.
+The [`from_data`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/app/models/analytics/panel.rb) method builds the panel objects for a dashboard. Using the `filter_map` method, we can add a condition to skip rendering panels that include the visualization we are developing.
 
 For example, here we have added the `enable_usage_overview_visualization` feature flag and can check it's current state to determine whether panels using the `usage_overview` visualization should be rendered:
 

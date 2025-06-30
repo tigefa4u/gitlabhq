@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Geo
@@ -122,13 +122,13 @@ Geo is designed to be a active-passive, high-availability solution. It operates 
 Geo should not be confused with [Gitaly Cluster](../gitaly/praefect.md). For more information about
 the difference between Geo and Gitaly Cluster, see [Comparison to Geo](../gitaly/_index.md#comparison-to-geo).
 
-## How it works
+## How Geo works
 
-This is a brief summary of how Geo works in your GitLab environment. For a more detailed information, see the [Geo Development page](../../development/geo.md).
+This is a brief summary of how Geo works in your GitLab environment. For more details, see the Geo development documentation.
 
 Your Geo instance can be used for cloning and fetching projects, in addition to reading any data. This makes working with large repositories over large distances much faster.
 
-![Geo overview](replication/img/geo_overview_v11_5.png)
+![Geo overview](img/geo_overview_v11_5.png)
 
 When Geo is enabled, the:
 
@@ -149,13 +149,13 @@ Keep in mind that:
 
 The following diagram illustrates the underlying architecture of Geo.
 
-![Geo architecture](replication/img/geo_architecture_v13_8.png)
+![Geo architecture](img/geo_architecture_v13_8.png)
 
 In this diagram:
 
 - There is the **primary** site and the details of one **secondary** site.
 - Writes to the database can only be performed on the **primary** site. A **secondary** site receives database
-  updates by using [PostgreSQL streaming replication](https://wiki.postgresql.org/wiki/Streaming_Replication).
+  updates by using [PostgreSQL streaming replication](https://www.postgresql.org/docs/16/warm-standby.html#STREAMING-REPLICATION).
 - If present, the [LDAP server](#ldap) should be configured to replicate for [Disaster Recovery](disaster_recovery/_index.md) scenarios.
 - A **secondary** site performs different type of synchronizations against the **primary** site, using a special
   authorization protected by JWT:
@@ -197,8 +197,8 @@ The following are required to run Geo:
   Geo sites. If using different operating system versions between Geo sites, you
   **must** [check OS locale data compatibility](replication/troubleshooting/common.md#check-os-locale-data-compatibility)
   across Geo sites to avoid silent corruption of database indexes.
-- [Supported PostgreSQL versions](https://handbook.gitlab.com/handbook/engineering/infrastructure-platforms/data-access/database-framework/postgresql-upgrade-cadence/) for your GitLab releases with [Streaming Replication](https://wiki.postgresql.org/wiki/Streaming_Replication).
-  - [PostgreSQL Logical replication](https://www.postgresql.org/docs/current/logical-replication.html) is not supported.
+- [Supported PostgreSQL versions](https://handbook.gitlab.com/handbook/engineering/infrastructure-platforms/data-access/database-framework/postgresql-upgrade-cadence/) for your GitLab releases with [Streaming Replication](https://www.postgresql.org/docs/16/warm-standby.html#STREAMING-REPLICATION).
+  - [PostgreSQL Logical replication](https://www.postgresql.org/docs/16/logical-replication.html) is not supported.
 - All sites must run [the same PostgreSQL versions](setup/database.md#postgresql-replication).
 - Git 2.9 or later
 - Git-lfs 2.4.2 or later on the user side when using LFS

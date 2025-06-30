@@ -59,7 +59,7 @@ module Snippets
     end
 
     def organization_id
-      params[:organization_id].presence || Organizations::Organization::DEFAULT_ORGANIZATION_ID
+      params[:organization_id].presence
     end
 
     # If the snippet_actions param is present
@@ -80,7 +80,8 @@ module Snippets
       end
 
       snippet_saved
-    rescue StandardError => e # Rescuing all because we can receive Creation exceptions, GRPC exceptions, Git exceptions, ...
+      # Rescuing all because we can receive Creation exceptions, GRPC exceptions, Git exceptions, etc.
+    rescue StandardError => e
       Gitlab::ErrorTracking.log_exception(e, service: 'Snippets::CreateService')
 
       # If the commit action failed we need to remove the repository if exists

@@ -1,6 +1,6 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Plan
+group: Project Management
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: GitLab for Jira Cloud app
 ---
@@ -134,7 +134,7 @@ After you link to a GitLab group:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/460663) in GitLab 17.2 [with a flag](../../administration/feature_flags.md) named `enable_jira_connect_configuration`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/460663) in GitLab 17.2 [with a flag](../../administration/feature_flags/_index.md) named `enable_jira_connect_configuration`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/467117) in GitLab 17.4. Feature flag `enable_jira_connect_configuration` removed.
 
 {{< /history >}}
@@ -341,3 +341,24 @@ A `403 Forbidden` is returned if the user information cannot be fetched from Jir
 
 To resolve this issue, ensure you meet certain
 [Jira user requirements](../../administration/settings/jira_cloud_app.md#jira-user-requirements).
+
+### Jira Code does not work after linking to a GitLab group
+
+[Jira Code](https://support.atlassian.com/jira-software-cloud/docs/enable-code/) might not work after you
+[link the GitLab for Jira Cloud app to a GitLab group](#configure-the-gitlab-for-jira-cloud-app).
+To resolve this issue, you must configure both Bitbucket and Jira.
+
+In Bitbucket:
+
+1. Sign in to your Atlassian account.
+1. Create and enter a name for your workspace.
+
+In Jira:
+
+1. In **Projects**, select your project.
+1. Select **Development > Code**.
+1. Select **Connect Bitbucket > Link Bitbucket Cloud workspace**.
+1. Select the workspace you created in Bitbucket.
+1. Select **Grant access**.
+
+Your repositories should now appear in Jira Code.

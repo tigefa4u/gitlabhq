@@ -1,6 +1,7 @@
 .with-fixtures-needs:
   needs:
     - "rspec-all frontend_fixture"
+    - "rspec-all frontend_fixture clickhouse"
 
 .with-graphql-schema-dump-needs:
   needs:
@@ -82,6 +83,24 @@ compile-test-assets:
       - "${WEBPACK_COMPILE_LOG_PATH}"
     when: always
 
+build-vite-prod:
+  extends:
+    - .production
+    - .default-retry
+    - .with-ci-node-image
+    - .frontend:rules:compile-production-assets
+  artifacts:
+    expire_in: 1h
+    paths:
+      - public/vite-dev/
+  stage: prepare
+  needs: []
+  script:
+    - source scripts/utils.sh
+    - yarn_install_script
+    - yarn vite-prod
+  allow_failure: true
+
 gdk:compile-test-assets:
   extends:
     - compile-test-assets
@@ -149,13 +168,13 @@ retrieve-frontend-fixtures:
     - .default-retry
     - .default-before_script
     - .ruby-cache
-    - .use-pg16
     - .repo-from-artifacts
   stage: fixtures
   needs:
     - "setup-test-env"
     - "retrieve-tests-metadata"
     - "retrieve-frontend-fixtures"
+    - "compile-test-assets"
     # it's ok to wait for the repo artifact as we're waiting for setup-test-env (which takes longer than clone-gitlab-repo) anyway
     - !reference [.repo-from-artifacts, needs]
   variables:
@@ -171,7 +190,6 @@ retrieve-frontend-fixtures:
         exit 0
       fi
     - !reference [.base-script, script]
-    - run_with_custom_exit_code rspec_parallelized_job
   artifacts:
     name: frontend-fixtures
     expire_in: 31d
@@ -186,12 +204,23 @@ retrieve-frontend-fixtures:
 # Builds FOSS fixtures in the FOSS project.
 rspec-all frontend_fixture:
   extends:
+    - .use-pg16
     - .frontend-fixtures-base
     - .frontend:rules:frontend_fixture
-  needs:
-    - !reference [.frontend-fixtures-base, needs]
-    - "compile-test-assets"
+  script:
+    - !reference [.frontend-fixtures-base, script]
+    - run_with_custom_exit_code rspec_parallelized_job "--tag ~click_house"
   parallel: 7
+
+rspec-all frontend_fixture clickhouse:
+  extends:
+    - .use-pg16-clickhouse25
+    - .frontend-fixtures-base
+    - .frontend:rules:frontend_fixture
+  script:
+    - !reference [.clickhouse-setup, script]
+    - !reference [.frontend-fixtures-base, script]
+    - run_with_custom_exit_code rspec_parallelized_job "--tag click_house"
 
 # Uploads EE fixtures in the EE project.
 # Uploads FOSS fixtures in the FOSS project.

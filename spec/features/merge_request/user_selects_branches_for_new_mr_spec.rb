@@ -4,6 +4,7 @@ require 'spec_helper'
 
 RSpec.describe 'Merge request > User selects branches for new MR', :js, feature_category: :code_review_workflow do
   include ListboxHelpers
+  include RapidDiffsHelpers
 
   let_it_be(:user) { create(:user) }
   let_it_be(:project) { create(:project, :public, :repository, namespace: user.namespace) }
@@ -103,19 +104,48 @@ RSpec.describe 'Merge request > User selects branches for new MR', :js, feature_
     expect(find('.js-source-branch')).to have_content('fix')
   end
 
-  it 'allows to change the diff view' do
-    visit project_new_merge_request_path(project, merge_request: { target_branch: 'master', source_branch: 'fix' })
+  context 'on changes tab' do
+    let_it_be(:params) { { target_branch: 'master', source_branch: 'fix' } }
+    let_it_be(:merge_request) do
+      Gitlab::GitalyClient.allow_n_plus_1_calls do
+        @merge_request = ::MergeRequests::BuildService
+                           .new(project: project, current_user: user, params: params)
+                           .execute
+      end
+    end
 
-    click_link 'Changes'
+    let_it_be(:diffs) { merge_request.diffs }
 
-    expect(page).to have_css('a.btn.selected', text: 'Inline')
-    expect(page).not_to have_css('a.btn.selected', text: 'Side-by-side')
+    before do
+      visit project_new_merge_request_path(project, merge_request: params)
 
-    click_link 'Side-by-side'
+      click_link 'Changes'
 
-    within '.merge-request' do
-      expect(page).not_to have_css('a.btn.selected', text: 'Inline')
-      expect(page).to have_css('a.btn.selected', text: 'Side-by-side')
+      wait_for_requests
+    end
+
+    it_behaves_like 'Rapid Diffs application'
+  end
+
+  context 'without rapid diffs' do
+    before do
+      stub_feature_flags(rapid_diffs: false)
+    end
+
+    it 'allows to change the diff view' do
+      visit project_new_merge_request_path(project, merge_request: { target_branch: 'master', source_branch: 'fix' })
+
+      click_link 'Changes'
+
+      expect(page).to have_css('a.btn.selected', text: 'Inline')
+      expect(page).not_to have_css('a.btn.selected', text: 'Side-by-side')
+
+      click_link 'Side-by-side'
+
+      within '.merge-request' do
+        expect(page).not_to have_css('a.btn.selected', text: 'Inline')
+        expect(page).to have_css('a.btn.selected', text: 'Side-by-side')
+      end
     end
   end
 

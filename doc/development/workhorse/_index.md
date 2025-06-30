@@ -1,7 +1,7 @@
 ---
 stage: Create
 group: Source Code
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: GitLab Workhorse
 ---
 
@@ -58,11 +58,11 @@ thereby minimizing the direct load on Rails.
 
 ### Expanding functionality
 
-- **Maintaining Simplicity:** While expanding Workhorse's functionalities to include direct handling
+- Maintaining Simplicity: While expanding Workhorse's functionalities to include direct handling
   of specific services (for example, container registry), it's crucial to maintain its simplicity and efficiency.
   Workhorse should not encompass complex control logic but rather focus on executing tasks as directed
   by Rails.
-- **Service Implementation and Data Migration:** Implementing new functionalities in Workhorse
+- Service Implementation and Data Migration: Implementing new functionalities in Workhorse
   requires careful consideration of data migration strategies and service continuity.
 
 ### Data management and operational integrity

@@ -17,7 +17,7 @@ RSpec.describe "User creates milestone", :js, feature_category: :team_planning d
       click_button("Create milestone")
 
       expect(page).to have_content(title)
-        .and have_content("Issues")
+        .and have_content("Work items")
         .and have_header_with_correct_id_and_link(1, "Description header", "description-header")
 
       visit(activity_project_path(project))

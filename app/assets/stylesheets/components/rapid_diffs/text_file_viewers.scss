@@ -1,10 +1,30 @@
 @use 'constants';
 
 .rd-text-view-root {
+  --rd-code-border-adjust: var(--code-border-lightness-adjust, -0.075);
+  --rd-line-added-background-color: var(--custom-diff-addition-color, var(--code-new-diff-background-color, $line-number-new));
+  --rd-line-removed-background-color: var(--custom-diff-deletion-color, var(--code-old-diff-background-color, $line-number-old));
+  --rd-line-link-color: var(--code-line-number-color, #{$gl-color-neutral-400});
+  --rd-line-theme-border-color: oklch(from var(--code-background) calc(l + var(--rd-code-border-adjust)) c h);
   background-color: var(--code-background, $gl-color-neutral-0);
   font-family: $monospace-font;
   line-height: constants.$code-line-height;
   font-size: constants.$code-font-size;
+  border-radius: 0 0 var(--rd-diff-file-border-radius) var(--rd-diff-file-border-radius);
+}
+
+// we can only use gl-dark for now because prefers-color-scheme can be overridden by user setting
+// light-dark() also doesn't work because it always returns a color and can never be 'initial'
+// stylelint-disable-next-line gitlab/no-gl-class
+:root.gl-dark .rd-text-view-root {
+  // disable side borders when light theme is used in dark mode
+  --rd-disable-extended-borders: var(--code-light-theme);
+}
+
+// stylelint-disable-next-line gitlab/no-gl-class
+:root:not(.gl-dark) .rd-text-view-root {
+  // disable side borders when light theme is used in dark mode
+  --rd-disable-extended-borders: var(--code-dark-theme);
 }
 
 .rd-text-view-root,
@@ -17,21 +37,28 @@
   display: grid;
 }
 
-.rd-hunk-lines:last-child > :first-child {
-  border-bottom-left-radius: var(--rd-diff-file-border-radius);
+.rd-text-view-content > tr:last-child {
+  --rd-row-bottom-left-radius: var(--rd-diff-file-border-radius);
+  --rd-row-bottom-right-radius: var(--rd-diff-file-border-radius);
 }
 
-.rd-hunk-lines:last-child > :last-child {
-  border-bottom-right-radius: var(--rd-diff-file-border-radius);
+.rd-text-view-content > tr:last-child > td:not(:last-child) {
+  --rd-row-bottom-right-radius: 0;
+}
+
+.rd-text-view-content > tr:last-child > td:not(:first-child) {
+  --rd-row-bottom-left-radius: 0;
 }
 
 .rd-hunk-header {
+  position: relative;
+  z-index: constants.$diff-file-hunk-header-z-index;
   // this is used when a hunk header doesn't have any text, only expand buttons
   min-height: calc(1em * $code-line-height);
-  border-top: 1px solid var(--diff-expansion-background-color, var(--gl-border-color-default));
-  border-bottom: 1px solid var(--diff-expansion-background-color, var(--gl-border-color-default));
   background-color: var(--code-diff-hunk-header-background-color, $gray-50);
   color: var(--code-diff-hunk-header-color, $gray-400);
+  border-radius: 0 0 var(--rd-row-bottom-right-radius) var(--rd-row-bottom-left-radius);
+  outline: 1px solid var(--diff-expansion-background-color, var(--gl-border-color-default));
 
   &:first-child {
     border-top: 0;
@@ -54,9 +81,12 @@
   display: none;
 }
 
-.rd-hunk-header-parallel,
-.rd-hunk-lines-parallel, {
+.rd-hunk-lines-parallel {
   grid-template-columns: 50px 1fr 50px 1fr;
+}
+
+.rd-hunk-header-parallel {
+  grid-template-columns: 50px 1fr;
 }
 
 .rd-hunk-header-inline {
@@ -69,7 +99,7 @@
 
 .rd-hunk-header-buttons {
   display: grid;
-  grid-auto-flow: row;
+  grid-auto-flow: column;
   padding: 0;
 }
 
@@ -81,14 +111,21 @@
   // this causes jumps when the icons change from idle to loading
   font-size: 0;
   border: 0;
+  padding: 0;
 
   background-color: var(--code-diff-expand-button-background-color, $gray-100);
   color: var(--code-diff-expand-button-color, var(--gl-text-color-subtle));
+  border-radius: 0 0 var(--rd-row-bottom-right-radius) var(--rd-row-bottom-left-radius);
 
-  &:hover,
-  &:focus {
+  &:hover {
     background-color:var(--code-diff-expand-button-hover-background-color, $gray-200);
     color: var(--code-diff-expand-button-hover-color, $gray-800);
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--gl-focus-ring-outer-color);
+    position: relative;
+    margin: 0 1px;
   }
 }
 
@@ -97,55 +134,133 @@
 }
 
 .rd-line-number {
+  position: relative;
   padding: 0 10px 0 5px;
   text-align: right;
-  background-color: var(--code-line-nubmer-background-color, $white);
-
-  // override content border
-  &:first-child {
-    margin-left: -1px;
-    border-left: 1px solid rgba(0, 0, 0, 0.125);
-    border-left: 1px solid light-dark(rgba(0, 0, 0, 0.125), var(--gl-border-color-default));
-  }
+  background-color: var(--code-line-number-background-color, $white);
+  scroll-margin-top: var(--rd-diff-file-header-height);
+  z-index: constants.$diff-file-line-number-z-index;
 }
 
-// Do not use nesting here to allow quick jump to code based on the selector
-.rd-line-number:hover:not(:empty) {
-  background-color: var(--code-line-nubmer-hover-background-color, $gl-color-purple-100);
-  border-color: var(--code-line-nubmer-hover-border-color, $gl-color-purple-200);
+.rd-hunk-lines:target {
+  --rd-line-background-color-override: var(--code-highlighted-line-background-color);
+  // handle empty cells
+  --code-line-number-background-color: var(--code-highlighted-line-background-color);
+  --rd-disable-extended-borders: 1;
+  position: relative;
+  background-color: var(--code-highlighted-line-background-color);
+  border-radius: 0 0 var(--rd-row-bottom-right-radius) var(--rd-row-bottom-left-radius);
+  outline: 1px solid var(--code-highlighted-line-border-color);
+  z-index: constants.$diff-file-highlighted-line-number-z-index;
 }
 
-.rd-line-number:hover:not(:empty) .rd-line-link {
-  color: var(--code-line-nubmer-hover-color, $gl-color-neutral-600);
+.rd-hunk-lines:target .rd-line-number {
+  --rd-adjacent-line-border-color: var(--rd-line-border-color);
+}
+
+// child combinator improves performance of the selector
+// duplicate .rd-hunk-lines-inline selector to override highlighted color
+.rd-hunk-lines-parallel:hover > .rd-line-number:not(:empty),
+.rd-hunk-lines-inline.rd-hunk-lines-inline:hover > .rd-line-number {
+  --rd-line-border-color: var(--code-line-number-hover-border-color, #{$gl-color-purple-200});
+  --rd-adjacent-line-border-color: var(--rd-line-border-color);
+  --rd-line-background-color: var(--code-line-number-hover-background-color, #{$gl-color-purple-100});
+  background-color: var(--rd-line-background-color);
+}
+
+.rd-line-number:hover > .rd-line-link {
+  color: var(--code-line-number-hover-color, $gl-color-neutral-600);
 }
 
 .rd-line-number[data-change=removed] {
-  background-color: var(--diff-deletion-color, var(--code-old-diff-line-number-background-color, $line-number-old));
+  --rd-line-link-color: var(--code-old-diff-line-number-color, #{scale-color($gl-color-neutral-300, $red: -30%, $green: -30%, $blue: -30%)});
+  --rd-line-background-color: var(--custom-diff-deletion-color, var(--code-old-diff-line-number-background-color));
 }
 
 .rd-line-number[data-change=added] {
-  background-color: var(--diff-addition-color, var(--code-new-diff-line-number-background-color, $line-number-new));
+  --rd-line-link-color: var(--code-new-diff-line-number-color, #{scale-color($gl-color-neutral-200, $red: -30%, $green: -30%, $blue: -30%)});
+  --rd-line-background-color: var(--custom-diff-addition-color, var(--code-new-diff-line-number-background-color));
+}
+
+.rd-line-number[data-change=meta] {
+  --rd-line-background-color: var(--code-meta-diff-background-color);
 }
 
 .rd-line-number-border-right,
 .rd-line-number-border-both {
-  border-right: 1px solid rgba(0, 0, 0, 0.125);
+  border-right: 1px solid var(--rd-line-border-color, var(--rd-line-theme-border-color));
 }
 
 .rd-line-number-border-both {
-  border-left: 1px solid rgba(0, 0, 0, 0.125);
+  border-left: 1px solid var(--rd-line-border-color, var(--rd-line-theme-border-color));
+}
+
+// consistent border colors for changed lines
+.rd-line-number,
+.rd-line-content {
+  --background-color: var(--rd-line-background-color-override, var(--rd-line-background-color));
+  --rd-line-border-color: oklch(from var(--background-color) calc(l + var(--rd-code-border-adjust)) c h);
+  background-color: var(--background-color);
+}
+
+.rd-line-content[data-change=removed] + .rd-line-number[data-change=added] {
+  border-left-color: var(--rd-adjacent-line-border-color,
+    oklch(
+      from color-mix(in lch, var(--rd-line-removed-background-color), var(--rd-line-added-background-color))
+      calc(l + var(--rd-code-border-adjust)) c h
+    )
+  );
+}
+
+.rd-line-content[data-change=removed]:has(+ :not(.rd-line-number[data-change=added])) {
+  box-shadow: 1px 0 var(--rd-line-border-color);
+}
+
+// table cells can't overflow to the right, we have to reserve space on the neighbouring cell
+.rd-hunk-lines-parallel > .rd-line-number[data-position=new]:not([data-change=meta]):empty {
+  border-left: 0;
+  margin-left: 1px;
+}
+
+.rd-line-number:first-child {
+  box-shadow: var(--rd-disable-extended-borders, -1px 0 var(--rd-line-border-color));
+  border-bottom-left-radius: var(--rd-row-bottom-left-radius);
+}
+
+.rd-line-content:last-child {
+  box-shadow: var(--rd-disable-extended-borders, 1px 0 var(--rd-line-border-color));
+  border-bottom-right-radius: var(--rd-row-bottom-right-radius);
 }
 
 .rd-line-link {
   display: block;
 
   &, &:hover {
-    color: var(--code-line-nubmer-color, $gray-400);
+    color: var(--rd-line-link-color);
+  }
+
+  &:focus {
+    outline: none;
   }
 
   &::before {
     content: attr(data-line-number);
   }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0 -1px;
+  }
+}
+
+.rd-line-link:focus-visible::after {
+  outline: 1px solid var(--gl-focus-ring-outer-color);
+  inset: 1px 0;
+}
+
+.rd-line-number:has(> .rd-line-link:focus-visible) {
+  z-index: constants.$diff-file-cell-focused-z-index;
 }
 
 .rd-line-content,
@@ -156,6 +271,9 @@
 
 .rd-hunk-header-content {
   align-self: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rd-line-content {
@@ -163,30 +281,45 @@
 
   &::before {
     position: absolute;
-    margin-left: -14px;
+    margin-left: -13px;
   }
 }
 
 .rd-line-content[data-change=removed] {
-  background-color: var(--diff-deletion-color, var(--code-old-diff-background-color, $line-removed));
+  --rd-line-background-color: var(--rd-line-removed-background-color);
 
   &::before {
-    content: "-";
+    // / "" allows us to not announce this with screen readers
+    content: "−" / "";
     color: var(--code-old-diff-sign-color, scale-color($line-number-old, $red: -30%, $green: -30%, $blue: -30%));
   }
 }
 
 .rd-line-content[data-change=added] {
-  background-color: var(--diff-addition-color, var(--code-new-diff-background-color, $line-added));
+  --rd-line-background-color: var(--rd-line-added-background-color);
 
   &::before {
-    content: "+";
+    // / "" allows us to not announce this with screen readers
+    content: "+" / "";
     color: var(--code-new-diff-sign-color, scale-color($line-number-new, $red: -30%, $green: -30%, $blue: -30%));
   }
 }
 
-// Select text only within one side of the parallel diff
-.rd-diff-file:has([data-position=new]:where(:active, :focus)) [data-position=old],
-.rd-diff-file:has([data-position=old]:where(:active, :focus)) [data-position=new] {
+.rd-line-content[data-change=meta] {
+  --rd-line-background-color: var(--code-meta-diff-background-color);
+  color: var(--code-meta-diff-color);
+  user-select: none;
+
+  &::before {
+    content: "\\" / "";
+  }
+}
+
+.rd-line-text {
+  all: unset;
+}
+
+[data-disable-diff-side=old] [data-position=old],
+[data-disable-diff-side=new] [data-position=new] {
   user-select: none;
 }

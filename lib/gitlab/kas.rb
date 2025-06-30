@@ -3,6 +3,7 @@
 module Gitlab
   module Kas
     INTERNAL_API_AGENTK_REQUEST_HEADER = 'Gitlab-Agentk-Api-Request'
+    INTERNAL_API_AGENT_REQUEST_HEADER = 'Gitlab-Agent-Api-Request'
     INTERNAL_API_KAS_REQUEST_HEADER = 'Gitlab-Kas-Api-Request'
     VERSION_FILE = 'GITLAB_KAS_VERSION'
     JWT_ISSUER = 'gitlab-kas'
@@ -28,31 +29,18 @@ module Gitlab
         write_secret
       end
 
-      # Return GitLab KAS version
-      #
-      # @return [String] version
-      def version
-        version_info.to_s
-      end
-
-      # Return GitLab KAS version info
-      #
-      # @return [Gitlab::VersionInfo] version_info
-      def version_info
-        return version_info_from_file if version_info_from_file.valid?
-
-        version_info_from_gitlab_and_file_sha
-      end
-
       # Return GitLab KAS version info for display
       # This is the version that is displayed on the `frontend`. This is also used to
       # check if the version of an existing agent does not match the latest agent version.
+      # If the getServerInfo RPC call fails, we fallback to GITLAB_KAS_VERSION file;
       # If the GITLAB_KAS_VERSION file contains a SHA, we defer instead to the Gitlab version.
       #
       # For further details, see: https://gitlab.com/gitlab-org/gitlab/-/merge_requests/149794
       #
       # @return [Gitlab::VersionInfo] version_info
       def display_version_info
+        server_version = ServerInfo.new.version_info
+        return server_version if server_version&.valid?
         return version_info_from_file if version_info_from_file.valid?
 
         Gitlab.version_info
@@ -60,6 +48,7 @@ module Gitlab
 
       # Return GitLab KAS version info for installation
       # This is the version used as the image tag when generating the command to install a Gitlab agent.
+      # If the getServerInfo RPC call fails, we fallback to GITLAB_KAS_VERSION file;
       # If the GITLAB_KAS_VERSION file contains a SHA, we defer instead to the Gitlab version without the patch.
       # This could mean that it might point to a Gitlab agent version that is several patches behind the latest one.
       #
@@ -67,6 +56,8 @@ module Gitlab
       #
       # @return [Gitlab::VersionInfo] version_info
       def install_version_info
+        server_version = ServerInfo.new.version_info
+        return server_version.without_patch if server_version&.valid?
         return version_info_from_file if version_info_from_file.valid?
 
         Gitlab.version_info.without_patch
@@ -122,10 +113,6 @@ module Gitlab
 
       def version_info_from_file
         Gitlab::VersionInfo.parse(version_file_content, parse_suffix: true)
-      end
-
-      def version_info_from_gitlab_and_file_sha
-        Gitlab::VersionInfo.parse("#{Gitlab.version_info}+#{version_file_content}", parse_suffix: true)
       end
 
       def ssl?

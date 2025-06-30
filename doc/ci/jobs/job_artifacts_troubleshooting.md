@@ -38,7 +38,7 @@ the path to the file is incorrect, or the file was not created. You can check th
 log for other errors or warnings that specify the filename and why it wasn't
 generated.
 
-For more detailed job logs, you can [enable CI/CD debug logging](../variables/_index.md#enable-debug-logging)
+For more detailed job logs, you can [enable CI/CD debug logging](../variables/variables_troubleshooting.md#enable-debug-logging)
 and try the job again. This logging might provide more information about why the file
 wasn't created.
 
@@ -143,6 +143,8 @@ To troubleshoot this error, verify that:
 - The `project`, `job`, and `ref` combination exists and results in the desired dependency.
 - Any variables in use evaluate to the correct values.
 
+If you use the `CI_JOB_TOKEN`, add the token to the project's [allowlist](ci_job_token.md#control-job-token-access-to-your-project) to pull artifacts from a different project.
+
 ### For a job configured with `needs:pipeline:job`
 
 The `could not retrieve the needed artifacts.` error can happen for a job using
@@ -182,6 +184,6 @@ On GitLab SaaS:
 
 On GitLab Self-Managed:
 
-- [Enable the feature flag](../../administration/feature_flags.md) named `ci_unlock_pipelines_extra_low`.
+- [Enable the feature flag](../../administration/feature_flags/_index.md) named `ci_unlock_pipelines_extra_low`.
 
 For more information see the comment in [merge request 140318](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/140318#note_1718600424).

@@ -5,8 +5,6 @@ module Types
     class NoteType < BaseObject
       graphql_name 'Note'
 
-      include ActionView::Helpers::SanitizeHelper
-
       connection_type_class Types::CountableConnectionType
 
       authorize :read_note
@@ -14,6 +12,10 @@ module Types
       expose_permissions Types::PermissionTypes::Note
 
       implements Types::Notes::BaseNoteInterface
+
+      def self.authorization_scopes
+        super + [:ai_workflows]
+      end
 
       present_using NotePresenter
 
@@ -23,6 +25,7 @@ module Types
         method: :human_max_access
 
       field :id, ::Types::GlobalIDType[::Note],
+        scopes: [:api, :read_api, :ai_workflows],
         null: false,
         description: 'ID of the note.'
 
@@ -82,10 +85,6 @@ module Types
 
         # object is a presenter, so object.object returns the concrete note object.
         ::Gitlab::GlobalId.build(object, model_name: object.object.class.to_s, id: object.discussion_id)
-      end
-
-      def note_project
-        object.project
       end
 
       def position

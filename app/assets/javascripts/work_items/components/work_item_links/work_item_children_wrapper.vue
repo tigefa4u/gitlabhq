@@ -43,11 +43,6 @@ export default {
       type: String,
       required: true,
     },
-    workItemIid: {
-      type: String,
-      required: false,
-      default: null,
-    },
     children: {
       type: Array,
       required: true,
@@ -111,10 +106,14 @@ export default {
       required: false,
       default: null,
     },
+    contextualViewEnabled: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   data() {
     return {
-      prefetchedWorkItem: null,
       updateInProgress: false,
       currentClientX: 0,
       currentClientY: 0,
@@ -518,7 +517,7 @@ export default {
       }
     },
     onClick(event, child) {
-      if (event.metaKey || event.ctrlKey) {
+      if (event.metaKey || event.ctrlKey || (this.contextualViewEnabled && event.shiftKey)) {
         return;
       }
       if (this.isTopLevel) {
@@ -589,6 +588,7 @@ export default {
       :data-child-type="child.workItemType.name"
       :active-child-item-id="activeChildItemId"
       :parent-id="parentId"
+      :contextual-view-enabled="contextualViewEnabled"
       class="!gl-border-x-0 !gl-border-b-1 !gl-border-t-0 !gl-border-solid !gl-pb-2 last:!gl-border-b-0 last:!gl-pb-0"
       @drag="$emit('drag', $event)"
       @drop="$emit('drop')"
@@ -596,8 +596,7 @@ export default {
       @mouseout="clearPrefetching"
       @removeChild="removeChild"
       @error="$emit('error', $event)"
-      @click.stop="onClick($event, child)"
-      @click.native="onClick($event, child)"
+      @toggleDrawer="onClick($event, child)"
     />
   </component>
 </template>

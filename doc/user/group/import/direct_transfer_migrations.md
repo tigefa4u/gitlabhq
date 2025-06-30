@@ -1,6 +1,6 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Create
+group: Import
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Migrate groups and projects by using direct transfer
 ---
@@ -44,19 +44,20 @@ Before migrating by using direct transfer, see the following prerequisites.
 
 ### Versions
 
-To maximize the chance of a successful and performant migration, you should:
+To maximize the chance of a successful and performant migration:
 
-- Upgrade both the source and destination instances to GitLab 16.8 or later to use bulk import and export of relations.
+- Upgrade both the source and destination instances to GitLab 16.8 or later for bulk import and export of relations.
   For more information, see [epic 9036](https://gitlab.com/groups/gitlab-org/-/epics/9036).
-- Migrate between versions that are as new as possible. Update the source and destination instances to as late a version
-  as possible to take advantage of bug fixes and improvements added over time.
-- [Configure Sidekiq](../../project/import/_index.md#sidekiq-configuration) properly.
+- Migrate between versions that are as late as possible for bug fixes and other improvements.
 
-We have successfully tested migrations between a source instance running GitLab 16.2 and a destination instance running
-GitLab 16.8.
+If the source and destination instances are not the same version,
+the source instance must not be more than two [minor](../../../policy/maintenance.md#versioning)
+versions earlier than the destination instance.
+This requirement does not apply for migrations from GitLab.com to GitLab Dedicated.
 
 ### Configuration
 
+- Ensure [Sidekiq is properly configured](../../project/import/_index.md#sidekiq-configuration).
 - Both GitLab instances must have group migration by direct transfer
   [enabled in application settings](../../../administration/settings/import_and_export_settings.md#enable-migration-of-groups-and-projects-by-direct-transfer)
   by an instance administrator.
@@ -226,7 +227,7 @@ To view group import history:
 1. Sign in to GitLab.
 1. On the left sidebar, at the top, select **Create new** ({{< icon name="plus" >}}) and **New group**.
 1. Select **Import group**.
-1. In the upper-right corner, select **History**.
+1. In the upper-right corner, select **View import history**.
 1. If there are any errors for a particular import, select **Show errors** to see their details.
 
 ## Cancel a running migration

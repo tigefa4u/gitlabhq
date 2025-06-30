@@ -4,9 +4,11 @@ class Packages::PackageFile < ApplicationRecord
   include EachBatch
   include UpdateProjectStatistics
   include FileStoreMounter
+  include ObjectStorable
   include Packages::Installable
   include Packages::Destructible
 
+  STORE_COLUMN = :file_store
   INSTALLABLE_STATUSES = [:default].freeze
   ENCODED_SLASH = "%2F"
   SORTABLE_COLUMNS = %w[id file_name created_at].freeze
@@ -16,7 +18,7 @@ class Packages::PackageFile < ApplicationRecord
   delegate :file_type, :dsc?, :component, :architecture, :fields, to: :debian_file_metadatum, prefix: :debian
   delegate :channel, :metadata, to: :helm_file_metadatum, prefix: :helm
 
-  enum status: { default: 0, pending_destruction: 1, processing: 2, error: 3 }
+  enum :status, { default: 0, pending_destruction: 1, processing: 2, error: 3 }
 
   belongs_to :package
 
@@ -39,13 +41,13 @@ class Packages::PackageFile < ApplicationRecord
 
   validates :file_name, uniqueness: { scope: :package }, if: -> { !pending_destruction? && package&.pypi? }
   validates :file_sha256, format: { with: Gitlab::Regex.sha256_regex }, if: -> { package&.pypi? }, allow_nil: true
+  validate :ensure_unique_conan_file_name, if: -> { !pending_destruction? && package&.conan? }, on: :create
 
   scope :recent, -> { order(id: :desc) }
   scope :limit_recent, ->(limit) { recent.limit(limit) }
   scope :for_package_ids, ->(ids) { where(package_id: ids) }
   scope :with_file_name, ->(file_name) { where(file_name: file_name) }
   scope :with_file_name_like, ->(file_name) { where(arel_table[:file_name].matches(file_name)) }
-  scope :with_files_stored_locally, -> { where(file_store: ::Packages::PackageFileUploader::Store::LOCAL) }
   scope :with_format, ->(format) { where(::Packages::PackageFile.arel_table[:file_name].matches("%.#{format}")) }
   scope :with_nuget_format, -> { where("reverse(split_part(reverse(packages_package_files.file_name), '.', 1)) = :format", format: Packages::Nuget::FORMAT) }
 
@@ -60,12 +62,12 @@ class Packages::PackageFile < ApplicationRecord
   end
 
   scope :for_rubygem_with_file_name, ->(project, file_name) do
-    joins(:package).merge(project.packages.rubygems).with_file_name(file_name)
+    joins(:package).merge(::Packages::Rubygems::Package.for_projects(project)).with_file_name(file_name)
   end
 
   scope :for_helm_with_channel, ->(project, channel) do
     joins(:package)
-      .merge(project.packages.helm.installable)
+      .merge(::Packages::Helm::Package.for_projects(project).installable)
       .joins(:helm_file_metadatum)
       .where(packages_helm_file_metadata: { channel: channel })
       .installable
@@ -111,6 +113,16 @@ class Packages::PackageFile < ApplicationRecord
   scope :without_conan_recipe_revision, -> do
     joins(:conan_file_metadatum)
       .where(packages_conan_file_metadata: { recipe_revision_id: nil })
+  end
+
+  scope :with_conan_package_revision, ->(package_revision) do
+    joins(conan_file_metadatum: :package_revision)
+      .where(packages_conan_package_revisions: { revision: package_revision })
+  end
+
+  scope :without_conan_package_revision, -> do
+    joins(:conan_file_metadatum)
+      .where(packages_conan_file_metadata: { package_revision_id: nil })
   end
 
   def self.most_recent!
@@ -175,6 +187,22 @@ class Packages::PackageFile < ApplicationRecord
 
     carrierwave_file.copy_to(new_file_path)
     carrierwave_file.delete
+  end
+
+  def ensure_unique_conan_file_name
+    return unless conan_file_metadatum && conan_file_metadatum.recipe_revision_id.present?
+
+    return unless self.class.installable.where(
+      package_id: package_id,
+      file_name: file_name,
+      packages_conan_file_metadata: {
+        recipe_revision_id: conan_file_metadatum.recipe_revision_id,
+        package_reference_id: conan_file_metadatum.package_reference_id,
+        package_revision_id: conan_file_metadatum.package_revision_id
+      }
+    ).joins(:conan_file_metadatum).exists?
+
+    errors.add(:file_name, _('already exists for the given recipe revision, package reference, and package revision'))
   end
 end
 

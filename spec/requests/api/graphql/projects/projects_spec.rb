@@ -3,6 +3,8 @@
 require 'spec_helper'
 
 RSpec.describe 'getting a collection of projects', feature_category: :source_code_management do
+  using RSpec::Parameterized::TableSyntax
+
   include GraphqlHelpers
 
   let_it_be(:current_user) { create(:user) }
@@ -89,7 +91,8 @@ RSpec.describe 'getting a collection of projects', feature_category: :source_cod
         .to contain_exactly(
           *projects.map { |project| a_graphql_entity_for(project) },
           a_graphql_entity_for(other_project),
-          a_graphql_entity_for(project_with_owner_access)
+          a_graphql_entity_for(project_with_owner_access),
+          a_graphql_entity_for(archived_project)
         )
       end
     end
@@ -123,9 +126,10 @@ RSpec.describe 'getting a collection of projects', feature_category: :source_cod
       # There is an N+1 query related to custom roles - https://gitlab.com/gitlab-org/gitlab/-/issues/515675
       # There is an N+1 query for duo_features_enabled cascading setting - https://gitlab.com/gitlab-org/gitlab/-/issues/442164
       # There is an N+1 query related to pipelines - https://gitlab.com/gitlab-org/gitlab/-/issues/515677
+      # There is an N+1 query related to marked_for_deletion - https://gitlab.com/gitlab-org/gitlab/-/issues/548924
       expect do
         post_graphql(query, current_user: current_user)
-      end.not_to exceed_all_query_limit(control).with_threshold(8)
+      end.not_to exceed_all_query_limit(control).with_threshold(12)
     end
 
     it 'returns the expected projects' do
@@ -228,6 +232,87 @@ RSpec.describe 'getting a collection of projects', feature_category: :source_cod
         a_graphql_entity_for(project_aimed_for_deletion1),
         a_graphql_entity_for(project_aimed_for_deletion2)
       )
+    end
+  end
+
+  context 'when providing marked_for_deletion_on filter', :freeze_time do
+    let_it_be(:path) { %i[projects nodes] }
+    let_it_be(:marked_for_deletion_on) { Date.yesterday }
+    let_it_be(:project_marked_for_deletion) do
+      create(:project, marked_for_deletion_at: marked_for_deletion_on, developers: current_user)
+    end
+
+    let_it_be(:second_project_marked_for_deletion) do
+      create(:project, marked_for_deletion_at: marked_for_deletion_on - 1.day, developers: current_user)
+    end
+
+    let(:filters) { { marked_for_deletion_on: marked_for_deletion_on } }
+
+    it 'returns the expected projects' do
+      post_graphql(query, current_user: current_user)
+      returned_projects = graphql_data_at(*path)
+
+      returned_ids = returned_projects.pluck('id')
+      returned_marked_for_deletion_on = returned_projects.pluck('markedForDeletionOn')
+
+      expect(returned_ids).to contain_exactly(project_marked_for_deletion.to_global_id.to_s)
+      expect(returned_marked_for_deletion_on).to contain_exactly(marked_for_deletion_on.iso8601)
+    end
+  end
+
+  context 'when providing visibility_level filter' do
+    let_it_be(:path) { %i[projects nodes] }
+
+    let_it_be(:public_project) { create(:project, :public, owners: [current_user]) }
+    let_it_be(:private_project) { create(:project, :private, owners: [current_user]) }
+    let_it_be(:internal_project) { create(:project, :internal, owners: [current_user]) }
+
+    where :visibility_level, :included_projects, :excluded_projects do
+      nil       | [ref(:public_project), ref(:private_project), ref(:internal_project)] | []
+      :public   | [ref(:public_project)] | [ref(:private_project), ref(:internal_project)]
+      :private  | [ref(:private_project)] | [ref(:public_project), ref(:internal_project)]
+      :internal | [ref(:internal_project)] | [ref(:private_project), ref(:public_project)]
+    end
+
+    with_them do
+      let(:filters) { { visibility_level: } }
+
+      it 'filters projects by visibility level', :aggregate_failures do
+        post_graphql(query, current_user: current_user)
+
+        returned_projects = graphql_data_at(*path)
+        returned_ids = returned_projects.pluck('id')
+
+        included_project_ids = included_projects.map { |p| p.to_global_id.to_s }
+        excluded_project_ids = excluded_projects.map { |p| p.to_global_id.to_s }
+
+        expect(returned_ids).to include(*included_project_ids) if included_project_ids.any?
+        expect(returned_ids).not_to include(*excluded_project_ids) if excluded_project_ids.any?
+      end
+    end
+  end
+
+  context 'when providing namespace_path filter' do
+    let_it_be(:path) { %i[projects nodes] }
+    let_it_be(:group) { create(:group, owners: [current_user]) }
+    let_it_be(:project) { create(:project, group: group, owners: [current_user]) }
+
+    before do
+      post_graphql(query, current_user: current_user)
+    end
+
+    subject { graphql_data_at(*path).pluck('id') }
+
+    context 'when `namespace_path` has match' do
+      let(:filters) { { namespace_path: group.full_path } }
+
+      it { is_expected.to contain_exactly(project.to_global_id.to_s) }
+    end
+
+    context 'when `namespace_path` has no match' do
+      let(:filters) { { namespace_path: 'non_existent_path' } }
+
+      it { is_expected.to be_empty }
     end
   end
 end

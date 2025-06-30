@@ -1,6 +1,6 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Create
+group: Import
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: ZenTao (deprecated)
 ---
@@ -17,7 +17,7 @@ title: ZenTao (deprecated)
 {{< alert type="warning" >}}
 
 This feature was [deprecated](https://gitlab.com/gitlab-org/gitlab/-/issues/377825) in GitLab 15.7
-and is planned for removal in 18.0.
+and is planned for removal in 19.0.
 This change is a breaking change.
 
 {{< /alert >}}

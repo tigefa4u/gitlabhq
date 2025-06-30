@@ -16,7 +16,7 @@ title: Transfer projects
 
 {{< history >}}
 
-- Support for transferring projects with container images within the same top-level namespace [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/499163) on GitLab.com in GitLab 17.7 [with a flag](../../../administration/feature_flags.md) named `transfer_project_with_tags`. Disabled by default.
+- Support for transferring projects with container images within the same top-level namespace [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/499163) on GitLab.com in GitLab 17.7 [with a flag](../../../administration/feature_flags/_index.md) named `transfer_project_with_tags`. Disabled by default.
 - Support for transferring projects with container images within the same top-level namespace [enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/499163) in GitLab 17.7. Feature flag removed.
 
 {{< /history >}}
@@ -44,6 +44,11 @@ A project transfer includes:
 The project's [path also changes](../repository/_index.md#repository-path-changes), so make sure to update the URLs to the project components where necessary.
 
 New project-level labels are created for issues and merge requests if matching group labels don't already exist in the target namespace.
+
+If a project contains issues assigned to an epic, and that epic is not available in the target
+group, GitLab creates a copy of the epic in the target group. When you transfer multiple projects
+with issues assigned to the same epic, GitLab creates a separate copy of that epic in the target
+group for each project.
 
 {{< alert type="warning" >}}
 

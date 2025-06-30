@@ -3,8 +3,6 @@
 require 'spec_helper'
 
 RSpec.describe ActiveSession, :clean_gitlab_redis_sessions, feature_category: :system_access do
-  include SessionHelpers
-
   let(:lookup_key) { described_class.lookup_key_name(user.id) }
   let(:user) do
     create(:user).tap do |user|
@@ -13,7 +11,7 @@ RSpec.describe ActiveSession, :clean_gitlab_redis_sessions, feature_category: :s
   end
 
   let(:rack_session) { Rack::Session::SessionId.new('6919a6f1bb119dd7396fadc38fd18d0d') }
-  let(:session) { instance_double(ActionDispatch::Request::Session, id: rack_session, '[]': {}) }
+  let(:session) { instance_double(ActionDispatch::Request::Session, id: rack_session, '[]': {}, dig: {}) }
 
   let(:request) do
     double(:request, {
@@ -187,7 +185,8 @@ RSpec.describe ActiveSession, :clean_gitlab_redis_sessions, feature_category: :s
       before do
         store = ActiveSupport::Cache::RedisCacheStore.new(
           namespace: Gitlab::Redis::Sessions::SESSION_NAMESPACE,
-          redis: Gitlab::Redis::Sessions
+          redis: Gitlab::Redis::Sessions,
+          coder: Gitlab::Sessions::CacheStoreCoder
         )
         # ActiveSupport::Cache::RedisCacheStore wraps the data in ActiveSupport::Cache::Entry
         # https://github.com/rails/rails/blob/v7.0.8.6/activesupport/lib/active_support/cache.rb#L506
@@ -235,6 +234,8 @@ RSpec.describe ActiveSession, :clean_gitlab_redis_sessions, feature_category: :s
   end
 
   describe '.set' do
+    subject(:set_request) { described_class.set(user, request) }
+
     it 'sets a new redis entry for the user session and a lookup entry' do
       described_class.set(user, request)
 
@@ -263,7 +264,8 @@ RSpec.describe ActiveSession, :clean_gitlab_redis_sessions, feature_category: :s
           device_name: 'iPhone 6',
           device_type: 'smartphone',
           created_at: eq(time),
-          updated_at: eq(time)
+          updated_at: eq(time),
+          step_up_authenticated: false
         )
       end
     end
@@ -288,80 +290,35 @@ RSpec.describe ActiveSession, :clean_gitlab_redis_sessions, feature_category: :s
       end
     end
 
-    context 'when session_expire_from_init is set' do
-      before do
-        stub_application_setting(session_expire_from_init: true, session_expire_delay: 10080)
+    context 'when the request session is step-up authenticated' do
+      it 'sets step_up_authenticated in the active_user_session' do
+        expect(::Gitlab::Auth::Oidc::StepUpAuthentication)
+          .to receive(:succeeded?).with(session).and_return(true)
+
+        set_request
+
+        new_session = described_class.list(user).first
+
+        expect(new_session).to have_attributes(step_up_authenticated: true)
       end
 
-      it 'sets a new redis entry with the same ttl' do
-        described_class.set(user, request)
-        key = described_class.key_name(user.id, rack_session.private_id)
+      context 'for session key step_up_authenticated' do
+        context 'when feature flag :omniauth_step_up_auth_for_admin_mode is disabled' do
+          before do
+            stub_feature_flags(omniauth_step_up_auth_for_admin_mode: false)
+          end
 
-        # Sanity check for default ttl
-        expect(get_ttl(key)).to be_within(10).of(Settings.gitlab['session_expire_delay'] * 60)
+          it 'does not set the step-up authenticated' do
+            allow(::Gitlab::Auth::Oidc::StepUpAuthentication)
+              .to receive(:succeeded?).with(session).and_return(true)
 
-        # Mock passage of time
-        expire(key, 4.days.to_i)
+            set_request
 
-        # passage of time with no additional session access should have no effect
-        expect(get_ttl(key)).to be_within(20).of(4.days.to_i)
+            new_session = described_class.list(user).first
 
-        described_class.set(user, request)
-
-        # ensure active session reset did not modify ttl
-        expect(get_ttl(key)).to be_within(20).of(4.days.to_i)
-      end
-
-      context 'and session_expire_from_init FF is disabled' do
-        before do
-          stub_feature_flags(session_expire_from_init: false)
+            expect(new_session).to have_attributes(step_up_authenticated: false)
+          end
         end
-
-        it 'updates ttl using session max lifetime' do
-          described_class.set(user, request)
-          key = described_class.key_name(user.id, rack_session.private_id)
-
-          # Sanity check for default ttl
-          expect(get_ttl(key)).to be_within(10).of(Settings.gitlab['session_expire_delay'] * 60)
-
-          # Mock passage of time
-          expire(key, 4.days.to_i)
-
-          # Manual expiration setting should be respected by redis
-          expect(get_ttl(key)).to be_within(10).of(4.days.to_i)
-
-          # recreate session, should reset ttl to setting_expire_session_delay * 60
-          described_class.set(user, request)
-
-          # ensure active session reset did not modify ttl
-          expect(get_ttl(key)).to be_within(10).of(Settings.gitlab['session_expire_delay'] * 60)
-        end
-      end
-    end
-
-    context 'when session expire from init is disabled' do
-      before do
-        stub_application_setting(session_expire_from_init: false, session_expire_delay: 10080)
-      end
-
-      it 'restarts session duration' do
-        described_class.set(user, request)
-        key = described_class.key_name(user.id, rack_session.private_id)
-
-        # Sanity check for default ttl
-        expect(get_ttl(key)).to be_within(10).of(Settings.gitlab['session_expire_delay'] * 60)
-
-        # Mock passage of time
-        expire(key, 4.days.to_i)
-
-        # Manual expiration setting should be respected by redis
-        expect(get_ttl(key)).to be_within(10).of(4.days.to_i)
-
-        # recreate session, should reset ttl to setting_expire_session_delay * 60
-        described_class.set(user, request)
-
-        # ensure active session reset did not modify ttl
-        expect(get_ttl(key)).to be_within(10).of(Settings.gitlab['session_expire_delay'] * 60)
       end
     end
   end

@@ -1,4 +1,8 @@
-import { COLLAPSE_FILE, EXPAND_FILE } from '~/rapid_diffs/events';
+import { COLLAPSE_FILE, EXPAND_FILE, MOUNTED } from '~/rapid_diffs/events';
+
+function getDetails(root) {
+  return root.querySelector('[data-file-body]');
+}
 
 function getOppositeToggleButton(clicked) {
   const isOpened = clicked.dataset.opened;
@@ -12,15 +16,20 @@ function getOppositeToggleButton(clicked) {
 function collapse(root = this.diffElement) {
   // eslint-disable-next-line no-param-reassign
   root.dataset.collapsed = true;
-  // eslint-disable-next-line no-param-reassign
-  root.querySelector('[data-file-body]').hidden = true;
+  getDetails(root).removeAttribute('open');
 }
 
 function expand(root = this.diffElement) {
   // eslint-disable-next-line no-param-reassign
   delete root.dataset.collapsed;
-  // eslint-disable-next-line no-param-reassign
-  root.querySelector('[data-file-body]').hidden = false;
+  getDetails(root).open = true;
+}
+
+function stopTransition(element) {
+  element.style.transition = 'none';
+  requestAnimationFrame(() => {
+    element.style.transition = '';
+  });
 }
 
 export const ToggleFileAdapter = {
@@ -32,7 +41,10 @@ export const ToggleFileAdapter = {
       } else {
         collapse.call(this);
       }
-      getOppositeToggleButton(button).focus();
+      const oppositeButton = getOppositeToggleButton(button);
+      oppositeButton.focus();
+      // a replaced button triggers another transition that we need to stop
+      stopTransition(oppositeButton);
     },
   },
   [EXPAND_FILE]() {
@@ -40,5 +52,19 @@ export const ToggleFileAdapter = {
   },
   [COLLAPSE_FILE]() {
     collapse.call(this);
+  },
+  [MOUNTED](onUnmounted) {
+    const details = getDetails(this.diffElement);
+    const handleToggle = () => {
+      if (details.open) {
+        expand.call(this);
+      } else {
+        collapse.call(this);
+      }
+    };
+    details.addEventListener('toggle', handleToggle);
+    onUnmounted(() => {
+      details.removeEventListener('toggle', handleToggle);
+    });
   },
 };

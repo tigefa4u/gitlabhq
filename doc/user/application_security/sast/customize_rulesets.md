@@ -35,13 +35,12 @@ You can disable predefined rules for any SAST analyzer.
 
 When you disable a rule:
 
-- Most analyzers still scan for the vulnerability. The results are removed as a processing step after the scan completes, and they don't appear in the [`gl-sast-report.json` artifact](_index.md#download-a-sast-report).
-- Findings for the disabled rule no longer appear in the [pipeline security tab](../vulnerability_report/pipeline.md).
+- All SAST analyzers that support custom rulesets still scan for the vulnerability. The results are removed as a processing step after the scan completes, and they don't appear in the [`gl-sast-report.json` artifact](_index.md#download-a-sast-report).
+- Findings for the disabled rule no longer appear in the [pipeline security tab](../detect/security_scanning_results.md).
 - Existing findings for the disabled rule on the default branch are marked as [`No longer detected`](../vulnerability_report/_index.md#activity-filter) in the [vulnerability report](../vulnerability_report/_index.md).
 
 The Semgrep-based analyzer handles disabled rules differently:
 
-- To improve performance, the Semgrep-based analyzer doesn't scan for disabled rules at all.
 - If you disable a rule in the Semgrep-based analyzer, existing vulnerability findings for that rule are [automatically resolved](_index.md#automatic-vulnerability-resolution) after you merge the `sast-ruleset.toml` file to the default branch.
 
 See the [Schema](#schema) and [Examples](#examples) sections for information on how
@@ -132,7 +131,7 @@ If remote configuration file doesn't seem to be applying customizations correctl
 
 ### The top-level section
 
-The top-level section contains one or more _configuration sections_, defined as [TOML tables](https://toml.io/en/v1.0.0#table).
+The top-level section contains one or more configuration sections, defined as [TOML tables](https://toml.io/en/v1.0.0#table).
 
 | Setting | Description |
 | --------| ----------- |
@@ -145,7 +144,7 @@ Configuration example:
 ...
 ```
 
-Avoid creating configuration sections that modify existing rules _and_ build a custom ruleset, as
+Avoid creating configuration sections that modify existing rules and build a custom ruleset, as
 the latter replaces predefined rules completely.
 
 ### The `[$analyzer]` configuration section
@@ -158,7 +157,7 @@ differ based on the kind of configuration you're making.
 | `[[$analyzer.ruleset]]` | Predefined rules | Defines modifications to an existing rule. |
 | `interpolate` | All | If set to `true`, you can use `$VAR` in the configuration to evaluate environment variables. Use this feature with caution, so you don't leak secrets or tokens. (Default: `false`) |
 | `description` | Passthroughs | Description of the custom ruleset. |
-| `targetdir`   | Passthroughs | The directory where the final configuration should be persisted. If empty, a directory with a random name is created. The directory can contain up to 100 MB of files. In case the SAST job is running with non-root user privileges, ensure that the [active user](../../../development/integrations/secure.md#permissions) has read and write permissions for this directory. |
+| `targetdir`   | Passthroughs | The directory where the final configuration should be persisted. If empty, a directory with a random name is created. The directory can contain up to 100 MB of files. In case the SAST job is running with non-root user privileges, ensure that the active user has read and write permissions for this directory. |
 | `validate`    | Passthroughs | If set to `true`, the content of each passthrough is validated. The validation works for `yaml`, `xml`, `json` and `toml` content. The proper validator is identified based on the extension used in the `target` parameter of the `[[$analyzer.passthrough]]` section. (Default: `false`) |
 | `timeout`     | Passthroughs | The maximum time to spend to evaluate the passthrough chain, before timing out. The timeout cannot exceed 300 seconds. (Default: 60) |
 

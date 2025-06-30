@@ -38,10 +38,10 @@ if puma_master?
   # since it must happen prior to any worker processes or the metrics server starting up.
   Prometheus::CleanupMultiprocDirService.new(prometheus_metrics_dir).execute
 
-  ::Prometheus::Client.reinitialize_on_pid_change(force: true)
+  Gitlab::Metrics.client.reinitialize_on_pid_change(force: true)
 end
 
-::Prometheus::Client.configure do |config|
+Gitlab::Metrics.client.configure do |config|
   config.logger = Gitlab::AppLogger
 
   config.multiprocess_files_dir = prometheus_metrics_dir
@@ -79,7 +79,7 @@ rescue IOError => e
 end
 
 Gitlab::Cluster::LifecycleEvents.on_worker_start do
-  defined?(::Prometheus::Client.reinitialize_on_pid_change) && ::Prometheus::Client.reinitialize_on_pid_change
+  defined?(Gitlab::Metrics.client.reinitialize_on_pid_change) && Gitlab::Metrics.client.reinitialize_on_pid_change
   logger = Gitlab::AppLogger
   # Since we also run these samplers in the Puma primary, we need to re-create them each time we fork.
   # For Sidekiq, this does not make any difference, since there is no primary.
@@ -99,9 +99,19 @@ Gitlab::Cluster::LifecycleEvents.on_worker_start do
   end
 
   if Gitlab::Runtime.sidekiq?
-    Gitlab::Metrics::Samplers::ConcurrencyLimitSampler.instance(logger: logger).start
-    Gitlab::Metrics::Samplers::StatActivitySampler.instance(logger: logger).start
-    Gitlab::Metrics::Samplers::GlobalSearchSampler.instance(logger: logger).start if Gitlab.ee?
+    @samplers_started = false
+
+    Rails.application.config.after_routes_loaded do
+      # Rails will reload this hook every time routes are changed.
+      unless @samplers_started
+        # These samplers may attempt to retrieve database connections (e.g. for feature flag checks)
+        # in the background, so wait until all the code is loaded before starting.
+        Gitlab::Metrics::Samplers::ConcurrencyLimitSampler.instance(logger: logger).start
+        Gitlab::Metrics::Samplers::StatActivitySampler.instance(logger: logger).start
+        Gitlab::Metrics::Samplers::GlobalSearchSampler.instance(logger: logger).start if Gitlab.ee?
+        @samplers_started = true
+      end
+    end
   end
 
   Gitlab::Ci::Parsers.instrument!

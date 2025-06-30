@@ -1,4 +1,6 @@
+import { GlFilteredSearchToken } from '@gitlab/ui';
 import { range } from 'lodash';
+import { OPERATORS_IS } from '~/vue_shared/components/filtered_search_bar/constants';
 import { OBSTACLE_TYPES } from '~/vue_shared/components/user_deletion_obstacles/constants';
 import { SOLO_OWNED_ORGANIZATIONS_REQUESTED_COUNT } from '~/admin/users/constants';
 
@@ -40,12 +42,13 @@ export const paths = {
   unban: '/admin/users/id/unban',
 };
 
-export const createGroupCountResponse = (groupCounts) => ({
+export const createMembershipCountResponse = (data) => ({
   data: {
     users: {
-      nodes: groupCounts.map(({ id, groupCount }) => ({
+      nodes: data.map(({ id, groupCount, projectCount }) => ({
         id: `gid://gitlab/User/${id}`,
         groupCount,
+        projectCount,
         __typename: 'UserCore',
       })),
       __typename: 'UserCoreConnection',
@@ -103,3 +106,72 @@ export const multipleWithExtrasSoloOwnedOrganizations = {
   count: 12,
   nodes: range(SOLO_OWNED_ORGANIZATIONS_REQUESTED_COUNT).map((index) => organization(index)),
 };
+
+export const expectedAccessLevelToken = {
+  title: 'Access level',
+  type: 'access_level',
+  token: GlFilteredSearchToken,
+  operators: OPERATORS_IS,
+  unique: true,
+  options: IS_EE
+    ? [
+        { value: 'admins', title: 'Administrator' },
+        { value: 'auditors', title: 'Auditor' },
+        { value: 'external', title: 'External' },
+      ]
+    : [
+        { value: 'admins', title: 'Administrator' },
+        { value: 'external', title: 'External' },
+      ],
+};
+
+export const expectedTokens = [
+  expectedAccessLevelToken,
+  {
+    title: 'State',
+    type: 'state',
+    token: GlFilteredSearchToken,
+    operators: OPERATORS_IS,
+    unique: true,
+    options: [
+      { value: 'active', title: 'Active' },
+      { value: 'banned', title: 'Banned' },
+      { value: 'blocked', title: 'Blocked' },
+      { value: 'deactivated', title: 'Deactivated' },
+      { value: 'blocked_pending_approval', title: 'Pending approval' },
+      { value: 'trusted', title: 'Trusted' },
+      { value: 'wop', title: 'Without projects' },
+    ],
+  },
+  {
+    title: 'Two-factor authentication',
+    type: '2fa',
+    token: GlFilteredSearchToken,
+    operators: OPERATORS_IS,
+    unique: true,
+    options: [
+      { value: 'two_factor_enabled', title: 'On' },
+      { value: 'two_factor_disabled', title: 'Off' },
+    ],
+  },
+  {
+    title: 'Type',
+    type: 'type',
+    token: GlFilteredSearchToken,
+    operators: OPERATORS_IS,
+    unique: true,
+    options: [
+      { value: 'without_bots', title: 'Humans' },
+      { value: 'bots', title: 'Bots' },
+      { value: 'placeholder', title: 'Placeholder' },
+    ],
+  },
+  {
+    title: 'LDAP sync',
+    type: 'ldap_sync',
+    token: GlFilteredSearchToken,
+    operators: OPERATORS_IS,
+    unique: true,
+    options: [{ value: 'ldap_sync', title: 'True' }],
+  },
+];

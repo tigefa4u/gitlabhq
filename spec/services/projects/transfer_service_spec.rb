@@ -272,7 +272,7 @@ RSpec.describe Projects::TransferService, feature_category: :groups_and_projects
 
         it 'replaces inherited integrations', :aggregate_failures do
           expect { execute_transfer }
-            .to change(Integration, :count).by(0)
+            .to not_change(Integration, :count)
             .and change { project.slack_integration.webhook }.to eq(group_integration.webhook)
         end
       end
@@ -460,7 +460,7 @@ RSpec.describe Projects::TransferService, feature_category: :groups_and_projects
         context 'when the dry run in the registry succeeds' do
           it 'allows the transfer to continue' do
             expect(ContainerRegistry::GitlabApiClient).to receive(:move_repository_to_namespace).with(
-              project.full_path, namespace: target.full_path, dry_run: true)
+              project.full_path, namespace: target.full_path, project: project, dry_run: true)
 
             expect(execute_transfer).to eq true
           end
@@ -472,7 +472,7 @@ RSpec.describe Projects::TransferService, feature_category: :groups_and_projects
           before do
             expect(ContainerRegistry::GitlabApiClient)
               .to receive(:move_repository_to_namespace)
-              .with(project.full_path, namespace: target.full_path, dry_run: true)
+              .with(project.full_path, namespace: target.full_path, project: project, dry_run: true)
               .and_return(dry_run_result)
           end
 
@@ -726,6 +726,8 @@ RSpec.describe Projects::TransferService, feature_category: :groups_and_projects
     let(:group) { create(:group) }
     let(:member_of_new_group) { create(:user) }
 
+    let(:user_ids) { [user.id, member_of_old_group.id, member_of_new_group.id] }
+
     before do
       old_group.add_developer(member_of_old_group)
       group.add_maintainer(member_of_new_group)
@@ -743,20 +745,25 @@ RSpec.describe Projects::TransferService, feature_category: :groups_and_projects
       execute_transfer
     end
 
-    it 'calls AuthorizedProjectUpdate::UserRefreshFromReplicaWorker with a delay to update project authorizations' do
-      stub_feature_flags(do_not_run_safety_net_auth_refresh_jobs: false)
+    it 'enqueues a EnqueueUsersRefreshAuthorizedProjectsWorker job' do
+      expect(AuthorizedProjectUpdate::EnqueueUsersRefreshAuthorizedProjectsWorker)
+        .to receive(:perform_async).with(user_ids)
 
-      user_ids = [user.id, member_of_old_group.id, member_of_new_group.id].map { |id| [id] }
+      execute_transfer
+    end
 
-      expect(AuthorizedProjectUpdate::UserRefreshFromReplicaWorker).to(
-        receive(:bulk_perform_in).with(
-          1.hour,
-          user_ids,
-          batch_delay: 30.seconds, batch_size: 100
-        )
-      )
+    context 'when project_authorizations_update_in_background_in_transfer_service feature flag is disabled' do
+      before do
+        stub_feature_flags(project_authorizations_update_in_background_in_transfer_service: false)
+      end
 
-      subject
+      it 'calls UserProjectAccessChangedService with user_ids to update project authorizations' do
+        expect_next_instance_of(UserProjectAccessChangedService, user_ids) do |instance|
+          expect(instance).to receive(:execute).with(priority: UserProjectAccessChangedService::LOW_PRIORITY)
+        end
+
+        execute_transfer
+      end
     end
 
     it 'refreshes the permissions of the members of the old and new namespace', :sidekiq_inline do

@@ -1,100 +1,91 @@
 ---
 stage: AI-powered
 group: Duo Workflow
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
-title: Development of GitLab Duo Workflow
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
+title: Development of GitLab Duo Agent Platform
 ---
 
-This guide describes how to set up the local development environment for the various projects that make up [GitLab Duo Workflow](../../user/duo_workflow/_index.md).
+{{< history >}}
+
+- [Name changed](https://gitlab.com/gitlab-org/gitlab/-/issues/551382) from `Workflow` to `Agent Platform` in GitLab 18.2. 
+
+{{< /history >}}
+
+How to set up the local development environment to run [GitLab Duo Agent Platform](../../user/duo_agent_platform/_index.md).
 
 ## Prerequisites
 
-- Vertex API access
-  - You need access to the `ai-enablement-dev-69497ba7` project in GCP. This should by available to all engineers at GitLab.
-- Docker
-  - See which Docker tooling is approved for GitLab team members in the [handbook](https://handbook.gitlab.com/handbook/tools-and-tips/mac/#docker-desktop).
+- [GitLab Ultimate license](https://handbook.gitlab.com/handbook/engineering/developer-onboarding/#working-on-gitlab-ee-developer-licenses)
+- [Vertex access](https://gitlab.com/gitlab-org/gitlab-development-kit/-/blob/main/doc/howto/gitlab_ai_gateway.md#use-the-existing-project): You need access to the `ai-enablement-dev-69497ba7` project in GCP because GDK by default uses Anthropic hosted on Vertex. Access to this project should be available to all engineers at GitLab.
+  - If you do not have Vertex access for any reason, you should unset `DUO_WORKFLOW__VERTEX_PROJECT_ID` in the Duo Workflow Service and set `ANTHROPIC_API_KEY` to a regular Anthropic API key
+- Various settings and feature flags, which are enabled for you by the [GDK setup script](#development-setup-for-backend-components)
 
 ## Set up local development for Workflow
 
 Workflow consists of four separate services:
 
 1. [GitLab instance](https://gitlab.com/gitlab-org/gitlab/)
-1. [GitLab Duo Workflow Service](https://gitlab.com/gitlab-org/duo-workflow/duo-workflow-service)
+1. GitLab Duo Workflow Service, which is part of the [GitLab AI Gateway](https://gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist/-/blob/main/docs/duo_workflow_service.md?ref_type=heads)
 1. [GitLab Duo Workflow Executor](https://gitlab.com/gitlab-org/duo-workflow/duo-workflow-executor/)
 1. [GitLab Duo Workflow Webview](https://gitlab.com/gitlab-org/editor-extensions/gitlab-lsp/-/blob/main/packages/webview_duo_workflow/README.md)
 
-### GDK Setup
+### Development Setup for Backend Components
 
-We recommend [setting up GitLab Duo Workflow directly with the GitLab Development Kit (GDK)](https://gitlab.com/gitlab-org/gitlab-development-kit/-/blob/main/doc/howto/duo_workflow.md?ref_type=heads)
-for setting up local versions of GitLab, the GitLab Duo Workflow Service and Executor.
+You should [set up GitLab Duo Agent Platform with the GitLab Development Kit (GDK)](https://gitlab.com/gitlab-org/gitlab-development-kit/-/blob/main/doc/howto/duo_workflow.md)
+to run local versions of GitLab, Duo Workflow Service, and Executor.
 
-This setup can be used with the [publicly available version of the VS Code Extension](https://marketplace.visualstudio.com/items?itemName=GitLab.gitlab-workflow).
-Follow [these instructions](#gitlab-duo-workflow-ui-in-visual-studio-code-vs-code) to see the GitLab Duo Workflow UI local build in VS Code if you want to actively need to develop it or use an unreleased version.
+This setup can be used as-is with the [publicly available version of the VS Code Extension](https://marketplace.visualstudio.com/items?itemName=GitLab.gitlab-workflow).
 
-### Manual Setup
+### Development Setup for Frontend Components
 
-#### GitLab Duo Workflow UI in Visual Studio Code (VS Code)
+There is no need to set up the backend components of the Agent Platform to test changes for the Agent Platform UI in the IDE.
 
-There is no need for the GDK, Workflow service or Workflow executor local build to test the GitLab Duo Workflow UI.
-Only set these up if you are making changes to one of these packages and need to test their integration with the GitLab Duo Workflow UI in VS Code.
-Please refer to the [GitLab Duo Workflow README.md](https://gitlab.com/gitlab-org/editor-extensions/gitlab-lsp/-/blob/main/packages/webview_duo_workflow/README.md) file in the Language Server project to get started with local development of GitLab Duo Workflow UI.
+A local build of the UI is required if you are making Duo Workflow UI changes that you need to view locally. A local build is also required if you want to use a version of the UI that has not been released yet.
 
-#### Set up your local GitLab instance
+Refer to the [GitLab Duo Workflow README](https://gitlab.com/gitlab-org/editor-extensions/gitlab-lsp/-/blob/main/packages/webview_duo_workflow/README.md) file in the Language Server project to get started with local development of GitLab Duo Agent Platform UI in the IDE.
 
-1. Configure the GitLab Duo Workflow Service URL in your local GitLab instance by updating the `config/gitlab.yml` file:
+## Development settings
 
-   ```dotenv
-   development:
-     duo_workflow:
-       service_url: 0.0.0.0:50052
-       secure: false
-   ```
+Each of these settings can be turned on in your user settings in VS Code.
 
-1. Restart the GitLab instance.
+### Change view type
 
-   ```shell
-   gdk restart rails
-   ```
+Enable the Duo Workflow as a sidepanel instead of fullview. This is going to be the default for public beta.
 
-1. In your local GitLab instance, enable the `duo_workflow` feature flag from the Rails console:
+`"gitlab.featureFlags.duoWorkflowPanel": true,`
 
-   ```ruby
-   Feature.enable(:duo_workflow)
-   ```
+### Executor type
 
-1. Set up [GitLab Runner with GDK](https://gitlab.com/gitlab-org/gitlab-development-kit/blob/main/doc/howto/runner.md) so you can create CI jobs locally to test Workflow.
-1. Create a [personal access token](../../user/profile/personal_access_tokens.md) in your local GitLab instance with the `api` scope. Save this value and use it in the next step.
-1. Run GDK with an Ultimate license.
-1. If you're running GitLab in SaaS mode, you'll need to turn on the `beta and experimental features` functionality, as they are [turned off by default](../../user/gitlab_duo/turn_on_off.md#turn-on-beta-and-experimental-features). In the group settings for the project you'll run workflow against, ensure that the `Use experiment and beta Duo features` checkbox is checked.
-1. Manually create a Workflow using the following `curl` request; the output will be a workflow ID that is referred to as `$WORKFLOW_ID` throughout the rest of these docs:
+Allow to define which Duo Workflow executor is selected. Accepts:
 
-   ```shell
-   curl POST --verbose \
-     --header "Authorization: Bearer $YOUR_GITLAB_PAT" \
-     --header 'Content-Type: application/json' \
-     --data '{
-        "project_id": "$PROJECT_ID_FOR_RUNNING_WORKFLOW_AGAINST"
-     }' \
-     $YOUR_GDK_ROOT_URL/api/v4/ai/duo_workflows/workflows
-   ```
+- `shell` - Current default, runs the go binary directly on the user's machine
+- `docker` - Runs the go binary inside a Docker container (deprecated)
+- `node` - Runs a nodeJs/TypeScript executor directly inside the languge server. Expected to become the default.
 
-#### Set up the GitLab Duo Workflow Service and Executor
+`"gitlab.duo.workflow.executor": "node",`
 
-Refer to the readme of [GitLab Duo Workflow Service](https://gitlab.com/gitlab-org/duo-workflow/duo-workflow-service) and [GitLab Duo Workflow Executor](https://gitlab.com/gitlab-org/duo-workflow/duo-workflow-executor/) to set them up individually.
+### Workflow graph
 
-## Troubleshooting
+Experimental settings that allow Duo Workflow graph to be swapped. Includes:
 
-### Issues connecting to 50052 port
+- `software_development` - default
+- `chat` - used by agentic chat
+- `search_and_replace` - Used to scan large number of files and replace results with specific instructions
 
-JAMF may be listening on the `50052` port which will conflict with GitLab Duo Workflow Service.
+`"gitlab.duo.workflow.graph": "software_development",`
 
-```shell
-$ sudo lsof -i -P | grep LISTEN | grep :50052
-jamfRemot  <redacted>           root   11u  IPv4 <redacted>      0t0    TCP localhost:50052 (LISTEN)
-```
+### Tool approval
 
-To work around this,run the serveron 50053 with:
+Allow users to get access to tools that require approval such as running terminal commands.
 
-```shell
-PORT=50053 poetry run duo-workflow-service
-```
+`"gitlab.duo.workflow.toolApproval": true`
+
+## Evaluate Workflow
+
+### Running evals
+
+To evaluate your local setup, please refer to [Duo Workflow Tests](https://gitlab.com/gitlab-org/duo-workflow/testing/duo-workflow-tests) repo.
+
+### Comparing results
+
+Once you finish a evaluation and have a experiment ID from LangSmith, compare results using [this notebook](https://gitlab.com/gitlab-org/duo-workflow/testing/notebooks/-/blob/main/notebooks/compare-swe-bench-evals.ipynb?ref_type=heads) from the [Duo Workflow Notebooks](https://gitlab.com/gitlab-org/duo-workflow/testing/notebooks) repo.

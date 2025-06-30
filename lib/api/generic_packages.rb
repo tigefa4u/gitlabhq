@@ -49,7 +49,12 @@ module API
 
           put 'authorize' do
             authorize_job_token_policies!(authorized_user_project)
-            authorize_workhorse!(**authorize_workhorse_params)
+
+            authorize_workhorse!(**authorize_workhorse_params).tap do
+              if Feature.enabled?(:packages_protected_packages_generic, authorized_user_project)
+                protect_package!(declared_params[:package_name], :generic)
+              end
+            end
           end
 
           desc 'Upload package file' do
@@ -92,12 +97,18 @@ module API
               file_name: encoded_file_name,
               build: current_authenticated_job
             )
-            package_file = ::Packages::Generic::CreatePackageFileService
+
+            response = ::Packages::Generic::CreatePackageFileService
               .new(project, current_user, create_package_file_params)
               .execute
 
+            if response.error?
+              bad_request!('Duplicate package is not allowed') if response.cause.package_file_already_exists?
+              forbidden!('Package protected.') if response.cause.package_protected?
+            end
+
             if params[:select] == 'package_file'
-              present package_file
+              present response[:package_file]
             else
               created!
             end
@@ -105,8 +116,6 @@ module API
             Gitlab::ErrorTracking.track_exception(e, extra: { file_name: params[:file_name], project_id: project.id })
 
             forbidden!
-          rescue ::Packages::DuplicatePackageError
-            bad_request!('Duplicate package is not allowed')
           end
 
           desc 'Download package file' do

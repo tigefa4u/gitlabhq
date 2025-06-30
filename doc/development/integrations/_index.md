@@ -1,7 +1,7 @@
 ---
-stage: Foundations
-group: Import and Integrate
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+stage: Create
+group: Import
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 description: Development guidelines for Integrations
 title: Integration development guidelines
 ---
@@ -208,13 +208,14 @@ For example, to create metric definitions for the Slack integration, you copy th
 
 ### Security requirements
 
-#### All HTTP calls must use `Gitlab::HTTP`
+#### All HTTP calls must use `Integrations::Clients::HTTP`
 
-Integrations must always make HTTP calls using `Gitlab::HTTP`, which:
+Integrations must always make HTTP calls using `Integrations::Clients::HTTP`, which:
 
 - Ensures that [network settings](../../security/webhooks.md) are enforced for HTTP calls.
 - Has additional [security hardening](../../security/webhooks.md#enforce-dns-rebinding-attack-protection) features.
 - Is our single source of truth for making secure HTTP calls.
+- Ensure all response sizes are validated.
 
 #### Masking channel values
 
@@ -244,7 +245,7 @@ but they offer minimal benefit compared to the costs involved:
 - They increase the potential surface area of security problems and the effort required to fix them.
 - Often these gems make HTTP calls on your behalf. As integrations can make HTTP calls to remote
   servers configured by users, it is critical that we
-  [fully control the network calls](#all-http-calls-must-use-gitlabhttp).
+  [fully control the network calls](#all-http-calls-must-use-integrationsclientshttp).
 - There is a maintenance cost of managing gem upgrades.
 - They can block us from using newer features.
 

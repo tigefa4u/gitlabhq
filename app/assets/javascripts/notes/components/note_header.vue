@@ -202,21 +202,21 @@ export default {
         <span ref="actionText" class="system-note-separator">
           <template v-if="actionText">{{ actionText }}</template>
         </span>
-        <a
+        <time-ago-tooltip
           v-if="noteTimestampLink"
           ref="noteTimestampLink"
           :href="noteTimestampLink"
           class="note-timestamp system-note-separator"
+          :time="createdAt"
+          tooltip-placement="bottom"
           @click="updateTargetNoteHash"
-        >
-          <time-ago-tooltip :time="createdAt" tooltip-placement="bottom" />
-        </a>
+        />
         <time-ago-tooltip v-else ref="noteTimestamp" :time="createdAt" tooltip-placement="bottom" />
       </template>
 
       <template v-if="isImported">
         <span v-if="isSystemNote">&middot;</span>
-        <imported-badge :text-only="isSystemNote" :importable-type="importableType" />
+        <imported-badge :text-only="isSystemNote" />
       </template>
 
       <gl-badge

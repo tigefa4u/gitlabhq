@@ -7,11 +7,11 @@ import { createLocalState } from '~/ci/runner/graphql/list/local_state';
 import { stubComponent } from 'helpers/stub_component';
 
 import RunnerList from '~/ci/runner/components/runner_list.vue';
-import RunnerBulkDelete from '~/ci/runner/components/runner_bulk_delete.vue';
-import RunnerBulkDeleteCheckbox from '~/ci/runner/components/runner_bulk_delete_checkbox.vue';
+import RunnerBulkActions from '~/ci/runner/components/runner_bulk_actions.vue';
+import RunnerBulkActionsCheckbox from '~/ci/runner/components/runner_bulk_actions_checkbox.vue';
 import RunnerConfigurationPopover from '~/ci/runner/components/runner_configuration_popover.vue';
 
-import { I18N_PROJECT_TYPE, I18N_STATUS_NEVER_CONTACTED } from '~/ci/runner/constants';
+import { I18N_PROJECT_TYPE } from '~/ci/runner/constants';
 import { allRunnersData } from '../mock_data';
 
 const mockRunners = allRunnersData.data.runners.nodes;
@@ -27,8 +27,8 @@ describe('RunnerList', () => {
   const findRows = () => wrapper.findAll('[data-testid^="runner-row-"]');
   const findCell = ({ row = 0, fieldKey }) =>
     findRows().at(row).find(`[data-testid="td-${fieldKey}"]`);
-  const findRunnerBulkDelete = () => wrapper.findComponent(RunnerBulkDelete);
-  const findRunnerBulkDeleteCheckbox = () => wrapper.findComponent(RunnerBulkDeleteCheckbox);
+  const findRunnerBulkActions = () => wrapper.findComponent(RunnerBulkActions);
+  const findRunnerBulkActionsCheckbox = () => wrapper.findComponent(RunnerBulkActionsCheckbox);
 
   const createComponent = ({ props = {}, ...options } = {}, mountFn = shallowMountExtended) => {
     ({ cacheConfig, localMutations } = createLocalState());
@@ -99,9 +99,7 @@ describe('RunnerList', () => {
     const numericId = getIdFromGraphQLId(id);
 
     // Badges
-    expect(findCell({ fieldKey: 'status' }).text()).toMatchInterpolatedText(
-      I18N_STATUS_NEVER_CONTACTED,
-    );
+    expect(findCell({ fieldKey: 'status' }).text()).toMatchInterpolatedText('Never contacted Idle');
 
     // Runner summary
     const summary = findCell({ fieldKey: 'summary' }).text();
@@ -119,6 +117,29 @@ describe('RunnerList', () => {
     expect(findCell({ fieldKey: 'actions' }).exists()).toBe(true);
   });
 
+  describe('fixed table appearance', () => {
+    it('is enabled by default', () => {
+      createComponent({
+        stubs: {
+          GlTableLite: stubComponent(GlTableLite),
+        },
+      });
+
+      expect(findTable().attributes('fixed')).toBe('true');
+    });
+
+    it('can be disabled', () => {
+      createComponent({
+        props: { fixed: true },
+        stubs: {
+          GlTableLite: stubComponent(GlTableLite),
+        },
+      });
+
+      expect(findTable().attributes('fixed')).toBe('true');
+    });
+  });
+
   describe('When the list is checkable', () => {
     beforeEach(() => {
       createComponent(
@@ -132,11 +153,11 @@ describe('RunnerList', () => {
     });
 
     it('runner bulk delete is available', () => {
-      expect(findRunnerBulkDelete().props('runners')).toEqual(mockRunners);
+      expect(findRunnerBulkActions().props('runners')).toEqual(mockRunners);
     });
 
     it('runner bulk delete checkbox is available', () => {
-      expect(findRunnerBulkDeleteCheckbox().props('runners')).toEqual(mockRunners);
+      expect(findRunnerBulkActionsCheckbox().props('runners')).toEqual(mockRunners);
     });
 
     it('Displays a checkbox field', () => {
@@ -161,28 +182,20 @@ describe('RunnerList', () => {
 
     it('Emits a deleted event', () => {
       const event = { message: 'Deleted!' };
-      findRunnerBulkDelete().vm.$emit('deleted', event);
+      findRunnerBulkActions().vm.$emit('deleted', event);
 
       expect(wrapper.emitted('deleted')).toEqual([[event]]);
+    });
+
+    it('Emits a toggledPaused event', () => {
+      const event = { message: 'Paused!' };
+      findRunnerBulkActions().vm.$emit('toggledPaused', event);
+
+      expect(wrapper.emitted('toggledPaused')).toEqual([[event]]);
     });
   });
 
   describe('Scoped cell slots', () => {
-    it('Render #runner-job-status-badge slot in "status" cell', () => {
-      createComponent(
-        {
-          scopedSlots: {
-            'runner-job-status-badge': ({ runner }) => `Job status ${runner.jobExecutionStatus}`,
-          },
-        },
-        mountExtended,
-      );
-
-      expect(findCell({ fieldKey: 'status' }).text()).toContain(
-        `Job status ${mockRunners[0].jobExecutionStatus}`,
-      );
-    });
-
     it('Render #runner-name slot in "summary" cell', () => {
       createComponent(
         {

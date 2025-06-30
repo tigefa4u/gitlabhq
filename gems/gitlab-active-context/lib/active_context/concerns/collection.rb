@@ -5,6 +5,8 @@ module ActiveContext
     module Collection
       extend ActiveSupport::Concern
 
+      MODELS = {}.freeze
+
       class_methods do
         def track!(*objects)
           ActiveContext::Tracker.track!(objects, collection: self)
@@ -62,6 +64,14 @@ module ActiveContext
 
           Ability.allowed?(user, :"read_#{object.to_ability_name}", object)
         end
+
+        def current_search_embedding_version
+          self::MODELS[collection_record.search_embedding_version] || {}
+        end
+
+        def current_indexing_embedding_versions
+          collection_record.indexing_embedding_versions&.filter_map { |version| self::MODELS[version] } || []
+        end
       end
 
       attr_reader :object
@@ -73,7 +83,9 @@ module ActiveContext
       def references
         reference_klasses = Array.wrap(self.class.reference_klasses)
         routing = self.class.routing(object)
-        collection_id = self.class.collection_record.id
+        collection_id = self.class.collection_record&.id
+
+        raise StandardError, "#{self.class} expected to have a collection record" unless collection_id
 
         reference_klasses.map do |reference_klass|
           reference_klass.serialize(collection_id: collection_id, routing: routing, data: object)

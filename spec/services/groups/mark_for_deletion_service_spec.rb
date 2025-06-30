@@ -4,11 +4,10 @@ require 'spec_helper'
 
 RSpec.describe Groups::MarkForDeletionService, feature_category: :groups_and_projects do
   let_it_be(:user) { create(:user) }
-  let(:licensed) { false }
   let(:service) { described_class.new(group, user, {}) }
   let_it_be_with_reload(:group) { create(:group, owners: user) }
 
-  subject(:result) { service.execute(licensed: licensed) }
+  subject(:result) { service.execute }
 
   context 'when marking the group for deletion' do
     context 'with user that can admin the group' do
@@ -33,60 +32,12 @@ RSpec.describe Groups::MarkForDeletionService, feature_category: :groups_and_pro
           result
         end
 
-        context 'when notification feature flag is enabled and adjourned deletion is enabled' do
-          before do
-            stub_feature_flags(group_deletion_notification_email: true)
-            allow(group).to receive(:adjourned_deletion?).and_return(true)
+        it 'sends a notification email' do
+          expect_next_instance_of(NotificationService) do |service|
+            expect(service).to receive(:group_scheduled_for_deletion).with(group)
           end
 
-          it 'sends a notification email' do
-            expect_next_instance_of(NotificationService) do |service|
-              expect(service).to receive(:group_scheduled_for_deletion).with(group)
-            end
-
-            result
-          end
-        end
-
-        context 'when notification feature flag is disabled' do
-          before do
-            stub_feature_flags(group_deletion_notification_email: false)
-            allow(group).to receive(:adjourned_deletion?).and_return(true)
-          end
-
-          it 'does not send a notification email' do
-            expect(NotificationService).not_to receive(:new)
-
-            result
-          end
-        end
-
-        context 'when notification feature flag is enabled for specific group' do
-          before do
-            stub_feature_flags(group_deletion_notification_email: group)
-            allow(group).to receive(:adjourned_deletion?).and_return(true)
-          end
-
-          it 'sends a notification email' do
-            expect_next_instance_of(NotificationService) do |service|
-              expect(service).to receive(:group_scheduled_for_deletion).with(group)
-            end
-
-            result
-          end
-        end
-
-        context 'when adjourned deletion is disabled' do
-          before do
-            stub_feature_flags(group_deletion_notification_email: true)
-            allow(group).to receive(:adjourned_deletion?).and_return(false)
-          end
-
-          it 'does not send a notification email' do
-            expect(NotificationService).not_to receive(:new)
-
-            result
-          end
+          result
         end
 
         context 'when marking for deletion fails' do
@@ -107,24 +58,6 @@ RSpec.describe Groups::MarkForDeletionService, feature_category: :groups_and_pro
             expect(NotificationService).not_to receive(:new)
 
             result
-          end
-        end
-
-        context 'when the downtier_delayed_deletion feature flag is disabled' do
-          before do
-            stub_feature_flags(downtier_delayed_deletion: false)
-          end
-
-          it 'returns error' do
-            expect(result).to eq({ status: :error, message: 'Cannot mark group for deletion: feature not supported' })
-          end
-
-          context 'when the feature is licensed', unless: Gitlab.ee? do
-            let(:licensed) { true }
-
-            it 'is successful' do
-              expect(result[:status]).to eq(:success)
-            end
           end
         end
       end
@@ -157,7 +90,7 @@ RSpec.describe Groups::MarkForDeletionService, feature_category: :groups_and_pro
       it 'does not mark the group for deletion' do
         result
 
-        expect(group.marked_for_deletion?).to be_falsey
+        expect(group.self_deletion_scheduled?).to be_falsey
       end
 
       it 'returns error' do

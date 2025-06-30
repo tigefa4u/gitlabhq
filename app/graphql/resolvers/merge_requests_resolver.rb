@@ -84,13 +84,6 @@ module Resolvers
       required: false,
       description: 'Limit result to draft merge requests.'
 
-    argument :approved, GraphQL::Types::Boolean,
-      required: false,
-      description: <<~DESC
-               Limit results to approved merge requests.
-               Available only when the feature flag `mr_approved_filter` is enabled.
-      DESC
-
     argument :blob_path, GraphQL::Types::String,
       required: false,
       experiment: { milestone: '17.7' },
@@ -126,6 +119,10 @@ module Resolvers
       required: false,
       description: 'Merge requests updated before the timestamp.'
 
+    argument :ignored_reviewer_username, GraphQL::Types::String,
+      required: false,
+      description: 'Username of the reviewer to ignore when searching by reviewer state.',
+      experiment: { milestone: '18.0' }
     argument :label_name, [GraphQL::Types::String, { null: true }],
       required: false,
       description: 'Labels applied to the merge request.'

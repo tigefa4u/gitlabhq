@@ -14,35 +14,42 @@ title: Profile preferences
 
 You can update your preferences to change the look and feel of GitLab.
 
-## Change the appearance
+## Change the mode
 
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/28252) in GitLab 13.1.
 - [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/524846) from experiment to beta in GitLab 17.11.
+- [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/470413) from **Appearance** to **Mode** in GitLab 18.1.
 
 {{< /history >}}
 
-You can change the visual appearance of the interface to be light, dark, or automatically update based on device preferences.
+You can change the color mode of the interface to be light, dark, or automatically update based on device preferences.
 
 To change the appearance:
 
 1. On the left sidebar, select your avatar.
 1. Select **Preferences**.
-1. In the **Appearance** section, select an option.
+1. In the **Mode** section, select an option.
 1. Select **Save changes**.
 
-## Change the color theme
+## Change the navigation theme
 
-You can change the color theme of the GitLab UI. These colors are displayed on the left sidebar.
-Using individual color themes might help you differentiate between your different
+{{< history >}}
+
+- [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/470413) from **Color theme** to **Navigation theme** in GitLab 18.1.
+
+{{< /history >}}
+
+You can change the navigation theme of the GitLab UI. These colors are displayed on the left sidebar.
+Using individual navigation themes might help you differentiate between your different
 GitLab instances.
 
-To change the color theme:
+To change the navigation theme:
 
 1. On the left sidebar, select your avatar.
 1. Select **Preferences**.
-1. In the **Color theme** section, select a theme.
+1. In the **Navigation** section, select a theme.
 
 ## Change the syntax highlighting theme
 
@@ -58,12 +65,13 @@ To change the syntax highlighting theme:
 
 1. On the left sidebar, select your avatar.
 1. Select **Preferences**.
-1. In the **Syntax highlighting theme** section, select a theme.
+1. In the **Syntax highlights** section, select a theme.
 1. Select **Save changes**.
 
 To view the updated syntax highlighting theme, refresh your project's page.
 
-To customize the syntax highlighting theme, you can also [use the Application settings API](../../api/settings.md#available-settings). Use `default_syntax_highlighting_theme` to change the syntax highlighting colors on a more granular level.
+To customize the syntax highlighting theme, you can also [use the Application settings API](../../api/settings.md#available-settings). Use `default_syntax_highlighting_theme` and `default_dark_syntax_highlighting_theme` to change the syntax highlighting colors on a more
+granular level.
 
 If these steps do not work, your programming language might not be supported by the syntax highlighters.
 For more information, view [Rouge Ruby Library](https://github.com/rouge-ruby/rouge) for guidance on code files and Snippets. View [Monaco Editor](https://microsoft.github.io/monaco-editor/) and [Monarch](https://microsoft.github.io/monaco-editor/monarch.html) for guidance on the Web IDE.
@@ -76,7 +84,7 @@ To change the diff colors:
 
 1. On the left sidebar, select your avatar.
 1. Select **Preferences**.
-1. Go to the **Diff colors** section.
+1. Go to the **Diffs** section.
 1. Select a color or enter a color code.
 1. Select **Save changes**.
 
@@ -120,7 +128,7 @@ If you do not choose a default text editor, your last used choice is preserved.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/419079) in GitLab 16.6 [with a flag](../../administration/feature_flags.md) named `ui_for_organizations`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/419079) in GitLab 16.6 [with a flag](../../administration/feature_flags/_index.md) named `ui_for_organizations`. Disabled by default.
 
 {{< /history >}}
 
@@ -147,7 +155,7 @@ To choose your home organization:
 
 {{< history >}}
 
-- [Homepage options changed](https://gitlab.com/groups/gitlab-org/-/epics/13066) in GitLab 17.9 [with a flag](../../administration/feature_flags.md) named `your_work_projects_vue`. Disabled by default.
+- [Homepage options changed](https://gitlab.com/groups/gitlab-org/-/epics/13066) in GitLab 17.9 [with a flag](../../administration/feature_flags/_index.md) named `your_work_projects_vue`. Disabled by default.
 - [Homepage option changes generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/465889) in GitLab 17.10. Feature flag `your_work_projects_vue` removed.
 
 {{< /history >}}
@@ -294,7 +302,7 @@ Change localization settings such as your language, calendar start day, and time
 
 ### Change your display language on the GitLab UI
 
-GitLab supports multiple languages on the UI. To help improve translations or request support for an unlisted language, view [Translating GitLab](../../development/i18n/translation.md).
+GitLab supports multiple languages on the UI.
 
 To choose a language for the GitLab UI:
 
@@ -373,7 +381,7 @@ To customize the time format:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/105049) as a [beta](../../policy/development_stages_support.md#beta) in GitLab 15.9 [with flags](../../administration/feature_flags.md) named `index_code_with_zoekt` and `search_code_with_zoekt`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/105049) as a [beta](../../policy/development_stages_support.md#beta) in GitLab 15.9 [with flags](../../administration/feature_flags/_index.md) named `index_code_with_zoekt` and `search_code_with_zoekt`. Disabled by default.
 - [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/388519) in GitLab 16.6.
 - Feature flags `index_code_with_zoekt` and `search_code_with_zoekt` [removed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/148378) in GitLab 17.1.
 
@@ -472,28 +480,22 @@ You must be the administrator of the GitLab instance to configure GitLab with So
 
 {{< details >}}
 
-- Offering: GitLab.com
+- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/161819) as a [beta](../../policy/development_stages_support.md#beta) in GitLab 17.0 [with flags](../../administration/feature_flags.md) named `web_ide_oauth` and `web_ide_extensions_marketplace`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/151352) as a [beta](../../policy/development_stages_support.md#beta) in GitLab 17.0 [with flags](../../administration/feature_flags/_index.md) named `web_ide_oauth` and `web_ide_extensions_marketplace`. Disabled by default.
 - `web_ide_oauth` [enabled on GitLab.com, GitLab Self-Managed, and GitLab Dedicated](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/163181) in GitLab 17.4.
 - `web_ide_extensions_marketplace` [enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/459028) in GitLab 17.4.
 - `web_ide_oauth` [removed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/167464) in GitLab 17.5.
 - Enabled by default for [workspaces](../workspace/_index.md) in GitLab 17.6. Workspaces do not require any feature flags for the extension marketplace to be available.
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/508996) the `vscode_extension_marketplace_settings` [feature flag](../../administration/feature_flags.md) in GitLab 17.10. Disabled by default.
-- `web_ide_extensions_marketplace` and `vscode_extension_marketplace_settings` [enabled on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/459028) in GitLab 17.11.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/508996) the `vscode_extension_marketplace_settings` [feature flag](../../administration/feature_flags/_index.md) in GitLab 17.10. Disabled by default.
+- `web_ide_extensions_marketplace` [enabled on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/184662), and `vscode_extension_marketplace_settings` [enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/184662) in GitLab 17.11.
+- [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192659) in GitLab 18.1. Feature flags `web_ide_extensions_marketplace` and `vscode_extension_marketplace_settings` removed.
 
 {{< /history >}}
-
-{{< alert type="flag" >}}
-
-The availability of this feature is controlled by a feature flag.
-For more information, see the history.
-
-{{< /alert >}}
 
 You can use the extension marketplace to search and
 [manage extensions](../project/web_ide/_index.md#manage-extensions) for the [Web IDE](../project/web_ide/_index.md) and [workspaces](../workspace/_index.md).
@@ -512,15 +514,3 @@ To enable the extension marketplace for the Web IDE and workspaces:
 1. Select the **Enable extension marketplace** checkbox.
 1. In the third-party extension acknowledgment, select **I understand**.
 1. Select **Save changes**.
-
-<!-- ## Troubleshooting
-
-Include any troubleshooting steps that you can foresee. If you know beforehand what issues
-one might have when setting this up, or when something is changed, or on upgrading, it's
-important to describe those, too. Think of things that may go wrong and include them here.
-This is important to minimize requests for support, and to avoid doc comments with
-questions that you know someone might ask.
-
-Each scenario can be a third-level heading, for example `### Getting error message X`.
-If you have none to add when creating a doc, leave this section in place
-but commented out to help encourage others to add to it in the future. -->

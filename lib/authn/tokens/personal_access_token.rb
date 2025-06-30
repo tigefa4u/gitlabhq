@@ -4,10 +4,12 @@ module Authn
   module Tokens
     class PersonalAccessToken
       def self.prefix?(plaintext)
-        plaintext.start_with?(
+        token_prefixes = [
           ::PersonalAccessToken.token_prefix,
           ApplicationSetting.defaults[:personal_access_token_prefix]
-        )
+        ].uniq.compact.reject(&:empty?)
+
+        plaintext.start_with?(*token_prefixes)
       end
 
       attr_reader :revocable, :source
@@ -28,6 +30,13 @@ module Authn
         service = service_by_type
 
         service.execute
+      end
+
+      def resource_name
+        return revocable.class.name if revocable.user.human?
+        return unless resource
+
+        "#{resource.class.name}AccessToken"
       end
 
       private

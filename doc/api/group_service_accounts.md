@@ -74,7 +74,7 @@ Example response:
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/407775) in GitLab 16.1.
 - Specify a service account user username or name was [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/144841) in GitLab 16.10.
-- Specify a service account user email address was [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/181456) in GitLab 17.9 [with a flag](../administration/feature_flags.md) named `group_service_account_custom_email`.
+- Specify a service account user email address was [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/181456) in GitLab 17.9 [with a flag](../administration/feature_flags/_index.md) named `group_service_account_custom_email`.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/186476) in GitLab 17.11. Feature flag `group_service_account_custom_email` removed.
 
 {{< /history >}}
@@ -314,7 +314,7 @@ Example response:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/184287) in GitLab 17.10
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/184287) in GitLab 17.11
 
 {{< /history >}}
 
@@ -380,7 +380,7 @@ Parameters:
 | `id`         | integer/string | yes  | The ID or [URL-encoded path of the target group](rest/_index.md#namespaced-paths). |
 | `user_id`    | integer | yes      | The ID of the service account user.                            |
 | `token_id`   | integer | yes      | The ID of the token. |
-| `expires_at` | date   | no        | Expiration date of the access token in ISO format (`YYYY-MM-DD`). [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/505671) in GitLab 17.9. If undefined, the token expires after one week. |
+| `expires_at` | date   | no        | Expiration date of the access token in ISO format (`YYYY-MM-DD`). [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/505671) in GitLab 17.9.If the token requires an expiration date, defaults to 1 week. If not required, defaults to the [maximum allowable lifetime limit](../user/profile/personal_access_tokens.md#access-token-expiration). |
 
 Example request:
 

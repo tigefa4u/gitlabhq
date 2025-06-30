@@ -39,6 +39,7 @@ RSpec.describe GitlabSchema.types['User'], feature_category: :user_profile do
       reviewRequestedMergeRequests
       groupMemberships
       groupCount
+      projectCount
       projectMemberships
       starredProjects
       contributedProjects
@@ -56,6 +57,7 @@ RSpec.describe GitlabSchema.types['User'], feature_category: :user_profile do
       linkedin
       twitter
       discord
+      github
       organization
       jobTitle
       createdAt
@@ -449,6 +451,22 @@ RSpec.describe GitlabSchema.types['User'], feature_category: :user_profile do
         context: { current_user: admin }).as_json
 
       expect(result.dig('data', 'user', 'type')).to eq('GHOST')
+    end
+  end
+
+  describe '.authorization_scopes' do
+    it 'allows ai_workflows scope token' do
+      expect(Types::UserType.authorization_scopes).to include(:ai_workflows)
+    end
+  end
+
+  describe 'fields with :ai_workflows scope' do
+    %w[username name].each do |field_name|
+      it "includes :ai_workflows scope for the #{field_name} field" do
+        field = Types::UserType.fields[field_name]
+        expect(field.instance_variable_get(:@scopes)).to include(:ai_workflows),
+          "Expected #{field_name} to include :ai_workflows scope"
+      end
     end
   end
 end

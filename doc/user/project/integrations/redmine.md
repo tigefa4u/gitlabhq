@@ -1,6 +1,6 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Plan
+group: Project Management
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Redmine
 ---
@@ -33,7 +33,7 @@ To enable the Redmine integration in a project:
    - **New issue URL**: The URL to use to create a new issue in the Redmine project linked to
      this GitLab project.
      <!-- The line below was originally added in January 2018: https://gitlab.com/gitlab-org/gitlab/-/commit/778b231f3a5dd42ebe195d4719a26bf675093350 -->
-     **This URL is not used and removal is planned in a future release.**
+     **This URL is not used and removal is planned in a future release**.
      For more information, see [issue 327503](https://gitlab.com/gitlab-org/gitlab/-/issues/327503).
 
 1. Optional. Select **Test settings**.

@@ -14,7 +14,7 @@ title: Google Artifact Management
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/141127) in GitLab 16.10 [with a flag](../../../administration/feature_flags.md) named `google_cloud_support_feature_flag`. This feature is in [beta](../../../policy/development_stages_support.md).
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/141127) in GitLab 16.10 [with a flag](../../../administration/feature_flags/_index.md) named `google_cloud_support_feature_flag`. This feature is in [beta](../../../policy/development_stages_support.md).
 - [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/150472) in GitLab 17.1. Feature flag `google_cloud_support_feature_flag` removed.
 
 {{< /history >}}
@@ -70,11 +70,11 @@ To view the list of images in the connected Artifact Registry repository in the 
 After the Artifact Registry integration is activated, the following predefined environment variables are available in CI/CD.
 You can use these environment variables to interact with the Artifact Registry, like pulling or pushing an image to the connected repository.
 
-| Variable | GitLab | Runner | Description |
-|-|-|-|-|
-| `GOOGLE_ARTIFACT_REGISTRY_PROJECT_ID` | 16.10 | 16.10 | The Google Cloud project ID where the Artifact Registry repository is located. |
-| `GOOGLE_ARTIFACT_REGISTRY_REPOSITORY_NAME` | 16.10  | 16.10 | The name of the connected Artifact Registry repository. |
-| `GOOGLE_ARTIFACT_REGISTRY_REPOSITORY_LOCATION` | 16.10  | 16.10 | The Google Cloud location of the connected Artifact Registry repository. |
+| Variable                                       | GitLab | Runner | Description |
+|------------------------------------------------|--------|--------|-------------|
+| `GOOGLE_ARTIFACT_REGISTRY_PROJECT_ID`          | 16.10  | 16.10  | The Google Cloud project ID where the Artifact Registry repository is located. |
+| `GOOGLE_ARTIFACT_REGISTRY_REPOSITORY_NAME`     | 16.10  | 16.10  | The name of the connected Artifact Registry repository. |
+| `GOOGLE_ARTIFACT_REGISTRY_REPOSITORY_LOCATION` | 16.10  | 16.10  | The Google Cloud location of the connected Artifact Registry repository. |
 
 ### Authenticate with the Google Artifact Registry
 

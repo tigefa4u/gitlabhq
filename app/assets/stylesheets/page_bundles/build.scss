@@ -15,6 +15,7 @@
 
   .top-bar {
     @include job-log-top-bar;
+    @include translucent-glass-background(var(--gl-background-color-section));
 
     &.has-archived-block {
       top: calc(#{$calc-application-header-height} + 28px);
@@ -107,17 +108,20 @@
     overflow: auto;
 
     .icon-arrow-right {
-      left: 8px;
-      top: 12px;
+      @apply gl-top-3 gl-left-3;
     }
 
     .build-job {
       &.retried {
-        background-color: var(--gray-10, $gray-10);
+        @apply gl-bg-subtle;
       }
 
       &:hover {
-        background-color: var(--gray-50, $gray-50);
+        @apply gl-bg-strong;
+      }
+
+      a:focus {
+        @apply gl-relative gl-z-2;
       }
     }
   }
@@ -176,7 +180,7 @@
 }
 
 .job-log-line-number {
-  @apply gl-text-neutral-400 dark:gl-text-neutral-300;
+  @apply gl-text-neutral-400 dark:gl-text-neutral-300 gl-relative;
   padding-right: $gl-padding-8;
   margin-right: $gl-padding-8;
   min-width: $job-line-number-width;
@@ -189,6 +193,19 @@
     text-decoration: underline;
     @apply gl-text-neutral-400 dark:gl-text-neutral-300;
   }
+
+  &::before {
+    content: ' ';
+    display: block;
+    // min accessibility height for the touch target
+    height: 24px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    // this transform is used to center the line number in the line
+    transform: translateY(-2.25px);
+  }
+
 }
 
 .job-log-time {
@@ -245,7 +262,7 @@
   margin-left: $highlight-x-margin;
   margin-right: $highlight-x-margin;
 
-  background-color: var(--gl-color-alpha-light-4);
+  @apply gl-bg-alpha-light-8 dark:gl-bg-alpha-light-4;
 
   .arrow {
     left: $highlight-extra-x-padding;
@@ -268,6 +285,13 @@
   @media (max-width: map-get($grid-breakpoints, lg)) {
     padding-left: 1rem;
   }
+}
+
+.rca-bar-component.rca-bar-component-fullscreen {
+  left: 0;
+  width: 100%;
+  padding-left: .5rem;
+  transition: left 0.3s ease, width 0.3s ease, padding 0.3s ease;
 }
 
 .loader-animation {

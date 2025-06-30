@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: npm package publishing guidelines
 ---
 
@@ -29,9 +29,9 @@ fostering trust and consistency in the GitLab ecosystem.
    - **[Secret detection](../user/application_security/secret_detection/pipeline/_index.md)**
 1. Secure NPM tokens used for registry interactions:
    - Strongly consider using an external secret store like OpenBao or Vault
-   - At a minimum, store tokens [securely](../ci/pipelines/pipeline_security.md#cicd-variables) in environment variables
+   - At a minimum, store tokens [securely](../ci/pipeline_security/_index.md#cicd-variables) in environment variables
      in GitLab CI/CD pipelines, ensuring that masking and protection is enabled.
-   - Do not store tokens on your local machine in unsecured locations. Please store tokens in 1Password and
+   - Do not store tokens on your local machine in unsecured locations. Instead, store tokens in 1Password and
      refrain from storing these secrets in unencrypted files like shell profiles, `.npmrc`, and `.env`.
 1. Add `gitlab-bot` as author of the package. This ensures the organization retains ownership if a team member's email becomes invalid during offboarding.
 
@@ -126,6 +126,6 @@ publish:
 
 Manual workflows should be avoided to ensure that:
 
-- **Secrets remain secure:** Tokens and other sensitive information should only exist in secure CI/CD environments.
-- **Workflows are consistent and auditable:** CI/CD pipelines ensure that all publishing steps are repeatable and documented.
-- **Complexity is reduced:** Centralized CI/CD pipelines simplify project handovers and minimize risks.
+- **Secrets remain secure**: Tokens and other sensitive information should only exist in secure CI/CD environments.
+- **Workflows are consistent and auditable**: CI/CD pipelines ensure that all publishing steps are repeatable and documented.
+- **Complexity is reduced**: Centralized CI/CD pipelines simplify project handovers and minimize risks.

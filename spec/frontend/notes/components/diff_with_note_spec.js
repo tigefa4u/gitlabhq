@@ -1,3 +1,4 @@
+import { cloneDeep } from 'lodash';
 import Vue from 'vue';
 import { shallowMount } from '@vue/test-utils';
 import { PiniaVuePlugin } from 'pinia';
@@ -61,7 +62,7 @@ describe('diff_with_note', () => {
     });
 
     it('removes trailing "+" char', () => {
-      const richText = wrapper.vm.$el
+      const richText = wrapper.element
         .querySelectorAll('.line_holder')[4]
         .querySelector('.line_content').textContent[0];
 
@@ -69,7 +70,8 @@ describe('diff_with_note', () => {
     });
 
     it('removes trailing "-" char', () => {
-      const richText = wrapper.vm.$el.querySelector('#LC13').parentNode.textContent[0];
+      const richText = wrapper.element.querySelector('.line .deletion').closest('.line').parentNode
+        .textContent[0];
 
       expect(richText).not.toEqual('-');
     });
@@ -104,7 +106,7 @@ describe('diff_with_note', () => {
 
     describe('when discussion does not have a diff_file', () => {
       beforeEach(() => {
-        const imageDiscussion = JSON.parse(JSON.stringify(imageDiscussionFixture[0]));
+        const imageDiscussion = cloneDeep(imageDiscussionFixture[0]);
         delete imageDiscussion.diff_file;
 
         createComponent({ discussion: imageDiscussion, diffFile: {} });
@@ -181,6 +183,50 @@ describe('diff_with_note', () => {
     it('falls back to discussion.commit_id for baseSha and headSha', () => {
       expect(findDiffViewer().props('oldSha')).toBe(mockCommitId);
       expect(findDiffViewer().props('newSha')).toBe(mockCommitId);
+    });
+  });
+
+  describe('diff header', () => {
+    let fileDiscussion;
+
+    beforeEach(() => {
+      fileDiscussion = JSON.parse(JSON.stringify(discussionFixture[0]));
+      fileDiscussion.position.position_type = 'file';
+      fileDiscussion.original_position.position_type = 'file';
+    });
+
+    describe('when the discussion has a diff_file', () => {
+      beforeEach(() => {
+        wrapper = shallowMount(DiffWithNote, {
+          propsData: { discussion: fileDiscussion, diffFile: {} },
+          store,
+        });
+      });
+
+      it('links directly to the file to take advantage of the prioritized Linked File feature', () => {
+        const header = findDiffFileHeader();
+
+        expect(header.attributes('discussionpath')).toContain(
+          `file=${fileDiscussion.diff_file.file_hash}`,
+        );
+      });
+    });
+
+    describe('when the discussion does not have a diff_file', () => {
+      beforeEach(() => {
+        delete fileDiscussion.diff_file;
+
+        wrapper = shallowMount(DiffWithNote, {
+          propsData: { discussion: fileDiscussion, diffFile: {} },
+          store,
+        });
+      });
+
+      it('does not include the `file` search parameter in the file link', () => {
+        const header = findDiffFileHeader();
+
+        expect(header.attributes('discussionpath')).not.toContain('file=');
+      });
     });
   });
 });

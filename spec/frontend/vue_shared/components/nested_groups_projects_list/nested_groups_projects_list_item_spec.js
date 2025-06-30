@@ -33,6 +33,7 @@ describe('NestedGroupsProjectsListItem', () => {
 
   const findNestedGroupsProjectsList = () => wrapper.findComponent(NestedGroupsProjectsList);
   const findToggleButton = () => wrapper.findComponent(GlButton);
+  const findMoreChildrenLink = () => wrapper.findByTestId('more-children-link');
 
   describe('when item type is group', () => {
     it('renders GroupsListItem component with correct props', () => {
@@ -65,6 +66,14 @@ describe('NestedGroupsProjectsListItem', () => {
           findNestedGroupsProjectsList().vm.$emit('load-children', 1);
 
           expect(wrapper.emitted('load-children')).toEqual([[1]]);
+        });
+      });
+
+      describe('when NestedGroupsProjectsList emits refetch event', () => {
+        it('emits refetch event', () => {
+          findNestedGroupsProjectsList().vm.$emit('refetch');
+
+          expect(wrapper.emitted('refetch')).toEqual([[]]);
         });
       });
     });
@@ -169,7 +178,7 @@ describe('NestedGroupsProjectsListItem', () => {
 
   describe('when children have already been loaded', () => {
     describe('when initialExpanded is true', () => {
-      beforeEach(() => {
+      it('passes children to NestedGroupsProjectsList component and removes gl-hidden class', () => {
         createComponent({
           propsData: {
             item: {
@@ -179,13 +188,29 @@ describe('NestedGroupsProjectsListItem', () => {
             initialExpanded: true,
           },
         });
-      });
 
-      it('passes children to NestedGroupsProjectsList component and removes gl-hidden class', () => {
         expect(findNestedGroupsProjectsList().props()).toMatchObject({
           items: topLevelGroupA.childrenToLoad,
         });
         expect(findNestedGroupsProjectsList().classes()).not.toContain('gl-hidden');
+      });
+
+      describe('when there are more than 20 children', () => {
+        it('renders link to subgroup page', () => {
+          createComponent({
+            propsData: {
+              item: {
+                ...topLevelGroupA,
+                children: topLevelGroupA.childrenToLoad,
+                childrenCount: 25,
+              },
+              initialExpanded: true,
+            },
+          });
+
+          expect(findMoreChildrenLink().props('href')).toBe(topLevelGroupA.webUrl);
+          expect(findMoreChildrenLink().text()).toBe('View all (23 more items)');
+        });
       });
     });
 

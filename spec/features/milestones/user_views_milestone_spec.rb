@@ -10,6 +10,11 @@ RSpec.describe "User views milestone", feature_category: :team_planning do
   let_it_be(:labels) { create_list(:label, 2, project: project) }
 
   before do
+    # TODO: When removing the feature flag,
+    # we won't need the tests for the issues listing page, since we'll be using
+    # the work items listing page.
+    stub_feature_flags(work_item_planning_view: false)
+
     sign_in(user)
   end
 
@@ -71,8 +76,8 @@ RSpec.describe "User views milestone", feature_category: :team_planning do
         visit(project_milestone_path(project, milestone))
 
         expect(page).to have_selector('#tab-issues li', count: 3)
-        expect(page).to have_selector('#milestone-issue-count-warning', text: 'Showing 3 of 6 issues. View all issues')
-        expect(page).to have_link('View all issues', href: project_issues_path(project, { milestone_title: milestone.title }))
+        expect(page).to have_selector('#milestone-issue-count-warning', text: 'Showing 3 of 6 items. View all')
+        expect(page).to have_link('View all', href: project_issues_path(project, { milestone_title: milestone.title }))
       end
     end
 

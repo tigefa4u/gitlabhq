@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Getting Started with Python in GitLab
 ---
 
@@ -13,11 +13,11 @@ This guide helps non-Python developers get started with Python quickly and effic
    - Install Python from the official [Python website](https://www.python.org/downloads/).
    - Python can also be installed with [Mise](https://mise.jdx.dev/lang/python.html):
 
-       ```shell
-       mise use python@3.14
-       ```
+     ```shell
+     mise use python@3.14
+     ```
 
-   - Please note that while macOS comes with Python pre-installed, it's strongly advised to install and use a separate version of Python
+   - While macOS comes with Python pre-installed, it's strongly advised to install and use a separate version of Python
 
 1. **Install Poetry** for package management:
    - Poetry is a modern, Python-specific dependency manager that simplifies packaging and dependency handling. To install it, run:
@@ -28,9 +28,9 @@ This guide helps non-Python developers get started with Python quickly and effic
 
    - Poetry can also be installed with Mise:
 
-      ```shell
-       mise install poetry
-      ```
+     ```shell
+     mise install poetry
+     ```
 
    - Make sure to read the Poetry installation [guide](https://python-poetry.org/docs/) for full installation details
 
@@ -52,7 +52,7 @@ This guide helps non-Python developers get started with Python quickly and effic
      ```
 
    - Both [PyCharm](https://www.jetbrains.com/help/pycharm/debugging-your-first-python-application.html)
-   and [VSCode](https://code.visualstudio.com/docs/python/debugging) provide great tools to debug your code
+     and [VSCode](https://code.visualstudio.com/docs/python/debugging) provide great tools to debug your code
 
 ---
 
@@ -62,17 +62,17 @@ If you are new to Python or looking to refresh your knowledge, this section prov
 learning the language.
 
 1. **[Zen of Python](https://peps.python.org/pep-0020/)**
-Zen of Python - PEP 20 - is an essential read, it shapes how you think about Python and write "Pythonic" code.
+   Zen of Python - PEP 20 - is an essential read, it shapes how you think about Python and write "Pythonic" code.
 
 1. **[Python Cheatsheet](https://www.pythoncheatsheet.org)**
-A comprehensive reference covering essential Python syntax, built-in functions, and useful libraries.
-This is ideal for both beginners and experienced users who want a quick, organized summary of Python's key features.
+   A comprehensive reference covering essential Python syntax, built-in functions, and useful libraries.
+   This is ideal for both beginners and experienced users who want a quick, organized summary of Python's key features.
 
 1. **[100-page Python Intro](https://learnbyexample.github.io/100_page_python_intro)**
-Brief guide provides a straightforward introduction to Python, covering all the essentials needed to start programming effectively. It’s a beginner-friendly option that covers everything from syntax to debugging and testing.
+   Brief guide provides a straightforward introduction to Python, covering all the essentials needed to start programming effectively. It's a beginner-friendly option that covers everything from syntax to debugging and testing.
 
 1. **[Learn X in Y Minutes: Python](https://learnxinyminutes.com/docs/python)**
-A very brief, high-level introduction cuts directly to the core syntax and features of Python, making it a valuable quick start for developers transitioning to Python.
+   A very brief, high-level introduction cuts directly to the core syntax and features of Python, making it a valuable quick start for developers transitioning to Python.
 
 1. **[Exercism Python Track](https://exercism.io/tracks/python)**
    Use Exercism's Python track as a foundation for learning Python concepts and best practices. Exercism provides hands-on practice with mentoring support, making it an excellent resource for mastering Python through coding exercises and feedback.
@@ -127,7 +127,7 @@ Refer to [Track and Propose Sessions for Python Learning Group](https://gitlab.c
 
 - **Bi-weekly sessions** for code review and discussion, led by experienced Python developers.
 - These sessions are designed to help you improve your Python skills through practical feedback.
-- Please feel free to add the office hours to your calendar.
+- Feel free to add the office hours to your calendar.
 
 ---
 
@@ -141,7 +141,7 @@ Add any uploaded videos to the [Python Resources](https://www.youtube.com/playli
 
 ### Mentorship Process
 
-1:1 mentorship for Python is possible and encouraged. For more information on how to get started with a mentor, please refer to the [GitLab Mentoring Handbook](https://handbook.gitlab.com/handbook/engineering/careers/mentoring/#mentoring).
+1:1 mentorship for Python is possible and encouraged. For more information on how to get started with a mentor, see the [GitLab Mentoring Handbook](https://handbook.gitlab.com/handbook/engineering/careers/mentoring/#mentoring).
 
 ---
 
@@ -151,21 +151,21 @@ In addition to the resources already mentioned, this section provides various ma
 it's ecosystem. In no particular order.
 
 1. **[A Whirlwind Tour of Python (Jupyter Notebook)](https://github.com/jakevdp/WhirlwindTourOfPython)**
-A fast-paced introduction to Python fundamentals, tailored especially for data science practitioners but works well for everyone who wants to get just the basic understanding of the language.
-This is a Jupiter Notebook which makes this guide an interactive resource as well as a good introduction to Jupiter Notebook itself.
+   A fast-paced introduction to Python fundamentals, tailored especially for data science practitioners but works well for everyone who wants to get just the basic understanding of the language.
+   This is a Jupiter Notebook which makes this guide an interactive resource as well as a good introduction to Jupiter Notebook itself.
 
 1. **[Python imports](https://realpython.com/absolute-vs-relative-python-imports/)**
-Even for Pythonistas with a couple of projects under their belt, imports can be confusing! You’re probably reading this because you’d like to gain a deeper understanding of imports in Python, particularly absolute and relative imports.
+   Even for Pythonistas with a couple of projects under their belt, imports can be confusing! You're probably reading this because you'd like to gain a deeper understanding of imports in Python, particularly absolute and relative imports.
 
 1. **[Python -m flag](https://www.geeksforgeeks.org/what-is-the-use-of-python-m-flag/)**
    Learning the -m flag helps you run Python tools correctly by ensuring they use the right Python environment, avoiding common setup headaches.
 
 1. **[Poetry vs pip](https://www.datacamp.com/tutorial/python-poetry)**
-`virtualenv` and `pip` are built-in tool to handle project dependencies and environments. Why and when should you use
-Poetry?
+   `virtualenv` and `pip` are built-in tool to handle project dependencies and environments. Why and when should you use
+   Poetry?
 
 1. **[Python roadmap](https://roadmap.sh/python)**
-Step by step guide to becoming a Python developer in 2025. Use this for inspiration and finding additional resources.
+   Step by step guide to becoming a Python developer in 2025. Use this for inspiration and finding additional resources.
 
 1. **[Programiz Python basics](https://programiz.pro/course/learn-python-basics)**
    Step into the world of programming with this beginner-friendly Python course and build a strong programming foundation.

@@ -1,7 +1,7 @@
 ---
 stage: Monitor
 group: Analytics Instrumentation
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Metric lifecycle
 ---
 
@@ -47,7 +47,7 @@ Currently, the [Metrics Dictionary](https://metrics.gitlab.com/) is built automa
      If the metric is instrumented within [`lib/gitlab/usage_data.rb`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/usage_data.rb)
      or [`ee/lib/ee/gitlab/usage_data.rb`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/lib/ee/gitlab/usage_data.rb) then remove the associated code and specs
      ([example](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/60149/diffs#6335dc533bd21df26db9de90a02dd66278c2390d_167_167)).
-   - **`redis_hll/redis/internal_events`**: Remove the tracking code e.g. `track_internal_event` and associated specs.
+   - **`redis_hll/redis/internal_events`**: Remove the tracking code, for example, `track_internal_event` and associated specs.
 
 1. Update the attributes of the metric's YAML definition:
 

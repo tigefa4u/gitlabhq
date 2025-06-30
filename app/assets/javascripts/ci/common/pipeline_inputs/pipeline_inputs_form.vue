@@ -1,11 +1,17 @@
 <script>
+import { GlCollapsibleListbox, GlButton } from '@gitlab/ui';
+import { isEqual, debounce } from 'lodash';
+import EMPTY_VARIABLES_SVG from '@gitlab/svgs/dist/illustrations/variables-sm.svg';
 import { s__ } from '~/locale';
 import { createAlert } from '~/alert';
 import { reportToSentry } from '~/ci/utils';
 import CrudComponent from '~/vue_shared/components/crud_component.vue';
+import HelpPageLink from '~/vue_shared/components/help_page_link/help_page_link.vue';
+import { DEFAULT_DEBOUNCE_AND_THROTTLE_MS } from '~/lib/utils/constants';
 import InputsTableSkeletonLoader from './pipeline_inputs_table/inputs_table_skeleton_loader.vue';
 import PipelineInputsTable from './pipeline_inputs_table/pipeline_inputs_table.vue';
 import getPipelineInputsQuery from './graphql/queries/pipeline_creation_inputs.query.graphql';
+import PipelineInputsPreviewDrawer from './pipeline_inputs_preview_drawer.vue';
 
 const ARRAY_TYPE = 'ARRAY';
 
@@ -15,10 +21,28 @@ export default {
     CrudComponent,
     InputsTableSkeletonLoader,
     PipelineInputsTable,
+    GlCollapsibleListbox,
+    GlButton,
+    PipelineInputsPreviewDrawer,
+    HelpPageLink,
   },
   inject: ['projectPath'],
   props: {
+    emitModifiedOnly: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    preselectAllInputs: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
     queryRef: {
+      type: String,
+      required: true,
+    },
+    emptySelectionText: {
       type: String,
       required: true,
     },
@@ -28,10 +52,13 @@ export default {
       default: () => [],
     },
   },
-  emits: ['update-inputs'],
+  emits: ['update-inputs', 'update-inputs-metadata'],
   data() {
     return {
       inputs: [],
+      selectedInputNames: [],
+      searchTerm: '',
+      showPreviewDrawer: false,
     };
   },
   apollo: {
@@ -48,20 +75,37 @@ export default {
       },
       update({ project }) {
         const queryInputs = project?.ciPipelineCreationInputs || [];
+
+        // if there are any saved inputs, overwrite the values
         const savedInputsMap = Object.fromEntries(
           this.savedInputs.map(({ name, value }) => [name, value]),
         );
 
-        // if there are any saved inputs, overwrite the values
-        return queryInputs.map((input) => ({
-          ...input,
-          default: savedInputsMap[input.name] ?? input.default,
-        }));
+        const processedInputs = queryInputs.map((input) => {
+          const savedValue = savedInputsMap[input.name];
+          const hasSavedValue = savedValue !== undefined;
+
+          return {
+            ...input,
+            savedValue,
+            value: hasSavedValue ? savedValue : input.default,
+            isSelected: hasSavedValue || this.preselectAllInputs,
+          };
+        });
+
+        this.selectedInputNames = processedInputs
+          .filter((input) => input.isSelected)
+          .map((input) => input.name);
+
+        this.$emit('update-inputs-metadata', {
+          totalAvailable: processedInputs.length,
+          totalModified: this.modifiedInputs.length,
+        });
+
+        return processedInputs;
       },
       error(error) {
-        createAlert({
-          message: s__('Pipelines|There was a problem fetching the pipeline inputs.'),
-        });
+        this.createErrorAlert(error);
         reportToSentry(this.$options.name, error);
       },
     },
@@ -70,50 +114,245 @@ export default {
     hasInputs() {
       return Boolean(this.inputs.length);
     },
+    hasSelectedInputs() {
+      return Boolean(this.selectedInputNames.length);
+    },
+    inputsToEmit() {
+      return this.emitModifiedOnly ? this.modifiedInputs : this.inputs;
+    },
     isLoading() {
       return this.$apollo.queries.inputs.loading;
     },
+    modifiedInputs() {
+      return this.inputs.filter((input) => !isEqual(input.value, input.default));
+    },
+    newlyModifiedInputs() {
+      return this.inputs.filter((input) => {
+        if (input.savedValue === undefined) return false;
+
+        return !isEqual(input.value, input.savedValue) && !isEqual(input.value, input.default);
+      });
+    },
+    nameValuePairs() {
+      return this.inputsToEmit.flatMap((input) => {
+        const baseNameValuePair = {
+          name: input.name,
+          value: this.formatInputValue(input),
+        };
+
+        if (input.isSelected) {
+          return [baseNameValuePair];
+        }
+        if (input.savedValue !== undefined) {
+          return [{ ...baseNameValuePair, destroy: true }];
+        }
+        return [];
+      });
+    },
+    inputsList() {
+      return this.inputs.map((input) => ({ text: input.name, value: input.name }));
+    },
+    selectedInputsList() {
+      return this.selectedInputNames.map((name) => ({ text: name, value: name }));
+    },
+    availableInputsList() {
+      return this.inputsList.filter((input) => !this.selectedInputNames.includes(input.value));
+    },
+    searchFilteredInputs() {
+      return this.inputsList.filter((input) =>
+        input.text.toLowerCase().includes(this.searchTerm.toLowerCase()),
+      );
+    },
+    filteredInputsList() {
+      if (this.searchTerm) {
+        return this.searchFilteredInputs;
+      }
+
+      if (!this.hasSelectedInputs) {
+        return this.inputsList;
+      }
+
+      const items = [
+        {
+          text: s__('Pipelines|Selected'),
+          options: this.selectedInputsList,
+        },
+      ];
+
+      if (this.availableInputsList.length) {
+        items.push({
+          textSrOnly: true,
+          text: s__('Pipelines|Available'),
+          options: this.availableInputsList,
+        });
+      }
+
+      return items;
+    },
+  },
+  created() {
+    this.debouncedSearch = debounce((searchTerm) => {
+      this.searchTerm = searchTerm;
+    }, DEFAULT_DEBOUNCE_AND_THROTTLE_MS);
   },
   methods: {
+    createErrorAlert(error) {
+      const graphQLErrors = error?.graphQLErrors?.map((err) => err.message) || [];
+      const message = graphQLErrors.length
+        ? graphQLErrors.join(', ')
+        : s__('Pipelines|There was a problem fetching the pipeline inputs. Please try again.');
+
+      createAlert({ message });
+    },
+    formatInputValue(input) {
+      let { value } = input;
+
+      // Convert string to array for ARRAY type inputs
+      if (input.type === ARRAY_TYPE && typeof value === 'string' && value) {
+        try {
+          value = JSON.parse(value);
+          if (!Array.isArray(value)) value = [value];
+        } catch (e) {
+          value = value.split(',').map((item) => item.trim());
+        }
+      }
+
+      return value;
+    },
     handleInputsUpdated(updatedInput) {
+      this.updateInputs(updatedInput);
+      this.emitEvents();
+    },
+    updateInputs(updatedInput) {
       this.inputs = this.inputs.map((input) =>
         input.name === updatedInput.name ? updatedInput : input,
       );
+    },
+    emitEvents() {
+      this.$emit('update-inputs-metadata', {
+        totalModified: this.modifiedInputs.length,
+        newlyModified: this.newlyModifiedInputs.length,
+      });
+      this.$emit('update-inputs', this.nameValuePairs);
+    },
+    selectInputs(items) {
+      const selectionChangedInputs = [];
 
-      const nameValuePairs = this.inputs.map((input) => {
-        let value = input.default;
+      this.inputs = this.inputs.map((input) => {
+        const wasSelected = input.isSelected;
+        const isSelected = items.includes(input.name);
+        const newValue = isSelected ? input.value : input.default;
 
-        // Convert string to array for ARRAY type inputs
-        if (input.type === ARRAY_TYPE && typeof value === 'string' && value) {
-          try {
-            value = JSON.parse(value);
-            if (!Array.isArray(value)) value = [value];
-          } catch (e) {
-            value = value.split(',').map((item) => item.trim());
-          }
+        if (isSelected !== wasSelected) {
+          selectionChangedInputs.push(input.name);
         }
 
-        return { name: input.name, value };
+        return {
+          ...input,
+          isSelected,
+          value: newValue,
+        };
       });
 
-      this.$emit('update-inputs', nameValuePairs);
+      this.selectedInputNames = items;
+
+      // Emit events for inputs that had selection changes
+      if (selectionChangedInputs.length > 0) {
+        this.emitEvents();
+      }
+    },
+    selectAll() {
+      const allInputs = this.searchFilteredInputs.map((input) => input.value);
+      this.selectInputs(allInputs);
+    },
+    deselectAll() {
+      this.inputs = this.inputs.map((input) => ({
+        ...input,
+        isSelected: false,
+        value: input.default,
+      }));
+
+      this.selectedInputNames = [];
+      this.emitEvents();
+    },
+    handleSearch(searchTerm) {
+      this.debouncedSearch(searchTerm);
     },
   },
+
+  EMPTY_VARIABLES_SVG,
 };
 </script>
 
 <template>
   <crud-component
-    :count="inputs.length"
-    :description="__('Specify the input values to use in this pipeline.')"
+    :description="
+      __(
+        'Specify the input values to use in this pipeline. Any inputs left unselected will use their default values.',
+      )
+    "
     :title="s__('Pipelines|Inputs')"
-    icon="code"
   >
+    <template v-if="hasInputs" #actions>
+      <gl-button
+        category="secondary"
+        variant="confirm"
+        size="small"
+        @click="showPreviewDrawer = true"
+      >
+        {{ s__('Pipelines|Preview inputs') }}
+      </gl-button>
+
+      <gl-collapsible-listbox
+        v-model="selectedInputNames"
+        :items="filteredInputsList"
+        :toggle-text="s__('Pipelines|Select inputs')"
+        :header-text="s__('Pipelines|Inputs')"
+        :search-placeholder="s__('Pipelines|Search input name')"
+        :show-select-all-button-label="__('Select all')"
+        :reset-button-label="__('Clear')"
+        searchable
+        multiple
+        placement="bottom-end"
+        size="small"
+        @reset="deselectAll"
+        @select="selectInputs"
+        @select-all="selectAll"
+        @search="handleSearch"
+      />
+
+      <pipeline-inputs-preview-drawer
+        :open="showPreviewDrawer"
+        :inputs="inputs"
+        @close="showPreviewDrawer = false"
+      />
+    </template>
+
     <inputs-table-skeleton-loader v-if="isLoading" />
-    <template v-else>
-      <pipeline-inputs-table v-if="hasInputs" :inputs="inputs" @update="handleInputsUpdated" />
-      <div v-else class="gl-flex gl-justify-center gl-text-subtle">
+    <pipeline-inputs-table
+      v-else-if="hasSelectedInputs"
+      :inputs="inputs"
+      @update="handleInputsUpdated"
+    />
+    <template v-if="!hasSelectedInputs && !isLoading" #empty>
+      <div
+        v-if="hasInputs"
+        class="gl-flex gl-flex-col gl-items-center gl-justify-center gl-p-2"
+        data-testid="empty-selection-state"
+      >
+        <img
+          :alt="s__('Pipelines|Pipeline inputs empty state image')"
+          :src="$options.EMPTY_VARIABLES_SVG"
+          class="gl-mb-3"
+        />
+        {{ emptySelectionText }}
+      </div>
+      <div v-else class="gl-text-center" data-testid="no-inputs-empty-state">
         {{ s__('Pipelines|There are no inputs for this configuration.') }}
+
+        <help-page-link href="ci/inputs/_index.md">
+          {{ s__('Pipelines|How do I use inputs?') }}
+        </help-page-link>
       </div>
     </template>
   </crud-component>

@@ -1,6 +1,6 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Create
+group: Import
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Project import and export API
 ---
@@ -99,7 +99,7 @@ curl --header "PRIVATE-TOKEN: <your_access_token>" \
 
 Status can be one of:
 
-- `none`: No exports _queued_, _started_, _finished_, or _being regenerated_.
+- `none`: No exports queued, started, finished, or being regenerated.
 - `queued`: The request for export is received, and is in the queue to be processed.
 - `started`: The export process has started and is in progress. It includes:
   - The process of exporting.
@@ -235,7 +235,7 @@ As an administrator, you can modify the maximum import file size. To do so, use 
 
 {{< alert type="flag" >}}
 
-On GitLab Self-Managed, by default this feature is available. To hide the feature, an administrator can [disable the feature flag](../administration/feature_flags.md) named `import_project_from_remote_file`.
+On GitLab Self-Managed, by default this feature is available. To hide the feature, an administrator can [disable the feature flag](../administration/feature_flags/_index.md) named `import_project_from_remote_file`.
 On GitLab.com and GitLab Dedicated, this feature is available.
 
 {{< /alert >}}
@@ -286,7 +286,7 @@ The `Content-Type` header must be `application/gzip`.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/425798) as a [beta](../policy/development_stages_support.md#beta) in GitLab 16.11 [with a flag](../administration/feature_flags.md) named `single_relation_import`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/425798) as a [beta](../policy/development_stages_support.md#beta) in GitLab 16.11 [with a flag](../administration/feature_flags/_index.md) named `single_relation_import`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/455889) in GitLab 17.1. Feature flag `single_relation_import` removed.
 
 {{< /history >}}

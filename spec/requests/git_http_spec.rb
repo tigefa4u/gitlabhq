@@ -166,6 +166,7 @@ RSpec.describe 'Git HTTP requests', feature_category: :source_code_management do
 
         it "redirects to the .git suffix version" do
           expect(response).to redirect_to("/#{repository_path}.git/info/refs")
+          expect(response.body).to match(/You.are.being.+redirected/)
         end
       end
 
@@ -178,6 +179,7 @@ RSpec.describe 'Git HTTP requests', feature_category: :source_code_management do
 
         it "redirects to the .git suffix version" do
           expect(response).to redirect_to("/#{repository_path}.git/info/refs?service=#{params[:service]}")
+          expect(response.body).to match(/You.are.being.+redirected/)
         end
       end
 
@@ -190,6 +192,7 @@ RSpec.describe 'Git HTTP requests', feature_category: :source_code_management do
 
         it "redirects to the .git suffix version" do
           expect(response).to redirect_to("/#{repository_path}.git/info/refs?service=#{params[:service]}")
+          expect(response.body).to match(/You.are.being.+redirected/)
         end
       end
 
@@ -202,6 +205,7 @@ RSpec.describe 'Git HTTP requests', feature_category: :source_code_management do
 
         it "redirects to the sign-in page" do
           expect(response).to redirect_to(new_user_session_path)
+          expect(response.body).to match(/You.are.being.+redirected/)
         end
       end
     end
@@ -666,6 +670,23 @@ RSpec.describe 'Git HTTP requests', feature_category: :source_code_management do
                   it_behaves_like 'pushes are allowed'
                 end
 
+                context "when oauth token owner has composite identity" do
+                  let_it_be(:service_account) { create(:user, :service_account, composite_identity_enforced: true) }
+                  let(:scopes) { ::Gitlab::Auth::AI_WORKFLOW_SCOPES + ["user:#{user.id}"] }
+                  let!(:token) do
+                    OauthAccessToken.create!(
+                      application_id: application.id,
+                      expires_in: 1.hour,
+                      resource_owner_id: service_account.id,
+                      organization: organization,
+                      scopes: scopes
+                    ).plaintext_token
+                  end
+
+                  it_behaves_like 'pulls are allowed'
+                  it_behaves_like 'pushes are allowed'
+                end
+
                 context "when oauth token has api scope" do
                   let(:scopes) { 'api' }
 
@@ -710,6 +731,13 @@ RSpec.describe 'Git HTTP requests', feature_category: :source_code_management do
 
                   it_behaves_like 'pulls are allowed'
                   it_behaves_like 'pushes are allowed'
+
+                  it 'updates the token last used time and client IP on pull' do
+                    clone_get(path, **env)
+
+                    expect(access_token.reload.last_used_at).to be_present
+                    expect(access_token.reload.last_used_ips.count).to eq(1)
+                  end
 
                   it 'rejects the push attempt for read_repository scope' do
                     read_access_token = create(:personal_access_token, user: user, scopes: [:read_repository])

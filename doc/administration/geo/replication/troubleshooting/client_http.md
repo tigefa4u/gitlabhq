@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Troubleshooting Geo client and HTTP response code errors
@@ -73,7 +73,7 @@ To resolve this issue:
 1. Set `nginx['proxy_custom_buffer_size'] = '8k'` in `/etc/gitlab.rb` on all web nodes on the secondary site.
 1. Reconfigure the **secondary** using `sudo gitlab-ctl reconfigure`.
 
-If you still get this error, you can further increase the buffer size by repeating the steps above
+If you still get this error, you can further increase the buffer size by repeating the previous steps
 and changing the `8k` size, for example by doubling it to `16k`.
 
 ### Geo Admin area shows `Unknown` for health status and 'Request failed with status code 401'

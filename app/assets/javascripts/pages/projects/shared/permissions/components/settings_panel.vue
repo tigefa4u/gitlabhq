@@ -8,7 +8,7 @@ import {
   GlFormSelect,
   GlToggle,
 } from '@gitlab/ui';
-import SecretManagerSettings from 'ee_component/pages/projects/shared/permissions/components/secret_manager_settings.vue';
+import SecretManagerSettings from 'ee_component/pages/projects/shared/permissions/secrets_manager/secrets_manager_settings.vue';
 import ConfirmDanger from '~/vue_shared/components/confirm_danger/confirm_danger.vue';
 import settingsMixin from 'ee_else_ce/pages/projects/shared/permissions/mixins/settings_pannel_mixin';
 import glFeatureFlagMixin from '~/vue_shared/mixins/gl_feature_flags_mixin';
@@ -18,7 +18,6 @@ import {
   VISIBILITY_LEVEL_INTERNAL_INTEGER,
   VISIBILITY_LEVEL_PUBLIC_INTEGER,
 } from '~/visibility_level/constants';
-import CascadingLockIcon from '~/namespaces/cascading_settings/components/cascading_lock_icon.vue';
 import {
   visibilityLevelDescriptions,
   featureAccessLevelMembers,
@@ -28,8 +27,6 @@ import {
   featureAccessLevelDescriptions,
   modelExperimentsHelpPath,
   modelRegistryHelpPath,
-  duoHelpPath,
-  amazonQHelpPath,
   pipelineExecutionPoliciesHelpPath,
   extendedPratExpiryWebhooksExecuteHelpPath,
 } from '../constants';
@@ -126,7 +123,6 @@ export default {
     CiCatalogSettings,
     ProjectFeatureSetting,
     ProjectSettingRow,
-    CascadingLockIcon,
     GlButton,
     GlCard,
     GlSprintf,
@@ -142,7 +138,6 @@ export default {
       ),
   },
   mixins: [settingsMixin, glFeatureFlagMixin()],
-  inject: ['cascadingSettingsData'],
   props: {
     requestCveAvailable: {
       type: Boolean,
@@ -203,26 +198,6 @@ export default {
       default: false,
     },
     requirementsAvailable: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    licensedAiFeaturesAvailable: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    amazonQAvailable: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    amazonQAutoReviewEnabled: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    duoFeaturesLocked: {
       type: Boolean,
       required: false,
       default: false,
@@ -311,6 +286,11 @@ export default {
       type: String,
       required: true,
     },
+    isSecretsManagerAvailable: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
     showVisibilityConfirmModal: {
       type: Boolean,
       required: false,
@@ -362,8 +342,6 @@ export default {
       showDiffPreviewInEmail: true,
       extendedPratExpiryWebhooksExecute: false,
       cveIdRequestEnabled: true,
-      duoFeaturesEnabled: false,
-      autoReviewEnabled: this.amazonQAutoReviewEnabled,
       sppRepositoryPipelineAccess: false,
       featureAccessLevelEveryone,
       featureAccessLevelMembers,
@@ -433,7 +411,7 @@ export default {
       }
 
       return s__(
-        'ProjectSettings|View and edit files in this project. When set to **Everyone With Access** non-project members have only read access.',
+        'ProjectSettings|View and edit files in this project. When set to %{em_start}Everyone With Access%{em_end} non-project members have only read access.',
       );
     },
     cveIdRequestIsDisabled() {
@@ -468,41 +446,11 @@ export default {
         this.showDiffPreviewInEmail = newValue;
       },
     },
-    showCascadingButton() {
-      return (
-        this.duoFeaturesLocked &&
-        this.cascadingSettingsData &&
-        Object.keys(this.cascadingSettingsData).length
-      );
-    },
     wasProjectInitiallyPrivate() {
       return this.currentSettings.visibilityLevel === VISIBILITY_LEVEL_PRIVATE_INTEGER;
     },
-    duoEnabledSetting() {
-      if (this.amazonQAvailable) {
-        return {
-          label: s__('ProjectSettings|Amazon Q'),
-          helpText: s__('ProjectSettings|This project can use Amazon Q.'),
-          helpPath: amazonQHelpPath,
-        };
-      }
-      if (this.licensedAiFeaturesAvailable) {
-        return {
-          label: s__('ProjectSettings|GitLab Duo'),
-          helpText: s__('ProjectSettings|Use AI-powered features in this project.'),
-          helpPath: duoHelpPath,
-        };
-      }
-
-      return null;
-    },
   },
   watch: {
-    duoFeaturesEnabled(isEnabled) {
-      if (this.amazonQAvailable) {
-        this.autoReviewEnabled = isEnabled;
-      }
-    },
     visibilityLevel(value, oldValue) {
       if (value === VISIBILITY_LEVEL_PRIVATE_INTEGER) {
         if (
@@ -1083,56 +1031,6 @@ export default {
           name="project[project_feature_attributes][releases_access_level]"
         />
       </project-setting-row>
-      <project-setting-row
-        v-if="duoEnabledSetting"
-        data-testid="duo-settings"
-        :label="duoEnabledSetting.label"
-        :help-text="duoEnabledSetting.helpText"
-        :help-path="duoEnabledSetting.helpPath"
-        :locked="duoFeaturesLocked"
-      >
-        <template #label-icon>
-          <cascading-lock-icon
-            v-if="showCascadingButton"
-            data-testid="duo-cascading-lock-icon"
-            :is-locked-by-group-ancestor="cascadingSettingsData.lockedByAncestor"
-            :is-locked-by-application-settings="cascadingSettingsData.lockedByApplicationSetting"
-            :ancestor-namespace="cascadingSettingsData.ancestorNamespace"
-            class="gl-ml-1"
-          />
-        </template>
-        <gl-toggle
-          v-model="duoFeaturesEnabled"
-          class="gl-mt-2"
-          :disabled="duoFeaturesLocked"
-          :label="duoEnabledSetting.label"
-          label-position="hidden"
-          name="project[project_setting_attributes][duo_features_enabled]"
-          data-testid="duo_features_enabled_toggle"
-        />
-        <div
-          v-if="amazonQAvailable"
-          class="project-feature-setting-group gl-flex gl-flex-col gl-gap-5 gl-pl-5 md:gl-pl-7"
-        >
-          <project-setting-row
-            :label="s__('AI|Enable Auto Review')"
-            class="gl-mt-5"
-            :help-text="
-              s__('AI|When a merge request is created, automatically starts an Amazon Q review')
-            "
-          >
-            <gl-toggle
-              v-model="autoReviewEnabled"
-              class="gl-mt-2"
-              :disabled="duoFeaturesLocked || !duoFeaturesEnabled"
-              :label="s__('AI|Auto Review')"
-              label-position="hidden"
-              name="project[amazon_q_auto_review_enabled]"
-              data-testid="amazon_q_auto_review_enabled"
-            />
-          </project-setting-row>
-        </div>
-      </project-setting-row>
 
       <project-setting-row v-if="canDisableEmails" ref="email-settings">
         <label class="js-emails-enabled">
@@ -1222,7 +1120,11 @@ export default {
         </gl-form-checkbox>
       </project-setting-row>
       <ci-catalog-settings v-if="canAddCatalogResource" :full-path="confirmationPhrase" />
-      <secret-manager-settings v-if="canManageSecretManager" :full-path="confirmationPhrase" />
+      <secret-manager-settings
+        v-if="isSecretsManagerAvailable"
+        :can-manage-secrets-manager="canManageSecretManager"
+        :full-path="confirmationPhrase"
+      />
       <other-project-settings />
       <project-setting-row
         v-if="policySettingsAvailable"

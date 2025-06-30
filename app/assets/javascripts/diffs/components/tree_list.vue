@@ -48,6 +48,11 @@ export default {
       type: Number,
       required: true,
     },
+    groupBlobsListItems: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
   },
   data() {
     return {
@@ -62,7 +67,26 @@ export default {
       'fileTree',
       'allBlobs',
       'linkedFile',
+      'flatBlobsList',
     ]),
+    flatUngroupedList() {
+      return this.flatBlobsList.reduce((acc, blob, index) => {
+        const loading = this.isLoading(blob.fileHash);
+        const lastIndex = acc.length;
+        const previous = acc[lastIndex - 1];
+        const adjacentNonHeader = previous?.isHeader ? acc[lastIndex - 2] : previous;
+        const isSibling = adjacentNonHeader?.parentPath === blob.parentPath;
+        if (isSibling) return [...acc, { ...blob, loading, level: 1 }];
+        const header = {
+          key: `header-${index}`,
+          path: blob.parentPath,
+          isHeader: true,
+          tree: [],
+          level: 0,
+        };
+        return [...acc, header, { ...blob, loading, level: 1 }];
+      }, []);
+    },
     filteredTreeList() {
       let search = this.search.toLowerCase().trim();
 
@@ -101,8 +125,7 @@ export default {
       const result = [];
       const createFlatten = (level, hidden) => (item) => {
         const isTree = item.type === 'tree';
-        const loading =
-          !isTree && !item.isHeader && this.loadedFiles && !this.loadedFiles[item.fileHash];
+        const loading = !isTree && !item.isHeader && this.isLoading(item.fileHash);
         result.push({
           ...item,
           hidden,
@@ -152,6 +175,8 @@ export default {
       ];
     },
     treeList() {
+      if (!this.renderTreeList && !this.groupBlobsListItems && !this.search)
+        return this.flatUngroupedList;
       const list = this.linkedFile ? this.flatListWithLinkedFile : this.flatFilteredTreeList;
       if (this.search) return list;
       return list.filter((item) => !item.hidden);
@@ -166,7 +191,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions(useLegacyDiffs, ['toggleTreeOpen', 'setRenderTreeList', 'setTreeOpen']),
+    ...mapActions(useLegacyDiffs, ['setRenderTreeList', 'setTreeOpen']),
     preventClippingSelectedFile(hash) {
       // let the layout stabilize, we need to wait for:
       // scroll to file, sticky elements update, file browser height update
@@ -194,6 +219,9 @@ export default {
           .forEach((path) => this.setTreeOpen({ path, opened: true }));
       }
     },
+    isLoading(fileHash) {
+      return this.loadedFiles && !this.loadedFiles[fileHash];
+    },
   },
   searchPlaceholder: sprintf(s__('MergeRequest|Search (e.g. *.vue) (%{MODIFIER_KEY}P)'), {
     MODIFIER_KEY,
@@ -202,12 +230,26 @@ export default {
 </script>
 
 <template>
-  <div class="tree-list-holder gl-flex gl-flex-col" data-testid="file-tree-container">
+  <section
+    class="tree-list-holder gl-flex gl-flex-col"
+    data-testid="file-tree-container"
+    aria-labelledby="tree-list-title"
+  >
     <div class="gl-mb-3 gl-flex gl-items-center">
-      <h5 class="gl-my-0 gl-inline-block">{{ __('Files') }}</h5>
-      <gl-badge v-if="totalFilesCount != null" class="gl-ml-2" data-testid="file-count">{{
-        totalFilesCount
-      }}</gl-badge>
+      <h2
+        id="tree-list-title"
+        class="gl-my-0 gl-inline-block gl-text-base"
+        :aria-label="__('File browser')"
+      >
+        {{ __('Files') }}
+      </h2>
+      <gl-badge
+        v-if="totalFilesCount != null"
+        class="gl-ml-2"
+        data-testid="file-count"
+        aria-hidden="true"
+        >{{ totalFilesCount }}</gl-badge
+      >
       <gl-button-group class="gl-ml-auto">
         <gl-button
           v-gl-tooltip.hover
@@ -229,7 +271,6 @@ export default {
         />
       </gl-button-group>
     </div>
-    <label for="diff-tree-search" class="sr-only">{{ $options.searchPlaceholder }}</label>
     <gl-search-box-by-type
       id="diff-tree-search"
       v-model="search"
@@ -239,7 +280,11 @@ export default {
       :clear-button-title="__('Clear search')"
       class="gl-mb-3"
     />
-    <div :class="{ 'tree-list-blobs': !renderTreeList || search }" class="mr-tree-list">
+    <nav
+      :class="{ 'tree-list-blobs': !renderTreeList || search }"
+      class="mr-tree-list"
+      :aria-label="__('File tree')"
+    >
       <recycle-scroller
         v-if="treeList.length"
         ref="scroller"
@@ -247,6 +292,7 @@ export default {
         :item-size="rowHeight"
         :buffer="100"
         key-field="key"
+        data-testid="tree-list-scroll"
       >
         <template #default="{ item }">
           <diff-file-row
@@ -258,9 +304,9 @@ export default {
             :style="{ '--level': item.level }"
             :class="{ 'tree-list-parent': item.level > 0 }"
             :tabindex="item.loading ? -1 : 0"
-            class="gl-relative !gl-m-1"
+            class="gl-relative"
             :data-file-row="item.fileHash"
-            @toggleTreeOpen="toggleTreeOpen"
+            @toggleTreeOpen="$emit('toggleFolder', $event)"
             @clickFile="!item.loading && $emit('clickFile', $event)"
           />
         </template>
@@ -271,8 +317,8 @@ export default {
       <p v-else class="prepend-top-20 append-bottom-20 text-center">
         {{ s__('MergeRequest|No files found') }}
       </p>
-    </div>
-  </div>
+    </nav>
+  </section>
 </template>
 
 <style>

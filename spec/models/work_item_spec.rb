@@ -102,6 +102,30 @@ RSpec.describe WorkItem, feature_category: :portfolio_management do
     end
   end
 
+  describe '.with_parent_ids' do
+    let_it_be(:parent_item) { create(:work_item, :epic, project: reusable_project) }
+
+    context 'when given valid parent IDs' do
+      let_it_be(:child_item) { create(:work_item, project: reusable_project) }
+
+      before do
+        create(:parent_link, work_item_parent: parent_item, work_item: child_item)
+      end
+
+      it 'returns the work items with the specified parent IDs' do
+        expect(described_class.with_work_item_parent_ids([parent_item.id])).to contain_exactly(child_item)
+      end
+    end
+
+    context 'when work item does not have parent link' do
+      let_it_be(:work_item_without_parent) { create(:work_item, project: reusable_project) }
+
+      it 'does not return the work item' do
+        expect(described_class.with_work_item_parent_ids([parent_item.id])).to be_empty
+      end
+    end
+  end
+
   describe '#create_dates_source_from_current_dates' do
     let_it_be(:start_date) { nil }
     let_it_be(:due_date) { nil }
@@ -220,6 +244,7 @@ RSpec.describe WorkItem, feature_category: :portfolio_management do
         instance_of(WorkItems::Widgets::Hierarchy),
         instance_of(WorkItems::Widgets::Labels),
         instance_of(WorkItems::Widgets::LinkedItems),
+        instance_of(WorkItems::Widgets::LinkedResources),
         instance_of(WorkItems::Widgets::Milestone),
         instance_of(WorkItems::Widgets::Notes),
         instance_of(WorkItems::Widgets::Notifications),
@@ -269,6 +294,7 @@ RSpec.describe WorkItem, feature_category: :portfolio_management do
             instance_of(WorkItems::Widgets::Hierarchy),
             instance_of(WorkItems::Widgets::Labels),
             instance_of(WorkItems::Widgets::LinkedItems),
+            instance_of(WorkItems::Widgets::LinkedResources),
             instance_of(WorkItems::Widgets::Notes),
             instance_of(WorkItems::Widgets::Notifications),
             instance_of(WorkItems::Widgets::Participants),
@@ -338,7 +364,7 @@ RSpec.describe WorkItem, feature_category: :portfolio_management do
     it 'returns quick action commands supported for all work items' do
       is_expected.to include(:title, :reopen, :close, :cc, :tableflip, :shrug, :type, :promote_to, :checkin_reminder,
         :subscribe, :unsubscribe, :confidential, :award, :move, :clone, :copy_metadata, :duplicate,
-        :promote_to_incident, :board_move, :convert_to_ticket)
+        :promote_to_incident, :board_move, :convert_to_ticket, :zoom, :remove_zoom)
     end
 
     it 'omits quick action commands from assignees widget' do
@@ -427,13 +453,49 @@ RSpec.describe WorkItem, feature_category: :portfolio_management do
   end
 
   describe 'callbacks' do
-    describe 'record_create_action' do
+    describe 'record_create_action', :clean_gitlab_redis_shared_state do
+      let_it_be(:user) { create(:user) }
+
       it 'records the creation action after saving' do
-        expect(Gitlab::UsageDataCounters::WorkItemActivityUniqueCounter).to receive(:track_work_item_created_action)
         # During the work item transition we also want to track work items as issues
         expect(Gitlab::UsageDataCounters::IssueActivityUniqueCounter).to receive(:track_issue_created_action)
 
         create(:work_item)
+      end
+
+      it "triggers an internal event" do
+        expect { create(:work_item, project: reusable_project, author: user) }
+          .to trigger_internal_events('users_creating_work_items').with(
+            project: reusable_project,
+            user: user,
+            additional_properties: {
+              label: 'issue'
+            }
+          ).and increment_usage_metrics(
+            'counts_weekly.aggregated_metrics.users_work_items',
+            'counts_monthly.aggregated_metrics.users_work_items'
+          ).and not_increment_usage_metrics(
+            'redis_hll_counters.count_distinct_user_id_from_create_work_type_epic_monthly',
+            'redis_hll_counters.count_distinct_user_id_from_create_work_type_epic_weekly'
+          )
+      end
+
+      context 'when work item is of type epic' do
+        it "triggers an internal event" do
+          expect { create(:work_item, :epic, project: reusable_project, author: user) }
+            .to trigger_internal_events('users_creating_work_items').with(
+              project: reusable_project,
+              user: user,
+              additional_properties: {
+                label: 'epic'
+              }
+            ).and increment_usage_metrics(
+              'redis_hll_counters.count_distinct_user_id_from_create_work_type_epic_monthly',
+              'redis_hll_counters.count_distinct_user_id_from_create_work_type_epic_weekly',
+              'counts_weekly.aggregated_metrics.users_work_items',
+              'counts_monthly.aggregated_metrics.users_work_items'
+            )
+        end
       end
 
       it_behaves_like 'internal event tracking' do
@@ -575,10 +637,31 @@ RSpec.describe WorkItem, feature_category: :portfolio_management do
     end
   end
 
-  describe '#linked_items_keyset_order' do
+  describe '.linked_items_keyset_order' do
     subject { described_class.linked_items_keyset_order }
 
     it { is_expected.to eq('"issue_links"."id" DESC') }
+  end
+
+  describe '.linked_items_for' do
+    let_it_be(:items) { create_list(:work_item, 3, project: reusable_project) }
+    let_it_be(:linked_items) { create_list(:work_item, 3, project: reusable_project) }
+
+    let(:work_item_ids) { items.pluck(:id) }
+
+    subject(:linked) { described_class.linked_items_for(work_item_ids) }
+
+    before do
+      items.each_with_index do |item, i|
+        create(:work_item_link, source: item, target: linked_items[i])
+      end
+    end
+
+    it 'returns the linked items' do
+      expect(linked.map(&:issue_link_target_id)).to match_array(work_item_ids)
+      expect(linked.map(&:issue_link_source_id)).to match_array(linked_items.map(&:id))
+      expect(linked.map(&:issue_link_type).uniq).to contain_exactly('relates_to')
+    end
   end
 
   context 'with hierarchy' do
@@ -869,8 +952,7 @@ RSpec.describe WorkItem, feature_category: :portfolio_management do
 
     context 'when a user cannot read cross project' do
       it 'only returns work items within the same project' do
-        allow(Ability).to receive(:allowed?).with(user, :read_all_resources, :global).and_call_original
-        expect(Ability).to receive(:allowed?).with(user, :read_cross_project).and_return(false)
+        allow(Gitlab::ExternalAuthorization).to receive_messages(perform_check?: true, access_allowed?: true)
 
         expect(authorized_item_a.linked_work_items(user)).to contain_exactly(authorized_item_b)
       end

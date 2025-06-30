@@ -2,13 +2,55 @@
 
 require 'spec_helper'
 
-RSpec.describe ForkNetwork do
+RSpec.describe ForkNetwork, feature_category: :source_code_management do
   include ProjectForksHelper
+
+  describe "validations" do
+    it { is_expected.to belong_to(:organization) }
+    it { is_expected.to belong_to(:root_project).class_name('Project') }
+
+    describe "#organization_match" do
+      let_it_be(:organization) { create(:organization) }
+      let_it_be(:project) { create(:project, organization: organization) }
+
+      context "when organization_id matches root_project's organization_id" do
+        let(:fork_network) { build(:fork_network, root_project: project, organization: organization) }
+
+        it "is valid" do
+          expect(fork_network).to be_valid
+        end
+      end
+
+      context "when organization_id does not match root_project's organization_id" do
+        let_it_be(:different_organization) { create(:organization) }
+
+        let(:fork_network) { build(:fork_network, root_project: project, organization: different_organization) }
+
+        it "is not valid" do
+          expect(fork_network).not_to be_valid
+          expect(fork_network.errors[:organization_id]).to include("must match the root project organization's ID")
+        end
+      end
+
+      context "when root_project is nil" do
+        let(:fork_network) { build(:fork_network, root_project: nil, organization: organization) }
+
+        it "is valid" do
+          expect(fork_network).to be_valid
+        end
+      end
+    end
+  end
+
+  describe "associations" do
+    it { is_expected.to have_many(:fork_network_members) }
+    it { is_expected.to have_many(:projects).through(:fork_network_members) }
+  end
 
   describe '#add_root_as_member' do
     it 'adds the root project as a member when creating a new root network' do
       project = create(:project)
-      fork_network = described_class.create!(root_project: project)
+      fork_network = described_class.create!(root_project: project, organization_id: project.organization_id)
 
       expect(fork_network.projects).to include(project)
     end

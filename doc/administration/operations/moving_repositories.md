@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Data Access
 group: Gitaly
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Moving repositories managed by GitLab
@@ -19,7 +19,7 @@ You can move all repositories managed by GitLab to another file system or anothe
 The GitLab API is the recommended way to move Git repositories:
 
 - Between servers.
-- Between different storage.
+- Between different storages.
 - From single-node Gitaly to Gitaly Cluster.
 
 For more information, see:
@@ -250,7 +250,7 @@ sudo -u git  sh -c 'rsync -a --delete /var/opt/gitlab/git-data/repositories/. \
   /mnt/gitlab/repositories'
 ```
 
-The `/.` in the command above is very important, without it you can
+The `/.` in the previous command is very important, without it you can
 get the wrong directory structure in the target directory.
 If you want to see progress, replace `-a` with `-av`.
 

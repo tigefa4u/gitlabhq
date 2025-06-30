@@ -1,7 +1,7 @@
 ---
-stage: Foundations
-group: Import and Integrate
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+stage: Create
+group: Import
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Principles of Importer Design
 ---
 
@@ -13,9 +13,11 @@ title: Principles of Importer Design
 - Importers must not add third-party Ruby gems that make HTTP calls.
   Importers use the same
   [Ruby gem policy as for integrations](../integrations/_index.md#no-ruby-gems-that-make-http-calls), for more information about Ruby gem use for importers see that page.
-- All HTTP calls must use `Gitlab::HTTP`.
-  `Gitlab::HTTP` ensures that [network settings](../../security/webhooks.md) of the instance
-  are enforced and has other [security hardening](../../security/webhooks.md#enforce-dns-rebinding-attack-protection) measures.
+- All HTTP calls must use `Import::Clients::HTTP`, which:
+  - Ensures that [network settings](../../security/webhooks.md) are enforced for HTTP calls.
+  - Has additional [security hardening](../../security/webhooks.md#enforce-dns-rebinding-attack-protection) features.
+  - Is our single source of truth for making secure HTTP calls.
+  - Ensure all response sizes are validated.
 
 ## Logging
 

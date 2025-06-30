@@ -17,6 +17,7 @@ import {
   autocompleteDataSources,
   markdownPreviewPath,
 } from '~/work_items/utils';
+import projectPermissionsQuery from '../graphql/ai_permissions_for_project.query.graphql';
 import workItemByIidQuery from '../graphql/work_item_by_iid.query.graphql';
 import workItemDescriptionTemplateQuery from '../graphql/work_item_description_template.query.graphql';
 import { i18n, NEW_WORK_ITEM_IID, TRACKING_CATEGORY_SHOW, ROUTES } from '../constants';
@@ -39,11 +40,6 @@ export default {
     WorkItemDescriptionTemplateListbox,
   },
   mixins: [Tracking.mixin()],
-  provide: {
-    editorAiActions: window.gon?.licensed_features?.generateDescription
-      ? [generateDescriptionAction()]
-      : [],
-  },
   inject: ['isGroup'],
   props: {
     description: {
@@ -85,7 +81,7 @@ export default {
       required: false,
       default: true,
     },
-    workItemTypeName: {
+    newWorkItemType: {
       type: String,
       required: false,
       default: '',
@@ -137,15 +133,22 @@ export default {
       descriptionTemplate: null,
       appliedTemplate: '',
       showTemplateApplyWarning: false,
+      workspacePermissions: {},
     };
   },
   computed: {
     createFlow() {
-      return this.workItemId === newWorkItemId(this.workItemTypeName);
+      return this.workItemId === newWorkItemId(this.newWorkItemType);
+    },
+    editorAiActions() {
+      const { id, userPermissions } = this.workspacePermissions;
+      return userPermissions?.generateDescription
+        ? [generateDescriptionAction({ resourceId: id })]
+        : [];
     },
     workItemFullPath() {
       return this.createFlow
-        ? newWorkItemFullPath(this.fullPath, this.workItemTypeName)
+        ? newWorkItemFullPath(this.fullPath, this.newWorkItemType)
         : this.fullPath;
     },
     autosaveKey() {
@@ -157,6 +160,7 @@ export default {
     hasConflicts() {
       return Boolean(this.conflictedDescription);
     },
+    // eslint-disable-next-line vue/no-unused-properties
     tracking() {
       return {
         category: TRACKING_CATEGORY_SHOW,
@@ -265,13 +269,16 @@ export default {
   },
   mounted() {
     const DEFAULT_TEMPLATE_NAME = 'default';
-    if (this.isCreateFlow) {
-      const templateName = !this.isNewWorkItemRoute
-        ? DEFAULT_TEMPLATE_NAME
-        : this.$route.query[paramName] ||
-          this.$route.query[oldParamNameFromPreWorkItems] ||
-          DEFAULT_TEMPLATE_NAME;
+    const templateNameFromRoute =
+      this.$route.query[paramName] || this.$route.query[oldParamNameFromPreWorkItems];
+    const templateName = !this.isNewWorkItemRoute
+      ? DEFAULT_TEMPLATE_NAME
+      : templateNameFromRoute || DEFAULT_TEMPLATE_NAME;
 
+    // Ensure that template is set during Create Flow only if any of the following is true:;
+    // - Template name is present in URL.
+    // - Description is empty.
+    if (this.isCreateFlow && (templateNameFromRoute || this.descriptionText.trim() === '')) {
       this.selectedTemplate = {
         name: templateName,
         projectId: null,
@@ -327,6 +334,7 @@ export default {
         if (this.descriptionTemplate === this.descriptionText) {
           return;
         }
+
         if (!isUnchangedTemplate && (isDirty || hasContent)) {
           this.showTemplateApplyWarning = true;
         } else {
@@ -336,6 +344,25 @@ export default {
       error(e) {
         Sentry.captureException(e);
         this.$emit('error', s__('WorkItem|Unable to find selected template.'));
+      },
+    },
+    workspacePermissions: {
+      query() {
+        return projectPermissionsQuery;
+      },
+      variables() {
+        return {
+          fullPath: this.fullPath,
+        };
+      },
+      update(data) {
+        return data.workspace || {};
+      },
+      skip() {
+        return this.isGroup;
+      },
+      error(error) {
+        Sentry.captureException(error);
       },
     },
   },
@@ -349,9 +376,17 @@ export default {
       this.isEditing = true;
       this.wasEdited = true;
 
-      this.descriptionText = this.createFlow
-        ? this.workItemDescription?.description
-        : getDraft(this.autosaveKey) || this.workItemDescription?.description;
+      if (this.createFlow) {
+        this.descriptionText = this.workItemDescription?.description;
+      } else {
+        const draftDescription = getDraft(this.autosaveKey) || '';
+        if (draftDescription.trim() !== '') {
+          this.descriptionText = draftDescription;
+        } else {
+          this.descriptionText = this.workItemDescription?.description;
+        }
+      }
+
       this.initialDescriptionText = this.descriptionText;
 
       await this.$nextTick();
@@ -399,9 +434,15 @@ export default {
       this.conflictedDescription = '';
       this.initialDescriptionText = this.descriptionText;
     },
-    setDescriptionText(newText) {
+    setDescriptionText(newText, onMountInit = false) {
       this.descriptionText = newText;
-      this.$emit('updateDraft', this.descriptionText);
+      // Ensure that we don't update the draft on mount during create mode as
+      // it will otherwise overwrite localStorage and previously saved data
+      // will be lost. See vue_shared/components/markdown/markdown_editor.vue
+      // mounted hook where onMountInit boolean is passed with $emit('input').
+      if (!onMountInit || !this.isCreateFlow) {
+        this.$emit('updateDraft', this.descriptionText);
+      }
       updateDraft(this.autosaveKey, this.descriptionText);
     },
     handleDescriptionTextUpdated(newText) {
@@ -456,6 +497,20 @@ export default {
         this.onInput();
       }
     },
+    handleEscape() {
+      // Don't cancel if autosuggest open in plain text editor
+      if (
+        !this.$refs.markdownEditor.$el
+          .querySelector('textarea')
+          ?.classList.contains('at-who-active')
+      ) {
+        if (this.isCreateFlow) {
+          this.$emit('cancelCreate');
+        } else {
+          this.cancelEditing();
+        }
+      }
+    },
   },
 };
 </script>
@@ -503,6 +558,7 @@ export default {
           </template>
         </gl-alert>
         <markdown-editor
+          ref="markdownEditor"
           :value="descriptionText"
           :render-markdown-path="markdownPreviewPath"
           :markdown-docs-path="$options.markdownDocsPath"
@@ -511,6 +567,7 @@ export default {
           :autocomplete-data-sources="autocompleteDataSources"
           :restricted-tool-bar-items="restrictedToolBarItems"
           :uploads-path="uploadsPath"
+          :editor-ai-actions="editorAiActions"
           enable-autocomplete
           supports-quick-actions
           :autofocus="autofocus"
@@ -518,6 +575,7 @@ export default {
           @input="setDescriptionText"
           @keydown.meta.enter="updateWorkItem"
           @keydown.ctrl.enter="updateWorkItem"
+          @keydown.esc.stop="handleEscape"
         />
         <div class="gl-flex">
           <gl-alert
@@ -579,6 +637,7 @@ export default {
     </gl-form>
     <work-item-description-rendered
       v-else
+      :full-path="fullPath"
       :work-item-description="workItemDescription"
       :work-item-id="workItemId"
       :work-item-type="workItemType"

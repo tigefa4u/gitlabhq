@@ -18,6 +18,10 @@ import (
 
 const testData = `123456789012345678901234567890`
 const testDataEtag = `W/"myetag"`
+const entryServerExtraHeader1 = "X-Custom-Header1"
+const entryServerExtraHeader1Value = "Header1"
+const entryServerExtraHeader2 = "X-Custom-Header2"
+const entryServerExtraHeader2Value = "Header2"
 
 type option struct {
 	Key   string
@@ -48,7 +52,12 @@ func testEntryServer(t *testing.T, requestURL string, httpHeaders http.Header, a
 		w.Header().Set("Date", "Wed, 21 Oct 2015 05:28:00 GMT")
 		w.Header().Set("Pragma", "no-cache")
 
+		// add metrics tracker
+		r = testhelper.RequestWithMetrics(t, r)
+
 		SendURL.Inject(w, r, data)
+
+		testhelper.AssertMetrics(t, r)
 	}
 	serveFile := func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
@@ -65,6 +74,8 @@ func testEntryServer(t *testing.T, requestURL string, httpHeaders http.Header, a
 		w.Header().Set("Expires", "Wed, 21 Oct 2015 07:28:00 GMT")
 		w.Header().Set("Date", "Wed, 21 Oct 2015 06:28:00 GMT")
 		w.Header().Set("Pragma", "")
+		w.Header().Set(entryServerExtraHeader1, entryServerExtraHeader1Value)
+		w.Header().Set(entryServerExtraHeader2, entryServerExtraHeader2Value)
 
 		http.ServeContent(w, r, "archive.txt", time.Now(), tempFile)
 	}
@@ -233,7 +244,11 @@ func TestPostRequest(t *testing.T) {
 
 		data := base64.URLEncoding.EncodeToString(jsonParams)
 
+		// add metrics tracker
+		r = testhelper.RequestWithMetrics(t, r)
+
 		SendURL.Inject(w, r, data)
+		testhelper.AssertMetrics(t, r)
 	}
 	externalPostURLHandler := func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "POST", r.Method)
@@ -294,9 +309,13 @@ func TestErrorWithCustomStatusCode(t *testing.T) {
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest("GET", "/target", nil)
 
+	// add metrics tracker
+	request = testhelper.RequestWithMetrics(t, request)
+
 	SendURL.Inject(response, request, data)
 
 	require.Equal(t, http.StatusTeapot, response.Code)
+	testhelper.AssertMetrics(t, request)
 }
 
 func TestHttpClientReuse(t *testing.T) {
@@ -322,11 +341,35 @@ func TestSSRFFilter(t *testing.T) {
 	response := testEntryServer(t, "/get/request", nil, false, option{Key: "SSRFFilter", Value: true})
 
 	// Test uses loopback IP like 127.0.0.x and thus fails
-	require.Equal(t, http.StatusInternalServerError, response.Code)
+	require.Equal(t, http.StatusForbidden, response.Code)
+	require.Equal(t, "Forbidden\n", response.Body.String())
 }
 
 func TestSSRFFilterWithAllowLocalhost(t *testing.T) {
 	response := testEntryServer(t, "/get/request", nil, false, option{Key: "SSRFFilter", Value: true}, option{Key: "AllowLocalhost", Value: true})
 
 	require.Equal(t, http.StatusOK, response.Code)
+}
+
+func TestRestrictForwardedResponseHeaders(t *testing.T) {
+	restrictForwardedResponseHeadersParams := &map[string]interface{}{
+		"Enabled":   true,
+		"AllowList": []string{entryServerExtraHeader1},
+	}
+
+	response := testEntryServer(t, "/get/request", nil, false, option{Key: "RestrictForwardedResponseHeaders", Value: restrictForwardedResponseHeadersParams}, option{Key: "ResponseHeaders", Value: http.Header{"CustomHeader": {"Test"}}})
+
+	require.Equal(t, http.StatusOK, response.Code)
+
+	expectedHeaders := http.Header{
+		"Content-Disposition":   []string{"attachment; filename=\"archive.txt\""},
+		"Cache-Control":         []string{"no-cache"},
+		"Expires":               []string{""},
+		"Date":                  []string{"Wed, 21 Oct 2015 05:28:00 GMT"},
+		"Pragma":                []string{"no-cache"},
+		entryServerExtraHeader1: []string{entryServerExtraHeader1Value},
+		"Customheader":          []string{"Test"},
+	}
+
+	require.Equal(t, expectedHeaders, response.Header())
 }

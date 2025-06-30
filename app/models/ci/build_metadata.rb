@@ -14,8 +14,6 @@ module Ci
     self.table_name = 'p_ci_builds_metadata'
     self.primary_key = 'id'
 
-    ignore_column :runtime_runner_features, remove_with: '18.1', remove_after: '2025-05-22'
-
     query_constraints :id, :partition_id
     partitionable scope: :build, partitioned: true
 
@@ -45,7 +43,7 @@ module Ci
     scope :with_interruptible, -> { where(interruptible: true) }
     scope :with_exposed_artifacts, -> { where(has_exposed_artifacts: true) }
 
-    enum timeout_source: {
+    enum :timeout_source, {
       unknown_timeout_source: 1,
       project_timeout_source: 2,
       runner_timeout_source: 3,

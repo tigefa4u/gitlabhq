@@ -68,11 +68,7 @@ module Gitlab
         gon.current_user_avatar_url = current_user.avatar_url
         gon.time_display_relative = current_user.time_display_relative
         gon.time_display_format = current_user.time_display_format
-
-        if current_user.user_preference
-          gon.current_user_use_work_items_view = current_user.user_preference.use_work_items_view || false
-          gon.text_editor = current_user.user_preference.text_editor
-        end
+        gon.text_editor = current_user.user_preference&.text_editor if current_user.user_preference
       end
 
       if current_organization && Feature.enabled?(:ui_for_organizations, current_user)
@@ -81,16 +77,13 @@ module Gitlab
 
       # Initialize gon.features with any flags that should be
       # made globally available to the frontend
-      push_frontend_feature_flag(:vscode_web_ide, current_user)
       push_frontend_feature_flag(:ui_for_organizations, current_user)
       push_frontend_feature_flag(:organization_switching, current_user)
       push_frontend_feature_flag(:find_and_replace, current_user)
       # To be removed with https://gitlab.com/gitlab-org/gitlab/-/issues/399248
       push_frontend_feature_flag(:remove_monitor_metrics)
-      push_frontend_feature_flag(:work_items_view_preference, current_user)
       push_frontend_feature_flag(:work_item_view_for_issues)
-      push_frontend_feature_flag(:search_button_top_right, current_user)
-      push_frontend_feature_flag(:merge_request_dashboard, current_user, type: :wip)
+      push_frontend_feature_flag(:merge_request_dashboard, current_user, type: :beta)
       push_frontend_feature_flag(:new_project_creation_form, current_user, type: :wip)
       push_frontend_feature_flag(:work_items_client_side_boards, current_user)
       push_frontend_feature_flag(:glql_work_items, current_user, type: :wip)

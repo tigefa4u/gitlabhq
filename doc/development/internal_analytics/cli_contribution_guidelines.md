@@ -1,7 +1,7 @@
 ---
 stage: Monitor
 group: Analytics Instrumentation
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Contributing to the Internal Events CLI
 ---
 
@@ -15,7 +15,7 @@ title: Contributing to the Internal Events CLI
 
 ### When the generator should be used
 
-The internal events generator _should_:
+The internal events generator should:
 
 - be a one-stop-shop for any engineering tasks related to instrumenting metrics
 
@@ -25,7 +25,7 @@ The internal events generator _should not_:
 
 ### What we expect of users
 
-The internal events generator _should_:
+The internal events generator should:
 
 - protect users from making mistakes
 - communicate which tasks still need to be completed to achieve their goal at any given time
@@ -39,7 +39,7 @@ The internal events generator _should not_:
 
 ### What we expect of the development environment
 
-The internal events generator _should_:
+The internal events generator should:
 
 - be faster than manually performing the same tasks
 - leave the user's environment in a clean & valid state if force-exited
@@ -52,7 +52,7 @@ The internal events generator _should not_:
 
 ### Setting expectations with the user
 
-The internal events generator _should_:
+The internal events generator should:
 
 - show a progress bar and detail the required steps at the top of each screen
 - have outcome-based entrypoints defining each flow
@@ -60,7 +60,7 @@ The internal events generator _should_:
 
 ### Communicating information to the user
 
-The internal events generator _should_:
+The internal events generator should:
 
 - provide textual labels and explanations for everything
 - always print the `InternalEventsCli::Text::FEEDBACK_NOTICE` when a user exits the CLI
@@ -72,7 +72,7 @@ The internal events generator _should not_:
 
 ### Collecting information from the user
 
-The internal events generator _should_:
+The internal events generator should:
 
 - prefer using select menus to plain text inputs
 - auto-fill with defaults where possible or use previous selections to infer information
@@ -106,6 +106,6 @@ The internal events generator _should not_:
 
 ## FAQ
 
-**Q:** Why don't `InternalEventsCli::Event` & `InternalEventsCli::Metric` use `Gitlab::Tracking::EventDefinition` & `Gitlab::Usage::MetricDefinition` respectively?
+**Q**: Why don't `InternalEventsCli::Event` & `InternalEventsCli::Metric` use `Gitlab::Tracking::EventDefinition` & `Gitlab::Usage::MetricDefinition`?
 
-**A:** Using the `EventDefinition` & `MetricDefinition` classes would require GDK to be running and the rails app to be loaded. The performance of the CLI is critical to its usability, so separate classes are worth the value snappy startup times provide. Ideally, this will be refactored in time such that the same classes can be used for both the CLI & the rails app. For now, the rails app and the CLI share the `json-schemas` for the definitions as a single source of truth.
+**A**: Using the `EventDefinition` & `MetricDefinition` classes would require GDK to be running and the rails app to be loaded. The performance of the CLI is critical to its usability, so separate classes are worth the value snappy startup times provide. Ideally, this will be refactored in time such that the same classes can be used for both the CLI & the rails app. For now, the rails app and the CLI share the `json-schemas` for the definitions as a single source of truth.

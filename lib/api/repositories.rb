@@ -10,6 +10,7 @@ module API
     content_type :txt, 'text/plain'
 
     helpers ::API::Helpers::HeadersHelpers
+    helpers ::API::Helpers::BlobHelpers
 
     helpers do
       params :release_params do
@@ -39,6 +40,16 @@ module API
           desc: 'The Git trailer to use for determining if commits are to be included in the changelog',
           default: ::Repositories::ChangelogService::DEFAULT_TRAILER,
           documentation: { example: 'Changelog' }
+
+        optional :config_file,
+          type: String,
+          documentation: { example: '.gitlab/changelog_config.yml' },
+          desc: "The file path to the configuration file as stored in the project's Git repository. Defaults to '.gitlab/changelog_config.yml'"
+
+        optional :config_file_ref,
+          type: String,
+          desc: 'The git reference (for example, branch) where the changelog configuration file is defined. Defaults to the default repository branch.',
+          documentation: { example: 'main' }
       end
     end
 
@@ -142,7 +153,6 @@ module API
           desc: 'The commit hash', documentation: { example: '7d70e02340bac451f281cecf0a980907974bd8be' }
       end
       get ':id/repository/blobs/:sha/raw' do
-        # Load metadata enough to ask Workhorse to load the whole blob
         assign_blob_vars!(limit: 0)
 
         no_cache_headers
@@ -156,6 +166,14 @@ module API
           desc: 'The commit hash', documentation: { example: '7d70e02340bac451f281cecf0a980907974bd8be' }
       end
       get ':id/repository/blobs/:sha' do
+        # Load metadata for @blob, but not not the actual data
+        #
+        assign_blob_vars!(limit: 0)
+        check_rate_limit_for_blob(@blob)
+
+        # If #check_rate_limit_for_blob hasn't stopped the request, allow data
+        #   to actually be loaded without limit.
+        #
         assign_blob_vars!(limit: -1)
 
         {
@@ -315,11 +333,6 @@ module API
       end
       params do
         use :release_params
-
-        optional :config_file,
-          type: String,
-          documentation: { example: '.gitlab/changelog_config.yml' },
-          desc: "The file path to the configuration file as stored in the project's Git repository. Defaults to '.gitlab/changelog_config.yml'"
       end
       route_setting :authentication, job_token_allowed: true
       route_setting :authorization, job_token_policies: :read_releases,
@@ -352,11 +365,6 @@ module API
           type: String,
           desc: 'The branch to commit the changelog changes to',
           documentation: { example: 'main' }
-
-        optional :config_file,
-          type: String,
-          documentation: { example: '.gitlab/changelog_config.yml' },
-          desc: "The file path to the configuration file as stored in the project's Git repository. Defaults to '.gitlab/changelog_config.yml'"
 
         optional :file,
           type: String,

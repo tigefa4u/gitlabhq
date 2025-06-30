@@ -1,7 +1,8 @@
 ---
-stage: DevSecOps
-group: Technical writing
+stage: Application Security Testing
+group: Secret Detection
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+description: Learn about testing and resolving vulnerabilities.
 title: Get started securing your application
 ---
 
@@ -70,9 +71,9 @@ even if the vulnerability already exists on the default branch.
 
 For more information, see:
 
-- [Enable Secret Detection](secret_detection/pipeline/_index.md#enable-the-analyzer)
+- [Enable Secret Detection](secret_detection/pipeline/_index.md#getting-started)
 - [Secret Detection settings](secret_detection/pipeline/configure.md)
-- [Enable Dependency Scanning](dependency_scanning/_index.md#configuration)
+- [Enable Dependency Scanning](dependency_scanning/_index.md#getting-started)
 - [Dependency Scanning settings](dependency_scanning/_index.md#available-cicd-variables)
 
 ## Step 4: Review scan results
@@ -90,7 +91,7 @@ and preventing the introduction of new ones.
 For more information, see:
 
 - [View the vulnerability report](vulnerability_report/_index.md)
-- [View security findings in merge requests](detect/security_scan_results.md#merge-request)
+- [View security findings in merge requests](detect/security_scanning_results.md)
 - [View the Security Dashboard](security_dashboard/_index.md)
 - [Labels](../project/labels.md)
 - [Issue boards](../project/issue_board.md)
@@ -146,4 +147,4 @@ For more information, see:
 - [DAST](dast/_index.md)
 - [Fuzz testing](coverage_fuzzing/_index.md)
 - [Web API fuzzing](api_fuzzing/_index.md)
-- [Review apps](../../development/testing_guide/review_apps.md)
+- [Review apps](../../ci/review_apps/_index.md)

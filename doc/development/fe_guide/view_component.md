@@ -1,7 +1,7 @@
 ---
 stage: Foundations
 group: Design System
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: ViewComponent
 ---
 
@@ -37,7 +37,7 @@ Consider this list a best effort. The full list can be found in [`app/components
 
 The `Pajamas::AlertComponent` follows the [Pajamas Alert](https://design.gitlab.com/components/alert/) specification.
 
-**Examples:**
+**Examples**:
 
 By default this creates a dismissible info alert with icon:
 
@@ -61,7 +61,7 @@ For the full list of options, see its
 
 The `Pajamas::BannerComponent` follows the [Pajamas Banner](https://design.gitlab.com/components/banner/) specification.
 
-**Examples:**
+**Examples**:
 
 In its simplest form the banner component looks like this:
 
@@ -92,7 +92,7 @@ For the full list of options, see its
 
 The `Pajamas::ButtonComponent` follows the [Pajamas Button](https://design.gitlab.com/components/button/) specification.
 
-**Examples:**
+**Examples**:
 
 The button component has a lot of options but all of them have good defaults,
 so the simplest button looks like this:
@@ -129,7 +129,7 @@ For the full list of options, see its
 
 The `Pajamas::CardComponent` follows the [Pajamas Card](https://design.gitlab.com/components/card/) specification.
 
-**Examples:**
+**Examples**:
 
 The card has one mandatory `body` slot and optional `header` and `footer` slots:
 
@@ -223,7 +223,7 @@ Layout components can be used to create common layout patterns used in GitLab.
 
 A standard page header with a page title and optional actions.
 
-**Example:**
+**Example**:
 
 ```ruby
 = render ::Layouts::PageHeadingComponent.new(_('Page title')) do |c|
@@ -238,7 +238,7 @@ For the full list of options, see its
 
 A list container being used to host a table or list with user actions such as create, read, update, delete.
 
-**Example:**
+**Example**:
 
 ```ruby
 = render ::Layouts::CrudComponent.new(_('CRUD title'), icon: 'ICONNAME', count: COUNT) do |c|
@@ -263,7 +263,7 @@ For the full list of options, see its
 
 Many of the settings pages use a layout where the title and description are on the left and the settings fields are on the right. The `Layouts::HorizontalSectionComponent` can be used to create this layout.
 
-**Example:**
+**Example**:
 
 ```ruby
 = render ::Layouts::HorizontalSectionComponent.new(options: { class: 'gl-mb-6' }) do |c|
@@ -284,7 +284,7 @@ For the full list of options, see its
 
 A settings block (accordion) to group related settings.
 
-**Example:**
+**Example**:
 
 ```ruby
 = render ::Layouts::SettingsBlock.new(_('Settings block heading')) do |c|
@@ -301,7 +301,7 @@ For the full list of options, see its
 
 Similar to SettingsBlock (see above) this component is used to group related settings together. Unlike SettingsBlock it doesn't provide accordion functionality. Uses a sticky header.
 
-**Example:**
+**Example**:
 
 ```ruby
 = render ::Layouts::SettingsSection.new(_('Settings section heading')) do |c|
@@ -327,8 +327,8 @@ For the full list of options, see its
 
 If you need to have a custom layout for your ViewComponent preview consider using these paths for the layout code:
 
-- `app/views/layouts/lookbook` — for your layout HAML file
-- `app/assets/javascripts/entrypoints/lookbook` — for your custom JavaScript code
-- `app/assets/stylesheets/lookbook` — for your custom SASS code
+- `app/views/layouts/lookbook` for your layout HAML file
+- `app/assets/javascripts/entrypoints/lookbook` for your custom JavaScript code
+- `app/assets/stylesheets/lookbook` for your custom SASS code
 
-Please note that JavaScript and SASS code has to be manually included in the layout.
+JavaScript and SASS code have to be manually included in the layout.

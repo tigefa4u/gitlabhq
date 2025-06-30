@@ -24,7 +24,7 @@ RSpec.describe ContainerRepositoryPolicy, feature_category: :container_registry 
       allow(container_repository).to receive(:has_tags?).and_return(has_tags)
     end
 
-    context 'when the project has tag protection rules' do
+    context 'when the project has a tag protection rule' do
       before_all do
         create(
           :container_registry_protection_tag_rule,

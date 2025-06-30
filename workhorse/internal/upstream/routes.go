@@ -11,6 +11,7 @@ import (
 	"gitlab.com/gitlab-org/labkit/log"
 	"gitlab.com/gitlab-org/labkit/tracing"
 
+	"gitlab.com/gitlab-org/gitlab/workhorse/internal/ai_assist/duoworkflow"
 	apipkg "gitlab.com/gitlab-org/gitlab/workhorse/internal/api"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/artifacts"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/builds"
@@ -21,6 +22,7 @@ import (
 	gobpkg "gitlab.com/gitlab-org/gitlab/workhorse/internal/gob"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/helper"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/imageresizer"
+	"gitlab.com/gitlab-org/gitlab/workhorse/internal/metrics"
 	proxypkg "gitlab.com/gitlab-org/gitlab/workhorse/internal/proxy"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/queueing"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/secret"
@@ -122,6 +124,7 @@ func (u *upstream) observabilityMiddlewares(handler http.Handler, method string,
 	handler = log.AccessLogger(
 		handler,
 		log.WithAccessLogger(u.accessLogger),
+		log.WithTrustedProxies(u.TrustedCIDRsForXForwardedFor),
 		log.WithExtraFields(func(_ *http.Request) log.Fields {
 			return log.Fields{
 				"route":      metadata.regexpStr, // This field matches the `route` label in Prometheus metrics
@@ -136,6 +139,16 @@ func (u *upstream) observabilityMiddlewares(handler http.Handler, method string,
 	if opts != nil && opts.isGeoProxyRoute {
 		handler = instrumentGeoProxyRoute(handler, method, metadata) // Add Geo prometheus metrics
 	}
+
+	originalHandler := handler
+
+	// Wrap with metrics tracking (add the tracker to the context)
+	handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tracker := metrics.NewRequestTracker()
+		ctx := metrics.NewContext(r.Context(), tracker)
+		r = r.WithContext(ctx)
+		originalHandler.ServeHTTP(w, r)
+	})
 
 	return handler
 }
@@ -310,6 +323,11 @@ func configureRoutes(u *upstream) {
 		u.wsRoute(
 			newRoute(projectPattern+`-/jobs/[0-9]+/proxy.ws\z`, "project_jobs_proxy_ws", railsBackend),
 			channel.Handler(api)),
+
+		// Duo Workflow websocket
+		u.wsRoute(
+			newRoute(apiPattern+`v4/ai/duo_workflows/ws\z`, "duo_workflow_ws", railsBackend),
+			duoworkflow.Handler(api)),
 
 		// Long poll and limit capacity given to jobs/request and builds/register.json
 		u.route("",

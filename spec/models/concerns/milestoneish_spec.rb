@@ -16,8 +16,9 @@ RSpec.describe Milestone, 'Milestoneish', factory_default: :keep do
   let_it_be(:issue, reload: true) { create(:work_item, milestone: milestone, assignees: [member], labels: [label1]) }
   let_it_be(:security_issue_1, reload: true) { create(:work_item, :confidential, author: author, milestone: milestone, labels: [label2]) }
   let_it_be(:security_issue_2, reload: true) { create(:work_item, :confidential, assignees: [assignee], milestone: milestone) }
-  let_it_be(:closed_issue_1, reload: true) { create(:work_item, :closed, milestone: milestone) }
+  let_it_be(:closed_issue_1, reload: true) { create(:work_item, :task, :closed, milestone: milestone) }
   let_it_be(:closed_issue_2, reload: true) { create(:work_item, :closed, milestone: milestone) }
+  let_it_be(:closed_incident, reload: true) { create(:work_item, :incident, :closed, milestone: milestone) }
   let_it_be(:closed_security_issue_1, reload: true) { create(:work_item, :confidential, :closed, author: author, milestone: milestone) }
   let_it_be(:closed_security_issue_2, reload: true) { create(:work_item, :confidential, :closed, assignees: [assignee], milestone: milestone) }
   let_it_be(:merge_request) { create(:merge_request, source_project: project, target_project: project, milestone: milestone) }
@@ -28,7 +29,6 @@ RSpec.describe Milestone, 'Milestoneish', factory_default: :keep do
   before do
     project.add_developer(member)
     project.add_guest(guest)
-    stub_feature_flags(work_items_alpha: false)
   end
 
   describe '#sorted_issues' do
@@ -251,13 +251,13 @@ RSpec.describe Milestone, 'Milestoneish', factory_default: :keep do
 
   describe '#closed_issues_count' do
     it 'counts all closed issues including confidential' do
-      expect(milestone.closed_issues_count).to eq 4
+      expect(milestone.closed_issues_count).to eq 5
     end
   end
 
   describe '#total_issues_count' do
     it 'counts all issues including confidential' do
-      expect(milestone.total_issues_count).to eq 7
+      expect(milestone.total_issues_count).to eq 8
     end
   end
 

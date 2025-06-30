@@ -293,26 +293,6 @@ RSpec.describe Projects::MergeRequestsController, feature_category: :source_code
 
         expect(response.body.scan('<diff-file ').size).to eq(5)
       end
-
-      context 'for stream_url' do
-        it 'returns stream_url with offset' do
-          get diffs_project_merge_request_path(project, merge_request, rapid_diffs: 'true')
-
-          url = "/#{project.full_path}/-/merge_requests/#{merge_request.iid}/diffs_stream?offset=5&view=inline"
-
-          expect(assigns(:stream_url)).to eq(url)
-        end
-
-        context 'when view is set to parallel' do
-          it 'returns stream_url with parallel view' do
-            get diffs_project_merge_request_path(project, merge_request, rapid_diffs: 'true', view: 'parallel')
-
-            url = "/#{project.full_path}/-/merge_requests/#{merge_request.iid}/diffs_stream?offset=5&view=parallel"
-
-            expect(assigns(:stream_url)).to eq(url)
-          end
-        end
-      end
     end
 
     private
@@ -373,8 +353,8 @@ RSpec.describe Projects::MergeRequestsController, feature_category: :source_code
         let(:expected_stats) do
           {
             visible_count: 20,
-            email_path: "/#{project.full_path}/-/merge_requests/1.diff",
-            diff_path: "/#{project.full_path}/-/merge_requests/1.patch"
+            email_path: "/#{project.full_path}/-/merge_requests/1.patch",
+            diff_path: "/#{project.full_path}/-/merge_requests/1.diff"
           }
         end
       end
@@ -388,6 +368,57 @@ RSpec.describe Projects::MergeRequestsController, feature_category: :source_code
         send_request
 
         expect(json_response['diffs_stats']).to eq({ "added_lines" => 0, "removed_lines" => 0, "diffs_count" => 0 })
+      end
+    end
+  end
+
+  describe 'GET #diff_file' do
+    before do
+      project.add_developer(user)
+      login_as(user)
+    end
+
+    let_it_be(:merge_request) { create(:merge_request, author: user) }
+    let(:diff_file_path) { diff_file_project_merge_request_path(project, merge_request) }
+    let(:diff_file) { merge_request.merge_request_diff.diffs.diff_files.first }
+    let(:old_path) { diff_file.old_path }
+    let(:new_path) { diff_file.new_path }
+    let(:ignore_whitespace_changes) { false }
+    let(:view) { 'inline' }
+
+    let(:params) do
+      {
+        old_path: old_path,
+        new_path: new_path,
+        ignore_whitespace_changes: ignore_whitespace_changes,
+        view: view
+      }.compact
+    end
+
+    let(:send_request) { get diff_file_path, params: params }
+
+    include_examples 'diff file endpoint'
+
+    context 'with whitespace-only diffs' do
+      let(:ignore_whitespace_changes) { true }
+      let(:diffs_collection) { instance_double(Gitlab::Diff::FileCollection::Base, diff_files: [diff_file]) }
+
+      before do
+        allow(diff_file).to receive(:whitespace_only?).and_return(true)
+      end
+
+      it 'makes a call to diffs_resource with ignore_whitespace_change: false' do
+        expect_next_instance_of(described_class) do |instance|
+          allow(instance).to receive(:diffs_resource).and_return(diffs_collection)
+
+          expect(instance).to receive(:diffs_resource).with(
+            hash_including(ignore_whitespace_change: false)
+          ).and_return(diffs_collection)
+        end
+
+        send_request
+
+        expect(response).to have_gitlab_http_status(:success)
       end
     end
   end

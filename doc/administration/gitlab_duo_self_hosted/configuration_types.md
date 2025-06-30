@@ -1,5 +1,5 @@
 ---
-stage: AI-Powered
+stage: AI-powered
 group: Custom Models
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: Get started with GitLab Duo Self-Hosted.
@@ -8,7 +8,7 @@ title: GitLab Duo Self-Hosted configuration and authentication
 
 {{< details >}}
 
-- Tier: Ultimate
+- Tier: Premium, Ultimate
 - Add-on: GitLab Duo Enterprise
 - Offering: GitLab Self-Managed
 
@@ -16,11 +16,12 @@ title: GitLab Duo Self-Hosted configuration and authentication
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/12972) in GitLab 17.1 [with a flag](../feature_flags.md) named `ai_custom_model`. Disabled by default.
+- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/12972) in GitLab 17.1 [with a flag](../feature_flags/_index.md) named `ai_custom_model`. Disabled by default.
 - [Enabled on GitLab Self-Managed](https://gitlab.com/groups/gitlab-org/-/epics/15176) in GitLab 17.6.
 - Changed to require GitLab Duo add-on in GitLab 17.6 and later.
-- Feature flag `ai_custom_model` removed in GitLab 17.8
-- Generally available in GitLab 17.9
+- Feature flag `ai_custom_model` removed in GitLab 17.8.
+- Generally available in GitLab 17.9.
+- Changed to include Premium in GitLab 18.0.
 
 {{< /history >}}
 
@@ -70,8 +71,6 @@ sequenceDiagram
     SelfHostedAIGateway -->> SelfHostedGitLab: Forward AI response
     SelfHostedGitLab -->> User: Forward AI response
 ```
-
-For more information, see the [self-hosted model deployment blueprint](https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/custom_models/).
 
 ## Authentication for GitLab Duo Self-Hosted
 

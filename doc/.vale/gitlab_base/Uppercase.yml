@@ -45,6 +45,7 @@ exceptions:
   - CRIME
   - CRM
   - CRUD
+  - CSF
   - CSRF
   - CSS
   - CSV
@@ -121,7 +122,10 @@ exceptions:
   - IIS
   - IMAP
   - IOPS
+  - IRAP
   - IRC
+  - ISM
+  - ISMAP
   - ISO
   - JPEG
   - JPG
@@ -151,6 +155,7 @@ exceptions:
   - NDA
   - NFS
   - NGINX
+  - NIST
   - NOTE
   - NPM
   - NTP
@@ -170,6 +175,7 @@ exceptions:
   - PGP
   - PHP
   - PID
+  - PIN
   - PKCS
   - PMD
   - PNG
@@ -241,6 +247,7 @@ exceptions:
   - TCP
   - TIFF
   - TIP
+  - TISAX
   - TLD
   - TLS
   - TODO

@@ -11,6 +11,7 @@ export const MOCK_USERS = [
     badges: [
       { text: 'Admin', variant: 'success' },
       { text: "It's you!", variant: 'muted' },
+      { text: 'Admin role', variant: 'info', icon: 'admin' },
     ],
     projectsCount: 0,
     actions: [],
@@ -20,4 +21,4 @@ export const MOCK_USERS = [
 
 export const MOCK_ADMIN_USER_PATH = 'admin/users/:id';
 
-export const MOCK_GROUP_COUNTS = { 2177: 5 };
+export const MOCK_MEMBERSHIP_COUNTS = { 2177: { groupCount: 5, projectCount: 10 } };

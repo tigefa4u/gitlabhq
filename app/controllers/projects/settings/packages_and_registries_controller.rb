@@ -33,7 +33,10 @@ module Projects
       end
 
       def set_feature_flag_packages_protected_packages
+        push_frontend_feature_flag(:packages_protected_packages_helm, project)
+        push_frontend_feature_flag(:packages_protected_packages_nuget, project)
         push_frontend_feature_flag(:packages_protected_packages_delete, project)
+        push_frontend_feature_flag(:packages_protected_packages_generic, project)
       end
 
       def set_feature_flag_container_registry_protected_containers_delete
@@ -42,3 +45,5 @@ module Projects
     end
   end
 end
+
+Projects::Settings::PackagesAndRegistriesController.prepend_mod

@@ -22,7 +22,6 @@ class Group < Namespace
   include Importable
   include IdInOrdered
   include Members::Enumerable
-  include Namespaces::AdjournedDeletable
 
   extend ::Gitlab::Utils::Override
 
@@ -138,14 +137,23 @@ class Group < Namespace
   has_one :deletion_schedule, class_name: 'GroupDeletionSchedule'
   delegate :deleting_user, :marked_for_deletion_on, to: :deletion_schedule, allow_nil: true
 
-  scope :aimed_for_deletion, ->(date) { joins(:deletion_schedule).where('group_deletion_schedules.marked_for_deletion_on <= ?', date) }
+  scope :aimed_for_deletion, -> { where.associated(:deletion_schedule) }
+  scope :self_or_ancestors_aimed_for_deletion, -> { where(self_or_ancestors_deletion_schedule_subquery.exists) }
+
   scope :not_aimed_for_deletion, -> { where.missing(:deletion_schedule) }
+  scope :self_and_ancestors_not_aimed_for_deletion, -> { where.not(self_or_ancestors_deletion_schedule_subquery.exists) }
+
   scope :with_deletion_schedule, -> { preload(deletion_schedule: :deleting_user) }
   scope :with_deletion_schedule_only, -> { preload(:deletion_schedule) }
 
-  scope :by_marked_for_deletion_on, ->(marked_for_deletion_on) do
+  scope :marked_for_deletion_before, ->(date) do
     joins(:deletion_schedule)
-      .where(group_deletion_schedules: { marked_for_deletion_on: marked_for_deletion_on })
+      .where('group_deletion_schedules.marked_for_deletion_on <= ?', date)
+  end
+
+  scope :marked_for_deletion_on, ->(date) do
+    joins(:deletion_schedule)
+      .where(group_deletion_schedules: { marked_for_deletion_on: date })
   end
 
   has_one :harbor_integration, class_name: 'Integrations::Harbor'
@@ -164,6 +172,7 @@ class Group < Namespace
   delegate :subgroup_runner_token_expiration_interval, :subgroup_runner_token_expiration_interval=, :subgroup_runner_token_expiration_interval_human_readable, :subgroup_runner_token_expiration_interval_human_readable=, to: :namespace_settings, allow_nil: true
   delegate :project_runner_token_expiration_interval, :project_runner_token_expiration_interval=, :project_runner_token_expiration_interval_human_readable, :project_runner_token_expiration_interval_human_readable=, to: :namespace_settings, allow_nil: true
   delegate :force_pages_access_control, :force_pages_access_control=, to: :namespace_settings, allow_nil: true
+  delegate :model_prompt_cache_enabled, :model_prompt_cache_enabled=, to: :namespace_settings, allow_nil: true
 
   delegate :require_dpop_for_manage_api_endpoints, :require_dpop_for_manage_api_endpoints=, to: :namespace_settings
   delegate :require_dpop_for_manage_api_endpoints?, to: :namespace_settings
@@ -205,10 +214,27 @@ class Group < Namespace
 
   scope :with_users, -> { includes(:users) }
 
+  scope :active, -> { non_archived.not_aimed_for_deletion }
+  scope :self_and_ancestors_active, -> { self_and_ancestors_non_archived.self_and_ancestors_not_aimed_for_deletion }
+
+  scope :inactive, -> do
+    joins(:namespace_settings)
+      .left_joins(:deletion_schedule)
+      .where(<<~SQL)
+        #{reflections['namespace_settings'].table_name}.archived = TRUE
+        OR #{reflections['deletion_schedule'].table_name}.#{reflections['deletion_schedule'].foreign_key} IS NOT NULL
+      SQL
+  end
+  scope :self_or_ancestors_inactive, -> { self_or_ancestors_archived.or(self_or_ancestors_aimed_for_deletion) }
+
   scope :with_non_archived_projects, -> { includes(:non_archived_projects) }
 
   scope :with_non_invite_group_members, -> { includes(:non_invite_group_members) }
   scope :with_request_group_members, -> { includes(:request_group_members) }
+
+  scope :in_accessible_sub_namespaces, -> do
+    where('id IN (SELECT id FROM accessible_sub_namespace_ids)')
+  end
 
   scope :by_id, ->(groups) { where(id: groups) }
 
@@ -447,7 +473,14 @@ class Group < Namespace
     end
 
     def with_api_scopes
-      preload(:namespace_settings, :group_feature, :parent)
+      preload(
+        :namespace_settings,
+        :namespace_settings_with_ancestors_inherited_settings,
+        :namespace_details,
+        :group_feature,
+        :parent,
+        :deletion_schedule
+      )
     end
 
     # Handle project creation permissions based on application setting and group setting. The `default_project_creation`
@@ -485,6 +518,19 @@ class Group < Namespace
       return false if user.can_admin_all_resources?
 
       project_creation_setting == ::Gitlab::Access::ADMINISTRATOR_PROJECT_ACCESS
+    end
+
+    def self_or_ancestors_deletion_schedule_subquery
+      deletion_schedule_reflection = reflect_on_association(:deletion_schedule)
+      deletion_schedule_table = Arel::Table.new(deletion_schedule_reflection.table_name)
+      traversal_ids_ref = "#{arel_table.name}.#{arel_table[:traversal_ids].name}"
+
+      deletion_schedule_table
+        .project(1)
+        .where(
+          deletion_schedule_table[deletion_schedule_reflection.foreign_key]
+            .eq(Arel.sql("ANY (#{traversal_ids_ref})"))
+        )
     end
 
     private
@@ -668,6 +714,14 @@ class Group < Namespace
     return false unless user
 
     all_owners = member_owners_excluding_project_bots
+    last_owner_in_list?(user, all_owners)
+  end
+
+  # This is used in BillableMember Entity to
+  # avoid multiple "member_owners_excluding_project_bots" calls
+  # for each billable members
+  def last_owner_in_list?(user, all_owners)
+    return false unless user
 
     all_owners.size == 1 && all_owners.first.user_id == user.id
   end
@@ -1035,10 +1089,6 @@ class Group < Namespace
     ].compact.min
   end
 
-  def work_item_move_and_clone_flag_enabled?
-    feature_flag_enabled_for_self_or_ancestor?(:work_item_move_and_clone, type: :beta)
-  end
-
   def work_items_feature_flag_enabled?
     feature_flag_enabled_for_self_or_ancestor?(:work_items)
   end
@@ -1068,13 +1118,13 @@ class Group < Namespace
     feature_flag_enabled_for_self_or_ancestor?(:glql_load_on_click)
   end
 
-  # Note: this method is overridden in EE to check the work_item_epics feature flag  which also enables this feature
-  def namespace_work_items_enabled?
-    ::Feature.enabled?(:namespace_level_work_items, self, type: :development)
+  # overriden in EE
+  def supports_group_work_items?
+    false
   end
 
   def create_group_level_work_items_feature_flag_enabled?
-    ::Feature.enabled?(:create_group_level_work_items, self, type: :wip)
+    ::Feature.enabled?(:create_group_level_work_items, self, type: :wip) && supports_group_work_items?
   end
 
   def supports_lock_on_merge?
@@ -1175,6 +1225,16 @@ class Group < Namespace
     ::Clusters::Agent.for_projects(all_projects)
   end
 
+  def active?
+    self_and_ancestors.inactive.none?
+  end
+
+  def pending_delete?
+    return false unless deletion_schedule
+
+    deletion_schedule.marked_for_deletion_on.future?
+  end
+
   private
 
   def feature_flag_enabled_for_self_or_ancestor?(feature_flag, type: :development)
@@ -1256,6 +1316,12 @@ class Group < Namespace
 
     # We cannot disclose the Pages unique domain, hence returning generic error message
     errors.add(:path, _('has already been taken'))
+  end
+
+  # Overriding of Namespaces::AdjournedDeletable method
+  override :all_scheduled_for_deletion_in_hierarchy_chain
+  def all_scheduled_for_deletion_in_hierarchy_chain
+    self_and_ancestors(hierarchy_order: :asc).joins(:deletion_schedule)
   end
 end
 

@@ -42,12 +42,9 @@ class ProjectsController < Projects::ApplicationController
     push_frontend_feature_flag(:edit_branch_rules, @project)
     # TODO: We need to remove the FF eventually when we rollout page_specific_styles
     push_frontend_feature_flag(:page_specific_styles, current_user)
-    push_frontend_feature_flag(:blob_repository_vue_header_app, @project)
-    push_frontend_feature_flag(:blob_overflow_menu, current_user)
     push_frontend_feature_flag(:filter_blob_path, current_user)
     push_licensed_feature(:file_locks) if @project.present? && @project.licensed_feature_available?(:file_locks)
     push_frontend_feature_flag(:directory_code_dropdown_updates, current_user)
-    push_frontend_feature_flag(:ci_pipeline_status_realtime, @project)
 
     if @project.present? && @project.licensed_feature_available?(:security_orchestration_policies)
       push_licensed_feature(:security_orchestration_policies)
@@ -195,24 +192,12 @@ class ProjectsController < Projects::ApplicationController
   def destroy
     return access_denied! unless can?(current_user, :remove_project, @project)
 
-    return destroy_immediately unless @project.adjourned_deletion_configured?
     return destroy_immediately if @project.marked_for_deletion_at? && params[:permanently_delete].present?
 
     result = ::Projects::MarkForDeletionService.new(@project, current_user, {}).execute
 
     if result[:status] == :success
-      if @project.adjourned_deletion?
-        redirect_to project_path(@project), status: :found
-      else
-        # This is a free project, it will use delayed deletion but can only be restored by an admin.
-        flash[:toast] = format(
-          _("Deleting project '%{project_name}'. All data will be removed on %{date}."),
-          project_name: @project.full_name,
-          # FIXME: Replace `project.marked_for_deletion_at` with `project` after https://gitlab.com/gitlab-org/gitlab/-/work_items/527085
-          date: helpers.permanent_deletion_date_formatted(@project.marked_for_deletion_at)
-        )
-        redirect_to dashboard_projects_path, status: :found
-      end
+      redirect_to project_path(@project), status: :found
     else
       flash.now[:alert] = result[:message]
 
@@ -511,6 +496,7 @@ class ProjectsController < Projects::ApplicationController
       warn_about_potentially_unwanted_characters
       enforce_auth_checks_on_uploads
       merge_request_title_regex
+      merge_request_title_regex_description
       emails_enabled
     ]
 
@@ -551,6 +537,7 @@ class ProjectsController < Projects::ApplicationController
       :template_project_id,
       :merge_method,
       :initialize_with_sast,
+      :initialize_with_secret_detection,
       :initialize_with_readme,
       :ci_separated_caches,
       :suggestion_commit_message,
@@ -559,6 +546,7 @@ class ProjectsController < Projects::ApplicationController
       :merge_commit_template_or_default,
       :squash_commit_template_or_default,
       :merge_request_title_regex,
+      :merge_request_title_regex_description,
       { project_setting_attributes: project_setting_attributes,
         project_feature_attributes: project_feature_attributes }
     ]
@@ -617,13 +605,16 @@ class ProjectsController < Projects::ApplicationController
   def redirect_git_extension
     return unless params[:format] == 'git'
 
+    git_extension_regex = %r{\.git/?\Z}
+    return unless request.path.match?(git_extension_regex)
+
     # `project` calls `find_routable!`, so this will trigger the usual not-found
     # behaviour when the user isn't authorized to see the project
     return if project.nil? || performed?
 
     uri = URI(request.original_url)
     # Strip the '.git' part from the path
-    uri.path = uri.path.sub(%r{\.git/?\Z}, '')
+    uri.path = uri.path.sub(git_extension_regex, '')
 
     redirect_to(uri.to_s)
   end
@@ -637,7 +628,7 @@ class ProjectsController < Projects::ApplicationController
   end
 
   def check_export_rate_limit!
-    prefixed_action = "project_#{params[:action]}".to_sym
+    prefixed_action = :"project_#{params[:action]}"
 
     project_scope = params[:action] == 'download_export' ? @project : nil
 

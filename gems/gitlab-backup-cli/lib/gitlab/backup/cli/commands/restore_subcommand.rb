@@ -4,18 +4,12 @@ module Gitlab
   module Backup
     module Cli
       module Commands
-        class RestoreSubcommand < ObjectStorageCommand
+        class RestoreSubcommand < Command
           package_name 'Restore'
 
           desc 'all BACKUP_ID', 'Restores a backup including repositories, database and local files'
           def all(backup_id)
             Gitlab::Backup::Cli.update_process_title!("restore all from #{backup_id}")
-
-            duration = measure_duration do
-              Gitlab::Backup::Cli::Output.info("Initializing environment...")
-              Gitlab::Backup::Cli.rails_environment!
-            end
-            Gitlab::Backup::Cli::Output.success("Environment loaded. (#{duration.in_seconds}s)")
 
             restore_executor =
               Gitlab::Backup::Cli::RestoreExecutor.new(

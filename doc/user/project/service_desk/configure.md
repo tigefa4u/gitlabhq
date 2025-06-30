@@ -211,7 +211,7 @@ To edit the custom email display name:
 
 {{< /history >}}
 
-New tickets are confidential by default, so only project members with at least the Reporter role
+New tickets are confidential by default, so only project members with at least the Planner role
 can view them.
 
 In private and internal projects, you can configure GitLab so that new tickets are not confidential by default, and any project member can view them.
@@ -268,7 +268,7 @@ To enable this setting:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/329990) in GitLab 16.3 [with a flag](../../../administration/feature_flags.md) named `service_desk_custom_email`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/329990) in GitLab 16.3 [with a flag](../../../administration/feature_flags/_index.md) named `service_desk_custom_email`. Disabled by default.
 - [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/387003) in GitLab 16.4.
 - Ability to select the SMTP authentication method [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/429680) in GitLab 16.6.
 - [Feature flag `service_desk_custom_email` removed](https://gitlab.com/gitlab-org/gitlab/-/issues/387003) in GitLab 16.7.
@@ -576,7 +576,7 @@ In [Microsoft 365 admin center](https://admin.microsoft.com/Adminportal/Home#/ho
       Set-TransportConfig -AllowLegacyTLSClients $true
       ```
 
-   1. If you want to forward to an external recipient, please see this guide on how to enable
+   1. If you want to forward to an external recipient, see this guide on how to enable
       [external email forwarding](https://learn.microsoft.com/en-gb/defender-office-365/outbound-spam-policies-external-email-forwarding).
       You might also want to [create an outbound anti-spam policy](https://security.microsoft.com/antispam)
       to allow forwarding to external recipients only for users who need it.

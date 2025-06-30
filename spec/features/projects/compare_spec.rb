@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe "Compare", :js, feature_category: :groups_and_projects do
+RSpec.describe "Compare", :js, feature_category: :source_code_management do
   let(:user)    { create(:user) }
   let(:project) { create(:project, :repository) }
 
@@ -11,7 +11,7 @@ RSpec.describe "Compare", :js, feature_category: :groups_and_projects do
     sign_in user
   end
 
-  shared_examples "compare view of branches" do
+  describe "compare view of branches" do
     shared_examples 'compares branches' do
       it 'compares branches' do
         visit project_compare_index_path(project, from: 'master', to: 'master')
@@ -61,7 +61,7 @@ RSpec.describe "Compare", :js, feature_category: :groups_and_projects do
       select_using_dropdown('to', RepoHelpers.sample_commit.id, commit: true)
 
       click_button 'Compare'
-      expect(page).to have_content 'Commits on Source (1)'
+      expect(page).to have_content 'Commits on Source 1'
       expect(page).to have_content "Showing 2 changed files"
 
       diff = first('.js-unfold')
@@ -85,7 +85,7 @@ RSpec.describe "Compare", :js, feature_category: :groups_and_projects do
         )
       end
 
-      it 'compares branches' do
+      it 'compares branches', quarantine: 'https://gitlab.com/gitlab-org/gitlab/-/issues/547867' do
         visit project_compare_index_path(project)
 
         select_using_dropdown('from', 'master')
@@ -93,7 +93,7 @@ RSpec.describe "Compare", :js, feature_category: :groups_and_projects do
 
         click_button 'Compare'
 
-        expect(page).to have_content 'Commits on Source (1)'
+        expect(page).to have_content 'Commits on Source 1'
         expect(page).to have_content 'Showing 1 changed file with 5 additions and 0 deletions'
         expect(page).to have_link 'View open merge request', href: project_merge_request_path(project, merge_request)
         expect(page).not_to have_link 'Create merge request'
@@ -146,19 +146,34 @@ RSpec.describe "Compare", :js, feature_category: :groups_and_projects do
         visit project_compare_index_path(project, from: "feature", to: "master")
         click_button('Compare')
 
-        expect(page).to have_content 'Commits on Source (29)'
+        expect(page).to have_content 'Commits on Source 29'
 
         # go to the second page
         within(".files .gl-pagination") do
           click_on("2")
         end
 
-        expect(page).not_to have_content 'Commits on Source (29)'
+        expect(page).not_to have_content 'Commits on Source 29'
       end
+    end
+
+    context 'when displayed with rapid_diffs' do
+      let(:from) { RepoHelpers.sample_commit.parent_id }
+      let(:to) { RepoHelpers.sample_commit.id }
+      let(:compare) { CompareService.new(project, to).execute(project, from) }
+      let(:diffs) { compare.diffs }
+
+      before do
+        visit project_compare_path(project, from: from, to: to, rapid_diffs: true)
+
+        wait_for_requests
+      end
+
+      it_behaves_like 'Rapid Diffs application'
     end
   end
 
-  shared_examples "compare view of tags" do
+  describe "compare view of tags" do
     it "compares tags" do
       visit project_compare_index_path(project, from: "master", to: "master")
 
@@ -192,9 +207,7 @@ RSpec.describe "Compare", :js, feature_category: :groups_and_projects do
       # wait for searching for commits to finish
       has_testid?('listbox-no-results-text')
 
-      within(find_by_testid('listbox-search-input')) do
-        find('input').send_keys(:return)
-      end
+      find_by_testid('listbox-search-input').send_keys(:return)
     else
       # find before all to wait for the items visibility
       within(".js-compare-#{dropdown_type}-dropdown") do
@@ -202,7 +215,4 @@ RSpec.describe "Compare", :js, feature_category: :groups_and_projects do
       end
     end
   end
-
-  it_behaves_like "compare view of branches"
-  it_behaves_like "compare view of tags"
 end

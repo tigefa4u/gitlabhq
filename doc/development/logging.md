@@ -1,7 +1,7 @@
 ---
 stage: Monitor
 group: Platform Insights
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Logging development guidelines
 ---
 
@@ -215,7 +215,7 @@ end
 #### Logging durations
 
 Similar to timezones, choosing the right time unit to log can impose avoidable overhead. So, whenever
-challenged to choose between seconds, milliseconds or any other unit, lean towards _seconds_ as float
+challenged to choose between seconds, milliseconds or any other unit, lean towards seconds as float
 (with microseconds precision, that is, `Gitlab::InstrumentationHelper::DURATION_PRECISION`).
 
 In order to make it easier to track timings in the logs, make sure the log key has `_s` as
@@ -231,7 +231,7 @@ Create a new logger class, inheriting from `MultiDestinationLogger` and add an
 array of loggers to a `LOGGERS` constant. The loggers should be classes that
 descend from `Gitlab::Logger`. For example, the user-defined loggers in the
 following examples could be inheriting from `Gitlab::Logger` and
-`Gitlab::JsonLogger`, respectively.
+`Gitlab::JsonLogger`.
 
 You must specify one of the loggers as the `primary_logger`. The
 `primary_logger` is used when information about this multi-destination logger is

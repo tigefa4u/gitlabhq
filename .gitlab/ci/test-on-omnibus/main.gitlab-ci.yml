@@ -11,6 +11,7 @@ include:
   - local: .gitlab/ci/qa-common/rules.gitlab-ci.yml
   - local: .gitlab/ci/qa-common/variables.gitlab-ci.yml
   - local: .gitlab/ci/qa-common/omnibus.gitlab-ci.yml
+  - local: .gitlab/ci/test-on-omnibus/rules.gitlab-ci.yml
   - local: .gitlab/ci/test-on-omnibus/$[[ inputs.pipeline-type ]].gitlab-ci.yml
 
 variables:
@@ -49,23 +50,37 @@ _quarantine:
     paths:
       - gitlab-qa-run-*/**/test-metrics-*.json
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:external-trigger-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - !reference [.rules:test:manual-except-default-branch, rules]
 
 # ------------------------------------------
 # Test jobs
 # ------------------------------------------
 
+# ========== Network limiting setup ===========
+# Only run a subset of smoke suite
+airgapped:
+  extends:
+    - .parallel
+    - .omnibus-e2e
+    - .with-ignored-runtime-data
+  variables:
+    QA_SCENARIO: Test::Instance::Airgapped
+    QA_RSPEC_TAGS: --tag smoke --tag ~github --tag ~external_api_calls --tag ~skip_live_env
+  rules:
+    - !reference [.rules:test:omnibus-base, rules]
+    - if: $QA_SUITES =~ /Test::Instance::Airgapped/
+
 # Execute smallest test suite to validate omnibus package in dependency update merge request pipelines
 health-check:
   extends:
     - .omnibus-e2e
+    - .rules:test:dependency-update
   variables:
     QA_SCENARIO: Test::Instance::Image
     QA_RUN_IN_PARALLEL: true
     QA_RSPEC_TAGS: --tag health_check
-  rules:
-    - !reference [.rules:test:dependency-update, rules]
 
 # ========== instance ===========
 instance:
@@ -76,7 +91,7 @@ instance:
     QA_SCENARIO: Test::Instance::Image
     QA_RUN_IN_PARALLEL: true
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - !reference [.rules:test:smoke-for-omnibus-mr, rules]
     - if: $QA_SUITES =~ /Test::Instance::All/
 
@@ -91,13 +106,14 @@ praefect:
     QA_CAN_TEST_PRAEFECT: "true"
     QA_GITALY_TRANSACTIONS_ENABLED: "false"
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - !reference [.rules:test:smoke-for-omnibus-mr, rules]
     - if: $QA_SUITES =~ /Test::Instance::Create/
 
 # ========== gitaly transactions enabled ===========
 # https://docs.gitlab.com/ee/architecture/blueprints/gitaly_transaction_management/
 gitaly-transactions:
+  when: manual
   extends:
     - .parallel
     - .omnibus-e2e
@@ -109,7 +125,7 @@ gitaly-transactions:
     QA_GITALY_TRANSACTIONS_ENABLED: "true"
     QA_RUN_IN_PARALLEL: true
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Instance::Create/
 
 # ========== gitaly reftables backend ===========
@@ -127,7 +143,7 @@ gitaly-reftables-backend:
     QA_CAN_TEST_PRAEFECT: "true"
     QA_FEATURE_FLAGS: "gitaly_new_repo_reftable_backend=enabled"
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Instance::Create/
 
 # ========== git sha256 enabled ===========
@@ -142,7 +158,7 @@ git-sha256-repositories:
     QA_USE_SHA256_REPOSITORY_OBJECT_STORAGE: true
     GITLAB_QA_OPTS: "--enable-feature support_sha256_repositories"
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Instance::All/
 
 gitaly-cluster:
@@ -150,7 +166,7 @@ gitaly-cluster:
   variables:
     QA_SCENARIO: Test::Integration::GitalyCluster
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::GitalyCluster/
 
 group-saml:
@@ -170,7 +186,7 @@ oauth:
     QA_RSPEC_TAGS: --tag oauth
     GITLAB_QA_OPTS: --omnibus-config github_oauth
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::OAuth/
 
 instance-saml:
@@ -178,7 +194,7 @@ instance-saml:
   variables:
     QA_SCENARIO: Test::Integration::InstanceSAML
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::InstanceSAML/
 
 jira:
@@ -187,7 +203,7 @@ jira:
   variables:
     QA_SCENARIO: Test::Integration::Jira
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::Jira/
 
 integrations:
@@ -195,7 +211,7 @@ integrations:
   variables:
     QA_SCENARIO: Test::Integration::Integrations
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::Integrations/
 
 ldap-no-server:
@@ -203,7 +219,7 @@ ldap-no-server:
   variables:
     QA_SCENARIO: Test::Integration::LDAPNoServer
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::LDAPNoServer/
 
 ldap-tls:
@@ -211,7 +227,7 @@ ldap-tls:
   variables:
     QA_SCENARIO: Test::Integration::LDAPTLS
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::LDAPTLS/
 
 ldap-no-tls:
@@ -219,7 +235,7 @@ ldap-no-tls:
   variables:
     QA_SCENARIO: Test::Integration::LDAPNoTLS
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::LDAPNoTLS/
 
 mtls:
@@ -227,7 +243,7 @@ mtls:
   variables:
     QA_SCENARIO: Test::Integration::MTLS
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::Mtls/
 
 mattermost:
@@ -236,7 +252,7 @@ mattermost:
   variables:
     QA_SCENARIO: Test::Integration::Mattermost
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::Mattermost/
 
 registry:
@@ -245,8 +261,22 @@ registry:
   variables:
     QA_SCENARIO: Test::Integration::Registry
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::Registry/
+
+# ========== Relative url ===========
+# Only run a subset of smoke suite
+relative-url:
+  extends:
+    - .parallel
+    - .omnibus-e2e
+    - .with-ignored-runtime-data
+  variables:
+    QA_SCENARIO: Test::Instance::RelativeUrl
+    QA_RSPEC_TAGS: --tag smoke --tag ~orchestrated --tag ~skip_live_env
+  rules:
+    - !reference [.rules:test:omnibus-base, rules]
+    - if: $QA_SUITES =~ /Test::Instance::All/
 
 repository-storage:
   extends:
@@ -254,8 +284,42 @@ repository-storage:
   variables:
     QA_SCENARIO: Test::Instance::RepositoryStorage
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Instance::RepositoryStorage/
+
+# ========== Object Storage with MiniO ===========
+object-storage:
+  extends:
+    - .omnibus-e2e
+  variables:
+    QA_SCENARIO: Test::Instance::Image
+    QA_RSPEC_TAGS: --tag object_storage
+    GITLAB_QA_OPTS: --omnibus-config object_storage
+  rules:
+    - !reference [.rules:test:omnibus-base, rules]
+    - if: $QA_SUITES =~ /Test::Instance::ObjectStorage/
+
+# ========== Object Storage with AWS ===========
+object-storage-aws:
+  extends:
+    - object-storage
+  variables:
+    AWS_S3_ACCESS_KEY: $QA_AWS_S3_ACCESS_KEY
+    AWS_S3_BUCKET_NAME: $QA_AWS_S3_BUCKET_NAME
+    AWS_S3_KEY_ID: $QA_AWS_S3_KEY_ID
+    AWS_S3_REGION: $QA_AWS_S3_REGION
+    GITLAB_QA_OPTS: --omnibus-config object_storage_aws
+
+# ========== Object Storage with GCS ===========
+object-storage-gcs:
+  extends:
+    - object-storage
+  variables:
+    GCS_BUCKET_NAME: $QA_GCS_BUCKET_NAME
+    GOOGLE_PROJECT: $QA_GOOGLE_PROJECT
+    GOOGLE_JSON_KEY: $QA_GOOGLE_JSON_KEY
+    GOOGLE_CLIENT_EMAIL: $QA_GOOGLE_CLIENT_EMAIL
+    GITLAB_QA_OPTS: --omnibus-config object_storage_gcs
 
 service-ping-disabled:
   extends:
@@ -264,7 +328,7 @@ service-ping-disabled:
   variables:
     QA_SCENARIO: Test::Integration::ServicePingDisabled
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::ServicePingDisabled/
 
 smtp:
@@ -273,7 +337,7 @@ smtp:
   variables:
     QA_SCENARIO: Test::Integration::SMTP
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::SMTP/
 
 cloud-activation:
@@ -283,7 +347,7 @@ cloud-activation:
     QA_SCENARIO: Test::Instance::Image
     QA_RSPEC_TAGS: --tag cloud_activation
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Instance::CloudActivation/
 
 metrics:
@@ -291,7 +355,7 @@ metrics:
   variables:
     QA_SCENARIO: Test::Integration::Metrics
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::Metrics/
 
 elasticsearch:
@@ -302,7 +366,7 @@ elasticsearch:
   before_script:
     - !reference [.omnibus-e2e, before_script]
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - !reference [.rules:test:ee-only, rules]
     - if: $QA_SUITES =~ /Test::Integration::Elasticsearch/
 
@@ -313,7 +377,7 @@ importers:
     QA_SCENARIO: Test::Integration::Import
     QA_MOCK_GITHUB: "true"
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::Import/
 
 import-with-smtp:
@@ -323,7 +387,7 @@ import-with-smtp:
   variables:
     QA_SCENARIO: Test::Integration::ImportWithSMTP
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::ImportWithSMTP/
 
 # ========== ai-gateway ===========
@@ -333,7 +397,7 @@ ai-gateway:
   variables:
     QA_SCENARIO: Test::Integration::AiGateway
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::AiGateway/
 
 ai-gateway-no-seat-assigned:
@@ -342,7 +406,7 @@ ai-gateway-no-seat-assigned:
   variables:
     QA_SCENARIO: Test::Integration::AiGatewayNoSeatAssigned
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::AiGatewayNoSeatAssigned/
 
 ai-gateway-no-add-on:
@@ -354,7 +418,7 @@ ai-gateway-no-add-on:
     - export QA_EE_ACTIVATION_CODE=$QA_EE_ACTIVATION_CODE_NO_ADD_ON
     - !reference [.omnibus-e2e, before_script]
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::AiGatewayNoAddOn/
 
 ai-gateway-no-license:
@@ -366,7 +430,7 @@ ai-gateway-no-license:
     - unset QA_EE_LICENSE
     - !reference [.omnibus-e2e, before_script]
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - if: $QA_SUITES =~ /Test::Integration::AiGatewayNoLicense/
 
 # ========== continuous-vulnerability-scanning ===========
@@ -378,7 +442,7 @@ continuous-vulnerabiity-scanning:
     QA_SCENARIO: Test::Integration::ContinuousVulnerabilityScanning
     QA_MOCK_GITHUB: "true"
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - !reference [.rules:test:ee-only, rules]
     - if: $QA_SUITES =~ /Test::Integration::ContinuousVulnerabilityScanning/
 
@@ -393,7 +457,8 @@ update-minor:
     UPDATE_TYPE: minor
     QA_RSPEC_TAGS: --tag health_check
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:update-jobs-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - !reference [.rules:test:update, rules]
 
 update-major:
@@ -404,7 +469,8 @@ update-major:
     UPDATE_TYPE: major
     QA_RSPEC_TAGS: --tag health_check
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:update-jobs-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - !reference [.rules:test:update, rules]
 
 update-patch:
@@ -415,7 +481,22 @@ update-patch:
     UPDATE_TYPE: patch
     QA_RSPEC_TAGS: --tag health_check
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:update-jobs-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
+    - !reference [.rules:test:update-patch, rules]
+
+# Job tests upgrade from previous internal release to latest if available
+# Requires GITLAB_QA_DEV_ACCESS_TOKEN to pull internal release
+update-patch-from-internal-to-internal:
+  extends:
+    - .omnibus-e2e
+    - .update-script
+  variables:
+    UPDATE_TYPE: internal_patch
+    QA_RSPEC_TAGS: --tag health_check
+  rules:
+    - !reference [.rules:test:update-jobs-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - !reference [.rules:test:update-patch, rules]
 
 update-from-patch-to-stable:
@@ -426,7 +507,8 @@ update-from-patch-to-stable:
     QA_RSPEC_TAGS: --tag health_check
     QA_SCENARIO: Test::Omnibus::UpdateToNext
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:update-jobs-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - !reference [.rules:test:update-patch, rules]
 
 update-ee-to-ce:
@@ -438,7 +520,8 @@ update-ee-to-ce:
     UPDATE_FROM_EDITION: ee
     QA_RSPEC_TAGS: --tag health_check
   rules:
-    - !reference [.rules:test:dependency-update-never, rules]
+    - !reference [.rules:test:update-jobs-never, rules]
+    - !reference [.rules:test:omnibus-base, rules]
     - !reference [.rules:test:ce-only, rules]
     - !reference [.rules:test:update, rules]
 

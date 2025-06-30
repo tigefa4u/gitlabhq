@@ -115,6 +115,8 @@ module API
       optional :max_artifacts_size, type: Integer, desc: "Set the maximum file size for each job's artifacts"
       optional :max_attachment_size, type: Integer, desc: 'Maximum attachment size in MB'
       optional :max_export_size, type: Integer, desc: 'Maximum export size in MB'
+      optional :max_github_response_size_limit, type: Integer, desc: "Maximum allowed size in MB for GitHub API responses. 0 for unlimited."
+      optional :max_github_response_json_value_count, type: Integer, desc: "Maximum allowed object count for GitHub API responses. 0 for unlimited. Count is an estimate based on the number of : , { and [ occurrences in the response."
       optional :max_import_size, type: Integer, desc: 'Maximum import size in MB'
       optional :max_import_remote_file_size, type: Integer, desc: 'Maximum remote file size in MB for imports from external object storages'
       optional :max_decompressed_archive_size, type: Integer, desc: 'Maximum decompressed size in MB'
@@ -228,6 +230,7 @@ module API
       optional :allow_runner_registration_token, type: Boolean, desc: 'Allow registering runners using a registration token'
       optional :ci_max_includes, type: Integer, desc: 'Maximum number of includes per pipeline'
       optional :ci_job_live_trace_enabled, type: Boolean, desc: 'Turn on incremental logging for job logs.'
+      optional :git_push_pipeline_limit, type: Integer, desc: 'Set the limit for pipelines and branches that can be triggered when creating a Git push. Set to 0 to disable the limit'
       optional :security_policy_global_group_approvers_enabled, type: Boolean, desc: 'Query scan result policy approval groups globally'
       optional :slack_app_enabled, type: Grape::API::Boolean, desc: 'Enable the GitLab for Slack app'
       given slack_app_enabled: ->(val) { val } do
@@ -249,6 +252,8 @@ module API
         optional :preset, type: String, desc: "The preset configuration of URL's for the VS Code Extension Marketplace"
         optional :custom_values, type: Hash, desc: "VS Code Extension Marketplace URL's when preset is 'custom'"
       end
+      optional :enable_language_server_restrictions, type: Boolean, desc: 'Enables enforcing language server restrictions'
+      optional :minimum_language_server_version, type: String, desc: 'The minimum language server version to accept requests from'
 
       Gitlab::SSHPublicKey.supported_types.each do |type|
         optional :"#{type}_key_restriction",

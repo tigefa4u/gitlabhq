@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: SQL views
 ---
 
@@ -51,11 +51,11 @@ Using these views provides several advantages:
 
 ## Drawbacks
 
-1. **Performance overhead:** Views can introduce additional query overhead due to materialization and computation on access.
-1. **Debugging complexity:** Debugging can become more challenging because you need to trace through both the Ruby/Rails layer and the PostgreSQL.
-1. **Migration challenges:** Views need to be managed carefully during schema migrations. If underlying tables change, you need to ensure views are updated accordingly. Rails migrations don't handle views as seamlessly as they handle regular tables.
-1. **Maintenance overhead:** Views add another layer of programming languages to maintain in your database schema.
-1. **Testing complexity:** Testing code that relies on views often requires more testing setup.
+1. **Performance overhead**: Views can introduce additional query overhead due to materialization and computation on access.
+1. **Debugging complexity**: Debugging can become more challenging because you need to trace through both the Ruby/Rails layer and the PostgreSQL.
+1. **Migration challenges**: Views need to be managed carefully during schema migrations. If underlying tables change, you need to ensure views are updated accordingly. Rails migrations don't handle views as seamlessly as they handle regular tables.
+1. **Maintenance overhead**: Views add another layer of programming languages to maintain in your database schema.
+1. **Testing complexity**: Testing code that relies on views often requires more testing setup.
 
 ## Guidelines
 
@@ -78,5 +78,5 @@ end
 
 ## Further Reading
 
-- [PostgreSQL System Catalogs](https://www.postgresql.org/docs/current/catalogs.html)
-- [PostgreSQL Views](https://www.postgresql.org/docs/current/sql-createview.html)
+- [PostgreSQL System Catalogs](https://www.postgresql.org/docs/16/catalogs.html)
+- [PostgreSQL Views](https://www.postgresql.org/docs/16/sql-createview.html)

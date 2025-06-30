@@ -43,7 +43,7 @@ If you are using GitLab.com:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/383139) in GitLab 15.10. Deployed behind the `create_runner_workflow_for_admin` [flag](../../administration/feature_flags.md)
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/383139) in GitLab 15.10. Deployed behind the `create_runner_workflow_for_admin` [flag](../../administration/feature_flags/_index.md)
 - [Enabled by default](https://gitlab.com/gitlab-org/gitlab/-/issues/389269) in GitLab 16.0.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/415447) in GitLab 16.2. Feature flag `create_runner_workflow_for_admin` removed.
 
@@ -98,7 +98,7 @@ For more information, see
 
 Prerequisites:
 
-- Runner registration tokens must be [enabled](../../administration/settings/continuous_integration.md#allow-runner-registration-tokens) in the **Admin** area.
+- Runner registration tokens must be [enabled](../../administration/settings/continuous_integration.md#control-runner-registration) in the **Admin** area.
 - You must be an administrator.
 
 To create an instance runner:
@@ -242,7 +242,7 @@ When only one job runs at a time, the fair usage algorithm assigns jobs in this 
 
 ## Group runners
 
-Use _group runners_ when you want all projects in a group
+Use group runners when you want all projects in a group
 to have access to a set of runners.
 
 Group runners process jobs by using a first in, first out queue.
@@ -251,7 +251,7 @@ Group runners process jobs by using a first in, first out queue.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/383143) in GitLab 15.10. Deployed behind the `create_runner_workflow_for_namespace` [flag](../../administration/feature_flags.md). Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/383143) in GitLab 15.10. Deployed behind the `create_runner_workflow_for_namespace` [flag](../../administration/feature_flags/_index.md). Disabled by default.
 - [Enabled by default](https://gitlab.com/gitlab-org/gitlab/-/issues/393919) in GitLab 16.0.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/415447) in GitLab 16.2. Feature flag `create_runner_workflow_for_admin` removed.
 
@@ -471,7 +471,7 @@ Filter entries where stale runners were removed:
 
 ## Project runners
 
-Use _project runners_ when you want to use runners for specific projects. For example,
+Use project runners when you want to use runners for specific projects. For example,
 when you have:
 
 - Jobs with specific requirements, like a deploy job that requires credentials.
@@ -485,7 +485,7 @@ Project runners process jobs by using a first in, first out ([FIFO](https://en.w
 {{< alert type="note" >}}
 
 Project runners do not get instance with forked projects automatically.
-A fork *does* copy the CI/CD settings of the cloned repository.
+A fork does copy the CI/CD settings of the cloned repository.
 
 {{< /alert >}}
 
@@ -505,7 +505,7 @@ You cannot unassign a runner from the owner project. Delete the runner instead.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/383143) in GitLab 15.10. Deployed behind the `create_runner_workflow_for_namespace` [flag](../../administration/feature_flags.md). Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/383143) in GitLab 15.10. Deployed behind the `create_runner_workflow_for_namespace` [flag](../../administration/feature_flags/_index.md). Disabled by default.
 - [Enabled by default](https://gitlab.com/gitlab-org/gitlab/-/issues/393919) in GitLab 16.0.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/415447) in GitLab 16.2. Feature flag `create_runner_workflow_for_admin` removed.
 
@@ -645,7 +645,7 @@ You can edit a project runner from any of the projects it's enabled for.
 The modifications, which include unlocking and editing tags and the description,
 affect all projects that use the runner.
 
-An administrator can [enable the runner for multiple projects](../../administration/settings/continuous_integration.md#enable-a-project-runner-for-multiple-projects).
+An administrator can [enable the runner for multiple projects](../../administration/settings/continuous_integration.md#share-project-runners-with-multiple-projects).
 
 ### Prevent a project runner from being enabled for other projects
 
@@ -768,7 +768,7 @@ To determine the IP address of an instance runner:
 1. Select **CI/CD > Runners**.
 1. Find the runner in the table and view the **IP Address** column.
 
-![Instance runner IP address](img/shared_runner_ip_address_v14_5.png)
+![Screenshot showing the IP address column for an instance runner in the GitLab Admin area](img/shared_runner_ip_address_v14_5.png)
 
 ### Determine the IP address of a project runner
 
@@ -779,7 +779,28 @@ project.
 1. Go to the project's **Settings > CI/CD** and expand the **Runners** section.
 1. Select the runner name and find the **IP Address** row.
 
-![Project runner IP address](img/project_runner_ip_address_v17_6.png)
+![Screenshot showing where to find the IP address for a project runner in the runner details](img/project_runner_ip_address_v17_6.png)
+
+## Add maintenance notes to runner configuration
+
+{{< details >}}
+
+- Tier: Ultimate
+- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
+
+{{< /details >}}
+
+{{< history >}}
+
+- [Introduced for administrators](https://gitlab.com/gitlab-org/gitlab/-/issues/348299) in GitLab 15.1.
+- [Made available for groups and projects](https://gitlab.com/gitlab-org/gitlab/-/issues/422621) in GitLab 18.2.
+
+{{< /history >}}
+
+You can add a maintenance note to document the runner. Users who can edit the runner
+see the note when they view the runner details.
+
+Use this feature to inform others about consequences or problems related to changing the runner configuration.
 
 ## Enable use of runner registration tokens in projects and groups
 
@@ -805,7 +826,7 @@ In GitLab 17.0, the use of runner registration tokens is disabled in all GitLab 
 
 Prerequisites:
 
-- Runner registration tokens must be [enabled](../../administration/settings/continuous_integration.md#allow-runner-registration-tokens) in the **Admin** area.
+- Runner registration tokens must be [enabled](../../administration/settings/continuous_integration.md#control-runner-registration) in the **Admin** area.
 
 To enable the use of runner registration token in project and groups:
 
