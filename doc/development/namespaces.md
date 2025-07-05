@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Namespaces
 ---
 
@@ -217,7 +217,7 @@ namespace_object.recursive_self_and_hierarchy
 ### Search using trie data structure
 
 `Namespaces::Traversal::TrieNode` implements a trie data structure to efficiently search within
-`namespaces.traveral_ids` hierarchy for a set of Namespaces.
+`namespaces.traversal_ids` hierarchy for a set of Namespaces.
 
 ```ruby
 traversal_ids = [[9970, 123], [9970, 456]] # Derived from (for example): Namespace.where(...).map(&:traversal_ids)

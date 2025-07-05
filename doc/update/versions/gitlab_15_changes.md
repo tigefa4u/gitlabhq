@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: GitLab 15 changes
 ---
@@ -30,7 +30,7 @@ For more information about upgrading GitLab Helm Chart, see [the release notes f
 
 - **Upgrade to patch release 15.11.3 or later**. This avoids [issue 408304](https://gitlab.com/gitlab-org/gitlab/-/issues/408304) when upgrading from 15.5.0 and earlier.
 
-- Normally, backups in environments that have PgBouncer must [bypass PgBouncer by setting variables that are prefixed with `GITLAB_BACKUP_`](../../administration/backup_restore/backup_gitlab.md#bypassing-pgbouncer). However, due to an [issue](https://gitlab.com/gitlab-org/gitlab/-/issues/422163), `gitlab-backup` uses the regular database connection through PgBouncer instead of the direct connection defined in the override, and the database backup fails. The workaround is to use `pg_dump` directly.
+- Usually, backups in environments that have PgBouncer must [bypass PgBouncer by setting variables that are prefixed with `GITLAB_BACKUP_`](../../administration/backup_restore/backup_gitlab.md#bypassing-pgbouncer). However, due to an [issue](https://gitlab.com/gitlab-org/gitlab/-/issues/422163), `gitlab-backup` uses the regular database connection through PgBouncer instead of the direct connection defined in the override, and the database backup fails. The workaround is to use `pg_dump` directly.
 
     **Affected releases**:
 
@@ -411,7 +411,7 @@ if you can't upgrade to 15.11.12 and later.
 - A database constraint is added, specifying that the `namespace_id` column on the issues
   table has no `NULL` values.
 
-  - If the `namespace_id` batched background migration from 15.4 failed (see above) then the 15.7 upgrade
+  - If the `namespace_id` batched background migration from 15.4 failed (see previous item) then the 15.7 upgrade
     fails with a database migration error.
 
   - On GitLab instances with large issues tables, validating this constraint causes the upgrade to take
@@ -959,7 +959,7 @@ A [license caching issue](https://gitlab.com/gitlab-org/gitlab/-/issues/376706) 
      kubectl get pods -l app=webservice -o custom-columns=webservice-image:{.spec.containers[0].image},workhorse-image:{.spec.containers[1].image}
      ```
 
-  1. [Enable the `active_support_hash_digest_sha256` feature flag](../../administration/feature_flags.md#how-to-enable-and-disable-features-behind-flags) to switch `ActiveSupport::Digest` to use SHA256:
+  1. [Enable the `active_support_hash_digest_sha256` feature flag](../../administration/feature_flags/_index.md#how-to-enable-and-disable-features-behind-flags) to switch `ActiveSupport::Digest` to use SHA256:
 
      1. [Start the rails console](../../administration/operations/rails_console.md)
      1. Enable the feature flag:
@@ -1006,9 +1006,9 @@ A [license caching issue](https://gitlab.com/gitlab-org/gitlab/-/issues/376706) 
   For more information, see [issue 364763](https://gitlab.com/gitlab-org/gitlab/-/issues/364763).
 
 - The use of encrypted S3 buckets with storage-specific configuration is no longer supported after [removing support for using `background_upload`](../deprecations.md#background-upload-for-object-storage).
-- The [certificate-based Kubernetes integration (DEPRECATED)](../../user/infrastructure/clusters/_index.md#certificate-based-kubernetes-integration-deprecated) is disabled by default, but you can be re-enable it through the [`certificate_based_clusters` feature flag](../../administration/feature_flags.md#how-to-enable-and-disable-features-behind-flags) until GitLab 16.0.
+- The [certificate-based Kubernetes integration (DEPRECATED)](../../user/infrastructure/clusters/_index.md#certificate-based-kubernetes-integration-deprecated) is disabled by default, but you can be re-enable it through the [`certificate_based_clusters` feature flag](../../administration/feature_flags/_index.md#how-to-enable-and-disable-features-behind-flags) until GitLab 16.0.
 - When you use the GitLab Helm Chart project with a custom `serviceAccount`, ensure it has `get` and `list` permissions for the `serviceAccount` and `secret` resources.
-- The `FF_GITLAB_REGISTRY_HELPER_IMAGE` [feature flag](../../administration/feature_flags.md#enable-or-disable-the-feature) is removed and helper images are always pulled from GitLab Registry.
+- The `FF_GITLAB_REGISTRY_HELPER_IMAGE` [feature flag](../../administration/feature_flags/_index.md#enable-or-disable-the-feature) is removed and helper images are always pulled from GitLab Registry.
 
 ### Linux package installations
 
@@ -1032,7 +1032,7 @@ A [license caching issue](https://gitlab.com/gitlab-org/gitlab/-/issues/376706) 
   [Fault tolerant and Geo installations require additional steps and planning](../../administration/postgresql/replication_and_failover.md#upgrading-postgresql-major-version-in-a-patroni-cluster).
 
   Because of underlying structural changes, the running PostgreSQL process
-  **_must_** be restarted when it is upgraded before running database
+  must be restarted when it is upgraded before running database
   migrations. If automatic restart is skipped, you must run the following
   command before migrations are run:
 
@@ -1078,7 +1078,7 @@ A [license caching issue](https://gitlab.com/gitlab-org/gitlab/-/issues/376706) 
 
   It is mandatory to restart PostgreSQL when underlying version changes, to avoid
   errors like the [one related to loading necessary libraries](https://docs.gitlab.com/omnibus/settings/database.html#could-not-load-library-plpgsqlso)
-  that can cause downtime. So, if you skip the automatic restarts using the above
+  that can cause downtime. So, if you skip the automatic restarts using the previous
   method, ensure that you restart the services manually before upgrading to GitLab
   15.0.
 

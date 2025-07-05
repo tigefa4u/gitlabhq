@@ -2,7 +2,7 @@ import Vue, { nextTick } from 'vue';
 // eslint-disable-next-line no-restricted-imports
 import Vuex from 'vuex';
 import VueApollo from 'vue-apollo';
-import { GlTab, GlTabs, GlModal, GlAlert } from '@gitlab/ui';
+import { GlTab, GlTabs, GlModal, GlAlert, GlSprintf } from '@gitlab/ui';
 import createMockApollo from 'helpers/mock_apollo_helper';
 import { mountExtended, shallowMountExtended } from 'helpers/vue_test_utils_helper';
 import { stubComponent, RENDER_ALL_SLOTS_TEMPLATE } from 'helpers/stub_component';
@@ -76,6 +76,7 @@ describe('PlaceholdersTabApp', () => {
       },
       mocks: { $toast },
       stubs: {
+        GlSprintf,
         GlTabs: stubComponent(GlTabs, {
           template: RENDER_ALL_SLOTS_TEMPLATE,
         }),
@@ -226,6 +227,23 @@ describe('PlaceholdersTabApp', () => {
     createComponent();
 
     expect(findAlert().exists()).toBe(true);
+    expect(findAlert().text()).toBe(
+      'Contribution and membership reassignment cannot be undone. Incorrect reassignment poses a security risk, so check carefully before you reassign.',
+    );
+  });
+
+  describe('when allowBypassPlaceholderConfirmation is true', () => {
+    beforeEach(() => {
+      createComponent({
+        provide: { allowBypassPlaceholderConfirmation: true },
+      });
+    });
+
+    it('renders alert with extra text', () => {
+      expect(findAlert().text()).toContain(
+        'Skip confirmation when administrators reassign placeholder users',
+      );
+    });
   });
 
   it('renders tabs', () => {
@@ -302,39 +320,21 @@ describe('PlaceholdersTabApp', () => {
   });
 
   describe('reassign CSV button', () => {
-    describe('when the feature flag is enabled', () => {
-      beforeEach(() => {
-        createComponent({
-          provide: {
-            glFeatures: { importerUserMappingReassignmentCsv: true },
-          },
-          mountFn: mountExtended,
-        });
-      });
-
-      it('renders the button and the modal', () => {
-        expect(findReassignCsvButton().exists()).toBe(true);
-        expect(findCsvModal().exists()).toBe(true);
-      });
-
-      it('shows modal when button is clicked', async () => {
-        findReassignCsvButton().trigger('click');
-
-        await nextTick();
-
-        expect(findCsvModal().findComponent(GlModal).isVisible()).toBe(true);
-      });
+    beforeEach(() => {
+      createComponent({ mountFn: mountExtended });
     });
 
-    describe('when the feature flag is disabled', () => {
-      beforeEach(() => {
-        createComponent({ provide: { glFeatures: { importerUserMappingReassignmentCsv: false } } });
-      });
+    it('renders the button and the modal', () => {
+      expect(findReassignCsvButton().exists()).toBe(true);
+      expect(findCsvModal().exists()).toBe(true);
+    });
 
-      it('does not render the button and the modal', () => {
-        expect(findReassignCsvButton().exists()).toBe(false);
-        expect(findCsvModal().exists()).toBe(false);
-      });
+    it('shows modal when button is clicked', async () => {
+      findReassignCsvButton().trigger('click');
+
+      await nextTick();
+
+      expect(findCsvModal().findComponent(GlModal).isVisible()).toBe(true);
     });
   });
 

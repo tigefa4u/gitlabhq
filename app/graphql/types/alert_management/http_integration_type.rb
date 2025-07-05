@@ -9,14 +9,6 @@ module Types
       implements Types::AlertManagement::IntegrationType
 
       authorize :admin_operations
-
-      def type
-        :http
-      end
-
-      def api_url
-        nil
-      end
     end
   end
 end

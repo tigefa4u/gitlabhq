@@ -1,8 +1,11 @@
 <script>
 import { GlLoadingIcon, GlButton } from '@gitlab/ui';
 import { uniqueId } from 'lodash';
+import { computed } from 'vue';
+import { logError } from '~/lib/logger';
+import { captureException } from '~/sentry/sentry_browser_wrapper';
 import BlobContent from '~/blob/components/blob_content.vue';
-import BlobHeader from '~/blob/components/blob_header.vue';
+import BlobHeader from 'ee_else_ce/blob/components/blob_header.vue';
 import { SIMPLE_BLOB_VIEWER, RICH_BLOB_VIEWER } from '~/blob/components/constants';
 import { createAlert } from '~/alert';
 import axios from '~/lib/utils/axios_utils';
@@ -16,6 +19,7 @@ import blobInfoQuery from 'shared_queries/repository/blob_info.query.graphql';
 import highlightMixin from '~/repository/mixins/highlight_mixin';
 import projectInfoQuery from 'ee_else_ce/repository/queries/project_info.query.graphql';
 import eventHub from '~/notes/event_hub';
+import { InternalEvents } from '~/tracking';
 import getRefMixin from '../mixins/get_ref';
 import { getRefType } from '../utils/ref_type';
 import {
@@ -24,23 +28,22 @@ import {
   LFS_STORAGE,
   LEGACY_FILE_TYPES,
   EMPTY_FILE,
+  EVENT_FILE_SIZE_LIMIT_EXCEEDED,
 } from '../constants';
-import BlobButtonGroup from './blob_button_group.vue';
-import ForkSuggestion from './fork_suggestion.vue';
 import { loadViewer } from './blob_viewers';
+
+const trackingMixin = InternalEvents.mixin();
 
 export default {
   components: {
     BlobHeader,
-    BlobButtonGroup,
     BlobContent,
     GlLoadingIcon,
     GlButton,
-    ForkSuggestion,
     CodeIntelligence,
     AiGenie: () => import('ee_component/ai/components/ai_genie.vue'),
   },
-  mixins: [getRefMixin, highlightMixin, glFeatureFlagMixin()],
+  mixins: [getRefMixin, highlightMixin, glFeatureFlagMixin(), trackingMixin],
   inject: {
     originalBranch: {
       default: '',
@@ -56,12 +59,18 @@ export default {
           projectPath: this.projectPath,
         };
       },
-      error() {
+      error(error) {
+        logError(`Unexpected error while fetching projectInfo query`, error);
+        captureException(error, {
+          tags: {
+            vue_component: 'BlobContentViewer',
+          },
+        });
         this.displayError();
       },
       update({ project }) {
-        this.pathLocks = project.pathLocks || DEFAULT_BLOB_INFO.pathLocks;
-        this.userPermissions = project.userPermissions;
+        this.pathLocks = project?.pathLocks || DEFAULT_BLOB_INFO.pathLocks;
+        this.userPermissions = project?.userPermissions || DEFAULT_BLOB_INFO.userPermissions;
       },
     },
     project: {
@@ -87,17 +96,30 @@ export default {
         const urlHash = getLocationHash(); // If there is a code line hash in the URL we render with the simple viewer
         const useSimpleViewer = usePlain || urlHash?.startsWith('L') || !this.hasRichViewer;
 
+        if (this.isTooLarge) {
+          this.trackEvent(EVENT_FILE_SIZE_LIMIT_EXCEEDED, {
+            label: this.blobInfo.language,
+            property: this.blobInfo.size,
+          });
+        }
+
         if (this.isUnsupportedLanguage(this.blobInfo.language) && this.isTooLarge) return;
         this.initHighlightWorker(this.blobInfo, this.isUsingLfs);
         this.switchViewer(useSimpleViewer ? SIMPLE_BLOB_VIEWER : RICH_BLOB_VIEWER); // By default, if present, use the rich viewer to render
       },
-      error() {
+      error(error) {
+        logError(`Unexpected error while fetching blobInfo query`, error);
+        captureException(error, {
+          tags: {
+            vue_component: 'BlobContentViewer',
+          },
+        });
         this.displayError();
       },
     },
   },
   provide() {
-    return { blobHash: uniqueId() };
+    return { blobHash: uniqueId(), currentRef: computed(() => this.currentRef) };
   },
   props: {
     path: {
@@ -258,7 +280,7 @@ export default {
       this.loadLegacyViewer();
     },
     loadLegacyViewer() {
-      if (this.legacyViewerLoaded) {
+      if (this.legacyViewerLoaded || this.isLoadingLegacyViewer) {
         return;
       }
 
@@ -281,7 +303,6 @@ export default {
           }
 
           this.isBinary = binary;
-          this.isLoadingLegacyViewer = false;
 
           window.requestIdleCallback(() => {
             this.isRenderingLegacyTextViewer = false;
@@ -295,7 +316,10 @@ export default {
           handleLocationHash(); // Ensures that we scroll to the hash when async content is loaded
           eventHub.$emit('showBlobInteractionZones', this.blobInfo.path);
         })
-        .catch(() => this.displayError());
+        .catch(() => this.displayError())
+        .finally(() => {
+          this.isLoadingLegacyViewer = false;
+        });
     },
     displayError() {
       createAlert({ message: __('An error occurred while loading the file. Please try again.') });
@@ -375,35 +399,13 @@ export default {
         :show-blame-toggle="glFeatures.inlineBlame"
         :project-path="projectPath"
         :project-id="projectId"
+        :is-using-lfs="isUsingLfs"
+        :current-ref="currentRef"
         @viewer-changed="handleViewerChanged"
         @copy="onCopy"
         @edit="editBlob"
         @error="displayError"
         @blame="handleToggleBlame"
-      >
-        <template #actions>
-          <blob-button-group
-            v-if="isLoggedIn && !blobInfo.archived && !glFeatures.blobOverflowMenu"
-            :path="path"
-            :name="blobInfo.name"
-            :replace-path="blobInfo.replacePath"
-            :delete-path="blobInfo.webPath"
-            :can-push-code="userPermissions.pushCode"
-            :can-push-to-branch="blobInfo.canCurrentUserPushToBranch"
-            :empty-repo="isEmptyRepository"
-            :project-path="projectPath"
-            :is-locked="Boolean(pathLockedByUser)"
-            :can-lock="canLock"
-            :show-fork-suggestion="showSingleFileEditorForkSuggestion"
-            :is-using-lfs="isUsingLfs"
-            @fork="setForkTarget('view')"
-          />
-        </template>
-      </blob-header>
-      <fork-suggestion
-        v-if="forkTarget && showForkSuggestion"
-        :fork-path="forkPath"
-        @cancel="setForkTarget(null)"
       />
       <blob-content
         v-if="!blobViewer"

@@ -70,7 +70,6 @@ class Issue < ApplicationRecord
   ignore_column :project_id_convert_to_bigint, remove_with: '17.8', remove_after: '2024-12-13'
   ignore_column :promoted_to_epic_id_convert_to_bigint, remove_with: '17.8', remove_after: '2024-12-13'
   ignore_column :updated_by_id_convert_to_bigint, remove_with: '17.8', remove_after: '2024-12-13'
-  ignore_column :correct_work_item_type_id, remove_with: '18.0', remove_after: '2025-04-17'
 
   belongs_to :project
   belongs_to :namespace, inverse_of: :issues
@@ -126,7 +125,7 @@ class Issue < ApplicationRecord
     inverse_of: :work_item,
     autosave: true
 
-  alias_attribute :escalation_status, :incident_management_issuable_escalation_status
+  alias_method :escalation_status, :incident_management_issuable_escalation_status
 
   accepts_nested_attributes_for :issuable_severity, update_only: true
   accepts_nested_attributes_for :sentry_issue
@@ -152,7 +151,14 @@ class Issue < ApplicationRecord
   scope :in_projects, ->(project_ids) { where(project_id: project_ids) }
   scope :not_in_projects, ->(project_ids) { where.not(project_id: project_ids) }
 
-  scope :non_archived, -> { left_joins(:project).where(project_id: nil).or(where(projects: { archived: false })) }
+  scope :join_project_through_namespace, -> do
+    joins("JOIN projects ON projects.project_namespace_id = issues.namespace_id")
+  end
+
+  scope :non_archived, ->(use_existing_join: false) do
+    relation = use_existing_join ? self : left_joins(:project)
+    relation.where(project_id: nil).or(relation.where(projects: { archived: false }))
+  end
 
   scope :with_due_date, -> { where.not(due_date: nil) }
   scope :without_due_date, -> { where(due_date: nil) }
@@ -163,8 +169,13 @@ class Issue < ApplicationRecord
 
   scope :not_authored_by, ->(user) { where.not(author_id: user) }
 
+  # N.B. The start_date and due_date columns are preserved on the issues table to enable performant sorting by these
+  # dates, since we would otherwise need to perform a join for the sort. These are synced via the DB trigger
+  # sync_issues_dates_with_work_item_dates_sources() from the work_item_dates_sources table
   scope :order_due_date_asc, -> { reorder(arel_table[:due_date].asc.nulls_last) }
   scope :order_due_date_desc, -> { reorder(arel_table[:due_date].desc.nulls_last) }
+  scope :order_start_date_asc, -> { reorder(arel_table[:start_date].asc.nulls_last) }
+  scope :order_start_date_desc, -> { reorder(arel_table[:start_date].desc.nulls_last) }
   scope :order_closest_future_date, -> { reorder(Arel.sql("CASE WHEN issues.due_date >= CURRENT_DATE THEN 0 ELSE 1 END ASC, ABS(CURRENT_DATE - issues.due_date) ASC")) }
   scope :order_created_at_desc, -> { reorder(created_at: :desc) }
   scope :order_severity_asc, -> do
@@ -189,8 +200,6 @@ class Issue < ApplicationRecord
   scope :order_escalation_status_desc, -> { includes(:incident_management_issuable_escalation_status).order(IncidentManagement::IssuableEscalationStatus.arel_table[:status].desc.nulls_last).references(:incident_management_issuable_escalation_status) }
   scope :order_closed_at_asc, -> { reorder(arel_table[:closed_at].asc.nulls_last) }
   scope :order_closed_at_desc, -> { reorder(arel_table[:closed_at].desc.nulls_last) }
-  scope :order_start_date_asc, -> { left_joins(:dates_source).order(WorkItems::DatesSource.arel_table[:start_date].asc.nulls_last) }
-  scope :order_start_date_desc, -> { left_joins(:dates_source).order(WorkItems::DatesSource.arel_table[:start_date].desc.nulls_last) }
 
   scope :preload_associated_models, -> { preload(:assignees, :labels, project: :namespace) }
   scope :with_web_entity_associations, -> do
@@ -230,7 +239,9 @@ class Issue < ApplicationRecord
   scope :confidential_only, -> { where(confidential: true) }
 
   scope :without_hidden, -> {
-    where('NOT EXISTS (?)', Users::BannedUser.select(1).where('issues.author_id = banned_users.user_id'))
+    # We add `+ 0` to the author_id to make the query planner use a nested loop and prevent
+    # loading of all banned user IDs for certain queries
+    where_not_exists(Users::BannedUser.where('banned_users.user_id = (issues.author_id + 0)'))
   }
 
   scope :counts_by_state, -> { reorder(nil).group(:state_id).count }
@@ -325,6 +336,13 @@ class Issue < ApplicationRecord
       where('issues.namespace_id IN (SELECT id FROM namespace_ids)').with(cte.to_arel)
     end
 
+    def with_accessible_sub_namespace_ids_cte(namespace_ids)
+      # Using materialized: true to ensure the CTE is computed once and reused, which significantly improves performance
+      # for complex queries. See: https://gitlab.com/gitlab-org/gitlab/-/issues/548094
+      accessible_sub_namespace_ids = Gitlab::SQL::CTE.new(:accessible_sub_namespace_ids, namespace_ids, materialized: true)
+      with(accessible_sub_namespace_ids.to_arel)
+    end
+
     override :order_upvotes_desc
     def order_upvotes_desc
       reorder(upvotes_count: :desc)
@@ -352,12 +370,6 @@ class Issue < ApplicationRecord
 
   def self.participant_includes
     [:assignees] + super
-  end
-
-  def work_item_type_id=(input_work_item_type_id)
-    work_item_type = WorkItems::Type.find_by_id_with_fallback(input_work_item_type_id)
-
-    super(work_item_type&.id)
   end
 
   def next_object_by_relative_position(ignoring: nil, order: :asc)
@@ -402,20 +414,44 @@ class Issue < ApplicationRecord
   # Alternative prefix for situations where the standard prefix would be
   # interpreted as a comment, most notably to begin commit messages with
   # (e.g. "GL-123: My commit")
-  def self.alternative_reference_prefix
+  def self.alternative_reference_prefix_without_postfix
     'GL-'
   end
 
-  # Pattern used to extract `#123` issue references from text
-  #
+  def self.alternative_reference_prefix_with_postfix
+    if Feature.enabled?(:extensible_reference_filters, Feature.current_request)
+      '[issue:'
+    else
+      ''
+    end
+  end
+
+  def self.reference_postfix
+    ']'
+  end
+
+  # Pattern used to extract issue references from text
   # This pattern supports cross-project references.
   def self.reference_pattern
-    @reference_pattern ||= %r{
+    prefix_with_postfix = alternative_reference_prefix_with_postfix
+    if prefix_with_postfix.empty?
+      @reference_pattern ||= %r{
       (?:
         (#{Project.reference_pattern})?#{Regexp.escape(reference_prefix)} |
-        #{Regexp.escape(alternative_reference_prefix)}
+        #{Regexp.escape(alternative_reference_prefix_without_postfix)}
       )#{Gitlab::Regex.issue}
     }x
+    else
+      %r{
+    ((?:
+      (#{Project.reference_pattern})?#{Regexp.escape(reference_prefix)} |
+      #{alternative_reference_prefix_without_postfix}
+    )#{Gitlab::Regex.issue}) |
+    ((?:
+      #{Regexp.escape(prefix_with_postfix)}(#{Project.reference_pattern}/)?
+    )#{Gitlab::Regex.issue(reference_postfix)})
+  }x
+    end
   end
 
   def self.link_reference_pattern
@@ -449,6 +485,8 @@ class Issue < ApplicationRecord
     when 'closest_future_date', 'closest_future_date_asc' then order_closest_future_date
     when 'due_date', 'due_date_asc'                       then order_due_date_asc.with_order_id_desc
     when 'due_date_desc'                                  then order_due_date_desc.with_order_id_desc
+    when 'start_date', 'start_date_asc'                   then order_start_date_asc.with_order_id_desc
+    when 'start_date_desc'                                then order_start_date_desc.with_order_id_desc
     when 'relative_position', 'relative_position_asc'     then order_by_relative_position
     when 'severity_asc'                                   then order_severity_asc
     when 'severity_desc'                                  then order_severity_desc
@@ -456,8 +494,6 @@ class Issue < ApplicationRecord
     when 'escalation_status_desc'                         then order_escalation_status_desc
     when 'closed_at', 'closed_at_asc'                     then order_closed_at_asc
     when 'closed_at_desc'                                 then order_closed_at_desc
-    when 'start_date', 'start_date_asc'                   then order_start_date_asc
-    when 'start_date_desc'                                then order_start_date_desc
     else
       super
     end
@@ -607,16 +643,6 @@ class Issue < ApplicationRecord
     !self.closed? && !self.project.forked?
   end
 
-  # Returns `true` if the current issue can be viewed by either a logged in User
-  # or an anonymous user.
-  def visible_to_user?(user = nil)
-    return publicly_visible? unless user
-    return true if user.can_read_all_resources?
-    return readable_by?(user) unless project
-
-    readable_by?(user) && access_allowed_for_project_with_external_authorization?(user, project)
-  end
-
   # Always enforce spam check for support bot but allow for other users when issue is not publicly visible
   def allow_possible_spam?(user)
     return true if Gitlab::CurrentSettings.allow_possible_spam
@@ -728,23 +754,6 @@ class Issue < ApplicationRecord
     self.update_column(:upvotes_count, self.upvotes)
   end
 
-  # Returns `true` if the given User can read the current Issue.
-  #
-  # This method duplicates the same check of issue_policy.rb
-  # for performance reasons, check commit: 002ad215818450d2cbbc5fa065850a953dc7ada8
-  # Make sure to sync this method with issue_policy.rb
-  def readable_by?(user)
-    if user.can_read_all_resources?
-      true
-    elsif hidden?
-      false
-    elsif project
-      project_level_readable_by?(user)
-    else
-      group_level_readable_by?(user)
-    end
-  end
-
   def hidden?
     author&.banned?
   end
@@ -825,40 +834,6 @@ class Issue < ApplicationRecord
   end
 
   private
-
-  def project_level_readable_by?(user)
-    if !project.issues_enabled?
-      false
-    elsif project.personal? && project.team.owner?(user)
-      true
-    elsif confidential? && !assignee_or_author?(user)
-      project.member?(user, Gitlab::Access::PLANNER)
-    elsif project.public? || (project.internal? && !user.external?)
-      project.feature_available?(:issues, user)
-    else
-      project.member?(user)
-    end
-  end
-
-  def group_level_readable_by?(user)
-    # This should never happen as we don't support personal namespace level issues. Just additional safety.
-    return false unless namespace.is_a?(::Group)
-
-    if confidential? && !assignee_or_author?(user)
-      namespace.member?(user, Gitlab::Access::PLANNER)
-    else
-      namespace.member?(user)
-    end
-  end
-
-  def access_allowed_for_project_with_external_authorization?(user, project)
-    return false if project.blank?
-
-    ::Gitlab::ExternalAuthorization.access_allowed?(
-      user,
-      project.external_authorization_classification_label
-    )
-  end
 
   def due_date_after_start_date
     return unless start_date.present? && due_date.present?

@@ -15,7 +15,7 @@ title: Ruby gems in the package registry
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/52147) in GitLab 13.9 [with a flag](../../../administration/feature_flags.md) named `rubygem_packages`. Disabled by default. This feature is an [experiment](../../../policy/development_stages_support.md).
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/52147) in GitLab 13.9 [with a flag](../../../administration/feature_flags/_index.md) named `rubygem_packages`. Disabled by default. This feature is an [experiment](../../../policy/development_stages_support.md).
 
 {{< /history >}}
 
@@ -62,7 +62,7 @@ To authenticate with an access token:
 In this example:
 
 - `<token>` must be the token value of either your personal access token or deploy token.
-- `<project_id>` is displayed on the [project overview page](../../project/working_with_projects.md#access-a-project-by-using-the-project-id).
+- `<project_id>` is displayed on the [project overview page](../../project/working_with_projects.md#find-the-project-id).
 
 {{< /tab >}}
 

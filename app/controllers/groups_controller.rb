@@ -20,12 +20,12 @@ class GroupsController < Groups::ApplicationController
   before_action :group, except: [:index, :new, :create]
 
   # Authorize
-  before_action :authorize_admin_group!, only: [:update, :projects, :transfer, :export, :download_export]
+  before_action :authorize_admin_group!, only: [:update, :transfer, :export, :download_export]
   before_action :authorize_view_edit_page!, only: :edit
   before_action :authorize_remove_group!, only: [:destroy, :restore]
   before_action :authorize_create_group!, only: [:new]
 
-  before_action :group_projects, only: [:projects, :activity, :issues, :merge_requests]
+  before_action :group_projects, only: [:activity, :issues, :merge_requests]
   before_action :event_filter, only: [:activity]
 
   before_action :user_actions, only: [:show]
@@ -33,21 +33,16 @@ class GroupsController < Groups::ApplicationController
   before_action :check_export_rate_limit!, only: [:export, :download_export]
 
   before_action only: :issues do
-    push_frontend_feature_flag(:frontend_caching, group)
     push_force_frontend_feature_flag(:work_items, group.work_items_feature_flag_enabled?)
     push_force_frontend_feature_flag(:work_items_beta, group.work_items_beta_feature_flag_enabled?)
     push_force_frontend_feature_flag(:work_items_alpha, group.work_items_alpha_feature_flag_enabled?)
     push_frontend_feature_flag(:issues_grid_view)
+    push_frontend_feature_flag(:issues_list_create_modal, group)
     push_frontend_feature_flag(:issues_list_drawer, group)
     push_frontend_feature_flag(:work_item_status_feature_flag, group&.root_ancestor)
-    push_force_frontend_feature_flag(:namespace_level_work_items, group.namespace_work_items_enabled?)
   end
 
-  before_action only: :merge_requests do
-    push_frontend_feature_flag(:mr_approved_filter, type: :ops)
-  end
-
-  skip_cross_project_access_check :index, :new, :create, :edit, :update, :destroy, :projects
+  skip_cross_project_access_check :index, :new, :create, :edit, :update, :destroy
   # When loading show as an atom feed, we render events that could leak cross
   # project information
   skip_cross_project_access_check :show, if: -> { request.format.html? }
@@ -82,7 +77,7 @@ class GroupsController < Groups::ApplicationController
   def create
     response = Groups::CreateService.new(
       current_user,
-      group_params.merge(organization_id: Current.organization&.id)
+      group_params.merge(organization_id: Current.organization.id)
     ).execute
     @group = response[:group]
 
@@ -152,10 +147,6 @@ class GroupsController < Groups::ApplicationController
 
   def merge_requests; end
 
-  def projects
-    @projects = @group.projects.with_statistics.page(params[:page])
-  end
-
   def update
     if Groups::UpdateService.new(@group, current_user, group_params).execute
 
@@ -181,8 +172,10 @@ class GroupsController < Groups::ApplicationController
   end
 
   def destroy
-    return destroy_immediately unless group.adjourned_deletion?
-    return destroy_immediately if group.marked_for_deletion? && ::Gitlab::Utils.to_boolean(params[:permanently_remove])
+    if group.self_deletion_scheduled? &&
+        ::Gitlab::Utils.to_boolean(params.permit(:permanently_remove)[:permanently_remove])
+      return destroy_immediately
+    end
 
     result = ::Groups::MarkForDeletionService.new(group, current_user).execute
 
@@ -197,8 +190,7 @@ class GroupsController < Groups::ApplicationController
             message: format(
               _("'%{group_name}' has been scheduled for deletion and will be deleted on %{date}."),
               group_name: group.name,
-              # FIXME: Replace `group.marked_for_deletion_on` with `group` after https://gitlab.com/gitlab-org/gitlab/-/work_items/527085
-              date: helpers.permanent_deletion_date_formatted(group.marked_for_deletion_on)
+              date: helpers.permanent_deletion_date_formatted(group)
             )
           }
         end
@@ -217,7 +209,7 @@ class GroupsController < Groups::ApplicationController
   end
 
   def restore
-    return render_404 unless group.marked_for_deletion?
+    return render_404 unless group.self_deletion_scheduled?
 
     result = ::Groups::RestoreService.new(group, current_user).execute
 
@@ -329,7 +321,7 @@ class GroupsController < Groups::ApplicationController
   def determine_layout
     if [:new, :create].include?(action_name.to_sym)
       'dashboard'
-    elsif [:edit, :update, :projects].include?(action_name.to_sym)
+    elsif [:edit, :update].include?(action_name.to_sym)
       'group_settings'
     else
       'group'
@@ -369,7 +361,7 @@ class GroupsController < Groups::ApplicationController
   end
 
   def check_export_rate_limit!
-    prefixed_action = "group_#{params[:action]}".to_sym
+    prefixed_action = :"group_#{params[:action]}"
 
     scope = params[:action] == :download_export ? @group : nil
 
@@ -379,14 +371,7 @@ class GroupsController < Groups::ApplicationController
   private
 
   def successful_creation_hooks
-    update_user_setup_for_company
-  end
-
-  def update_user_setup_for_company
-    return if @group.setup_for_company.nil? || current_user.setup_for_company.present?
-
-    Users::UpdateService.new(current_user,
-      { setup_for_company: @group.setup_for_company }.merge(user: current_user)).execute
+    # overwritten in EE
   end
 
   def groups

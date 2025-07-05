@@ -23,6 +23,7 @@ module Gitlab
           current_user_todos: 'Current user todos',
           award_emoji: 'Award emoji',
           linked_items: 'Linked items',
+          linked_resources: 'Linked Resources',
           color: 'Color',
           participants: 'Participants',
           time_tracking: 'Time tracking',
@@ -60,7 +61,9 @@ module Gitlab
             :start_and_due_date,
             :time_tracking,
             :vulnerabilities,
-            [:weight, { editable: true, rollup: false }]
+            :linked_resources,
+            [:weight, { editable: true, rollup: false }],
+            :status
           ],
           incident: [
             :assignees,
@@ -75,6 +78,7 @@ module Gitlab
             :iteration,
             :labels,
             :linked_items,
+            :linked_resources,
             :milestone,
             :notes,
             :notifications,
@@ -118,6 +122,7 @@ module Gitlab
             :iteration,
             :labels,
             :linked_items,
+            :linked_resources,
             :milestone,
             :notes,
             :notifications,
@@ -163,7 +168,6 @@ module Gitlab
             :assignees,
             :award_emoji,
             :color,
-            :crm_contacts,
             :current_user_todos,
             :custom_fields,
             :description,

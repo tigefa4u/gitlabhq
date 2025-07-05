@@ -120,11 +120,11 @@ registry, and copies the image to Google Artifact Registry.
 
    In the example, replace the following:
 
-   - <var><code>LOCATION</code></var>: the
+   - `LOCATION`: the
      Google Cloud region where you created your Google Artifact Registry repository.
-   - <var><code>PROJECT</code></var>: your
+   - `PROJECT`: your
      Google Cloud project ID.
-   - <var><code>REPOSITORY</code></var>: the
+   - `REPOSITORY`: the
      repository ID of your Google Artifact Registry repository.
 
    ```yaml
@@ -215,9 +215,9 @@ Replace the following:
 
 **Caution**: Deleting a project has the following effects:
 
-- **Everything in the project is deleted.** If you used an existing project for the tasks in this document, when
+- **Everything in the project is deleted**. If you used an existing project for the tasks in this document, when
   you delete it, you also delete any other work you've done in the project.
-- **Custom project IDs are lost.** When you created this project, you might have created a custom project ID that
+- **Custom project IDs are lost**. When you created this project, you might have created a custom project ID that
   you want to use in the future. To preserve the URLs that use the project ID, such as an appspot.com URL, delete selected
   resources inside the project instead of deleting the whole project.
 

@@ -13,7 +13,7 @@ describe QA::Support::Formatters::AllureMetadataFormatter do
     )
   end
 
-  # rubocop:disable RSpec/VerifiedDoubles
+  # rubocop:disable RSpec/VerifiedDoubles -- verified double complains about missing dynamically added methods
   let(:rspec_example) do
     double(
       RSpec::Core::Example,
@@ -52,7 +52,7 @@ describe QA::Support::Formatters::AllureMetadataFormatter do
       expect(rspec_example).to have_received(:add_link).with(name: "Job(#{ci_job})", url: ci_job_url)
       expect(rspec_example).to have_received(:issue).with(
         'Failure issues',
-        'https://gitlab.com/gitlab-org/gitlab/-/issues?sort=updated_desc&scope=all&state=opened&' \
+        'https://gitlab.com/gitlab-org/quality/e2e-test-issues/-/issues?sort=updated_desc&scope=all&state=opened&' \
           'search=spec.rb&search=Some%20failure%0Amessage'
       )
     end
@@ -71,45 +71,9 @@ describe QA::Support::Formatters::AllureMetadataFormatter do
 
         expect(rspec_example).to have_received(:issue).with(
           'Failure issues',
-          'https://gitlab.com/gitlab-org/gitlab/-/issues?sort=updated_desc&scope=all&state=opened&' \
+          'https://gitlab.com/gitlab-org/quality/e2e-test-issues/-/issues?sort=updated_desc&scope=all&state=opened&' \
             'search=spec.rb&search=Some%20failure%20message'
         )
-      end
-    end
-  end
-
-  context 'with flaky test data', :aggregate_failures do
-    let(:influx_client) { instance_double(InfluxDB2::Client, create_query_api: influx_query_api) }
-    let(:influx_query_api) { instance_double(InfluxDB2::QueryApi, query: data) }
-    let(:data) do
-      [
-        instance_double(
-          InfluxDB2::FluxTable,
-          records: [
-            instance_double(InfluxDB2::FluxRecord, values: { 'status' => 'failed', 'testcase' => 'testcase' }),
-            instance_double(InfluxDB2::FluxRecord, values: { 'status' => 'passed', 'testcase' => 'testcase' })
-          ]
-        )
-      ]
-    end
-
-    before do
-      stub_env('QA_RUN_TYPE', 'test-on-omnibus')
-      stub_env('QA_INFLUXDB_URL', 'url')
-      stub_env('QA_INFLUXDB_TOKEN', 'token')
-
-      allow(InfluxDB2::Client).to receive(:new) { influx_client }
-    end
-
-    context 'with skipped spec' do
-      let(:status) { :pending }
-
-      it 'skips adding flaky test data' do
-        formatter.start(nil)
-        formatter.example_finished(rspec_example_notification)
-
-        expect(rspec_example).not_to have_received(:set_flaky)
-        expect(rspec_example).not_to have_received(:parameter)
       end
     end
   end

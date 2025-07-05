@@ -1,3 +1,4 @@
+import createState from '~/batch_comments/stores/modules/batch_comments/state';
 import * as types from '../stores/modules/batch_comments/mutation_types';
 
 const processDraft = (draft) => ({
@@ -67,12 +68,12 @@ export default {
   [types.CLEAR_DRAFTS]() {
     this.drafts = [];
   },
-  [types.SET_REVIEW_BAR_RENDERED]() {
-    this.reviewBarRendered = true;
-  },
   [types.SET_DRAFT_EDITING]({ draftId, isEditing }) {
     const draftIndex = this.drafts.findIndex((draft) => draft.id === draftId);
     const draft = this.drafts[draftIndex];
     this.drafts.splice(draftIndex, 1, { ...draft, isEditing });
+  },
+  reset() {
+    Object.assign(this, createState());
   },
 };

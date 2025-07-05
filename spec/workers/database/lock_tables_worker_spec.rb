@@ -64,7 +64,7 @@ RSpec.describe Database::LockTablesWorker, feature_category: :cell do
         context 'when the table is not locked for writes' do
           where(:database_name, :tables) do
             :ci   | %w[users namespaces]
-            :main | %w[ci_pipelines ci_builds]
+            :main | %w[p_ci_pipelines p_ci_builds]
           end
 
           with_them do
@@ -89,17 +89,17 @@ RSpec.describe Database::LockTablesWorker, feature_category: :cell do
           context 'when the table is already locked for writes' do
             where(:database_name, :tables) do
               :ci   | %w[users namespaces]
-              :main | %w[ci_pipelines ci_builds]
+              :main | %w[p_ci_pipelines p_ci_builds]
             end
 
             with_them do
-              it 'skips locking the tables on the corresponding database' do
+              it 'returns as locked for the previously locked tables on the corresponding database' do
                 tables.each do |table_name|
                   lock_table(database_name, table_name)
                 end
 
                 expected_log_results = tables.map do |table_name|
-                  { action: 'skipped', database: database_name, dry_run: false, table: table_name }
+                  { action: 'locked', database: database_name, dry_run: false, table: table_name }
                 end
                 expect(worker).to receive(:log_extra_metadata_on_done).with(:performed_actions, expected_log_results)
 

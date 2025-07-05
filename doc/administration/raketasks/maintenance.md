@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Maintenance Rake tasks
 ---
@@ -155,6 +155,18 @@ To run `gitlab:check`, run:
   bundle exec rake gitlab:check RAILS_ENV=production
   ```
 
+- Kubernetes installations:
+
+  ```shell
+  kubectl exec -it <toolbox-pod-name> -- sudo gitlab-rake gitlab:check
+  ```
+
+  {{< alert type="note" >}}
+  Due to the specific architecture of Helm-based GitLab installations, the output may contain
+  false negatives for connectivity verification to `gitlab-shell`, Sidekiq, and `systemd`-related files.
+  These reported failures are expected and do not indicate actual issues, disregard them when reviewing diagnostic results.
+  {{< /alert >}}
+  
 Use `SANITIZE=true` for `gitlab:check` if you want to omit project names from the output.
 
 Example output:
@@ -360,7 +372,7 @@ database: gitlabhq_production
 ```
 
 Starting with GitLab 17.1, migrations are executed in an
-[order](../../development/database/migration_ordering.md#171-logic) that conforms to the GitLab release cadence.
+order that conforms to the GitLab release cadence.
 
 ## Run incomplete database migrations
 
@@ -383,20 +395,21 @@ status in the output of the `sudo gitlab-rake db:migrate:status` command.
    ```
 
 Starting with GitLab 17.1, migrations are executed in an
-[order](../../development/database/migration_ordering.md#171-logic) that conforms to the GitLab release cadence.
+order that conforms to the GitLab release cadence.
 
 ## Rebuild database indexes
 
-{{< details >}}
+{{< history >}}
 
-- Status: Experiment
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/42705) in GitLab 13.5 [with a flag](../../administration/feature_flags/_index.md) named `database_reindexing`. Disabled by default.
+- [Enabled on GitLab.com](https://gitlab.com/groups/gitlab-org/-/epics/3989) in GitLab 13.9.
+- [Enabled on GitLab Self-Managed and GitLab Dedicated](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/188548) in GitLab 18.0.
 
-{{< /details >}}
+{{< /history >}}
 
 {{< alert type="warning" >}}
 
-This feature is experimental, and isn't enabled by default. Use caution when
-running in a production environment, and run during off-peak times.
+Use with caution when running in a production environment, and run during off-peak times.
 
 {{< /alert >}}
 
@@ -410,7 +423,6 @@ Prerequisites:
 
 - This feature requires PostgreSQL 12 or later.
 - These index types are **not supported**: expression indexes and indexes used for constraint exclusion.
-- Not enabled by default. A feature flag must be set for this task to work: `Feature.enable("database_reindexing")`
 
 ### Run reindexing
 
@@ -435,11 +447,11 @@ sudo gitlab-rails console
 Then customize the configuration:
 
 ```ruby
-# Lower minimum index size to 100 MB (default is 1GB)
-ApplicationSetting.current.update!(database_reindexing: { reindexing_minimum_index_size: 100.megabytes })
+# Lower minimum index size to 100 MB (default is 1 GB)
+Gitlab::Database::Reindexing.minimum_index_size!(100.megabytes)
 
 # Change minimum bloat threshold to 30% (default is 20%, there is no benefit from setting it lower)
-ApplicationSetting.current.update!(database_reindexing: { reindexing_minimum_relative_bloat_size: 0.3 })
+Gitlab::Database::Reindexing.minimum_relative_bloat_size!(0.3)
 ```
 
 ### Automated reindexing
@@ -486,7 +498,7 @@ For Kubernetes deployments, you can create a similar schedule using the CronJob 
 
 - Rebuilding database indexes is a disk-intensive task, so you should perform the
   task during off-peak hours. Running the task during peak hours can lead to
-  _increased_ bloat, and can also cause certain queries to perform slowly.
+  increased bloat, and can also cause certain queries to perform slowly.
 - The task requires free disk space for the index being restored. The created
   indexes are appended with `_ccnew`. If the reindexing task fails, re-running the
   task cleans up the temporary indexes.
@@ -540,7 +552,8 @@ gitlab-rake gitlab:db:schema_checker:run
 {{< /history >}}
 
 The `gitlab:db:sos` command gathers configuration, performance, and diagnostic data about your GitLab
-database to help you troubleshoot issues. Where you run this command depends on your configuration:
+database to help you troubleshoot issues. Where you run this command depends on your configuration. Make sure
+to run this command relative to where GitLab is installed `(/gitlab)`.
 
 - **Scaled GitLab**: on your Puma or Sidekiq server.
 - **Cloud native install**: on the toolbox pod.
@@ -548,10 +561,10 @@ database to help you troubleshoot issues. Where you run this command depends on 
 
 Modify the command as needed:
 
-- **Default path** - To run the command with the default folder path (`tmp/sos.zip`), run `gitlab-rake gitlab:db:sos`.
-- **Custom path** - To change the folder path, run `gitlab-rake gitlab:db:sos["custom/path/to/folder"]`.
+- **Default path** - To run the command with the default file path (`/var/opt/gitlab/gitlab-rails/tmp/sos.zip`), run `gitlab-rake gitlab:db:sos`.
+- **Custom path** - To change the file path, run `gitlab-rake gitlab:db:sos["/absolute/custom/path/to/file.zip"]`.
 - **Zsh users** - If you have not modified your Zsh configuration, you must add quotation marks
-  around the entire command, like this: `gitlab-rake "gitlab:db:sos[custom/path/to/folder]"`
+  around the entire command, like this: `gitlab-rake "gitlab:db:sos[/absolute/custom/path/to/file.zip]"`
 
 The Rake task runs for five minutes. It creates a compressed folder in the path you specify.
 The compressed folder contains a large number of files.
@@ -559,9 +572,9 @@ The compressed folder contains a large number of files.
 ### Enable optional query statistics data
 
 The `gitlab:db:sos` Rake task can also gather data for troubleshooting slow queries using the
-[`pg_stat_statements` extension](https://www.postgresql.org/docs/current/pgstatstatements.html).
+[`pg_stat_statements` extension](https://www.postgresql.org/docs/16/pgstatstatements.html).
 
-Enabling this extension is optional, and requires restarting PostgreSQL and GitLab. This data is 
+Enabling this extension is optional, and requires restarting PostgreSQL and GitLab. This data is
 likely required for troubleshooting GitLab performance issues caused by slow database queries.
 
 Prerequisites:
@@ -648,7 +661,7 @@ Prerequisites:
    SELECT * FROM pg_stat_statements LIMIT 10;
    ```
 
-## Check the database for deduplicate CI/CD tags
+## Check the database for duplicate CI/CD tags
 
 {{< history >}}
 
@@ -666,6 +679,90 @@ sudo gitlab-rake gitlab:db:deduplicate_tags
 ```
 
 To run this command in dry-run mode, set the environment variable `DRY_RUN=true`.
+
+## Detect PostgreSQL collation version mismatches
+
+{{< history >}}
+
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/195450) in GitLab 18.2.
+
+{{< /history >}}
+
+The PostgreSQL collation checker detects collation version mismatches between the database and
+operating system that can cause index corruption. PostgreSQL uses the operating
+system's `glibc` library for string collation (sorting and comparison rules).
+Run this task after operating system upgrades that change the underlying `glibc` library.
+
+Prerequisites:
+
+- PostgreSQL 13 or later.
+
+To check for PostgreSQL collation mismatches in all databases:
+
+```shell
+sudo gitlab-rake gitlab:db:collation_checker
+```
+
+To check a specific database:
+
+```shell
+# Check main database
+sudo gitlab-rake gitlab:db:collation_checker:main
+
+# Check CI database
+sudo gitlab-rake gitlab:db:collation_checker:ci
+```
+
+### Example output
+
+When no issues are found:
+
+```plaintext
+Checking for PostgreSQL collation mismatches on main database...
+No collation mismatches detected on main.
+```
+
+If mismatches are detected, the task provides remediation steps to fix the affected indexes.
+
+Example output with mismatches:
+
+```plaintext
+Checking for PostgreSQL collation mismatches on main database...
+⚠️ COLLATION MISMATCHES DETECTED on main database!
+2 collation(s) have version mismatches:
+  - en_US.utf8: stored=428.1, actual=513.1
+  - es_ES.utf8: stored=428.1, actual=513.1
+
+Affected indexes that need to be rebuilt:
+  - index_projects_on_name (btree) on table projects
+    • Affected columns: name
+    • Type: UNIQUE
+
+REMEDIATION STEPS:
+1. Put GitLab into maintenance mode
+2. Run the following SQL commands:
+
+# Step 1: Check for duplicate entries in unique indexes
+SELECT name, COUNT(*), ARRAY_AGG(id) FROM projects GROUP BY name HAVING COUNT(*) > 1 LIMIT 1;
+
+# If duplicates exist, you may need to use gitlab:db:deduplicate_tags or similar tasks
+# to fix duplicate entries before rebuilding unique indexes.
+
+# Step 2: Rebuild affected indexes
+# Option A: Rebuild individual indexes with minimal downtime:
+REINDEX INDEX CONCURRENTLY index_projects_on_name;
+
+# Option B: Alternatively, rebuild all indexes at once (requires downtime):
+REINDEX DATABASE main;
+
+# Step 3: Refresh collation versions
+ALTER COLLATION "en_US.utf8" REFRESH VERSION;
+ALTER COLLATION "es_ES.utf8" REFRESH VERSION;
+
+3. Take GitLab out of maintenance mode
+```
+
+For more information about PostgreSQL collation issues and how they affect database indexes, see the [PostgreSQL upgrading OS documentation](../postgresql/upgrading_os.md).
 
 ## Troubleshooting
 

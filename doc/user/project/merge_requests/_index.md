@@ -4,6 +4,7 @@ group: Code Review
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: Propose, review, and collaborate on changes to a project.
 title: Merge requests
+description: Code review, collaboration, branch merging, and commits.
 ---
 
 {{< details >}}
@@ -283,8 +284,8 @@ the code added or changed in another merge request. To support keeping individua
 merge requests small, GitLab can update up to four open merge requests when their
 target branch merges into `main`. For example:
 
-- **Merge request 1**: merge `feature-alpha` into `main`.
-- **Merge request 2**: merge `feature-beta` into `feature-alpha`.
+- Merge request 1: merge `feature-alpha` into `main`.
+- Merge request 2: merge `feature-beta` into `feature-alpha`.
 
 If these merge requests are open at the same time, and merge request 1 (`feature-alpha`)
 merges into `main`, GitLab updates the destination of merge request 2 from `feature-alpha`
@@ -335,8 +336,7 @@ For a web developer writing a webpage for your company's website:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/115383) in GitLab 15.11 [with a flag](../../../administration/feature_flags.md) named `mr_activity_filters`. Disabled by default.
-- [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/387070) in GitLab 16.0.
+- Feature flag `mr_activity_filters` [enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/387070) in GitLab 16.0.
 - [Enabled on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/126998) in GitLab 16.3 by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/132355) in GitLab 16.5. Feature flag `mr_activity_filters` removed.
 - Filtering bot comments [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/128473) in GitLab 16.9.
@@ -377,17 +377,17 @@ sort order by clicking the sort button on the right.
 When you want to finish a conversation in a merge request,
 [resolve a thread](../../discussions/_index.md#resolve-a-thread).
 
-GitLab shows the number of unresolved threads in the top right corner of a
-merge request, like this: **7 unresolved threads**.
+GitLab shows the number of open threads in the top right corner of a
+merge request, like this: `7 open threads`.
 
-### Move all unresolved threads in a merge request to an issue
+### Move all open threads in a merge request to an issue
 
-If you have multiple unresolved threads in a merge request, you can
+If you have multiple open threads in a merge request, you can
 create an issue to resolve them separately:
 
 1. On the left sidebar, select **Search or go to** and find your project.
 1. Select **Code > Merge requests** and find your merge request.
-1. In the merge request, in the top right, find the **Unresolved threads**
+1. In the merge request, in the top right, find the **Open threads**
    dropdown list, and select **Thread options** ({{< icon name="ellipsis_v" >}}).
 1. Select **Resolve all with new issue**.
 1. Fill out the fields in the new issue, and select **Create issue**.
@@ -395,9 +395,9 @@ create an issue to resolve them separately:
 GitLab marks all threads as resolved, and adds a link from the merge request to
 the newly created issue.
 
-### Move one unresolved thread in a merge request to an issue
+### Move one open thread in a merge request to an issue
 
-If you have one specific unresolved thread in a merge request, you can
+If you have one specific open thread in a merge request, you can
 create an issue to resolve it separately:
 
 1. On the left sidebar, select **Search or go to** and find your project.
@@ -412,9 +412,9 @@ the newly created issue.
 
 ### Prevent merge unless all threads are resolved
 
-You can prevent merge requests from merging while threads remain unresolved.
-When you enable this setting, the **Unresolved threads** counter in a merge request
-is shown in orange while at least one thread remains unresolved.
+You can prevent merge requests from merging while threads remain open.
+When you enable this setting, the **Open threads** counter in a merge request
+is shown in orange while at least one thread remains open.
 
 1. On the left sidebar, select **Search or go to** and find your project.
 1. Select **Settings > Merge requests**.
@@ -446,14 +446,14 @@ Threads on lines that don't change and top-level resolvable threads are not reso
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/132678) in GitLab 16.5 [with a flag](../../../administration/feature_flags.md) named `notifications_todos_buttons`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/132678) in GitLab 16.5 [with a flag](../../../administration/feature_flags/_index.md) named `notifications_todos_buttons`. Disabled by default.
 - [Issues, incidents](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/133474), and [epics](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/133881) also updated.
 
 {{< /history >}}
 
 {{< alert type="flag" >}}
 
-On GitLab Self-Managed, by default this feature is not available. To make it available, an administrator can [enable the feature flag](../../../administration/feature_flags.md) named `notifications_todos_buttons`.
+On GitLab Self-Managed, by default this feature is not available. To make it available, an administrator can [enable the feature flag](../../../administration/feature_flags/_index.md) named `notifications_todos_buttons`.
 On GitLab.com and GitLab Dedicated, this feature is not available.
 
 {{< /alert >}}

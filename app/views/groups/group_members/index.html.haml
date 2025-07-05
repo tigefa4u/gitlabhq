@@ -4,7 +4,6 @@
 - content_for :hide_invite_members_button, true
 
 - if can_admin_group_member?(@group)
-  = render_if_exists 'shared/promotions/promote_planner_role'
   = render_if_exists 'groups/group_members/link_to_pending_members'
   = render ::Layouts::PageHeadingComponent.new(_('Group members')) do |c|
     - c.with_description do
@@ -13,11 +12,12 @@
         .gl-w-full.order-md-1
         = brand_member_guidelines
     - c.with_actions do
-      .js-invite-group-trigger{ data: { classes: 'md:gl-w-auto gl-w-full', display_text: _('Invite a group') } }
-      .js-invite-members-trigger{ data: { variant: 'confirm',
-        classes: 'md:gl-w-auto gl-w-full',
-        trigger_source: 'group_members_page',
-        display_text: _('Invite members') } }
+      - if can_invite_group_member?(@group)
+        .js-invite-group-trigger{ data: { classes: 'md:gl-w-auto gl-w-full', display_text: _('Invite a group') } }
+        .js-invite-members-trigger{ data: { variant: 'confirm',
+          classes: 'md:gl-w-auto gl-w-full',
+          trigger_source: 'group_members_page',
+          display_text: _('Invite members') } }
 
 = render 'groups/invite_groups_modal', group: @group, reload_page_on_submit: true
 

@@ -8,7 +8,6 @@ RSpec.describe Ci::Catalog::Resources::Component, type: :model, feature_category
   it { is_expected.to belong_to(:catalog_resource).class_name('Ci::Catalog::Resource') }
   it { is_expected.to belong_to(:project) }
   it { is_expected.to belong_to(:version).class_name('Ci::Catalog::Resources::Version') }
-  it { is_expected.to have_many(:usages).class_name('Ci::Catalog::Resources::Components::Usage') }
   it { is_expected.to have_many(:last_usages).class_name('Ci::Catalog::Resources::Components::LastUsage') }
 
   it_behaves_like 'a BulkInsertSafe model', described_class do
@@ -76,7 +75,7 @@ RSpec.describe Ci::Catalog::Resources::Component, type: :model, feature_category
                         "#{component.version.name}"
 
         expect(component.include_path).to eq(expected_path)
-        expect(Gitlab.config.gitlab_ci.server_fqdn).not_to be_nil
+        expect(Gitlab.config.gitlab.server_fqdn).not_to be_nil
       end
     end
   end

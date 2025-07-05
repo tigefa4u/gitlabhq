@@ -3,7 +3,7 @@ type: reference, howto
 stage: Application Security Testing
 group: Dynamic Analysis
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-title: Troubleshooting
+title: Troubleshooting DAST scans
 ---
 
 The following troubleshooting scenarios have been collected from customer support cases. If you
@@ -167,7 +167,7 @@ The modules that can be configured for logging are as follows:
 
 As a simpler alternative to configuring log modules with `DAST_LOG_FILE_CONFIG`, you can set `SECURE_LOG_LEVEL`:
 
-- To any of the [supported log levels](#log-levels). 
+- To any of the [supported log levels](#log-levels).
   When you do this, the specified level becomes the default log level in the log file for all modules.
 - To `debug` or `trace` to enable the [auth report](configuration/authentication.md#configure-the-authentication-report).
 - To `trace` to enable [DevTools logging](#chromium-devtools-logging).
@@ -183,7 +183,7 @@ dast:
     SECURE_LOG_LEVEL: "trace"
     # is equivalent to:
     # DAST_LOG_FILE_CONFIG: "loglevel:trace"
-    # DAST_LOG_DEVTOOLS_CONFIG: "Default:messageAndBody,truncate:2000" 
+    # DAST_LOG_DEVTOOLS_CONFIG: "Default:messageAndBody,truncate:2000"
     # DAST_AUTH_REPORT: "true"
 ```
 
@@ -329,7 +329,7 @@ dast:
 
 #### Try disabling the cache
 
-If DAST incorrectly caches your application pages, it can lead to DAST being unable to properly crawl your application. If you see that some pages are unexpectedly not found by the crawler, try setting `DAST_USE_CACHE: "false"` variable to see if that helps. Note that it can significantly decrease the performance of the scan. Make sure to only disable cache when absolutely necessary. If you have a subscription, [create a support ticket](https://about.gitlab.com/support/) to investigate why cache is preventing your website from being crawled.
+If DAST incorrectly caches your application pages, it can lead to DAST being unable to properly crawl your application. If you see that some pages are unexpectedly not found by the crawler, try setting `DAST_USE_CACHE: "false"` variable to see if that helps. This can significantly decrease the performance of the scan. Make sure to only disable cache when absolutely necessary. If you have a subscription, [create a support ticket](https://about.gitlab.com/support/) to investigate why cache is preventing your website from being crawled.
 
 #### Specifying target paths directly
 

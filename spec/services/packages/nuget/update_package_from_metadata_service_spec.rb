@@ -57,8 +57,8 @@ RSpec.describe Packages::Nuget::UpdatePackageFromMetadataService, :clean_gitlab_
           expect(service).to receive(:try_obtain_lease).and_call_original
 
           expect { subject }
-            .to change { ::Packages::Package.count }.by(0)
-            .and change { Packages::DependencyLink.count }.by(0)
+            .to not_change { ::Packages::Package.count }
+            .and not_change { Packages::DependencyLink.count }
           expect(package_file.reload.file_name).not_to eq(package_file_name)
           expect(package_file.package).to be_processing
           expect(package_file.package.reload.name).not_to eq(package_name)
@@ -99,9 +99,9 @@ RSpec.describe Packages::Nuget::UpdatePackageFromMetadataService, :clean_gitlab_
 
         expect { subject }
           .to change { ::Packages::Package.count }.by(-1)
-          .and change { Packages::Dependency.count }.by(0)
-          .and change { Packages::DependencyLink.count }.by(0)
-          .and change { Packages::Nuget::DependencyLinkMetadatum.count }.by(0)
+          .and not_change { Packages::Dependency.count }
+          .and not_change { Packages::DependencyLink.count }
+          .and not_change { Packages::Nuget::DependencyLinkMetadatum.count }
           .and change { ::Packages::Nuget::Metadatum.count }.by(1)
           .and change { existing_package.build_infos.count }.by(1)
         expect(package_file.reload.file_name).to eq(package_file_name)
@@ -278,10 +278,10 @@ RSpec.describe Packages::Nuget::UpdatePackageFromMetadataService, :clean_gitlab_
 
           expect { subject }
             .to change { ::Packages::Package.count }.by(-1)
-            .and change { Packages::Dependency.count }.by(0)
-            .and change { Packages::DependencyLink.count }.by(0)
-            .and change { Packages::Nuget::DependencyLinkMetadatum.count }.by(0)
-            .and change { ::Packages::Nuget::Metadatum.count }.by(0)
+            .and not_change { Packages::Dependency.count }
+            .and not_change { Packages::DependencyLink.count }
+            .and not_change { Packages::Nuget::DependencyLinkMetadatum.count }
+            .and not_change { ::Packages::Nuget::Metadatum.count }
             .and change { existing_package.nuget_symbols.count }.by(1)
           expect(package_file.reload.file_name).to eq(package_file_name)
           expect(package_file.package).to eq(existing_package)
@@ -340,6 +340,90 @@ RSpec.describe Packages::Nuget::UpdatePackageFromMetadataService, :clean_gitlab_
       end
 
       it_behaves_like 'raising an', described_class::ZipError, with_message: 'Could not open the .nupkg file'
+    end
+
+    context 'with package protection rule for different roles and package_name_patterns', :enable_admin_mode do
+      let!(:package) { create(:nuget_package, :processing, :with_symbol_package, :with_build) }
+
+      let(:package_protection_rule) do
+        create(:package_protection_rule, package_type: :nuget, project: package.project)
+      end
+
+      let(:project_developer) { create(:user, developer_of: package.project) }
+      let(:project_maintainer) { create(:user, maintainer_of: package.project) }
+      let(:project_owner) { package.project.owner }
+      let(:instance_admin) { create(:admin) }
+      let(:project_deploy_token) { create(:deploy_token, projects: [package.project], write_package_registry: true) }
+
+      let(:service) { described_class.new(package_file, package_zip_file, package_publishing_actor) }
+
+      before do
+        package_protection_rule.update!(
+          package_name_pattern: package_name_pattern,
+          minimum_access_level_for_push: minimum_access_level_for_push
+        )
+
+        package.update!(creator: package_creator)
+      end
+
+      shared_examples 'updates package and package file and creates metadatum' do
+        it 'updates package and package file and creates metadatum', :aggregate_failures do
+          expect { subject }
+            .to not_change { ::Packages::Package.count }
+            .and change { Packages::Dependency.count }.by(1)
+            .and change { Packages::DependencyLink.count }.by(1)
+            .and change { ::Packages::Nuget::Metadatum.count }.by(1)
+
+          expect(package.reload.name).to eq(package_name)
+          expect(package.version).to eq(package_version)
+          expect(package).to be_default
+          expect(package_file.reload.file_name).to eq(package_file_name)
+          # hard reset needed to properly reload package_file.file
+          expect(Packages::PackageFile.find(package_file.id).file.size).not_to eq 0
+        end
+      end
+
+      shared_examples 'protected package' do
+        it_behaves_like 'raising an', described_class::ProtectedPackageError, with_message: "Package 'DummyProject.DummyPackage' with version '1.0.0' is protected"
+
+        context 'when feature flag :packages_protected_packages_nuget is disabled' do
+          before do
+            stub_feature_flags(packages_protected_packages_nuget: false)
+          end
+
+          it_behaves_like 'updates package and package file and creates metadatum'
+        end
+      end
+
+      where(:package_name_pattern, :minimum_access_level_for_push, :package_creator, :package_publishing_actor, :shared_examples_name) do
+        ref(:package_name)               | :maintainer | ref(:project_developer)  | ref(:project_developer)    | 'protected package'
+        ref(:package_name)               | :maintainer | ref(:project_maintainer) | ref(:project_maintainer)   | 'updates package and package file and creates metadatum'
+        ref(:package_name)               | :maintainer | ref(:project_owner)      | ref(:project_owner)        | 'updates package and package file and creates metadatum'
+        ref(:package_name)               | :maintainer | ref(:instance_admin)     | ref(:instance_admin)       | 'updates package and package file and creates metadatum'
+        ref(:package_name)               | :maintainer | nil                      | ref(:project_deploy_token) | 'protected package'
+        ref(:package_name)               | :maintainer | nil                      | nil                        | 'protected package'
+
+        ref(:package_name)               | :owner      | ref(:project_maintainer) | ref(:project_maintainer)   | 'protected package'
+        ref(:package_name)               | :owner      | ref(:project_owner)      | ref(:project_owner)        | 'updates package and package file and creates metadatum'
+        ref(:package_name)               | :owner      | ref(:instance_admin)     | ref(:instance_admin)       | 'updates package and package file and creates metadatum'
+        ref(:package_name)               | :owner      | nil                      | ref(:project_deploy_token) | 'protected package'
+        ref(:package_name)               | :owner      | nil                      | nil                        | 'protected package'
+
+        ref(:package_name)               | :admin      | ref(:project_owner)      | ref(:project_owner)        | 'protected package'
+        ref(:package_name)               | :admin      | ref(:instance_admin)     | ref(:instance_admin)       | 'updates package and package file and creates metadatum'
+        ref(:package_name)               | :admin      | nil                      | ref(:project_deploy_token) | 'protected package'
+        ref(:package_name)               | :admin      | nil                      | nil                        | 'protected package'
+
+        lazy { "Other.#{package_name}" } | :admin      | nil                      | nil                        | 'updates package and package file and creates metadatum'
+        lazy { "Other.#{package_name}" } | :admin      | nil                      | ref(:project_deploy_token) | 'updates package and package file and creates metadatum'
+        lazy { "Other.#{package_name}" } | :admin      | ref(:project_owner)      | ref(:project_owner)        | 'updates package and package file and creates metadatum'
+        lazy { "Other.#{package_name}" } | :maintainer | nil                      | ref(:project_deploy_token) | 'updates package and package file and creates metadatum'
+        lazy { "Other.#{package_name}" } | :maintainer | ref(:project_owner)      | ref(:project_owner)        | 'updates package and package file and creates metadatum'
+      end
+
+      with_them do
+        it_behaves_like params[:shared_examples_name]
+      end
     end
   end
 end

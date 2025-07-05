@@ -42,11 +42,11 @@ creation.
 
 We are interested in datasets that show the following characteristics:
 
-- **Size of the dataset:** they are considerably large.
-- **Access methods:** we can filter the vast majority of queries accessing the dataset
+- **Size of the dataset**: they are considerably large.
+- **Access methods**: we can filter the vast majority of queries accessing the dataset
   by a time related dimension or a categorical dimension with time decay effects.
-- **Immutability:** the time-decay status does not change.
-- **Retention:** whether we want to keep the old data or not, or whether old
+- **Immutability**: the time-decay status does not change.
+- **Retention**: whether we want to keep the old data or not, or whether old
   data should remain accessible by users through the application.
 
 ### Size of the dataset
@@ -126,7 +126,7 @@ such as CI pipelines that failed more than 6 months ago.
 
 This is the acceptable best practice for addressing time-decay data from a pure database perspective.
 You can find more information on table partitioning for PostgreSQL in the
-[documentation page for table partitioning](https://www.postgresql.org/docs/12/ddl-partitioning.html).
+[documentation page for table partitioning](https://www.postgresql.org/docs/16/ddl-partitioning.html).
 
 Partitioning by date intervals (for example, month, year) allows us to create much smaller tables
 (partitions) for each date interval and only access the most recent partitions for any
@@ -166,7 +166,7 @@ we can safely keep the 7 latest partitions at all times (current month and 6 mon
 That means that we can have a worker dropping the 8th oldest partition at the start of each month.
 
 Moving partitions to cheaper storage inside the same database is relatively simple in PostgreSQL
-through the use of [tablespaces](https://www.postgresql.org/docs/12/manage-ag-tablespaces.html).
+through the use of [tablespaces](https://www.postgresql.org/docs/16/manage-ag-tablespaces.html).
 It is possible to specify a tablespace and storage parameters for each partition separately, so the
 approach in this case would be to:
 
@@ -291,7 +291,7 @@ The process required follows:
 
    We are not adding them at the beginning as they are adding overhead to each insert and they
    would slow down the initial backfilling of the table (in this case for more than half a billion
-   records, which can add up significantly). So we create a lightweight, *vanilla* version of the
+   records, which can add up significantly). So we create a lightweight, vanilla version of the
    table, copy all the data and then add any remaining indexes and foreign keys.
 
 1. Swap the base table with partitioned copy: this is when the partitioned table

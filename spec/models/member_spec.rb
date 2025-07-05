@@ -1308,6 +1308,19 @@ RSpec.describe Member, feature_category: :groups_and_projects do
         end
       end
     end
+
+    context 'when after accept request' do
+      let_it_be(:group) { create(:group, require_two_factor_authentication: true) }
+      let_it_be(:member, reload: true) { create(:group_member, :awaiting, source: group) }
+
+      it 'calls updates the two factor requirement' do
+        expect(member.user).to receive(:require_two_factor_authentication_from_group).and_call_original
+
+        member.accept_request(group.first_owner)
+
+        expect(member.user.require_two_factor_authentication_from_group).to be_truthy
+      end
+    end
   end
 
   describe '#decline_invite!' do
@@ -1759,6 +1772,20 @@ RSpec.describe Member, feature_category: :groups_and_projects do
         subject(:create_member) { member }
 
         it_behaves_like 'performs all the common hooks'
+      end
+    end
+
+    context 'when importing' do
+      let(:member) { create(:group_member, source: source, importing: true) }
+
+      it 'does not invoke a notification' do
+        allow(Notify).to receive(:member_access_granted_email).and_call_original
+
+        create_member
+
+        expect(Notify)
+          .not_to have_received(:member_access_granted_email)
+          .with(member.real_source_type, member.id)
       end
     end
   end

@@ -1,6 +1,6 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Plan
+group: Project Management
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Jira development panel
 ---
@@ -25,7 +25,7 @@ For an overview, see [Jira development panel integration](https://www.youtube.co
 
 {{< history >}}
 
-- Ability to delete branches [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/148712) in GitLab 17.1 [with a flag](../../administration/feature_flags.md) named `jira_connect_remove_branches`. Disabled by default.
+- Ability to delete branches [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/148712) in GitLab 17.1 [with a flag](../../administration/feature_flags/_index.md) named `jira_connect_remove_branches`. Disabled by default.
 - Ability to delete branches made [generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/158224) in GitLab 17.2. Feature flag `jira_connect_remove_branches` removed.
 
 {{< /history >}}
@@ -66,12 +66,12 @@ For the [GitLab for Jira Cloud app](connect-app.md), the following information i
 |---------------------------------------------|-------------------------------------------------------|
 | Merge request title or description          | Link to the merge request<br>Link to the deployment<br>Link to the pipeline through the merge request title<br>Link to the pipeline through the merge request description ([introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/390888) in GitLab 15.10)<br>Link to the branch ([introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/354373) in GitLab 15.11)<br>Reviewer information and approval status ([introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/364273) in GitLab 16.5) |
 | Branch name                                 | Link to the branch<br>Link to the deployment          |
-| Commit message                              | Link to the commit<br>Link to the deployment from up to 5,000 commits after the last successful deployment to the environment <sup>1</sup> <sup>2</sup> |
+| Commit message                              | Link to the commit<br>Link to the deployment from up to 2,000 commits after the last successful deployment to the environment <sup>1</sup> <sup>2</sup> |
 | [Jira Smart Commit](#jira-smart-commits)    | Custom comment, logged time, or workflow transition   |
 
-**Footnotes:**
+**Footnotes**:
 
-1. [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/300031) in GitLab 16.2 [with a flag](../../administration/feature_flags.md) named `jira_deployment_issue_keys`. Enabled by default.
+1. [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/300031) in GitLab 16.2 [with a flag](../../administration/feature_flags/_index.md) named `jira_deployment_issue_keys`. Enabled by default.
 1. [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/415025) in GitLab 16.3. Feature flag `jira_deployment_issue_keys` removed.
 
 ## Jira Smart Commits

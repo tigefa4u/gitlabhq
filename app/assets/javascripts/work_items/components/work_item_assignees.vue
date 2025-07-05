@@ -1,6 +1,7 @@
 <script>
 import { GlButton } from '@gitlab/ui';
 import { unionBy } from 'lodash';
+import fuzzaldrinPlus from 'fuzzaldrin-plus';
 import { sortNameAlphabetically, newWorkItemId } from '~/work_items/utils';
 import currentUserQuery from '~/graphql_shared/queries/current_user.query.graphql';
 import usersSearchQuery from '~/graphql_shared/queries/workspace_autocomplete_users.query.graphql';
@@ -12,7 +13,6 @@ import { s__, sprintf, __ } from '~/locale';
 import Tracking from '~/tracking';
 import { ISSUE_MR_CHANGE_ASSIGNEE } from '~/behaviors/shortcuts/keybindings';
 import updateWorkItemMutation from '../graphql/update_work_item.mutation.graphql';
-import updateNewWorkItemMutation from '../graphql/update_new_work_item.mutation.graphql';
 import { i18n, TRACKING_CATEGORY_SHOW } from '../constants';
 
 export default {
@@ -63,11 +63,6 @@ export default {
       type: Array,
       required: false,
       default: () => [],
-    },
-    workItemAuthor: {
-      type: Object,
-      required: false,
-      default: () => ({}),
     },
   },
   data() {
@@ -168,13 +163,24 @@ export default {
           { options: unselectedUsers, text: __('All users'), textSrOnly: true },
         ];
       }
+      const filteredParticipants = fuzzaldrinPlus.filter(
+        // We're storing `name` and `username` as a combined string in
+        // a new key `matcher` as fuzzaldrin-plus doesn't support searching
+        // using multiple keys.
+        this.participants.map((p) => ({ ...p, matcher: `${p.name} ${p.username}` })),
+        this.searchKey,
+        {
+          key: ['matcher'],
+        },
+      );
 
-      return this.users.map((user) => ({
+      return unionBy([...filteredParticipants, ...this.users], 'id').map((user) => ({
         ...user,
         value: user?.id,
         text: user?.name,
       }));
     },
+    // eslint-disable-next-line vue/no-unused-properties
     tracking() {
       return {
         category: TRACKING_CATEGORY_SHOW,
@@ -261,15 +267,10 @@ export default {
       const { localAssigneeIds } = this;
 
       if (this.workItemId === newWorkItemId(this.workItemType)) {
-        this.$apollo.mutate({
-          mutation: updateNewWorkItemMutation,
-          variables: {
-            input: {
-              workItemType: this.workItemType,
-              fullPath: this.fullPath,
-              assignees: this.localAssignees,
-            },
-          },
+        this.$emit('updateWidgetDraft', {
+          workItemType: this.workItemType,
+          fullPath: this.fullPath,
+          assignees: this.localAssignees,
         });
 
         this.updateInProgress = false;

@@ -84,6 +84,7 @@ issues:
 - observability_logs
 - observability_traces
 - dates_source
+- current_status
 work_item_type:
 - issues
 - namespace
@@ -327,7 +328,6 @@ ci_pipelines: &pipeline_definition
 - processables
 - generic_commit_statuses
 - trigger
-- trigger_requests
 - variables
 - auto_canceled_by
 - auto_canceled_pipelines
@@ -381,6 +381,7 @@ ci_pipelines: &pipeline_definition
 - pipeline_metadata
 - build_execution_configs
 - project_mirror
+- workload
 pipeline_metadata:
 - project
 - pipeline
@@ -420,7 +421,6 @@ builds:
 - metadata
 - runner
 - trigger
-- trigger_request
 - erased_by
 - deployment
 - pending_state
@@ -496,7 +496,6 @@ bridges:
 - resource_group
 - metadata
 - trigger
-- trigger_request
 - downstream_pipeline
 - upstream_pipeline
 generic_commit_statuses:
@@ -509,7 +508,6 @@ variables:
 - project
 triggers:
 - project
-- trigger_requests
 - owner
 pipeline_schedules:
 - project
@@ -581,7 +579,6 @@ project:
 - catalog_resource_sync_events
 - catalog_resource_versions
 - ci_components
-- ci_component_usages
 - ci_component_last_usages
 - external_status_checks
 - base_tags
@@ -594,6 +591,7 @@ project:
 - ci_access_project_authorizations
 - cluster_project
 - workspaces
+- workspace_agentk_states
 - creator
 - cycle_analytics_stages
 - value_streams
@@ -930,6 +928,7 @@ project:
 - project_control_compliance_statuses
 - approval_policies
 - project_requirement_compliance_statuses
+- analyzer_statuses
 award_emoji:
 - awardable
 - user
@@ -1031,6 +1030,7 @@ lists:
 - list_user_preferences
 - group
 - project
+- custom_status
 milestone_releases:
 - milestone
 - release
@@ -1146,6 +1146,7 @@ resource_state_events:
   - merge_request
   - source_merge_request
   - epic
+  - namespace
 iteration:
   - group
   - iterations_cadence

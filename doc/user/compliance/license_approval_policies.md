@@ -14,7 +14,7 @@ title: License approval policies
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/8092) in GitLab 15.9 [with a flag](../../administration/feature_flags.md) named `license_scanning_policies`.
+- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/8092) in GitLab 15.9 [with a flag](../../administration/feature_flags/_index.md) named `license_scanning_policies`.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/397644) in GitLab 15.11. Feature flag `license_scanning_policies` removed.
 
 {{< /history >}}
@@ -42,9 +42,8 @@ License approval policies rely on the output of a dependency scanning job to ver
 
 To ensure enforcement of your policies, you should enable dependency scanning on your target development projects. You can achieve this a few different ways:
 
-- Create a global [scan execution policy](../application_security/policies/scan_execution_policies.md) that enforces Dependency Scanning to run in all target development projects.
-- Use a [Compliance Pipeline](compliance_frameworks.md) to define a Dependency Scanning job that is enforced on projects enforced by a given Compliance Framework.
-- Work with development teams to configure [Dependency Scanning](../application_security/dependency_scanning/_index.md) in each of their project's `.gitlab-ci.yml` files or enable by using the [Security Configuration panel](../application_security/configuration/_index.md).
+- Create a [scan execution policy](../application_security/policies/scan_execution_policies.md) that enforces Dependency Scanning to run in all target development projects.
+- Work with your development teams to configure [dependency scanning](../application_security/dependency_scanning/_index.md) in each of their projects' `.gitlab-ci.yml` files or enable it by using the [Security Configuration panel](../application_security/detect/security_configuration.md).
 
 License approval policies require license information from [GitLab-supported packages](license_scanning_of_cyclonedx_files/_index.md#supported-languages-and-package-managers).
 
@@ -54,7 +53,7 @@ Create a license approval policy to enforce license compliance.
 
 To create a license approval policy:
 
-1. [Link a security policy project](../application_security/policies/_index.md#policy-implementation) to your development group, subgroup, or project (the Owner role is required).
+1. [Link a security policy project](../application_security/policies/security_policy_projects.md#link-to-a-security-policy-project) to your development group, subgroup, or project (the Owner role is required).
 1. On the left sidebar, select **Search or go to** and find your project.
 1. Select **Secure > Policies**.
 1. Create a new [Merge request approval Policy](../application_security/policies/merge_request_approval_policies.md).

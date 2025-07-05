@@ -40,7 +40,7 @@ class DeployToken < ApplicationRecord
 
   validates :expires_at, iso8601_date: true, on: :create
   validates :deploy_token_type, presence: true
-  enum deploy_token_type: {
+  enum :deploy_token_type, {
     group_type: 1,
     project_type: 2
   }
@@ -58,15 +58,13 @@ class DeployToken < ApplicationRecord
   def self.prefix_for_deploy_token
     return DEPLOY_TOKEN_PREFIX unless Feature.enabled?(:custom_prefix_for_all_token_types, :instance)
 
-    # Manually remove gl - we'll add this from the configuration.
-    # Once the feature flag has been removed, we can change DEPLOY_TOKEN_PREFIX to `ft-`
-    ::Authn::TokenField::PrefixHelper.prepend_instance_prefix(DEPLOY_TOKEN_PREFIX.delete_prefix('gl'))
+    ::Authn::TokenField::PrefixHelper.prepend_instance_prefix(DEPLOY_TOKEN_PREFIX)
   end
 
   def valid_for_dependency_proxy?
     group_type? &&
       active? &&
-      (Gitlab::Auth::REGISTRY_SCOPES & scopes).size == Gitlab::Auth::REGISTRY_SCOPES.size
+      (has_scopes?(Gitlab::Auth::REGISTRY_SCOPES) || has_scopes?(Gitlab::Auth::VIRTUAL_REGISTRY_SCOPES))
   end
 
   def revoke!
@@ -176,5 +174,9 @@ class DeployToken < ApplicationRecord
 
   def no_projects
     errors.add(:deploy_token, 'cannot have projects assigned') if project_deploy_tokens.any?
+  end
+
+  def has_scopes?(required_scopes)
+    (required_scopes & scopes).size == required_scopes.size
   end
 end

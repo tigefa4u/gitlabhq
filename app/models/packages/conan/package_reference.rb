@@ -4,6 +4,7 @@ module Packages
   module Conan
     class PackageReference < ApplicationRecord
       include ShaAttribute
+      include PackageFileable
 
       REFERENCE_LENGTH_MAX = 40
       MAX_INFO_SIZE = 20_000
@@ -17,7 +18,6 @@ module Packages
       belongs_to :project
 
       has_many :package_revisions, inverse_of: :package_reference, class_name: 'Packages::Conan::PackageRevision'
-      has_many :file_metadata, inverse_of: :package_reference, class_name: 'Packages::Conan::FileMetadatum'
 
       validates :package, :project, presence: true
       validates :reference, presence: true, format: { with: Gitlab::Regex.conan_package_reference_regex },
@@ -26,6 +26,8 @@ module Packages
 
       validates :info, json_schema: { filename: 'conan_package_info', detail_errors: true }
       validate :ensure_info_size
+
+      scope :pluck_reference_and_info, -> { limit(MAX_PLUCK).pluck(:reference, :info) }
 
       def self.for_package_id_and_reference(package_id, reference)
         where(package_id: package_id, reference: reference)

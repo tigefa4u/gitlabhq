@@ -22,7 +22,6 @@ export function initNewProjectForm() {
     projectsUrl,
     parentGroupUrl,
     parentGroupName,
-    projectHelpPath,
     isCiCdAvailable,
     canImportProjects,
     importSourcesEnabled,
@@ -30,6 +29,9 @@ export function initNewProjectForm() {
     canSelectNamespace,
     canCreateProject,
     userProjectLimit,
+    displaySha256Repository,
+    restrictedVisibilityLevels,
+    defaultProjectVisibility,
     importHistoryPath,
     importGitlabEnabled,
     importGitlabImportPath,
@@ -48,6 +50,7 @@ export function initNewProjectForm() {
     importGitEnabled,
     importManifestEnabled,
     importManifestImportPath,
+    importByUrlValidatePath,
   } = el.dataset;
 
   const provide = {
@@ -61,7 +64,6 @@ export function initNewProjectForm() {
     projectsUrl,
     parentGroupUrl,
     parentGroupName,
-    projectHelpPath,
     trackLabel,
     isCiCdAvailable: parseBoolean(isCiCdAvailable),
     importSourcesEnabled: parseBoolean(importSourcesEnabled),
@@ -69,6 +71,9 @@ export function initNewProjectForm() {
     canSelectNamespace: parseBoolean(canSelectNamespace),
     canCreateProject: parseBoolean(canCreateProject),
     userProjectLimit: parseInt(userProjectLimit, 10),
+    displaySha256Repository: parseBoolean(displaySha256Repository),
+    restrictedVisibilityLevels: JSON.parse(restrictedVisibilityLevels),
+    defaultProjectVisibility,
     importHistoryPath,
     importGitlabEnabled: parseBoolean(importGitlabEnabled),
     importGitlabImportPath,
@@ -87,6 +92,7 @@ export function initNewProjectForm() {
     importGitEnabled: parseBoolean(importGitEnabled),
     importManifestEnabled: parseBoolean(importManifestEnabled),
     importManifestImportPath,
+    importByUrlValidatePath,
   };
 
   return new Vue({

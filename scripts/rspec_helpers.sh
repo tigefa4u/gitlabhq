@@ -16,13 +16,16 @@ function update_tests_metadata() {
 }
 
 function retrieve_tests_mapping() {
-  mkdir -p $(dirname "$RSPEC_PACKED_TESTS_MAPPING_PATH")
+  local mapping_archive="${1:-$RSPEC_PACKED_TESTS_MAPPING_PATH}"
+  local mapping_path="${2:-$RSPEC_TESTS_MAPPING_PATH}"
 
-  if [[ ! -f "${RSPEC_PACKED_TESTS_MAPPING_PATH}" ]]; then
-    (curl --fail --location  -o "${RSPEC_PACKED_TESTS_MAPPING_PATH}.gz" "https://gitlab-org.gitlab.io/gitlab/${RSPEC_PACKED_TESTS_MAPPING_PATH}.gz" && gzip -d "${RSPEC_PACKED_TESTS_MAPPING_PATH}.gz") || echo "{}" > "${RSPEC_PACKED_TESTS_MAPPING_PATH}"
+  mkdir -p $(dirname "$mapping_archive")
+
+  if [[ ! -f "${mapping_archive}" ]]; then
+    (curl --fail --location  -o "${mapping_archive}.gz" "https://gitlab-org.gitlab.io/gitlab/${mapping_archive}.gz" && gzip -d "${mapping_archive}.gz") || echo "{}" > "${mapping_archive}"
   fi
 
-  scripts/unpack-test-mapping "${RSPEC_PACKED_TESTS_MAPPING_PATH}" "${RSPEC_TESTS_MAPPING_PATH}"
+  scripts/unpack-test-mapping "${mapping_archive}" "${mapping_path}"
 }
 
 function retrieve_frontend_fixtures_mapping() {
@@ -59,6 +62,7 @@ function retrieve_failed_tests() {
   local directory_for_output_reports="${1}"
   local failed_tests_format="${2}"
   local pipeline_index="${3}"
+  local output_mode="${4:-categorized}"
   local pipeline_report_path="tmp/test_results/${pipeline_index}/test_reports.json"
 
   echo 'Attempting to build pipeline test report...'
@@ -67,7 +71,11 @@ function retrieve_failed_tests() {
 
   echo 'Generating failed tests lists...'
 
-  scripts/failed_tests.rb --previous-tests-report-path "${pipeline_report_path}" --format "${failed_tests_format}" --output-directory "${directory_for_output_reports}"
+  scripts/failed_tests.rb \
+    --previous-tests-report-path "${pipeline_report_path}" \
+    --format "${failed_tests_format}" \
+    --output-directory "${directory_for_output_reports}" \
+    $([[ "${output_mode}" == "single_output" ]] && echo "--single-output" || echo '')
 }
 
 function rspec_args() {
@@ -240,7 +248,8 @@ function change_exit_code_if_known_flaky_tests() {
   echo "${found_known_flaky_tests_output}"
   if [[ $found_known_flaky_tests_status -eq 0 ]]; then
     echo
-    echo "Changing the CI/CD job exit code to 112."
+    echo "Changing the CI/CD job exit code to 112, and creating the ${RSPEC_TEST_ALREADY_FAILED_ON_DEFAULT_BRANCH_MARKER_PATH} file"
+    touch "${RSPEC_TEST_ALREADY_FAILED_ON_DEFAULT_BRANCH_MARKER_PATH}"
 
     new_exit_code=112
   else
@@ -272,7 +281,7 @@ function rspec_parallelized_job() {
   local test_level="${job_name[1]}"
   # e.g. 'rspec unit pg14 1/24 278964' would become 'rspec_unit_pg14_1_24_278964'
   local report_name=$(echo "${CI_JOB_NAME} ${CI_PROJECT_ID}" | sed -E 's|[/ ]|_|g')
-  local rspec_opts="${1:-}"
+  local rspec_opts="--force-color ${1:-}"
   local rspec_tests_mapping_enabled="${RSPEC_TESTS_MAPPING_ENABLED:-}"
   local spec_folder_prefixes=""
   local rspec_flaky_folder_path="$(dirname "${FLAKY_RSPEC_SUITE_REPORT_PATH}")/"

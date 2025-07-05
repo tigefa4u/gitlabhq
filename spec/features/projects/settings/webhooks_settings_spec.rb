@@ -43,6 +43,7 @@ RSpec.describe 'Projects > Settings > Webhook Settings', feature_category: :webh
         expect(page).to have_content('Comment')
         expect(page).to have_content('Merge request events')
         expect(page).to have_content('Pipeline events')
+        expect(page).to have_content('Milestone events')
         expect(page).to have_content('Wiki page events')
         expect(page).to have_content('Releases events')
         expect(page).to have_content('Emoji events')
@@ -71,6 +72,8 @@ RSpec.describe 'Projects > Settings > Webhook Settings', feature_category: :webh
         visit webhooks_path
 
         click_link 'Edit'
+        fill_in 'Name (optional)', with: 'Existing project hook'
+        fill_in 'Description (optional)', with: 'An existing project hook for testing'
         fill_in 'URL', with: url
         check 'Enable SSL verification'
         click_button 'Save changes'

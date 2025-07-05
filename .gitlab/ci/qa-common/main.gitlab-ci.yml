@@ -7,17 +7,17 @@ workflow:
 include:
   - local: .gitlab/ci/version.yml
   - local: .gitlab/ci/global.gitlab-ci.yml
-  - component: "gitlab.com/gitlab-org/quality/pipeline-common/allure-report@9.14.0"
+  - component: "gitlab.com/gitlab-org/quality/pipeline-common/allure-report@11.7.0"
     inputs:
       job_name: "e2e-test-report"
       job_stage: "report"
-      report_title: "E2E Test Result Summary"
+      report_title: '<a href="https://handbook.gitlab.com/handbook/engineering/testing/end-to-end-pipeline-monitoring/#allure-report">E2E Test Result Summary</a>'
       aws_access_key_id_variable_name: "QA_ALLURE_AWS_ACCESS_KEY_ID"
       aws_secret_access_key_variable_name: "QA_ALLURE_AWS_SECRET_ACCESS_KEY"
       gitlab_auth_token_variable_name: "PROJECT_TOKEN_FOR_CI_SCRIPTS_API_USAGE"
       allure_job_name: "${QA_RUN_TYPE}"
   - project: gitlab-org/quality/pipeline-common
-    ref: 9.14.0
+    ref: 11.7.0
     file:
       - /ci/notify-slack.gitlab-ci.yml
       - /ci/qa-report.gitlab-ci.yml
@@ -130,6 +130,18 @@ stages:
     - bundle exec rake "ci:export_code_paths_mapping[$QA_CODE_PATHS_MAPPING_FILE_PATTERN]"
   rules:
     - if: '$COVERBAND_ENABLED == "true"'
+
+.export-frontend-code-paths-mapping:
+  extends:
+    - .qa-install
+  stage: report
+  when: always
+  variables:
+    QA_FRONTEND_PATHS_MAPPING_FILE_PATTERN: $CI_PROJECT_DIR/qa/tmp/js-coverage-by-example-*.json
+  script:
+    - bundle exec rake "ci:export_frontend_code_paths_mapping[$QA_FRONTEND_PATHS_MAPPING_FILE_PATTERN]"
+  rules:
+    - if: '$BABEL_ENV == "istanbul"'
 
 .notify-slack:
   extends:

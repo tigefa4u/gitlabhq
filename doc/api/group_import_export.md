@@ -1,6 +1,6 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Create
+group: Import
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Group import and export API
 ---
@@ -24,7 +24,7 @@ Group exports include the following:
 - Group badges
 - Group members
 - Group wikis (Premium and Ultimate only)
-- Subgroups. Each subgroup includes all data above
+- Subgroups. Each subgroup includes all previous data in the list.
 
 To preserve group-level relationships from imported projects, you should run group export and import first. This way,
 you can import project exports into the desired group structure.

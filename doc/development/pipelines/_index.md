@@ -1,7 +1,7 @@
 ---
 stage: none
 group: Engineering Productivity
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Pipelines for the GitLab project
 ---
 
@@ -21,7 +21,7 @@ on the `dev.gitlab.com` mirror if they do not exist on that instance.
 
 ## Pipeline tiers
 
-**under active development:** For more information, see [epic 58](https://gitlab.com/groups/gitlab-org/quality/engineering-productivity/-/epics/58).
+**Under active development**: For more information, see [epic 58](https://gitlab.com/groups/gitlab-org/quality/engineering-productivity/-/epics/58).
 
 A merge request will typically run several CI/CD pipelines. Depending on where the merge request is at in the approval process, we will trigger different kinds of pipelines. We call those kinds of pipelines **pipeline tiers**.
 
@@ -85,7 +85,7 @@ To identify the RSpec tests that are likely to fail in a merge request, we use *
 
 ##### Dynamic mappings
 
-First, we use the [`test_file_finder` gem](https://gitlab.com/gitlab-org/ruby/gems/test_file_finder), with dynamic mapping strategies coming from the [`Crystalball` gem](https://github.com/toptal/crystalball))
+First, we use the [`test_file_finder` gem](https://gitlab.com/gitlab-org/ruby/gems/test_file_finder), with dynamic mapping strategies coming from the [`Crystalball` gem](https://gitlab.com/gitlab-org/ruby/gems/crystalball))
   ([see where it's used](https://gitlab.com/gitlab-org/gitlab/-/blob/2348d57cf4710f89b96b25de0cf33a455d38325e/tooling/lib/tooling/find_tests.rb#L20), and [the mapping strategies we use in Crystalball](https://gitlab.com/gitlab-org/gitlab/-/blob/master/spec/crystalball_env.rb)).
 
 In addition to `test_file_finder`, we have added several advanced mappings to detect even more tests to run:
@@ -124,7 +124,7 @@ In addition, there are a few circumstances where we would always run the full RS
 
 #### Have you encountered a problem with backend predictive tests?
 
-If so, have a look at [the Engineering Productivity RUNBOOK on predictive tests](https://gitlab.com/gitlab-org/quality/engineering-productivity/team/-/blob/main/runbooks/predictive-tests.md) for instructions on how to act upon predictive tests issues. Additionally, if you identified any test selection gaps, let `@gl-dx/eng-prod` know so that we can take the necessary steps to optimize test selections.
+If so, have a look at [the Development Analytics RUNBOOK on predictive tests](https://gitlab.com/gitlab-org/quality/analytics/team/-/blob/main/runbooks/predictive-test-selection.md) for instructions on how to act upon predictive tests issues. Additionally, if you identified any test selection gaps, let `@gl-dx/development-analytics` know so that we can take the necessary steps to optimize test selections.
 
 ### Jest predictive jobs
 
@@ -149,7 +149,7 @@ The `rules` definitions for full Jest tests are defined at `.frontend:rules:jest
 
 #### Have you encountered a problem with frontend predictive tests?
 
-If so, have a look at [the Engineering Productivity RUNBOOK on predictive tests](https://gitlab.com/gitlab-org/quality/engineering-productivity/team/-/blob/main/runbooks/predictive-tests.md) for instructions on how to act upon predictive tests issues.
+If so, have a look at [the Development analytics RUNBOOK on predictive tests](https://gitlab.com/gitlab-org/quality/analytics/team/-/blob/main/runbooks/predictive-test-selection.md) for instructions on how to act upon predictive tests issues.
 
 ### Fork pipelines
 
@@ -210,7 +210,7 @@ and `rspec rspec-ee-pg16-rerun-previous-failed-tests` jobs run the failed tests 
 
 This was introduced on August 25th 2021, with <https://gitlab.com/gitlab-org/gitlab/-/merge_requests/69053>.
 
-### How it works?
+### How the failed test is re-run
 
 1. The `detect-previous-failed-tests` job (`prepare` stage) detects the test files associated with failed RSpec
    jobs from the previous MR pipeline.
@@ -574,7 +574,7 @@ before we resolve [Developer-level users no longer able to run pipelines on prot
 It's used to run `sync-as-if-jh-branch` to synchronize the dependencies
 when the merge requests changed the dependencies. See
 [How we generate the as-if-JH branch](#how-we-generate-the-as-if-jh-branch)
-for how it works.
+for its implementation.
 
 ###### Temporary GitLab JH validation project variables
 
@@ -725,7 +725,7 @@ Exceptions to this general guideline should be motivated and documented.
 
 We're running Ruby 3.2 on GitLab.com, as well as for the default branch.
 To prepare for the next Ruby version, we run merge requests in Ruby 3.3.
-Please see the roadmap at
+See the roadmap at
 [Ruby 3.3 epic](https://gitlab.com/groups/gitlab-org/-/epics/12350)
 for more details.
 
@@ -755,6 +755,7 @@ NOTE: With the addition of PG17, we are close to the limit of nightly jobs, with
 | `maintenance` scheduled pipelines for the `master` branch (every even-numbered hour at XX:05)   | 16 (default version)                | 3.2 (default version) |
 | `maintenance` scheduled pipelines for the `ruby-next` branch (every odd-numbered hour at XX:10) | 16 (default version)                | 3.3                   |
 | `nightly` scheduled pipelines for the `master` branch                                           | 16 (default version), 14, 15 and 17 | 3.2 (default version) |
+| `weekly` scheduled pipelines for the `master` branch                                            | 16 (default version)                | 3.2 (default version) |
 
 For the next Ruby versions we're testing against with, we run
 maintenance scheduled pipelines every 2 hours on the `ruby-next` branch.
@@ -811,6 +812,7 @@ test suites use PostgreSQL 16 because there is no dependency between the databas
 |-------------------------------------------------------------------------------------------------|-----------------------|----------------------|----------------------|
 | Merge requests with label `~group::global search` or `~pipeline:run-search-tests`               | 8.X (production)      |                      | 16 (default version) |
 | `nightly` scheduled pipelines for the `master` branch                                           | 7.X, 8.X (production) | 1.X, 2.X             | 16 (default version) |
+| `weekly` scheduled pipelines for the `master` branch                                            | 9.X                   | latest               | 16 (default version) |
 
 ## Monitoring
 

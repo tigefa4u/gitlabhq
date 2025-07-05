@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Gitlab::Database::LoadBalancing, :suppress_gitlab_schemas_validate_connection, feature_category: :cell do
+RSpec.describe Gitlab::Database::LoadBalancing, :suppress_gitlab_schemas_validate_connection, feature_category: :database do
   describe '.base_models' do
     it 'returns the models to apply load balancing to' do
       models = described_class.base_models
@@ -535,7 +535,7 @@ RSpec.describe Gitlab::Database::LoadBalancing, :suppress_gitlab_schemas_validat
       end
 
       with_them do
-        it 'redirects queries to the right roles' do
+        it 'redirects queries to the right roles', quarantine: 'https://gitlab.com/gitlab-org/gitlab/-/issues/520708' do
           roles = []
 
           # If we don't run any queries, the pool may be a NullPool. This can

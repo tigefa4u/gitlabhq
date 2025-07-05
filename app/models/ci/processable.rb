@@ -17,7 +17,6 @@ module Ci
     has_one :sourced_pipeline, class_name: 'Ci::Sources::Pipeline', foreign_key: :source_job_id, inverse_of: :source_job
     has_one :trigger, through: :pipeline
 
-    belongs_to :trigger_request
     belongs_to :resource_group, class_name: 'Ci::ResourceGroup', inverse_of: :processables
 
     accepts_nested_attributes_for :needs
@@ -45,6 +44,14 @@ module Ci
       joins(:metadata).where.not(
         Ci::BuildMetadata.table_name => { id: Ci::BuildMetadata.scoped_build.with_interruptible.select(:id) }
       )
+    end
+
+    # The run after commit queue is processed LIFO
+    # We need to ensure that the Redis data is persisted before any other callbacks the might depend on it.
+    before_commit do |job|
+      job.run_after_commit do
+        redis_state.save if defined?(@redis_state)
+      end
     end
 
     state_machine :status do
@@ -134,6 +141,8 @@ module Ci
       :merge_train_pipeline?,
       to: :pipeline
 
+    delegate :short_token, to: :trigger, prefix: true, allow_nil: true
+
     def clone(current_user:, new_job_variables_attributes: [])
       new_attributes = self.class.clone_accessors.index_with do |attribute|
         public_send(attribute) # rubocop:disable GitlabSecurity/PublicSend
@@ -157,7 +166,7 @@ module Ci
       # ignore the persisted `scoped_user_id`, because that is propagated
       # together with `options` to cloned jobs.
       # We also handle the case where `user` is `nil` (legacy behavior in specs).
-      return unless user&.has_composite_identity?
+      return unless user&.composite_identity_enforced?
 
       User.find_by_id(options[:scoped_user_id])
     end
@@ -167,6 +176,10 @@ module Ci
       return false if retried? || archived? || deployment_rejected?
 
       success? || failed? || canceled? || canceling?
+    end
+
+    def archived?(...)
+      degenerated? || super
     end
 
     def aggregated_needs_names
@@ -267,12 +280,18 @@ module Ci
       options[:manual_confirmation] if manual_job?
     end
 
-    def trigger_short_token
-      if ::Feature.enabled?(:ci_read_trigger_from_ci_pipeline, project)
-        trigger&.short_token
-      else
-        trigger_request&.trigger_short_token
+    def redis_state
+      strong_memoize(:redis_state) do
+        Ci::JobRedisState.find_or_initialize_by(job: self)
       end
+    end
+
+    def enqueue_immediately?
+      redis_state.enqueue_immediately?
+    end
+
+    def set_enqueue_immediately!
+      redis_state.enqueue_immediately = true
     end
 
     private

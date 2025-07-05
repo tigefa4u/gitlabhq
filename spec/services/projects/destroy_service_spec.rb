@@ -868,6 +868,172 @@ RSpec.describe Projects::DestroyService, :aggregate_failures, :event_store_publi
     end
   end
 
+  describe '#delete_commit_statuses' do
+    let(:service) { described_class.new(project, user, {}) }
+    let(:batch_size) { described_class::BATCH_SIZE }
+
+    context 'when there are no commit statuses' do
+      it 'does not delete anything and logs zero count' do
+        expect(Gitlab::AppLogger).to receive(:info).with(
+          class: described_class.name,
+          project_id: project.id,
+          message: 'leftover commit statuses',
+          orphaned_commit_status_count: 0
+        )
+
+        expect { service.send(:delete_commit_statuses) }.not_to change(::CommitStatus, :count)
+      end
+    end
+
+    context 'when there are fewer commit statuses than the batch size' do
+      before do
+        create_list(:commit_status, 2, project: project)
+      end
+
+      it 'deletes all statuses in a single batch and logs the count' do
+        expect(Gitlab::AppLogger).to receive(:info).with(
+          class: described_class.name,
+          project_id: project.id,
+          message: 'leftover commit statuses',
+          orphaned_commit_status_count: 2
+        )
+
+        expect { service.send(:delete_commit_statuses) }
+          .to change { CommitStatus.for_project(project).count }.from(2).to(0)
+      end
+    end
+
+    context 'when there are more commit statuses than the batch size' do
+      before do
+        stub_const("#{described_class}::BATCH_SIZE", 2)
+        create_list(:commit_status, 3, project: project)
+      end
+
+      it 'deletes statuses in multiple batches and logs the total count' do
+        expect(Gitlab::AppLogger).to receive(:info).with(
+          class: described_class.name,
+          project_id: project.id,
+          message: 'leftover commit statuses',
+          orphaned_commit_status_count: 3
+        )
+
+        expect { service.send(:delete_commit_statuses) }
+          .to change { CommitStatus.for_project(project).count }.from(3).to(0)
+      end
+    end
+  end
+
+  describe '#delete_environments' do
+    let(:service) { described_class.new(project, user, {}) }
+    let(:batch_size) { described_class::BATCH_SIZE }
+
+    context 'when there are no environments' do
+      it 'does not delete anything and logs zero count' do
+        expect(Gitlab::AppLogger).to receive(:info).with(
+          class: described_class.name,
+          project_id: project.id,
+          message: 'Deleting environments completed',
+          deleted_environment_count: 0
+        )
+
+        expect { service.send(:delete_environments) }.not_to change(Environment, :count)
+      end
+    end
+
+    context 'when there are fewer environments than the batch size' do
+      before do
+        create_list(:environment, 2, project: project)
+      end
+
+      it 'deletes all environments in a single batch and logs the count' do
+        expect(Gitlab::AppLogger).to receive(:info).with(
+          class: described_class.name,
+          project_id: project.id,
+          message: 'Deleting environments completed',
+          deleted_environment_count: 2
+        )
+
+        expect { service.send(:delete_environments) }
+          .to change { Environment.for_project(project).count }.from(2).to(0)
+      end
+    end
+
+    context 'when there are more environments than the batch size' do
+      before do
+        stub_const("#{described_class}::BATCH_SIZE", 2)
+        create_list(:environment, 3, project: project)
+      end
+
+      it 'deletes environments in multiple batches and logs the total count' do
+        expect(Gitlab::AppLogger).to receive(:info).with(
+          class: described_class.name,
+          project_id: project.id,
+          message: 'Deleting environments completed',
+          deleted_environment_count: 3
+        )
+
+        expect { service.send(:delete_environments) }
+          .to change { Environment.for_project(project).count }.from(3).to(0)
+      end
+    end
+  end
+
+  describe '#destroy_orphaned_ci_job_artifacts!' do
+    let(:service) { described_class.new(project, user) }
+
+    context 'when there are no orphaned job artifacts' do
+      let(:no_job_artifacts) { Ci::JobArtifact.none }
+
+      before do
+        allow(Ci::JobArtifact).to receive(:for_project).with(project).and_return(no_job_artifacts)
+      end
+
+      it 'returns early without performing any destroy operations' do
+        expect(no_job_artifacts).not_to receive(:begin_fast_destroy)
+        expect(no_job_artifacts).not_to receive(:finalize_fast_destroy)
+
+        service.send(:destroy_orphaned_ci_job_artifacts!)
+      end
+    end
+
+    context 'when there are orphaned job artifacts' do
+      let(:job) { create(:ci_build, project: project) }
+      let(:orphaned_job_artifact) { create(:ci_job_artifact, job: job, project: project) }
+
+      before do
+        orphaned_job_artifact.connection.transaction do
+          orphaned_job_artifact.connection.execute(<<~SQL)
+            SET session_replication_role = 'replica';
+          SQL
+
+          orphaned_job_artifact.update_column(:job_id, non_existing_record_id)
+
+          orphaned_job_artifact.connection.execute(<<~SQL)
+            SET session_replication_role = 'origin';
+          SQL
+        end
+      end
+
+      it 'destroys orphaned artifacts' do
+        expect { destroy_project(project, user) }.to change { Ci::JobArtifact.count }.by(-1)
+
+        expect(Ci::JobArtifact.exists?(orphaned_job_artifact.id)).to be_falsey
+      end
+
+      it 'logs that the artifacts have been destroyed' do
+        allow(Gitlab::AppLogger).to receive(:info) # Logged during artifact deletion
+
+        expect(Gitlab::AppLogger).to receive(:info).with(
+          class: described_class.name,
+          project_id: project.id,
+          message: 'Orphaned CI job artifacts deleted'
+        )
+
+        service.send(:destroy_orphaned_ci_job_artifacts!)
+      end
+    end
+  end
+
   def destroy_project(project, user, params = {})
     described_class.new(project, user, params).public_send(async ? :async_execute : :execute)
   end

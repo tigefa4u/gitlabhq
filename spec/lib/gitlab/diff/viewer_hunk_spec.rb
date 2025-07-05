@@ -113,7 +113,7 @@ RSpec.describe Gitlab::Diff::ViewerHunk, feature_category: :code_review_workflow
       context 'when bottom is false' do
         context 'when closest line number is more than 20 lines from first line position' do
           it 'up and down expand directions' do
-            lines = [match_line, new_line(old_pos: 30)]
+            lines = [match_line, new_line(new_pos: 30)]
             hunks = described_class.init_from_expanded_lines(lines, false, 8)
 
             expect(hunks.first.header.expand_directions).to match_array([:down, :up])
@@ -169,7 +169,7 @@ RSpec.describe Gitlab::Diff::ViewerHunk, feature_category: :code_review_workflow
     it 'returns up and down' do
       lines = [old_line(old_pos: 1), match_line, new_line(old_pos: 25)]
       instance = described_class.init_from_diff_lines(lines)[1]
-      expect(instance.header.expand_directions).to match_array([:down, :up])
+      expect(instance.header.expand_directions).to match_array([:up, :down])
     end
   end
 
@@ -198,13 +198,13 @@ RSpec.describe Gitlab::Diff::ViewerHunk, feature_category: :code_review_workflow
     )
   end
 
-  def new_line(old_pos: 11)
+  def new_line(old_pos: 11, new_pos: 12)
     Gitlab::Diff::Line.new(
       'new line',
       'new',
       0,
       old_pos,
-      12
+      new_pos
     )
   end
 

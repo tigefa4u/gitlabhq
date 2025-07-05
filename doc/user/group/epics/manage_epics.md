@@ -20,6 +20,7 @@ to them.
 {{< history >}}
 
 - [Changed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/169256) the minimum user role from Reporter to Planner in GitLab 17.7.
+- Ability to assign milestones to epics [introduced](https://gitlab.com/groups/gitlab-org/-/epics/329) in GitLab 18.2.
 
 {{< /history >}}
 
@@ -52,10 +53,10 @@ If you select **Inherited**:
 
 - For the **start date**: GitLab scans all child epics and issues assigned to the epic,
   and sets the start date to match the earliest start date found in the child epics or the milestone
-  assigned to the issues.
+  assigned to the child items.
 - For the **due date**: GitLab scans all child epics and issues assigned to the epic,
   and sets the due date to match the latest due date found in the child epics or the milestone
-  assigned to the issues.
+  assigned to the child items.
 
 These dates are dynamic and recalculated if any of the following occur:
 
@@ -83,6 +84,7 @@ After you create an epic, you can edit the following details:
 - Start date
 - Due date
 - Labels
+- Milestone
 - [Color](#epic-color)
 
 Prerequisites:
@@ -95,10 +97,10 @@ To edit an epic's title or description:
 1. Make your changes.
 1. Select **Save changes**.
 
-To edit an epic's start date, due date, or labels:
+To edit an epic's start date, due date, milestone, or labels:
 
 1. Next to each section in the right sidebar, select **Edit**.
-1. Select the dates or labels for your epic.
+1. Select the dates, milestone, or labels for your epic.
 
 ### Reorder list items in the epic description
 
@@ -149,41 +151,6 @@ To update multiple epics at the same time:
 1. Select the appropriate fields and their values from the sidebar.
 1. Select **Update selected**.
 
-### Open epics in a drawer
-
-{{< details >}}
-
-- Offering: GitLab Self-Managed
-
-{{< /details >}}
-
-{{< history >}}
-
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/464063) in GitLab 17.4 [with a flag](../../../administration/feature_flags.md) named `issues_list_drawer`. Disabled by default.
-- Feature flag [changed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/170066) from `issues_list_drawer` to `epics_list_drawer` in GitLab 17.6.
-
-{{< /history >}}
-
-{{< alert type="flag" >}}
-
-The availability of this feature is controlled by a feature flag.
-For more information, see the history.
-This feature is available for testing, but not ready for production use.
-
-{{< /alert >}}
-
-When this feature is enabled, when you select an epic from the list or epic board, it opens in a drawer.
-You can then edit the epic or create comments.
-
-To open the epic in full view, either:
-
-- Open the epic in a new tab. From the list of epics, you can either:
-  - Right-click the epic and open it in a new browser tab.
-  - Hold <kbd>Cmd</kbd> or <kbd>Ctrl</kbd> and select the epic.
-- From the drawer, in the top-left corner, select **Open in full view**.
-
-![Epic opened in a drawer.](img/epic_drawer_v17_4.png)
-
 ## Prevent truncating descriptions with "Read more"
 
 {{< history >}}
@@ -192,15 +159,9 @@ To open the epic in full view, either:
 
 {{< /history >}}
 
-<!-- When epics as work items are GA and feature flag `work_item_epics` is removed, remove the prerequisite below. -->
-
 If an epic description is long, GitLab displays only part of it.
 To see the whole description, you must select **Read more**.
 This truncation makes it easier to find other elements on the page without scrolling through lengthy text.
-
-Prerequisites:
-
-- [The new look for epics](epic_work_items.md) must be enabled.
 
 To change whether descriptions are truncated:
 
@@ -217,13 +178,7 @@ This setting is remembered and affects all issues, tasks, epics, objectives, and
 
 {{< /history >}}
 
-<!-- When epics as work items are GA and feature flag `work_item_epics` is removed, remove the prerequisite below. -->
-
 Epic attributes are shown in a sidebar to the right of the description when space allows.
-
-Prerequisites:
-
-- [The new look for epics](epic_work_items.md) must be enabled.
 
 To hide the sidebar and increase space for the description:
 
@@ -247,30 +202,18 @@ To show the sidebar again:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/4231) in GitLab 17.4 [with a flag](../../../administration/feature_flags.md) named `work_items_beta`. Disabled by default. This feature is in [beta](../../../policy/development_stages_support.md#beta).
+- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/4231) in GitLab 17.4 [with a flag](../../../administration/feature_flags/_index.md) named `work_items_beta`. Disabled by default. This feature is in [beta](../../../policy/development_stages_support.md#beta).
+- [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/551805) in GitLab 18.2.
 
 {{< /history >}}
 
-{{< alert type="flag" >}}
-
-The availability of this feature is controlled by a feature flag.
-For more information, see the history.
-This feature is available for testing, but not ready for production use.
-
-{{< /alert >}}
-
-If [the new look for epics](epic_work_items.md) is enabled,
-an epic can be assigned to one or more users.
+An epic can be assigned to one or more users.
 
 The assignees can be changed as often as needed.
 The idea is that the assignees are people responsible for the epic.
 
 If a user is not a member of a group, an epic can only be assigned to them if another group member
 assigns them.
-
-This feature is in [beta](../../../policy/development_stages_support.md).
-If you find a bug, use the
-[feedback issue](https://gitlab.com/gitlab-org/gitlab/-/issues/463598) to provide more details.
 
 ### Change assignee on an epic
 
@@ -282,7 +225,6 @@ If you find a bug, use the
 
 Prerequisites:
 
-- [The new look for epics](epic_work_items.md) must be enabled.
 - You must have at least the Planner role for the group.
 
 To change the assignee on an epic:
@@ -305,7 +247,7 @@ The assignee is changed without having to refresh the page.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/79940) in GitLab 14.9 [with a flag](../../../administration/feature_flags.md) named `epic_color_highlight`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/79940) in GitLab 14.9 [with a flag](../../../administration/feature_flags/_index.md) named `epic_color_highlight`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/365336) in GitLab 16.11. Feature flag `epic_color_highlight` removed.
 - Customizable color [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/394864) in GitLab 17.5.
 
@@ -452,6 +394,54 @@ the epic's [confidentiality status](#make-an-epic-confidential):
 - Confidential epic (regardless of group visibility): You must have at least the Planner
   role for the group.
 
+### Open epics in a drawer
+
+{{< history >}}
+
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/464698) in GitLab 17.4 [with a flag](../../../administration/feature_flags/_index.md) named `work_item_view_for_issues`. Enabled by default.
+- Ability to toggle between drawer and full page view [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/536620) in GitLab 18.2.
+
+{{< /history >}}
+
+{{< alert type="flag" >}}
+
+The availability of this feature is controlled by a feature flag.
+For more information, see the history.
+
+{{< /alert >}}
+
+When you select an epic from the Epics page or an epic board, it opens in a drawer.
+You can then view and edit its details without losing context of the epic list or board.
+
+When using the drawer:
+
+- Select an epic from the list to open it in the drawer.
+- The drawer appears on the right side of the screen.
+- You can edit the epic directly in the drawer.
+- To close the drawer, select the close icon ({{< icon name="close" >}}) or press **Escape**.
+
+#### Open an epic in full page view
+
+To open an epic in the full page view:
+
+- Open the epic in a new tab. From the list of epics, either:
+  - Right-click the epic and open it in a new browser tab.
+  - Hold <kbd>Cmd</kbd> or <kbd>Ctrl</kbd> and select the epic.
+- Select an epic, and from the drawer, in the top-left corner, select **Open in full page** ({{< icon name="maximize" >}}).
+
+#### Set preference whether to open epics in a drawer
+
+To configure how epics open on the Epics page:
+
+1. On the left sidebar, select **Search or go to** and find your group.
+1. Select **Plan > Epics**.
+1. In the top right corner, select **Display options** ({{< icon name="preferences" >}}).
+1. Toggle **Open items in side panel**:
+   - **On** (default): Epics open in a drawer overlay.
+   - **Off**: Epics open in a full page view.
+
+Your preference is saved and remembered across all your sessions and devices.
+
 ### Cached epic count
 
 The total count of open epics displayed in the sidebar is cached if higher
@@ -491,7 +481,7 @@ To filter:
 
 {{< history >}}
 
-- OR filtering for labels and authors was [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/382969) in GitLab 15.9 [with a flag](../../../administration/feature_flags.md) named `or_issuable_queries`. Disabled by default.
+- OR filtering for labels and authors was [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/382969) in GitLab 15.9 [with a flag](../../../administration/feature_flags/_index.md) named `or_issuable_queries`. Disabled by default.
 - [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/104292) in GitLab 15.9.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/296031) in GitLab 17.0. Feature flag `or_issuable_queries` removed.
 
@@ -555,8 +545,8 @@ Prerequisites:
 
 To make an epic confidential:
 
-- **When creating an epic:** select the checkbox under **Confidentiality**.
-- **In an existing epic:** on the right sidebar, select **Edit** next to **Confidentiality**, and then
+- **When creating an epic**: select the checkbox under **Confidentiality**.
+- **In an existing epic**: on the right sidebar, select **Edit** next to **Confidentiality**, and then
   select **Turn on**.
 
 In GitLab 15.6 and later, you can also use the `/confidential` [quick action](../../project/quick_actions.md).
@@ -568,25 +558,18 @@ in relation to epics.
 
 ### View issues assigned to an epic
 
-On the **Child issues and epics** section, you can see epics and issues assigned to this epic.
-Only epics and issues that you can access show on the list.
+In the **Child items** section, you can see epics, issues, and tasks assigned to this epic.
+You can also see any epics, issues, and tasks inherited by descendant items.
+Only epics, issues, and tasks that you can access show on the list.
 
 You can always view the issues assigned to the epic if they are in the group's child project.
 It's possible because the visibility setting of a project must be the same as or less restrictive than
 of its parent group.
 
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
-You can also see any epics, issues, and tasks inherited by descendant items.
-Only epics, issues, and tasks that you can access show on the list.
-
 ### View count and weight of issues in an epic
 
-On the **Child issues and epics** section header, the number of descendant epics and issues and their total
-weight is displayed.
+In the **Child items** section header, the number of descendant epics and issues and their total
+weight is displayed. Tasks are not included in these counts.
 
 To see the number of open and closed epics and issues:
 
@@ -594,13 +577,6 @@ To see the number of open and closed epics and issues:
 
 The numbers reflect all child issues and epics associated with the epic, including those you might
 not have permission to view.
-
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
-Tasks are not included in these counts.
 
 ### View epic progress
 
@@ -610,7 +586,8 @@ Tasks are not included in these counts.
 
 {{< /history >}}
 
-On the **Child issues and epics** section header, the epic progress percentage is displayed.
+In the **Child items** section header, the epic progress percentage is displayed.
+Tasks are not included in this calculation.
 
 To see the completed and total weight of child issues:
 
@@ -618,13 +595,6 @@ To see the completed and total weight of child issues:
 
 The weights and progress reflect all issues associated with the epic, including issues you might
 not have permission to view.
-
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
-Tasks are not included in this calculation.
 
 ### Health status
 
@@ -667,7 +637,6 @@ To address risks to timely delivery of your planned work, incorporate a review o
 
 Prerequisites:
 
-- [The new look for epics](epic_work_items.md) must be enabled.
 - You must have at least the Planner role for the group.
 
 To change the health status of an epic:
@@ -704,7 +673,7 @@ The maximum number of direct child issues and epics is 5000.
 {{< /history >}}
 
 You can add existing issues to an epic, including issues in a project from a [different group hierarchy](_index.md#child-issues-from-different-group-hierarchies).
-Newly added issues appear at the top of the list of issues in the **Child issues and epics** section.
+Newly added issues appear at the top of the list of issues in the **Child items** section.
 
 An epic contains a list of issues and an issue can be set as a child item of at most one epic.
 When you add a new issue that's already linked to an epic, the issue is automatically unlinked from its
@@ -716,7 +685,7 @@ Prerequisites:
 
 To add an existing issue to an epic:
 
-1. On the epic's page, under **Child issues and epics**, select **Add**.
+1. On the epic's page, under **Child items**, select **Add**.
 1. Select **Add an existing issue**.
 1. Identify the issue to be added, using either of the following methods:
    - Paste the link of the issue.
@@ -726,12 +695,6 @@ To add an existing issue to an epic:
 
    If there are multiple issues to be added, press <kbd>Space</kbd> and repeat this step.
 1. Select **Add**.
-
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
 
 #### Create an issue from an epic
 
@@ -756,19 +719,13 @@ Prerequisites:
 
 To create an issue from an epic:
 
-1. On the epic's page, under **Child issues and epics**, select **Add**.
+1. On the epic's page, under **Child items**, select **Add**.
 1. Select **Add a new issue**.
 1. Under **Title**, enter the title for the new issue.
 1. From the **Project** dropdown list, select the project in which the issue should be created.
 1. Select **Create issue**.
 
 The new issue is assigned to the epic.
-
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
 
 ### Remove an issue from an epic
 
@@ -801,7 +758,7 @@ To remove an issue from an epic:
 
 {{< /history >}}
 
-New issues show at the top of the list in the **Child issues and epics** section.
+New issues show at the top of the list in the **Child items** section.
 You can reorder the list of issues by dragging them.
 
 Prerequisites:
@@ -810,14 +767,8 @@ Prerequisites:
 
 To reorder issues assigned to an epic:
 
-1. Go to the **Child issues and epics** section.
+1. Go to the **Child items** section.
 1. Drag issues into the desired order.
-
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
 
 ### Move issues between epics
 
@@ -834,7 +785,7 @@ If [the new look for epics](epic_work_items.md) is enabled, this section is name
 
 {{< /history >}}
 
-New issues appear at the top of the list in the **Child issues and epics**
+New issues appear at the top of the list in the **Child items**
 tab. You can move issues from one epic to another.
 
 Prerequisites:
@@ -843,14 +794,8 @@ Prerequisites:
 
 To move an issue to another epic:
 
-1. Go to the **Child issues and epics** section.
+1. Go to the **Child items** section.
 1. Drag issues into the desired parent epic in the visible hierarchy.
-
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
 
 ### Use an epic template for repeating issues
 
@@ -858,8 +803,6 @@ You can create a spreadsheet template to manage a pattern of consistently repeat
 
 <i class="fa fa-youtube-play youtube" aria-hidden="true"></i>
 For an introduction to epic templates, see [GitLab Epics and Epic Template Tip](https://www.youtube.com/watch?v=D74xKFNw8vg).
-
-For more on epic templates, see [Epic Templates - Repeatable sets of issues](https://handbook.gitlab.com/handbook/marketing/brand-and-product-marketing/product-and-solution-marketing/getting-started/104/).
 
 ## Multi-level child epics
 
@@ -871,11 +814,7 @@ For more on epic templates, see [Epic Templates - Repeatable sets of issues](htt
 {{< /details >}}
 
 You can add any epic that belongs to a group or subgroup of the parent epic's group.
-New child epics appear at the top of the list of epics in the **Child issues and epics** section.
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
+New child epics appear at the top of the list of epics in the **Child items** section.
 
 When you add an epic that's already linked to a parent epic, the link to its current parent is removed.
 
@@ -894,7 +833,6 @@ This helps organize and track related work across multiple epics.
 
 Prerequisites:
 
-- [The new look for epics](epic_work_items.md) must be enabled.
 - You must have at least the Guest role for either the parent epic's group or the child epic's group.
 
 To add a parent epic:
@@ -913,7 +851,7 @@ The parent epic is added.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/8502) in GitLab 15.6 [with a flag](../../../administration/feature_flags.md) named `child_epics_from_different_hierarchies`. Disabled by default.
+- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/8502) in GitLab 15.6 [with a flag](../../../administration/feature_flags/_index.md) named `child_epics_from_different_hierarchies`. Disabled by default.
 - Minimum required role for the group [changed](https://gitlab.com/gitlab-org/gitlab/-/issues/382503) from Reporter to Guest in GitLab 15.7.
 - Cross-group child epics [enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/375622) in GitLab 15.9. Enabled by default.
 - [Feature flag `child_epics_from_different_hierarchies`](https://gitlab.com/gitlab-org/gitlab/-/issues/382719) removed in GitLab 15.10.
@@ -939,13 +877,7 @@ Prerequisites:
 
 To view child epics from the parent:
 
-- In an epic, in the **Child issues and epics** section, select **Roadmap view**.
-
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
+- In an epic, in the **Child items** section, select **Roadmap view**.
 
 ### Add a child epic to an epic
 
@@ -963,34 +895,22 @@ Prerequisites:
 
 To add a new epic as child epic:
 
-1. In an epic, in the **Child issues and epics** section, select **Add > Add a new epic**.
+1. In an epic, in the **Child items** section, select **Add > Add a new epic**.
 1. Select a group from the dropdown list. The epic's group is selected by default.
 1. Enter a title for the new epic.
 1. Select **Create epic**.
-
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
 
 #### Existing epic
 
 To add an existing epic as child epic:
 
-1. In an epic, in the **Child issues and epics** section, select **Add > Add an existing epic**.
+1. In an epic, in the **Child items** section, select **Add > Add an existing epic**.
 1. Identify the epic to be added, using either of the following methods:
    - Paste the link of the epic.
    - Search for the desired issue by entering part of the epic's title, then selecting the desired match. This search is only available for epics in the same group hierarchy.
 
    If there are multiple epics to be added, press <kbd>Space</kbd> and repeat this step.
 1. Select **Add**.
-
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
 
 ### Move child epics between epics
 
@@ -1000,7 +920,7 @@ If [the new look for epics](epic_work_items.md) is enabled, this section is name
 
 {{< /history >}}
 
-New child epics appear at the top of the list in the **Child issues and epics** section.
+New child epics appear at the top of the list in the **Child items** section.
 You can move child epics from one epic to another.
 When you add a new epic that's already linked to a parent epic, the link to its current parent is removed.
 Issues and child epics cannot be intermingled.
@@ -1011,14 +931,8 @@ Prerequisites:
 
 To move child epics to another epic:
 
-1. Go to the **Child issues and epics** section.
+1. Go to the **Child items** section.
 1. Drag epics into the desired parent epic.
-
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
 
 ### Reorder child epics assigned to an epic
 
@@ -1028,7 +942,7 @@ If [the new look for epics](epic_work_items.md) is enabled, this section is name
 
 {{< /history >}}
 
-New child epics appear at the top of the list in the **Child issues and epics** section.
+New child epics appear at the top of the list in the **Child items** section.
 You can reorder the list of child epics.
 
 Prerequisites:
@@ -1037,14 +951,8 @@ Prerequisites:
 
 To reorder child epics assigned to an epic:
 
-1. Go to the **Child issues and epics** section.
+1. Go to the **Child items** section.
 1. Drag epics into the desired order.
-
-<!-- When epics as work items are generally available and feature flag `work_item_epics` is removed,
-use the info below in the main body. -->
-
-If [the new look for epics](epic_work_items.md) is enabled, this section is named
-**Child items**.
 
 ### Remove a child epic from a parent epic
 

@@ -304,8 +304,7 @@ RSpec.describe Projects::Operations::UpdateService, feature_category: :groups_an
         let!(:prometheus_integration) do
           create(:prometheus_integration, :instance, properties: {
             api_url: "http://example.prometheus.com",
-            manual_configuration: "0",
-            google_iap_audience_client_id: 123
+            manual_configuration: "0"
           })
         end
 
@@ -316,6 +315,18 @@ RSpec.describe Projects::Operations::UpdateService, feature_category: :groups_an
               'manual_configuration' => '1'
             }
           }
+        end
+
+        context 'when find_or_initialize_integration returns nil' do
+          before do
+            allow_next_instance_of(Project) do |instance|
+              allow(instance).to receive(:find_or_initialize_integration).and_return(nil)
+            end
+          end
+
+          it 'does not include prometheus_integration_attributes' do
+            expect(subject.execute[:prometheus_integration_attributes]).to be_nil
+          end
         end
 
         it 'uses Project#find_or_initialize_integration to include instance defined defaults and pass them to Projects::UpdateService', :aggregate_failures do
@@ -333,8 +344,7 @@ RSpec.describe Projects::Operations::UpdateService, feature_category: :groups_an
 
           expect(Integrations::Prometheus.last).to have_attributes(
             api_url: 'http://new.prometheus.com',
-            manual_configuration: true,
-            google_iap_audience_client_id: 123
+            manual_configuration: true
           )
         end
       end

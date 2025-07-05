@@ -2,7 +2,7 @@
 import { GlBreadcrumb } from '@gitlab/ui';
 import { s__, __ } from '~/locale';
 import glFeatureFlagMixin from '~/vue_shared/mixins/gl_feature_flags_mixin';
-import { ROUTES, WORK_ITEM_TYPE_ENUM_EPIC } from '../constants';
+import { ROUTES, WORK_ITEM_TYPE_NAME_EPIC } from '../constants';
 
 const BREADCRUMB_LABELS = {
   workItemList: s__('WorkItem|Work items'),
@@ -25,12 +25,18 @@ export default {
       default: false,
     },
   },
+  props: {
+    staticBreadcrumbs: {
+      type: Array,
+      required: true,
+    },
+  },
   computed: {
     isWorkItemOnly() {
       return this.glFeatures.workItemPlanningView;
     },
     isEpicsList() {
-      return this.workItemType === WORK_ITEM_TYPE_ENUM_EPIC;
+      return this.workItemType === WORK_ITEM_TYPE_NAME_EPIC;
     },
     listName() {
       if (this.isWorkItemOnly) {
@@ -41,14 +47,11 @@ export default {
         return __('Epics');
       }
 
-      return this.isGroup ? s__('WorkItem|Work items') : __('Issues');
+      return __('Issues');
     },
     issueAsWorkItem() {
       return (
-        !this.isGroup &&
-        (this.glFeatures.workItemViewForIssues ||
-          (this.glFeatures.workItemsViewPreference && gon.current_user_use_work_items_view)) &&
-        this.glFeatures.workItemsAlpha
+        !this.isGroup && this.glFeatures.workItemViewForIssues && this.glFeatures.workItemsAlpha
       );
     },
     crumbs() {
@@ -56,13 +59,13 @@ export default {
         text: this.listName,
       };
 
-      if (this.isWorkItemOnly || this.glFeatures.workItemEpicsList || this.issueAsWorkItem) {
+      if (this.isWorkItemOnly || this.isGroup || this.issueAsWorkItem) {
         indexCrumb.to = { name: ROUTES.index, query: this.$route.query };
       } else {
         indexCrumb.href = this.listPath;
       }
 
-      const crumbs = [indexCrumb];
+      const crumbs = [...this.staticBreadcrumbs, indexCrumb];
 
       if (this.$route.name === ROUTES.new) {
         crumbs.push({

@@ -4,6 +4,8 @@ class ProjectCiCdSetting < ApplicationRecord
   include ChronicDurationAttribute
   include EachBatch
 
+  ignore_column :restrict_user_defined_variables, remove_with: '18.3', remove_after: '2025-08-14'
+
   belongs_to :project, inverse_of: :ci_cd_settings
 
   DEFAULT_GIT_DEPTH = 20
@@ -20,7 +22,7 @@ class ProjectCiCdSetting < ApplicationRecord
 
   ALLOWED_SUB_CLAIM_COMPONENTS = %w[project_path ref_type ref].freeze
 
-  enum pipeline_variables_minimum_override_role: PIPELINE_VARIABLES_OVERRIDE_ROLES, _prefix: true
+  enum :pipeline_variables_minimum_override_role, PIPELINE_VARIABLES_OVERRIDE_ROLES, prefix: true
 
   before_validation :set_pipeline_variables_secure_defaults, on: :create
   before_create :set_default_git_depth
@@ -42,8 +44,11 @@ class ProjectCiCdSetting < ApplicationRecord
     numericality: {
       only_integer: true,
       greater_than_or_equal_to: ChronicDuration.parse('1 day'),
-      less_than_or_equal_to: ChronicDuration.parse('1 year'),
-      message: N_('must be between 1 day and 1 year')
+      less_than_or_equal_to: ->(_) { ::Gitlab::CurrentSettings.ci_delete_pipelines_in_seconds_limit },
+      message: ->(*) {
+        format(N_('must be between 1 day and %{limit}'),
+          limit: ::Gitlab::CurrentSettings.ci_delete_pipelines_in_seconds_limit_human_readable_long)
+      }
     }
 
   attribute :forward_deployment_enabled, default: true
@@ -53,14 +58,32 @@ class ProjectCiCdSetting < ApplicationRecord
   chronic_duration_attr :runner_token_expiration_interval_human_readable, :runner_token_expiration_interval
   chronic_duration_attr_writer :delete_pipelines_in_human_readable, :delete_pipelines_in_seconds
 
+  scope :for_namespace, ->(namespace) { joins(:project).where({ projects: { namespace: namespace } }) }
   scope :for_project, ->(ids) { where(project_id: ids) }
   scope :order_project_id_asc, -> { order(project_id: :asc) }
   scope :configured_to_delete_old_pipelines, -> do
     where.not(delete_pipelines_in_seconds: nil)
   end
+  scope :with_pipeline_variables_enabled, -> do
+    where.not(pipeline_variables_minimum_override_role: NO_ONE_ALLOWED_ROLE)
+  end
 
   def self.pluck_project_id(limit)
     limit(limit).pluck(:project_id)
+  end
+
+  def self.bulk_restrict_pipeline_variables!(project_ids:)
+    for_project(project_ids).update_all(pipeline_variables_minimum_override_role: NO_ONE_ALLOWED_ROLE)
+  end
+
+  def self.project_ids_not_using_variables(settings_relation, limit)
+    project_ids = settings_relation.limit(limit).pluck(:project_id)
+
+    projects_with_vars =
+      Ci::PipelineVariable.projects_with_variables(project_ids, limit) +
+      Ci::JobVariable.projects_with_variables(project_ids, limit)
+
+    project_ids - projects_with_vars
   end
 
   def keep_latest_artifacts_available?
@@ -80,23 +103,8 @@ class ProjectCiCdSetting < ApplicationRecord
     role_access_level >= role_project_minimum_access_level || user&.can_admin_all_resources?
   end
 
-  def pipeline_variables_minimum_override_role=(value)
-    return if value.nil?
-
-    self[:restrict_user_defined_variables] = true # don't use the method because it's overridden
-    self[:pipeline_variables_minimum_override_role] = value
-  end
-
-  def pipeline_variables_minimum_override_role
-    return 'developer' unless restrict_user_defined_variables
-
-    self[:pipeline_variables_minimum_override_role]
-  end
-
   def restrict_user_defined_variables=(value)
     return unless [true, false].include?(value)
-
-    self[:restrict_user_defined_variables] = true
 
     if value == true && pipeline_variables_minimum_override_role == 'developer'
       self[:pipeline_variables_minimum_override_role] = 'maintainer'
@@ -107,14 +115,13 @@ class ProjectCiCdSetting < ApplicationRecord
     end
   end
 
-  def restrict_user_defined_variables
-    self[:restrict_user_defined_variables] && self[:pipeline_variables_minimum_override_role] != 'developer'
+  def restrict_user_defined_variables?
+    self[:pipeline_variables_minimum_override_role] != 'developer'
   end
 
   private
 
   def set_pipeline_variables_secure_defaults
-    self.restrict_user_defined_variables = true
     self.pipeline_variables_minimum_override_role = project.root_namespace.pipeline_variables_default_role
   end
 

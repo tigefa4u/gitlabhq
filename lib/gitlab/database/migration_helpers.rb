@@ -13,6 +13,7 @@ module Gitlab
       include Migrations::SidekiqHelpers
       include Migrations::RedisHelpers
       include DynamicModelHelpers
+      include FeatureFlagMigratorHelpers
       include RenameTableHelpers
       include AsyncIndexes::MigrationHelpers
       include AsyncConstraints::MigrationHelpers

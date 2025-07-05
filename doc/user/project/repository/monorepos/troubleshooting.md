@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Data Access
 group: Gitaly
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Troubleshooting monorepo performance
@@ -43,11 +43,11 @@ such as:
 
 - Turn on [pack-objects-cache](../../../../administration/gitaly/configure_gitaly.md#pack-objects-cache)
   to reduce the work that `git-pack-objects` has to do.
-- Change [Git strategy](_index.md#git-strategy)
+- Change [Git strategy](_index.md#use-git-fetch-in-cicd-operations)
   in CI/CD settings from `clone` to `fetch` or `none`.
-- [Stop fetching tags](_index.md#git-fetch-extra-flags),
+- [Stop fetching tags](_index.md#change-git-fetch-behavior-with-flags),
   unless your tests require them.
-- [Use shallow clones](_index.md#shallow-cloning)
+- [Use shallow clones](_index.md#use-shallow-clones-in-cicd-processes)
   whenever possible.
 
 The other option is to increase CPU capacity on Gitaly servers.
@@ -85,7 +85,7 @@ delete to fail when concurrent deletes happen.
 
 Engineers at GitLab have developed mitigations to try to batch reference deletions.
 
-Turn on the following [feature flags](../../../../administration/feature_flags.md) to allow GitLab to batch ref deletions.
+Turn on the following [feature flags](../../../../administration/feature_flags/_index.md) to allow GitLab to batch ref deletions.
 These feature flags do not need downtime to enable.
 
 - `merge_request_cleanup_ref_worker_async`

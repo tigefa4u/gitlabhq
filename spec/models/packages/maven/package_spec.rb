@@ -24,6 +24,10 @@ RSpec.describe Packages::Maven::Package, type: :model, feature_category: :packag
           '1.2.3-4/../../', '1.2.3-4%2e%2e%', '../../../../../1.2.3', '%2e%2e%2f1.2.3').for(:version)
       end
     end
+
+    describe '#name' do
+      it_behaves_like 'validate package name format', :maven_package
+    end
   end
 
   describe '.only_maven_packages_with_path' do
@@ -77,23 +81,6 @@ RSpec.describe Packages::Maven::Package, type: :model, feature_category: :packag
       let_it_be(:package) { create(:maven_package, version: nil) }
 
       it_behaves_like 'not enqueuing a sync worker job'
-    end
-  end
-
-  describe '#prevent_concurrent_inserts' do
-    let(:maven_package) { build(:maven_package, project_id: 5) }
-    let(:lock_key) do
-      maven_package.connection.quote(
-        "#{described_class.table_name}-#{maven_package.project_id}-#{maven_package.name}-#{maven_package.version}"
-      )
-    end
-
-    subject(:exec) { maven_package.send(:prevent_concurrent_inserts) }
-
-    it 'executes advisory lock' do
-      expect(maven_package.connection).to receive(:execute).with("SELECT pg_advisory_xact_lock(hashtext(#{lock_key}))")
-
-      exec
     end
   end
 end

@@ -2,6 +2,7 @@
 stage: Plan
 group: Project Management
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+gitlab_dedicated: no
 title: Incoming email
 ---
 
@@ -225,8 +226,7 @@ Reply by email should now be working.
 
    {{< alert type="note" >}}
 
-   This step is necessary to avoid thread deadlocks and to support the latest MailRoom features. See
-   [this explanation](../development/emails.md#mailroom-gem-updates) for more details.
+   This step is necessary to avoid thread deadlocks and to support the latest MailRoom features.
 
    {{< /alert >}}
 
@@ -859,7 +859,7 @@ Record the following when you configure your OAuth 2.0 application:
 
 For MailRoom to work as a service account, the application you create
 in Azure Active Directory requires that you set the `Mail.ReadWrite` property
-to read/write mail in *all* mailboxes.
+to read/write mail in all mailboxes.
 
 To mitigate security concerns, we recommend configuring an application access
 policy which limits the mailbox access for all accounts, as described in

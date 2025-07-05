@@ -3,6 +3,7 @@ stage: Application Security Testing
 group: Dynamic Analysis
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Dynamic Application Security Testing (DAST)
+description: Automated penetration testing, vulnerability detection, web application scanning, security assessment, and CI/CD integration.
 ---
 
 {{< details >}}
@@ -61,7 +62,7 @@ target branches.
 
 ## View scan results
 
-Detected vulnerabilities appear in [merge requests](../detect/security_scan_results.md#merge-request), the [pipeline security tab](../vulnerability_report/pipeline.md),
+Detected vulnerabilities appear in [merge requests](../detect/security_scanning_results.md), the [pipeline security tab](../detect/security_scanning_results.md),
 and the [vulnerability report](../vulnerability_report/_index.md).
 
 {{< alert type="note" >}}
@@ -70,7 +71,7 @@ A pipeline may consist of multiple jobs, including SAST and DAST scanning. If an
 fails to finish for any reason, the security dashboard doesn't show DAST scanner output. For
 example, if the DAST job finishes but the SAST job fails, the security dashboard doesn't show DAST
 results. On failure, the analyzer outputs an
-[exit code](../../../development/integrations/secure.md#exit-code).
+exit code.
 
 {{< /alert >}}
 

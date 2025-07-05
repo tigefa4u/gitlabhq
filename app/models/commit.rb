@@ -413,11 +413,7 @@ class Commit
     message_body = ["(cherry picked from commit #{sha})"]
 
     if merged_merge_request?(user)
-      commits_in_merge_request = if Feature.enabled?(:more_commits_from_gitaly, project)
-                                   merged_merge_request(user).commits(load_from_gitaly: true)
-                                 else
-                                   merged_merge_request(user).commits
-                                 end
+      commits_in_merge_request = merged_merge_request(user).commits(load_from_gitaly: true)
 
       if commits_in_merge_request.present?
         message_body << ""
@@ -600,9 +596,7 @@ class Commit
   end
 
   def first_diffs_slice(limit, diff_options = {})
-    diff_options[:max_files] = limit
-
-    diffs(diff_options).diff_files
+    diffs(diff_options.merge(max_files: limit)).diff_files
   end
 
   private

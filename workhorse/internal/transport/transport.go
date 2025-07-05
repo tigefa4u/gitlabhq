@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"syscall"
 	"time"
 
@@ -52,6 +53,19 @@ var privateNetworks = []net.IPNet{
 	parseCIDR("64:ff9b::/96"),  /* IPv4/IPv6 translation - RFC 6052 */
 	parseCIDR("2001:10::/28"),  /* Deprecated (previously ORCHID) - RFC 4843 */
 	parseCIDR("2001:20::/28"),  /* ORCHIDv2 - RFC7343 */
+}
+
+var lookupIPFunc = net.LookupIP
+
+// AllowedIPError represents an error that occurs when an IP address
+// is not allowed according to the security policy.
+type AllowedIPError struct {
+	IP      net.IP
+	Message string
+}
+
+func (e *AllowedIPError) Error() string {
+	return fmt.Sprintf("IP %s is not allowed: %s", e.IP.String(), e.Message)
 }
 
 // NewDefaultTransport creates a new default transport that has Workhorse's User-Agent header set.
@@ -106,10 +120,10 @@ func WithResponseHeaderTimeout(timeout time.Duration) Option {
 }
 
 // WithSSRFFilter sets IP restrictions for the transport.
-func WithSSRFFilter(allowLocalhost bool, allowedURIs []string) Option {
+func WithSSRFFilter(allowLocalhost bool, allowedEndpoints []string) Option {
 	return func(t *http.Transport) {
 		t.DialContext = (&net.Dialer{
-			Control: validateIPAddress(allowLocalhost, allowedURIs),
+			Control: validateIPAddress(allowLocalhost, allowedEndpoints),
 		}).DialContext
 	}
 }
@@ -130,19 +144,45 @@ func newRestrictedTransport(options ...Option) http.RoundTripper {
 	return tracing.NewRoundTripper(correlation.NewInstrumentedRoundTripper(t))
 }
 
-func validateIPAddress(allowLocalhost bool, allowedURIs []string) func(network, address string, c syscall.RawConn) error {
+func validateIPAddress(allowLocalhost bool, allowedEndpoints []string) func(network, address string, c syscall.RawConn) error {
 	return func(_, address string, _ syscall.RawConn) error {
 		host, _, _ := net.SplitHostPort(address)
 
 		ipAddress := net.ParseIP(host)
 
-		for _, allowedURI := range allowedURIs {
-			uri := helper.URLMustParse(allowedURI)
+		for _, allowedEndpoint := range allowedEndpoints {
+			var hostname string
 
-			ips, err := net.LookupIP(uri.Hostname())
+			switch {
+			case strings.Contains(allowedEndpoint, "://"):
+				// It's already a URL
+				uri := helper.URLMustParse(allowedEndpoint)
+				hostname = uri.Hostname()
+			case strings.Contains(allowedEndpoint, ":"):
+				// It's a host:port format
+				hostPart, _, err := net.SplitHostPort(allowedEndpoint)
+				if err != nil {
+					return fmt.Errorf("invalid host:port format: %v", err)
+				}
 
+				hostname = hostPart
+			default:
+				// It's a hostname
+				hostname = allowedEndpoint
+			}
+
+			// Check if it's an IP address itself
+			if ip := net.ParseIP(hostname); ip != nil {
+				if ip.Equal(ipAddress) {
+					return nil
+				}
+				continue // Skip DNS lookup for IP addresses
+			}
+
+			// Perform DNS lookup
+			ips, err := lookupIPFunc(hostname)
 			if err != nil {
-				return fmt.Errorf("error resolving IP address: %v", err)
+				return fmt.Errorf("error resolving IP address for %s: %v", hostname, err)
 			}
 
 			for _, ip := range ips {
@@ -153,31 +193,31 @@ func validateIPAddress(allowLocalhost bool, allowedURIs []string) func(network, 
 		}
 
 		if ipAddress.Equal(net.IPv4bcast) {
-			return fmt.Errorf("requests to the limited broadcast address are not allowed")
+			return &AllowedIPError{IP: ipAddress, Message: "limited broadcast IPs are not allowed"}
 		}
 
 		for _, network := range privateNetworks {
 			if network.Contains(ipAddress) {
-				return fmt.Errorf("requests to the private network are not allowed")
+				return &AllowedIPError{IP: ipAddress, Message: "private IPs are not allowed"}
 			}
 		}
 
 		if !allowLocalhost {
 			for _, network := range loopbackNetworks {
 				if network.Contains(ipAddress) {
-					return fmt.Errorf("requests to loopback addresses are not allowed")
+					return &AllowedIPError{IP: ipAddress, Message: "loopback IPs are not allowed"}
 				}
 			}
 
 			for _, network := range unspecifiedNetworks {
 				if network.Contains(ipAddress) {
-					return fmt.Errorf("requests to the localhost are not allowed")
+					return &AllowedIPError{IP: ipAddress, Message: "unspecified IPs are not allowed"}
 				}
 			}
 		}
 
 		if ipAddress.IsLinkLocalMulticast() || ipAddress.IsLinkLocalUnicast() {
-			return fmt.Errorf("requests to the link local network are not allowed")
+			return &AllowedIPError{IP: ipAddress, Message: "link-local unicast and multicast IPs are not allowed"}
 		}
 
 		return nil

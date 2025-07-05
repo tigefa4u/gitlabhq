@@ -1,7 +1,7 @@
 ---
 stage: Create
 group: Source Code
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Websocket channel support for Workhorse
 ---
 
@@ -18,7 +18,7 @@ the architecture of these connections.
 ## Introduction to WebSockets
 
 Websockets are an "upgraded" `HTTP/1.1` request. They permit bidirectional
-communication between a client and a server. **Websockets are not HTTP**.
+communication between a client and a server. Websockets are not HTTP.
 Clients can send messages (known as frames) to the server at any time, and
 vice versa. Client messages are not necessarily requests, and server messages are
 not necessarily responses. WebSocket URLs have schemes like `ws://` (unencrypted) or
@@ -121,7 +121,7 @@ This returns a JSON response containing details of where the
 terminal can be found, and how to connect it. In particular,
 the following details are returned in case of success:
 
-- WebSocket URL to connect** to, such as `wss://example.com/terminals/1.ws?tty=1`.
+- WebSocket URL to connect to, such as `wss://example.com/terminals/1.ws?tty=1`.
 - WebSocket sub-protocols to support, such as `["channel.k8s.io"]`.
 - Headers to send, such as `Authorization: Token xxyyz`.
 - Optional. Certificate authority to verify `wss` connections with.

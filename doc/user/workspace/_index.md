@@ -15,8 +15,7 @@ title: Workspaces
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/112397) in GitLab 15.11 [with a flag](../../administration/feature_flags.md) named `remote_development_feature_flag`. Disabled by default.
-- [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/391543) in GitLab 16.0.
+- Feature flag `remote_development_feature_flag` [enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/391543) in GitLab 16.0.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/136744) in GitLab 16.7. Feature flag `remote_development_feature_flag` removed.
 
 {{< /history >}}
@@ -31,6 +30,15 @@ which you can customize to meet the specific needs of each project.
 A Workspace can exist for a maximum of approximately one calendar year, `8760` hours. After this, it is automatically terminated.
 
 For a click-through demo, see [GitLab workspaces](https://tech-marketing.gitlab.io/static-demos/workspaces/ws_html.html).
+
+{{< alert type="note" >}}
+
+A Workspace runs on any `linux/amd64` Kubernetes cluster. If you need to run sudo commands, or
+build and run containers in your workspace, there might be platform-specific requirements.
+
+For more information, see [Platform compatibility](configuration.md#platform-compatibility).
+
+{{< /alert >}}
 
 ## Workspaces and projects
 
@@ -48,14 +56,13 @@ A running workspace remains accessible to the user even if user permissions are 
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/125331) in GitLab 16.2.
-- Managing workspaces from the **Code** menu [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/178492) in GitLab 17.11.
 
 {{< /history >}}
 
 To manage workspaces from a project:
 
 1. On the left sidebar, select **Search or go to** and find your project.
-1. In the upper right, select **Code**.
+1. In the upper right, select **Edit**.
 1. From the dropdown list, under **Your workspaces**, you can:
    - Restart, stop, or terminate an existing workspace.
    - Create a new workspace.
@@ -126,7 +133,9 @@ Workspaces support both GitLab default devfile and custom devfiles.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/171230) in GitLab 17.8.
+- [Introduced with Go](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/171230) in GitLab 17.8.
+- [Added support for Node, Ruby, and Rust](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/185393) in GitLab 17.9.
+- [Added support for Python, PHP, Java, and GCC](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/188199) in GitLab 18.0.
 
 {{< /history >}}
 
@@ -140,8 +149,18 @@ components:
     attributes:
       gl/inject-editor: true
     container:
-      image: "registry.gitlab.com/gitlab-org/gitlab-build-images/workspaces/ubuntu-24.04:20250321073701-golang-1.23-node-23.9-yarn-1.22-ruby-3.4.2-rust-1.85-docker-27.5.1@sha256:a059826e65f0bc0ee2f3fdfd62f16a108c5b99b24b4656734cd6b8f4631389ad"
+      image: "registry.gitlab.com/gitlab-org/gitlab-build-images/workspaces/ubuntu-24.04:[VERSION_TAG]"
 ```
+
+{{< alert type="note" >}}
+
+This container `image` is updated regularly. `[VERSION_TAG]` is a placeholder only. For the latest version, see the
+[default `default_devfile.yaml`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/ee/lib/remote_development/settings/default_devfile.yaml).
+
+{{< /alert >}}
+
+The workspace default image includes development tools such as Ruby, Node.js, Rust, Go, Python,
+Java, PHP, GCC, and their corresponding package managers. These tools are updated regularly.
 
 A GitLab default devfile might not be suitable for all development environments configurations.
 In these cases, you can create a [custom devfile](#custom-devfile).
@@ -162,13 +181,19 @@ You can define a devfile in the following locations, relative to your project's 
 
 - `schemaVersion` must be [`2.2.0`](https://devfile.io/docs/2.2.0/devfile-schema).
 - The devfile must have at least one component.
+- The devfile size must not exceed 3 MB.
 - For `components`:
   - Names must not start with `gl-`.
   - Only [`container`](#container-component-type) and `volume` are supported.
-- For `commands`, IDs must not start with `gl-`.
+- For `commands`:
+  - IDs must not start with `gl-`.
+  - Only `exec` and `apply` command types are supported.
+  - For `exec` commands, only the following options are supported: `commandLine`, `component`, `label`, and `hotReloadCapable`.
+  - When `hotReloadCapable` is specified for `exec` commands, it must be set to `false`.
 - For `events`:
   - Names must not start with `gl-`.
-  - Only `preStart` is supported.
+  - Only `preStart` and [`postStart`](#user-defined-poststart-events) are supported.
+  - The Devfile standard only allows exec commands to be linked to `postStart` events. If you want an apply command, you must use a `preStart` event.
 - `parent`, `projects`, and `starterProjects` are not supported.
 - For `variables`, keys must not start with `gl-`, `gl_`, `GL-`, or `GL_`.
 - For `attributes`:
@@ -193,6 +218,19 @@ The `container` component type supports the following schema properties only:
 | `endpoints`    | Port mappings to expose from the container. Names must not start with `gl-`.                                                   |
 | `volumeMounts` | Storage volume to mount in the container.                                                                                      |
 
+### User-defined `postStart` events
+
+You can define custom `postStart` events in your devfile to run commands after the workspace starts. Use this type of event to:
+
+- Set up development dependencies.
+- Configure the workspace environment.
+- Run initialization scripts.
+
+`postStart` event names must not start with `gl-` and can only reference `exec` type commands.
+
+For an example that shows how to configure `postStart` events,
+see the [example configurations](#example-configurations).
+
 ### Example configurations
 
 The following is an example devfile configuration:
@@ -213,13 +251,30 @@ components:
       endpoints:
         - name: http-3000
           targetPort: 3000
+commands:
+  - id: install-dependencies
+    exec:
+      component: tooling-container
+      commandLine: "npm install"
+  - id: setup-environment
+    exec:
+      component: tooling-container
+      commandLine: "echo 'Setting up development environment'"
+events:
+  postStart:
+    - install-dependencies
+    - setup-environment
 ```
+
+{{< alert type="note" >}}
+
+This container image is for demonstration purposes only. To use your own container image,
+see [Arbitrary user IDs](#arbitrary-user-ids).
+
+{{< /alert >}}
 
 For more information, see the [devfile documentation](https://devfile.io/docs/2.2.0/devfile-schema).
 For other examples, see the [`examples` projects](https://gitlab.com/gitlab-org/remote-development/examples).
-
-This container image is for demonstration purposes only.
-To use your own container image, see [Arbitrary user IDs](#arbitrary-user-ids).
 
 ## Workspace container requirements
 
@@ -228,13 +283,25 @@ in the container that has a defined `gl/inject-editor` attribute in the devfile.
 The workspace container where the GitLab VS Code fork is injected
 must meet the following system requirements:
 
-- **System architecture:** AMD64
-- **System libraries:**
+- System architecture: AMD64
+- System libraries:
   - `glibc` 2.28 and later
   - `glibcxx` 3.4.25 and later
 
 These requirements have been tested on Debian 10.13 and Ubuntu 20.04.
 For more information, see the [VS Code documentation](https://code.visualstudio.com/docs/remote/linux).
+
+{{< alert type="note" >}}
+
+GitLab always pulls the workspace injector image (`gl-tools-injector`) and project cloner image
+(`gl-project-cloner`) from the GitLab registry (`registry.gitlab.com/gitlab-org/gitlab-web-ide-vscode-fork/web-ide-injector`).
+These images cannot be overridden.
+
+If you use a private container registry for your other images, GitLab still needs to fetch these
+specific images from the GitLab registry. This requirement may impact environments with strict network
+controls, such as offline environments.
+
+{{< /alert >}}
 
 ## Workspace add-ons
 
@@ -262,7 +329,7 @@ For more information, see [GitLab Workflow extension for VS Code](https://gitlab
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/438491) as a [beta](../../policy/development_stages_support.md#beta) in GitLab 16.9 [with a flag](../../administration/feature_flags.md) named `allow_extensions_marketplace_in_workspace`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/438491) as a [beta](../../policy/development_stages_support.md#beta) in GitLab 16.9 [with a flag](../../administration/feature_flags/_index.md) named `allow_extensions_marketplace_in_workspace`. Disabled by default.
 - Feature flag `allow_extensions_marketplace_in_workspace` [removed](https://gitlab.com/gitlab-org/gitlab/-/issues/454669) in GitLab 17.6.
 
 {{< /history >}}
@@ -348,6 +415,29 @@ see [Create a custom workspace image that supports arbitrary user IDs](create_im
 
 For more information, see the
 [OpenShift documentation](https://docs.openshift.com/container-platform/4.12/openshift_images/create-images.html#use-uid_create-images).
+
+## Shallow cloning
+
+{{< history >}}
+
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/543982) in GitLab 18.2 [with a flag](../../administration/feature_flags/_index.md) named `workspaces_shallow_clone_project`. Disabled by default.
+
+{{< /history >}}
+
+{{< alert type="flag" >}}
+
+The availability of this feature is controlled by a feature flag.
+For more information, see the history.
+This feature is available for testing, but not ready for production use.
+
+{{< /alert >}}
+
+When you create a workspace, GitLab uses shallow cloning to improve performance.
+A shallow clone downloads only the latest commit history instead of the complete Git history,
+which significantly reduces the initial clone time for large repositories.
+
+After the workspace starts, Git converts the shallow clone to a full clone in the background.
+This process is transparent and doesn't affect your development workflow.
 
 ## Related topics
 

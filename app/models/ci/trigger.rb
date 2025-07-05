@@ -15,7 +15,6 @@ module Ci
     belongs_to :project
     belongs_to :owner, class_name: "User"
 
-    has_many :trigger_requests
     has_many :pipelines, class_name: 'Ci::Pipeline'
 
     validates :token, presence: true, uniqueness: true
@@ -34,16 +33,30 @@ module Ci
 
     before_save :copy_token_to_encrypted_token
 
+    scope :with_last_used, -> do
+      ci_pipelines = Ci::Pipeline.arel_table
+      last_used_pipelines =
+        ci_pipelines
+          .project(ci_pipelines[:created_at].as('last_used'))
+          .where(ci_pipelines[:trigger_id].eq(arel_table[:id]))
+          .order(ci_pipelines[:id].desc)
+          .take(1)
+      query = joins(Arel.sql("LEFT JOIN LATERAL (#{last_used_pipelines.to_sql}) last_used_pipelines ON TRUE"))
+      query = query.select(default_select_columns) if query.select_values.blank?
+      query.select(:last_used)
+    end
+
+    scope :with_token, ->(tokens) { where(token: Array.wrap(tokens).compact.reject(&:blank?)) }
+
     def set_default_values
       self.token = "#{TRIGGER_TOKEN_PREFIX}#{SecureRandom.hex(20)}" if self.token.blank?
     end
 
     def last_used
-      if ::Feature.enabled?(:ci_read_trigger_from_ci_pipeline, project)
-        pipelines.last&.created_at
-      else
-        trigger_requests.last&.created_at
-      end
+      # The instance should be preloaded by `.with_last_used` for performance reason
+      return attributes['last_used'] if attributes.has_key?('last_used')
+
+      pipelines.order(id: :desc).pick(:created_at)
     end
 
     def short_token

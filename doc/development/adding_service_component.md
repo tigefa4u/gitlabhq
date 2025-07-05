@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Adding a new Service Component to GitLab
 ---
 
@@ -43,13 +43,13 @@ In addition, it needs to cover the following:
 - Features provided by the component have been accepted into the [GitLab Product Direction](https://about.gitlab.com/direction/).
 - Documentation is available and the support team has been made aware of the new component.
 
-**For services that can operate completely separate from GitLab:**
+**For services that can operate completely separate from GitLab**:
 
 The first iteration should be to add the ability to connect and use the service as an externally installed component. Often this involves providing settings in GitLab to connect to the service, or allow connections from it. And then shipping documentation on how to install and configure the service with GitLab.
 
 [Elasticsearch](../integration/advanced_search/elasticsearch.md#install-an-elasticsearch-or-aws-opensearch-cluster) is an example of a service that has been integrated this way. Many of the other services, including internal projects like Gitaly, started off as separately installed alternatives.
 
-**For services that depend on the existing GitLab codebase:**
+**For services that depend on the existing GitLab codebase**:
 
 The first iteration should be opt-in, either through the `gitlab.yml` configuration or through [feature flags](feature_flags/_index.md). For these types of services it is often necessary to [bundle the service and its dependencies with GitLab](#bundling-a-service-with-gitlab) as part of the initial integration.
 
@@ -63,7 +63,7 @@ The first iteration should be opt-in, either through the `gitlab.yml` configurat
 
 Code shipped with GitLab needs to use a license approved by the Legal team. See the list of [existing approved licenses](https://handbook.gitlab.com/handbook/engineering/open-source/#using-open-source-software).
 
-Notify the [Distribution team](https://handbook.gitlab.com/handbook/engineering/infrastructure/core-platform/systems/distribution/) when adding a new dependency that must be compiled. We must be able to compile the dependency on all supported platforms.
+Notify the [Distribution team](https://handbook.gitlab.com/handbook/engineering/infrastructure-platforms/gitlab-delivery/distribution/) when adding a new dependency that must be compiled. We must be able to compile the dependency on all supported platforms.
 
 New services to be bundled with GitLab need to be available in the following environments.
 
@@ -86,7 +86,7 @@ In order for a service to be bundled for end-users or GitLab.com, it needs to be
 Dependencies should be kept up to date and be tracked for security updates. For the Rails codebase, the JavaScript and Ruby dependencies are
 scanned for vulnerabilities using GitLab [dependency scanning](../user/application_security/dependency_scanning/_index.md).
 
-In addition, any system dependencies used in Omnibus packages or the Cloud Native images should be added to the [dependency update automation](https://handbook.gitlab.com/handbook/engineering/infrastructure/core-platform/systems/distribution/maintenance/dependencies.io/#adding-new-dependencies).
+In addition, any system dependencies used in Omnibus packages or the Cloud Native images should be added to the [dependency update automation](https://handbook.gitlab.com/handbook/engineering/infrastructure-platforms/gitlab-delivery/distribution/maintenance).
 
 ## Release management
 

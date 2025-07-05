@@ -12,10 +12,13 @@ module SessionsHelper
     Gitlab::Utils::Email.obfuscated_email(email)
   end
 
-  def remember_me_enabled?
-    return false if session_expire_from_init_enabled?
+  def session_expire_modal_data
+    { session_timeout: Gitlab::Auth::SessionExpireFromInitEnforcer.session_expires_at(session) * 1000,
+      sign_in_url: new_session_url(:user, redirect_to_referer: 'yes') }
+  end
 
-    Gitlab::CurrentSettings.remember_me_enabled?
+  def remember_me_enabled?
+    Gitlab::CurrentSettings.allow_user_remember_me?
   end
 
   def unconfirmed_verification_email?(user)
@@ -33,15 +36,14 @@ module SessionsHelper
       obfuscated_email: obfuscated_email(verification_email(user)),
       verify_path: session_path(:user),
       resend_path: users_resend_verification_code_path,
-      offer_email_reset: user.email_reset_offered_at.nil?.to_s,
+      offer_email_reset: offer_email_reset_enabled?(user).to_s,
       update_email_path: users_update_email_path
     }
   end
 
   private
 
-  def session_expire_from_init_enabled?
-    Feature.enabled?(:session_expire_from_init, :instance) &&
-      Gitlab::CurrentSettings.session_expire_from_init
+  def offer_email_reset_enabled?(user)
+    Feature.enabled?(:offer_email_reset, :instance) && !user.email_reset_offered_at
   end
 end

@@ -1,5 +1,6 @@
 import produce from 'immer';
 import VueApollo from 'vue-apollo';
+import { unionBy } from 'lodash';
 import { concatPagination } from '@apollo/client/utilities';
 import { makeVar } from '@apollo/client/core';
 import errorQuery from '~/boards/graphql/client/error.query.graphql';
@@ -14,6 +15,7 @@ import {
   WIDGET_TYPE_HIERARCHY,
   WIDGET_TYPE_LINKED_ITEMS,
   WIDGET_TYPE_ASSIGNEES,
+  WIDGET_TYPE_VULNERABILITIES,
 } from '~/work_items/constants';
 
 import isExpandedHierarchyTreeChildQuery from '~/work_items/graphql/client/is_expanded_hierarchy_tree_child.query.graphql';
@@ -133,6 +135,15 @@ export const config = {
           },
         },
       },
+      WorkItemWidgetVulnerabilities: {
+        fields: {
+          // If we add any key args, the relatedVulnerabilities field becomes relatedVulnerabilities({"first":50,"after":"xyz"}) and
+          // kills any possibility to handle it on the widget level without hardcoding a string.
+          relatedVulnerabilities: {
+            keyArgs: false,
+          },
+        },
+      },
       WorkItem: {
         fields: {
           // Prevent `reference` from being transformed into `reference({"fullPath":true})`
@@ -141,11 +152,15 @@ export const config = {
           },
           // widgets policy because otherwise the subscriptions invalidate the cache
           widgets: {
+            keyArgs: false,
             merge(existing = [], incoming, context) {
               if (existing.length === 0) {
                 return incoming;
               }
-              return existing.map((existingWidget) => {
+
+              const mergedWidgets = unionBy(existing, incoming, '__typename');
+
+              return mergedWidgets.map((existingWidget) => {
                 const incomingWidget = incoming.find(
                   (w) => w.type && w.type === existingWidget.type,
                 );
@@ -196,6 +211,25 @@ export const config = {
                   };
                 }
 
+                // we want to concat next page of vulnerabilities work items within Vulnerabilities widget to the existing ones
+                if (
+                  incomingWidget?.type === WIDGET_TYPE_VULNERABILITIES &&
+                  context.variables.after &&
+                  incomingWidget.relatedVulnerabilities?.nodes
+                ) {
+                  // concatPagination won't work because we were placing new widget here so we have to do this manually
+                  return {
+                    ...incomingWidget,
+                    relatedVulnerabilities: {
+                      ...incomingWidget.relatedVulnerabilities,
+                      nodes: [
+                        ...existingWidget.relatedVulnerabilities.nodes,
+                        ...incomingWidget.relatedVulnerabilities.nodes,
+                      ],
+                    },
+                  };
+                }
+
                 // this ensures that we don’t override linkedItems.workItem when updating parent
                 if (incomingWidget?.type === WIDGET_TYPE_LINKED_ITEMS) {
                   if (!incomingWidget.linkedItems) {
@@ -228,6 +262,7 @@ export const config = {
                   }
 
                   return {
+                    ...existingWidget,
                     ...incomingWidget,
                     linkedItems: {
                       ...incomingWidget.linkedItems,

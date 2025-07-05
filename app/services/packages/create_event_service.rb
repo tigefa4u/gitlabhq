@@ -4,6 +4,9 @@ module Packages
   class CreateEventService < BaseService
     INTERNAL_EVENTS_NAMES = {
       'delete_package' => 'delete_package_from_registry',
+      'delete_recipe_revision' => 'delete_recipe_revision_from_registry',
+      'delete_package_reference' => 'delete_package_reference_from_registry',
+      'delete_package_revision' => 'delete_package_revision_from_registry',
       'pull_package' => 'pull_package_from_registry',
       'push_package' => 'push_package_to_registry',
       'push_symbol_package' => 'push_symbol_package_to_registry',
@@ -26,8 +29,9 @@ module Packages
         namespace: params[:namespace],
         additional_properties: {
           label: event_scope.to_s,
-          property: originator_type.to_s
-        }
+          property: originator_type.to_s,
+          deploy_token_id: deploy_token_id
+        }.compact
       )
     end
 
@@ -54,6 +58,12 @@ module Packages
 
     def event_name
       params[:event_name]
+    end
+
+    def deploy_token_id
+      return unless current_user.is_a?(DeployToken)
+
+      Gitlab::CryptoHelper.sha256(current_user.id)
     end
   end
 end

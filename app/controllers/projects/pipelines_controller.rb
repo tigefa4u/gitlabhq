@@ -11,18 +11,6 @@ class Projects::PipelinesController < Projects::ApplicationController
     :charts, :destroy, :status, :manual_variables
   ]
 
-  before_action only: [:charts] do
-    push_frontend_feature_flag(:ci_improved_project_pipeline_analytics, project)
-  end
-
-  before_action only: [:show] do
-    push_frontend_feature_flag(:ci_pipeline_status_realtime, project)
-  end
-
-  before_action only: [:new, :create, :manual_variables] do
-    push_frontend_feature_flag(:ci_inputs_for_pipelines, project)
-  end
-
   before_action :disable_query_limiting, only: [:create, :retry]
   before_action :pipeline, except: [:index, :new, :create, :charts]
   before_action :set_pipeline_path, only: [:show]

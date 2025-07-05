@@ -1,8 +1,9 @@
 import { nextTick } from 'vue';
-import { GlButton, GlIcon } from '@gitlab/ui';
+import { GlButton, GlIcon, GlAnimatedChevronLgDownUpIcon } from '@gitlab/ui';
 import { shallowMountExtended } from 'helpers/vue_test_utils_helper';
 import CrudComponent from '~/vue_shared/components/crud_component.vue';
 import { useLocalStorageSpy } from 'helpers/local_storage_helper';
+import { parseBoolean } from '~/lib/utils/common_utils';
 
 describe('CRUD Component', () => {
   useLocalStorageSpy();
@@ -29,12 +30,13 @@ describe('CRUD Component', () => {
   const findFormToggle = () => wrapper.findByTestId('crud-form-toggle');
   const findActions = () => wrapper.findByTestId('crud-actions');
   const findForm = () => wrapper.findByTestId('crud-form');
-  const findLoadingIcon = () => wrapper.findByTestId('crud-loading');
+  const findSkeletonLoader = () => wrapper.findByTestId('crud-loading');
   const findEmpty = () => wrapper.findByTestId('crud-empty');
   const findBody = () => wrapper.findByTestId('crud-body');
   const findFooter = () => wrapper.findByTestId('crud-footer');
   const findPagination = () => wrapper.findByTestId('crud-pagination');
   const findCollapseToggle = () => wrapper.findByTestId('crud-collapse-toggle');
+  const findChevronIcon = () => wrapper.findComponent(GlAnimatedChevronLgDownUpIcon);
 
   afterEach(() => {
     localStorage.clear();
@@ -111,21 +113,23 @@ describe('CRUD Component', () => {
   it("doesn't render content while loading", () => {
     createComponent({ isLoading: true }, { default: '<p>Body slot</p>' });
 
-    expect(findLoadingIcon().exists()).toBe(true);
+    expect(findSkeletonLoader().exists()).toBe(true);
+    expect(findCount().exists()).toBe(false);
+    expect(findIcon().exists()).toBe(false);
     expect(findBody().text()).toBe('');
   });
 
   it('renders `empty` slot', () => {
     createComponent({}, { empty: '<span>Empty message</span>' });
 
-    expect(findLoadingIcon().exists()).toBe(false);
+    expect(findSkeletonLoader().exists()).toBe(false);
     expect(findEmpty().text()).toBe('Empty message');
   });
 
   it('renders `body` slot', () => {
     createComponent({}, { default: '<p>Body slot</p>' });
 
-    expect(findLoadingIcon().exists()).toBe(false);
+    expect(findSkeletonLoader().exists()).toBe(false);
     expect(findBody().text()).toBe('Body slot');
   });
 
@@ -201,6 +205,10 @@ describe('CRUD Component', () => {
       createComponent({ isCollapsible: true }, { default: '<p>Body slot</p>' });
 
       expect(findCollapseToggle().exists()).toBe(true);
+      // Vue compat doesn't know about component props if it extends other component
+      expect(
+        findChevronIcon().props('isOn') ?? parseBoolean(findChevronIcon().attributes('is-on')),
+      ).toBe(true);
     });
 
     it('click on toggle hides content', async () => {
@@ -211,6 +219,10 @@ describe('CRUD Component', () => {
       await findCollapseToggle().vm.$emit('click');
 
       expect(findBody().exists()).toBe(false);
+      // Vue compat doesn't know about component props if it extends other component
+      expect(
+        findChevronIcon().props('isOn') ?? parseBoolean(findChevronIcon().attributes('is-on')),
+      ).toBe(false);
     });
 
     it('`collapsed` hides content by default', () => {

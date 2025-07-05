@@ -2,19 +2,28 @@
 stage: Create
 group: Source Code
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-description: Control project visibility, creation, retention, and deletion on GitLab Self-Managed.
+gitlab_dedicated: yes
+description: Control project visibility, creation, retention, and deletion.
 title: Control access and visibility
 ---
 
 {{< details >}}
 
 - Tier: Free, Premium, Ultimate
-- Offering: GitLab Self-Managed
+- Offering: GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 
-GitLab enables users with administrator access to enforce
-specific controls on branches, projects, snippets, groups, and more.
+Administrators of GitLab instances can enforce specific controls on branches, projects, snippets, groups, and more.
+For example, you can define:
+
+- Which roles can create or delete projects.
+- Retention periods for deleted projects and groups.
+- Visibility of groups, projects, and snippets.
+- Allowed types and lengths for SSH keys.
+- Git settings, such as accepted protocols (SSH or HTTPS) and clone URLs.
+- Allow or prevent push mirroring and pull mirroring.
+- Allow or prevent invitations to groups and projects.
 
 Prerequisites:
 
@@ -50,7 +59,7 @@ Prerequisites:
 {{< alert type="note" >}}
 
 If you select **Administrators** and [Admin Mode](sign_in_restrictions.md#admin-mode)
-is turned on, administrators must enter Admin Mode to create new projects.
+is enabled, administrators must enter Admin Mode to create new projects.
 
 {{< /alert >}}
 
@@ -59,28 +68,20 @@ is turned on, administrators must enter Admin Mode to create new projects.
 {{< details >}}
 
 - Tier: Premium, Ultimate
-- Offering: GitLab Self-Managed
+- Offering: GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 
-{{< history >}}
-
-- User interface [changed](https://gitlab.com/gitlab-org/gitlab/-/issues/352960) in GitLab 15.1.
-
-{{< /history >}}
-
 Prerequisites:
 
-- You must be an administrator, or have the **Owner** role in a project.
+- You must be an administrator, or have the Owner role in a project.
 
 To restrict project deletion to only administrators:
 
 1. On the left sidebar, at the bottom, select **Admin**.
 1. Select **Settings > General**.
 1. Expand **Visibility and access controls**.
-1. Scroll to:
-   - (GitLab 15.1 and later) **Allowed to delete projects**, and select **Administrators**.
-   - (GitLab 15.0 and earlier) **Default project deletion protection**, and select **Only admins can delete project**.
+1. Scroll to **Allowed to delete projects**, and select **Administrators**.
 1. Select **Save changes**.
 
 To disable the restriction:
@@ -90,20 +91,10 @@ To disable the restriction:
 
 ## Deletion protection
 
-{{< details >}}
-
-- Tier: Premium, Ultimate
-- Offering: GitLab Self-Managed
-
-{{< /details >}}
-
 {{< history >}}
 
-- [Renamed](https://gitlab.com/gitlab-org/gitlab/-/issues/352960) from default delayed project deletion in GitLab 15.1.
-- [Enabled for projects in personal namespaces](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/89466) in GitLab 15.1.
-- [Disabled for projects in personal namespaces](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/95495) in GitLab 15.3.
-- [Removed option to delete immediately](https://gitlab.com/gitlab-org/gitlab/-/issues/389557) in GitLab 15.11 [with a flag](../feature_flags.md) named `always_perform_delayed_deletion`. Disabled by default.
 - Enabled delayed deletion by default and removed the option to delete immediately [on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/393622) and [on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/119606) in GitLab 16.0.
+- [Moved](https://gitlab.com/groups/gitlab-org/-/epics/17208) from GitLab Premium to GitLab Free in 18.0.
 
 {{< /history >}}
 
@@ -111,29 +102,18 @@ These protections help guard against accidental deletion of groups and projects 
 
 ### Retention period
 
-{{< history >}}
-
-- [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/352960) in GitLab 15.1.
-
-{{< /history >}}
-
 Groups and projects remain restorable during the retention period you define. By default,
 this is 7 days, but you can change it. If you set the retention period to `0` days, GitLab
 removes deleted groups and projects immediately. You can't restore them.
 
-In GitLab 15.1 and later, the retention period must be between `1` and `90` days.
-If, before the 15.1 update, you set the retention period to `0` days, the next time you change
-any application setting, GitLab:
-
-- Changes the retention period to `1` day.
-- Disables deletion protection.
+The retention period must be between `1` and `90` days.
 
 ### Delayed project deletion
 
 {{< history >}}
 
-- User interface [changed](https://gitlab.com/gitlab-org/gitlab/-/issues/352960) in GitLab 15.1.
 - Enabled delayed deletion by default and removed the option to delete immediately [on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/393622) and [on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/119606) in GitLab 16.0.
+- [Moved](https://gitlab.com/groups/gitlab-org/-/epics/17208) from GitLab Premium to GitLab Free in 18.0.
 
 {{< /history >}}
 
@@ -142,13 +122,9 @@ Prerequisites:
 - You must be an administrator.
 - You must enable delayed project deletion for groups before you can enable it for projects.
   Deletion protection is not available for projects only.
-- When disabled, GitLab 15.1 and later enforces this delayed-deletion setting, and you can't override it.
+- When disabled, GitLab enforces this delayed-deletion setting, and you can't override it.
 
 To configure delayed project deletion:
-
-{{< tabs >}}
-
-{{< tab title="GitLab 16.0 and later" >}}
 
 1. On the left sidebar, at the bottom, select **Admin**.
 1. Select **Settings > General**.
@@ -156,45 +132,18 @@ To configure delayed project deletion:
 1. Scroll to **Deletion protection** and set the retention period to a value between `1` and `90` days.
 1. Select **Save changes**.
 
-{{< /tab >}}
-
-{{< tab title="GitLab 15.11 and earlier" >}}
-
-1. On the left sidebar, at the bottom, select **Admin**.
-1. Select **Settings > General**.
-1. Expand **Visibility and access controls**.
-1. Scroll to:
-   - In GitLab 15.11 with `always_perform_delayed_deletion` feature flag enabled: **Deletion protection** and set the retention period to a value between `1` and `90` days.
-   - In GitLab 15.1 to 15.10: **Deletion protection** and select **Keep deleted groups and projects**, then set the retention period.
-   - In GitLab 15.0 and earlier: **Default delayed project protection** and select **Enable delayed project deletion by
-     default for newly-created groups**, then set the retention period.
-1. Select **Save changes**.
-
-{{< /tab >}}
-
-{{< /tabs >}}
-
 ### Delayed group deletion
 
 {{< history >}}
 
-- User interface [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/352960) in GitLab 15.1.
 - [Changed to default behavior](https://gitlab.com/gitlab-org/gitlab/-/issues/389557) on the Premium and Ultimate tier in GitLab 16.0.
+- [Moved](https://gitlab.com/groups/gitlab-org/-/epics/17208) from GitLab Premium to GitLab Free in 18.0.
 
 {{< /history >}}
 
 Groups remain restorable if the retention period is `1` or more days.
 
 In GitLab 16.0 and later, the **Keep deleted** option is removed, and delayed group deletion is the default.
-
-To enable delayed group deletion in GitLab 15:
-
-1. GitLab 15.11 only: enable the `always_perform_delayed_deletion` feature flag.
-1. On the left sidebar, at the bottom, select **Admin**.
-1. Select **Settings > General**.
-1. Expand **Visibility and access controls**.
-1. For **Deletion projection**, select **Keep deleted**.
-1. Select **Save changes**.
 
 ### Override defaults and delete immediately
 
@@ -265,7 +214,7 @@ For more details on group visibility, see
 
 {{< history >}}
 
-- [Changed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/124649) in GitLab 16.3 to prevent restricting default project and group visibility, [with a flag](../feature_flags.md) named `prevent_visibility_restriction`. Disabled by default.
+- [Changed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/124649) in GitLab 16.3 to prevent restricting default project and group visibility, [with a flag](../feature_flags/_index.md) named `prevent_visibility_restriction`. Disabled by default.
 - `prevent_visibility_restriction` [enabled](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/131203) by default in GitLab 16.4.
 - `prevent_visibility_restriction` [removed](https://gitlab.com/gitlab-org/gitlab/-/issues/433280) in GitLab 16.7.
 
@@ -275,7 +224,7 @@ When restricting visibility levels, consider how these restrictions interact
 with permissions for subgroups and projects that inherit their visibility from
 the item you're changing.
 
-This setting does not apply to groups and projects created under a personal namespace.
+This setting does not apply to projects created under a personal namespace.
 There is a [feature request](https://gitlab.com/gitlab-org/gitlab/-/issues/382749) to extend this
 functionality to [enterprise users](../../user/enterprise_user/_index.md).
 
@@ -292,9 +241,7 @@ Prerequisites:
    - If you restrict the **Public** level:
       - Only administrators can create public groups, projects, and snippets.
       - User profiles are visible to only authenticated users through the Web interface.
-      - User attributes through the GraphQL API are:
-         - Not visible in [GitLab 15.1 and later](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/88020).
-         - Visible only to authenticated users in GitLab 15.0.
+      - User attributes are not visible through the GraphQL API.
    - If you restrict the **Internal** level:
      - Only administrators can create internal groups, projects, and snippets.
    - If you restrict the **Private** level:
@@ -345,6 +292,12 @@ This happens even if you select **Only SSH**, because GitLab Runner and CI/CD jo
 {{< /alert >}}
 
 ## Customize Git clone URL for HTTP(S)
+
+{{< details >}}
+
+- Offering: GitLab Self-Managed
+
+{{< /details >}}
 
 You can customize project Git clone URLs for HTTP(S), which affects the clone
 panel shown to users on a project's page. For example, if:
@@ -406,19 +359,12 @@ Prerequisites:
 
 ## Configure globally-allowed IP address ranges
 
-{{< history >}}
-
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/87579) in GitLab 15.1 [with a flag](../feature_flags.md) named `group_ip_restrictions_allow_global`. Disabled by default.
-- [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/366445) in GitLab 15.4. [Feature flag `group_ip_restrictions_allow_global`](https://gitlab.com/gitlab-org/gitlab/-/issues/366445) removed.
-
-{{< /history >}}
-
 Administrators can combine IP address ranges with
 [IP restrictions per group](../../user/group/access_and_permissions.md#restrict-group-access-by-ip-address).
-Use globally-allowed IP addresses to allow aspects of the GitLab installation to work even when IP address
-restrictions are set per group.
+Globally-allowed IP addresses enable aspects of the GitLab installation to work properly, even when
+groups set their own IP address restrictions.
 
-For example, if the GitLab Pages daemon runs on the `10.0.0.0/24` range, you can specify that range as globally allowed.
+For example, if the GitLab Pages daemon runs on the `10.0.0.0/24` range, globally allow that range.
 GitLab Pages can still fetch artifacts from pipelines, even if IP address restrictions for the group don't
 include the `10.0.0.0/24` range.
 
@@ -437,14 +383,33 @@ Prerequisites:
      this list by authorization type.
 1. Select **Save changes**.
 
-<!-- ## Troubleshooting
+## Prevent invitations to groups and projects
 
-Include any troubleshooting steps that you can foresee. If you know beforehand what issues
-one might have when setting this up, or when something is changed, or on upgrading, it's
-important to describe those, too. Think of things that may go wrong and include them here.
-This is important to minimize requests for support, and to avoid doc comments with
-questions that you know someone might ask.
+{{< history >}}
 
-Each scenario can be a third-level heading, for example `### Getting error message X`.
-If you have none to add when creating a doc, leave this section in place
-but commented out to help encourage others to add to it in the future. -->
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/189954) in GitLab 18.0. Disabled by default.
+
+{{< /history >}}
+
+Administrators can prevent non-administrators from inviting users to all groups or projects on the instance.
+When you configure this setting, only administrators can invite users to groups or projects on the instance.
+
+{{< alert type="note" >}}
+
+Features such as [sharing](../../user/project/members/sharing_projects_groups.md) or [migrations](../../user/project/import/_index.md) can still allow access to these groups and projects.
+
+{{< /alert >}}
+
+Administrators can also [prevent user invitations to a specific group](../../user/group/manage.md#prevent-invitations-to-a-group).
+
+Prerequisites:
+
+- You must be an administrator.
+
+To prevent invitations to an instance:
+
+1. On the left sidebar, at the bottom, select **Admin**.
+1. Select **Settings > General**.
+1. Expand **Visibility and access controls**.
+1. Select the **Prevent group member invitations** checkbox.
+1. Select **Save changes**.

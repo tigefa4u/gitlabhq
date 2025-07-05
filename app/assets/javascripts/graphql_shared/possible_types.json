@@ -60,6 +60,14 @@
     "MergeRequest",
     "WorkItemWidgetCurrentUserTodos"
   ],
+  "CustomRoleInterface": [
+    "AdminMemberRole",
+    "MemberRole"
+  ],
+  "DependencyInterface": [
+    "Dependency",
+    "DependencyAggregation"
+  ],
   "DependencyLinkMetadata": [
     "NugetDependencyLinkMetadata"
   ],
@@ -129,15 +137,34 @@
     "AbuseReportLabel",
     "Label"
   ],
+  "MarkdownPaths": [
+    "GroupNamespaceMarkdownPaths",
+    "ProjectNamespaceMarkdownPaths",
+    "UserNamespaceMarkdownPaths"
+  ],
   "MemberInterface": [
     "GroupMember",
     "PendingGroupMember",
     "PendingProjectMember",
     "ProjectMember"
   ],
+  "MemberRoleInterface": [
+    "MemberRole",
+    "StandardRole"
+  ],
+  "NamespaceUnion": [
+    "CiDeletedNamespace",
+    "Namespace"
+  ],
+  "NamespacesLinkPaths": [
+    "GroupNamespaceLinks",
+    "ProjectNamespaceLinks",
+    "UserNamespaceLinks"
+  ],
   "NoteableInterface": [
     "AlertManagementAlert",
     "BoardEpic",
+    "CountableVulnerability",
     "Design",
     "Epic",
     "EpicIssue",
@@ -155,8 +182,10 @@
   "OrchestrationPolicy": [
     "ApprovalPolicy",
     "PipelineExecutionPolicy",
+    "PipelineExecutionSchedulePolicy",
     "ScanExecutionPolicy",
     "ScanResultPolicy",
+    "SecurityPolicyType",
     "VulnerabilityManagementPolicy"
   ],
   "PackageFileMetadata": [
@@ -178,6 +207,13 @@
   "PipelineInterface": [
     "Pipeline",
     "PipelineMinimalAccess"
+  ],
+  "PolicyAttributesUnion": [
+    "ApprovalPolicyAttributesType",
+    "PipelineExecutionPolicyAttributesType",
+    "PipelineExecutionScheduledPolicyAttributesType",
+    "ScanExecutionPolicyAttributesType",
+    "VulnerabilityManagementPolicyAttributesType"
   ],
   "ProjectInterface": [
     "Project",
@@ -235,6 +271,7 @@
     "AutocompletedUser",
     "BoardEpic",
     "Commit",
+    "CountableVulnerability",
     "CurrentUser",
     "Design",
     "Epic",

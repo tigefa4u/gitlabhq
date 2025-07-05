@@ -38,13 +38,14 @@ RSpec.describe "Admin manages runner in admin section", :js, feature_category: :
       end
     end
 
-    it_behaves_like 'shows runner jobs tab' do
+    it_behaves_like 'shows runner jobs' do
       let(:job_count) { '1' }
       let(:job) { runner_job }
     end
 
     describe 'when a runner is deleted' do
       before do
+        click_on 'Runner actions'
         click_on 'Delete runner'
 
         within_modal do

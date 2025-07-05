@@ -22,6 +22,11 @@ export default {
       default: null,
       required: false,
     },
+    size: {
+      type: String,
+      default: 'medium',
+      required: false,
+    },
   },
   emits: ['toggledPaused', 'deleted'],
   computed: {
@@ -33,11 +38,11 @@ export default {
     },
   },
   methods: {
-    onToggledPaused() {
-      this.$emit('toggledPaused');
+    onToggledPaused(event) {
+      this.$emit('toggledPaused', event);
     },
-    onDeleted(value) {
-      this.$emit('deleted', value);
+    onDeleted(event) {
+      this.$emit('deleted', event);
     },
   },
 };
@@ -45,13 +50,21 @@ export default {
 
 <template>
   <gl-button-group>
-    <runner-edit-button v-if="canUpdate && editUrl" :href="editUrl" />
+    <slot><!-- space for other actions --></slot>
+    <runner-edit-button v-if="canUpdate && editUrl" :size="size" :href="editUrl" />
     <runner-pause-button
       v-if="canUpdate"
       :runner="runner"
       :compact="true"
+      :size="size"
       @toggledPaused="onToggledPaused"
     />
-    <runner-delete-button v-if="canDelete" :runner="runner" :compact="true" @deleted="onDeleted" />
+    <runner-delete-button
+      v-if="canDelete"
+      :runner="runner"
+      :compact="true"
+      :size="size"
+      @deleted="onDeleted"
+    />
   </gl-button-group>
 </template>

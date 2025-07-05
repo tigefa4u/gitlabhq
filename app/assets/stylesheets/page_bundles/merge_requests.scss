@@ -244,6 +244,15 @@
 // to the top at different heights, which is a bad-looking defect
 $diff-file-header-top: 11px;
 
+.diffs.tab-pane .files {
+  @include media-breakpoint-up(md) {
+    // ensure consistent page height when selected file is loading
+    // https://gitlab.com/gitlab-org/gitlab/-/issues/426250
+    // also required for file browser to consume all available height
+    min-height: calc(100vh - (#{$calc-application-header-height} + #{$mr-sticky-header-height} + #{$diff-file-header-top} + #{$content-wrapper-padding}));
+  }
+}
+
 .diff-tree-list {
   --file-row-height: 32px;
   --file-tree-min-height: 300px;
@@ -291,11 +300,14 @@ $diff-file-header-top: 11px;
 
 .tree-list-holder {
   height: 100%;
+}
 
-  .file-row {
-    margin-left: 0;
-    margin-right: 0;
-  }
+.tree-list-holder .file-row {
+  width: calc(100% - #{$gl-spacing-scale-1} * 2);
+  margin: 0 0 0 $gl-spacing-scale-1;
+  border: 0;
+  min-width: 0;
+  background: transparent;
 }
 
 .tree-list-gutter {
@@ -445,7 +457,7 @@ $diff-file-header-top: 11px;
 }
 
 .mr-section-container {
-  @apply gl-bg-section gl-border gl-border-section gl-rounded-base;
+  @apply gl-bg-section gl-border gl-border-section gl-rounded-lg;
 
   &:not(:first-child) {
     @apply gl-mt-5;
@@ -462,15 +474,16 @@ $diff-file-header-top: 11px;
   }
 
   > .mr-widget-section {
-    &:first-child {
-      border-top-left-radius: $gl-border-radius-base-inner;
-      border-top-right-radius: $gl-border-radius-base-inner;
+    &:first-child,
+    .widget-merge-status {
+      border-top-left-radius: $gl-border-radius-lg-inner;
+      border-top-right-radius: $gl-border-radius-lg-inner;
     }
 
     > :last-child,
     .deploy-heading:last-child {
-      border-bottom-left-radius: $gl-border-radius-base-inner;
-      border-bottom-right-radius: $gl-border-radius-base-inner;
+      border-bottom-left-radius: $gl-border-radius-lg-inner;
+      border-bottom-right-radius: $gl-border-radius-lg-inner;
     }
   }
 
@@ -483,7 +496,7 @@ $diff-file-header-top: 11px;
   color: var(--gl-text-color-default);
 
   .commit-message-edit {
-    border-radius: $gl-border-radius-base;
+    @apply gl-rounded-base;
   }
 
   .commits-list {
@@ -645,7 +658,7 @@ $diff-file-header-top: 11px;
     }
 
     &.mr-pipeline-suggest {
-      border-radius: $gl-border-radius-base;
+      @apply gl-rounded-base;
       line-height: 20px;
       border: 1px solid var(--gl-border-color-default);
 
@@ -784,9 +797,10 @@ $diff-file-header-top: 11px;
 
 .merge-request-overview {
   @include media-breakpoint-up(lg) {
+    $mr-overview-gap-width: 2rem;
     display: grid;
-    grid-template-columns: calc(97% - #{$right-sidebar-width}) auto;
-    grid-gap: 3%;
+    grid-template-columns: calc(100% - #{$right-sidebar-width} - #{$mr-overview-gap-width}) auto;
+    column-gap: $mr-overview-gap-width;
   }
 }
 
@@ -813,31 +827,13 @@ $diff-file-header-top: 11px;
   }
 }
 
-// stylelint-disable-next-line gitlab/no-gl-class
-.submit-review-dropdown .gl-new-dropdown-panel {
-  max-width: none;
-}
-
-.submit-review-dropdown-form {
-  width: calc(100vw - 20px);
-  max-width: 756px;
-}
-
-.submit-review-dropdown-animated {
-  animation: review-btn-animate 300ms ease-in;
-}
-
 @include keyframes(review-btn-animate) {
-  0% {
+  0%, 100% {
     transform: scale(1);
   }
 
   75% {
     transform: scale(1.2);
-  }
-
-  100% {
-    transform: scale(1);
   }
 }
 
@@ -868,11 +864,6 @@ $diff-file-header-top: 11px;
   }
 }
 
-.merge-request-sticky-header {
-  z-index: calc($top-bar-z-index - 1);
-  height: $mr-sticky-header-height;
-}
-
 .merge-request-notification-toggle {
   // stylelint-disable-next-line gitlab/no-gl-class
   .gl-toggle {
@@ -887,42 +878,6 @@ $diff-file-header-top: 11px;
 
 .memory-graph-container {
   @apply gl-bg-default gl-border;
-}
-
-.review-bar-component {
-  position: fixed;
-  bottom: $calc-application-footer-height;
-  left: 0;
-  z-index: $zindex-dropdown-menu;
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: var(--mr-review-bar-height);
-  padding-left: $super-sidebar-width;
-  padding-right: $right-sidebar-collapsed-width;
-  background: var(--gl-background-color-default);
-  border-top: 1px solid var(--gl-border-color-default);
-  @apply gl-transition-padding;
-
-  @media (max-width: map-get($grid-breakpoints, sm)-1) {
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  .submit-review-dropdown {
-    margin-left: $grid-size;
-
-    .md-header {
-      top: -$gl-spacing-scale-2;
-    }
-  }
-}
-
-.review-bar-content {
-  max-width: $limited-layout-width;
-  padding: 0 $container-margin;
-  width: 100%;
-  margin: 0 auto;
 }
 
 .review-preview-item-header {
@@ -945,8 +900,6 @@ $diff-file-header-top: 11px;
 }
 
 .review-preview-item-content {
-  width: 100%;
-
   p {
     display: block;
     width: 100%;

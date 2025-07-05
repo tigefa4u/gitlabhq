@@ -17,7 +17,11 @@ Doorkeeper.configure do
     else
       # Ensure user is redirected to redirect_uri after login
       session[:user_return_to] = request.fullpath
-      redirect_to(new_user_session_url)
+
+      namespace_path = request.query_parameters['top_level_namespace_path']
+
+      resolver = Gitlab::Auth::OAuth::OauthResourceOwnerRedirectResolver.new(namespace_path)
+      redirect_to(resolver.resolve_redirect_url)
       nil
     end
   end
@@ -30,6 +34,14 @@ Doorkeeper.configure do
     next if user.two_factor_enabled? || Gitlab::Auth::TwoFactorAuthVerifier.new(user).two_factor_authentication_enforced?
 
     Gitlab::Auth.find_with_user_password(params[:username], params[:password], increment_failed_attempts: true)
+  end
+
+  allow_grant_flow_for_client do |grant_flow, client|
+    next true unless client
+    next true unless grant_flow == 'password'
+    next true unless Applications::CreateService.disable_ropc_available?
+
+    client.ropc_enabled?
   end
 
   # If you want to restrict access to the web interface for adding oauth authorized applications, you need to declare the block below.
@@ -165,7 +177,9 @@ Doorkeeper.configure do
         expires_in: configuration.device_code_expires_in,
         scopes: scopes.to_s,
         user_code: generate_user_code,
-        organization_id: Organizations::Organization::DEFAULT_ORGANIZATION_ID
+        # This will result in a fallback to Default Organizzation
+        # OAuth device grant flow doesn't support other organizations yet
+        organization_id: Gitlab::Current::Organization.new.organization.id
       }
     end
   end

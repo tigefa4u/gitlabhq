@@ -2,7 +2,7 @@ import { GlAlert, GlLink, GlSprintf, GlLoadingIcon } from '@gitlab/ui';
 import { EditorContent, Editor } from '@tiptap/vue-2';
 import { nextTick } from 'vue';
 import MockAdapter from 'axios-mock-adapter';
-import axios from 'axios';
+import axios from '~/lib/utils/axios_utils';
 import { shallowMountExtended } from 'helpers/vue_test_utils_helper';
 import { CONTENT_EDITOR_PASTE } from '~/vue_shared/constants';
 import markdownEditorEventHub from '~/vue_shared/components/markdown/eventhub';
@@ -231,8 +231,19 @@ describe('ContentEditor', () => {
     it('hides placeholder text', () => {
       expect(wrapper.text()).not.toContain('Enter some text here...');
     });
-  });
 
+    it('emits focus event', () => {
+      expect(wrapper.emitted('focus')).toHaveLength(1);
+    });
+
+    it('emits blur event when editorStateObserver emits blur event', async () => {
+      findEditorStateObserver().vm.$emit('blur');
+
+      await nextTick();
+
+      expect(wrapper.emitted('blur')).toHaveLength(1);
+    });
+  });
   describe('when editorStateObserver emits docUpdate event', () => {
     let markdown;
 

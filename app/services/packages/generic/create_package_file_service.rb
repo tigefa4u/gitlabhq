@@ -5,8 +5,13 @@ module Packages
     class CreatePackageFileService < BaseService
       def execute
         ::Packages::Package.transaction do
-          create_package_file(find_or_create_package)
+          package_file = create_package_file(find_or_create_package)
+          ServiceResponse.success(payload: { package_file: package_file })
         end
+      rescue ::Packages::DuplicatePackageError => e
+        ServiceResponse.error(message: e.message, reason: :package_file_already_exists)
+      rescue ::Packages::PackageProtectedError
+        ::Packages::CreatePackageService::ERROR_RESPONSE_PACKAGE_PROTECTED
       end
 
       private
@@ -19,9 +24,13 @@ module Packages
           status: params[:status]
         }
 
-        package = ::Packages::Generic::FindOrCreatePackageService
+        response = ::Packages::Generic::FindOrCreatePackageService
           .new(project, current_user, package_params)
           .execute
+
+        raise ::Packages::PackageProtectedError, response.message if response.cause.package_protected?
+
+        package = response[:package]
 
         unless Namespace::PackageSetting.duplicates_allowed?(package)
           raise ::Packages::DuplicatePackageError if target_file_is_duplicate?(package)

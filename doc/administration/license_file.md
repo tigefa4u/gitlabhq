@@ -101,7 +101,7 @@ For example, if a license has a start date of January 1, 2024 and an end date of
 - The grace period of 14 days starts at 12:00:00 AM server time January 1, 2025 and ends at 11:59:59 PM server time January 14, 2025.
 - Your instance becomes read-only at 12:00:00 AM server time January 15, 2025.
 
-To resume functionality, [renew your subscription](../subscriptions/self_managed/_index.md#renew-subscription-manually).
+To resume functionality, [renew your subscription](../subscriptions/manage_subscription.md#renew-manually).
 
 If the license has been expired for more than 30 days, you must purchase a [new subscription](../subscriptions/self_managed/_index.md) to resume functionality.
 
@@ -249,7 +249,7 @@ You cannot add your license because there is no **Subscription** area.
 This issue might occur if:
 
 - You're running GitLab Community Edition. Before you add your license, you
-  must [upgrade to Enterprise Edition](../update/_index.md#community-to-enterprise-edition).
+  must upgrade to Enterprise Edition.
 - You're using GitLab.com. You cannot add a GitLab Self-Managed license to GitLab.com.
   To use paid features on GitLab.com, [purchase a separate subscription](../subscriptions/gitlab_com/_index.md).
 

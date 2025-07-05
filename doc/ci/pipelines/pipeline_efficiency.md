@@ -88,9 +88,6 @@ You can improve runtimes by running jobs that test different things in parallel,
 the same stage, reducing overall runtime. The downside is that you need more runners
 running simultaneously to support the parallel jobs.
 
-The [testing levels for GitLab](../../development/testing_guide/testing_levels.md)
-provide an example of a complex testing strategy with many components involved.
-
 ### `needs` dependency visualization
 
 Viewing the `needs` dependencies in the [full pipeline graph](_index.md#group-jobs-by-stage-or-needs-configuration)
@@ -261,5 +258,5 @@ identify recurring problems with CI pipeline efficiency.
 ### Related topics
 
 - [CI Monitoring Webcast Slides](https://docs.google.com/presentation/d/1ONwIIzRB7GWX-WOSziIIv8fz1ngqv77HO1yVfRooOHM/edit?usp=sharing)
-- [GitLab.com Monitoring Handbook](https://handbook.gitlab.com/handbook/engineering/monitoring/)
+- GitLab.com Monitoring Handbook
 - [Buildings dashboards for operational visibility](https://aws.amazon.com/builders-library/building-dashboards-for-operational-visibility/)

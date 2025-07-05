@@ -1,7 +1,8 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+gitlab_dedicated: no
 title: Geo with Object storage
 ---
 
@@ -12,7 +13,7 @@ title: Geo with Object storage
 
 {{< /details >}}
 
-> Verification of files stored in object storage was [introduced](https://gitlab.com/groups/gitlab-org/-/epics/8056) in GitLab 16.4 [with a flag](../../feature_flags.md) named `geo_object_storage_verification`. Enabled by default.
+> Verification of files stored in object storage was [introduced](https://gitlab.com/groups/gitlab-org/-/epics/8056) in GitLab 16.4 [with a flag](../../feature_flags/_index.md) named `geo_object_storage_verification`. Enabled by default.
 
 Geo can be used in combination with Object Storage (AWS S3, or other compatible object storage).
 
@@ -80,6 +81,14 @@ configure the **secondary** in a few ways:
   replication.
 - Use a separate object store and enable the **Allow this secondary node to replicate
   content on Object Storage** setting.
+
+{{< alert type="warning" >}}
+
+To avoid data loss, you should only enable the **Allow this secondary node to replicate content on
+Object Storage** setting if you are using separate object stores for the Primary and Secondary
+sites.
+
+{{< /alert >}}
 
 GitLab does not support the case where both:
 

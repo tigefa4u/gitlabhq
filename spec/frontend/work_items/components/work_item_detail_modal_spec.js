@@ -82,10 +82,11 @@ describe('WorkItemDetailModal component', () => {
       isModal: true,
       workItemId,
       workItemIid: '1',
-      modalWorkItemFullPath: '',
+      workItemFullPath: '',
       newCommentTemplatePaths: [],
       isDrawer: false,
       modalIsGroup: null,
+      isBoard: false,
     });
   });
 

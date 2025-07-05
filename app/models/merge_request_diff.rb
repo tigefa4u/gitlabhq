@@ -8,11 +8,14 @@ class MergeRequestDiff < ApplicationRecord
   include Gitlab::Utils::StrongMemoize
   include BulkInsertableAssociations
   include ShaAttribute
+  include ObjectStorable
 
   ignore_columns %i[
     id_convert_to_bigint
     merge_request_id_convert_to_bigint
   ], remove_with: '18.3', remove_after: '2025-07-17'
+
+  STORE_COLUMN = :external_diff_store
 
   # Don't display more than 100 commits at once
   COMMITS_SAFE_SIZE = 100
@@ -71,7 +74,7 @@ class MergeRequestDiff < ApplicationRecord
     state :overflow_diff_lines_limit
   end
 
-  enum diff_type: {
+  enum :diff_type, {
     regular: 1,
     merge_head: 2
   }
@@ -358,19 +361,11 @@ class MergeRequestDiff < ApplicationRecord
   end
 
   def first_commit
-    if Feature.enabled?(:more_commits_from_gitaly, project)
-      commits(load_from_gitaly: true).last
-    else
-      commits.last
-    end
+    commits(load_from_gitaly: true).last
   end
 
   def last_commit
-    if Feature.enabled?(:more_commits_from_gitaly, project)
-      commits(load_from_gitaly: true).first
-    else
-      commits.first
-    end
+    commits(load_from_gitaly: true).first
   end
 
   def base_commit
@@ -452,6 +447,30 @@ class MergeRequestDiff < ApplicationRecord
 
   def diff_refs_by_sha?
     base_commit_sha? && head_commit_sha? && start_commit_sha?
+  end
+
+  def diffs_for_streaming(diff_options = {})
+    fetching_repository_diffs(diff_options) do |comparison|
+      reorder_diff_files!
+
+      collection = Gitlab::Diff::FileCollection::MergeRequestDiffStream.new(
+        self,
+        diff_options: diff_options
+      )
+
+      if comparison
+        # Delete the offset_index from options since we don't want to offset
+        # the diffs we will request given that we are already requesting specific
+        # paths
+        diff_options.delete(:offset_index)
+        diff_options[:generated_files] = comparison.generated_files
+        diff_options[:paths] = collection.diff_paths
+
+        comparison.diffs(diff_options)
+      else
+        collection
+      end
+    end
   end
 
   def diffs_in_batch(batch_page, batch_size, diff_options:)
@@ -871,7 +890,7 @@ class MergeRequestDiff < ApplicationRecord
   end
 
   def save_commits
-    MergeRequestDiffCommit.create_bulk(self.id, compare.commits.reverse, skip_commit_data: Feature.enabled?(:optimized_commit_storage, project))
+    MergeRequestDiffCommit.create_bulk(self.id, compare.commits.reverse, project, skip_commit_data: Feature.enabled?(:optimized_commit_storage, project))
     self.class.uncached { merge_request_diff_commits.reset }
   end
 

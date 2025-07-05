@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Dynamic Element Validation
 ---
 
@@ -13,7 +13,7 @@ Other problems that dynamic element validations solve are...
 - When our test is navigating to (or from) a page, we ensure that we are on the page we expect before
   test continuation.
 
-## How it works
+## How dynamic element validation works
 
 We interpret user actions on the page to have some sort of effect. These actions are
 

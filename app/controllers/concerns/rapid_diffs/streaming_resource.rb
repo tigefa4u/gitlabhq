@@ -15,7 +15,10 @@ module RapidDiffs
 
       offset = { offset_index: params.permit(:offset)[:offset].to_i }
 
-      stream_diff_files(streaming_diff_options.merge(offset))
+      context = view_context
+
+      # view_context calls are not memoized, with explicit passing we are able to reuse it across renders
+      stream_diff_files(streaming_diff_options.merge(offset), context)
 
       streaming_time = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - streaming_start_time).round(2)
       response.stream.write "<server-timings streaming=\"#{streaming_time}\"></server-timings>"
@@ -24,7 +27,7 @@ module RapidDiffs
     rescue StandardError => e
       Gitlab::AppLogger.error("Error streaming diffs: #{e.message}")
       error_component = ::RapidDiffs::StreamingErrorComponent.new(message: e.message)
-      response.stream.write error_component.render_in(view_context)
+      response.stream.write error_component.render_in(context)
     ensure
       response.stream.close
     end
@@ -40,7 +43,7 @@ module RapidDiffs
     private
 
     def rapid_diffs_enabled?
-      ::Feature.enabled?(:rapid_diffs, current_user, type: :wip)
+      ::Feature.enabled?(:rapid_diffs, current_user, type: :beta)
     end
 
     def resource
@@ -55,40 +58,61 @@ module RapidDiffs
       helpers.diff_view
     end
 
-    def stream_diff_files(options)
+    def stream_diff_files(options, view_context)
       return unless resource
-
-      diffs = resource.diffs_for_streaming(options)
-
-      if params.permit(:offset)[:offset].blank? && diffs.diff_files.empty?
-        empty_state_component = ::RapidDiffs::EmptyStateComponent.new
-        response.stream.write empty_state_component.render_in(view_context)
-        return
-      end
 
       # NOTE: This is a temporary flag to test out the new diff_blobs
       if !!ActiveModel::Type::Boolean.new.cast(params.permit(:diff_blobs)[:diff_blobs])
-        stream_diff_blobs(options)
+        stream_diff_blobs(options, view_context)
       else
-        diffs.diff_files.each do |diff_file|
-          response.stream.write(render_diff_file(diff_file))
-        end
+        stream_diff_collection(options, view_context)
       end
     end
 
-    def render_diff_file(diff_file)
-      render_to_string(
-        ::RapidDiffs::DiffFileComponent.new(diff_file: diff_file, parallel_view: view == :parallel),
-        layout: false
-      )
+    def stream_diff_collection(options, view_context)
+      diff_files = resource.diffs_for_streaming(options).diff_files(sorted: sorted?)
+
+      return render_empty_state if diff_files.empty?
+
+      skipped = []
+      diff_files.each do |diff_file|
+        if diff_file.no_preview?
+          skipped << diff_file
+        else
+          unless skipped.empty?
+            response.stream.write(diff_files_collection(skipped).render_in(view_context))
+            skipped = []
+          end
+
+          response.stream.write(diff_file_component(diff_file).render_in(view_context))
+        end
+      end
+
+      response.stream.write(diff_files_collection(skipped).render_in(view_context)) unless skipped.empty?
     end
 
-    def stream_diff_blobs(options)
+    def diff_file_component(diff_file)
+      ::RapidDiffs::DiffFileComponent.new(diff_file: diff_file, parallel_view: view == :parallel)
+    end
+
+    def diff_files_collection(diff_files)
+      ::RapidDiffs::DiffFileComponent.with_collection(diff_files, parallel_view: view == :parallel)
+    end
+
+    def stream_diff_blobs(options, view_context)
+      return render_empty_state if resource.diffs_for_streaming(options).count == 0
+
       resource.diffs_for_streaming(options) do |diff_files_batch|
-        diff_files_batch.each do |diff_file|
-          response.stream.write(render_diff_file(diff_file))
-        end
+        response.stream.write(diff_files_collection(diff_files_batch).render_in(view_context))
       end
+    end
+
+    def render_empty_state
+      response.stream.write render ::RapidDiffs::EmptyStateComponent.new
+    end
+
+    def sorted?
+      false
     end
 
     class Request < SimpleDelegator

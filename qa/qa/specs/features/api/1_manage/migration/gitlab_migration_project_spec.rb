@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module QA
-  RSpec.describe 'Manage', product_group: :import_and_integrate do
+  RSpec.describe 'Manage', product_group: :import do
     describe 'Gitlab migration', :import, :orchestrated, requires_admin: 'creates a user via API' do
       include_context 'with gitlab project migration'
 
@@ -120,7 +120,11 @@ module QA
 
         it(
           'successfully imports project wiki',
-          testcase: 'https://gitlab.com/gitlab-org/gitlab/-/quality/test_cases/347567'
+          testcase: 'https://gitlab.com/gitlab-org/gitlab/-/quality/test_cases/347567',
+          quarantine: {
+            issue: 'https://gitlab.com/gitlab-org/gitlab/-/issues/541472',
+            type: :investigating
+          }
         ) do
           expect_project_import_finished_successfully
 

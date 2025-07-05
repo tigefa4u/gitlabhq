@@ -11,13 +11,13 @@ import {
   GlIcon,
 } from '@gitlab/ui';
 import glFeatureFlagMixin from '~/vue_shared/mixins/gl_feature_flags_mixin';
+
 import { createAlert } from '~/alert';
 import { clearDraft } from '~/lib/utils/autosave';
-import { isMetaEnterKeyPair } from '~/lib/utils/common_utils';
+import { isMetaEnterKeyPair, parseBoolean } from '~/lib/utils/common_utils';
 import { getParameterByName } from '~/lib/utils/url_utility';
 import { convertToGraphQLId } from '~/graphql_shared/utils';
-import { fetchPolicies } from '~/lib/graphql';
-import { s__, sprintf } from '~/locale';
+import { s__, sprintf, __ } from '~/locale';
 import * as Sentry from '~/sentry/sentry_browser_wrapper';
 import { addHierarchyChild, setNewWorkItemCache } from '~/work_items/graphql/cache_utils';
 import { findWidget } from '~/issues/list/utils';
@@ -26,16 +26,24 @@ import { addShortcutsExtension } from '~/behaviors/shortcuts';
 import ZenMode from '~/zen_mode';
 import ShortcutsWorkItems from '~/behaviors/shortcuts/shortcuts_work_items';
 import WorkItemDates from 'ee_else_ce/work_items/components/work_item_dates.vue';
+import PageHeading from '~/vue_shared/components/page_heading.vue';
 import {
   getDisplayReference,
   getNewWorkItemAutoSaveKey,
+  getNewWorkItemWidgetsAutoSaveKey,
+  updateDraftWorkItemType,
   newWorkItemFullPath,
 } from '~/work_items/utils';
-import { TYPENAME_MERGE_REQUEST, TYPENAME_VULNERABILITY } from '~/graphql_shared/constants';
+import {
+  TYPENAME_MERGE_REQUEST,
+  TYPENAME_VULNERABILITY,
+  TYPENAME_GROUP,
+} from '~/graphql_shared/constants';
 import {
   I18N_WORK_ITEM_ERROR_CREATING,
-  sprintfWorkItem,
   i18n,
+  NAME_TO_TEXT_LOWERCASE_MAP,
+  NAME_TO_TEXT_MAP,
   WIDGET_TYPE_ASSIGNEES,
   WIDGET_TYPE_COLOR,
   NEW_WORK_ITEM_IID,
@@ -52,20 +60,20 @@ import {
   WIDGET_TYPE_MILESTONE,
   DEFAULT_EPIC_COLORS,
   WIDGET_TYPE_HIERARCHY,
-  WORK_ITEM_TYPE_NAME_LOWERCASE_MAP,
-  WORK_ITEM_TYPE_NAME_MAP,
   WORK_ITEM_TYPE_NAME_INCIDENT,
   WORK_ITEM_TYPE_NAME_EPIC,
   WIDGET_TYPE_CUSTOM_FIELDS,
   CUSTOM_FIELDS_TYPE_NUMBER,
   CUSTOM_FIELDS_TYPE_TEXT,
   WORK_ITEM_TYPE_NAME_ISSUE,
+  WIDGET_TYPE_STATUS,
 } from '../constants';
 import createWorkItemMutation from '../graphql/create_work_item.mutation.graphql';
 import namespaceWorkItemTypesQuery from '../graphql/namespace_work_item_types.query.graphql';
 import workItemByIidQuery from '../graphql/work_item_by_iid.query.graphql';
 import updateNewWorkItemMutation from '../graphql/update_new_work_item.mutation.graphql';
 import WorkItemProjectsListbox from './work_item_links/work_item_projects_listbox.vue';
+import WorkItemNamespaceListbox from './shared/work_item_namespace_listbox.vue';
 import WorkItemTitle from './work_item_title.vue';
 import WorkItemDescription from './work_item_description.vue';
 import WorkItemAssignees from './work_item_assignees.vue';
@@ -94,6 +102,7 @@ export default {
     WorkItemLoading,
     WorkItemCrmContacts,
     WorkItemProjectsListbox,
+    WorkItemNamespaceListbox,
     TitleSuggestions,
     WorkItemParent,
     WorkItemDates,
@@ -104,10 +113,28 @@ export default {
     WorkItemIteration: () => import('ee_component/work_items/components/work_item_iteration.vue'),
     WorkItemCustomFields: () =>
       import('ee_component/work_items/components/work_item_custom_fields.vue'),
+    WorkItemStatus: () => import('ee_component/work_items/components/work_item_status.vue'),
+    PageHeading,
   },
   mixins: [glFeatureFlagMixin()],
-  inject: ['fullPath', 'groupPath'],
+  inject: {
+    contributionGuidePath: {
+      default: '',
+    },
+    groupPath: {
+      default: '',
+    },
+    projectNamespaceFullPath: {
+      default: '',
+    },
+    workItemPlanningViewEnabled: {
+      default: false,
+    },
+  },
   i18n: {
+    contributionGuidelinesText: s__(
+      'WorkItem|Please review the %{linkStart}contribution guidelines%{linkEnd} for this project.',
+    ),
     suggestionTitle: s__('WorkItem|Similar items'),
     similarWorkItemHelpText: s__(
       'WorkItem|These existing items have a similar title and may represent potential duplicates.',
@@ -132,6 +159,10 @@ export default {
       type: String,
       required: false,
       default: '',
+    },
+    fullPath: {
+      type: String,
+      required: true,
     },
     hideFormTitle: {
       type: Boolean,
@@ -193,25 +224,27 @@ export default {
   data() {
     return {
       isTitleValid: true,
-      workItemTitle: this.title || '',
-      isConfidential: false,
+      isConfidential: parseBoolean(getParameterByName('issue[confidential]')),
       isRelatedToItem: true,
+      localTitle: this.title || '',
       error: null,
-      workItemTypes: [],
+      workItem: {},
+      namespace: null,
       selectedProjectFullPath: this.initialSelectedProject(),
       selectedWorkItemTypeId: null,
       loading: false,
       initialLoadingWorkItem: true,
       initialLoadingWorkItemTypes: true,
+      selectedNamespacePath: null,
       showWorkItemTypeSelect: false,
       discussionToResolve: getParameterByName('discussion_to_resolve'),
       mergeRequestToResolveDiscussionsOf: getParameterByName('merge_request_id'),
       vulnerabilityId: getParameterByName('vulnerability_id'),
       numberOfDiscussionsResolved: '',
+      selectedParentMilestone: null,
     };
   },
   apollo: {
-    // eslint-disable-next-line @gitlab/vue-no-undef-apollo-properties
     workItem: {
       query: workItemByIidQuery,
       variables() {
@@ -224,11 +257,6 @@ export default {
         return this.skipWorkItemQuery;
       },
       update(data) {
-        const title = data?.workspace?.workItem?.title;
-
-        if (this.isTitleFilled(title)) {
-          this.updateTitle(title);
-        }
         return data?.workspace?.workItem ?? {};
       },
       result() {
@@ -238,12 +266,9 @@ export default {
         this.error = i18n.fetchError;
       },
     },
-    workItemTypes: {
+    namespace: {
       query() {
         return namespaceWorkItemTypesQuery;
-      },
-      fetchPolicy() {
-        return this.workItemTypeName ? fetchPolicies.CACHE_ONLY : fetchPolicies.CACHE_FIRST;
       },
       variables() {
         return {
@@ -251,7 +276,7 @@ export default {
         };
       },
       update(data) {
-        return data.workspace?.workItemTypes?.nodes;
+        return data.workspace;
       },
       async result() {
         this.initialLoadingWorkItemTypes = false;
@@ -259,41 +284,51 @@ export default {
           return;
         }
 
-        let workItemDescription = '';
-        let workItemTitle = '';
-
         // The follow up title and description can come from the backend for the following three use cases
         // 1. when resolving a discussion in the MR and we have the merge request id in the query param
         // 2. when the issue and title are added in the query param . read https://docs.gitlab.com/user/project/issues/create_issues/#using-a-url-with-prefilled-values
         // 3. when following up a work item with a vulnerability, where we have the vulnerability id in the query param
-
-        workItemTitle = document.querySelector(
-          '.follow_up_work_item .follow-up-title',
-        )?.textContent;
-        workItemDescription = document.querySelector(
-          '.follow_up_work_item .follow-up-description',
-        )?.textContent;
+        const workItemTitle = document.querySelector('.params-title')?.textContent.trim();
+        const workItemDescription = document
+          .querySelector('.params-description')
+          ?.textContent.trim();
 
         for await (const workItemType of this.workItemTypes) {
-          await setNewWorkItemCache(
-            this.selectedProjectFullPath,
-            workItemType?.widgetDefinitions,
-            workItemType.name,
-            workItemType.id,
-            workItemType.iconName,
+          await setNewWorkItemCache({
+            fullPath: this.selectedProjectFullPath,
+            widgetDefinitions: workItemType?.widgetDefinitions,
+            workItemType: workItemType.name,
+            workItemTypeId: workItemType.id,
+            workItemTypeIconName: workItemType.iconName,
+            relatedItemId: this.relatedItemId,
             workItemTitle,
             workItemDescription,
-          );
+            confidential: this.isConfidential,
+          });
         }
 
-        const selectedWorkItemType = this.workItemTypes?.find(
-          (workItemType) => workItemType.name === this.preselectedWorkItemType,
-        );
+        const selectedWorkItemType = this.findWorkItemType(this.preselectedWorkItemType);
+
+        if (selectedWorkItemType) {
+          updateDraftWorkItemType({
+            fullPath: this.selectedProjectFullPath,
+            relatedItemId: this.relatedItemId,
+            workItemType: {
+              id: selectedWorkItemType.id,
+              name: selectedWorkItemType.name,
+              iconName: selectedWorkItemType.iconName,
+            },
+          });
+        }
 
         if (selectedWorkItemType) {
           this.selectedWorkItemTypeId = selectedWorkItemType?.id;
         } else {
           this.showWorkItemTypeSelect = true;
+          const defaultSelectedWorkItemType =
+            this.findWorkItemType(WORK_ITEM_TYPE_NAME_ISSUE) || this.workItemTypes?.at(0);
+          this.selectedWorkItemTypeId = defaultSelectedWorkItemType?.id;
+          this.$emit('changeType', defaultSelectedWorkItemType);
         }
       },
       error() {
@@ -304,6 +339,9 @@ export default {
     },
   },
   computed: {
+    workItemTypes() {
+      return this.namespace?.workItemTypes?.nodes ?? [];
+    },
     newWorkItemPath() {
       return newWorkItemFullPath(this.selectedProjectFullPath, this.selectedWorkItemTypeName);
     },
@@ -318,11 +356,14 @@ export default {
     hasWidgets() {
       return this.workItem?.widgets?.length > 0;
     },
+    relatedItemId() {
+      return this.relatedItem?.id;
+    },
     relatedItemReference() {
       return getDisplayReference(this.selectedProjectFullPath, this.relatedItem.reference);
     },
     relatedItemType() {
-      return WORK_ITEM_TYPE_NAME_LOWERCASE_MAP[this.relatedItem?.type];
+      return NAME_TO_TEXT_LOWERCASE_MAP[this.relatedItem?.type];
     },
     workItemAssignees() {
       return findWidget(WIDGET_TYPE_ASSIGNEES, this.workItem);
@@ -382,14 +423,27 @@ export default {
 
       return workItemTypes.map((workItemType) => ({
         value: workItemType.id,
-        text: WORK_ITEM_TYPE_NAME_MAP[workItemType.name],
+        text: NAME_TO_TEXT_MAP[workItemType.name],
       }));
     },
     selectedWorkItemType() {
       return this.workItemTypes?.find((item) => item.id === this.selectedWorkItemTypeId);
     },
+    allowedParentTypesForSelectedType() {
+      if (this.workItemTypes.length) {
+        const widgetDefinitionsForCurrentType =
+          this.workItemTypes.find((workItemType) => workItemType.id === this.selectedWorkItemTypeId)
+            ?.widgetDefinitions || [];
+
+        return (
+          widgetDefinitionsForCurrentType.find((widget) => widget.type === WIDGET_TYPE_HIERARCHY)
+            ?.allowedParentTypes?.nodes || []
+        );
+      }
+      return [];
+    },
     selectedWorkItemTypeName() {
-      return this.selectedWorkItemType?.name;
+      return this.selectedWorkItemType?.name || '';
     },
     selectedWorkItemTypeIconName() {
       return this.selectedWorkItemType?.iconName;
@@ -402,27 +456,30 @@ export default {
       return options;
     },
     createErrorText() {
-      return sprintfWorkItem(I18N_WORK_ITEM_ERROR_CREATING, this.selectedWorkItemTypeName);
+      return sprintf(I18N_WORK_ITEM_ERROR_CREATING, {
+        workItemType: NAME_TO_TEXT_LOWERCASE_MAP[this.selectedWorkItemTypeName],
+      });
     },
     createWorkItemText() {
-      return sprintfWorkItem(s__('WorkItem|Create %{workItemType}'), this.selectedWorkItemTypeName);
+      return sprintf(s__('WorkItem|Create %{workItemType}'), {
+        workItemType: NAME_TO_TEXT_LOWERCASE_MAP[this.selectedWorkItemTypeName],
+      });
     },
     makeConfidentialText() {
-      return sprintfWorkItem(
+      return sprintf(
         s__(
-          'WorkItem|This %{workItemType} is confidential and should only be visible to users having at least the Planner role',
+          'WorkItem|Turn on confidentiality: Limit visibility to %{namespace} members with at least the Planner role.',
         ),
-        this.selectedWorkItemTypeName,
+        { namespace: this.isGroup ? __('group') : __('project') },
       );
     },
     titleText() {
-      return sprintfWorkItem(s__('WorkItem|New %{workItemType}'), this.selectedWorkItemTypeName);
+      return sprintf(s__('WorkItem|New %{workItemType}'), {
+        workItemType: NAME_TO_TEXT_LOWERCASE_MAP[this.selectedWorkItemTypeName],
+      });
     },
     canUpdate() {
       return this.workItem?.userPermissions?.updateWorkItem;
-    },
-    workItemType() {
-      return this.workItem?.workItemType?.name;
     },
     workItemParticipantNodes() {
       return this.workItemParticipants?.participants?.nodes ?? [];
@@ -443,7 +500,7 @@ export default {
       return weightWidget?.weight ?? null;
     },
     workItemMilestoneId() {
-      return this.workItemMilestone?.milestone?.id || null;
+      return this.workItemMilestone?.milestone?.id || this.selectedParentMilestone?.id || null;
     },
     workItemCrmContactIds() {
       return this.workItemCrmContacts?.contacts?.nodes?.map((item) => item.id) || [];
@@ -459,8 +516,8 @@ export default {
       const healthStatusWidget = findWidget(WIDGET_TYPE_HEALTH_STATUS, this.workItem);
       return healthStatusWidget?.healthStatus || null;
     },
-    workItemAuthor() {
-      return this.workItem?.author;
+    workItemTitle() {
+      return this.localTitle || this.workItem?.title || this.title;
     },
     workItemDescription() {
       const descriptionWidget = findWidget(WIDGET_TYPE_DESCRIPTION, this.workItem);
@@ -475,21 +532,27 @@ export default {
     workItemId() {
       return this.workItem?.id;
     },
+    workItemStatus() {
+      return findWidget(WIDGET_TYPE_STATUS, this.workItem);
+    },
     workItemIid() {
       return this.workItem?.iid;
+    },
+    workItemStatusId() {
+      return this.workItemStatus?.status?.id;
     },
     shouldIncludeRelatedItem() {
       return (
         this.isWidgetSupported(WIDGET_TYPE_LINKED_ITEMS) &&
         this.isRelatedToItem &&
-        this.relatedItem?.id
+        this.relatedItemId
       );
     },
     resolvingMRDiscussionLink() {
-      return document.querySelector('.follow_up_work_item_details span.note-link a')?.href || '';
+      return document.querySelector('.params-discussion-to-resolve a')?.href || '';
     },
     resolvingMRDiscussionLinkText() {
-      return document.querySelector('.follow_up_work_item_details span.note-link a')?.text || '';
+      return document.querySelector('.params-discussion-to-resolve a')?.text || '';
     },
     createWorkItemWarning() {
       const warning =
@@ -497,7 +560,7 @@ export default {
           ? this.$options.i18n.resolveOneThreadText
           : this.$options.i18n.resolveAllThreadsText;
       return sprintf(warning, {
-        workItemType: this.selectedWorkItemTypeName,
+        workItemType: NAME_TO_TEXT_LOWERCASE_MAP[this.selectedWorkItemTypeName],
       });
     },
     isFormFilled() {
@@ -523,7 +586,8 @@ export default {
         Boolean(this.workItemDueDateIsFixed) ||
         Boolean(this.workItemStartDateIsFixed) ||
         Boolean(this.workItemIterationId) ||
-        (this.glFeatures.customFieldsFeature && isCustomFieldsFilled)
+        Boolean(this.workItemStatusId) ||
+        isCustomFieldsFilled
       );
     },
     shouldDatesRollup() {
@@ -532,8 +596,30 @@ export default {
     workItemCustomFields() {
       return findWidget(WIDGET_TYPE_CUSTOM_FIELDS, this.workItem)?.customFieldValues ?? null;
     },
-    showWorkItemCustomFields() {
-      return this.glFeatures.customFieldsFeature && this.workItemCustomFields;
+    showWorkItemStatus() {
+      return this.workItemStatus && this.glFeatures.workItemStatusFeatureFlag;
+    },
+    isGroupWorkItem() {
+      return this.namespace?.id.includes(TYPENAME_GROUP);
+    },
+    uploadsPath() {
+      const rootPath = this.namespace?.webUrl;
+      if (!rootPath) {
+        return window.uploads_path;
+      }
+      return this.isGroupWorkItem ? `${rootPath}/-/uploads` : `${rootPath}/uploads`;
+    },
+    inputNamespacePath() {
+      if (this.workItemPlanningViewEnabled) {
+        return this.selectedNamespacePath;
+      }
+      return this.selectedProjectFullPath;
+    },
+    showItemTypeSelect() {
+      if (this.workItemPlanningViewEnabled) {
+        return true;
+      }
+      return this.showWorkItemTypeSelect || this.alwaysShowWorkItemTypeSelect;
     },
   },
   watch: {
@@ -570,6 +656,9 @@ export default {
     document.removeEventListener('keydown', this.handleKeydown);
   },
   methods: {
+    findWorkItemType(workItemTypeName) {
+      return this.workItemTypes?.find((workItemType) => workItemType.name === workItemTypeName);
+    },
     initialSelectedProject() {
       if (this.relatedItem) {
         return this.relatedItem.reference.substring(0, this.relatedItem.reference.lastIndexOf('#'));
@@ -577,16 +666,9 @@ export default {
       return this.fullPath || null;
     },
     handleKeydown(e) {
-      if (isMetaEnterKeyPair(e)) {
+      if (isMetaEnterKeyPair(e) && !this.loading) {
         this.createWorkItem();
       }
-    },
-    isTitleFilled(newValue) {
-      const title = newValue ?? this.workItemTitle;
-      return Boolean(String(title).trim());
-    },
-    updateTitle(newValue) {
-      this.workItemTitle = newValue;
     },
     validateAllowedParentTypes(selectedWorkItemType) {
       return (
@@ -601,8 +683,8 @@ export default {
         this.selectedWorkItemType?.widgetDefinitions?.flatMap((i) => i.type) || [];
       return widgetDefinitions.indexOf(widgetType) !== -1;
     },
-    validate(newValue) {
-      this.isTitleValid = this.isTitleFilled(newValue);
+    validate() {
+      this.isTitleValid = Boolean(String(this.workItemTitle).trim());
     },
     setNumberOfDiscussionsResolved() {
       if (this.discussionToResolve || this.mergeRequestToResolveDiscussionsOf) {
@@ -610,9 +692,43 @@ export default {
           this.discussionToResolve && this.mergeRequestToResolveDiscussionsOf ? '1' : 'all';
       }
     },
+    clearAutosaveDraft({ fullPath, workItemType }) {
+      const fullDraftAutosaveKey = getNewWorkItemAutoSaveKey({
+        fullPath,
+        workItemType,
+      });
+      clearDraft(fullDraftAutosaveKey);
+
+      const widgetsAutosaveKey = getNewWorkItemWidgetsAutoSaveKey({
+        fullPath,
+      });
+      clearDraft(widgetsAutosaveKey);
+    },
+    handleChangeType() {
+      setNewWorkItemCache({
+        fullPath: this.selectedProjectFullPath,
+        widgetDefinitions: this.selectedWorkItemType?.widgetDefinitions || [],
+        workItemType: this.selectedWorkItemTypeName,
+        workItemTypeId: this.selectedWorkItemTypeId,
+        workItemTypeIconName: this.selectedWorkItemTypeIconName,
+        relatedItemId: this.relatedItemId,
+      });
+
+      updateDraftWorkItemType({
+        fullPath: this.selectedProjectFullPath,
+        relatedItemId: this.relatedItemId,
+        workItemType: {
+          id: this.selectedWorkItemTypeId,
+          name: this.selectedWorkItemTypeName,
+          iconName: this.selectedWorkItemTypeIconName,
+        },
+      });
+
+      this.$emit('changeType', this.selectedWorkItemTypeName);
+    },
     async updateDraftData(type, value) {
       if (type === 'title') {
-        this.workItemTitle = value;
+        this.localTitle = value;
       }
 
       try {
@@ -622,6 +738,7 @@ export default {
             input: {
               fullPath: this.selectedProjectFullPath,
               workItemType: this.selectedWorkItemTypeName,
+              relatedItemId: this.relatedItemId,
               [type]: value,
             },
           },
@@ -643,7 +760,7 @@ export default {
       const workItemCreateInput = {
         title: this.workItemTitle,
         workItemTypeId: this.selectedWorkItemTypeId,
-        namespacePath: this.selectedProjectFullPath,
+        namespacePath: this.inputNamespacePath || this.fullPath,
         confidential: this.workItem.confidential,
         descriptionWidget: {
           description: this.workItemDescription || '',
@@ -722,6 +839,12 @@ export default {
       if (this.isWidgetSupported(WIDGET_TYPE_CRM_CONTACTS)) {
         workItemCreateInput.crmContactsWidget = {
           contactIds: this.workItemCrmContactIds,
+        };
+      }
+
+      if (this.isWidgetSupported(WIDGET_TYPE_STATUS)) {
+        workItemCreateInput.statusWidget = {
+          status: this.workItemStatusId,
         };
       }
 
@@ -805,14 +928,29 @@ export default {
           numberOfDiscussionsResolved: this.numberOfDiscussionsResolved,
         });
 
-        const autosaveKey = getNewWorkItemAutoSaveKey(
-          this.selectedProjectFullPath,
-          this.selectedWorkItemTypeName,
-        );
-        clearDraft(autosaveKey);
+        this.clearAutosaveDraft({
+          fullPath: this.selectedProjectFullPath,
+          workItemType: this.selectedWorkItemTypeName,
+        });
       } catch {
         this.error = this.createErrorText;
         this.loading = false;
+      }
+    },
+    async handleUpdateWidgetDraft(input) {
+      try {
+        await this.$apollo.mutate({
+          mutation: updateNewWorkItemMutation,
+          variables: {
+            input: {
+              ...input,
+              relatedItemId: this.relatedItemId,
+            },
+          },
+        });
+      } catch (e) {
+        this.error = this.createErrorText;
+        Sentry.captureException(e);
       }
     },
     handleCancelClick() {
@@ -828,21 +966,24 @@ export default {
       }
     },
     handleDiscardDraft() {
-      const autosaveKey = getNewWorkItemAutoSaveKey(
-        this.selectedProjectFullPath,
-        this.selectedWorkItemTypeName,
-      );
-      clearDraft(autosaveKey);
+      this.clearAutosaveDraft({
+        fullPath: this.selectedProjectFullPath,
+        workItemType: this.selectedWorkItemTypeName,
+      });
 
       const selectedWorkItemWidgets = this.selectedWorkItemType?.widgetDefinitions || [];
 
-      setNewWorkItemCache(
-        this.selectedProjectFullPath,
-        selectedWorkItemWidgets,
-        this.selectedWorkItemTypeName,
-        this.selectedWorkItemTypeId,
-        this.selectedWorkItemTypeIconName,
-      );
+      setNewWorkItemCache({
+        fullPath: this.selectedProjectFullPath,
+        widgetDefinitions: selectedWorkItemWidgets,
+        workItemType: this.selectedWorkItemTypeName,
+        workItemTypeId: this.selectedWorkItemTypeId,
+        workItemTypeIconName: this.selectedWorkItemTypeIconName,
+        relatedItemId: this.relatedItemId,
+      });
+    },
+    onParentMilestone(parentMilestone) {
+      this.selectedParentMilestone = parentMilestone;
     },
   },
   NEW_WORK_ITEM_IID,
@@ -857,24 +998,40 @@ export default {
       <gl-alert v-if="error" class="gl-mb-3" variant="danger" @dismiss="error = null">
         {{ error }}
       </gl-alert>
-      <h1 v-if="!hideFormTitle" class="page-title gl-text-xl gl-pb-5">{{ titleText }}</h1>
-      <div class="gl-flex gl-items-center gl-gap-4">
-        <gl-form-group
-          v-if="showProjectSelector"
-          class="gl-max-w-26 gl-flex-grow"
-          :label="__('Project')"
-        >
-          <work-item-projects-listbox
-            v-model="selectedProjectFullPath"
-            :full-path="fullPath"
-            :is-group="isGroup"
-            :current-project-name="namespaceFullName"
-          />
-        </gl-form-group>
+      <page-heading v-if="!hideFormTitle" :heading="titleText" />
 
-        <gl-loading-icon v-if="$apollo.queries.workItemTypes.loading" size="lg" />
+      <div class="gl-flex gl-items-center gl-gap-4">
+        <template v-if="workItemPlanningViewEnabled">
+          <gl-form-group class="gl-mr-4 gl-max-w-26 gl-flex-grow" :label="__('Group/project')">
+            <work-item-namespace-listbox
+              v-model="selectedNamespacePath"
+              :full-path="fullPath"
+              :is-group="isGroup"
+            />
+          </gl-form-group>
+        </template>
+
+        <template v-else>
+          <gl-form-group
+            v-if="showProjectSelector"
+            class="gl-max-w-26 gl-flex-grow"
+            :label="__('Project')"
+            label-for="create-work-item-project"
+          >
+            <work-item-projects-listbox
+              v-model="selectedProjectFullPath"
+              :full-path="fullPath"
+              :is-group="isGroup"
+              :current-project-name="namespaceFullName"
+              :project-namespace-full-path="projectNamespaceFullPath"
+              toggle-id="create-work-item-project"
+            />
+          </gl-form-group>
+        </template>
+
+        <gl-loading-icon v-if="$apollo.queries.namespace.loading" size="lg" />
         <gl-form-group
-          v-else-if="showWorkItemTypeSelect || alwaysShowWorkItemTypeSelect"
+          v-else-if="showItemTypeSelect"
           class="gl-max-w-26 gl-flex-grow"
           :label="__('Type')"
           label-for="work-item-type"
@@ -884,11 +1041,11 @@ export default {
             v-model="selectedWorkItemTypeId"
             data-testid="work-item-types-select"
             :options="formOptions"
-            @change="$emit('changeType', selectedWorkItemTypeName)"
+            @change="handleChangeType"
           />
         </gl-form-group>
       </div>
-      <div v-if="selectedWorkItemTypeId" data-testid="create-work-item">
+      <template v-if="selectedWorkItemTypeId">
         <work-item-title
           ref="title"
           data-testid="title-input"
@@ -913,13 +1070,19 @@ export default {
               :full-path="selectedProjectFullPath"
               :show-buttons-below-field="false"
               :hide-fullscreen-markdown-button="isModal"
+              :new-work-item-type="selectedWorkItemTypeName"
               :work-item-id="workItemId"
               :work-item-iid="workItemIid"
-              :work-item-type-name="selectedWorkItemTypeName"
+              :uploads-path="uploadsPath"
               @error="updateError = $event"
+              @cancelCreate="handleCancelClick"
               @updateDraft="updateDraftData('description', $event)"
             />
-            <div v-if="numberOfDiscussionsResolved && resolvingMRDiscussionLink" class="gl-mb-4">
+            <div
+              v-if="numberOfDiscussionsResolved && resolvingMRDiscussionLink"
+              class="gl-mb-4"
+              data-testid="work-item-resolve-discussion"
+            >
               <gl-icon class="gl-mr-2" name="information-o" />
               {{ createWorkItemWarning }}
               <gl-link :href="resolvingMRDiscussionLink">{{
@@ -961,6 +1124,18 @@ export default {
             class="work-item-overview-right-sidebar gl-px-3"
             :class="{ 'is-modal': true }"
           >
+            <work-item-status
+              v-if="showWorkItemStatus"
+              class="work-item-attributes-item"
+              :can-update="canUpdate"
+              :full-path="selectedProjectFullPath"
+              :is-group="isGroup"
+              :work-item-id="workItemId"
+              :work-item-iid="workItemIid"
+              :work-item-type="selectedWorkItemTypeName"
+              @updateWidgetDraft="handleUpdateWidgetDraft"
+              @error="$emit('error', $event)"
+            />
             <work-item-assignees
               v-if="workItemAssignees"
               class="js-assignee work-item-attributes-item"
@@ -970,10 +1145,10 @@ export default {
               :work-item-id="workItemId"
               :assignees="workItemAssignees.assignees.nodes"
               :participants="workItemParticipantNodes"
-              :work-item-author="workItemAuthor"
               :allows-multiple-assignees="workItemAssignees.allowsMultipleAssignees"
               :work-item-type="selectedWorkItemTypeName"
               :can-invite-members="workItemAssignees.canInviteMembers"
+              @updateWidgetDraft="handleUpdateWidgetDraft"
               @error="$emit('error', $event)"
             />
             <work-item-labels
@@ -985,7 +1160,49 @@ export default {
               :work-item-id="workItemId"
               :work-item-iid="workItemIid"
               :work-item-type="selectedWorkItemTypeName"
+              @updateWidgetDraft="handleUpdateWidgetDraft"
               @error="$emit('error', $event)"
+            />
+            <work-item-parent
+              v-if="showParentAttribute"
+              class="work-item-attributes-item"
+              :can-update="canUpdate"
+              :work-item-id="workItemId"
+              :work-item-type="selectedWorkItemTypeName"
+              :group-path="groupPath"
+              :full-path="selectedProjectFullPath"
+              :parent="workItemParent"
+              :is-group="isGroup"
+              :allowed-parent-types-for-new-work-item="allowedParentTypesForSelectedType"
+              @updateWidgetDraft="handleUpdateWidgetDraft"
+              @error="$emit('error', $event)"
+              @parentMilestone="onParentMilestone"
+            />
+            <work-item-weight
+              v-if="workItemWeight"
+              class="work-item-attributes-item"
+              :can-update="canUpdate"
+              :full-path="selectedProjectFullPath"
+              :widget="workItemWeight"
+              :work-item-id="workItemId"
+              :work-item-iid="workItemIid"
+              :work-item-type="selectedWorkItemTypeName"
+              @updateWidgetDraft="handleUpdateWidgetDraft"
+              @error="$emit('error', $event)"
+            />
+            <work-item-milestone
+              v-if="workItemMilestone"
+              class="js-milestone work-item-attributes-item"
+              :is-group="isGroup"
+              :full-path="selectedProjectFullPath"
+              :work-item-id="workItemId"
+              :work-item-iid="workItemIid"
+              :work-item-milestone="workItemMilestone.milestone || selectedParentMilestone"
+              :work-item-type="selectedWorkItemTypeName"
+              :can-update="canUpdate"
+              @updateWidgetDraft="handleUpdateWidgetDraft"
+              @error="$emit('error', $event)"
+              @parentMilestone="onParentMilestone"
             />
             <work-item-iteration
               v-if="workItemIteration"
@@ -997,29 +1214,7 @@ export default {
               :work-item-id="workItemId"
               :work-item-iid="workItemIid"
               :work-item-type="selectedWorkItemTypeName"
-              @error="$emit('error', $event)"
-            />
-            <work-item-milestone
-              v-if="workItemMilestone"
-              class="js-milestone work-item-attributes-item"
-              :is-group="isGroup"
-              :full-path="selectedProjectFullPath"
-              :work-item-id="workItemId"
-              :work-item-iid="workItemIid"
-              :work-item-milestone="workItemMilestone.milestone"
-              :work-item-type="selectedWorkItemTypeName"
-              :can-update="canUpdate"
-              @error="$emit('error', $event)"
-            />
-            <work-item-weight
-              v-if="workItemWeight"
-              class="work-item-attributes-item"
-              :can-update="canUpdate"
-              :full-path="selectedProjectFullPath"
-              :widget="workItemWeight"
-              :work-item-id="workItemId"
-              :work-item-iid="workItemIid"
-              :work-item-type="selectedWorkItemTypeName"
+              @updateWidgetDraft="handleUpdateWidgetDraft"
               @error="$emit('error', $event)"
             />
             <work-item-dates
@@ -1033,6 +1228,7 @@ export default {
               :should-roll-up="shouldDatesRollup"
               :work-item-type="selectedWorkItemTypeName"
               :work-item="workItem"
+              @updateWidgetDraft="handleUpdateWidgetDraft"
               @error="$emit('error', $event)"
             />
             <work-item-health-status
@@ -1042,6 +1238,7 @@ export default {
               :work-item-iid="workItemIid"
               :work-item-type="selectedWorkItemTypeName"
               :full-path="selectedProjectFullPath"
+              @updateWidgetDraft="handleUpdateWidgetDraft"
               @error="$emit('error', $event)"
             />
             <work-item-color
@@ -1050,28 +1247,17 @@ export default {
               :work-item="workItem"
               :full-path="selectedProjectFullPath"
               :can-update="canUpdate"
+              @updateWidgetDraft="handleUpdateWidgetDraft"
               @error="$emit('error', $event)"
             />
             <work-item-custom-fields
-              v-if="showWorkItemCustomFields"
+              v-if="workItemCustomFields"
               :work-item-id="workItemId"
               :work-item-type="selectedWorkItemTypeName"
               :custom-fields="workItemCustomFields"
               :full-path="selectedProjectFullPath"
-              :is-group="isGroup"
               :can-update="canUpdate"
-              @error="$emit('error', $event)"
-            />
-            <work-item-parent
-              v-if="showParentAttribute"
-              class="work-item-attributes-item"
-              :can-update="canUpdate"
-              :work-item-id="workItemId"
-              :work-item-type="selectedWorkItemTypeName"
-              :group-path="groupPath"
-              :full-path="selectedProjectFullPath"
-              :parent="workItemParent"
-              :is-group="isGroup"
+              @updateWidgetDraft="handleUpdateWidgetDraft"
               @error="$emit('error', $event)"
             />
             <work-item-crm-contacts
@@ -1081,14 +1267,47 @@ export default {
               :work-item-id="workItemId"
               :work-item-iid="workItemIid"
               :work-item-type="selectedWorkItemTypeName"
+              @updateWidgetDraft="handleUpdateWidgetDraft"
               @error="$emit('error', $event)"
             />
           </aside>
-          <div
-            v-if="!stickyFormSubmit"
-            class="gl-col-start-1 gl-flex gl-gap-3 gl-py-3"
-            data-testid="form-buttons"
-          >
+          <div v-if="!stickyFormSubmit" class="gl-col-start-1 gl-py-3" data-testid="form-buttons">
+            <div class="gl-mb-2 gl-flex gl-gap-3">
+              <gl-button
+                variant="confirm"
+                :loading="loading"
+                data-testid="create-button"
+                @click="createWorkItem"
+              >
+                {{ createWorkItemText }}
+              </gl-button>
+              <gl-button type="button" data-testid="cancel-button" @click="handleCancelClick">
+                {{ __('Cancel') }}
+              </gl-button>
+            </div>
+            <gl-sprintf
+              v-if="contributionGuidePath"
+              :message="$options.i18n.contributionGuidelinesText"
+            >
+              <template #link="{ content }">
+                <gl-link class="gl-font-bold" :href="contributionGuidePath">
+                  {{ content }}
+                </gl-link>
+              </template>
+            </gl-sprintf>
+          </div>
+        </div>
+        <!-- stick to bottom and put the Confirm button on the right -->
+        <!-- bg-overlap to match modal bg -->
+        <div
+          v-if="stickyFormSubmit"
+          class="gl-border-t gl-sticky gl-bottom-0 gl-z-1 -gl-mx-5 gl-flex gl-flex-col gl-items-end gl-gap-2 gl-bg-overlap gl-px-5 gl-py-3"
+          data-testid="form-buttons"
+        >
+          <div class="gl-flex gl-gap-3">
+            <gl-button type="button" data-testid="cancel-button" @click="handleCancelClick">
+              {{ __('Cancel') }}
+            </gl-button>
             <gl-button
               variant="confirm"
               :loading="loading"
@@ -1097,31 +1316,18 @@ export default {
             >
               {{ createWorkItemText }}
             </gl-button>
-            <gl-button type="button" data-testid="cancel-button" @click="handleCancelClick">
-              {{ __('Cancel') }}
-            </gl-button>
+          </div>
+          <div v-if="contributionGuidePath">
+            <gl-sprintf :message="$options.i18n.contributionGuidelinesText">
+              <template #link="{ content }">
+                <gl-link class="gl-font-bold" :href="contributionGuidePath">
+                  {{ content }}
+                </gl-link>
+              </template>
+            </gl-sprintf>
           </div>
         </div>
-        <!-- stick to bottom and put the Confim button on the right -->
-        <!-- bg-overlap to match modal bg -->
-        <div
-          v-if="stickyFormSubmit"
-          class="gl-border-t gl-sticky gl-bottom-0 gl-z-1 -gl-mx-5 gl-flex gl-justify-end gl-gap-3 gl-bg-overlap gl-px-5 gl-py-3"
-          data-testid="form-buttons"
-        >
-          <gl-button type="button" data-testid="cancel-button" @click="handleCancelClick">
-            {{ __('Cancel') }}
-          </gl-button>
-          <gl-button
-            variant="confirm"
-            :loading="loading"
-            data-testid="create-button"
-            @click="createWorkItem"
-          >
-            {{ createWorkItemText }}
-          </gl-button>
-        </div>
-      </div>
+      </template>
     </template>
   </form>
 </template>

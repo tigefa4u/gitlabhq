@@ -3,6 +3,7 @@ stage: none
 group: unassigned
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: GitLab.com settings
+description: Instance configurations.
 ---
 
 {{< details >}}
@@ -49,8 +50,6 @@ this limit. Repository limits apply to both public and private projects.
 
 ## Backups
 
-[See our backup strategy](https://handbook.gitlab.com/handbook/engineering/infrastructure/production/#backups).
-
 To back up an entire project on GitLab.com, you can export it:
 
 - [Through the UI](../project/settings/import_export.md).
@@ -74,9 +73,10 @@ the related documentation:
 
 | Setting                                                                          | GitLab.com                                                                                                 | Default (GitLab Self-Managed) |
 |----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|------------------------|
-| Artifacts maximum size (compressed)                                              | 1 GB                                                                                                       | See [Maximum artifacts size](../../administration/settings/continuous_integration.md#maximum-artifacts-size). |
-| Artifacts [expiry time](../../ci/yaml/_index.md#artifactsexpire_in)               | 30 days unless otherwise specified                                                                         | See [Default artifacts expiration](../../administration/settings/continuous_integration.md#default-artifacts-expiration). Artifacts created before June 22, 2020 have no expiry. |
+| Artifacts maximum size (compressed)                                              | 1 GB                                                                                                       | See [Maximum artifacts size](../../administration/settings/continuous_integration.md#set-maximum-artifacts-size). |
+| Artifacts [expiry time](../../ci/yaml/_index.md#artifactsexpire_in)               | 30 days unless otherwise specified                                                                         | See [Default artifacts expiration](../../administration/settings/continuous_integration.md#set-default-artifacts-expiration). Artifacts created before June 22, 2020 have no expiry. |
 | Scheduled Pipeline Cron                                                          | `*/5 * * * *`                                                                                              | See [Pipeline schedules advanced configuration](../../administration/cicd/_index.md#change-maximum-scheduled-pipeline-frequency). |
+| Maximum jobs in a single pipeline                                                | `500` for Free tier, `1000` for all trial tiers, `1500` for Premium, and `2000` for Ultimate.              | See [Maximum number of jobs in a pipeline](../../administration/instance_limits.md#maximum-number-of-jobs-in-a-pipeline). |
 | Maximum jobs in active pipelines                                                 | `500` for Free tier, `1000` for all trial tiers, `20000` for Premium, and `100000` for Ultimate.           | See [Number of jobs in active pipelines](../../administration/instance_limits.md#number-of-jobs-in-active-pipelines). |
 | Maximum CI/CD subscriptions to a project                                         | `2`                                                                                                        | See [Number of CI/CD subscriptions to a project](../../administration/instance_limits.md#number-of-cicd-subscriptions-to-a-project). |
 | Maximum number of pipeline triggers in a project                                 | `25000`                                                                                                    | See [Limit the number of pipeline triggers](../../administration/instance_limits.md#limit-the-number-of-pipeline-triggers). |
@@ -87,7 +87,7 @@ the related documentation:
 | Maximum test cases for each [unit test report](../../ci/testing/unit_test_reports.md) | `500000`                                                                                                   | Unlimited.             |
 | Maximum registered runners                                                       | Free tier: `50` for each group and `50`for each project<br/>All paid tiers: `1000` for each group and `1000` for each project | See [Number of registered runners for each scope](../../administration/instance_limits.md#number-of-registered-runners-for-each-scope). |
 | Limit of dotenv variables                                                        | Free tier: `50`<br>Premium tier: `100`<br>Ultimate tier: `150`                                             | See [Limit dotenv variables](../../administration/instance_limits.md#limit-dotenv-variables). |
-| Maximum downstream pipeline trigger rate (for a given project, user, and commit) | `350` each minute                                                                                           | See [Maximum downstream pipeline trigger rate](../../administration/settings/continuous_integration.md#maximum-downstream-pipeline-trigger-rate). |
+| Maximum downstream pipeline trigger rate (for a given project, user, and commit) | `350` each minute                                                                                           | See [Maximum downstream pipeline trigger rate](../../administration/settings/continuous_integration.md#limit-downstream-pipeline-trigger-rate). |
 | Maximum number of downstream pipelines in a pipeline's hierarchy tree            | `1000`                                                                                                     | See [Limit pipeline hierarchy size](../../administration/instance_limits.md#limit-pipeline-hierarchy-size). |
 
 ## Container registry
@@ -287,11 +287,11 @@ GitLab.com uses the IP ranges `34.74.90.64/28` and `34.74.226.0/24` for traffic 
 fleet. This whole range is solely allocated to GitLab. Connections from webhooks or
 repository mirroring come from these IP addresses. You should allow these connections.
 
-- **Incoming connections** - GitLab.com is fronted by Cloudflare. For incoming connections to GitLab.com,
+- Incoming connections - GitLab.com is fronted by Cloudflare. For incoming connections to GitLab.com,
   allow CIDR blocks of Cloudflare ([IPv4](https://www.cloudflare.com/ips-v4/) and
   [IPv6](https://www.cloudflare.com/ips-v6/)).
 
-- **Outgoing connections from CI/CD runners** - We don't provide static IP addresses for outgoing
+- Outgoing connections from CI/CD runners - We don't provide static IP addresses for outgoing
   connections from CI/CD runners. However, these guidelines can help:
   - Linux GPU-enabled and Linux Arm64 runners are deployed into Google Cloud, in `us-central1`.
   - Other GitLab.com instance runners are deployed into Google Cloud in `us-east1`.
@@ -342,7 +342,7 @@ Merge requests enforce these maximums:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/521970) in GitLab 17.10 [with a flag](../../administration/feature_flags.md) named `merge_requests_diffs_limit`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/521970) in GitLab 17.10 [with a flag](../../administration/feature_flags/_index.md) named `merge_requests_diffs_limit`. Disabled by default.
 - [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/521970) in GitLab 17.10.
 
 {{< /history >}}
@@ -362,7 +362,7 @@ close the affected merge request and create a new merge request.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/527036) in GitLab 17.11 [with a flag](../../administration/feature_flags.md) named `merge_requests_diff_commits_limit`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/527036) in GitLab 17.11 [with a flag](../../administration/feature_flags/_index.md) named `merge_requests_diff_commits_limit`. Disabled by default.
 
 {{< /history >}}
 
@@ -373,7 +373,7 @@ For more information, see the history.
 
 {{< /alert >}}
 
-GitLab limits each merge request to 1,000,000 (one million) [diff commits](../../development/merge_request_concepts/diffs/development.md#mergerequestdiffcommit).
+GitLab limits each merge request to 1,000,000 (one million) diff commits.
 Merge requests that reach this limit cannot be updated further. Instead,
 close the affected merge request and create a new merge request.
 
@@ -386,56 +386,43 @@ GitLab.com sets these requirements for passwords on new accounts and password ch
 - All characters are accepted. For example, `~`, `!`, `@`, `#`, `$`, `%`, `^`, `&`, `*`, `()`,
   `[]`, `_`, `+`,  `=`, and `-`.
 
+## Group creation
+
+On GitLab.com, [top-level group creation](../../api/groups.md#create-a-group) is not available through the API. It must be performed through the UI.
+
 ## Project and group deletion
 
 Settings related to the deletion of projects and groups.
 
 ### Delayed group deletion
 
-{{< details >}}
-
-- Tier: Premium, Ultimate
-- Offering: GitLab.com
-
-{{< /details >}}
-
 {{< history >}}
 
 - Delayed group deletion enabled by default for GitLab Premium and GitLab Ultimate in GitLab 16.1.
+- [Moved](https://gitlab.com/groups/gitlab-org/-/epics/17208) from GitLab Premium to GitLab Free in 18.0.
 
 {{< /history >}}
 
-Groups in GitLab Premium and GitLab Ultimate have delayed deletion enabled
-by default. Groups are permanently deleted after a seven-day delay.
-
-If you are on GitLab Free, your groups are immediately deleted, and you cannot restore them.
+Groups are permanently deleted after a seven-day delay.
 
 See how to [view and restore groups marked for deletion](../group/_index.md#restore-a-group).
 
 ### Delayed project deletion
 
-{{< details >}}
-
-- Tier: Premium, Ultimate
-- Offering: GitLab.com
-
-{{< /details >}}
-
 {{< history >}}
 
 - Delayed project deletion enabled by default for GitLab Premium and GitLab Ultimate in GitLab 16.1.
+- [Moved](https://gitlab.com/groups/gitlab-org/-/epics/17208) from GitLab Premium to GitLab Free in 18.0.
 
 {{< /history >}}
 
-In GitLab Premium and GitLab Ultimate, projects are permanently deleted after a seven-day delay.
-
-If you are on GitLab Free, your projects are immediately deleted, and you cannot restore them.
+Projects are permanently deleted after a seven-day delay.
 
 See how to [view and restore projects marked for deletion](../project/working_with_projects.md#restore-a-project).
 
-### Inactive project deletion
+### Dormant project deletion
 
-[Inactive project deletion](../../administration/inactive_project_deletion.md) is disabled on GitLab.com.
+[Dormant project deletion](../../administration/dormant_project_deletion.md) is disabled on GitLab.com.
 
 ## Package registry limits
 
@@ -519,9 +506,7 @@ More details are available on the rate limits for
 
 GitLab can rate-limit requests at several layers. The rate limits listed here
 are configured in the application. These limits are the most
-restrictive for each IP address. For more information about the rate limits
-for GitLab.com, see
-[the documentation in the handbook](https://handbook.gitlab.com/handbook/engineering/infrastructure/rate-limiting).
+restrictive for each IP address.
 
 ### Group and project import by uploading export files
 
@@ -701,6 +686,17 @@ The limit varies depending on your plan and the number of seats in your subscrip
 | GitLab Ultimate and open source, `999` seats or fewer  | `6,000`                |
 | GitLab Ultimate and open source, `1,000-4,999` seats   | `9,000`                |
 | GitLab Ultimate and open source, `5,000` seats or more | `13,000`               |
+
+### Security policy limits
+
+The maximum number of policies that you can add to a security policy project. These limits apply to each policy type individually. For example, you can have five merge request approval policies and five scan execution policies in the same security policy project.
+
+| Policy type                                            | Default limit                             |
+|--------------------------------------------------------|-------------------------------------------|
+| Merge request approval policies                        | Five policies per security policy project |
+| Scan execution policies                                | Five policies per security policy project |
+| Pipeline execution policies                            | Five policies per security policy project |
+| Vulnerability management policies                      | Five policies per security policy project |
 
 ### Other limits
 

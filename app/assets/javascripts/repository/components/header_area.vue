@@ -189,6 +189,9 @@ export default {
     showCompactCodeDropdown() {
       return this.glFeatures.directoryCodeDropdownUpdates;
     },
+    showBlobControls() {
+      return this.$route.params.path && this.$route.name === 'blobPathDecoded';
+    },
   },
   methods: {
     onInput(selectedRef) {
@@ -220,6 +223,7 @@ export default {
         data-testid="ref-dropdown-container"
         :project-id="projectId"
         :value="refSelectorValue"
+        :default-branch="rootRef"
         use-symbolic-ref-names
         :query-params="refSelectorQueryParams"
         @input="onInput"
@@ -272,7 +276,11 @@ export default {
       </h1>
 
       <!-- Tree controls -->
-      <div v-if="isTreeView" class="tree-controls gl-mb-3 gl-flex gl-flex-wrap gl-gap-3 sm:gl-mb-0">
+      <div
+        v-if="!showBlobControls"
+        class="tree-controls gl-mb-3 gl-flex gl-flex-wrap gl-gap-3 sm:gl-mb-0"
+        data-testid="tree-controls-container"
+      >
         <add-to-tree
           v-if="!isReadmeView && showCompactCodeDropdown"
           class="gl-hidden sm:gl-block"
@@ -292,7 +300,7 @@ export default {
           :upload-path="uploadPath"
           :new-dir-path="newDirPath"
         />
-        <!-- EE: = render_if_exists 'projects/tree/lock_link' -->
+        <!-- EE lock directory -->
         <lock-directory-button
           v-if="!isRoot"
           :project-path="projectPath"
@@ -333,7 +341,7 @@ export default {
           v-on="$listeners"
         />
         <!-- code + mobile panel -->
-        <div v-if="!isReadmeView" class="project-code-holder gl-w-full sm:gl-w-auto">
+        <div class="project-code-holder gl-w-full sm:gl-w-auto">
           <div v-if="showCompactCodeDropdown" class="gl-flex gl-justify-end gl-gap-3">
             <add-to-tree
               v-if="!isReadmeView"
@@ -367,11 +375,16 @@ export default {
               :project-id="projectId"
               :project-path="projectPath"
               :show-web-ide-button="showWebIdeButton"
-              :show-gitpod-button="isGitpodEnabledForInstance"
+              :is-gitpod-enabled-for-instance="isGitpodEnabledForInstance"
+              :is-gitpod-enabled-for-user="isGitpodEnabledForUser"
             />
-            <repository-overflow-menu v-if="comparePath" />
+            <repository-overflow-menu
+              :full-path="projectPath"
+              :path="currentPath"
+              :current-ref="currentRef"
+            />
           </div>
-          <template v-else>
+          <template v-else-if="!isReadmeView">
             <code-dropdown
               class="git-clone-holder js-git-clone-holder gl-hidden sm:gl-inline-block"
               :ssh-url="sshUrl"
@@ -381,29 +394,32 @@ export default {
               :current-path="currentPath"
               :directory-download-links="downloadLinks"
             />
-            <div class="gl-flex gl-items-stretch gl-gap-3 sm:gl-hidden">
-              <source-code-download-dropdown
-                :download-links="downloadLinks"
-                :download-artifacts="downloadArtifacts"
+            <div class="gl-flex gl-w-full gl-gap-3 sm:gl-inline-block sm:gl-w-auto">
+              <div class="gl-flex gl-w-full gl-items-stretch gl-gap-3 sm:gl-hidden">
+                <source-code-download-dropdown
+                  :download-links="downloadLinks"
+                  :download-artifacts="downloadArtifacts"
+                />
+                <clone-code-dropdown
+                  class="mobile-git-clone js-git-clone-holder !gl-w-full"
+                  :ssh-url="sshUrl"
+                  :http-url="httpUrl"
+                  :kerberos-url="kerberosUrl"
+                />
+              </div>
+              <repository-overflow-menu
+                :full-path="projectPath"
+                :path="currentPath"
+                :current-ref="currentRef"
               />
-              <clone-code-dropdown
-                class="mobile-git-clone js-git-clone-holder !gl-w-full"
-                :ssh-url="sshUrl"
-                :http-url="httpUrl"
-                :kerberos-url="kerberosUrl"
-              />
-              <repository-overflow-menu v-if="comparePath" />
             </div>
           </template>
         </div>
-        <repository-overflow-menu
-          v-if="comparePath && !showCompactCodeDropdown"
-          class="gl-hidden sm:gl-inline-flex"
-        />
       </div>
 
       <!-- Blob controls -->
       <blob-controls
+        v-if="showBlobControls"
         :project-path="projectPath"
         :project-id-as-number="projectIdAsNumber"
         :ref-type="getRefType"

@@ -98,7 +98,7 @@ Each database node runs four services:
 
 ### Consul server node
 
-The Consul server node runs the Consul server service. These nodes must have reached the quorum and elected a leader _before_ Patroni cluster bootstrap; otherwise, database nodes wait until such Consul leader is elected.
+The Consul server node runs the Consul server service. These nodes must have reached the quorum and elected a leader before Patroni cluster bootstrap; otherwise, database nodes wait until such Consul leader is elected.
 
 ### PgBouncer node
 
@@ -239,7 +239,7 @@ Few things to remember about the service itself:
 
 ### Installing the Linux package
 
-First, make sure to [download and install](https://about.gitlab.com/install/) the Linux package **on each node**.
+First, make sure to [download and install](https://about.gitlab.com/install/) the Linux package on each node.
 
 Make sure you install the necessary dependencies from step 1,
 add GitLab package repository from step 2.
@@ -338,7 +338,7 @@ If you choose an arbitrary order, you do not have any predetermined leader.
 
 #### Enable Monitoring
 
-If you enable Monitoring, it must be enabled on **all** database servers.
+If you enable Monitoring, it must be enabled on all database servers.
 
 1. Create/edit `/etc/gitlab/gitlab.rb` and add the following configuration:
 
@@ -558,9 +558,13 @@ Ensure that all migrations ran:
 gitlab-rake gitlab:db:configure
 ```
 
-> **Note**: If you encounter a `rake aborted!` error stating that PgBouncer is failing to connect to PostgreSQL it may be that your PgBouncer node's IP address is missing from
+{{< alert type="note" >}}
+
+If you encounter a `rake aborted!` error stating that PgBouncer is failing to connect to PostgreSQL it may be that your PgBouncer node's IP address is missing from
 PostgreSQL's `trust_auth_cidr_addresses` in `gitlab.rb` on your database nodes. See
 [PgBouncer error `ERROR:  pgbouncer cannot connect to server`](replication_and_failover_troubleshooting.md#pgbouncer-error-error-pgbouncer-cannot-connect-to-server) before you proceed.
+
+{{< /alert >}}
 
 ### Backups
 
@@ -729,7 +733,7 @@ After deploying the configuration follow these steps:
 
 Patroni is an opinionated solution for PostgreSQL high-availability. It takes the control of PostgreSQL, overrides its configuration, and manages its lifecycle (start, stop, restart). Patroni is the only option for PostgreSQL 12+ clustering and for cascading replication for Geo deployments.
 
-The fundamental [architecture](#example-recommended-setup-manual-steps) (mentioned above) does not change for Patroni.
+The fundamental [architecture](#example-recommended-setup-manual-steps) does not change for Patroni.
 You do not need any special consideration for Patroni while provisioning your database nodes. Patroni heavily relies on Consul to store the state of the cluster and elect a leader. Any failure in Consul cluster and its leader election propagates to the Patroni cluster as well.
 
 Patroni monitors the cluster and handles any failover. When the primary node fails, it works with Consul to notify PgBouncer. On failure, Patroni handles the transitioning of the old primary to a replica and rejoins it to the cluster automatically.
@@ -802,7 +806,7 @@ If a replica is not in sync, `gitlab-ctl patroni members` indicates the volume
 of missing data, and the `lag` fields indicate the elapsed time.
 
 Read more about the data returned by the leader
-[in the PostgreSQL documentation](https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-REPLICATION-VIEW),
+[in the PostgreSQL documentation](https://www.postgresql.org/docs/16/monitoring-stats.html#PG-STAT-REPLICATION-VIEW),
 including other values for the `state` field.
 
 The replicas should return:
@@ -826,13 +830,13 @@ conninfo              | user=gitlab_replicator host=172.18.0.113 port=5432 appli
 ```
 
 Read more about the data returned by the replica
-[in the PostgreSQL documentation](https://www.postgresql.org/docs/12/monitoring-stats.html#PG-STAT-WAL-RECEIVER-VIEW).
+[in the PostgreSQL documentation](https://www.postgresql.org/docs/16/monitoring-stats.html#PG-STAT-WAL-RECEIVER-VIEW).
 
 ### Selecting the appropriate Patroni replication method
 
 [Review the Patroni documentation carefully](https://patroni.readthedocs.io/en/latest/yaml_configuration.html#postgresql)
-before making changes as **_some of the options carry a risk of potential data
-loss if not fully understood_**. The [replication mode](https://patroni.readthedocs.io/en/latest/replication_modes.html)
+before making changes as some of the options carry a risk of potential data
+loss if not fully understood. The [replication mode](https://patroni.readthedocs.io/en/latest/replication_modes.html)
 configured determines the amount of tolerable data loss.
 
 {{< alert type="warning" >}}
@@ -841,7 +845,7 @@ Replication is not a backup strategy! There is no replacement for a well-conside
 
 {{< /alert >}}
 
-Linux package installations default [`synchronous_commit`](https://www.postgresql.org/docs/11/runtime-config-wal.html#GUC-SYNCHRONOUS-COMMIT) to `on`.
+Linux package installations default [`synchronous_commit`](https://www.postgresql.org/docs/16/runtime-config-wal.html#GUC-SYNCHRONOUS-COMMIT) to `on`.
 
 ```ruby
 postgresql['synchronous_commit'] = 'on'
@@ -862,11 +866,11 @@ patroni['remove_data_directory_on_diverged_timelines'] = false
 
 [The upstream documentation is always more up to date](https://patroni.readthedocs.io/en/latest/patroni_configuration.html), but the table below should provide a minimal overview of functionality.
 
-|Setting|Overview|
-|-|-|
-|`use_pg_rewind`|Try running `pg_rewind` on the former cluster leader before it rejoins the database cluster.|
-|`remove_data_directory_on_rewind_failure`|If `pg_rewind` fails, remove the local PostgreSQL data directory and re-replicate from the current cluster leader.|
-|`remove_data_directory_on_diverged_timelines`|If `pg_rewind` cannot be used and the former leader's timeline has diverged from the current one, delete the local data directory and re-replicate from the current cluster leader.|
+| Setting                                       | Overview |
+|-----------------------------------------------|----------|
+| `use_pg_rewind`                               | Try running `pg_rewind` on the former cluster leader before it rejoins the database cluster. |
+| `remove_data_directory_on_rewind_failure`     | If `pg_rewind` fails, remove the local PostgreSQL data directory and re-replicate from the current cluster leader. |
+| `remove_data_directory_on_diverged_timelines` | If `pg_rewind` cannot be used and the former leader's timeline has diverged from the current one, delete the local data directory and re-replicate from the current cluster leader. |
 
 ### Database authorization for Patroni
 
@@ -907,14 +911,14 @@ for a successful switchover.
 While Patroni supports automatic failover, you also have the ability to perform
 a manual one, where you have two slightly different options:
 
-- **Failover**: allows you to perform a manual failover when there are no healthy nodes.
+- Failover: allows you to perform a manual failover when there are no healthy nodes.
   You can perform this action in any PostgreSQL node:
 
   ```shell
   sudo gitlab-ctl patroni failover
   ```
 
-- **Switchover**: only works when the cluster is healthy and allows you to schedule a switchover (it can happen immediately).
+- Switchover: only works when the cluster is healthy and allows you to schedule a switchover (it can happen immediately).
   You can perform this action in any PostgreSQL node:
 
   ```shell
@@ -974,15 +978,15 @@ For a list of the bundled PostgreSQL versions and the default version for each r
 
 Here are a few key facts that you must consider before upgrading PostgreSQL:
 
-- The main point is that you have to **shut down the Patroni cluster**. This means that your
+- The main point is that you have to shut down the Patroni cluster. This means that your
   GitLab deployment is down for the duration of database upgrade or, at least, as long as your leader
-  node is upgraded. This can be **a significant downtime depending on the size of your database**.
+  node is upgraded. This can be a significant downtime depending on the size of your database.
 
-- Upgrading PostgreSQL creates a new data directory with a new control data. From the perspective of Patroni, this is a new cluster that needs to be bootstrapped again. Therefore, as part of the upgrade procedure, the cluster state (stored in Consul) is wiped out. After the upgrade is complete, Patroni bootstraps a new cluster. **This changes your _cluster ID_**.
+- Upgrading PostgreSQL creates a new data directory with a new control data. From the perspective of Patroni, this is a new cluster that needs to be bootstrapped again. Therefore, as part of the upgrade procedure, the cluster state (stored in Consul) is wiped out. After the upgrade is complete, Patroni bootstraps a new cluster. This changes your cluster ID.
 
 - The procedures for upgrading leader and replicas are not the same. That is why it is important to use the right procedure on each node.
 
-- Upgrading a replica node **deletes the data directory and resynchronizes it** from the leader using the
+- Upgrading a replica node deletes the data directory and resynchronizes it from the leader using the
   configured replication method (`pg_basebackup` is the only available option). It might take some
   time for replica to catch up with the leader, depending on the size of your database.
 
@@ -1003,19 +1007,19 @@ Considering these, you should carefully plan your PostgreSQL upgrade:
 
    {{< /alert >}}
 
-1. Stop Patroni **only on replicas**.
+1. Stop Patroni only on replicas.
 
    ```shell
    sudo gitlab-ctl stop patroni
    ```
 
-1. Enable the maintenance mode on the **application node**:
+1. Enable the maintenance mode on the application node:
 
    ```shell
    sudo gitlab-ctl deploy-page up
    ```
 
-1. Upgrade PostgreSQL on **the leader node** and make sure that the upgrade is completed successfully:
+1. Upgrade PostgreSQL on the leader node and make sure that the upgrade is completed successfully:
 
    ```shell
    # Default command timeout is 600s, configurable with '--timeout'
@@ -1040,16 +1044,25 @@ Considering these, you should carefully plan your PostgreSQL upgrade:
    gitlab-ctl patroni members
    ```
 
-1. You can now disable the maintenance mode on the **application node**:
+1. You can now disable the maintenance mode on the application node:
 
    ```shell
    sudo gitlab-ctl deploy-page down
    ```
 
-1. Upgrade PostgreSQL **on replicas** (you can do this in parallel on all of them):
+1. Upgrade PostgreSQL on replicas (you can do this in parallel on all of them):
 
    ```shell
    sudo gitlab-ctl pg-upgrade
+   ```
+
+1. Ensure that the compatible versions of `pg_dump` and `pg_restore` are used
+   on the GitLab Rails instance to avoid version mismatch errors when performing
+   a backup or restore. You can do this by specifying the PostgreSQL version
+   in `/etc/gitlab/gitlab.rb` on the Rails instance:
+
+   ```shell
+   postgresql['version'] = 16
    ```
 
 If issues are encountered upgrading the replicas,
@@ -1104,9 +1117,9 @@ cluster.
 
 #### Preflight check
 
-We rely on PostgreSQL [logical replication](https://www.postgresql.org/docs/current/logical-replication.html)
+We rely on PostgreSQL [logical replication](https://www.postgresql.org/docs/16/logical-replication.html)
 to support near-zero-downtime upgrades of Patroni clusters. The of
-[logical replication requirements](https://www.postgresql.org/docs/current/logical-replication-restrictions.html)
+[logical replication requirements](https://www.postgresql.org/docs/16/logical-replication-restrictions.html)
 must be met. In particular, `wal_level` must be `logical`. To check the `wal_level`,
 run the following command with `gitlab-psql` on any node of the existing cluster:
 
@@ -1116,7 +1129,7 @@ SHOW wal_level;
 
 By default, Patroni sets `wal_level` to `replica`. You must increase it to `logical`.
 Changing `wal_level` requires restarting PostgreSQL, so this step leads to a short
-downtime (hence near-zero-downtime). To do this on the Patroni **leader** node:
+downtime (hence near-zero-downtime). To do this on the Patroni leader node:
 
 1. Edit `gitlab.rb` by setting:
 
@@ -1162,7 +1175,7 @@ CREATE PUBLICATION patroni_upgrade FOR ALL TABLES;
 #### Copy the data from the existing cluster
 
 To dump the current database from the existing cluster, run these commands on the
-**leader** of the new cluster:
+leader of the new cluster:
 
 1. Optional. Copy global database objects:
 
@@ -1204,7 +1217,7 @@ CREATE SUBSCRIPTION patroni_upgrade
 
 In this statement, `EXISTING_CLUSTER_LEADER` is the host address of the leader node
 of the existing cluster. You can also use
-[other parameters](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS)
+[other parameters](https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-PARAMKEYWORDS)
 to change the connection string. For example, you can pass the authentication password.
 
 To check the status of replication, run these queries:
@@ -1236,7 +1249,7 @@ existing cluster. When you switch the database backend of the application and po
 it to the new cluster, the old cluster does not receive new updates. It falls behind
 the new cluster. After this point, any recovery must be done from the nodes of the new cluster.
 
-To do the switch on **all** PgBouncer nodes:
+To do the switch on all PgBouncer nodes:
 
 1. Edit `gitlab.rb` by setting:
 

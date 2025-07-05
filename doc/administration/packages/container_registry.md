@@ -526,6 +526,14 @@ Report any issues or feedback using [issue 525855](https://gitlab.com/gitlab-org
 
 <!--- end_remove -->
 
+The `s3_v2` driver (in Beta) uses AWS SDK v2 and only supports Signature Version 4 for authentication.
+This driver improves performance and reliability while ensuring compatibility with AWS authentication requirements,
+as support for older signature methods is deprecated. For more information, see [epic 16272](https://gitlab.com/groups/gitlab-org/-/epics/16272).
+
+For a complete list of configuration parameters for each driver, see [`s3_v1`](https://gitlab.com/gitlab-org/container-registry/-/blob/f4ece8cdba4413b968c8a3fd20497a8186f23d26/docs/storage-drivers/s3_v1.md) and [`s3_v2`](https://gitlab.com/gitlab-org/container-registry/-/blob/f4ece8cdba4413b968c8a3fd20497a8186f23d26/docs/storage-drivers/s3_v2.md).
+
+To configure the S3 storage driver, add one of the following configurations to your `/etc/gitlab/gitlab.rb` file:
+
 ```ruby
 # Deprecated: Will be removed in GitLab 19.0
 registry['storage'] = {
@@ -537,7 +545,11 @@ registry['storage'] = {
     'regionendpoint' => '<your-s3-regionendpoint>'
   }
 }
+```
 
+Or
+
+```ruby
 # Beta: s3_v2 driver
 registry['storage'] = {
   's3_v2' => {
@@ -550,9 +562,33 @@ registry['storage'] = {
 }
 ```
 
-The `s3_v2` driver (in Beta) uses AWS SDK v2 and only supports Signature Version 4 for authentication. This driver improves performance and reliability while ensuring compatibility with AWS authentication requirements, as they are phasing out support for older signature methods. For more information, see [epic 16272](https://gitlab.com/groups/gitlab-org/-/epics/16272).
+For improved security, you can use an IAM role instead of static credentials by not including the `accesskey` and `secretkey` parameters.
 
-For improved security, you can use an IAM role instead of static credentials by omitting the `accesskey` and `secretkey` parameters.
+To prevent storage cost increases, configure a lifecycle policy in your S3 bucket to purge incomplete multipart uploads.
+The container registry does not automatically clean these up.
+A three-day expiration policy for incomplete multipart uploads works well for most usage patterns.
+
+{{< alert type="note" >}}
+
+`loglevel` settings differ between the [`s3_v1`](https://gitlab.com/gitlab-org/container-registry/-/blob/f4ece8cdba4413b968c8a3fd20497a8186f23d26/docs/storage-drivers/s3_v1.md#configuration-parameters) and [`s3_v2`](https://gitlab.com/gitlab-org/container-registry/-/blob/f4ece8cdba4413b968c8a3fd20497a8186f23d26/docs/storage-drivers/s3_v2.md#configuration-parameters) drivers.
+If you set the `loglevel` for the wrong driver, it is ignored and a warning message is printed.
+
+{{< /alert >}}
+
+When using MinIO with the `s3_v2` driver, add the `checksum_disabled` parameter to disable AWS checksums:
+
+```ruby
+registry['storage'] = {
+  's3_v2' => {
+    'accesskey' => '<s3-access-key>',
+    'secretkey' => '<s3-secret-key-for-access-key>',
+    'bucket' => '<your-s3-bucket>',
+    'region' => '<your-s3-region>',
+    'regionendpoint' => '<your-s3-regionendpoint>',
+    'checksum_disabled' => true
+  }
+}
+```
 
 For S3 VPC endpoints:
 
@@ -569,11 +605,13 @@ registry['storage'] = {
 }
 ```
 
-- `regionendpoint` is only required when configuring an S3 compatible service such as MinIO, or when using an AWS S3 VPC Endpoint.
-- `<your-s3-bucket>` should be the name of a bucket that exists, and can't include subdirectories.
-- `pathstyle` should be set to `true` to use host/bucket_name/object style paths instead of bucket_name.host/object. Set to `false` for AWS S3.
+S3 configuration parameters:
 
-You can set a rate limit on connections to S3 to avoid 503 errors from the S3 API:
+- `<your-s3-bucket>`: The name of an existing bucket. Cannot include subdirectories.
+- `regionendpoint`: Required only when using an S3-compatible service like MinIO or an AWS S3 VPC Endpoint.
+- `pathstyle`: Controls URL formatting. Set to `true` for `host/bucket_name/object` (most S3-compatible services) or `false` for `bucket_name.host/object` (AWS S3).
+
+To avoid 503 errors from the S3 API, add the `maxrequestspersecond` parameter to set a rate limit on connections:
 
 ```ruby
 registry['storage'] = {
@@ -606,6 +644,10 @@ Report any issues or feedback using [issue 525855](https://gitlab.com/gitlab-org
 
 {{< /alert >}}
 
+For a complete list of configuration parameters for each driver, see [`azure_v1`](https://gitlab.com/gitlab-org/container-registry/-/blob/7b1786d261481a3c69912ad3423225f47f7c8242/docs/storage-drivers/azure_v1.md) and [`azure_v2`](https://gitlab.com/gitlab-org/container-registry/-/blob/7b1786d261481a3c69912ad3423225f47f7c8242/docs/storage-drivers/azure_v2.md).
+
+To configure the Azure storage driver, add one of the following configurations to your `/etc/gitlab/gitlab.rb` file:
+
 ```ruby
 # Deprecated: Will be removed in GitLab 19.0
 registry['storage'] = {
@@ -615,7 +657,11 @@ registry['storage'] = {
     'container' => '<container_name>'
   }
 }
+```
 
+Or
+
+```ruby
 # Beta: azure_v2 driver
 registry['storage'] = {
   'azure_v2' => {
@@ -755,7 +801,7 @@ you can pull from the container registry, but you cannot push.
    ```
 
    The output of these commands should match, except for the content in the
-   `_uploads` directories and sub-directories.
+   `_uploads` directories and subdirectories.
 1. Configure your registry to [use the S3 bucket for storage](#use-object-storage).
 1. For the changes to take effect, set the Registry back to `read-write` mode and [reconfigure GitLab](../restart_gitlab.md#reconfigure-a-linux-package-installation).
 
@@ -1271,6 +1317,11 @@ See the [Container registry metadata database](container_registry_metadata_datab
 
 ## Container registry garbage collection
 
+Prerequisites:
+
+- You must have installed GitLab by using a Linux package or the
+  [GitLab Helm chart](https://docs.gitlab.com/charts/charts/registry/#garbage-collection).
+
 {{< alert type="note" >}}
 
 Retention policies in your object storage provider, such as Amazon S3 Lifecycle, may prevent
@@ -1286,22 +1337,24 @@ alone does not delete image layers, it only leaves the underlying image manifest
 To more effectively free up space, the container registry has a garbage collector that can
 delete unreferenced layers and (optionally) untagged manifests.
 
-To start the garbage collector, use the `registry-garbage-collect` command provided by `gitlab-ctl`.
+To start the garbage collector, run the following `gitlab-ctl` command:
 
-{{< alert type="warning" >}}
-
-This command shuts down the container registry prior to the garbage collection and
-only starts it again after garbage collection completes. If you prefer to avoid downtime,
-you can manually set the container registry to [read-only mode and bypass `gitlab-ctl`](#performing-garbage-collection-without-downtime).
-
-{{< /alert >}}
+```shell
+`registry-garbage-collect`
+```
 
 The time required to perform garbage collection is proportional to the container registry data size.
 
-Prerequisites:
+{{< alert type="warning" >}}
 
-- You must have installed GitLab by using a Linux package or the
-  [GitLab Helm chart](https://docs.gitlab.com/charts/charts/registry/#garbage-collection).
+The `registry-garbage-collect` command shuts down the container registry prior to the garbage collection and
+only starts it again after garbage collection completes. If you prefer to avoid downtime,
+you can manually set the container registry to [read-only mode and bypass `gitlab-ctl`](#performing-garbage-collection-without-downtime).
+
+This command proceeds only if the metadata is in object storage. This command does not proceed
+if the [container registry metadata database](#container-registry-metadata-database) is enabled.
+
+{{< /alert >}}
 
 ### Understanding the content-addressable layers
 
@@ -1624,52 +1677,59 @@ To configure GitLab and the container registry on separate nodes:
    1. Ensure file permissions are correct.
    1. Run `sudo gitlab-ctl reconfigure` on both nodes.
 
-## Architecture of GitLab container registry
+## Container registry architecture
 
-The GitLab registry is what users use to store their own Docker images.
-Because of that the Registry is client facing, meaning that we expose it directly
-on the web server (or load balancers, LB for short).
+Users can store their own Docker images in the container registry. Because the registry
+is client facing, the registry is directly exposed
+on the web server or load balancer (LB).
 
 ```mermaid
 %%{init: { "fontFamily": "GitLab Sans" }}%%
 flowchart LR
-    A[User] --->|1: Docker login<br>on port 443| C{Frontend load<br>balancer}
-    C --->|2: connection attempt<br>without token fails| D[Registry]
-    C --->|5: connect with <br>token succeeds| D[Registry]
-    C --->|3: Docker<br>requests token| E[API frontend]
-    E --->|4:API returns<br>signed token| C
+    accTitle: Container registry authentication flow
+    accDescr: Shows how users authenticate with the container registry with GitLab API to push and pull Docker images
+
+    A[User] --->|1: Docker loginon port 443| C{Frontend loadbalancer}
+    C --->|2: connection attemptwithout token fails| D[Container registry]
+    C --->|5: connect with token succeeds| D[Container registry]
+    C --->|3: Dockerrequests token| E[API frontend]
+    E --->|4:API returnssigned token| C
 
     linkStyle 1 stroke-width:4px,stroke:red
     linkStyle 2 stroke-width:4px,stroke:green
 ```
 
-The flow described by the diagram above:
+The authentication flow includes these steps:
 
-1. A user runs `docker login registry.gitlab.example` on their client. This reaches the web server (or LB) on port 443.
-1. Web server connects to the Registry backend pool (by default, using port 5000). Because the user
-   didn't provide a valid token, the Registry returns a 401 HTTP code and the URL (`token_realm` from
-   Registry configuration) where to get one. This points to the GitLab API.
-1. The Docker client then connects to the GitLab API and obtains a token.
-1. The API signs the token with the registry key and hands it to the Docker client
-1. The Docker client now logs in again with the token received from the API. It can now push and pull Docker images.
+1. A user runs `docker login registry.gitlab.example` on their client. This request reaches the web server (or LB) on port 443.
+1. The web server connects to the registry backend pool (port 5000 by default). Because the user does not have a valid token, the registry returns a `401 Unauthorized` HTTP code and a URL to get a token. The URL is defined by the [`token_realm`](#registry-node-settings) setting in the registry configuration and points to the GitLab API.
+1. The Docker client connects to the GitLab API and obtains a token.
+1. The API signs the token with the registry key and sends it to the Docker client.
+1. The Docker client logs in again with the token received from the API. The authenticated client can now push and pull Docker images.
 
 Reference: <https://distribution.github.io/distribution/spec/auth/token/>
 
-### Communication between GitLab and Registry
+### Communication between GitLab and the container registry
 
-Registry doesn't have a way to authenticate users internally so it relies on
-GitLab to validate credentials. The connection between Registry and GitLab is
-TLS encrypted. The key is used by GitLab to sign the tokens while the certificate
-is used by Registry to validate the signature. By default, a self-signed certificate key pair is generated
-for all installations. This can be overridden as needed.
+The container registry cannot authenticate users internally, so it validates credentials through GitLab.
+The connection between the registry and GitLab is
+TLS encrypted.
 
-GitLab interacts with the Registry using the Registry private key. When a Registry
-request goes out, a new short-living (10 minutes) namespace limited token is generated
+GitLab uses the private key to sign tokens, and the registry uses the public key provided
+by the certificate to validate the signature.
+
+By default, a self-signed certificate key pair is generated
+for all installations. You can override this behavior using the [`internal_key`](#registry-node-settings) setting in the registry configuration.
+
+The following steps describe the communication flow:
+
+1. GitLab interacts with the registry using the registry's private key. When a registry
+request is sent, a short-lived (10 minutes), namespace-limited token is generated
 and signed with the private key.
-The Registry then verifies that the signature matches the registry certificate
+1. The registry verifies that the signature matches the registry certificate
 specified in its configuration and allows the operation.
-GitLab background jobs processing (through Sidekiq) also interacts with Registry.
-These jobs talk directly to Registry to handle image deletion.
+1. GitLab processes background jobs through Sidekiq, which also interacts with the registry.
+These jobs communicate directly with the registry to handle image deletion.
 
 ## Migrate from a third-party registry
 
@@ -1702,7 +1762,7 @@ The GitLab container registry should accept the same configuration that you are 
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/480652) in GitLab 17.5 [with a flag](../feature_flags.md) named `set_delete_failed_container_repository`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/480652) in GitLab 17.5 [with a flag](../feature_flags/_index.md) named `set_delete_failed_container_repository`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/490354) in GitLab 17.6. Feature flag `set_delete_failed_container_repository` removed.
 
 {{< /history >}}

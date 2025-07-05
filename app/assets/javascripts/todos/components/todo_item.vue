@@ -5,7 +5,6 @@ import { INSTRUMENT_TODO_ITEM_FOLLOW, TODO_STATE_DONE } from '../constants';
 import TodoItemTitle from './todo_item_title.vue';
 import TodoItemBody from './todo_item_body.vue';
 import TodoItemTimestamp from './todo_item_timestamp.vue';
-import TodoSnoozedTimestamp from './todo_snoozed_timestamp.vue';
 import TodoItemActions from './todo_item_actions.vue';
 import TodoItemTitleHiddenBySaml from './todo_item_title_hidden_by_saml.vue';
 
@@ -18,19 +17,19 @@ export default {
     TodoItemTitle,
     TodoItemBody,
     TodoItemTimestamp,
-    TodoSnoozedTimestamp,
     TodoItemActions,
     TodoItemTitleHiddenBySaml,
   },
   inject: ['currentTab'],
   props: {
-    currentUserId: {
-      type: String,
-      required: true,
-    },
     todo: {
       type: Object,
       required: true,
+    },
+    selectable: {
+      type: Boolean,
+      required: false,
+      default: false,
     },
     selected: {
       type: Boolean,
@@ -73,6 +72,7 @@ export default {
     :class="{ 'gl-bg-subtle': isDone }"
   >
     <gl-form-checkbox
+      v-if="selectable"
       class="gl-inline-block gl-pt-2"
       :aria-label="__('Select')"
       :checked="selected"
@@ -91,24 +91,14 @@ export default {
         <component
           :is="titleComponent"
           :todo="todo"
-          class="gl-flex gl-items-center gl-gap-2 gl-overflow-hidden gl-whitespace-nowrap gl-px-2 gl-pb-3 gl-pt-2 gl-text-sm gl-text-subtle sm:gl-mr-0 sm:gl-pr-4 md:gl-mb-1"
+          class="gl-flex gl-items-center gl-gap-2 gl-overflow-hidden gl-whitespace-nowrap gl-px-2 gl-pb-3 gl-pt-1 gl-text-sm gl-text-subtle sm:gl-mr-0 sm:gl-pr-4"
         />
-        <todo-item-body
-          :todo="todo"
-          :current-user-id="currentUserId"
-          :is-hidden-by-saml="isHiddenBySaml"
-        />
+        <todo-item-body :todo="todo" :is-hidden-by-saml="isHiddenBySaml" />
       </div>
-
-      <todo-snoozed-timestamp
-        v-if="todo.snoozedUntil"
-        class="gl-mr-2"
-        :snoozed-until="todo.snoozedUntil"
-        :has-reached-snooze-timestamp="!isSnoozed"
-      />
 
       <todo-item-timestamp
         :todo="todo"
+        :is-snoozed="isSnoozed"
         class="gl-w-full gl-whitespace-nowrap gl-px-2 sm:gl-w-auto"
       />
     </gl-link>

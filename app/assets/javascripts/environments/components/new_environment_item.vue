@@ -199,7 +199,7 @@ export default {
       <div v-else class="gl-px-4 gl-align-middle" data-testid="deployments-empty-state">
         <gl-sprintf :message="$options.i18n.emptyState">
           <template #link="{ content }">
-            <gl-link :href="helpPagePath">{{ content }}</gl-link>
+            <gl-link :href="helpPagePath" variant="inline">{{ content }}</gl-link>
           </template>
         </gl-sprintf>
       </div>
@@ -232,6 +232,7 @@ export default {
             :actions="actions"
             data-track-action="click_dropdown"
             data-track-label="environment_actions"
+            size="small"
           />
 
           <stop-component

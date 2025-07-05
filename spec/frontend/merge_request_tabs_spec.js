@@ -8,8 +8,8 @@ import setWindowLocation from 'helpers/set_window_location_helper';
 import axios from '~/lib/utils/axios_utils';
 import MergeRequestTabs, { getActionFromHref } from '~/merge_request_tabs';
 import Diff from '~/diff';
-import '~/lib/utils/common_utils';
 import { visitUrl } from '~/lib/utils/url_utility';
+import { NO_SCROLL_TO_HASH_CLASS } from '~/lib/utils/common_utils';
 
 jest.mock('~/lib/utils/webpack', () => ({
   resetServiceWorkersPublicPath: jest.fn(),
@@ -48,7 +48,7 @@ describe('MergeRequestTabs', () => {
   });
 
   afterEach(() => {
-    document.body.innerHTML = '';
+    resetHTMLFixture();
   });
 
   describe('clickTab', () => {
@@ -111,10 +111,6 @@ describe('MergeRequestTabs', () => {
           },
         },
       };
-    });
-
-    afterEach(() => {
-      resetHTMLFixture();
     });
 
     describe('meta click', () => {
@@ -459,15 +455,18 @@ describe('MergeRequestTabs', () => {
       describe('Rapid Diffs', () => {
         let createRapidDiffsApp;
         let init;
-        let reloadDiffs;
+        let hide;
+        let show;
 
         beforeEach(() => {
           setWindowLocation('https://example.com?rapid_diffs=true');
-          reloadDiffs = jest.fn();
           init = jest.fn();
+          hide = jest.fn();
+          show = jest.fn();
           createRapidDiffsApp = jest.fn(() => ({
             init,
-            reloadDiffs,
+            hide,
+            show,
           }));
         });
 
@@ -479,7 +478,6 @@ describe('MergeRequestTabs', () => {
           testContext.class.tabShown('diffs', 'not-a-vue-page');
           expect(createRapidDiffsApp).toHaveBeenCalledTimes(1);
           expect(init).toHaveBeenCalledTimes(1);
-          expect(reloadDiffs).toHaveBeenCalledTimes(1);
         });
 
         it('creates a single Rapid Diffs app instance', () => {
@@ -492,7 +490,27 @@ describe('MergeRequestTabs', () => {
           testContext.class.tabShown('diffs', 'not-a-vue-page');
           expect(createRapidDiffsApp).toHaveBeenCalledTimes(1);
           expect(init).toHaveBeenCalledTimes(1);
-          expect(reloadDiffs).toHaveBeenCalledTimes(1);
+        });
+
+        it('hides Rapid Diffs', () => {
+          testContext.class = new MergeRequestTabs({
+            stubLocation,
+            createRapidDiffsApp,
+          });
+          testContext.class.tabShown('diffs', 'not-a-vue-page');
+          testContext.class.tabShown('new', 'not-a-vue-page');
+          expect(hide).toHaveBeenCalledTimes(1);
+        });
+
+        it('shows Rapid Diffs', () => {
+          testContext.class = new MergeRequestTabs({
+            stubLocation,
+            createRapidDiffsApp,
+          });
+          testContext.class.tabShown('diffs', 'not-a-vue-page');
+          testContext.class.tabShown('new', 'not-a-vue-page');
+          testContext.class.tabShown('diffs', 'not-a-vue-page');
+          expect(show).toHaveBeenCalledTimes(1);
         });
       });
     });
@@ -574,11 +592,26 @@ describe('MergeRequestTabs', () => {
       ${'/user/diffs/-/merge_requests/1/pipelines'}          | ${'pipelines'}
       ${'/user/pipelines/-/merge_requests/1/commits'}        | ${'commits'}
       ${'/user/pipelines/1/-/merge_requests/1/diffs'}        | ${'diffs'}
+      ${'/user/gitlab/-/merge_requests/new/diffs'}           | ${'diffs'}
       ${'/user/pipelines/-/merge_requests/1'}                | ${'show'}
       ${'/user/pipelines/-/merge_requests/1/reports'}        | ${'reports'}
       ${'/group/reports/project/-/merge_requests/1/reports'} | ${'reports'}
     `('returns $action for $location', ({ pathName, action }) => {
       expect(getActionFromHref(pathName)).toBe(action);
     });
+  });
+
+  it('does not scroll to targets with no scroll class', () => {
+    setHTMLFixture(htmlMergeRequestsWithTaskList);
+    const target = document.createElement('div');
+    target.id = 'target';
+    target.classList.add(NO_SCROLL_TO_HASH_CLASS);
+    document.body.appendChild(target);
+    testContext.class.currentAction = 'show';
+    window.location.hash = 'target';
+
+    // popstate event handlers are not triggered in the same task
+    jest.runAllTimers();
+    expect(window.scrollTo).not.toHaveBeenCalled();
   });
 });

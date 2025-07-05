@@ -129,7 +129,7 @@ export default {
     },
     resolveCheckboxText() {
       return this.discussion.resolved
-        ? s__('DesignManagement|Unresolve thread')
+        ? s__('DesignManagement|Reopen thread')
         : s__('DesignManagement|Resolve thread');
     },
     firstNote() {
@@ -160,11 +160,6 @@ export default {
     },
     isFormVisible() {
       return this.isFormRendered && this.discussionWithOpenForm === this.discussion.id;
-    },
-    designsVersion() {
-      return this.$route.query.version
-        ? `gid://gitlab/DesignManagement::Version/${this.$route.query.version}`
-        : null;
     },
   },
   mounted() {

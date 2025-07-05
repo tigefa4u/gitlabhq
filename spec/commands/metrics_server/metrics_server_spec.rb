@@ -2,6 +2,7 @@
 
 require 'spec_helper'
 
+require_relative '../../../metrics_server/dependencies'
 require_relative '../../../metrics_server/metrics_server'
 
 # End-to-end tests for the metrics server process we use to serve metrics
@@ -92,6 +93,9 @@ RSpec.describe 'GitLab metrics server', :aggregate_failures do
     end
   end
 
-  it_behaves_like 'spawns a server', 'puma'
+  context 'with quarantine', quarantine: 'https://gitlab.com/gitlab-org/gitlab/-/issues/455277' do
+    it_behaves_like 'spawns a server', 'puma'
+  end
+
   it_behaves_like 'spawns a server', 'sidekiq'
 end

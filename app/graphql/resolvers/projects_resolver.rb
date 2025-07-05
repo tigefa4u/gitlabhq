@@ -51,6 +51,14 @@ module Resolvers
       required: false,
       description: 'Date when the project was marked for deletion.'
 
+    argument :active, GraphQL::Types::Boolean,
+      required: false,
+      description: "Filters by projects that are not archived and not marked for deletion."
+
+    argument :visibility_level, ::Types::VisibilityLevelsEnum,
+      required: false,
+      description: 'Filter projects by visibility level.'
+
     before_connection_authorization do |projects, current_user|
       ::Preloaders::UserMaxAccessLevelInProjectsPreloader.new(projects, current_user).execute
     end
@@ -61,6 +69,8 @@ module Resolvers
       projects = ProjectsFinder
         .new(current_user: current_user, params: finder_params(args), project_ids_relation: parse_gids(args[:ids]))
         .execute
+
+      projects.each { |project| BatchLoader::GraphQL.wrap(project.self_or_ancestors_archived?) }
 
       apply_lookahead(projects)
     end
@@ -74,7 +84,7 @@ module Resolvers
     end
 
     def unconditional_includes
-      [:creator, :group, :invited_groups, :project_setting]
+      [:creator, :group, :invited_groups, :project_setting, :project_namespace]
     end
 
     def finder_params(args)
@@ -90,6 +100,8 @@ module Resolvers
         aimed_for_deletion: args[:aimed_for_deletion],
         not_aimed_for_deletion: args[:not_aimed_for_deletion],
         marked_for_deletion_on: args[:marked_for_deletion_on],
+        visibility_level: args[:visibility_level],
+        active: args[:active],
         current_organization: ::Current.organization
       }
     end

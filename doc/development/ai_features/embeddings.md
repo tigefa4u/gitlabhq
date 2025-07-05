@@ -1,7 +1,7 @@
 ---
-stage: Foundations
+stage: AI-powered
 group: Global Search
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Embeddings
 ---
 
@@ -80,7 +80,7 @@ The following process outlines the steps to get embeddings generated and stored 
 
 ### Prerequisites
 
-1. [Make sure Elasticsearch is running](../advanced_search.md#setting-up-development-environment).
+1. [Make sure Elasticsearch is running](../advanced_search.md#setting-up-your-development-environment).
 1. If you have an existing Elasticsearch setup, make sure the `AddEmbeddingToWorkItems` migration has been completed by executing the following until it returns:
 
    ```ruby

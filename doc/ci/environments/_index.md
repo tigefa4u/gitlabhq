@@ -3,6 +3,7 @@ stage: Deploy
 group: Environments
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Environments
+description: Environments, variables, dashboards, and review apps.
 ---
 
 {{< details >}}
@@ -53,7 +54,7 @@ There are a few ways to view a list of environments for a given project:
 
 {{< history >}}
 
-- [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/337417) to persist arbitrary URLs in GitLab 15.2 [with a flag](../../administration/feature_flags.md) named `soft_validation_on_external_url`. Disabled by default.
+- [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/337417) to persist arbitrary URLs in GitLab 15.2 [with a flag](../../administration/feature_flags/_index.md) named `soft_validation_on_external_url`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/337417) in GitLab 15.3. [Feature flag `soft_validation_on_external_url`](https://gitlab.com/gitlab-org/gitlab/-/issues/367206) removed.
 
 {{< /history >}}
@@ -62,11 +63,11 @@ The [environment URL](../yaml/_index.md#environmenturl) is displayed in a few
 places in GitLab:
 
 - In a merge request as a link:
-  ![Environment URL in merge request](../img/environments_mr_review_app_v11_10.png)
+  ![Environment URL in merge request](img/environments_mr_review_app_v11_10.png)
 - In the Environments view as a button:
   ![Open live environment from environments view](img/environments_open_live_environment_v14_8.png)
 - In the Deployments view as a button:
-  ![Environment URL in deployments](../img/deployments_view_v11_10.png)
+  ![Environment URL in deployments](img/deployments_view_v11_10.png)
 
 You can see this information in a merge request if:
 
@@ -75,7 +76,7 @@ You can see this information in a merge request if:
 
 For example:
 
-![Environment URLs in merge request](../img/environments_link_url_mr_v10_1.png)
+![Environment URLs in merge request](img/environments_link_url_mr_v10_1.png)
 
 #### Go from source files to public pages
 
@@ -282,13 +283,13 @@ are calculated.
 To indicate that a specific environment is for a specific use,
 you can use tiers:
 
-| Environment tier | Environment name examples                          |
-|------------------|----------------------------------------------------|
-| `production`     | Production, Live                                   |
-| `staging`        | Staging, Model, Demo                               |
-| `testing`        | Test, QC                                           |
+| Environment tier | Environment name examples |
+|------------------|---------------------------|
+| `production`     | Production, Live          |
+| `staging`        | Staging, Model, Demo      |
+| `testing`        | Test, QC                  |
 | `development`    | Dev, [Review apps](../review_apps/_index.md), Trunk |
-| `other`          |                                                    |
+| `other`          |                           |
 
 By default, GitLab assumes a tier based on [the environment name](../yaml/_index.md#environmentname).
 You cannot set an environment tier using the UI.
@@ -404,6 +405,8 @@ deploy_review:
 Stopping an environment means its deployments are not accessible on the target server. You must stop
 an environment before it can be deleted.
 
+When using the `on_stop` action to stop an environment, the job runs if it's not [archived](../../administration/settings/continuous_integration.md#archive-pipelines).
+
 ### Stop an environment by using the UI
 
 {{< alert type="note" >}}
@@ -441,7 +444,7 @@ In the following example, a `deploy_review` job calls a `stop_review` job to cle
 environment.
 
 - Both jobs must have the same [`rules`](../yaml/_index.md#rules)
-  or [`only/except`](../yaml/_index.md#only--except) configuration. Otherwise,
+  or [`only/except`](../yaml/deprecated_keywords.md#only--except) configuration. Otherwise,
   the `stop_review` job might not be included in all pipelines that include the
   `deploy_review` job, and you cannot trigger `action: stop` to stop the environment automatically.
 - The job with [`action: stop` might not run](#the-job-with-action-stop-doesnt-run)
@@ -597,7 +600,7 @@ manually.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/108616) in GitLab 15.8 [with a flag](../../administration/feature_flags.md) named `stop_stale_environments`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/108616) in GitLab 15.8 [with a flag](../../administration/feature_flags/_index.md) named `stop_stale_environments`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/112098) in GitLab 15.10. Feature flag `stop_stale_environments` removed.
 
 {{< /history >}}
@@ -630,7 +633,7 @@ Protected environments are ignored and not stopped.
 
 You can define a stop job for the environment with an [`on_stop` action](../yaml/_index.md#environmenton_stop) in the environment's deploy job.
 
-The stop jobs of finished deployments in the latest finished pipeline are run when an environment is stopped. A deployment or pipeline is _finished_ if it has the successful, canceled, or failed status.
+The stop jobs of finished deployments in the latest finished pipeline are run when an environment is stopped. A deployment or pipeline is finished if it has the successful, canceled, or failed status.
 
 Prerequisites:
 

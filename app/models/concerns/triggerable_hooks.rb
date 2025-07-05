@@ -32,6 +32,7 @@ module TriggerableHooks
         job_hooks: :job_events,
         member_hooks: :member_events,
         merge_request_hooks: :merge_requests_events,
+        milestone_hooks: :milestone_events,
         note_hooks: :note_events,
         pipeline_hooks: :pipeline_events,
         project_hooks: :project_events,
@@ -41,7 +42,8 @@ module TriggerableHooks
         resource_access_token_hooks: :resource_access_token_events,
         subgroup_hooks: :subgroup_events,
         tag_push_hooks: :tag_push_events,
-        wiki_page_hooks: :wiki_page_events
+        wiki_page_hooks: :wiki_page_events,
+        vulnerability_hooks: :vulnerability_events
       }
     end
 

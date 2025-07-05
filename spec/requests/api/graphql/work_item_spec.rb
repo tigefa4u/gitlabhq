@@ -714,6 +714,21 @@ RSpec.describe 'Query.work_item(id)', feature_category: :team_planning do
             expect(graphql_dig_at(work_item_data, :widgets, "linkedItems", "nodes", "linkId"))
               .to match_array([link1.to_gid.to_s, link2.to_gid.to_s])
           end
+
+          context 'with anonymous user on public project' do
+            let(:current_user) { nil }
+
+            before do
+              project.update!(visibility: ::Gitlab::VisibilityLevel::PUBLIC)
+            end
+
+            it 'returns only items that the user has access to' do
+              post_graphql(query, current_user: current_user)
+
+              expect(graphql_dig_at(work_item_data, :widgets, "linkedItems", "nodes", "linkId"))
+                .to match_array([link1.to_gid.to_s, link2.to_gid.to_s])
+            end
+          end
         end
 
         context 'when limiting the number of results' do
@@ -862,7 +877,8 @@ RSpec.describe 'Query.work_item(id)', feature_category: :team_planning do
                 { "type" => "NOTIFICATIONS" },
                 { "type" => "PARTICIPANTS" },
                 { "type" => "START_AND_DUE_DATE" },
-                { "type" => "TIME_TRACKING" }
+                { "type" => "TIME_TRACKING" },
+                { "type" => "LINKED_RESOURCES" }
               ]
             )
           end
@@ -902,6 +918,9 @@ RSpec.describe 'Query.work_item(id)', feature_category: :team_planning do
                               name
                             }
                           }
+                        }
+                        discussion {
+                          id
                         }
                       }
                     }
@@ -1026,14 +1045,15 @@ RSpec.describe 'Query.work_item(id)', feature_category: :team_planning do
 
           expect_graphql_errors_to_be_empty
 
-          another_note = create(:note, project: work_item.project, noteable: work_item)
+          another_note = create(:discussion_note, project: work_item.project, noteable: work_item)
+          create(:note, project: work_item.project, noteable: work_item, in_reply_to: another_note)
+
           create(:award_emoji, awardable: another_note, name: 'star', user: guest)
           another_user = create(:user, developer_of: note.resource_parent)
           note_with_different_user = create(:note, project: note.project, noteable: work_item, author: another_user)
           create(:award_emoji, awardable: note_with_different_user, name: 'star', user: developer)
 
-          # TODO: Fix existing N+1 queries in https://gitlab.com/gitlab-org/gitlab/-/issues/414747
-          expect { post_graphql(query, current_user: developer) }.not_to exceed_query_limit(control).with_threshold(4)
+          expect { post_graphql(query, current_user: developer) }.not_to exceed_query_limit(control)
           expect_graphql_errors_to_be_empty
         end
       end

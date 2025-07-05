@@ -21,7 +21,6 @@ module Ci
 
       delegate :timeout, to: :metadata, prefix: true, allow_nil: true
       delegate :interruptible, to: :metadata, prefix: false, allow_nil: true
-      delegate :environment_auto_stop_in, to: :metadata, prefix: false, allow_nil: true
       delegate :id_tokens, to: :metadata, allow_nil: true
       delegate :exit_code, to: :metadata, allow_nil: true
 
@@ -67,7 +66,6 @@ module Ci
       ensure_metadata.tap do |metadata|
         # Store presence of exposed artifacts in build metadata to make it easier to query
         metadata.has_exposed_artifacts = value&.dig(:artifacts, :expose_as).present?
-        metadata.environment_auto_stop_in = value&.dig(:environment, :auto_stop_in)
       end
     end
 
@@ -91,14 +89,12 @@ module Ci
       ensure_metadata.id_tokens = value
     end
 
-    def enqueue_immediately?
-      !!options[:enqueue_immediately]
-    end
+    # TODO: Update this logic when column `p_ci_builds.debug_trace_enabled` is added.
+    # See https://gitlab.com/gitlab-org/gitlab/-/merge_requests/194954#note_2574776849.
+    def debug_trace_enabled?
+      return true if degenerated?
 
-    def set_enqueue_immediately!
-      # ensures that even if `config_options: nil` in the database we set the
-      # new value correctly.
-      self.options = options.merge(enqueue_immediately: true)
+      metadata&.debug_trace_enabled?
     end
 
     private

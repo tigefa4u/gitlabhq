@@ -24,6 +24,10 @@ module QA
           ])
       end
 
+      before do
+        Runtime::ApplicationSettings.set_application_settings(enforce_ci_inbound_job_token_scope_enabled: false)
+      end
+
       context 'without duplication setting' do
         where do
           {
@@ -90,7 +94,7 @@ module QA
             end
 
             Page::Project::Packages::Show.perform do |show|
-              expect(show).to have_package_info(package_name, package_version)
+              expect(show).to have_package_info(name: nil, version: package_version)
             end
 
             gitlab_ci_yaml = ERB.new(read_fixture('package_managers/maven/group/consumer',

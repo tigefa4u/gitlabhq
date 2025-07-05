@@ -4,14 +4,14 @@ require 'rubocop_spec_helper'
 require 'rspec-parameterized'
 require_relative '../../../../rubocop/cop/gitlab/avoid_current_organization'
 
-RSpec.describe RuboCop::Cop::Gitlab::AvoidCurrentOrganization, feature_category: :cell do
+RSpec.describe RuboCop::Cop::Gitlab::AvoidCurrentOrganization, feature_category: :organization do
   describe 'bad examples' do
     shared_examples 'reference offense' do
       it 'registers an offense' do
-        expect_offense(<<~CODE, node: node_value)
+        expect_offense(<<~RUBY, node: node_value)
           return if %{node}
                     ^{node} Avoid the use of [...]
-        CODE
+        RUBY
       end
     end
 
@@ -25,10 +25,10 @@ RSpec.describe RuboCop::Cop::Gitlab::AvoidCurrentOrganization, feature_category:
       let(:node_value) { 'Current.organization' }
 
       it 'registers an offense' do
-        expect_offense(<<~CODE, keyword: node_value)
+        expect_offense(<<~RUBY, keyword: node_value)
           %{keyword} = some_value
           ^{keyword}^^^^^^^^^^^^^ Avoid the use of [...]
-        CODE
+        RUBY
       end
     end
   end

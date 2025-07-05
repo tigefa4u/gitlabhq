@@ -4,17 +4,16 @@ import * as Sentry from '~/sentry/sentry_browser_wrapper';
 import Tracking from '~/tracking';
 import { newWorkItemId } from '~/work_items/utils';
 import { getIdFromGraphQLId } from '~/graphql_shared/utils';
-import { s__, __ } from '~/locale';
+import { s__, __, sprintf } from '~/locale';
 import { MILESTONE_STATE } from '~/sidebar/constants';
 import WorkItemSidebarDropdownWidget from '~/work_items/components/shared/work_item_sidebar_dropdown_widget.vue';
 import { ISSUE_MR_CHANGE_MILESTONE } from '~/behaviors/shortcuts/keybindings';
 import projectMilestonesQuery from '~/sidebar/queries/project_milestones.query.graphql';
 import groupMilestonesQuery from '~/sidebar/queries/group_milestones.query.graphql';
 import updateWorkItemMutation from '~/work_items/graphql/update_work_item.mutation.graphql';
-import updateNewWorkItemMutation from '~/work_items/graphql/update_new_work_item.mutation.graphql';
 import {
   I18N_WORK_ITEM_ERROR_UPDATING,
-  sprintfWorkItem,
+  NAME_TO_TEXT_LOWERCASE_MAP,
   TRACKING_CATEGORY_SHOW,
 } from '../constants';
 
@@ -73,6 +72,7 @@ export default {
     };
   },
   computed: {
+    // eslint-disable-next-line vue/no-unused-properties
     tracking() {
       return {
         category: TRACKING_CATEGORY_SHOW,
@@ -155,6 +155,11 @@ export default {
         return;
       }
 
+      if (!selectedMilestoneId) {
+        this.localMilestone = null;
+        this.$emit('parentMilestone', null);
+      }
+
       this.localMilestone = selectedMilestoneId
         ? this.milestones.find(({ id }) => id === selectedMilestoneId)
         : null;
@@ -163,32 +168,21 @@ export default {
       this.updateInProgress = true;
 
       if (this.workItemId === newWorkItemId(this.workItemType)) {
-        this.$apollo
-          .mutate({
-            mutation: updateNewWorkItemMutation,
-            variables: {
-              input: {
-                fullPath: this.fullPath,
-                milestone: this.localMilestone
-                  ? {
-                      ...this.localMilestone,
-                      webPath: this.localMilestone.webUrl,
-                      startDate: '',
-                      projectMilestone: false,
-                    }
-                  : null,
-                workItemType: this.workItemType,
-              },
-            },
-          })
-          .catch((error) => {
-            Sentry.captureException(error);
-          })
-          .finally(() => {
-            this.updateInProgress = false;
-            this.searchTerm = '';
-            this.shouldFetch = false;
-          });
+        this.$emit('updateWidgetDraft', {
+          fullPath: this.fullPath,
+          milestone: this.localMilestone
+            ? {
+                ...this.localMilestone,
+                webPath: this.localMilestone.webUrl,
+                startDate: '',
+                projectMilestone: false,
+              }
+            : null,
+          workItemType: this.workItemType,
+        });
+        this.updateInProgress = false;
+        this.searchTerm = '';
+        this.shouldFetch = false;
         return;
       }
 
@@ -212,7 +206,9 @@ export default {
         })
         .catch((error) => {
           this.localMilestone = this.workItemMilestone;
-          const msg = sprintfWorkItem(I18N_WORK_ITEM_ERROR_UPDATING, this.workItemType);
+          const msg = sprintf(I18N_WORK_ITEM_ERROR_UPDATING, {
+            workItemType: NAME_TO_TEXT_LOWERCASE_MAP[this.workItemType],
+          });
           this.$emit('error', msg);
           Sentry.captureException(error);
         })

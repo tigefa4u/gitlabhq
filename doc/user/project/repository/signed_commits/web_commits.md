@@ -14,8 +14,7 @@ title: Signed commits from the GitLab UI
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/19185) in GitLab 15.4.
-- Displaying **Verified** badge for signed GitLab UI commits [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/124218) in GitLab 16.3 [with a flag](../../../../administration/feature_flags.md) named `gitaly_gpg_signing`. Disabled by default.
+- Displaying **Verified** badge for signed GitLab UI commits [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/124218) in GitLab 16.3 [with a flag](../../../../administration/feature_flags/_index.md) named `gitaly_gpg_signing`. Disabled by default.
 - Verifying the signatures using multiple keys specified in `rotated_signing_keys` option [introduced](https://gitlab.com/gitlab-org/gitaly/-/merge_requests/6163) in GitLab 16.3.
 - `gitaly_gpg_signing` feature flag [enabled by default](https://gitlab.com/gitlab-org/gitaly/-/merge_requests/6876) on GitLab Self-Managed and GitLab Dedicated in GitLab 17.0.
 
@@ -75,12 +74,16 @@ which makes it possible to create commits on behalf of other users.
 When commit signing is enabled, commits created using the REST API that have different `author_name`
 and `author_email` than the user who sends the API request are rejected.
 
-## Rebasing from UI
+## Troubleshooting
 
-When signing commits made in the UI is enabled and you rebase a merge request from the UI, the commits aren't signed.
+### Web commits become unsigned after rebase
 
-In this case, new commits aren't created.
-The merge request commits are modified and added on top of the target branch, so GitLab cannot sign them.
+Previously-signed commits in a branch become unsigned when:
 
-To have rebased commits signed, a workaround is to rebase locally and push the changes to the merge
-request branch.
+- Commit signing is configured for commits created from the GitLab UI.
+- The merge request is rebased from the GitLab UI.
+
+This happens because the previous commits are modified, and added on top of the target branch. GitLab
+can't sign these commits.
+
+To work around this problem, rebase the branch locally, and push the changes back up to GitLab.

@@ -3,6 +3,7 @@ stage: Application Security Testing
 group: Vulnerability Research
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: GitLab Advisory Database
+description: Security advisories, vulnerabilities, dependencies, database, and updates.
 ---
 
 The [GitLab Advisory Database](https://gitlab.com/gitlab-org/security-products/gemnasium-db) serves as a repository for security advisories related to software dependencies. It is updated on an hourly basis with the latest security advisories.
@@ -82,7 +83,7 @@ accDescr: Sequence of actions that make up the advisory ingestion process.
 
 ## Maintenance
 
-The [Vulnerability Research](https://handbook.gitlab.com/handbook/engineering/development/sec/secure/vulnerability-research/) team is responsible for the maintenance and regular updates of the GitLab Advisory Database and the GitLab Advisory Database (Open Source Edition).
+The Vulnerability Research team is responsible for the maintenance and regular updates of the GitLab Advisory Database and the GitLab Advisory Database (Open Source Edition).
 
 Community contributions are accessible in [advisories-community](https://gitlab.com/gitlab-org/advisories-community) via the `community-sync` flag.
 

@@ -5,22 +5,47 @@ class NamespaceSetting < ApplicationRecord
   include Sanitizable
   include ChronicDurationAttribute
   include EachBatch
+  include SafelyChangeColumnDefault
+
+  columns_changing_default :require_dpop_for_manage_api_endpoints
 
   ignore_column :token_expiry_notify_inherited, remove_with: '17.9', remove_after: '2025-01-11'
-  enum pipeline_variables_default_role: ProjectCiCdSetting::PIPELINE_VARIABLES_OVERRIDE_ROLES, _prefix: true
+  enum :pipeline_variables_default_role, ProjectCiCdSetting::PIPELINE_VARIABLES_OVERRIDE_ROLES, prefix: true
 
   ignore_column :third_party_ai_features_enabled, remove_with: '16.11', remove_after: '2024-04-18'
   ignore_column :code_suggestions, remove_with: '17.8', remove_after: '2024-05-16'
 
-  cascading_attr :math_rendering_limits_enabled, :resource_access_token_notify_inherited
+  cascading_attr :math_rendering_limits_enabled, :resource_access_token_notify_inherited, :web_based_commit_signing_enabled
 
   scope :for_namespaces, ->(namespaces) { where(namespace: namespaces) }
 
+  scope :with_ancestors_inherited_settings, -> {
+    # Get all columns except 'archived' since we're overriding it
+    other_columns = column_names.reject { |col| col == 'archived' }.map { |col| "#{table_name}.#{col}" }.join(', ')
+
+    select(<<-SQL)
+    #{other_columns},
+    CASE WHEN EXISTS (
+      SELECT 1 FROM #{table_name} ns2
+      JOIN namespaces n ON n.id = ns2.namespace_id
+      WHERE ns2.archived = true
+      AND n.id = ANY(
+        SELECT unnest(namespaces.traversal_ids)
+        FROM namespaces
+        WHERE namespaces.id = #{table_name}.namespace_id
+      )
+    ) THEN true
+    ELSE #{table_name}.archived
+    END AS archived
+    SQL
+      .joins(:namespace)
+  }
+
   belongs_to :namespace, inverse_of: :namespace_settings
 
-  enum jobs_to_be_done: { basics: 0, move_repository: 1, code_storage: 2, exploring: 3, ci: 4, other: 5 }, _suffix: true
-  enum enabled_git_access_protocol: { all: 0, ssh: 1, http: 2 }, _suffix: true
-  enum seat_control: { off: 0, user_cap: 1, block_overages: 2 }, _prefix: true
+  enum :jobs_to_be_done, { basics: 0, move_repository: 1, code_storage: 2, exploring: 3, ci: 4, other: 5 }, suffix: true
+  enum :enabled_git_access_protocol, { all: 0, ssh: 1, http: 2 }, suffix: true
+  enum :seat_control, { off: 0, user_cap: 1, block_overages: 2 }, prefix: true
 
   attribute :default_branch_protection_defaults, default: -> { {} }
 
@@ -126,13 +151,7 @@ class NamespaceSetting < ApplicationRecord
   private
 
   def set_pipeline_variables_default_role
-    # After FF  `change_namespace_default_role_for_pipeline_variables` rollout - we have to remove both FF and pipeline_variables_default_role = NO_ONE_ALLOWED_ROLE
-    # As any self-managed and Dedicated instance should opt-in by changing their namespace settings explicitly.
-    # NO_ONE_ALLOWED will be set as the default value for namespace_settings through a database migration.
-
-    # WARNING: Removing this FF could cause breaking changes for self-hosted and dedicated instances.
-
-    return if Feature.disabled?(:change_namespace_default_role_for_pipeline_variables, namespace)
+    return if Gitlab::CurrentSettings.pipeline_variables_default_allowed
 
     self.pipeline_variables_default_role = ProjectCiCdSetting::NO_ONE_ALLOWED_ROLE
   end

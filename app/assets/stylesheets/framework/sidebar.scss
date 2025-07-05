@@ -33,7 +33,7 @@
 
   .sidebar-collapsed-icon {
     .btn {
-      background-color: $gray-10;
+      @apply gl-bg-subtle;
     }
 
     &:not(.disabled) {
@@ -306,7 +306,7 @@
 
 @mixin right-sidebar {
   position: fixed;
-  bottom: calc(#{$calc-application-footer-height} + var(--mr-review-bar-height));
+  bottom: $calc-application-footer-height;
   right: 0;
   @apply gl-bg-default;
   z-index: 200;
@@ -362,7 +362,7 @@
 
     &:hover {
       @apply gl-text-default;
-      background: $gray-50;
+      @apply gl-bg-strong;
     }
 
     &:hover,
@@ -484,10 +484,10 @@
 
           .issuable-context-form {
             top: calc(#{$calc-application-header-height} + #{$mr-sticky-header-height});
-            height: calc(#{$calc-application-viewport-height} - #{$mr-sticky-header-height} - var(--mr-review-bar-height));
+            height: calc(#{$calc-application-viewport-height} - #{$mr-sticky-header-height});
             position: sticky;
             padding: 0 $gl-spacing-scale-3;
-            margin-bottom: calc((#{$content-wrapper-padding} * -1) + var(--mr-review-bar-height));
+            margin-bottom: calc((#{$content-wrapper-padding} * -1));
             overflow-y: auto;
             overscroll-behavior: contain;
           }

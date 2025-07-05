@@ -9,7 +9,7 @@ RSpec.describe 'Work item detail', :js, feature_category: :team_planning do
   let_it_be_with_reload(:user2) { create(:user, name: 'John') }
 
   let_it_be(:group) { create(:group) }
-  let_it_be(:project) { create(:project, :public, group: group) }
+  let_it_be(:project) { create(:project, :public, :repository, group: group) }
   let_it_be(:label) { create(:label, project: project, title: "testing-label") }
   let_it_be(:label2) { create(:label, project: project, title: "another-label") }
   let_it_be(:work_item) { create(:work_item, project: project, labels: [label]) }
@@ -22,6 +22,13 @@ RSpec.describe 'Work item detail', :js, feature_category: :team_planning do
   let(:contact_name) { "#{contact.first_name} #{contact.last_name}" }
   let(:list_path) { project_issues_path(project) }
   let(:work_items_path) { project_work_item_path(project, work_item.iid) }
+
+  before do
+    # TODO: When removing the feature flag,
+    # we won't need the tests for the issues listing page, since we'll be using
+    # the work items listing page.
+    stub_feature_flags(work_item_planning_view: false)
+  end
 
   shared_examples 'change type action is not displayed' do
     it 'change type action is not displayed' do
@@ -169,5 +176,51 @@ RSpec.describe 'Work item detail', :js, feature_category: :team_planning do
     end
 
     it_behaves_like 'change type action is not displayed'
+  end
+
+  context 'for development widget' do
+    let_it_be(:merge_request) do
+      create(
+        :merge_request,
+        source_project: project,
+        source_branch: "#{work_item.iid}-feature",
+        target_project: project,
+        target_branch: "master",
+        title: "Related Merge Request",
+        description: "Merge request description, fixes ##{work_item.iid}"
+      )
+    end
+
+    before_all do
+      project.add_developer(user)
+    end
+
+    context 'for user signed in' do
+      before do
+        sign_in(user)
+        visit work_items_path
+
+        wait_for_all_requests
+      end
+
+      it 'shows development widget with merge request' do
+        within_testid('work-item-development') do
+          expect(page.find('li a')[:href]).to include(merge_request_path(merge_request))
+        end
+      end
+    end
+
+    context 'for user not signed in' do
+      before do
+        visit work_items_path
+        wait_for_all_requests
+      end
+
+      it 'shows development widget with merge request' do
+        within_testid('work-item-development') do
+          expect(page.find('li a')[:href]).to include(merge_request_path(merge_request))
+        end
+      end
+    end
   end
 end

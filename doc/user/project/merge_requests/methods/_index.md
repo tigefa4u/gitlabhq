@@ -77,7 +77,7 @@ looks like this:
      merge feature
   ```
 
-- In comparison, a **squash merge** constructs a squash commit, a virtual copy of all commits
+- In comparison, a squash merge constructs a squash commit, a virtual copy of all commits
 from the `feature` branch. The original commits (B and D) remain unchanged
 on the `feature` branch, and then a merge commit is made on the `main` branch to merge in the squashed branch:
 
@@ -150,7 +150,7 @@ gitGraph
 ```
 
 When you visit the merge request page with `Merge commit with semi-linear history`
-method selected, you can accept it **only if a fast-forward merge is possible**.
+method selected, you can accept it only if a fast-forward merge is possible.
 When a fast-forward merge is not possible, the user is given the option to rebase, see
 [Rebasing in (semi-)linear merge methods](#rebasing-in-semi-linear-merge-methods).
 
@@ -193,7 +193,7 @@ When a fast-forward merge is not possible, the user is given the option to rebas
 [Rebasing in (semi-)linear merge methods](#rebasing-in-semi-linear-merge-methods).
 
 When you visit the merge request page with `Fast-forward merge`
-method selected, you can accept it **only if a fast-forward merge is possible**.
+method selected, you can accept it only if a fast-forward merge is possible.
 
 ## Rebasing in (semi-)linear merge methods
 
@@ -218,12 +218,6 @@ Rebasing may be required before squashing, even though squashing can itself be
 considered equivalent to rebasing.
 
 ### Rebase without CI/CD pipeline
-
-{{< history >}}
-
-- Changed to [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/350262) in GitLab 15.3. Feature flag `rebase_without_ci_ui` removed.
-
-{{< /history >}}
 
 To rebase a merge request's branch without triggering a CI/CD pipeline, select
 **Rebase without pipeline** from the merge request reports section.

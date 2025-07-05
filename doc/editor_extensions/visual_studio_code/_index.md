@@ -42,14 +42,24 @@ When you view a GitLab project in VS Code, the extension shows you information a
 
 ## Switch GitLab accounts in VS Code
 
-The GitLab Workflow extension uses one account for each [VS Code Workspace](https://code.visualstudio.com/docs/editor/workspaces) (window). The extension automatically selects the account when:
+The GitLab Workflow extension uses one account for each
+[VS Code Workspace](https://code.visualstudio.com/docs/editor/workspaces) (window). The extension
+automatically selects the account when:
 
 - You have added only one GitLab account to the extension.
 - All workspaces in your VS Code window use the same GitLab account, based on the `git remote` configuration.
 
-In other cases, you must select a GitLab account for the active VS Code window.
+What the extension shows in the status bar depends on your account setup:
 
-To change the account selection:
+![Status bar for a user with multiple GitLab accounts, with one preselected.](img/preselected_account_v17_11.png)
+
+- If only one GitLab account exists, the status bar shows no information.
+- If multiple GitLab accounts exist, and the extension can determine which account to use,
+  the status bar shows the account name next to the tanuki ({{< icon name="tanuki">}}) icon.
+- If multiple GitLab accounts exist, and the extension can't determine which account to use,
+  the status bar shows **Multiple GitLab Accounts** ({{< icon name="question-o">}}).
+
+To select a GitLab account for the active VS Code window, select the status bar item, or:
 
 1. Open the Command Palette:
    - For macOS, press <kbd>Command</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>.
@@ -57,11 +67,10 @@ To change the account selection:
 1. Run the command `GitLab: Select Account for this Workspace`.
 1. Select your desired account from the list.
 
-You can also change accounts by selecting the GitLab account status bar item.
-
 ## Select your GitLab project
 
-When your Git repository can be associated with multiple GitLab projects, the extension cannot determine which account to use. This can happen when you have multiple remotes, for example:
+When your Git repository can be associated with multiple GitLab projects, the extension cannot
+determine which account to use. This can happen when you have multiple remotes, for example:
 
 - `origin`: `git@gitlab.com:gitlab-org/gitlab-vscode-extension.git`
 - `personal-fork`: `git@gitlab.com:myusername/gitlab-vscode-extension.git`
@@ -74,7 +83,7 @@ To select an account:
 1. Expand **Issues and Merge Requests**.
 1. Select the line containing **(multiple projects)** to expand the list of accounts.
 1. Select your desired project:
-   ![select project-account combination](../img/select-project-account_v17_7.png)
+   ![select project-account combination](img/select-project-account_v17_7.png)
 
 The **Issues and Merge requests** list updates with your selected project's information.
 
@@ -175,12 +184,12 @@ Use this extension to review, comment on, and approve merge requests without lea
 1. To review the proposed changes to a file, select the file from the list to show it in a VS Code tab.
    GitLab shows diff comments inline in the tab. In the list, deleted files are marked in red:
 
-   ![An alphabetical list of files changed in this merge request, including the change types.](../img/vscode_view_changed_file_v17_6.png)
+   ![An alphabetical list of files changed in this merge request, including the change types.](img/vscode_view_changed_file_v17_6.png)
 
 Use the diff to:
 
 - Review and create discussions.
-- Resolve and unresolve these discussions.
+- Resolve and reopen these discussions.
 - Delete and edit individual comments.
 
 ### Compare with default branch
@@ -365,6 +374,15 @@ or **Accept Next Line Of Inline Suggestion**:
 1. Assign your preferred shortcuts to **Accept Inline Suggestion**, **Accept Next Word Of Inline Suggestion**,
    or **Accept Next Line Of Inline Suggestion**.
 1. Press <kbd>Enter</kbd> to save your changes.
+
+## Update the extension
+
+To update your extension to the latest version:
+
+1. In Visual Studio Code, go to **Settings > Extensions**.
+1. Search for **GitLab Workflow** published by **GitLab (`gitlab.com`)**.
+1. From **Extension: GitLab Workflow**, select **Update to {later version}**.
+1. Optional. To enable automatic updates in the future, select **Auto-Update**
 
 ## Related topics
 

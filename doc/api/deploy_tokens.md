@@ -2,7 +2,7 @@
 stage: Deploy
 group: Environments
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-title: Deploy Tokens API
+title: Deploy tokens API
 ---
 
 {{< details >}}
@@ -11,6 +11,8 @@ title: Deploy Tokens API
 - Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
+
+Use this API to interact with [deploy tokens](../user/project/deploy_tokens/_index.md).
 
 ## List all deploy tokens
 
@@ -158,7 +160,7 @@ Parameters:
 | ------------ | ---------------- | ---------------------- | ----------- |
 | `id`         | integer/string   | Yes | ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths) |
 | `name`       | string           | Yes | New deploy token's name |
-| `scopes`     | array of strings | Yes | Indicates the deploy token scopes. Must be at least one of `read_repository`, `read_registry`, `write_registry`, `read_package_registry`, or `write_package_registry`. |
+| `scopes`     | array of strings | Yes | Indicates the deploy token scopes. Must be at least one of `read_repository`, `read_registry`, `write_registry`, `read_package_registry`, `write_package_registry`, `read_virtual_registry`, or `write_virtual_registry`. |
 | `expires_at` | datetime         | No | Expiration date for the deploy token. Does not expire if no value is provided. Expected in ISO 8601 format (`2019-03-15T08:00:00Z`) |
 | `username`   | string           | No | Username for deploy token. Default is `gitlab+deploy-token-{n}` |
 

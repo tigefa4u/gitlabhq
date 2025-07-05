@@ -29,7 +29,7 @@ class ActiveSession
     :ip_address, :browser, :os,
     :device_name, :device_type,
     :is_impersonated, :session_id, :session_private_id,
-    :admin_mode
+    :admin_mode, :step_up_authenticated
   ].freeze
   ATTR_READER_LIST = [
     :created_at, :updated_at
@@ -76,8 +76,7 @@ class ActiveSession
       session_private_id = request.session.id.private_id
       client = Gitlab::SafeDeviceDetector.new(request.user_agent)
       timestamp = Time.current
-      key = key_name(user.id, session_private_id)
-      expiry = expiry_time(key)
+      expiry = Settings.gitlab['session_expire_delay'] * 60
 
       active_user_session = new(
         ip_address: request.remote_ip,
@@ -89,13 +88,16 @@ class ActiveSession
         updated_at: timestamp,
         session_private_id: session_private_id,
         is_impersonated: request.session[:impersonator_id].present?,
-        admin_mode: Gitlab::Auth::CurrentUserMode.new(user, request.session).admin_mode?
+        admin_mode: Gitlab::Auth::CurrentUserMode.new(user, request.session).admin_mode?,
+        step_up_authenticated:
+          Feature.enabled?(:omniauth_step_up_auth_for_admin_mode, user) &&
+            ::Gitlab::Auth::Oidc::StepUpAuthentication.succeeded?(request.session)
       )
 
       Gitlab::Instrumentation::RedisClusterValidator.allow_cross_slot_commands do
         redis.pipelined do |pipeline|
           pipeline.setex(
-            key,
+            key_name(user.id, session_private_id),
             expiry,
             active_user_session.dump
           )
@@ -168,26 +170,6 @@ class ActiveSession
 
   private_class_method def self.rack_key_name(session_id)
     "#{Gitlab::Redis::Sessions::SESSION_NAMESPACE}:#{session_id}"
-  end
-
-  def self.expiry_time(key)
-    # initialize to defaults
-    ttl = Settings.gitlab['session_expire_delay'] * 60
-
-    return ttl unless Feature.enabled?(:session_expire_from_init, :instance) &&
-      Gitlab::CurrentSettings.session_expire_from_init
-
-    # If we're initializing a session, there won't already be a session
-    # Only use current session TTL if we have expire session from init enabled
-    Gitlab::Redis::Sessions.with do |redis|
-      # redis returns -2 if the key doesn't exist, -1 if no TTL
-      ttl_expire = redis.ttl(key)
-
-      # for new sessions, return default ttl, otherwise, keep same ttl
-      ttl = ttl_expire if ttl_expire > -1
-    end
-
-    ttl
   end
 
   def self.key_name(user_id, session_id = '*')
@@ -265,10 +247,8 @@ class ActiveSession
       # See: https://gitlab.com/gitlab-org/gitlab/-/issues/30516
       # Explanation of why this Marshal.load call is OK:
       # https://gitlab.com/gitlab-com/gl-security/product-security/appsec/appsec-reviews/-/issues/124#note_744576714
-      # rubocop:disable Security/MarshalLoad
-      session_data = Marshal.load(raw_session)
+      session_data = ActiveSupport::Cache::SerializerWithFallback[:marshal_7_1].load(raw_session)
       session_data.is_a?(ActiveSupport::Cache::Entry) ? session_data.value : session_data
-      # rubocop:enable Security/MarshalLoad
     end
   end
 

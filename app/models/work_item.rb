@@ -2,11 +2,13 @@
 
 class WorkItem < Issue
   include Gitlab::Utils::StrongMemoize
+  include Gitlab::InternalEventsTracking
+  include Import::HasImportSource
 
   COMMON_QUICK_ACTIONS_COMMANDS = [
     :title, :reopen, :close, :cc, :tableflip, :shrug, :type, :promote_to, :checkin_reminder,
     :subscribe, :unsubscribe, :confidential, :award, :react, :move, :clone, :copy_metadata,
-    :duplicate, :promote_to_incident, :board_move, :convert_to_ticket
+    :duplicate, :promote_to_incident, :board_move, :convert_to_ticket, :zoom, :remove_zoom
   ].freeze
 
   self.table_name = 'issues'
@@ -33,16 +35,18 @@ class WorkItem < Issue
     )
   }
 
-  scope :within_timeframe, ->(start_date, due_date) do
+  scope :within_timeframe, ->(start_date, due_date, with_namespace_cte: false) do
     date_filtered_issue_ids = ::WorkItems::DatesSource
                                 .select('issue_id')
                                 .where('start_date IS NOT NULL OR due_date IS NOT NULL')
-                                # Require the namespace_ids CTE from by_parent to be present when filtering by timeframe
-                                # for performance reasons.
-                                # see: https://gitlab.com/gitlab-org/gitlab/-/merge_requests/181904
-                                .where('namespace_id IN (SELECT id FROM namespace_ids)')
                                 .where('start_date IS NULL OR start_date <= ?', due_date)
                                 .where('due_date IS NULL OR due_date >= ?', start_date)
+
+    # The namespace_ids CTE from by_parent by timeframe helps with performance when querying across multiple namespaces.
+    # see: https://gitlab.com/gitlab-org/gitlab/-/merge_requests/181904
+    if with_namespace_cte
+      date_filtered_issue_ids = date_filtered_issue_ids.where('namespace_id IN (SELECT id FROM namespace_ids)')
+    end
 
     joins("INNER JOIN (#{date_filtered_issue_ids.to_sql}) AS filtered_dates ON issues.id = filtered_dates.issue_id")
   end
@@ -51,6 +55,11 @@ class WorkItem < Issue
     joins(work_item_type: :enabled_widget_definitions)
       .merge(::WorkItems::WidgetDefinition.by_enabled_widget_type(type))
   end
+
+  scope :with_work_item_parent_ids, ->(parent_ids) {
+    joins("INNER JOIN work_item_parent_links ON work_item_parent_links.work_item_id = issues.id")
+      .where(work_item_parent_links: { work_item_parent_id: parent_ids })
+  }
 
   class << self
     def find_by_namespace_and_iid!(namespace, iid)
@@ -72,13 +81,34 @@ class WorkItem < Issue
       }xo
     end
 
+    def alternative_reference_prefix_with_postfix
+      if Feature.enabled?(:extensible_reference_filters, Feature.current_request)
+        '[work_item:'
+      else
+        ''
+      end
+    end
+
     def reference_pattern
-      @reference_pattern ||= %r{
+      prefix_with_postfix = alternative_reference_prefix_with_postfix
+      if prefix_with_postfix.empty?
+        @reference_pattern ||= %r{
         (?:
           (#{namespace_reference_pattern})?#{Regexp.escape(reference_prefix)} |
-          #{Regexp.escape(alternative_reference_prefix)}
+          #{Regexp.escape(alternative_reference_prefix_without_postfix)}
         )#{Gitlab::Regex.work_item}
       }x
+      else
+        %r{
+        ((?:
+          (#{namespace_reference_pattern})?#{Regexp.escape(reference_prefix)} |
+          #{alternative_reference_prefix_without_postfix}
+        )#{Gitlab::Regex.work_item}) |
+        ((?:
+          #{Regexp.escape(prefix_with_postfix)}(#{namespace_reference_pattern}/)?
+        )#{Gitlab::Regex.work_item(reference_postfix)})
+      }x
+      end
     end
 
     def link_reference_pattern
@@ -130,6 +160,19 @@ class WorkItem < Issue
         ])
     end
 
+    def linked_items_for(target_ids, preload: nil, link_type: nil)
+      select_query =
+        select('issues.*,
+                issue_links.id AS issue_link_id,
+                issue_links.link_type AS issue_link_type_value,
+                issue_links.target_id AS issue_link_source_id,
+                issue_links.source_id AS issue_link_target_id,
+                issue_links.created_at AS issue_link_created_at,
+                issue_links.updated_at AS issue_link_updated_at')
+
+      ordered_linked_items(select_query, ids: target_ids, link_type: link_type, preload: preload)
+    end
+
     override :related_link_class
     def related_link_class
       WorkItems::RelatedWorkItemLink
@@ -143,6 +186,25 @@ class WorkItem < Issue
 
     def non_widgets
       [:pending_escalations]
+    end
+
+    def ordered_linked_items(select_query, ids: [], link_type: nil, preload: nil)
+      type_condition =
+        if link_type == WorkItems::RelatedWorkItemLink::TYPE_RELATES_TO
+          " AND issue_links.link_type = #{WorkItems::RelatedWorkItemLink.link_types[link_type]}"
+        else
+          ""
+        end
+
+      query_ids = sanitize_sql_array(['?', Array.wrap(ids)])
+
+      select_query
+        .joins("INNER JOIN issue_links ON
+          (issue_links.source_id = issues.id AND issue_links.target_id IN (#{query_ids})#{type_condition})
+          OR
+          (issue_links.target_id = issues.id AND issue_links.source_id IN (#{query_ids})#{type_condition})")
+        .preload(preload)
+        .reorder(linked_items_keyset_order)
     end
   end
 
@@ -254,14 +316,14 @@ class WorkItem < Issue
   def linked_work_items(current_user = nil, authorize: true, preload: nil, link_type: nil)
     return [] if new_record?
 
-    linked_work_items = linked_work_items_query(link_type)
-                          .preload(preload)
-                          .reorder(self.class.linked_items_keyset_order)
-    return linked_work_items unless authorize
+    linked_items =
+      self.class.ordered_linked_items(linked_issues_select, ids: id, link_type: link_type, preload: preload)
+
+    return linked_items unless authorize
 
     cross_project_filter = ->(work_items) { work_items.where(project: project) }
     Ability.work_items_readable_by_user(
-      linked_work_items,
+      linked_items,
       current_user,
       filters: { read_cross_project: cross_project_filter }
     )
@@ -319,7 +381,14 @@ class WorkItem < Issue
   def record_create_action
     super
 
-    Gitlab::UsageDataCounters::WorkItemActivityUniqueCounter.track_work_item_created_action(author: author)
+    track_internal_event(
+      'users_creating_work_items',
+      user: author,
+      project: project,
+      additional_properties: {
+        label: work_item_type.base_type
+      }
+    )
   end
 
   def hierarchy(options = {})
@@ -398,21 +467,6 @@ class WorkItem < Issue
     if max_child_depth + ancestor_depth > restriction.maximum_depth - 1
       errors.add(:work_item_type_id, _('reached maximum depth'))
     end
-  end
-
-  def linked_work_items_query(link_type)
-    type_condition =
-      if link_type == WorkItems::RelatedWorkItemLink::TYPE_RELATES_TO
-        " AND issue_links.link_type = #{WorkItems::RelatedWorkItemLink.link_types[link_type]}"
-      else
-        ""
-      end
-
-    linked_issues_select
-      .joins("INNER JOIN issue_links ON
-         (issue_links.source_id = issues.id AND issue_links.target_id = #{id}#{type_condition})
-         OR
-         (issue_links.target_id = issues.id AND issue_links.source_id = #{id}#{type_condition})")
   end
 
   def hierarchy_supports_parent?

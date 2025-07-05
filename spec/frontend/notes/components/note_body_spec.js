@@ -1,14 +1,10 @@
 import Vue from 'vue';
-// eslint-disable-next-line no-restricted-imports
-import Vuex from 'vuex';
 import { PiniaVuePlugin } from 'pinia';
 import { createTestingPinia } from '@pinia/testing';
 import { shallowMountExtended } from 'helpers/vue_test_utils_helper';
 import NoteBody from '~/notes/components/note_body.vue';
 import NoteAwardsList from '~/notes/components/note_awards_list.vue';
 import NoteForm from '~/notes/components/note_form.vue';
-import createStore from '~/notes/stores';
-import notes from '~/notes/stores/modules/index';
 import Suggestions from '~/vue_shared/components/markdown/suggestions.vue';
 import { useLegacyDiffs } from '~/diffs/stores/legacy_diffs';
 import { globalAccessorPlugin } from '~/pinia/plugins';
@@ -24,23 +20,8 @@ describe('issue_note_body component', () => {
   let wrapper;
   let pinia;
 
-  const createComponent = ({
-    props = {},
-    noteableData = noteableDataMock,
-    notesData = notesDataMock,
-    store = null,
-  } = {}) => {
-    let mockStore;
-
-    if (!store) {
-      mockStore = createStore();
-
-      mockStore.dispatch('setNoteableData', noteableData);
-      mockStore.dispatch('setNotesData', notesData);
-    }
-
+  const createComponent = (props = {}) => {
     wrapper = shallowMountExtended(NoteBody, {
-      store: mockStore || store,
       pinia,
       propsData: {
         note,
@@ -58,7 +39,8 @@ describe('issue_note_body component', () => {
   beforeEach(() => {
     pinia = createTestingPinia({ plugins: [globalAccessorPlugin] });
     useLegacyDiffs();
-    useNotes();
+    useNotes().setNoteableData(noteableDataMock);
+    useNotes().setNotesData(notesDataMock);
     useMrNotes();
     createComponent();
   });
@@ -73,7 +55,7 @@ describe('issue_note_body component', () => {
 
   describe('isInternalNote', () => {
     beforeEach(() => {
-      createComponent({ props: { isInternalNote: true } });
+      createComponent({ isInternalNote: true });
     });
   });
 
@@ -82,7 +64,9 @@ describe('issue_note_body component', () => {
 
     beforeEach(() => {
       createComponent({
-        props: { isEditing: true, autosaveKey, restoreFromAutosave: true },
+        isEditing: true,
+        autosaveKey,
+        restoreFromAutosave: true,
       });
     });
 
@@ -98,7 +82,7 @@ describe('issue_note_body component', () => {
       ${false} | ${'Save comment'}
       ${true}  | ${'Save internal note'}
     `('renders save button with text "$buttonText"', ({ internal, buttonText }) => {
-      createComponent({ props: { note: { ...note, internal }, isEditing: true } });
+      createComponent({ note: { ...note, internal }, isEditing: true });
 
       expect(wrapper.findComponent(NoteForm).props('saveButtonTitle')).toBe(buttonText);
     });
@@ -112,40 +96,20 @@ describe('issue_note_body component', () => {
 
   describe('commitMessage', () => {
     beforeEach(() => {
-      const mrMetadata = {
+      useMrNotes().mrMetadata = {
         branch_name: 'branch',
         project_path: '/path',
         project_name: 'name',
         username: 'user',
         user_full_name: 'user userton',
       };
-      const notesStore = notes();
-
-      notesStore.state.notes = {};
-
-      const store = new Vuex.Store({
-        modules: {
-          notes: notesStore,
-          page: {
-            namespaced: true,
-            state: {
-              mrMetadata,
-            },
-          },
-        },
-      });
-
-      useMrNotes().mrMetadata = mrMetadata;
       useLegacyDiffs().defaultSuggestionCommitMessage =
         '*** %{branch_name} %{project_path} %{project_name} %{username} %{user_full_name} %{file_paths} %{suggestions_count} %{files_count} %{co_authored_by}';
 
       createComponent({
-        store,
-        props: {
-          note: { ...note, suggestions: [12345] },
-          canEdit: true,
-          file: { file_path: 'abc' },
-        },
+        note: { ...note, suggestions: [12345] },
+        canEdit: true,
+        file: { file_path: 'abc' },
       });
     });
 
@@ -168,39 +132,44 @@ describe('issue_note_body component', () => {
     `(
       '$existsText code review feedback component when author type is "$userType" and note type is "$type"',
       ({ userType, type, exists }) => {
-        createComponent({
-          props: { note: { ...note, type, author: { ...note.author, user_type: userType } } },
-        });
+        const duoNote = {
+          ...note,
+          id: '1',
+          type,
+          discussion_id: 'discussion1',
+          author: {
+            ...note.author,
+            user_type: userType,
+          },
+        };
+        useNotes().discussions = [{ id: 'discussion1', notes: [duoNote] }];
+
+        createComponent({ note: duoNote });
 
         expect(wrapper.findByTestId('code-review-feedback').exists()).toBe(exists);
       },
     );
+
+    it('does not render if not first note in discussion', () => {
+      const duoNote = {
+        ...note,
+        id: '9',
+        type: 'DiscussionNote',
+        discussion_id: 'discussion1',
+        author: {
+          ...note.author,
+          user_type: 'duo_code_review_bot',
+        },
+      };
+      useNotes().discussions = [{ id: 'discussion1', notes: [note, duoNote] }];
+
+      createComponent({ note: duoNote });
+
+      expect(wrapper.findByTestId('code-review-feedback').exists()).toBe(false);
+    });
   });
 
   describe('duo code review feedback text', () => {
-    const createMockStoreWithDiscussion = (discussionId, discussionNotes) => {
-      return new Vuex.Store({
-        getters: {
-          getDiscussion: () => (id) => {
-            if (id === discussionId) {
-              return { notes: discussionNotes };
-            }
-            return {};
-          },
-          suggestionsCount: () => 0,
-          getSuggestionsFilePaths: () => [],
-        },
-        modules: {
-          notes: {
-            state: { batchSuggestionsInfo: [] },
-          },
-          page: {
-            state: { failedToLoadMetadata: false },
-          },
-        },
-      });
-    };
-
     const createDuoNote = (props = {}) => ({
       ...note,
       id: '1',
@@ -215,11 +184,10 @@ describe('issue_note_body component', () => {
 
     it('renders feedback text for the first DiffNote from GitLabDuo', () => {
       const duoNote = createDuoNote();
-      const mockStore = createMockStoreWithDiscussion('discussion1', [duoNote]);
+      useNotes().discussions = [{ id: 'discussion1', notes: [duoNote] }];
 
       createComponent({
-        props: { note: duoNote },
-        store: mockStore,
+        note: duoNote,
       });
 
       const feedbackDiv = wrapper.find('.gl-text-md.gl-mt-4.gl-text-gray-500');
@@ -228,9 +196,10 @@ describe('issue_note_body component', () => {
 
     it('does not render feedback text for non-DiffNote from GitLabDuo', () => {
       const duoNote = createDuoNote({ type: 'DiscussionNote' });
+      useNotes().discussions = [{ id: 'discussion1', notes: [duoNote] }];
 
       createComponent({
-        props: { note: duoNote },
+        note: duoNote,
       });
 
       const feedbackDiv = wrapper.find('.gl-text-md.gl-mt-4.gl-text-gray-500');
@@ -239,14 +208,10 @@ describe('issue_note_body component', () => {
 
     it('does not render feedback text for follow-up DiffNote from GitLabDuo', () => {
       const duoNote = createDuoNote({ id: '2' });
-      const mockStore = createMockStoreWithDiscussion('discussion1', [
-        { id: '1' }, // First note has different ID
-        duoNote,
-      ]);
+      useNotes().discussions = [{ id: 'discussion1', notes: [{ id: '1' }, duoNote] }];
 
       createComponent({
-        props: { note: duoNote },
-        store: mockStore,
+        note: duoNote,
       });
 
       const feedbackDiv = wrapper.find('.gl-text-md.gl-mt-4.gl-text-gray-500');
@@ -255,11 +220,10 @@ describe('issue_note_body component', () => {
 
     it('shows default awards list with thumbsup and thumbsdown for first DiffNote from GitLabDuo', () => {
       const duoNote = createDuoNote();
-      const mockStore = createMockStoreWithDiscussion('discussion1', [duoNote]);
+      useNotes().discussions = [{ id: 'discussion1', notes: [duoNote] }];
 
       createComponent({
-        props: { note: duoNote },
-        store: mockStore,
+        note: duoNote,
       });
 
       const awardsList = wrapper.findComponent(NoteAwardsList);
@@ -278,7 +242,7 @@ describe('issue_note_body component', () => {
       };
 
       createComponent({
-        props: { note: regularNote },
+        note: regularNote,
       });
 
       const awardsList = wrapper.findComponent(NoteAwardsList);
@@ -291,8 +255,9 @@ describe('issue_note_body component', () => {
 
         const result = wrapper.vm.duoFeedbackText;
         expect(result).toContain('Rate this response');
+        expect(result).toContain('Mention');
         expect(result).toContain('@GitLabDuo');
-        expect(result).toContain('in reply for more questions');
+        expect(result).toContain('to continue the conversation.');
       });
     });
   });

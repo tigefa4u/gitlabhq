@@ -1,186 +1,365 @@
 ---
-stage: Application Security Testing
+stage: Secure
 group: Static Analysis
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-title: Roll out security scanning
+title: 'Roll out application security testing'
 ---
 
-You can roll out security scanning to individual projects, subgroups, and groups. You should start
-with individual projects, then increase the scope in increments. An incremental roll out allows you
-to evaluate the results at each point and adjust as needed.
+Plan your application security testing implementation in phases to ensure a smooth transition to a
+more secure development practice.
 
-To enable security scanning of individual projects:
+This guide helps you implement GitLab application security testing across your organization in
+phases. By starting with a pilot group and gradually expanding coverage, you can minimize disruption
+while maximizing security benefits. The phased approach allows your team to become familiar with
+application security testing tools and workflows before scaling to all projects.
 
-- Enable individual security scanners.
-- Enable all security scanners by using AutoDevOps.
+Prerequisites:
 
-To enable security scanning of multiple projects, subgroups, or groups:
+- GitLab Ultimate.
+- Familiarity with GitLab CI/CD pipelines. The following GitLab self-paced courses provide a good
+  introduction:
+  - [Introduction to CI/CD](https://university.gitlab.com/courses/introduction-to-cicd-s2)
+  - [Hands-on Labs: CI Fundamentals](https://university.gitlab.com/courses/hands-on-labs-ci-fundamentals)
+- Understanding of your organization's security requirements and risk tolerance.
 
-- Use a scan execution policy to enforce all or a subset of security scanners.
+## Scope
 
-## Enable individual security scanners
+This guide covers how to plan and execute a phased implementation of GitLab application security
+testing features, including configuration, vulnerability management, and prevention
+strategies. It assumes you want to gradually introduce application security testing to minimize
+disruption to existing workflows while securing your codebase.
 
-To enable individual security scanning tools with the option of customizing settings, add the
-GitLab CI/CD [templates](#template-editions) to your `.gitlab-ci.yml` file.
+## Phases
 
-For instructions on how to enable individual security scanners, see their documentation.
+The implementation consists of two main phases:
 
-## Enable security scanning by using Auto DevOps
+1. **Pilot phase**: Implement application security testing for a limited set of projects to validate
+   configurations and train teams.
+1. **Rollout phase**: Expand application security testing to all target projects using the knowledge
+   gained during the pilot.
 
-To enable the following security scanning tools, with default settings, enable
-[Auto DevOps](../../../topics/autodevops/_index.md):
+## Pilot phase
 
-- [Auto SAST](../../../topics/autodevops/stages.md#auto-sast)
-- [Auto Secret Detection](../../../topics/autodevops/stages.md#auto-secret-detection)
-- [Auto DAST](../../../topics/autodevops/stages.md#auto-dast)
-- [Auto Dependency Scanning](../../../topics/autodevops/stages.md#auto-dependency-scanning)
-- [Auto Container Scanning](../../../topics/autodevops/stages.md#auto-container-scanning)
+The pilot phase allows you to apply application security testing with minimal risk before a wider
+rollout.
 
-While you cannot directly customize Auto DevOps, you can [include the Auto DevOps template in your project's `.gitlab-ci.yml` file](../../../topics/autodevops/customize.md#customize-gitlab-ciyml).
+Consider the following guidance before starting on the pilot phase:
 
-## Customizing security scanners
+- Identify key stakeholders including security team members, developers, and project managers.
+- Select pilot projects that are representative of your codebase but not critical to daily
+  operations.
+- Schedule training sessions for developers and security team members.
+- Document current security practices to measure improvements.
 
-The behavior of each security scanner can be customized by using the
-[predefined CD/CD variables](../../../ci/variables/predefined_variables.md) and each scanner's own
-CI/CD variables. See each scanner's documentation for details of the CI/CD variables available.
+### Pilot goals
 
-{{< alert type="warning" >}}
+The pilot phase helps you achieve several key objectives:
 
-All customization of security scanning tools should be tested in a merge request before merging
-these changes to the default branch. Failure to do so can give unexpected results, including a large
-number of false positives.
+- Implement application security testing without slowing development
 
-{{< /alert >}}
+  During the pilot, application security testing results are available to developers in the UI,
+  without blocking merge requests. This approach minimizes risk to projects outside the pilot's
+  scope while collecting valuable data on your current security posture. In the rollout phase you
+  should use a [merge request approval policy](#merge-request-approval-policy) to add an additional
+  approval gate when vulnerabilities are detected in merge requests.
 
-### Template editions
+- Establish scalable detection methods
 
-Most of the GitLab application security tools have two template editions:
+  Implement application security testing on pilot projects in a way that can be expanded to include
+  all projects in the wider rollout scope. Focus on configurations that scale well and can be
+  standardized across projects.
 
-- **Stable:** The stable template is the default. It offers a reliable and consistent application
-  security experience. You should use the stable template for most users and projects that require
-  stability and predictable behavior in their CI/CD pipelines.
-- **Latest:** The latest template is for those who want to access and test cutting-edge features. It
-  is identified by the word `latest` in the template's name. It is not considered stable and may
-  include breaking changes that are planned for the next major release. This template allows you to
-  try new features and updates before they become part of the stable release.
+- Test scan times
 
-{{< alert type="note" >}}
+  Test scan times on representative codebases and applications.
 
-Mixing different security template editions can cause both merge request and branch pipelines to
-run. You should use **either** the stable or latest edition templates in a project.
+- Simulate the vulnerability remediation workflow
 
-{{< /alert >}}
+  Simulate detecting, triaging, analyzing, and remediating vulnerabilities in the developer
+  workflows. Verify that engineers can act on findings.
 
-### Override the default registry base address
+- Compare maintenance costs
 
-By default, GitLab security scanners use `registry.gitlab.com/security-products` as the
-base address for Docker images. You can override this for most scanners by setting the CI/CD variable
-`SECURE_ANALYZERS_PREFIX` to another location. This affects all scanners at once.
+  Compare the maintenance of a single solution versus integrating multiple endpoint solutions. How
+  well does this integrate into the IDE, merge request, and pipeline?
 
-The [Container Scanning](../container_scanning/_index.md) analyzer is an exception, and it
-does not use the `SECURE_ANALYZERS_PREFIX` variable. To override its Docker image, see
-the instructions for
-[Running container scanning in an offline environment](../container_scanning/_index.md#running-container-scanning-in-an-offline-environment).
+#### Benefits for developers
 
-### Use security scanning tools with merge request pipelines
+Developers in the pilot group will gain:
 
-By default, the application security jobs are configured to run for branch pipelines only.
-To use them with [merge request pipelines](../../../ci/pipelines/merge_request_pipelines.md),
-you must reference their [`latest` edition template](#template-editions).
+- Familiarity with application security testing methods and how to interpret results.
+- Experience preventing vulnerabilities from being merged into the default branch.
+- Understanding of the vulnerability management workflow that begins when a vulnerability is
+  detected in the default branch.
 
-For example, to run both SAST and Dependency Scanning, the following template is used:
+#### Benefits for security management
 
-```yaml
-include:
-  - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
-  - template: Jobs/SAST.latest.gitlab-ci.yml
-```
+Security team members participating in the pilot will gain:
 
-### Use a custom scanning stage
+- Experience with vulnerability tracking and management in GitLab.
+- Data to establish security baselines and set realistic remediation goals.
+- Insights to refine the security policy before wider rollout.
 
-When security scanning is enabled by [enabling individual security scanners](#enable-individual-security-scanners),
-the scanning jobs use the predefined `test` stage by default. If you specify a custom stage in your
-`.gitlab-ci.yml` file without including a `test` stage, an error occurs.
+### Pilot plan
 
-For example, the following attempts to use a `unit-tests` stage:
+Proper planning ensures an effective pilot phase.
 
-```yaml
-include:
-  - template: Jobs/Dependency-Scanning.gitlab-ci.yml
-  - template: Jobs/SAST.gitlab-ci.yml
-  - template: Jobs/Secret-Detection.gitlab-ci.yml
+#### Roles and responsibilities
 
-stages:
-  - unit-tests
+Define who is responsible for:
 
-custom job:
-  stage: unit-tests
-  script:
-    - echo "custom job"
-```
+- Configuring application security testing
+- Reviewing scan results
+- Triaging vulnerabilities
+- Managing remediation
+- Training team members
+- Measuring the pilot's success
 
-The above `.gitlab-ci.yml` causes a linting error:
+### Pilot scope
 
-```plaintext
-Unable to create pipeline
-- dependency_scanning job: chosen stage test does not exist; available stages are .pre
-- unit-tests
-- .post
-```
+Carefully select which projects to include in the pilot phase.
 
-This error appears because the `test` stage used by the security scanning jobs isn't declared in the `.gitlab-ci.yml` file.
-To fix this issue, you can either:
+Consider these factors when selecting pilot projects:
 
-- Add a `test` stage in your `.gitlab-ci.yml`:
+- Include projects with different technology stacks to test application security testing
+  effectiveness.
+- Choose projects with active development to see real-time results.
+- Select projects with teams open to learning new security practices.
+- Avoid starting with mission-critical applications.
 
-  ```yaml
-  include:
-    - template: Jobs/Dependency-Scanning.gitlab-ci.yml
-    - template: Jobs/SAST.gitlab-ci.yml
-    - template: Jobs/Secret-Detection.gitlab-ci.yml
+### Security application security testing order
 
-  stages:
-    - test
-    - unit-tests
+Introduce security application security testing in the following order. This balances value and ease
+of deployment.
 
-  custom job:
-    stage: unit-tests
-    script:
-      - echo "custom job"
-  ```
+- Dependency scanning
+- SAST
+- Advanced SAST
+- Pipeline secret detection
+- Secret push protection
+- Container scanning
+- DAST
+- API security testing
+- IaC scanning
+- Operational container scanning
 
-- Override the default stage of each security job. For example, to use a pre-defined stage named `unit-tests`:
+## Test pilot projects
 
-  ```yaml
-  include:
-    - template: Jobs/Dependency-Scanning.gitlab-ci.yml
-    - template: Jobs/SAST.gitlab-ci.yml
-    - template: Jobs/Secret-Detection.gitlab-ci.yml
+With planning complete, begin implementing application security testing of your pilot projects.
 
-  stages:
-    - unit-tests
+### Set up testing of pilot projects
 
-  dependency_scanning:
-    stage: unit-tests
+Prerequisites:
 
-  sast:
-    stage: unit-tests
+- You must have the Maintainer role for the projects in which application security testing is to be
+  enabled.
 
-  .secret-analyzer:
-    stage: unit-tests
+For each project in scope:
 
-  custom job:
-    stage: unit-tests
-    script:
-      - echo "custom job"
-  ```
+1. On the left sidebar, select **Search or go to** and find your project.
+1. Select **Secure > Security configuration**.
+1. Expand **Security configuration**.
+1. Enable the appropriate application security testing based on your project's stack.
 
-For more information about overriding security jobs, see:
+For more details, see [Security configuration](../configuration/_index.md).
 
-- [Overriding SAST jobs](../sast/_index.md#overriding-sast-jobs).
-- [Overriding Dependency Scanning jobs](../dependency_scanning/_index.md#overriding-dependency-scanning-jobs).
-- [Overriding Container Scanning jobs](../container_scanning/_index.md#overriding-the-container-scanning-template).
-- [Overriding Secret Detection jobs](../secret_detection/pipeline/configure.md).
-- [Overriding DAST jobs](../dast/browser/_index.md).
+### For developers
 
-All the security scanning tools define their stage, so this error can occur with all of them.
+Introduce developers to the tools that provide visibility into security findings.
+
+#### Pipeline results
+
+Developers can view security findings directly in pipeline results:
+
+1. On the left sidebar, select **Search or go to** and find your project.
+1. Select **Build > Pipelines**.
+1. Select the pipeline to review.
+1. In the pipeline details, select the **Security** tab to view detected vulnerabilities.
+
+For more details, see
+[View security scan results in pipelines](../vulnerability_report/pipeline.md).
+
+#### Merge request security widget
+
+The security widget provides visibility into vulnerabilities detected in merge request pipelines:
+
+1. Open a merge request.
+1. Review the security widget to see detected vulnerabilities.
+1. Select **Expand** to see detailed findings.
+
+For more details, see [View security scan results in merge requests](security_scan_results.md).
+
+#### VS Code integration with GitLab Workflow extension
+
+Developers can view security findings directly in their IDE:
+
+1. Install the GitLab Workflow extension for VS Code.
+1. Connect the extension to your GitLab instance.
+1. Use the extension to view security findings without leaving your development environment.
+
+For more details, see
+[GitLab Workflow extension for VS Code](../../../editor_extensions/visual_studio_code/_index.md).
+
+## Vulnerability management workflow
+
+Establish a structured workflow for handling detected vulnerabilities.
+
+The vulnerability management workflow consists of four key stages:
+
+1. **Detect**: Find vulnerabilities through automated application security testing in pipelines.
+1. **Triage**: Assess the severity and impact of detected vulnerabilities.
+1. **Analyze**: Investigate the root cause and determine the best approach for remediation.
+1. **Remediate**: Implement fixes to resolve the vulnerabilities.
+
+### Efficient triage
+
+GitLab provides several features to streamline vulnerability triage:
+
+- Vulnerability filters to focus on high-impact issues first.
+- Severity and confidence ratings to prioritize efforts.
+- Vulnerability tracking to maintain visibility of outstanding issues.
+- Risk assessment data.
+
+For more details, see [Triage](../triage/_index.md).
+
+Triage should include regular reviews of the vulnerability report with security stakeholders.
+
+### Efficient remediation
+
+Streamline the remediation process with these GitLab features:
+
+- Automated remediation suggestions for certain vulnerability types.
+- Merge request creation directly from vulnerability details.
+- Vulnerability history tracking to monitor progress.
+- Automatically resolve vulnerabilities that are no longer detected.
+
+For more details, see [Remediate](../remediate/_index.md).
+
+#### Integrate with ticketing systems
+
+You can use a GitLab issue to track the remediation work required for a vulnerability.
+Alternatively, you can use a Jira issue if that is your primary ticketing system.
+
+For more details, see
+[Linking a vulnerability to GitLab and Jira issues](../vulnerabilities/_index.md#linking-a-vulnerability-to-gitlab-and-jira-issues).
+
+## Vulnerability prevention
+
+Implement features to prevent vulnerabilities from being introduced in the first place.
+
+### Merge request approval policy
+
+Use a merge request approval policy to add an extra approval requirement if the number and
+severity of vulnerabilities in a merge request exceeds a specific threshold. This allows an extra
+review from a member of the application security team, providing an extra level of scrutiny.
+
+Configure approval policies to require security reviews:
+
+1. On the left sidebar, select **Search or go to** and find your group.
+1. Select **Secure > Policies**.
+1. Select **New policy**
+1. In the **Merge request approval policy** pane, select **Select policy**.
+1. Add a merge request approval policy requiring approval from security team members.
+
+For more details, see
+[Security approvals in merge requests](../policies/merge_request_approval_policies.md).
+
+## Rollout phase
+
+After a successful pilot, expand application security testing to all target projects.
+
+Before starting on the rollout phase consider the following:
+
+- Evaluate the results of the pilot phase.
+- Document lessons learned and best practices.
+- Prepare training materials based on pilot experiences.
+- Update implementation plans based on pilot feedback.
+
+### Define access to team members
+
+Application security testing tasks require specific roles or permissions. For each person taking
+part in the rollout phases, define their access according to the tasks they'll be
+performing.
+
+- Users with the Developer role can view vulnerabilities on their projects and merge requests.
+- Users with the Maintainer role can configure security configurations for projects.
+- Users assigned a Custom Role with `admin_vulnerability` permission can manage and triage
+  vulnerabilities.
+- Users assigned a Custom Role with `manage_security_policy_link` permission can enforce policies
+  on groups and projects.
+
+For more details, see
+[Roles and permissions](../../permissions.md#application-security-group-permissions).
+
+### Rollout goals
+
+The rollout phase aims to implement application security testing across all projects in scope,
+using the knowledge and experience gained during the pilot.
+
+### Rollout plan
+
+Review and update roles and responsibilities established during the pilot. The same team
+structure should work for the rollout, but you may need to add more team members as the
+scope expands.
+
+## Implement application security testing at scale
+
+Use policy features to efficiently scale your security implementation.
+
+### Use policy inheritance
+
+Use policy inheritance to maximize effectiveness while also minimizing the number of policies to be
+managed.
+
+Consider the scenario in which you have a top-level group named Finance which contains subgroups A,
+B, and C. You want to run dependency scanning and secret detection on all projects in the Finance
+group. For each subgroup you want to run different sets of application security testing tools.
+
+To achieve this goal, you could define 3 policies for the Finance group:
+
+- Policy 1:
+  - Includes dependency scanning and secret detection.
+  - Applies to the Finance group, all its subgroups, and their projects.
+- Policy 2:
+  - Includes DAST and API security testing.
+  - Scoped to only subgroups A and B.
+- Policy 3:
+  - Includes SAST.
+  - Scoped to only subgroup C.
+
+Only a single set of policies needs to be maintained but still provides the flexibility to suit
+the needs of different projects.
+
+For more details, see [Enforcement](../policies/_index.md#enforcement).
+
+### Configure scan execution policies
+
+Implement consistent application security testing across multiple projects by using scan execution
+policies.
+
+Prerequisites:
+
+- You must have the Owner role, or a custom role with `manage_security_policy_link` permission, for
+  the groups in which application security testing is to be enabled.
+
+1. On the left sidebar, select **Search or go to** and find your project or group.
+1. Select **Secure > Policies**.
+1. Create scan execution policies based on the application security testing configuration used
+   during the pilot phase.
+
+For more details, see [Security policies](../policies/_index.md).
+
+### Scale gradually
+
+Scale the rollout gradually, first to the pilot projects and incrementally to all target projects.
+When applying policies to all groups and projects, create awareness to all project stakeholders as
+this can impact changes in pipelines and merge request workflows. For example, notify stakeholders
+
+Implement your security policies in phases:
+
+1. Start by applying policies to the projects from the pilot phase.
+1. Monitor for any issues or disruptions.
+1. Gradually expand the policies' scope to include more projects.
+1. Continue until all target projects are covered.
+
+For more details, see [Policy design guidelines](../policies/_index.md#policy-design-guidelines).

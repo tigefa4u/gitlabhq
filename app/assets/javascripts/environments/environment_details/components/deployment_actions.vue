@@ -1,5 +1,5 @@
 <script>
-import { GlButton, GlModalDirective, GlTooltipDirective } from '@gitlab/ui';
+import { GlButtonGroup, GlButton, GlModalDirective, GlTooltipDirective } from '@gitlab/ui';
 import { translations } from '~/environments/environment_details/constants';
 import ActionsComponent from '~/environments/components/environment_actions.vue';
 import setEnvironmentToRollback from '~/environments/graphql/mutations/set_environment_to_rollback.mutation.graphql';
@@ -10,6 +10,7 @@ const EnvironmentApprovalComponent = import(
 
 export default {
   components: {
+    GlButtonGroup,
     GlButton,
     ActionsComponent,
     EnvironmentApproval: () => EnvironmentApprovalComponent,
@@ -69,8 +70,15 @@ export default {
       type: String,
       required: true,
     },
+    status: {
+      type: String,
+      required: true,
+    },
   },
   computed: {
+    environment() {
+      return this.approvalEnvironment.environment;
+    },
     isRollbackAvailable() {
       return Boolean(this.rollback?.lastDeployment);
     },
@@ -79,9 +87,6 @@ export default {
     },
     isActionsShown() {
       return this.actions.length > 0;
-    },
-    environment() {
-      return this.approvalEnvironment.environment;
     },
     rollbackButtonTitle() {
       return this.rollback.lastDeployment?.isLast
@@ -102,7 +107,7 @@ export default {
 };
 </script>
 <template>
-  <div>
+  <gl-button-group>
     <actions-component v-if="isActionsShown" :actions="actions" />
     <gl-button
       v-if="isRollbackAvailable"
@@ -115,9 +120,10 @@ export default {
     />
     <environment-approval
       v-if="approvalEnvironment.isApprovalActionAvailable"
-      :required-approval-count="environment.requiredApprovalCount"
       :deployment-web-path="deploymentWebPath"
+      :required-approval-count="environment.requiredApprovalCount"
       :show-text="false"
+      :status="status"
     />
-  </div>
+  </gl-button-group>
 </template>

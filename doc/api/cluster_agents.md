@@ -2,7 +2,7 @@
 stage: Deploy
 group: Environments
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-title: Agents API
+title: Kubernetes agent API
 ---
 
 {{< details >}}
@@ -18,7 +18,7 @@ title: Agents API
 
 {{< /history >}}
 
-Use the Agents API to work with the GitLab agent for Kubernetes.
+Use this API to interact with the [GitLab agent for Kubernetes](../user/clusters/agent/_index.md).
 
 ## List the agents for a project
 
@@ -388,7 +388,7 @@ Example response:
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/347046) in GitLab 15.0.
-- Two-token limit [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/361030/) in GitLab 16.1 with a [flag](../administration/feature_flags.md) named `cluster_agents_limit_tokens_created`.
+- Two-token limit [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/361030/) in GitLab 16.1 with a [flag](../administration/feature_flags/_index.md) named `cluster_agents_limit_tokens_created`.
 - Two-token limit [generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/412399) in GitLab 16.2. Feature flag `cluster_agents_limit_tokens_created` removed.
 
 {{< /history >}}
@@ -604,10 +604,10 @@ Example response:
 
 ```json
 {
-"id": 1,
-"agent_id": 5,
-"url": "grpcs://agent.example.com:4242",
-"public_key": "..."
+  "id": 1,
+  "agent_id": 5,
+  "url": "grpcs://agent.example.com:4242",
+  "public_key": "..."
 }
 ```
 
@@ -667,10 +667,10 @@ Example response for JWT authentication:
 
 ```json
 {
-"id": 1,
-"agent_id": 5,
-"url": "grpcs://agent.example.com:4242",
-"public_key": "..."
+  "id": 1,
+  "agent_id": 5,
+  "url": "grpcs://agent.example.com:4242",
+  "public_key": "..."
 }
 ```
 
@@ -686,10 +686,10 @@ Example response for mTLS:
 
 ```json
 {
-"id": 1,
-"agent_id": 5,
-"url": "grpcs://agent.example.com:4242",
-"client_cert": "..."
+  "id": 1,
+  "agent_id": 5,
+  "url": "grpcs://agent.example.com:4242",
+  "client_cert": "..."
 }
 ```
 

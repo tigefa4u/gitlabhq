@@ -46,7 +46,7 @@ collaborator workflows in other branches.
 When a file or directory is locked by a user:
 
 - Only the user who created the lock can modify the file or directory on the default branch.
-- For other users, the locked file or directory is **read-only** on the default branch.
+- For other users, the locked file or directory is read-only on the default branch.
 - Direct changes to locked files or directories on the default branch are blocked.
 - Merge requests that modify locked files or directories cannot be merged to the default branch.
 
@@ -81,15 +81,10 @@ similar functionality for locked files is discussed in
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/519325) in GitLab 17.10 [with a flag](../../administration/feature_flags.md) named `blob_overflow_menu`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/519325) in GitLab 17.10 [with a flag](../../administration/feature_flags/_index.md) named `blob_overflow_menu`. Disabled by default.
+- [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/522993) in GitLab 18.1. Feature flag `blob_overflow_menu` removed.
 
 {{< /history >}}
-
-{{< alert type="flag" >}}
-
-The availability of this feature is controlled by a feature flag. For more information, see the history.
-
-{{< /alert >}}
 
 To lock a file:
 
@@ -100,7 +95,11 @@ To lock a file:
 
 If you do not have permission to lock the file, the menu item is disabled.
 
-## View and remove locks
+## View locked files
+
+Prerequisites:
+
+- You must have at least the Developer role for the project.
 
 To view locked files:
 
@@ -109,10 +108,13 @@ To view locked files:
 
 The **Locked files** page displays all files locked with either Git LFS exclusive locks or the GitLab UI.
 
+## Remove file locks
+
 Prerequisites:
 
-- You must be the user who created the lock.
-- You must have at least the Maintainer role for the project.
+- You must either:
+  - Be the user who created the lock.
+  - Have at least the Maintainer role for the project.
 
 To remove a lock:
 

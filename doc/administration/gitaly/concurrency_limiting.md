@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Data Access
 group: Gitaly
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Concurrency limiting
@@ -16,7 +16,7 @@ These limits can be fixed, or set as adaptive.
 
 Enabling limits on your environment should be done with caution and only
 in select circumstances, such as to protect against unexpected traffic.
-When reached, limits _do_ result in disconnects that negatively impact users.
+When reached, limits do result in disconnects that negatively impact users.
 For consistent and stable performance, you should first explore other options such as
 adjusting node specifications, and [reviewing large repositories](../../user/project/repository/monorepos/_index.md) or workloads.
 
@@ -66,7 +66,7 @@ gitaly['configuration'] = {
   Gitaly.
 
 This limits the number of in-flight RPC calls for the given RPCs. The limit is applied per
-repository. In the example above:
+repository. In the previous example:
 
 - Each repository served by the Gitaly server can have at most 20 simultaneous `PostUploadPackWithSidechannel` and
   `SSHUploadPackWithSidechannel` RPC calls in flight.
@@ -88,7 +88,7 @@ information, see the [relevant documentation](monitoring.md#monitor-gitaly-concu
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/7891) in GitLab 15.11 [with a flag](../feature_flags.md) named `gitaly_pack_objects_limiting_remote_ip`. Disabled by default.
+- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/7891) in GitLab 15.11 [with a flag](../feature_flags/_index.md) named `gitaly_pack_objects_limiting_remote_ip`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitaly/-/merge_requests/5772) in GitLab 16.0. Feature flag `gitaly_pack_objects_limiting_remote_ip` removed.
 
 {{< /history >}}
@@ -123,7 +123,7 @@ gitaly['pack_objects_limiting'] = {
 - `max_queue_length` is the maximum size the concurrency queue (per key) can grow to before requests are rejected by Gitaly.
 - `max_queue_wait` is the maximum amount of time a request can wait in the concurrency queue to be picked up by Gitaly.
 
-In the example above:
+In the previous example:
 
 - Each remote IP can have at most 15 simultaneous pack-object processes in flight on a Gitaly node.
 - If another request comes in from an IP that has used up its 15 slots, that request gets queued.
@@ -215,8 +215,7 @@ The adaptive limiter calibrates the limits every 30 seconds and:
 - Decreases the limits by half when the top-level cgroup has either memory usage that exceeds 90%, excluding highly-evictable page caches,
   or CPU throttled for 50% or more of the observation time.
 
-Otherwise, the limits increase by one until reaching the upper bound. For more information about technical implementation
-of this system, refer to [the related design document](https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/gitaly_adaptive_concurrency_limit/).
+Otherwise, the limits increase by one until reaching the upper bound.
 
 Adaptive limiting is enabled for each RPC or pack-objects cache individually. However, limits are calibrated at the same time. Adaptive limiting has the following configurations:
 

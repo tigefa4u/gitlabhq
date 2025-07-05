@@ -25,7 +25,8 @@ RSpec.shared_examples 'issues or work items finder' do |factory, execute_context
         end
 
         context 'when filtering by group id' do
-          let(:params) { { group_id: subgroup.id } }
+          # WorkItemsFinder only fetches project-level work items when `include_descendants: true`
+          let(:params) { { group_id: subgroup.id, include_descendants: true } }
 
           it 'returns no items' do
             expect(items).to be_empty
@@ -377,11 +378,13 @@ RSpec.shared_examples 'issues or work items finder' do |factory, execute_context
         let(:milestones) do
           [
             create(:milestone, :closed, project: project_no_upcoming_milestones),
-            create(:milestone, project: project_next_1_1, title: '1.1', due_date: two_days_from_now),
-            create(:milestone, project: project_next_1_1, title: '8.9', due_date: ten_days_from_now),
-            create(:milestone, project: project_next_8_8, title: '1.2', due_date: yesterday),
-            create(:milestone, project: project_next_8_8, title: '8.8', due_date: tomorrow),
-            create(:milestone, group: group, title: '9.9', due_date: tomorrow)
+            create(:milestone, project: project_next_1_1, title: '1.1', start_date: two_days_from_now),
+            create(:milestone, project: project_next_1_1, title: '8.9', start_date: ten_days_from_now),
+            create(:milestone, project: project_next_8_8, title: '1.2', start_date: yesterday),
+            create(:milestone, project: project_next_8_8, title: '8.8', start_date: tomorrow),
+            create(:milestone, group: group, title: '9.9', start_date: tomorrow),
+            create(:milestone, group: group, title: '10.0', due_date: tomorrow),
+            create(:milestone, group: group, title: '11.0', due_date: yesterday)
           ]
         end
 
@@ -395,22 +398,44 @@ RSpec.shared_examples 'issues or work items finder' do |factory, execute_context
           end
         end
 
-        it 'returns items in the upcoming milestone for each project or group' do
+        it 'returns items in upcoming milestones for each project or group' do
           expect(items.map { |item| item.milestone.title })
-            .to contain_exactly('1.1', '8.8', '9.9')
-          expect(items.map { |item| item.milestone.due_date })
-            .to contain_exactly(tomorrow, two_days_from_now, tomorrow)
+            .to contain_exactly('1.1', '8.8', '8.9', '9.9')
+          expect(items.map { |item| item.milestone.start_date })
+            .to contain_exactly(tomorrow, two_days_from_now, ten_days_from_now, tomorrow)
+        end
+
+        context 'when use_legacy_milestone_filtering is true' do
+          let(:params) { { milestone_title: Milestone::Upcoming.name, use_legacy_milestone_filtering: true } }
+
+          it 'returns items with a due date in the future' do
+            expect(items.map { |item| item.milestone.title }).to contain_exactly('10.0')
+            expect(items.map { |item| item.milestone.start_date }).to contain_exactly(nil)
+            expect(items.map { |item| item.milestone.due_date }).to contain_exactly(tomorrow)
+          end
         end
 
         context 'using NOT' do
           let(:params) { { not: { milestone_title: Milestone::Upcoming.name } } }
 
-          it 'returns items not in upcoming milestones for each project or group, but must have a due date' do
+          it 'returns items not in upcoming milestones for each project or group, but must have a start date' do
             target_items = created_items.select do |item|
-              item.milestone&.due_date && item.milestone.due_date <= Date.current
+              item.milestone&.start_date && item.milestone.start_date <= Date.current
             end
 
             expect(items).to contain_exactly(*target_items)
+          end
+
+          context 'when use_legacy_milestone_filtering is true' do
+            let(:params) do
+              { not: { milestone_title: Milestone::Upcoming.name }, use_legacy_milestone_filtering: true }
+            end
+
+            it 'returns items with a due date in the past' do
+              expect(items.map { |item| item.milestone.title }).to contain_exactly('11.0')
+              expect(items.map { |item| item.milestone.start_date }).to contain_exactly(nil)
+              expect(items.map { |item| item.milestone.due_date }).to contain_exactly(yesterday)
+            end
           end
         end
       end
@@ -437,7 +462,8 @@ RSpec.shared_examples 'issues or work items finder' do |factory, execute_context
             create(:milestone, :closed, project: project_started_8, title: '6.0', start_date: three_days_ago),
             create(:milestone, project: project_started_8, title: '7.0'),
             create(:milestone, project: project_started_8, title: '8.0', start_date: yesterday),
-            create(:milestone, project: project_started_8, title: '9.0', start_date: tomorrow)
+            create(:milestone, project: project_started_8, title: '9.0', start_date: tomorrow),
+            create(:milestone, project: project_started_8, title: '10.0', due_date: tomorrow)
           ]
         end
 
@@ -449,9 +475,24 @@ RSpec.shared_examples 'issues or work items finder' do |factory, execute_context
 
         it 'returns items in the started milestones for each project' do
           expect(items.map { |item| item.milestone.title })
-            .to contain_exactly('1.0', '2.0', '8.0')
+            .to contain_exactly('1.0', '2.0', '8.0', '10.0')
           expect(items.map { |item| item.milestone.start_date })
-            .to contain_exactly(two_days_ago, yesterday, yesterday)
+            .to contain_exactly(two_days_ago, yesterday, yesterday, nil)
+          expect(items.map { |item| item.milestone.due_date })
+            .to contain_exactly(nil, nil, nil, tomorrow)
+        end
+
+        context 'when use_legacy_milestone_filtering is true' do
+          let(:params) { { milestone_title: Milestone::Started.name, use_legacy_milestone_filtering: true } }
+
+          it 'returns items overlapping the current date for each project' do
+            expect(items.map { |item| item.milestone.title })
+              .to contain_exactly('1.0', '2.0', '8.0')
+            expect(items.map { |item| item.milestone.start_date })
+              .to contain_exactly(two_days_ago, yesterday, yesterday)
+            expect(items.map { |item| item.milestone.due_date })
+              .to contain_exactly(nil, nil, nil)
+          end
         end
 
         context 'using NOT' do
@@ -1088,7 +1129,8 @@ RSpec.shared_examples 'issues or work items finder' do |factory, execute_context
     context 'external authorization' do
       it_behaves_like 'a finder with external authorization service' do
         let!(:subject) { create(factory, project: project) }
-        let(:project_params) { { project_id: project.id } }
+        let(:execute) { described_class.new(user).execute }
+        let(:project_execute) { described_class.new(user, project_id: project.id).execute }
       end
     end
 
@@ -1281,7 +1323,9 @@ RSpec.shared_examples 'issues or work items finder' do |factory, execute_context
         it_behaves_like 'returns public, does not return hidden or confidential'
 
         it 'does not filter by confidentiality' do
+          allow(items_model).to receive(:where).and_call_original
           expect(items_model).not_to receive(:where).with(a_string_matching('confidential'), anything)
+
           subject
         end
       end
@@ -1316,6 +1360,7 @@ RSpec.shared_examples 'issues or work items finder' do |factory, execute_context
         it_behaves_like 'returns public and confidential, does not return hidden'
 
         it 'does not filter by confidentiality' do
+          allow(items_model).to receive(:where).and_call_original
           expect(items_model).not_to receive(:where).with(a_string_matching('confidential'), anything)
 
           subject
@@ -1331,6 +1376,7 @@ RSpec.shared_examples 'issues or work items finder' do |factory, execute_context
           it_behaves_like 'returns public, confidential, and hidden'
 
           it 'does not filter by confidentiality' do
+            allow(items_model).to receive(:where).and_call_original
             expect(items_model).not_to receive(:where).with(a_string_matching('confidential'), anything)
 
             subject
@@ -1362,6 +1408,7 @@ RSpec.shared_examples 'issues or work items finder' do |factory, execute_context
         end
 
         it 'does not filter by confidentiality' do
+          allow(items_model).to receive(:where).and_call_original
           expect(items_model).not_to receive(:where).with(a_string_matching('confidential'), anything)
 
           subject

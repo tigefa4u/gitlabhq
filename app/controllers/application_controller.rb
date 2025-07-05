@@ -31,6 +31,8 @@ class ApplicationController < BaseActionController
   include Gitlab::HttpRouter::RuleContext
   include Gitlab::HttpRouter::RuleMetrics
 
+  around_action :set_current_ip_address
+
   before_action :authenticate_user!, except: [:route_not_found]
   before_action :set_current_organization
   before_action :enforce_terms!, if: :should_enforce_terms?
@@ -462,6 +464,10 @@ class ApplicationController < BaseActionController
     yield
   ensure
     @current_context = Gitlab::ApplicationContext.current
+  end
+
+  def set_current_ip_address(&block)
+    ::Gitlab::IpAddressState.with(request.ip, &block) # rubocop: disable CodeReuse/ActiveRecord -- not an ActiveRecord model
   end
 
   def set_locale(&block)

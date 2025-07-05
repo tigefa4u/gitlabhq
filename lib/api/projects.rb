@@ -96,13 +96,13 @@ module API
       def delete_project(user_project)
         permanently_remove = ::Gitlab::Utils.to_boolean(params[:permanently_remove])
 
-        if permanently_remove && user_project.adjourned_deletion_configured?
+        if permanently_remove
           error = immediately_delete_project_error(user_project)
 
           return render_api_error!(error, 400) if error
         end
 
-        if permanently_remove || !user_project.adjourned_deletion_configured?
+        if permanently_remove
           destroy_conditionally!(user_project) do
             ::Projects::DestroyService.new(user_project, current_user, {}).async_execute
           end
@@ -126,7 +126,7 @@ module API
       end
 
       def validate_projects_api_rate_limit!
-        if current_user && Feature.enabled?(:rate_limit_groups_and_projects_api, current_user)
+        if current_user
           check_rate_limit_by_user_or_ip!(:projects_api)
         else
           validate_projects_api_rate_limit_for_unauthenticated_users!
@@ -181,6 +181,7 @@ module API
         optional :updated_after, type: DateTime, desc: 'Return projects updated after the specified datetime. Format: ISO 8601 YYYY-MM-DDTHH:MM:SSZ'
         optional :include_pending_delete, type: Boolean, desc: 'Include projects in pending delete state. Can only be set by admins'
         optional :marked_for_deletion_on, type: Date, desc: 'Date when the project was marked for deletion'
+        optional :active, type: Boolean, desc: 'Limit by projects that are not archived and not marked for deletion'
 
         use :optional_filter_params_ee
       end
@@ -268,9 +269,7 @@ module API
         use :with_custom_attributes
       end
       get ":user_id/projects", feature_category: :groups_and_projects, urgency: :low do
-        if Feature.enabled?(:rate_limit_groups_and_projects_api, current_user)
-          check_rate_limit_by_user_or_ip!(:user_projects_api)
-        end
+        check_rate_limit_by_user_or_ip!(:user_projects_api)
 
         user = find_user(params[:user_id])
         not_found!('User') unless user
@@ -295,9 +294,7 @@ module API
           desc: 'Return only the ID, URL, name, and path of each project'
       end
       get ":user_id/contributed_projects", feature_category: :groups_and_projects, urgency: :low do
-        if Feature.enabled?(:rate_limit_groups_and_projects_api, current_user)
-          check_rate_limit_by_user_or_ip!(:user_contributed_projects_api)
-        end
+        check_rate_limit_by_user_or_ip!(:user_contributed_projects_api)
 
         user = find_user(params[:user_id])
         not_found!('User') unless user
@@ -318,9 +315,7 @@ module API
         use :statistics_params
       end
       get ":user_id/starred_projects", feature_category: :groups_and_projects, urgency: :low do
-        if Feature.enabled?(:rate_limit_groups_and_projects_api, current_user)
-          check_rate_limit_by_user_or_ip!(:user_starred_projects_api)
-        end
+        check_rate_limit_by_user_or_ip!(:user_starred_projects_api)
 
         user = find_user(params[:user_id])
         not_found!('User') unless user
@@ -338,7 +333,6 @@ module API
       end
       post ':id/restore', feature_category: :system_access do
         authorize!(:remove_project, user_project)
-        break not_found! unless user_project.adjourned_deletion?
 
         result = ::Projects::RestoreService.new(user_project, current_user).execute
         if result[:status] == :success
@@ -488,9 +482,7 @@ module API
       end
       # TODO: Set higher urgency https://gitlab.com/gitlab-org/gitlab/-/issues/357622
       get ":id", feature_category: :groups_and_projects, urgency: :low do
-        if Feature.enabled?(:rate_limit_groups_and_projects_api, current_user)
-          check_rate_limit_by_user_or_ip!(:project_api)
-        end
+        check_rate_limit_by_user_or_ip!(:project_api)
 
         options = {
           with: current_user ? Entities::ProjectWithAccess : Entities::ProjectDetails,
@@ -1029,6 +1021,7 @@ module API
       end
       put ":id/transfer", feature_category: :groups_and_projects do
         authorize! :change_namespace, user_project
+        Gitlab::QueryLimiting.disable!('https://gitlab.com/gitlab-org/gitlab/-/issues/546376')
 
         namespace = find_namespace!(params[:namespace])
         result = ::Projects::TransferService.new(user_project, current_user).execute(namespace)
@@ -1056,6 +1049,7 @@ module API
         authorize! :change_namespace, user_project
         args = declared_params(include_missing: false)
         args[:permission_scope] = :transfer_projects
+        args[:exact_matches_first] = true
 
         groups = ::Groups::UserGroupsFinder.new(current_user, current_user, args).execute
         groups = groups.excluding_groups(user_project.group).with_route

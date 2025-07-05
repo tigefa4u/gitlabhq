@@ -1,36 +1,43 @@
 import { escapeRegExp } from 'lodash';
 import { getIdFromGraphQLId } from '~/graphql_shared/utils';
-import { queryToObject, joinPaths } from '~/lib/utils/url_utility';
+import { joinPaths, queryToObject } from '~/lib/utils/url_utility';
 import AccessorUtilities from '~/lib/utils/accessor';
 import { parseBoolean } from '~/lib/utils/common_utils';
+import { getDraft, updateDraft } from '~/lib/utils/autosave';
 import { TYPE_EPIC, TYPE_ISSUE } from '~/issues/constants';
-
 import {
+  DEFAULT_PAGE_SIZE_CHILD_ITEMS,
+  NAME_TO_ENUM_MAP,
+  NAME_TO_ICON_MAP,
+  NAME_TO_ROUTE_MAP,
+  NEW_WORK_ITEM_GID,
   NEW_WORK_ITEM_IID,
+  STATE_CLOSED,
   WIDGET_TYPE_ASSIGNEES,
   WIDGET_TYPE_AWARD_EMOJI,
   WIDGET_TYPE_COLOR,
+  WIDGET_TYPE_CRM_CONTACTS,
   WIDGET_TYPE_CURRENT_USER_TODOS,
+  WIDGET_TYPE_CUSTOM_FIELDS,
   WIDGET_TYPE_DESCRIPTION,
   WIDGET_TYPE_DESIGNS,
+  WIDGET_TYPE_DEVELOPMENT,
+  WIDGET_TYPE_EMAIL_PARTICIPANTS,
   WIDGET_TYPE_ERROR_TRACKING,
   WIDGET_TYPE_HEALTH_STATUS,
   WIDGET_TYPE_HIERARCHY,
+  WIDGET_TYPE_ITERATION,
   WIDGET_TYPE_LABELS,
   WIDGET_TYPE_LINKED_ITEMS,
   WIDGET_TYPE_MILESTONE,
   WIDGET_TYPE_NOTES,
   WIDGET_TYPE_START_AND_DUE_DATE,
+  WIDGET_TYPE_STATUS,
   WIDGET_TYPE_TIME_TRACKING,
+  WIDGET_TYPE_VULNERABILITIES,
   WIDGET_TYPE_WEIGHT,
-  ISSUABLE_EPIC,
-  WORK_ITEMS_TYPE_MAP,
-  WORK_ITEM_TYPE_ENUM_EPIC,
+  WORK_ITEM_TYPE_NAME_ISSUE,
   WORK_ITEM_TYPE_ROUTE_WORK_ITEM,
-  NEW_WORK_ITEM_GID,
-  DEFAULT_PAGE_SIZE_CHILD_ITEMS,
-  STATE_CLOSED,
-  NAME_TO_ENUM_MAP,
 } from './constants';
 
 export const isAssigneesWidget = (widget) => widget.type === WIDGET_TYPE_ASSIGNEES;
@@ -39,20 +46,35 @@ export const isMilestoneWidget = (widget) => widget.type === WIDGET_TYPE_MILESTO
 
 export const isNotesWidget = (widget) => widget.type === WIDGET_TYPE_NOTES;
 
+export const findAssigneesWidget = (workItem) =>
+  workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_ASSIGNEES);
+
 export const findAwardEmojiWidget = (workItem) =>
   workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_AWARD_EMOJI);
 
 export const findColorWidget = (workItem) =>
   workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_COLOR);
 
+export const findCrmContactsWidget = (workItem) =>
+  workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_CRM_CONTACTS);
+
 export const findCurrentUserTodosWidget = (workItem) =>
   workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_CURRENT_USER_TODOS);
+
+export const findCustomFieldsWidget = (workItem) =>
+  workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_CUSTOM_FIELDS);
 
 export const findDescriptionWidget = (workItem) =>
   workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_DESCRIPTION);
 
 export const findDesignsWidget = (workItem) =>
   workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_DESIGNS);
+
+export const findDevelopmentWidget = (workItem) =>
+  workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_DEVELOPMENT);
+
+export const findEmailParticipantsWidget = (workItem) =>
+  workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_EMAIL_PARTICIPANTS);
 
 export const findErrorTrackingWidget = (workItem) =>
   workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_ERROR_TRACKING);
@@ -62,6 +84,9 @@ export const findHealthStatusWidget = (workItem) =>
 
 export const findHierarchyWidget = (workItem) =>
   workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_HIERARCHY);
+
+export const findIterationWidget = (workItem) =>
+  workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_ITERATION);
 
 export const findLabelsWidget = (workItem) =>
   workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_LABELS);
@@ -78,8 +103,14 @@ export const findNotesWidget = (workItem) =>
 export const findStartAndDueDateWidget = (workItem) =>
   workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_START_AND_DUE_DATE);
 
+export const findStatusWidget = (workItem) =>
+  workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_STATUS);
+
 export const findTimeTrackingWidget = (workItem) =>
   workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_TIME_TRACKING);
+
+export const findVulnerabilitiesWidget = (workItem) =>
+  workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_VULNERABILITIES);
 
 export const findWeightWidget = (workItem) =>
   workItem?.widgets?.find((widget) => widget.type === WIDGET_TYPE_WEIGHT);
@@ -91,18 +122,19 @@ export const findHierarchyWidgetAncestors = (workItem) =>
   findHierarchyWidget(workItem)?.ancestors?.nodes || [];
 
 export const formatLabelForListbox = (label) => ({
-  text: label.title || label.text,
-  value: label.id || label.value,
+  text: label.title,
+  value: label.id,
   color: label.color,
+});
+
+export const formatUserForListbox = (user) => ({
+  ...user,
+  text: user.name,
+  value: user.id,
 });
 
 export const convertTypeEnumToName = (workItemTypeEnum) =>
   Object.keys(NAME_TO_ENUM_MAP).find((name) => NAME_TO_ENUM_MAP[name] === workItemTypeEnum);
-
-export const getWorkItemIcon = (icon) => {
-  if (icon === ISSUABLE_EPIC) return WORK_ITEMS_TYPE_MAP[WORK_ITEM_TYPE_ENUM_EPIC].icon;
-  return icon;
-};
 
 /**
  * TODO: Remove this method with https://gitlab.com/gitlab-org/gitlab/-/issues/479637
@@ -119,7 +151,7 @@ export const getDefaultHierarchyChildrenCount = () => {
 export const formatAncestors = (workItem) =>
   findHierarchyWidgetAncestors(workItem).map((ancestor) => ({
     ...ancestor,
-    icon: getWorkItemIcon(ancestor.workItemType?.iconName),
+    icon: NAME_TO_ICON_MAP[ancestor.workItemType?.name],
     href: ancestor.webUrl,
   }));
 
@@ -245,15 +277,20 @@ export const autocompleteDataSources = ({ fullPath, iid, workItemTypeId, isGroup
 export const markdownPreviewPath = ({ fullPath, iid, isGroup = false }) => {
   const domain = gon.relative_url_root || '';
   const basePath = isGroup ? `groups/${fullPath}` : fullPath;
-  return `${domain}/${basePath}/-/preview_markdown?target_type=WorkItem&target_id=${iid}`;
+  const targetId = iid === NEW_WORK_ITEM_IID ? '' : `&target_id=${iid}`;
+  return `${domain}/${basePath}/-/preview_markdown?target_type=WorkItem${targetId}`;
 };
 
 // the path for creating a new work item of that type, e.g. /groups/gitlab-org/-/epics/new
-export const newWorkItemPath = ({ fullPath, isGroup = false, workItemTypeName, query = '' }) => {
+export const newWorkItemPath = ({ fullPath, isGroup = false, workItemType, query = '' }) => {
   const domain = gon.relative_url_root || '';
   const basePath = isGroup ? `groups/${fullPath}` : fullPath;
+  // We have a special case to redirect to /groups/my-group/-/work_items/new
+  // instead of /groups/my-group/-/issues/new
   const type =
-    WORK_ITEMS_TYPE_MAP[workItemTypeName]?.routeParamName || WORK_ITEM_TYPE_ROUTE_WORK_ITEM;
+    isGroup && workItemType === WORK_ITEM_TYPE_NAME_ISSUE
+      ? WORK_ITEM_TYPE_ROUTE_WORK_ITEM
+      : NAME_TO_ROUTE_MAP[workItemType] || WORK_ITEM_TYPE_ROUTE_WORK_ITEM;
   return `${domain}/${basePath}/-/${type}/new${query}`;
 };
 
@@ -369,9 +406,94 @@ export const makeDrawerUrlParam = (activeItem, fullPath, issuableType = TYPE_ISS
   );
 };
 
-export const getNewWorkItemAutoSaveKey = (fullPath, workItemType) => {
+export const getAutosaveKeyQueryParamString = () => {
+  const allowedKeysInQueryParamString = [
+    'vulnerability_id',
+    'discussion_to_resolve',
+    'issue[issue_type]',
+    'issuable_template',
+  ];
+  const queryParams = new URLSearchParams(window.location.search);
+  // Remove extra params from queryParams
+  const allKeys = Array.from(queryParams.keys());
+  for (const key of allKeys) {
+    if (!allowedKeysInQueryParamString.includes(key)) {
+      queryParams.delete(key);
+    }
+  }
+
+  return queryParams.toString();
+};
+
+export const getNewWorkItemAutoSaveKey = ({ fullPath, workItemType, relatedItemId }) => {
   if (!workItemType || !fullPath) return '';
-  return `new-${fullPath}-${workItemType.toLowerCase()}-draft`;
+
+  const relatedId = getIdFromGraphQLId(relatedItemId);
+  const queryParamString = getAutosaveKeyQueryParamString();
+  let initialKey = `new-${fullPath}-${workItemType.toLowerCase()}`;
+
+  if (relatedId) {
+    initialKey = `${initialKey}-related-${relatedId}`;
+  }
+
+  if (queryParamString) {
+    initialKey = `${initialKey}-${queryParamString}`;
+  }
+
+  // eslint-disable-next-line @gitlab/require-i18n-strings
+  return `${initialKey}-draft`;
+};
+
+export const getNewWorkItemWidgetsAutoSaveKey = ({ fullPath, relatedItemId }) => {
+  if (!fullPath) return '';
+
+  const relatedId = getIdFromGraphQLId(relatedItemId);
+  const queryParamString = getAutosaveKeyQueryParamString();
+  let initialKey = `new-${fullPath}`;
+
+  if (relatedId) {
+    initialKey = `${initialKey}-related-${relatedId}`;
+  }
+
+  if (queryParamString) {
+    initialKey = `${initialKey}-${queryParamString}`;
+  }
+
+  return `${initialKey}-widgets-draft`;
+};
+
+export const getWorkItemWidgets = (draftData) => {
+  if (!draftData?.workspace?.workItem) return {};
+
+  const widgets = {};
+  for (const widget of draftData.workspace.workItem.widgets || []) {
+    if (widget.type) {
+      widgets[widget.type] = widget;
+    }
+  }
+  widgets.TITLE = draftData.workspace.workItem.title;
+  widgets.TYPE = draftData.workspace.workItem.workItemType;
+
+  return widgets;
+};
+
+export const updateDraftWorkItemType = ({ fullPath, workItemType, relatedItemId }) => {
+  const widgetsAutosaveKey = getNewWorkItemWidgetsAutoSaveKey({
+    fullPath,
+    relatedItemId,
+  });
+  const sharedCacheWidgets = JSON.parse(getDraft(widgetsAutosaveKey)) || {};
+  sharedCacheWidgets.TYPE = workItemType;
+  updateDraft(widgetsAutosaveKey, JSON.stringify(sharedCacheWidgets));
+};
+
+export const getDraftWorkItemType = ({ fullPath, relatedItemId }) => {
+  const widgetsAutosaveKey = getNewWorkItemWidgetsAutoSaveKey({
+    fullPath,
+    relatedItemId,
+  });
+  const sharedCacheWidgets = JSON.parse(getDraft(widgetsAutosaveKey)) || {};
+  return sharedCacheWidgets.TYPE;
 };
 
 export const isItemDisplayable = (item, showClosed) => {

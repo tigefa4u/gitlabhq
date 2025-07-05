@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Self-compiled installation
 ---
@@ -51,12 +51,12 @@ If the highest number stable branch is unclear, check the [GitLab blog](https://
 
 | Software                | Minimum version | Notes                                                                                                                                                                                                                                                                                  |
 |:------------------------|:----------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Ruby](#2-ruby)         | `3.2.x`         | In GitLab 17.5 and later, Ruby 3.2 is required. You must use the standard MRI implementation of Ruby. We love [JRuby](https://www.jruby.org/) and [Rubinius](https://github.com/rubinius/rubinius#the-rubinius-language-platform), but GitLab needs several Gems that have native extensions. |
+| [Ruby](#2-ruby)         | `3.2.x`         | From GitLab 16.7 to 17.4, Ruby 3.1 is required. In GitLab 17.5 and later, Ruby 3.2 is required. You must use the standard MRI implementation of Ruby. We love [JRuby](https://www.jruby.org/) and [Rubinius](https://github.com/rubinius/rubinius#the-rubinius-language-platform), but GitLab needs several Gems that have native extensions. |
 | [RubyGems](#3-rubygems) | `3.5.x`         | A specific RubyGems version is not required, but you should update to benefit from some known performance improvements. |
 | [Go](#4-go)             | `1.22.x`        | In GitLab 17.1 and later, Go 1.22 or later is required.                                                                                                                                                                                                                                        |
 | [Git](#git)             | `2.47.x`        | In GitLab 17.7 and later, Git 2.47.x and later is required. You should use the [Git version provided by Gitaly](#git).                                                                                                                                                   |
 | [Node.js](#5-node)      | `20.13.x`       | In GitLab 17.0 and later, Node.js 20.13 or later is required.                                                                                                                                                                                                                                  |
-| [PostgreSQL](#7-database) | `14.x`          | In GitLab 17.0 and later, PostgreSQL 14 or later is required.                                                                                                                                                                                                                                  |
+| [PostgreSQL](#7-database) | `16.x`          | In GitLab 18.0 and later, PostgreSQL 16 or later is required.                                                                                                                                                                                                                                  |
 
 ## GitLab directory structure
 
@@ -79,16 +79,14 @@ The following directories are created as you go through the installation steps:
 - `/home/git/repositories` - Bare repositories for all projects organized by
   namespace. This directory is where the Git repositories which are pushed/pulled are
   maintained for all projects. **This area contains critical data for projects.
-  [Keep a backup](../administration/backup_restore/_index.md).**
+  [Keep a backup](../administration/backup_restore/_index.md)**.
 
 The default locations for repositories can be configured in `config/gitlab.yml`
 of GitLab and `config.yml` of GitLab Shell.
 
 It is not necessary to create these directories manually now, and doing so can cause errors later in the installation.
 
-For a more in-depth overview, see the [GitLab architecture doc](../development/architecture.md).
-
-## Overview
+## Installation workflow
 
 The GitLab installation consists of setting up the following components:
 
@@ -205,7 +203,7 @@ can install it with:
 sudo apt-get install -y postfix
 ```
 
-Then select 'Internet Site' and press <kbd>Enter</kbd> to confirm the hostname.
+Then select `Internet Site` and press <kbd>Enter</kbd> to confirm the hostname.
 
 ### ExifTool
 
@@ -222,15 +220,9 @@ The Ruby interpreter is required to run GitLab.
 See the [requirements section](#software-requirements) for the minimum
 Ruby requirements.
 
-The use of Ruby version managers such as [`RVM`](https://rvm.io/), [`rbenv`](https://github.com/rbenv/rbenv) or [`chruby`](https://github.com/postmodern/chruby) with GitLab
-in production, frequently leads to hard to diagnose problems. Version managers
-are not supported and we strongly advise everyone to follow the instructions
-below to use a system Ruby.
-
-Linux distributions generally have older versions of Ruby available, so these
-instructions are designed to install Ruby from the official source code.
-
-[Install Ruby](https://www.ruby-lang.org/en/documentation/installation/).
+Ruby version managers such as RVM, rbenv, or chruby can cause hard to diagnose problems with GitLab.
+You should instead [install Ruby](https://www.ruby-lang.org/en/documentation/installation/)
+from the official source code.
 
 ## 3. RubyGems
 
@@ -251,7 +243,7 @@ gem update --system
 ## 4. Go
 
 GitLab has several daemons written in Go. To install
-GitLab we need a Go compiler. The instructions below assume you use 64-bit
+GitLab, you must install a Go compiler. The following instructions assume you use 64-bit
 Linux. You can find downloads for other platforms at the
 [Go download page](https://go.dev/dl/).
 
@@ -303,7 +295,7 @@ sudo adduser --disabled-login --gecos 'GitLab' git
 {{< alert type="note" >}}
 
 Only PostgreSQL is supported.
-In GitLab 17.0 and later, we [require PostgreSQL 14+](requirements.md#postgresql).
+In GitLab 18.0 and later, we [require PostgreSQL 16+](requirements.md#postgresql).
 
 {{< /alert >}}
 
@@ -322,7 +314,7 @@ In GitLab 17.0 and later, we [require PostgreSQL 14+](requirements.md#postgresql
    sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
    sudo apt-get update
-   sudo apt-get -y install postgresql-14
+   sudo apt-get -y install postgresql-16
    ```
 
 1. Verify the PostgreSQL version you have is supported by the version of GitLab you're
@@ -547,7 +539,7 @@ use the branch name `11-8-stable`.
 
 {{< alert type="warning" >}}
 
-You can change `<X-Y-stable>` to `master` if you want the *bleeding edge* version, but never install `master` on a production server!
+You can change `<X-Y-stable>` to `master` if you want the "bleeding edge" version, but never install `master` on a production server!
 
 {{< /alert >}}
 
@@ -673,7 +665,7 @@ Make sure you have `bundle` (run `bundle -v`):
 - `< 2.x`.
 
 Install the gems (if you want to use Kerberos for user authentication, omit
-`kerberos` in the `--without` option below):
+`kerberos` in the `--without` option in the following commands):
 
 ```shell
 sudo -u git -H bundle config set --local deployment 'true'
@@ -836,7 +828,7 @@ For example, if you're running Redis and PostgreSQL on the same machine as GitLa
   After=redis-server.service postgresql.service
   ```
 
-`systemctl edit` installs drop-in configuration files at `/etc/systemd/system/<name of the unit>.d/override.conf`, so your local configuration is not overwritten when updating the unit files later. To split up your drop-in configuration files, you can add the above snippets to `.conf` files under `/etc/systemd/system/<name of the unit>.d/`.
+`systemctl edit` installs drop-in configuration files at `/etc/systemd/system/<name of the unit>.d/override.conf`, so your local configuration is not overwritten when updating the unit files later. To split up your drop-in configuration files, you can add the previous snippets to `.conf` files under `/etc/systemd/system/<name of the unit>.d/`.
 
 If you manually made changes to the unit files or added drop-in configuration files (without using `systemctl edit`), run the following command for them to take effect:
 
@@ -917,7 +909,7 @@ sudo -u git -H bundle exec rake gitlab:setup RAILS_ENV=production force=yes
 # When done, you see 'Administrator account created:'
 ```
 
-You can set the Administrator/root password and email by supplying them in environmental variables, `GITLAB_ROOT_PASSWORD` and `GITLAB_ROOT_EMAIL`, as seen below. If you don't set the password (and it is set to the default one), wait to expose GitLab to the public internet until the installation is done and you've logged into the server the first time. During the first login, you are forced to change the default password. An Enterprise Edition subscription may also be activated at this time by supplying the activation code in the `GITLAB_ACTIVATION_CODE` environment variable.
+You can set the Administrator/root password and email by supplying them in environmental variables, `GITLAB_ROOT_PASSWORD` and `GITLAB_ROOT_EMAIL`, as seen in the following command. If you don't set the password (and it is set to the default one), wait to expose GitLab to the public internet until the installation is done and you've logged into the server the first time. During the first login, you are forced to change the default password. An Enterprise Edition subscription may also be activated at this time by supplying the activation code in the `GITLAB_ACTIVATION_CODE` environment variable.
 
 ```shell
 sudo -u git -H bundle exec rake gitlab:setup RAILS_ENV=production GITLAB_ROOT_PASSWORD=yourpassword GITLAB_ROOT_EMAIL=youremail GITLAB_ACTIVATION_CODE=yourcode
@@ -1020,7 +1012,7 @@ Verify that the installed version is greater than 1.12.1:
 nginx -v
 ```
 
-If it's lower, you may receive the error below:
+If it's lower, you may receive the following error:
 
 ```plaintext
 nginx: [emerg] unknown "start$temp=[filtered]$rest" variable
@@ -1225,8 +1217,8 @@ bundle list | grep google-protobuf
 bundle check | grep google-protobuf
 ```
 
-Below, `3.2.0` is used as an example. Replace it with the version number
-you found above:
+In the following command, `3.2.0` is used as an example. Replace it with the version number
+you found prevously:
 
 ```shell
 cd /home/git/gitlab
@@ -1234,7 +1226,7 @@ sudo -u git -H gem install google-protobuf --version 3.2.0 --platform ruby
 ```
 
 Finally, you can test whether `google-protobuf` loads correctly. The
-following should print 'OK'.
+following should print `OK`.
 
 ```shell
 sudo -u git -H bundle exec ruby -rgoogle/protobuf -e 'puts :OK'

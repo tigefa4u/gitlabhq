@@ -3,6 +3,7 @@ stage: Verify
 group: Pipeline Authoring
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: CI/CD Jobs
+description: Configuration, rules, caching, artifacts, and logs.
 ---
 
 {{< details >}}
@@ -193,20 +194,9 @@ When you access a pipeline, you can see the related jobs for that pipeline.
 
 The order of jobs in a pipeline depends on the type of pipeline graph.
 
-- For [full pipeline graphs](../pipelines/_index.md#pipeline-details), jobs are sorted by name.
-- For [pipeline mini graphs](../pipelines/_index.md#pipeline-mini-graphs), jobs are sorted by status, and then by name.
-  The job status order is:
-
-  1. failed
-  1. warning
-  1. pending
-  1. running
-  1. manual
-  1. scheduled
-  1. canceled
-  1. success
-  1. skipped
-  1. created
+- For [full pipeline graphs](../pipelines/_index.md#pipeline-details), jobs are sorted alphabetically by name.
+- For [pipeline mini graphs](../pipelines/_index.md#pipeline-mini-graphs), jobs are sorted by status severity
+  with failed jobs appearing first, and then alphabetically by name.
 
 Selecting an individual job shows you its [job log](job_logs.md), and allows you to:
 
@@ -225,7 +215,7 @@ Selecting an individual job shows you its [job log](job_logs.md), and allows you
 
 {{< history >}}
 
-- Filtering jobs by job name [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/387547) as an [experiment](../../policy/development_stages_support.md) on GitLab.com and GitLab Self-Managed in GitLab 17.3 [with flags](../../administration/feature_flags.md) named `populate_and_use_build_names_table` for the API and `fe_search_build_by_name` for the UI. Disabled by default.
+- Filtering jobs by job name [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/387547) as an [experiment](../../policy/development_stages_support.md) on GitLab.com and GitLab Self-Managed in GitLab 17.3 [with flags](../../administration/feature_flags/_index.md) named `populate_and_use_build_names_table` for the API and `fe_search_build_by_name` for the UI. Disabled by default.
 
 {{< /history >}}
 
@@ -242,18 +232,36 @@ To view the full list of jobs that ran in a project:
 1. On the left sidebar, select **Search or go to** and find your project.
 1. Select **Build > Jobs**.
 
-You can filter the list by [job status](#view-jobs-in-a-pipeline), [job name](#job-names) and [job source](#available-job-sources).
+You can filter the list by [job name](#job-names), [job status](#available-job-statuses), and [job source](#available-job-sources).
+
+### Available job statuses
+
+CI/CD jobs can have the following statuses:
+
+- `canceled`: Job was manually canceled or automatically aborted.
+- `canceling`: Job is being canceled but `after_script` is running.
+- `created`: Job has been created but not yet processed.
+- `failed`: Job execution failed.
+- `manual`: Job requires manual action to start.
+- `pending`: Job is in the queue waiting for a runner.
+- `preparing`: Runner is preparing the execution environment.
+- `running`: Job is executing on a runner.
+- `scheduled`: Job has been scheduled but execution hasn't started.
+- `skipped`: Job was skipped due to conditions or dependencies.
+- `success`: Job completed successfully.
+- `waiting_for_resource`: Job is waiting for resources to become available.
 
 ### View the source of a job
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/181159) job source in GitLab 17.9 [with a flag](../../administration/feature_flags.md) named `populate_and_use_build_source_table`. Enabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/181159) job source in GitLab 17.9 [with a flag](../../administration/feature_flags/_index.md) named `populate_and_use_build_source_table`. Enabled by default.
 - [Generally available](https://gitlab.com/groups/gitlab-org/-/epics/11796) on GitLab.com, GitLab Self-Managed, and GitLab Dedicated in GitLab 17.11.
 
 {{< /history >}}
 
-GitLab CI/CD jobs now include a source attribute that indicates the action that initially triggered a CI/CD job. Use this attribute to track how a job was initiated or filter job runs based on the specific sources.
+GitLab CI/CD jobs now include a source attribute that indicates the action that initially triggered a CI/CD job.
+Use this attribute to track how a job was initiated or filter job runs based on the specific sources.
 
 #### Available job sources
 
@@ -262,7 +270,7 @@ The source attribute can have the following values:
 - `api`: Job initiated by a REST call to the Jobs API.
 - `chat`: Job initiated by a chat command using GitLab ChatOps.
 - `container_registry_push`: Job initiated by container registry push.
-- `duo_workflow`: Job initiated by GitLab Duo Workflow.
+- `duo_workflow`: Job initiated by GitLab Duo Agent Platform.
 - `external`: Job initiated by an event in an external repository integrated with GitLab. This does not include pull request events.
 - `external_pull_request_event`: Job initiated by a pull request event in an external repository.
 - `merge_request_event`: Job initiated by a merge request event.
@@ -275,7 +283,7 @@ The source attribute can have the following values:
 - `push`: Job initiated by a code push.
 - `scan_execution_policy`: Job initiated by a scan execution policy.
 - `schedule`: Job initiated by a scheduled pipeline.
-- `security_orchestration_policy`: Job initiated by a security orchestration policy.
+- `security_orchestration_policy`: Job initiated by a scheduled scan execution policy.
 - `trigger`: Job initiated by another job or pipeline.
 - `unknown`: Job initiated by an unknown source.
 - `web`: Job initiated by a user from the GitLab UI.
@@ -304,7 +312,7 @@ separate each job name with a number and one of the following:
 
 You can use these symbols interchangeably.
 
-In the example below, these three jobs are in a group named `build ruby`:
+In the following example, these three jobs are in a group named `build ruby`:
 
 ```yaml
 build ruby 1/3:
@@ -358,6 +366,7 @@ When you retry a [trigger job](../yaml/_index.md#trigger) that triggers a downst
 Prerequisites:
 
 - You must have at least the Developer role for the project.
+- The job must not be [archived](../../administration/settings/continuous_integration.md#archive-pipelines).
 
 To retry a job from a merge request:
 
@@ -464,7 +473,7 @@ You can cancel all jobs in a running pipeline at once.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/467107) as an [experiment](../../policy/development_stages_support.md) in GitLab 17.10 [with a flag](../../administration/feature_flags.md) named `force_cancel_build`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/467107) as an [experiment](../../policy/development_stages_support.md) in GitLab 17.10 [with a flag](../../administration/feature_flags/_index.md) named `force_cancel_build`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/519313) in GitLab 17.11. Feature flag `force_cancel_build` removed.
 
 {{< /history >}}

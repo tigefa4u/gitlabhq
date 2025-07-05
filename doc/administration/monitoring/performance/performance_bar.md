@@ -1,14 +1,15 @@
 ---
-stage: Systems
-group: Cloud Connector
+stage: Developer Experience
+group: Performance Enablement
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+gitlab_dedicated: yes
 title: Performance bar
 ---
 
 {{< details >}}
 
 - Tier: Free, Premium, Ultimate
-- Offering: GitLab Self-Managed
+- Offering: GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 
@@ -72,13 +73,13 @@ From left to right, the performance bar displays:
   its `X-Request-Id` header.
 - **Download**: a link to download the raw JSON used to generate the Performance Bar reports.
 - **Memory Report**: a link that generates a
-  [memory profiling](../../../development/performance.md#using-memory-profiler)
+  memory profiling
   report of the current URL.
-- **Flamegraph** with mode: a link to generate a [flamegraph](../../../development/profiling.md#speedscope-flamegraphs)
+- **Flamegraph** with mode: a link to generate a flamegraph
   of the current URL with the selected [Stackprof mode](https://github.com/tmm1/stackprof#sampling):
-  - The **Wall** mode samples every *interval* of the time on a clock on a wall. The interval is set to `10100` microseconds.
-  - The **CPU** mode samples every *interval* of CPU activity. The interval is set to `10100` microseconds.
-  - The **Object** mode samples every *interval*. The interval is set to `100` allocations.
+  - The **Wall** mode samples every interval of the time on a clock on a wall. The interval is set to `10100` microseconds.
+  - The **CPU** mode samples every interval of CPU activity. The interval is set to `10100` microseconds.
+  - The **Object** mode samples every interval. The interval is set to `100` allocations.
 - **Request Selector**: a select box displayed on the right-hand side of the
   Performance Bar which enables you to view these metrics for any requests made while
   the current page was open. Only the first two requests per unique URL are captured.

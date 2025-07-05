@@ -8,10 +8,10 @@ import ShortcutsNavigation from '~/behaviors/shortcuts/shortcuts_navigation';
 import { parseBoolean } from '~/lib/utils/common_utils';
 import { injectVueAppBreadcrumbs } from '~/lib/utils/breadcrumbs';
 import { apolloProvider } from '~/graphql_shared/issuable_client';
-import { ISSUE_WIT_FEEDBACK_BADGE } from '~/work_items/constants';
 import App from './components/app.vue';
 import WorkItemBreadcrumb from './components/work_item_breadcrumb.vue';
 import activeDiscussionQuery from './components/design_management/graphql/client/active_design_discussion.query.graphql';
+import { WORK_ITEM_TYPE_NAME_EPIC } from './constants';
 import { createRouter } from './router';
 
 Vue.use(VueApollo);
@@ -27,6 +27,7 @@ export const initWorkItemsRoot = ({ workItemType, workspaceType, withTabs } = {}
 
   const {
     canAdminLabel,
+    canBulkUpdate,
     fullPath,
     groupPath,
     groupId,
@@ -36,18 +37,20 @@ export const initWorkItemsRoot = ({ workItemType, workspaceType, withTabs } = {}
     labelsManagePath,
     registerPath,
     signInPath,
+    hasBlockedIssuesFeature,
+    hasGroupBulkEditFeature,
     hasIterationsFeature,
     hasOkrsFeature,
     hasSubepicsFeature,
     hasIssuableHealthStatusFeature,
+    hasCustomFieldsFeature,
     newCommentTemplatePaths,
     reportAbusePath,
     defaultBranch,
     initialSort,
     isSignedIn,
-    workItemType: listWorkItemType,
     hasEpicsFeature,
-    showNewIssueLink,
+    showNewWorkItem,
     canCreateEpic,
     autocompleteAwardEmojisPath,
     hasScopedLabelsFeature,
@@ -58,17 +61,20 @@ export const initWorkItemsRoot = ({ workItemType, workspaceType, withTabs } = {}
     hasLinkedItemsEpicsFeature,
     canCreateProjects,
     newProjectPath,
+    projectNamespaceFullPath,
     hasIssueDateFilterFeature,
     timeTrackingLimitToHours,
+    hasStatusFeature,
+    workItemPlanningViewEnabled,
   } = el.dataset;
 
   const isGroup = workspaceType === WORKSPACE_GROUP;
-  const router = createRouter({ fullPath, workItemType, workspaceType, defaultBranch, isGroup });
+  const router = createRouter({ fullPath, workspaceType, defaultBranch });
   let listPath = issuesListPath;
 
-  const breadcrumbParams = { workItemType: listWorkItemType, isGroup };
+  const breadcrumbParams = { workItemType, isGroup };
 
-  if (isGroup) {
+  if (workItemType === WORK_ITEM_TYPE_NAME_EPIC) {
     listPath = epicsListPath;
     breadcrumbParams.listPath = epicsListPath;
   } else {
@@ -88,37 +94,19 @@ export const initWorkItemsRoot = ({ workItemType, workspaceType, withTabs } = {}
     },
   });
 
-  let feedback = {};
-
-  if (gon.features.workItemViewForIssues) {
-    feedback = {
-      ...ISSUE_WIT_FEEDBACK_BADGE,
-    };
-  }
-
-  if (
-    workItemType === 'issue' &&
-    gon.features.workItemsViewPreference &&
-    !isGroup &&
-    !gon.features.useWiViewForIssues
-  ) {
-    import(/* webpackChunkName: 'work_items_feedback' */ '~/work_items_feedback')
-      .then(({ initWorkItemsFeedback }) => {
-        initWorkItemsFeedback(feedback);
-      })
-      .catch({});
-  }
-
   return new Vue({
     el,
     name: 'WorkItemsRoot',
     router,
     apolloProvider,
     provide: {
-      canAdminLabel,
+      canAdminLabel: parseBoolean(canAdminLabel),
+      canBulkUpdate: parseBoolean(canBulkUpdate),
       fullPath,
       isGroup,
       isProject: !isGroup,
+      hasBlockedIssuesFeature: parseBoolean(hasBlockedIssuesFeature),
+      hasGroupBulkEditFeature: parseBoolean(hasGroupBulkEditFeature),
       hasIssueWeightsFeature: parseBoolean(hasIssueWeightsFeature),
       hasOkrsFeature: parseBoolean(hasOkrsFeature),
       hasSubepicsFeature: parseBoolean(hasSubepicsFeature),
@@ -129,14 +117,15 @@ export const initWorkItemsRoot = ({ workItemType, workspaceType, withTabs } = {}
       signInPath,
       hasIterationsFeature: parseBoolean(hasIterationsFeature),
       hasIssuableHealthStatusFeature: parseBoolean(hasIssuableHealthStatusFeature),
+      hasCustomFieldsFeature: parseBoolean(hasCustomFieldsFeature),
       reportAbusePath,
       groupPath,
       groupId,
       initialSort,
       isSignedIn: parseBoolean(isSignedIn),
-      workItemType: listWorkItemType,
+      workItemType,
       hasEpicsFeature: parseBoolean(hasEpicsFeature),
-      showNewIssueLink: parseBoolean(showNewIssueLink),
+      showNewWorkItem: parseBoolean(showNewWorkItem),
       canCreateEpic: parseBoolean(canCreateEpic),
       autocompleteAwardEmojisPath,
       hasQualityManagementFeature: parseBoolean(hasQualityManagementFeature),
@@ -147,8 +136,11 @@ export const initWorkItemsRoot = ({ workItemType, workspaceType, withTabs } = {}
       canCreateProjects: parseBoolean(canCreateProjects),
       newIssuePath: '',
       newProjectPath,
+      projectNamespaceFullPath,
       hasIssueDateFilterFeature: parseBoolean(hasIssueDateFilterFeature),
       timeTrackingLimitToHours: parseBoolean(timeTrackingLimitToHours),
+      hasStatusFeature: parseBoolean(hasStatusFeature),
+      workItemPlanningViewEnabled: parseBoolean(workItemPlanningViewEnabled),
     },
     mounted() {
       performanceMarkAndMeasure({
@@ -164,6 +156,7 @@ export const initWorkItemsRoot = ({ workItemType, workspaceType, withTabs } = {}
       return createElement(App, {
         props: {
           newCommentTemplatePaths: JSON.parse(newCommentTemplatePaths),
+          rootPageFullPath: fullPath,
           withTabs,
         },
       });

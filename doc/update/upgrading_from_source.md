@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Upgrading self-compiled instances
 ---
@@ -167,11 +167,11 @@ extensions. For more information, see the
 
 {{< alert type="warning" >}}
 
-GitLab 17.0 requires PostgreSQL 14. GitLab 17.5 is compatible with up to PostgreSQL 16.
+GitLab 18.0 requires PostgreSQL 16.
 
 {{< /alert >}}
 
-To upgrade PostgreSQL, refer to its [documentation](https://www.postgresql.org/docs/11/upgrading.html).
+To upgrade PostgreSQL, refer to its [documentation](https://www.postgresql.org/docs/16/upgrading.html).
 
 ### Update the GitLab codebase
 
@@ -468,4 +468,4 @@ cd /home/git/gitlab
 sudo -u git -H bundle exec rake gitlab:backup:restore RAILS_ENV=production
 ```
 
-If you have more than one backup `*.tar` file, add `BACKUP=timestamp_of_backup` to the above.
+If you have more than one backup `*.tar` file, add `BACKUP=timestamp_of_backup` to the previous code block.

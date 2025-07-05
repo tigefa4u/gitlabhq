@@ -11,6 +11,16 @@ export const FEED_TOKEN = 'feedToken';
 export const INCOMING_EMAIL_TOKEN = 'incomingEmailToken';
 export const STATIC_OBJECT_TOKEN = 'staticObjectToken';
 
+export const DEFAULT_FILTER = [
+  {
+    type: 'state',
+    value: {
+      data: 'active',
+      operator: '=',
+    },
+  },
+];
+
 export const FILTER_OPTIONS = [
   {
     icon: 'status',
@@ -81,6 +91,18 @@ export const FILTER_OPTIONS_CREDENTIALS_INVENTORY = [
         title: s__('CredentialsInventory|Project and group access tokens'),
       },
       { value: 'gpg_keys', title: s__('CredentialsInventory|GPG keys') },
+    ],
+  },
+  {
+    icon: 'user',
+    title: s__('CredentialsInventory|Owner type'),
+    type: 'owner_type',
+    token: GlFilteredSearchToken,
+    operators: OPERATORS_IS,
+    unique: true,
+    options: [
+      { value: 'human', title: __('Human') },
+      { value: 'service_account', title: __('Service account') },
     ],
   },
   ...FILTER_OPTIONS,

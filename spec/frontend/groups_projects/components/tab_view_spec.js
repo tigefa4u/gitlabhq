@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import MockAdapter from 'axios-mock-adapter';
-import { GlLoadingIcon, GlKeysetPagination } from '@gitlab/ui';
+import { GlLoadingIcon, GlKeysetPagination, GlPagination } from '@gitlab/ui';
 import VueApollo from 'vue-apollo';
 import starredProjectsGraphQlResponse from 'test_fixtures/graphql/projects/your_work/starred_projects.query.graphql.json';
 import inactiveProjectsGraphQlResponse from 'test_fixtures/graphql/projects/your_work/inactive_projects.query.graphql.json';
@@ -14,7 +14,7 @@ import axios from '~/lib/utils/axios_utils';
 import TabView from '~/groups_projects/components/tab_view.vue';
 import { formatProjects } from '~/projects/your_work/utils';
 import ProjectsList from '~/vue_shared/components/projects_list/projects_list.vue';
-import ProjectsListEmptyState from '~/vue_shared/components/projects_list/projects_list_empty_state.vue';
+import ResourceListsEmptyState from '~/vue_shared/components/resource_lists/empty_state.vue';
 import NestedGroupsProjectsList from '~/vue_shared/components/nested_groups_projects_list/nested_groups_projects_list.vue';
 import { DEFAULT_PER_PAGE } from '~/api';
 import { createAlert } from '~/alert';
@@ -29,6 +29,8 @@ import { MEMBER_TAB as MEMBER_TAB_GROUPS } from '~/groups/your_work/constants';
 import {
   FILTERED_SEARCH_TOKEN_LANGUAGE,
   FILTERED_SEARCH_TOKEN_MIN_ACCESS_LEVEL,
+  PAGINATION_TYPE_KEYSET,
+  PAGINATION_TYPE_OFFSET,
 } from '~/groups_projects/constants';
 import { FILTERED_SEARCH_TERM_KEY } from '~/projects/filtered_search_and_sort/constants';
 import { ACCESS_LEVEL_OWNER_INTEGER, ACCESS_LEVEL_OWNER_STRING } from '~/access_level/constants';
@@ -36,11 +38,14 @@ import { TIMESTAMP_TYPE_CREATED_AT } from '~/vue_shared/components/resource_list
 import createMockApollo from 'helpers/mock_apollo_helper';
 import { resolvers } from '~/groups/your_work/graphql/resolvers';
 import waitForPromises from 'helpers/wait_for_promises';
+import { useMockInternalEventsTracking } from 'helpers/tracking_internal_events_helper';
 import { pageInfoMultiplePages, programmingLanguages } from './mock_data';
 
 jest.mock('~/alert');
 
 Vue.use(VueApollo);
+
+const { bindInternalEventDocument } = useMockInternalEventsTracking();
 
 describe('TabView', () => {
   let wrapper;
@@ -57,9 +62,22 @@ describe('TabView', () => {
       [FILTERED_SEARCH_TOKEN_LANGUAGE]: '8',
       [FILTERED_SEARCH_TOKEN_MIN_ACCESS_LEVEL]: ACCESS_LEVEL_OWNER_INTEGER,
     },
+    filtersAsQueryVariables: {
+      programmingLanguageName: 'CoffeeScript',
+      minAccessLevel: ACCESS_LEVEL_OWNER_STRING,
+    },
+    search: 'foo',
     filteredSearchTermKey: FILTERED_SEARCH_TERM_KEY,
     timestampType: TIMESTAMP_TYPE_CREATED_AT,
     programmingLanguages,
+    eventTracking: {
+      clickStat: 'click_stat_on_your_work_projects',
+      hoverStat: 'hover_stat_on_your_work_projects',
+      hoverVisibility: 'hover_visibility_icon_on_your_work_projects',
+      clickItemAfterFilter: 'click_project_after_filter_on_your_work_projects',
+      clickTopic: 'click_topic_on_your_work_projects',
+    },
+    paginationType: PAGINATION_TYPE_KEYSET,
   };
 
   const createComponent = ({ handlers = [], propsData = {} } = {}) => {
@@ -71,12 +89,13 @@ describe('TabView', () => {
     });
 
     apolloClient = mockApollo.defaultClient;
-    jest.spyOn(apolloClient, 'resetStore');
+    jest.spyOn(apolloClient, 'clearStore');
   };
 
   const findProjectsList = () => wrapper.findComponent(ProjectsList);
-  const findPagination = () => wrapper.findComponent(GlKeysetPagination);
-  const findEmptyState = () => wrapper.findComponent(ProjectsListEmptyState);
+  const findKeysetPagination = () => wrapper.findComponent(GlKeysetPagination);
+  const findOffsetPagination = () => wrapper.findComponent(GlPagination);
+  const findEmptyState = () => wrapper.findComponent(ResourceListsEmptyState);
 
   beforeEach(() => {
     mockAxios = new MockAdapter(axios);
@@ -90,14 +109,14 @@ describe('TabView', () => {
 
   describe.each`
     tab                | handler                                                                                     | expectedVariables                                                                          | expectedProjects
-    ${CONTRIBUTED_TAB} | ${[CONTRIBUTED_TAB.query, jest.fn().mockResolvedValue(contributedProjectsGraphQlResponse)]} | ${{ contributed: true, starred: false, sort: defaultPropsData.sort.toUpperCase() }}        | ${contributedProjectsGraphQlResponse.data.currentUser.contributedProjects.nodes}
-    ${PERSONAL_TAB}    | ${[PERSONAL_TAB.query, jest.fn().mockResolvedValue(personalProjectsGraphQlResponse)]}       | ${{ personal: true, membership: false, archived: 'EXCLUDE', sort: defaultPropsData.sort }} | ${personalProjectsGraphQlResponse.data.projects.nodes}
-    ${MEMBER_TAB}      | ${[MEMBER_TAB.query, jest.fn().mockResolvedValue(membershipProjectsGraphQlResponse)]}       | ${{ personal: false, membership: true, archived: 'EXCLUDE', sort: defaultPropsData.sort }} | ${membershipProjectsGraphQlResponse.data.projects.nodes}
-    ${STARRED_TAB}     | ${[STARRED_TAB.query, jest.fn().mockResolvedValue(starredProjectsGraphQlResponse)]}         | ${{ contributed: false, starred: true, sort: defaultPropsData.sort.toUpperCase() }}        | ${starredProjectsGraphQlResponse.data.currentUser.starredProjects.nodes}
-    ${INACTIVE_TAB}    | ${[INACTIVE_TAB.query, jest.fn().mockResolvedValue(inactiveProjectsGraphQlResponse)]}       | ${{ personal: false, membership: true, archived: 'ONLY', sort: defaultPropsData.sort }}    | ${inactiveProjectsGraphQlResponse.data.projects.nodes}
+    ${CONTRIBUTED_TAB} | ${[CONTRIBUTED_TAB.query, jest.fn().mockResolvedValue(contributedProjectsGraphQlResponse)]} | ${{ contributed: true, starred: false, sort: defaultPropsData.sort.toUpperCase() }}        | ${contributedProjectsGraphQlResponse.data.currentUser.contributedProjects}
+    ${PERSONAL_TAB}    | ${[PERSONAL_TAB.query, jest.fn().mockResolvedValue(personalProjectsGraphQlResponse)]}       | ${{ personal: true, membership: false, archived: 'EXCLUDE', sort: defaultPropsData.sort }} | ${personalProjectsGraphQlResponse.data.projects}
+    ${MEMBER_TAB}      | ${[MEMBER_TAB.query, jest.fn().mockResolvedValue(membershipProjectsGraphQlResponse)]}       | ${{ personal: false, membership: true, archived: 'EXCLUDE', sort: defaultPropsData.sort }} | ${membershipProjectsGraphQlResponse.data.projects}
+    ${STARRED_TAB}     | ${[STARRED_TAB.query, jest.fn().mockResolvedValue(starredProjectsGraphQlResponse)]}         | ${{ contributed: false, starred: true, sort: defaultPropsData.sort.toUpperCase() }}        | ${starredProjectsGraphQlResponse.data.currentUser.starredProjects}
+    ${INACTIVE_TAB}    | ${[INACTIVE_TAB.query, jest.fn().mockResolvedValue(inactiveProjectsGraphQlResponse)]}       | ${{ personal: false, membership: true, archived: 'ONLY', sort: defaultPropsData.sort }}    | ${inactiveProjectsGraphQlResponse.data.projects}
   `(
     'onMount when route name is $tab.value',
-    ({ tab, handler, expectedVariables, expectedProjects }) => {
+    ({ tab, handler, expectedVariables, expectedProjects: { nodes, count } }) => {
       describe('when GraphQL request is loading', () => {
         beforeEach(() => {
           createComponent({ handlers: [handler], propsData: { tab } });
@@ -122,15 +141,22 @@ describe('TabView', () => {
             first: DEFAULT_PER_PAGE,
             before: null,
             after: null,
-            search: defaultPropsData.filters[defaultPropsData.filteredSearchTermKey],
-            programmingLanguageName: 'CoffeeScript',
-            minAccessLevel: ACCESS_LEVEL_OWNER_STRING,
+            search: defaultPropsData.search,
+            ...defaultPropsData.filtersAsQueryVariables,
             ...expectedVariables,
           });
         });
 
+        it('emits query-complete event', () => {
+          expect(wrapper.emitted('query-complete')).toEqual([[]]);
+        });
+
+        it('emits update-count event', () => {
+          expect(wrapper.emitted('update-count')).toEqual([[tab, count]]);
+        });
+
         it('passes items to `ProjectsList` component', () => {
-          expect(findProjectsList().props('items')).toEqual(formatProjects(expectedProjects));
+          expect(findProjectsList().props('items')).toEqual(formatProjects(nodes));
         });
 
         it('passes `timestampType` prop to `ProjectsList` component', () => {
@@ -142,9 +168,15 @@ describe('TabView', () => {
             findProjectsList().vm.$emit('refetch');
           });
 
-          it('resets store and refetches list', () => {
-            expect(apolloClient.resetStore).toHaveBeenCalled();
+          it('clears store and refetches list', async () => {
+            expect(apolloClient.clearStore).toHaveBeenCalled();
+            await waitForPromises();
             expect(handler[1]).toHaveBeenCalledTimes(2);
+          });
+
+          it('emits refetch event', async () => {
+            await waitForPromises();
+            expect(wrapper.emitted('refetch')).toEqual([[]]);
           });
         });
       });
@@ -162,8 +194,7 @@ describe('TabView', () => {
 
         it('displays error alert', () => {
           expect(createAlert).toHaveBeenCalledWith({
-            message:
-              'An error occurred loading the projects. Please refresh the page to try again.',
+            message: "Your projects couldn't be loaded. Refresh the page to try again.",
             error,
             captureError: true,
           });
@@ -171,6 +202,26 @@ describe('TabView', () => {
       });
     },
   );
+
+  describe('when queryErrorMessage is not defined', () => {
+    const error = new Error();
+
+    beforeEach(async () => {
+      createComponent({
+        handlers: [[CONTRIBUTED_TAB.query, jest.fn().mockRejectedValue(error)]],
+        propsData: { tab: { ...CONTRIBUTED_TAB, queryErrorMessage: undefined } },
+      });
+      await waitForPromises();
+    });
+
+    it('displays error alert with fallback message', () => {
+      expect(createAlert).toHaveBeenCalledWith({
+        message: 'An error occurred. Refresh the page to try again.',
+        error,
+        captureError: true,
+      });
+    });
+  });
 
   describe('when tab.listComponent is NestedGroupsProjectsList', () => {
     beforeEach(() => {
@@ -190,7 +241,14 @@ describe('TabView', () => {
 
     describe('when search is empty', () => {
       beforeEach(async () => {
-        createComponent({ propsData: { tab: MEMBER_TAB_GROUPS, filters: {} } });
+        createComponent({
+          propsData: {
+            tab: MEMBER_TAB_GROUPS,
+            filters: {},
+            filtersAsQueryVariables: {},
+            search: '',
+          },
+        });
         await waitForPromises();
       });
 
@@ -262,8 +320,7 @@ describe('TabView', () => {
 
         it('displays error alert', () => {
           expect(createAlert).toHaveBeenCalledWith({
-            message:
-              'An error occurred loading the projects. Please refresh the page to try again.',
+            message: "Your groups couldn't be loaded. Refresh the page to try again.",
             error: new Error('Network Error'),
             captureError: true,
           });
@@ -272,7 +329,7 @@ describe('TabView', () => {
     });
   });
 
-  describe('pagination', () => {
+  describe('keyset pagination', () => {
     const propsData = { tab: PERSONAL_TAB };
 
     describe('when there is one page of projects', () => {
@@ -287,7 +344,7 @@ describe('TabView', () => {
       });
 
       it('does not render pagination', () => {
-        expect(findPagination().exists()).toBe(false);
+        expect(findKeysetPagination().exists()).toBe(false);
       });
     });
 
@@ -301,6 +358,7 @@ describe('TabView', () => {
             projects: {
               nodes: personalProjectsGraphQlResponse.data.projects.nodes,
               pageInfo: pageInfoMultiplePages,
+              count: personalProjectsGraphQlResponse.data.projects.count,
             },
           },
         }),
@@ -315,16 +373,16 @@ describe('TabView', () => {
       });
 
       it('renders pagination', () => {
-        expect(findPagination().exists()).toBe(true);
+        expect(findKeysetPagination().exists()).toBe(true);
       });
 
       describe('when next button is clicked', () => {
         beforeEach(() => {
-          findPagination().vm.$emit('next', mockEndCursor);
+          findKeysetPagination().vm.$emit('next', mockEndCursor);
         });
 
-        it('emits `page-change` event', () => {
-          expect(wrapper.emitted('page-change')[0]).toEqual([
+        it('emits `keyset-page-change` event', () => {
+          expect(wrapper.emitted('keyset-page-change')[0]).toEqual([
             {
               endCursor: mockEndCursor,
               startCursor: null,
@@ -358,11 +416,11 @@ describe('TabView', () => {
 
       describe('when previous button is clicked', () => {
         beforeEach(() => {
-          findPagination().vm.$emit('prev', mockStartCursor);
+          findKeysetPagination().vm.$emit('prev', mockStartCursor);
         });
 
-        it('emits `page-change` event', () => {
-          expect(wrapper.emitted('page-change')[0]).toEqual([
+        it('emits `keyset-page-change` event', () => {
+          expect(wrapper.emitted('keyset-page-change')[0]).toEqual([
             {
               endCursor: null,
               startCursor: mockStartCursor,
@@ -391,6 +449,84 @@ describe('TabView', () => {
             programmingLanguageName: 'CoffeeScript',
             minAccessLevel: ACCESS_LEVEL_OWNER_STRING,
           });
+        });
+      });
+    });
+  });
+
+  describe('offset pagination', () => {
+    const propsData = { tab: MEMBER_TAB_GROUPS, paginationType: PAGINATION_TYPE_OFFSET };
+
+    describe('when there is one page', () => {
+      beforeEach(async () => {
+        mockAxios.onGet(endpoint).replyOnce(200, dashboardGroupsResponse, {
+          'x-per-page': 10,
+          'x-page': 1,
+          'x-total': 9,
+          'x-total-pages': 1,
+          'x-next-page': null,
+          'x-prev-page': null,
+        });
+        createComponent({
+          propsData,
+        });
+        await waitForPromises();
+      });
+
+      it('does not render pagination', () => {
+        expect(findOffsetPagination().exists()).toBe(false);
+      });
+    });
+
+    describe('when there are multiple pages', () => {
+      beforeEach(async () => {
+        mockAxios.onGet(endpoint).replyOnce(200, dashboardGroupsResponse, {
+          'x-per-page': 10,
+          'x-page': 2,
+          'x-total': 21,
+          'x-total-pages': 3,
+          'x-next-page': 3,
+          'x-prev-page': 1,
+        });
+
+        createComponent({
+          propsData,
+        });
+        await waitForPromises();
+      });
+
+      it('renders pagination', () => {
+        expect(findOffsetPagination().exists()).toBe(true);
+      });
+
+      describe('when next button is clicked', () => {
+        beforeEach(() => {
+          findOffsetPagination().vm.$emit('input', 3);
+        });
+
+        it('emits `offset-page-change` event', () => {
+          expect(wrapper.emitted('offset-page-change')[0]).toEqual([3]);
+        });
+      });
+
+      describe('when previous button is clicked', () => {
+        beforeEach(() => {
+          findOffsetPagination().vm.$emit('input', 1);
+        });
+
+        it('emits `offset-page-change` event', () => {
+          expect(wrapper.emitted('offset-page-change')[0]).toEqual([1]);
+        });
+      });
+
+      describe('when `page` prop is changed', () => {
+        beforeEach(async () => {
+          wrapper.setProps({ page: 3 });
+          await waitForPromises();
+        });
+
+        it('calls API with page argument', () => {
+          expect(mockAxios.history.get[1].params.page).toBe(3);
         });
       });
     });
@@ -429,6 +565,98 @@ describe('TabView', () => {
 
       it('does not render an empty state', () => {
         expect(findEmptyState().exists()).toBe(false);
+      });
+    });
+  });
+
+  describe('event tracking', () => {
+    let trackEventSpy;
+
+    beforeEach(async () => {
+      createComponent({
+        handlers: [
+          [PERSONAL_TAB.query, jest.fn().mockResolvedValue(personalProjectsGraphQlResponse)],
+        ],
+        propsData: { tab: PERSONAL_TAB },
+      });
+      await waitForPromises();
+      trackEventSpy = bindInternalEventDocument(wrapper.element).trackEventSpy;
+    });
+
+    describe('when visibility is hovered', () => {
+      beforeEach(() => {
+        findProjectsList().vm.$emit('hover-visibility', 'private');
+      });
+
+      it('tracks event', () => {
+        expect(trackEventSpy).toHaveBeenCalledWith(
+          defaultPropsData.eventTracking.hoverVisibility,
+          { label: 'private' },
+          undefined,
+        );
+      });
+    });
+
+    describe('when stat is hovered', () => {
+      beforeEach(() => {
+        findProjectsList().vm.$emit('hover-stat', 'stars-count');
+      });
+
+      it('tracks event', () => {
+        expect(trackEventSpy).toHaveBeenCalledWith(
+          defaultPropsData.eventTracking.hoverStat,
+          { label: 'stars-count' },
+          undefined,
+        );
+      });
+    });
+
+    describe('when stat is clicked', () => {
+      beforeEach(() => {
+        findProjectsList().vm.$emit('click-stat', 'stars-count');
+      });
+
+      it('tracks event', () => {
+        expect(trackEventSpy).toHaveBeenCalledWith(
+          defaultPropsData.eventTracking.clickStat,
+          { label: 'stars-count' },
+          undefined,
+        );
+      });
+    });
+
+    describe('when topic is clicked', () => {
+      beforeEach(() => {
+        findProjectsList().vm.$emit('click-topic');
+      });
+
+      it('tracks event', () => {
+        expect(trackEventSpy).toHaveBeenCalledWith(
+          defaultPropsData.eventTracking.clickTopic,
+          {},
+          undefined,
+        );
+      });
+    });
+
+    describe('when avatar is clicked', () => {
+      beforeEach(() => {
+        findProjectsList().vm.$emit('click-avatar');
+      });
+
+      it('tracks event', () => {
+        expect(trackEventSpy).toHaveBeenCalledWith(
+          defaultPropsData.eventTracking.clickItemAfterFilter,
+          {
+            label: PERSONAL_TAB.value,
+            property: JSON.stringify({
+              search: 'user provided value',
+              language: '8',
+              min_access_level: 50,
+            }),
+          },
+          undefined,
+        );
       });
     });
   });

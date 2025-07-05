@@ -39,7 +39,7 @@ class Admin::GroupsController < Admin::ApplicationController
 
   def create
     response = ::Groups::CreateService.new(current_user,
-      group_params.with_defaults(organization_id: Current.organization&.id)).execute
+      group_params.with_defaults(organization_id: Current.organization.id)).execute
     @group = response[:group]
 
     if response.success?
@@ -75,7 +75,7 @@ class Admin::GroupsController < Admin::ApplicationController
   private
 
   def groups
-    Group.with_statistics.with_route
+    Group.with_statistics.with_namespace_details.with_route
   end
 
   def group

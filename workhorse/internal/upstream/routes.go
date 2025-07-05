@@ -11,16 +11,19 @@ import (
 	"gitlab.com/gitlab-org/labkit/log"
 	"gitlab.com/gitlab-org/labkit/tracing"
 
+	"gitlab.com/gitlab-org/gitlab/workhorse/internal/ai_assist/duoworkflow"
 	apipkg "gitlab.com/gitlab-org/gitlab/workhorse/internal/api"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/artifacts"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/builds"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/channel"
+	"gitlab.com/gitlab-org/gitlab/workhorse/internal/circuitbreaker"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/config"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/dependencyproxy"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/git"
 	gobpkg "gitlab.com/gitlab-org/gitlab/workhorse/internal/gob"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/helper"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/imageresizer"
+	"gitlab.com/gitlab-org/gitlab/workhorse/internal/metrics"
 	proxypkg "gitlab.com/gitlab-org/gitlab/workhorse/internal/proxy"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/queueing"
 	"gitlab.com/gitlab-org/gitlab/workhorse/internal/secret"
@@ -122,6 +125,7 @@ func (u *upstream) observabilityMiddlewares(handler http.Handler, method string,
 	handler = log.AccessLogger(
 		handler,
 		log.WithAccessLogger(u.accessLogger),
+		log.WithTrustedProxies(u.TrustedCIDRsForXForwardedFor),
 		log.WithExtraFields(func(_ *http.Request) log.Fields {
 			return log.Fields{
 				"route":      metadata.regexpStr, // This field matches the `route` label in Prometheus metrics
@@ -136,6 +140,16 @@ func (u *upstream) observabilityMiddlewares(handler http.Handler, method string,
 	if opts != nil && opts.isGeoProxyRoute {
 		handler = instrumentGeoProxyRoute(handler, method, metadata) // Add Geo prometheus metrics
 	}
+
+	originalHandler := handler
+
+	// Wrap with metrics tracking (add the tracker to the context)
+	handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tracker := metrics.NewRequestTracker()
+		ctx := metrics.NewContext(r.Context(), tracker)
+		r = r.WithContext(ctx)
+		originalHandler.ServeHTTP(w, r)
+	})
 
 	return handler
 }
@@ -311,6 +325,11 @@ func configureRoutes(u *upstream) {
 			newRoute(projectPattern+`-/jobs/[0-9]+/proxy.ws\z`, "project_jobs_proxy_ws", railsBackend),
 			channel.Handler(api)),
 
+		// Duo Workflow websocket
+		u.wsRoute(
+			newRoute(apiPattern+`v4/ai/duo_workflows/ws\z`, "duo_workflow_ws", railsBackend),
+			duoworkflow.Handler(api)),
+
 		// Long poll and limit capacity given to jobs/request and builds/register.json
 		u.route("",
 			newRoute(apiPattern+`v4/jobs/request\z`, "api_jobs_request", railsBackend), ciAPILongPolling),
@@ -461,6 +480,8 @@ func configureRoutes(u *upstream) {
 		u.route("GET", newRoute(apiProjectPattern+`/observability/v1/services`, "api_observability_services", railsBackend), gob.WithProjectAuth("/read/services")),
 
 		// Explicitly proxy API requests
+		u.route("POST", newRoute(apiPattern+`v4/internal/allowed`, "api_internal_allowed", railsBackend), allowedProxy(proxy, dependencyProxyInjector, u)),
+
 		u.route("",
 			newRoute(apiPattern, "api", railsBackend), proxy),
 
@@ -599,4 +620,14 @@ func corsMiddleware(next http.Handler, allowOriginRegex *regexp.Regexp) http.Han
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func allowedProxy(proxy http.Handler, dependencyProxyInjector *dependencyproxy.Injector, u *upstream) http.Handler {
+	if u.Config.CircuitBreakerConfig.Enabled {
+		roundTripperCircuitBreaker := circuitbreaker.NewRoundTripper(u.RoundTripper, &u.CircuitBreakerConfig, u.Config.Redis)
+
+		return buildProxy(u.Backend, u.Version, roundTripperCircuitBreaker, u.Config, dependencyProxyInjector)
+	}
+
+	return proxy
 }

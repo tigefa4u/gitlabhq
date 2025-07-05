@@ -24,7 +24,6 @@ import RunnerPagination from '../components/runner_pagination.vue';
 import RunnerTypeTabs from '../components/runner_type_tabs.vue';
 import RunnerActionsCell from '../components/cells/runner_actions_cell.vue';
 import RunnerMembershipToggle from '../components/runner_membership_toggle.vue';
-import RunnerJobStatusBadge from '../components/runner_job_status_badge.vue';
 
 import { pausedTokenConfig } from '../components/search_tokens/paused_token_config';
 import { statusTokenConfig } from '../components/search_tokens/status_token_config';
@@ -35,7 +34,6 @@ import {
   PROJECT_TYPE,
   I18N_FETCH_ERROR,
   FILTER_CSS_CLASSES,
-  JOBS_ROUTE_PATH,
 } from '../constants';
 import { captureException } from '../sentry_utils';
 
@@ -55,7 +53,6 @@ export default {
     RunnerPagination,
     RunnerTypeTabs,
     RunnerActionsCell,
-    RunnerJobStatusBadge,
     RunnerDashboardLink: () =>
       import('ee_component/ci/runner/components/runner_dashboard_link.vue'),
   },
@@ -93,7 +90,10 @@ export default {
   apollo: {
     runners: {
       query: groupRunnersQuery,
-      fetchPolicy: fetchPolicies.NETWORK_ONLY,
+      // Runners can be updated by users directly in this list.
+      // A "cache and network" policy prevents outdated filtered
+      // results.
+      fetchPolicy: fetchPolicies.CACHE_AND_NETWORK,
       variables() {
         return this.variables;
       },
@@ -180,12 +180,6 @@ export default {
     editUrl(runner) {
       return this.runners.urlsById[runner.id]?.edit;
     },
-    jobsUrl(runner) {
-      const url = new URL(this.webUrl(runner));
-      url.hash = `#${JOBS_ROUTE_PATH}`;
-
-      return url.href;
-    },
     refetchCounts() {
       this.$apollo.getClient().refetchQueries({ include: [groupRunnersCountQuery] });
     },
@@ -223,7 +217,7 @@ export default {
           variant="confirm"
           data-testid="new-group-runner-button"
         >
-          {{ s__('Runners|New group runner') }}
+          {{ s__('Runners|Create group runner') }}
         </gl-button>
         <registration-dropdown
           :allow-registration-token="allowRegistrationToken"
@@ -264,13 +258,8 @@ export default {
         :checkable="true"
         :loading="runnersLoading"
         @deleted="onDeleted"
+        @toggledPaused="onToggledPaused"
       >
-        <template #runner-job-status-badge="{ runner }">
-          <runner-job-status-badge
-            :href="jobsUrl(runner)"
-            :job-status="runner.jobExecutionStatus"
-          />
-        </template>
         <template #runner-name="{ runner }">
           <gl-link :href="webUrl(runner)">
             <runner-name :runner="runner" />

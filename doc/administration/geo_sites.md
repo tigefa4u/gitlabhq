@@ -1,7 +1,8 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+gitlab_dedicated: no
 title: Geo sites Admin area
 ---
 
@@ -27,7 +28,7 @@ All Geo sites have the following settings:
 | Setting | Description |
 | --------| ----------- |
 | Primary | This marks a Geo site as **primary** site. There can be only one **primary** site. |
-| Name    | The unique identifier for the Geo site. It's highly recommended to use a physical location as a name. Good examples are "London Office" or "us-east-1". Avoid words like "primary", "secondary", "Geo", or "DR". This makes the failover process easier because the physical location does not change, but the Geo site role can. All nodes in a single Geo site use the same site name. Nodes use the `gitlab_rails['geo_node_name']` setting in `/etc/gitlab/gitlab.rb` to lookup their Geo site record in the PostgreSQL database. If `gitlab_rails['geo_node_name']` is not set, the node's `external_url` with trailing slash is used as fallback. The value of `Name` is case-sensitive, and most characters are allowed. |
+| Name    | The unique identifier for the Geo site. It's highly recommended to use a physical location as a name. Good examples are `London Office` or `us-east-1`. Avoid words like `primary`, `secondary`, `Geo`, or `DR`. This makes the failover process easier because the physical location does not change, but the Geo site role can. All nodes in a single Geo site use the same site name. Nodes use the `gitlab_rails['geo_node_name']` setting in `/etc/gitlab/gitlab.rb` to lookup their Geo site record in the PostgreSQL database. If `gitlab_rails['geo_node_name']` is not set, the node's `external_url` with trailing slash is used as fallback. The value of `Name` is case-sensitive, and most characters are allowed. |
 | URL     | The instance's user-facing URL. |
 
 The site you're browsing is indicated with a blue `Current` label, and
@@ -49,7 +50,7 @@ the **primary** node is listed first as `Primary site`.
 and always attempt to synchronize those changes as quickly as possible.
 
 Backfill is the act of populating the **secondary** site with repositories and files that
-existed *before* the **secondary** site was added to the database. Because there may be
+existed before the **secondary** site was added to the database. Because there may be
 extremely large numbers of repositories and files, it's not feasible to attempt to
 download them all at once; so, GitLab places an upper limit on the concurrency of
 these operations.
@@ -93,15 +94,3 @@ HTTPS, customize your Internal URL to point to a load balancer with TLS
 terminated at the load balancer.
 
 {{< /alert >}}
-
-<!-- ## Troubleshooting
-
-Include any troubleshooting steps that you can foresee. If you know beforehand what issues
-one might have when setting this up, or when something is changed, or on upgrading, it's
-important to describe those, too. Think of things that may go wrong and include them here.
-This is important to minimize requests for support, and to avoid doc comments with
-questions that you know someone might ask.
-
-Each scenario can be a third-level heading, for example `### Getting error message X`.
-If you have none to add when creating a doc, leave this section in place
-but commented out to help encourage others to add to it in the future. -->

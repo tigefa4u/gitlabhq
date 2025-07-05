@@ -27,19 +27,18 @@ export default {
       :project-id="item.id"
       :project-name="item.title"
       :project-avatar-url="item.avatar"
-      :size="32"
+      :size="16"
       aria-hidden="true"
     />
 
-    <div class="gl-grow gl-truncate">
-      {{ item.title }}
-      <div
-        v-if="item.subtitle"
-        data-testid="subtitle"
-        class="gl-truncate gl-text-sm gl-text-subtle"
-      >
-        {{ item.subtitle }}
-      </div>
+    <div class="gl-flex gl-flex-row gl-items-center gl-gap-2 gl-truncate">
+      <span class="gl-truncate"> {{ item.title }} </span>
+      <template v-if="item.subtitle">
+        <span class="gl-text-subtle" aria-hidden="true">·</span>
+        <span data-testid="subtitle" class="gl-truncate gl-text-sm gl-text-subtle">
+          {{ item.subtitle }}
+        </span>
+      </template>
     </div>
   </search-result-focus-layover>
 </template>

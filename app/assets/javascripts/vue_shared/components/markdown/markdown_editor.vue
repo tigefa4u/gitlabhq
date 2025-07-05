@@ -1,5 +1,5 @@
 <script>
-import { GlAlert } from '@gitlab/ui';
+import { GlAlert, GlOutsideDirective as Outside } from '@gitlab/ui';
 import Autosize from 'autosize';
 import MarkdownComposer from 'ee_component/vue_shared/components/markdown/composer.vue';
 import { __ } from '~/locale';
@@ -43,6 +43,7 @@ export default {
         /* webpackChunkName: 'content_editor' */ '~/content_editor/components/content_editor.vue'
       ),
   },
+  directives: { Outside },
   inject: { canUseComposer: { default: false } },
   props: {
     value: {
@@ -142,6 +143,11 @@ export default {
       required: false,
       default: () => [],
     },
+    editorAiActions: {
+      type: Array,
+      required: false,
+      default: () => [],
+    },
   },
   data() {
     let editingMode;
@@ -193,7 +199,9 @@ export default {
   mounted() {
     this.autofocusTextarea();
 
-    this.$emit('input', this.markdown);
+    // Second argument (`true`) is passed to identify
+    // that the input event was emitted on component mount.
+    this.$emit('input', this.markdown, true);
     this.saveDraft();
 
     this.setFacade?.({
@@ -347,6 +355,11 @@ export default {
       }
       this.$emit('keydown', event);
     },
+    onClickOutside() {
+      if (!this.canUseComposer) return;
+
+      eventHub.$emit('CLOSE_COMPOSER');
+    },
   },
   EDITING_MODE_KEY,
   i18n: {
@@ -361,7 +374,7 @@ export default {
 };
 </script>
 <template>
-  <div class="md-area-wrapper gl-rounded-lg !gl-px-0">
+  <div class="js-editor md-area-wrapper gl-rounded-lg !gl-px-0">
     <local-storage-sync
       v-if="!isDefaultEditorEnabled"
       :value="editingMode"
@@ -391,6 +404,7 @@ export default {
       :new-comment-template-paths="newCommentTemplatePaths"
       :can-attach-file="!disableAttachments"
       :can-suggest="codeSuggestionsConfig.canSuggest"
+      :editor-ai-actions="editorAiActions"
       :line="codeSuggestionsConfig.line"
       :lines="codeSuggestionsConfig.lines"
       :show-suggest-popover="codeSuggestionsConfig.showPopover"
@@ -409,13 +423,17 @@ export default {
       <template #header-buttons><slot name="header-buttons"></slot></template>
       <template #toolbar><slot name="toolbar"></slot></template>
       <template #textarea>
-        <component :is="composerComponent" :markdown="canUseComposer ? markdown : null">
+        <component
+          :is="composerComponent"
+          v-outside="onClickOutside"
+          :markdown="canUseComposer ? markdown : null"
+        >
           <textarea
             v-bind="formFieldProps"
             ref="textarea"
             :value="markdown"
             class="note-textarea js-gfm-input markdown-area"
-            :class="[{ 'gl-relative gl-z-3 !gl-pl-7': canUseComposer }, formFieldProps.class || '']"
+            :class="[{ 'gl-relative gl-z-3': canUseComposer }, formFieldProps.class || '']"
             dir="auto"
             :data-can-suggest="codeSuggestionsConfig.canSuggest"
             :data-noteable-type="noteableType"
@@ -424,6 +442,8 @@ export default {
             :disabled="disabled"
             @input="updateMarkdownFromMarkdownField"
             @keydown="$emit('keydown', $event)"
+            @focus="$emit('focus')"
+            @blur="$emit('blur')"
           ></textarea>
         </component>
       </template>
@@ -450,6 +470,8 @@ export default {
         @change="updateMarkdownFromContentEditor"
         @keydown="onKeydown"
         @enableMarkdownEditor="onEditingModeChange('markdownField')"
+        @focus="$emit('focus')"
+        @blur="$emit('blur')"
       >
         <template #header-buttons><slot name="header-buttons"></slot></template>
         <template #toolbar><slot name="toolbar"></slot></template>

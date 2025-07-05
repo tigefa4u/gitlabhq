@@ -5,7 +5,6 @@ module Projects
     include ValidatesClassificationLabel
 
     ImportSourceDisabledError = Class.new(StandardError)
-    INTERNAL_IMPORT_SOURCES = %w[gitlab_custom_project_template gitlab_project_migration].freeze
     README_FILE = 'README.md'
 
     def initialize(user, params)
@@ -13,6 +12,7 @@ module Projects
       @params = params.dup
       @skip_wiki = @params.delete(:skip_wiki)
       @initialize_with_sast = Gitlab::Utils.to_boolean(@params.delete(:initialize_with_sast))
+      @initialize_with_secret_detection = Gitlab::Utils.to_boolean(@params.delete(:initialize_with_secret_detection))
       @initialize_with_readme = Gitlab::Utils.to_boolean(@params.delete(:initialize_with_readme))
       @import_data = @params.delete(:import_data)
       @relations_block = @params.delete(:relations_block)
@@ -30,6 +30,7 @@ module Projects
       params[:snippets_enabled] = params[:snippets_access_level] if params[:snippets_access_level]
       params[:merge_requests_enabled] = params[:merge_requests_access_level] if params[:merge_requests_access_level]
       params[:issues_enabled] = params[:issues_access_level] if params[:issues_access_level]
+      params[:protect_merge_request_pipelines] = true
 
       if create_from_template?
         return ::Projects::CreateFromTemplateService.new(current_user, params).execute
@@ -112,7 +113,11 @@ module Projects
 
     def validate_import_permissions
       return unless @project.import?
-      return if @project.gitlab_project_import?
+
+      # Skip for project template importers, as their permission model is different from other importers
+      # See: https://gitlab.com/gitlab-org/gitlab/-/issues/414046#note_1945586449.
+      return if Gitlab::ImportSources.template?(@project.import_type)
+
       return if current_user.can?(:import_projects, parent_namespace)
 
       @project.errors.add(:user, 'is not allowed to import projects')
@@ -146,6 +151,7 @@ module Projects
 
       create_readme if @initialize_with_readme
       create_sast_commit if @initialize_with_sast
+      create_secret_detection_commit if @initialize_with_secret_detection
 
       publish_event
     end
@@ -210,6 +216,13 @@ module Projects
 
     def create_sast_commit
       ::Security::CiConfiguration::SastCreateService.new(@project, current_user, { initialize_with_sast: true }, commit_on_default: true).execute
+    end
+
+    def create_secret_detection_commit
+      params = { initialize_with_secret_detection: true }
+      params[:sast_also_enabled] = true if @initialize_with_sast
+
+      ::Security::CiConfiguration::SecretDetectionCreateService.new(@project, current_user, params, commit_on_default: true).execute
     end
 
     def execute_hooks
@@ -314,10 +327,12 @@ module Projects
 
       import_type = @params[:import_type].to_s
 
-      return if INTERNAL_IMPORT_SOURCES.include?(import_type)
+      # Skip for projects created through the Direct Transfer importer.
+      return if import_type == BulkImports::Projects::Transformers::ProjectAttributesTransformer::PROJECT_IMPORT_TYPE
 
-      # Skip validation when creating project from a built in template
-      return if @import_export_upload.present? && import_type == 'gitlab_project'
+      # Skip for project template importers, as their feature availability is not
+      # controlled by the `import_sources` application setting.
+      return if Gitlab::ImportSources.template?(import_type)
 
       unless ::Gitlab::CurrentSettings.import_sources&.include?(import_type)
         raise ImportSourceDisabledError, "#{import_type} import source is disabled"

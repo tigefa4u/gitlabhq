@@ -35,6 +35,11 @@ export default {
       default: undefined,
       required: false,
     },
+    groupBlobsListItems: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
   },
   data() {
     return {
@@ -135,7 +140,7 @@ export default {
       :style="floatingWrapperStyles"
     >
       <panel-resizer
-        class="diff-tree-list-resizer"
+        class="diff-tree-list-resizer gl-hidden lg:gl-block"
         :start-size="treeWidth"
         :min-size="$options.minTreeWidth"
         :max-size="$options.maxTreeWidth"
@@ -149,7 +154,9 @@ export default {
         :loaded-files="loadedFiles"
         :total-files-count="totalFilesCount"
         :row-height="rowHeight"
+        :group-blobs-list-items="groupBlobsListItems"
         @clickFile="onFileClick"
+        @toggleFolder="$emit('toggleFolder', $event)"
       />
     </div>
   </file-browser-height>

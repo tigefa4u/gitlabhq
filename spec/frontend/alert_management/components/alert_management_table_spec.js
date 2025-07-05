@@ -7,9 +7,9 @@ import {
   GlLink,
 } from '@gitlab/ui';
 import { mount } from '@vue/test-utils';
-import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { nextTick } from 'vue';
+import axios from '~/lib/utils/axios_utils';
 import { createMockDirective, getBinding } from 'helpers/vue_mock_directive';
 import { extendedWrapper } from 'helpers/vue_test_utils_helper';
 import mockAlerts from 'jest/vue_shared/alert_details/mocks/alerts.json';
@@ -23,6 +23,7 @@ jest.mock('~/lib/utils/url_utility', () => ({
   visitUrl: jest.fn().mockName('visitUrlMock'),
   joinPaths: jest.requireActual('~/lib/utils/url_utility').joinPaths,
   setUrlFragment: jest.requireActual('~/lib/utils/url_utility').setUrlFragment,
+  isAbsolute: jest.requireActual('~/lib/utils/url_utility').isAbsolute,
 }));
 
 describe('AlertManagementTable', () => {

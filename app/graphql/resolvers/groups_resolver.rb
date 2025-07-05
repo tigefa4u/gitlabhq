@@ -46,6 +46,17 @@ module Resolvers
         Unauthenticated requests always return all public groups. The `owned_only` argument takes precedence.
       DESC
 
+    argument :marked_for_deletion_on, ::Types::DateType,
+      required: false,
+      description: 'Date when the group was marked for deletion.'
+
+    argument :active, GraphQL::Types::Boolean,
+      required: false,
+      default_value: nil,
+      description: 'When `nil` (default value), returns all groups. ' \
+        'When `true`, returns only groups that are not pending deletion. ' \
+        'When `false`, only returns groups that are pending deletion.'
+
     private
 
     def resolve_groups(parent_path: nil, **args)

@@ -27,8 +27,8 @@ class ContainerRepository < ApplicationRecord
   validates :failed_deletion_count, presence: true
   validates :failed_deletion_count, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: MAX_DELETION_FAILURES }
 
-  enum status: { delete_scheduled: 0, delete_failed: 1, delete_ongoing: 2 }
-  enum expiration_policy_cleanup_status: { cleanup_unscheduled: 0, cleanup_scheduled: 1, cleanup_unfinished: 2, cleanup_ongoing: 3 }
+  enum :status, { delete_scheduled: 0, delete_failed: 1, delete_ongoing: 2 }
+  enum :expiration_policy_cleanup_status, { cleanup_unscheduled: 0, cleanup_scheduled: 1, cleanup_unfinished: 2, cleanup_ongoing: 3 }
 
   delegate :client, :gitlab_api_client, to: :registry
 
@@ -309,16 +309,18 @@ class ContainerRepository < ApplicationRecord
     self.find_by(project: path.repository_project, name: path.repository_name)
   end
 
-  def has_protected_tag_rules_for_delete?(user)
-    return true if user.nil?
+  def protected_from_delete_by_tag_rules?(user)
+    return true unless user
+
+    # Admins are not restricted by mutable tag protection rules
     return false if user.can_admin_all_resources?
 
+    # Check for mutable tag protection rules
     return false unless project.has_container_registry_protected_tag_rules?(
       action: 'delete',
       access_level: project.team.max_member_access(user.id)
     )
 
-    # This is an API call so we put it last
     return false unless has_tags?
 
     true

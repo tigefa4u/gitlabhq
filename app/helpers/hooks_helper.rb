@@ -3,6 +3,9 @@
 module HooksHelper
   def webhook_form_data(hook)
     {
+      name: hook.name,
+      description: hook.description,
+      secret_token: hook.masked_token, # always use masked_token to avoid exposing secret_token to frontend
       url: hook.url,
       url_variables: Gitlab::Json.dump(hook.url_variables.keys.map { { key: _1 } }),
       custom_headers: Gitlab::Json.dump(hook.custom_headers.keys.map { { key: _1, value: WebHook::SECRET_MASK } })

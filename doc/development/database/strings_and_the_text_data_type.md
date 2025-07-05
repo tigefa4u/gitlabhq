@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Strings and the Text data type
 ---
 
@@ -10,10 +10,10 @@ When adding new columns to store strings or other textual information:
 1. We always use the `text` data type instead of the `string` data type.
 1. `text` columns should always have a limit set, either by using the `create_table` with
    the `#text ... limit: 100` helper (see below) when creating a table, or by using the `add_text_limit`
-   when altering an existing table. Without a limit, the longest possible [character string is about 1 GB](https://www.postgresql.org/docs/current/datatype-character.html).
+   when altering an existing table. Without a limit, the longest possible [character string is about 1 GB](https://www.postgresql.org/docs/16/datatype-character.html).
 
 The standard Rails `text` column type cannot be defined with a limit, but we extend `create_table` to
-add a `limit: 255` option. Outside of `create_table`, `add_text_limit` can be used to add a [check constraint](https://www.postgresql.org/docs/11/ddl-constraints.html)
+add a `limit: 255` option. Outside of `create_table`, `add_text_limit` can be used to add a [check constraint](https://www.postgresql.org/docs/16/ddl-constraints.html)
 to an already existing column.
 
 ## Background information
@@ -187,7 +187,7 @@ to update the `title_html` with a title that has more than 1024 characters, the 
 a database error.
 
 Adding or removing a constraint to an existing attribute requires that any application changes are
-deployed _first_,
+deployed first,
 otherwise servers still in the old version of the application
 [may try to update the attribute with invalid values](../multi_version_compatibility.md#ci-artifact-uploads-were-failing).
 For these reasons, `add_text_limit` should run in a post-deployment migration.

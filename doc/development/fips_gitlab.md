@@ -1,7 +1,7 @@
 ---
 stage: Create
 group: Source Code
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: FIPS 140-2 and 140-3
 ---
 
@@ -9,7 +9,7 @@ FIPS is short for "Federal Information Processing Standard", which defines certa
 module is set of hardware, software, and/or firmware that implements approved security functions (including cryptographic algorithms and key generation)
 and is contained within a cryptographic boundary.
 
-At GitLab, a cryptographic module almost always referrs to an embedded software component of another product or package release and is specific to a particular
+At GitLab, a cryptographic module almost always refers to an embedded software component of another product or package release and is specific to a particular
 version of a binary. For example, a particular version of Ubuntu Kernel Crypto API cryptographic module or the OpenSSL project's FIPS Provider.
 
 A module is validated after it completes testing by a NIST-certified laboratory and has an active certificate listed in the
@@ -91,7 +91,7 @@ module selection per CSP10 is as follows:
 Third party assessment organizations (3PAOs) validate the use of a FIPS-validated CM by:
 
 1. Checking the certificate number.
-1. Validating that the CM is configured in an approved mode and only uses algorithms listed as approved in the CM’s security policy.
+1. Validating that the CM is configured in an approved mode and only uses algorithms listed as approved in the CM's security policy.
 
 GitLab also does internal continuous monitoring and, in the past, has contracted independent auditors to audit our software against the FIPS 140 standard.
 Results are available in the Trust Center.
@@ -121,12 +121,13 @@ listed here that also do not work properly in FIPS mode:
 
 Additionally, these package repositories are disabled in FIPS mode:
 
-- [Conan package repository](../user/packages/conan_repository/_index.md).
+- [Conan 1 package repository](../user/packages/conan_1_repository/_index.md).
+- [Conan 2 package repository](../user/packages/conan_2_repository/_index.md).
 - [Debian package repository](../user/packages/debian_repository/_index.md).
 
 ### Development guidelines
 
-Please refer to the information above and the GitLab [Cryptography Standard](https://handbook.gitlab.com/handbook/security/cryptographic-standard/). Reach out
+For more information, refer to the information above and see the [GitLab Cryptography Standard](https://handbook.gitlab.com/handbook/security/cryptographic-standard/). Reach out
 to `#sec-assurance` with questions or open an MR if something needs to be clarified.
 
 Here are some guidelines for developing GitLab FIPS-approved software:
@@ -398,9 +399,9 @@ for builds of the Omnibus GitLab which are built with FIPS compliance.
 These GitLab builds are compiled to use the system OpenSSL, instead of
 the Omnibus-embedded version of OpenSSL. These packages are built for:
 
-- RHEL 8 (and compatible)
-- AmazonLinux 2
-- Ubuntu
+- RHEL 8 and 9 (and compatible)
+- AmazonLinux 2 and 2023
+- Ubuntu 20.04
 
 These are [consumed by the GitLab Environment Toolkit](#install-gitlab-with-fips-compliance) (GET).
 
@@ -426,7 +427,7 @@ system for which FIPS Linux packages are available.
 ### Nightly Omnibus FIPS builds
 
 The Distribution team has created [nightly FIPS Omnibus builds](https://packages.gitlab.com/gitlab/nightly-fips-builds),
-which can be used for *testing* purposes. These should never be used for production environments.
+which can be used for testing purposes. These should never be used for production environments.
 
 ## Runner
 
@@ -560,7 +561,7 @@ the `webservice` container has the following tags:
 
 #### Base images for FIPS Builds
 
-- Current: [UBI 9.5 Micro](https://gitlab.com/gitlab-org/build/CNG/-/blob/master/ci_files/variables.yml?ref_type=heads#L4)
+- Current: [UBI 9.6 Micro](https://gitlab.com/gitlab-org/build/CNG/-/blob/master/ci_files/variables.yml?ref_type=heads#L4)
 
 ### Testing merge requests with a FIPS pipeline
 

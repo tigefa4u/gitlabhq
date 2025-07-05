@@ -15,7 +15,7 @@ title: Dependency proxy for packages
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/3610) in GitLab 16.6 [with a flag](../../../../administration/feature_flags.md) named `packages_dependency_proxy_maven`. Disabled by default.
+- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/3610) in GitLab 16.6 [with a flag](../../../../administration/feature_flags/_index.md) named `packages_dependency_proxy_maven`. Disabled by default.
 - [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/415218) in GitLab 16.8. Feature flag `packages_dependency_proxy_maven` removed.
 
 {{< /history >}}
@@ -26,13 +26,11 @@ The dependency proxy is in [beta](../../../../policy/development_stages_support.
 
 {{< /alert >}}
 
-The GitLab dependency proxy for packages is a local proxy for frequently pulled packages.
-It is implemented as a pull-through cache that works at the project level.
+The GitLab dependency proxy is a local proxy server that downloads and stores copies of packages.
 
-Packages are pulled from the upstream package registry and automatically published to the
-project's package registry. Subsequent identical requests are fulfilled with the project's
-package registry. You can use the dependency proxy for packages to reduce unnecessary traffic
-to the upstream registry.
+The first time you request a package, GitLab fetches it from the upstream package registry and saves a copy in your project. When you request the same package again, GitLab serves the saved copy in the project's package registry.
+
+This approach reduces the number of downloads from external sources and makes package builds faster.
 
 ## Enable the dependency proxy
 
@@ -44,7 +42,7 @@ and that users who pull from the cache have the necessary authentication:
    - The [`dependency_proxy` feature](../../../../administration/packages/dependency_proxy.md#turn-on-the-dependency-proxy). Enabled by default.
 1. In the project settings, if the [`package` feature](../_index.md#turn-off-the-package-registry)
    is disabled, enable it. It is enabled by default.
-1. [Add an authentication method](#configure-a-client). The dependency proxy supports the same [authentication methods](../_index.md#authenticate-with-the-registry) as the package registry:
+1. [Add an authentication method](#configure-a-client). The dependency proxy supports the same [authentication methods](../supported_functionality.md#authenticate-with-the-registry) as the package registry:
    - [Personal access token](../../../profile/personal_access_tokens.md)
    - [Project deploy token](../../../project/deploy_tokens/_index.md)
    - [Group deploy token](../../../project/deploy_tokens/_index.md)

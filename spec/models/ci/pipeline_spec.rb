@@ -30,7 +30,6 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
   it { is_expected.to belong_to(:trigger).class_name('Ci::Trigger').inverse_of(:pipelines) }
 
   it { is_expected.to have_many(:statuses) }
-  it { is_expected.to have_many(:trigger_requests).with_foreign_key(:commit_id).inverse_of(:pipeline) }
   it { is_expected.to have_many(:variables) }
   it { is_expected.to have_many(:builds) }
   it { is_expected.to have_many(:build_execution_configs).class_name('Ci::BuildExecutionConfig').inverse_of(:pipeline) }
@@ -78,6 +77,7 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
   it { is_expected.to have_one(:source_job) }
   it { is_expected.to have_one(:pipeline_config) }
   it { is_expected.to have_one(:pipeline_metadata) }
+  it { is_expected.to have_one(:workload) }
 
   it do
     is_expected.to have_many(:daily_build_group_report_results).class_name('Ci::DailyBuildGroupReportResult')
@@ -1572,19 +1572,121 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
   end
 
   describe '#protected_ref?' do
-    let(:pipeline) { build(:ci_empty_pipeline, :created) }
+    subject { pipeline.protected_ref? }
 
-    it 'delegates method to project' do
-      expect(pipeline).not_to be_protected_ref
+    context 'when pipeline is for a branch' do
+      let(:pipeline) { create(:ci_pipeline, tag: false, project: project) }
+
+      it 'checks if the branch ref is protected' do
+        expect(project).to receive(:protected_for?).with("refs/heads/#{pipeline.ref}").and_return(true)
+
+        is_expected.to be_truthy
+      end
     end
-  end
 
-  describe '#legacy_trigger' do
-    let(:trigger_request) { build(:ci_trigger_request) }
-    let(:pipeline) { build(:ci_empty_pipeline, :created, trigger_requests: [trigger_request]) }
+    context 'when pipeline is for a tag' do
+      let(:pipeline) { create(:ci_pipeline, tag: true, project: project) }
 
-    it 'returns first trigger request' do
-      expect(pipeline.legacy_trigger).to eq trigger_request
+      it 'checks if the tag ref is protected' do
+        expect(project).to receive(:protected_for?).with("refs/tags/#{pipeline.ref}").and_return(true)
+
+        is_expected.to be_truthy
+      end
+    end
+
+    context 'when pipeline is for a merge request' do
+      let(:pipeline) { create(:ci_pipeline, source: :merge_request_event, merge_request: merge_request, project: project, user: project.owner) }
+
+      let_it_be(:merge_request) do
+        create(:merge_request, source_project: project, source_branch: 'feature', target_project: project, target_branch: 'master')
+      end
+
+      context 'when protect_merge_request_pipelines setting is enabled' do
+        before do
+          project.project_setting.update!(protect_merge_request_pipelines: true)
+        end
+
+        it 'returns true if both the source branch and target branch is protected' do
+          create(:protected_branch, name: 'feature', project: project)
+          create(:protected_branch, name: 'master', project: project)
+
+          expect(project).to receive(:protected_for?).with(merge_request.target_branch).and_call_original
+          expect(project).to receive(:protected_for?).with(merge_request.source_branch).and_call_original
+
+          is_expected.to be_truthy
+        end
+
+        it 'returns false if only the source branch ref is protected' do
+          create(:protected_branch, name: 'feature', project: project)
+
+          is_expected.to be_falsey
+        end
+
+        it 'returns false if only the target branch ref is protected' do
+          create(:protected_branch, name: 'master', project: project)
+
+          is_expected.to be_falsey
+        end
+
+        it 'returns false if the user who create the pipeline cannot update the source branch' do
+          expect_next_instance_of(Gitlab::UserAccess) do |instance|
+            expect(instance).to receive(:can_update_branch?).with(merge_request.source_branch).and_return(false)
+          end
+
+          is_expected.to be_falsey
+        end
+
+        it 'returns false if the user who create the pipeline cannot update the target branch' do
+          expect_next_instance_of(Gitlab::UserAccess) do |instance|
+            allow(instance).to receive(:can_update_branch?).with(merge_request.source_branch).and_call_original
+            expect(instance).to receive(:can_update_branch?).with(merge_request.target_branch).and_return(false)
+          end
+
+          is_expected.to be_falsey
+        end
+
+        context 'when the merge request is from a forked project' do
+          let_it_be(:forked_project) { fork_project(project, nil, repository: true) }
+          let_it_be(:merge_request) do
+            create(:merge_request, source_project: forked_project, source_branch: 'feature', target_project: project, target_branch: 'master')
+          end
+
+          it 'returns false even if both the source and target branches are protected' do
+            allow(project).to receive(:protected_for?).with(merge_request.source_branch).and_return(true)
+            allow(project).to receive(:protected_for?).with(merge_request.target_branch).and_return(true)
+
+            is_expected.to be_falsey
+          end
+        end
+
+        context 'when ref is ambiguous' do
+          let(:merge_request) do
+            create(:merge_request, source_branch: 'ambiguous', source_project: project, target_branch: 'master', target_project: project)
+          end
+
+          before do
+            repository = project.repository
+            repository.add_branch(user, 'ambiguous', 'feature')
+            repository.add_tag(user, 'ambiguous', 'master')
+          end
+
+          it 'returns false if source or target branch ref is ambiguous' do
+            is_expected.to be_falsey
+          end
+        end
+      end
+
+      context 'when protect_merge_request_pipelines setting is disabled' do
+        before do
+          project.project_setting.update!(protect_merge_request_pipelines: false)
+        end
+
+        it 'returns false even if both the source branch ref and target branch ref is protected' do
+          expect(project).not_to receive(:protected_for?)
+
+          is_expected.to be_falsey
+        end
+      end
     end
   end
 
@@ -3026,6 +3128,59 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
           expect(latest_successful_for_refs).to be_empty
         end
       end
+    end
+
+    describe '.latest_pipelines_for_ref_by_statuses' do
+      let_it_be(:ref1_success_old) { create(:ci_empty_pipeline, status: :success, ref: 'first_ref') }
+      let_it_be(:ref1_success) { create(:ci_empty_pipeline, status: :success, ref: 'first_ref') }
+      let_it_be(:ref1_failed) { create(:ci_empty_pipeline, status: :failed, ref: 'first_ref') }
+      let_it_be(:ref1_blocked) { create(:ci_empty_pipeline, status: :manual, ref: 'first_ref') }
+      let_it_be(:ref2_success) { create(:ci_empty_pipeline, status: :success, ref: 'second_ref') }
+
+      context 'when only a ref is passed in' do
+        subject(:latest_pipelines_for_ref_by_statuses) { described_class.latest_pipelines_for_ref_by_statuses(ref) }
+
+        let(:ref) { 'first_ref' }
+
+        it 'returns latest pipelines for all statuses by default' do
+          expect(latest_pipelines_for_ref_by_statuses).to match_array([ref1_success, ref1_failed, ref1_blocked])
+        end
+      end
+
+      context 'when a ref and status are passed in' do
+        subject(:latest_pipelines_for_ref_by_statuses) { described_class.latest_pipelines_for_ref_by_statuses(ref, statuses) }
+
+        let(:ref) { 'first_ref' }
+        let(:statuses) { %w[success failed] }
+
+        it 'returns latest pipelines for ref and statuses' do
+          expect(latest_pipelines_for_ref_by_statuses).to match_array([ref1_success, ref1_failed])
+        end
+      end
+    end
+  end
+
+  describe '.newest_first' do
+    let_it_be(:merged_commit_pipeline) do
+      create(
+        :ci_pipeline,
+        status: 'success',
+        ref: 'master',
+        sha: '123',
+        source: :push
+      )
+    end
+
+    before do
+      stub_feature_flags(source_filter_pipelines: true)
+    end
+
+    it 'returns the newest pipeline by source' do
+      expect(described_class.newest_first(source: :push)).to contain_exactly(merged_commit_pipeline)
+    end
+
+    it 'returns empty when a specified source has no pipelines' do
+      expect(described_class.newest_first(source: :schedule)).to be_empty
     end
   end
 
@@ -4582,21 +4737,7 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
       context 'when pipeline status is running' do
         let(:pipeline) { create(:ci_pipeline, :running) }
 
-        context 'with mr_show_reports_immediately flag enabled' do
-          before do
-            stub_feature_flags(mr_show_reports_immediately: project)
-          end
-
-          it { expect(subject).to be_truthy }
-        end
-
-        context 'with mr_show_reports_immediately flag disabled' do
-          before do
-            stub_feature_flags(mr_show_reports_immediately: false)
-          end
-
-          it { expect(subject).to be_falsey }
-        end
+        it { expect(subject).to be_falsey }
       end
 
       context 'when pipeline status is success' do
@@ -4627,6 +4768,58 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
     end
   end
 
+  describe '#complete_and_has_self_or_descendant_reports?' do
+    subject(:complete_and_has_self_or_descendant_reports?) do
+      pipeline.complete_and_has_self_or_descendant_reports?(Ci::JobArtifact.of_report_type(:test))
+    end
+
+    context 'when the pipeline has reports' do
+      let_it_be_with_reload(:pipeline) { create(:ci_pipeline, :with_test_reports, :success) }
+
+      it { is_expected.to be_truthy }
+
+      context 'when the pipeline is not complete' do
+        before do
+          pipeline.update!(status: 'running')
+        end
+
+        it { is_expected.to be_falsey }
+      end
+
+      context 'when the child pipeline has reports' do
+        let_it_be(:child_pipeline) { create(:ci_pipeline, :with_test_reports, :success, child_of: pipeline) }
+
+        it { is_expected.to be_truthy }
+      end
+
+      context 'with a nested child pipeline that has reports' do
+        let_it_be(:child_pipeline) { create(:ci_pipeline, :success, child_of: pipeline) }
+        let_it_be(:nested_child_pipeline) { create(:ci_pipeline, :with_test_reports, :success, child_of: child_pipeline) }
+
+        it { is_expected.to be_truthy }
+      end
+    end
+
+    context 'when the pipeline does not have reports' do
+      let_it_be_with_reload(:pipeline) { create(:ci_pipeline, :success) }
+
+      it { is_expected.to be_falsey }
+
+      context 'when the child pipeline has reports' do
+        let_it_be(:child_pipeline) { create(:ci_pipeline, :with_test_reports, :success, child_of: pipeline) }
+
+        it { is_expected.to be_truthy }
+      end
+
+      context 'with a nested child pipeline that has reports' do
+        let_it_be(:child_pipeline) { create(:ci_pipeline, :success, child_of: pipeline) }
+        let_it_be(:nested_child_pipeline) { create(:ci_pipeline, :with_test_reports, :success, child_of: child_pipeline) }
+
+        it { is_expected.to be_truthy }
+      end
+    end
+  end
+
   describe '#complete_or_manual_and_has_reports?' do
     subject(:complete_or_manual_and_has_reports?) do
       pipeline.complete_or_manual_and_has_reports?(
@@ -4640,38 +4833,24 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
         create(:ci_build, :test_reports, pipeline: pipeline)
       end
 
-      context 'with mr_show_reports_immediately flag enabled' do
-        before do
-          stub_feature_flags(mr_show_reports_immediately: project)
-        end
+      it { expect(subject).to be_falsey }
 
-        it { expect(subject).to be_truthy }
+      context 'when pipeline status is running' do
+        let(:pipeline) { create(:ci_pipeline, :running) }
+
+        it { is_expected.to be_falsey }
       end
 
-      context 'with mr_show_reports_immediately flag disabled' do
-        before do
-          stub_feature_flags(mr_show_reports_immediately: false)
-        end
+      context 'when pipeline status is success' do
+        let(:pipeline) { create(:ci_pipeline, :success) }
 
-        it { expect(subject).to be_falsey }
+        it { is_expected.to be_truthy }
+      end
 
-        context 'when pipeline status is running' do
-          let(:pipeline) { create(:ci_pipeline, :running) }
+      context 'when pipeline status is manual' do
+        let(:pipeline) { create(:ci_pipeline, :manual) }
 
-          it { is_expected.to be_falsey }
-        end
-
-        context 'when pipeline status is success' do
-          let(:pipeline) { create(:ci_pipeline, :success) }
-
-          it { is_expected.to be_truthy }
-        end
-
-        context 'when pipeline status is manual' do
-          let(:pipeline) { create(:ci_pipeline, :manual) }
-
-          it { is_expected.to be_truthy }
-        end
+        it { is_expected.to be_truthy }
       end
     end
 
@@ -4761,21 +4940,7 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
       context 'when pipeline status is running' do
         let(:pipeline) { create(:ci_pipeline, :running) }
 
-        context 'with mr_show_reports_immediately flag enabled' do
-          before do
-            stub_feature_flags(mr_show_reports_immediately: project)
-          end
-
-          it { expect(subject).to be_truthy }
-        end
-
-        context 'with mr_show_reports_immediately flag disabled' do
-          before do
-            stub_feature_flags(mr_show_reports_immediately: false)
-          end
-
-          it { expect(subject).to be_falsey }
-        end
+        it { expect(subject).to be_falsey }
       end
 
       context 'when pipeline status is success' do
@@ -4792,9 +4957,23 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
         create(:ci_build, :artifacts, pipeline: pipeline)
       end
 
-      let(:pipeline) { create(:ci_pipeline, :success) }
+      let_it_be(:pipeline) { create(:ci_pipeline, :success) }
 
       it { expect(subject).to be_falsey }
+
+      context 'when the child pipeline has code quality reports' do
+        let_it_be(:child_pipeline) { create(:ci_pipeline, :with_codequality_report, child_of: pipeline) }
+
+        it { expect(subject).to be_truthy }
+
+        context 'with FF show_child_reports_in_mr_page disabled' do
+          before do
+            stub_feature_flags(show_child_reports_in_mr_page: false)
+          end
+
+          it { expect(subject).to be_falsey }
+        end
+      end
     end
   end
 
@@ -4962,6 +5141,64 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
     context 'when pipeline does not have any builds with codequality reports' do
       it 'returns codequality reports without degradations' do
         expect(codequality_reports.degradations).to be_empty
+      end
+
+      context 'when child pipeline has codequality reports' do
+        let_it_be(:child_pipeline) { create(:ci_pipeline, :with_codequality_report, child_of: pipeline) }
+
+        it 'returns codequality report with collected data' do
+          expect(codequality_reports.degradations_count).to eq(3)
+        end
+
+        context 'with FF show_child_reports_in_mr_page disabled' do
+          before do
+            stub_feature_flags(show_child_reports_in_mr_page: false)
+          end
+
+          it 'returns codequality reports without degradations' do
+            expect(codequality_reports.degradations).to be_empty
+          end
+        end
+      end
+    end
+  end
+
+  describe '#terraform_reports' do
+    subject(:terraform_reports) { pipeline.terraform_reports }
+
+    let_it_be(:pipeline) { create(:ci_pipeline) }
+
+    context 'when pipeline has multiple builds with terraform reports' do
+      let_it_be(:build_tfplan1) { create(:ci_build, :terraform_reports, name: 'tfplan1', pipeline: pipeline) }
+      let_it_be(:build_tfplan2) { create(:ci_build, :terraform_reports, name: 'tfplan2', pipeline: pipeline) }
+
+      it 'returns terraform plan with collected data' do
+        expect(terraform_reports.plans.count).to eq(2)
+      end
+
+      context 'when child pipelines also have reports' do
+        let_it_be(:child_pipeline) { create(:ci_pipeline, child_of: pipeline) }
+        let_it_be(:build_child_tf_plan) { create(:ci_build, :terraform_reports, name: 'child-tf', pipeline: child_pipeline) }
+
+        it 'returns a terraform plan with child data' do
+          expect(terraform_reports.plans.count).to eq(3)
+        end
+
+        context 'with FF show_child_reports_in_mr_page disabled' do
+          before do
+            stub_feature_flags(show_child_reports_in_mr_page: false)
+          end
+
+          it 'does not show child pipeline reports' do
+            expect(terraform_reports.plans.count).to eq(2)
+          end
+        end
+      end
+    end
+
+    context 'when pipeline does not have any builds with terraform reports' do
+      it 'returns terraform reports without plans' do
+        expect(terraform_reports.plans).to be_empty
       end
     end
   end
@@ -5533,7 +5770,7 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
         let(:current_user) { owner }
 
         context 'when the downstream has strategy: depend' do
-          it 'marks source bridge as pending' do
+          it 'enqueues the source bridge and marks it as pending' do
             expect { reset_bridge }
               .to change { bridge.reload.status }
               .to('pending')
@@ -5614,6 +5851,18 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
                 expect { reset_bridge }.to not_change { bridge.status }
                   .and not_change { upstream_bridge.status }
               end
+            end
+          end
+
+          context 'when the source bridge has a resource group' do
+            before do
+              bridge.update!(resource_group: create(:ci_resource_group, project: bridge.project))
+            end
+
+            it 'enqueues the source bridge and marks it as waiting_for_resource' do
+              expect { reset_bridge }
+                .to change { bridge.reload.status }
+                .to('waiting_for_resource')
             end
           end
         end
@@ -6211,7 +6460,7 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
   end
 
   describe '#archived?' do
-    subject { build_stubbed(:ci_pipeline, created_at: 1.day.ago, project: project) }
+    subject(:pipeline) { build_stubbed(:ci_pipeline, created_at: 1.day.ago, project: project) }
 
     context 'when archive_builds_in is set' do
       before do
@@ -6219,6 +6468,23 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
       end
 
       it { is_expected.to be_archived }
+
+      it 'does not log by default' do
+        expect(::Gitlab::Ci::Pipeline::AccessLogger).not_to receive(:new)
+
+        expect(pipeline.archived?).to be_truthy
+      end
+
+      context 'when logging is requested' do
+        it 'calls access logger' do
+          expect(::Gitlab::Ci::Pipeline::AccessLogger)
+            .to receive(:new)
+            .with(pipeline: pipeline, archived: true)
+            .and_call_original
+
+          expect(pipeline.archived?(log: true)).to be_truthy
+        end
+      end
     end
 
     context 'when archive_builds_in is not set' do
@@ -6227,6 +6493,96 @@ RSpec.describe Ci::Pipeline, :mailer, factory_default: :keep, feature_category: 
       end
 
       it { is_expected.not_to be_archived }
+
+      context 'when logging is requested' do
+        it 'calls access logger' do
+          expect(::Gitlab::Ci::Pipeline::AccessLogger)
+            .to receive(:new)
+            .with(pipeline: pipeline, archived: false)
+            .and_call_original
+
+          expect(pipeline.archived?(log: true)).to be_falsey
+        end
+      end
+    end
+  end
+
+  describe '.not_archived' do
+    let_it_be(:old_pipeline) { create(:ci_pipeline, created_at: 3.months.ago, project: project) }
+    let_it_be(:fresh_pipeline) { create(:ci_pipeline, project: project) }
+
+    subject { described_class.not_archived }
+
+    context 'when archive_builds_in is set' do
+      before do
+        stub_application_setting(archive_builds_in_seconds: 1.week)
+      end
+
+      it { is_expected.to match_array([fresh_pipeline]) }
+    end
+
+    context 'when archive_builds_in is not set' do
+      before do
+        stub_application_setting(archive_builds_in_seconds: nil)
+      end
+
+      it { is_expected.to match_array([old_pipeline, fresh_pipeline]) }
+    end
+  end
+
+  describe '#queued_duration', :freeze_time do
+    it 'returns nil when pipeline has not started' do
+      # Build a pipeline created 1 hour ago with no start or finish time
+      pipeline = build(:ci_pipeline, created_at: 1.hour.ago, started_at: nil, finished_at: nil)
+      # We expect queued_duration to return nil because there is no start or finish info
+      expect(pipeline.queued_duration).to be_nil
+    end
+
+    it 'returns the correct duration when the pipeline has started but not finished' do
+      # Simulate a pipeline that was created 1 hour ago and started 30 minutes ago
+      created_time = 1.hour.ago
+      start_time = 30.minutes.ago
+      pipeline = build(:ci_pipeline, created_at: created_time, started_at: start_time)
+      expected_duration = (start_time - created_time).to_i
+      # Expect the queued_duration to be within 1 second of the actual time between creation and start
+      expect(pipeline.queued_duration).to eq(expected_duration)
+    end
+
+    it 'returns duration when pipeline has finished but not started' do
+      # Simulate a pipeline that was created 2 hours ago and finished 30 minutes ago without starting
+      created_time = 2.hours.ago
+      finish_time = 30.minutes.ago
+      pipeline = build(:ci_pipeline, created_at: created_time, started_at: nil, finished_at: finish_time)
+      expected_duration = (finish_time - created_time).to_i
+      # Expect queued_duration to be the time from creation to finish( since it never started within 1 second)
+      expect(pipeline.queued_duration).to eq(expected_duration)
+    end
+
+    it 'returns the correct duration based on start time when pipeline has started and finished' do
+      # Simulate a pipeline that was created 2 hours ago, started 1 hour ago, and finished 30 minutes ago
+      created_time = 2.hours.ago
+      start_time = 1.hour.ago
+      finish_time = 30.minutes.ago
+      pipeline = build(:ci_pipeline, created_at: created_time, started_at: start_time, finished_at: finish_time)
+      expected_duration = (start_time - created_time).to_i
+      # Expect queued_duration to be the time between creation and start, ignoring finish time
+      expect(pipeline.queued_duration).to eq(expected_duration)
+    end
+
+    it 'returns nil queued duration when created and finished at the same time' do
+      # Simulate a pipeline that was created and finished instantly
+      now = Time.current
+      pipeline = build(:ci_pipeline, created_at: now, finished_at: now, started_at: nil)
+      # Expect the queued duration to be nil
+      expect(pipeline.queued_duration).to be_nil
+    end
+  end
+
+  describe "association dependent" do
+    it_behaves_like "cleanup by a loose foreign key", on_delete: :async_nullify do
+      let!(:lfk_column) { :trigger_id }
+      let!(:parent) { create(:ci_trigger) }
+      let!(:model) { create(:ci_pipeline, trigger: parent) }
     end
   end
 end

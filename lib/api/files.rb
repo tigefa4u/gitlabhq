@@ -14,6 +14,7 @@ module API
     allow_access_with_scope [:read_repository, :ai_workflows], if: ->(request) { request.get? || request.head? }
 
     helpers ::API::Helpers::HeadersHelpers
+    helpers ::API::Helpers::BlobHelpers
 
     helpers do
       def commit_params(attrs)
@@ -52,7 +53,9 @@ module API
       end
 
       def authorize_ai_access!
-        forbidden!('Insufficient permissions for Duo Workflow') unless can?(current_user, :duo_workflow, user_project)
+        return if can?(current_user, :duo_workflow, user_project) || can?(current_user, :access_duo_agentic_chat, user_project)
+
+        forbidden!('Insufficient permissions for Duo Workflow')
       end
 
       def commit_response(attrs)
@@ -225,8 +228,14 @@ module API
           desc: 'The name of branch, tag or commit', allow_blank: false, documentation: { example: 'main' }
       end
       get ":id/repository/files/:file_path", requirements: FILE_ENDPOINT_REQUIREMENTS do
+        # Loads metadata for @blob as a side effect, but not not the actual data
+        #
         assign_file_vars!
+        check_rate_limit_for_blob(@blob, :repository_files)
 
+        # If #check_rate_limit_for_blob hasn't stopped the request, allow data
+        #   to actually be loaded without limit.
+        #
         @blob.load_all_data!
 
         data = blob_data

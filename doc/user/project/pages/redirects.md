@@ -128,7 +128,7 @@ rewrite the URL.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab-pages/-/merge_requests/936) in GitLab 16.8 [with a flag](../../../administration/feature_flags.md) named `FF_ENABLE_DOMAIN_REDIRECT`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab-pages/-/merge_requests/936) in GitLab 16.8 [with a flag](../../../administration/feature_flags/_index.md) named `FF_ENABLE_DOMAIN_REDIRECT`. Disabled by default.
 - [Enabled on GitLab.com](https://gitlab.com/gitlab-com/gl-infra/k8s-workloads/gitlab-com/-/merge_requests/3395) in GitLab 16.9.
 - [Enabled on GitLab Self-Managed and GitLab Dedicated](https://gitlab.com/gitlab-org/gitlab-pages/-/issues/1087) in GitLab 16.10.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab-pages/-/issues/1097) in GitLab 17.4. Feature flag `FF_ENABLE_DOMAIN_REDIRECT` removed.
@@ -279,7 +279,7 @@ rule 11: valid
 Most supported `_redirects` rules behave the same in both GitLab and Netlify.
 However, there are some minor differences:
 
-- **All rule URLs must begin with a slash:**
+- **All rule URLs must begin with a slash**:
 
   Netlify does not require URLs to begin with a forward slash:
 
@@ -296,7 +296,7 @@ However, there are some minor differences:
   /old/path /new/path 200
   ```
 
-- **All placeholder values are populated:**
+- **All placeholder values are populated**:
 
   Netlify only populates placeholder values that appear in the `to` path:
 

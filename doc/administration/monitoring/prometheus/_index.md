@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Monitoring GitLab with Prometheus
 ---
@@ -45,7 +45,7 @@ Prometheus runs as the `gitlab-prometheus` user and listen on
 Each exporter is automatically set up as a
 monitoring target for Prometheus, unless individually disabled.
 
-To disable Prometheus and all of its exporters, as well as any added in the future:
+To disable Prometheus and all of its exporters, and any exporters added in the future:
 
 1. Edit `/etc/gitlab/gitlab.rb`
 1. Add or find and uncomment the following lines, making sure they are set to `false`:
@@ -65,8 +65,8 @@ To disable Prometheus and all of its exporters, as well as any added in the futu
 
 {{< alert type="warning" >}}
 
-Although possible, it's not recommended to change the port Prometheus listens
-on, as this might affect or conflict with other services running on the GitLab
+You can change the port Prometheus listens on, but you should not.
+This change might affect or conflict with other services that run on the GitLab
 server. Proceed at your own risk.
 
 {{< /alert >}}
@@ -369,7 +369,7 @@ You can visit `http://localhost:9090` for the dashboard that Prometheus offers b
 
 If SSL has been enabled on your GitLab instance, you may not be able to access
 Prometheus on the same browser as GitLab if using the same FQDN due to [HSTS](https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security).
-[A test project exists](https://gitlab.com/gitlab-org/multi-user-prometheus) to provide access via GitLab, but in the interim there are
+[A GitLab test project exists](https://gitlab.com/gitlab-org/multi-user-prometheus) to provide access, but in the interim there are
 some workarounds: using a separate FQDN, using server IP, using a separate browser for Prometheus, resetting HSTS, or
 having [NGINX proxy it](https://docs.gitlab.com/omnibus/settings/nginx.html#inserting-custom-nginx-settings-into-the-gitlab-server-block).
 
@@ -390,13 +390,13 @@ These are only examples and may not work on all setups. Further adjustments may 
 
 {{< /alert >}}
 
-- **% CPU utilization:** `1 - avg without (mode,cpu) (rate(node_cpu_seconds_total{mode="idle"}[5m]))`
-- **% Memory available:** `((node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) or ((node_memory_MemFree_bytes + node_memory_Buffers_bytes + node_memory_Cached_bytes) / node_memory_MemTotal_bytes)) * 100`
-- **Data transmitted:** `rate(node_network_transmit_bytes_total{device!="lo"}[5m])`
-- **Data received:** `rate(node_network_receive_bytes_total{device!="lo"}[5m])`
-- **Disk read IOPS:** `sum by (instance) (rate(node_disk_reads_completed_total[1m]))`
+- **% CPU utilization**: `1 - avg without (mode,cpu) (rate(node_cpu_seconds_total{mode="idle"}[5m]))`
+- **% Memory available**: `((node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) or ((node_memory_MemFree_bytes + node_memory_Buffers_bytes + node_memory_Cached_bytes) / node_memory_MemTotal_bytes)) * 100`
+- **Data transmitted**: `rate(node_network_transmit_bytes_total{device!="lo"}[5m])`
+- **Data received**: `rate(node_network_receive_bytes_total{device!="lo"}[5m])`
+- **Disk read IOPS**: `sum by (instance) (rate(node_disk_reads_completed_total[1m]))`
 - **Disk write IOPS**: `sum by (instance) (rate(node_disk_writes_completed_total[1m]))`
-- **RPS via GitLab transaction count**: `sum(irate(gitlab_transaction_duration_seconds_count{controller!~'HealthController|MetricsController|'}[1m])) by (controller, action)`
+- **RPS via GitLab transaction count**: `sum(irate(gitlab_transaction_duration_seconds_count{controller!~'HealthController|MetricsController'}[1m])) by (controller, action)`
 
 ## Prometheus as a Grafana data source
 

@@ -4,8 +4,14 @@ import * as Sentry from '~/sentry/sentry_browser_wrapper';
 import { findWidget } from '~/issues/list/utils';
 import { newDate, toISODateFormat } from '~/lib/utils/datetime_utility';
 import { updateDraft } from '~/lib/utils/autosave';
-import { getParameterByName } from '~/lib/utils/url_utility';
-import { getNewWorkItemAutoSaveKey, newWorkItemFullPath } from '../utils';
+import {
+  findCustomFieldsWidget,
+  findStartAndDueDateWidget,
+  getNewWorkItemAutoSaveKey,
+  getNewWorkItemWidgetsAutoSaveKey,
+  newWorkItemFullPath,
+  getWorkItemWidgets,
+} from '../utils';
 import {
   WIDGET_TYPE_ASSIGNEES,
   WIDGET_TYPE_COLOR,
@@ -15,7 +21,6 @@ import {
   WIDGET_TYPE_CRM_CONTACTS,
   WIDGET_TYPE_ITERATION,
   WIDGET_TYPE_WEIGHT,
-  WIDGET_TYPE_START_AND_DUE_DATE,
   NEW_WORK_ITEM_IID,
   WIDGET_TYPE_MILESTONE,
   WIDGET_TYPE_HIERARCHY,
@@ -23,6 +28,7 @@ import {
   CUSTOM_FIELDS_TYPE_SINGLE_SELECT,
   CUSTOM_FIELDS_TYPE_MULTI_SELECT,
   CUSTOM_FIELDS_TYPE_TEXT,
+  WIDGET_TYPE_STATUS,
 } from '../constants';
 import workItemByIidQuery from './work_item_by_iid.query.graphql';
 
@@ -44,7 +50,7 @@ const updateDatesWidget = (draftData, dates) => {
   const dueDate = dates.dueDate ? toISODateFormat(newDate(dates.dueDate)) : null;
   const startDate = dates.startDate ? toISODateFormat(newDate(dates.startDate)) : null;
 
-  const widget = findWidget(WIDGET_TYPE_START_AND_DUE_DATE, draftData.workspace.workItem);
+  const widget = findStartAndDueDateWidget(draftData.workspace.workItem);
   Object.assign(widget, {
     dueDate,
     startDate,
@@ -57,7 +63,7 @@ const updateDatesWidget = (draftData, dates) => {
 const updateCustomFieldsWidget = (sourceData, draftData, customField) => {
   if (!customField) return;
 
-  const widget = findWidget(WIDGET_TYPE_CUSTOM_FIELDS, draftData.workspace.workItem);
+  const widget = findCustomFieldsWidget(draftData.workspace.workItem);
 
   if (!widget) return;
 
@@ -89,6 +95,7 @@ const updateCustomFieldsWidget = (sourceData, draftData, customField) => {
 
 export const updateNewWorkItemCache = (input, cache) => {
   const {
+    relatedItemId,
     healthStatus,
     fullPath,
     workItemType,
@@ -105,6 +112,7 @@ export const updateNewWorkItemCache = (input, cache) => {
     milestone,
     parent,
     customField,
+    status,
   } = input;
 
   try {
@@ -167,6 +175,11 @@ export const updateNewWorkItemCache = (input, cache) => {
             newData: parent,
             nodePath: 'parent',
           },
+          {
+            widgetType: WIDGET_TYPE_STATUS,
+            newData: status,
+            nodePath: 'status',
+          },
         ];
 
         widgetUpdates.forEach(({ widgetType, newData, nodePath }) => {
@@ -186,23 +199,16 @@ export const updateNewWorkItemCache = (input, cache) => {
 
     const newData = cache.readQuery({ query, variables });
 
-    const autosaveKey = getNewWorkItemAutoSaveKey(fullPath, workItemType);
+    const autosaveKey = getNewWorkItemAutoSaveKey({ fullPath, workItemType, relatedItemId });
 
     const isQueryDataValid = !isEmpty(newData) && newData?.workspace?.workItem;
 
-    const isWorkItemToResolveDiscussion = getParameterByName(
-      'merge_request_to_resolve_discussions_of',
-    );
-
-    const isNewIssueForVulnerability = getParameterByName('vulnerability_id');
-
-    if (
-      isQueryDataValid &&
-      autosaveKey &&
-      !isWorkItemToResolveDiscussion &&
-      !isNewIssueForVulnerability
-    ) {
+    if (isQueryDataValid && autosaveKey) {
       updateDraft(autosaveKey, JSON.stringify(newData));
+      updateDraft(
+        getNewWorkItemWidgetsAutoSaveKey({ fullPath, relatedItemId }),
+        JSON.stringify(getWorkItemWidgets(newData)),
+      );
     }
   } catch (e) {
     Sentry.captureException(e);

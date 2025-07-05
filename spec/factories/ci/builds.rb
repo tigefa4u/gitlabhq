@@ -238,7 +238,7 @@ FactoryBot.define do
     end
 
     trait :triggered do
-      trigger_request { association :ci_trigger_request, project_id: pipeline.project_id }
+      pipeline factory: :ci_pipeline, traits: [:triggered]
     end
 
     trait :tag do
@@ -362,8 +362,8 @@ FactoryBot.define do
 
     trait :artifacts do
       after(:create) do |build, evaluator|
-        create(:ci_job_artifact, :archive, :public, job: build, expire_at: build.artifacts_expire_at)
-        create(:ci_job_artifact, :metadata, :public, job: build, expire_at: build.artifacts_expire_at)
+        create(:ci_job_artifact, :mocked_checksum, :archive, :public, job: build, expire_at: build.artifacts_expire_at)
+        create(:ci_job_artifact, :mocked_checksum, :metadata, :public, job: build, expire_at: build.artifacts_expire_at)
         build.reload
       end
     end

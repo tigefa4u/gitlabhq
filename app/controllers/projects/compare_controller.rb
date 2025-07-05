@@ -78,13 +78,15 @@ class Projects::CompareController < Projects::ApplicationController
   end
 
   def rapid_diffs
-    return render_404 unless ::Feature.enabled?(:rapid_diffs, current_user, type: :wip)
+    return render_404 unless ::Feature.enabled?(:rapid_diffs, current_user, type: :beta) &&
+      ::Feature.enabled?(:rapid_diffs_on_compare_show, current_user, type: :wip)
 
-    @show_whitespace_default = current_user.nil? || current_user.show_whitespace_in_diffs
-    @reload_stream_url = diffs_stream_namespace_project_compare_index_path(**compare_params)
-    @diff_files_endpoint = diff_files_metadata_namespace_project_compare_index_path(**compare_params)
-    @diffs_stats_endpoint = diffs_stats_namespace_project_compare_index_path(**compare_params)
-    @update_current_user_path = expose_path(api_v4_user_preferences_path)
+    @rapid_diffs_presenter = ::RapidDiffs::ComparePresenter.new(
+      compare,
+      diff_view,
+      diff_options,
+      compare_params
+    )
 
     show
   end
@@ -203,7 +205,7 @@ class Projects::CompareController < Projects::ApplicationController
     @compare_params ||= params.permit(:from, :to, :from_project_id, :straight, :to_project_id)
   end
 
-  def diffs_resource
-    compare&.diffs(diff_options)
+  def diffs_resource(options = {})
+    compare&.diffs(diff_options.merge(options))
   end
 end

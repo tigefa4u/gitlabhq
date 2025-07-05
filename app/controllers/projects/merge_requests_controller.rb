@@ -34,16 +34,11 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   before_action :authenticate_user!, only: [:assign_related_issues]
   before_action :check_user_can_push_to_source_branch!, only: [:rebase]
 
-  before_action only: :index do
-    push_frontend_feature_flag(:mr_approved_filter, type: :ops)
-  end
-
   before_action only: [:show, :diffs, :rapid_diffs, :reports] do
     push_frontend_feature_flag(:mr_experience_survey, project)
     push_frontend_feature_flag(:mr_pipelines_graphql, project)
     push_frontend_feature_flag(:notifications_todos_buttons, current_user)
-    push_frontend_feature_flag(:mr_show_reports_immediately, project)
-    push_frontend_feature_flag(:improved_review_experience, current_user)
+    push_frontend_feature_flag(:mr_review_batch_submit, current_user)
   end
 
   around_action :allow_gitaly_ref_name_caching, only: [:index, :show, :diffs, :rapid_diffs, :discussions]
@@ -88,6 +83,8 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   ]
   urgency :low, [:pipeline_status, :pipelines, :exposed_artifacts]
 
+  helper_method :rapid_diffs_page_enabled?
+
   def index
     @merge_requests = @issuables
 
@@ -106,14 +103,13 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
   end
 
   def rapid_diffs
-    return render_404 unless ::Feature.enabled?(:rapid_diffs, current_user, type: :wip)
+    return render_404 unless rapid_diffs_page_enabled?
 
-    streaming_offset = 5
-    @reload_stream_url = diffs_stream_url(@merge_request)
-    @stream_url = diffs_stream_url(@merge_request, streaming_offset, diff_view)
-    @diffs_slice = @merge_request.first_diffs_slice(streaming_offset, diff_options)
-    @diff_files_endpoint = diff_files_metadata_namespace_project_merge_request_path
-    @diffs_stats_endpoint = diffs_stats_namespace_project_merge_request_path
+    @rapid_diffs_presenter = ::RapidDiffs::MergeRequestPresenter.new(
+      @merge_request,
+      diff_view,
+      diff_options
+    )
 
     show_merge_request
   end
@@ -154,6 +150,8 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
 
   def pipelines
     set_pipeline_variables
+    # Capture total count before pagination to ensure accurate count regardless of current page
+    @pipelines_count = @pipelines.count
     @pipelines = @pipelines.page(params[:page])
 
     Gitlab::PollingInterval.set_header(response, interval: 10_000)
@@ -172,7 +170,7 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
           preload_downstream_statuses: false
         ),
       count: {
-        all: @pipelines.count
+        all: @pipelines_count
       }
     }
   end
@@ -679,16 +677,6 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
     payload[:metadata]['meta.diffs_files_count'] = @merge_request.merge_request_diff.files_count
   end
 
-  def diffs_stream_resource_url(merge_request, offset, diff_view)
-    diffs_stream_namespace_project_merge_request_path(
-      id: merge_request.iid,
-      project_id: merge_request.project.to_param,
-      namespace_id: merge_request.project.namespace.to_param,
-      offset: offset,
-      view: diff_view
-    )
-  end
-
   def display_limit_warnings
     if @merge_request.reached_versions_limit?
       flash[:alert] = format(
@@ -704,16 +692,28 @@ class Projects::MergeRequestsController < Projects::MergeRequests::ApplicationCo
         "Close this merge request and create a new one.")
   end
 
-  def diffs_resource
-    @merge_request.latest_diffs
+  def diffs_resource(diff_options = {})
+    @merge_request.latest_diffs(diff_options)
+  end
+
+  def diff_file_component(base_args)
+    ::RapidDiffs::MergeRequestDiffFileComponent.new(
+      **base_args.merge({ merge_request: @merge_request })
+    )
   end
 
   def complete_diff_path
-    merge_request_path(merge_request, format: :patch)
+    merge_request_path(merge_request, format: :diff)
   end
 
   def email_format_path
-    merge_request_path(merge_request, format: :diff)
+    merge_request_path(merge_request, format: :patch)
+  end
+
+  def rapid_diffs_page_enabled?
+    ::Feature.enabled?(:rapid_diffs, current_user, type: :beta) &&
+      ::Feature.enabled?(:rapid_diffs_on_mr_show, current_user, type: :wip) &&
+      params[:rapid_diffs] == 'true'
   end
 end
 

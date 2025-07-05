@@ -24,10 +24,11 @@ Before you can install the agent in your cluster, you need:
   - [Digital Ocean](https://docs.digitalocean.com/products/kubernetes/getting-started/quickstart/)
   - [Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine/docs/deploy-app-cluster)
   - You should use [Infrastructure as Code techniques](../../../infrastructure/iac/_index.md) for managing infrastructure resources at scale.
-- On GitLab Self-Managed, a GitLab administrator must set up the
-  [agent server](../../../../administration/clusters/kas.md).
-  Then it is available by default at `wss://gitlab.example.com/-/kubernetes-agent/`.
-  On GitLab.com, the agent server is available at `wss://kas.gitlab.com`.
+- Access to an agent server:
+  - On GitLab.com, the agent server is available at `wss://kas.gitlab.com`.
+  - On GitLab Self-Managed, a GitLab administrator must set up the [agent server](../../../../administration/clusters/kas.md).
+    Then it is available by default at `wss://gitlab.example.com/-/kubernetes-agent/`.
+  - On GitLab Dedicated, the agent server is available at `wss://kas.<instance-domain>`, for example `wss://kas.example.gitlab-dedicated.com`. If you use a [custom hostname](../../../../administration/dedicated/configure_instance/network_security.md#bring-your-own-domain-byod) for your GitLab Dedicated instance, you can also choose a custom hostname for the KAS service.
 
 ## Bootstrap the agent with Flux support (recommended)
 
@@ -45,12 +46,18 @@ Prerequisites:
     with the `--path` option, you must pass the same value to the `--manifest-path` option of the
     `glab cluster agent bootstrap` command.
 
-To install the agent:
+To install the agent, either:
 
-- Run `glab cluster agent bootstrap`:
+- Run `glab cluster agent bootstrap` within the directory of your Git repository of your target project:
 
   ```shell
-  glab cluster agent bootstrap <agent-name> --manifest-path <same as --path used in flux bootstrap>
+  glab cluster agent bootstrap <agent-name> --manifest-path <same_path_used_in_flux_bootstrap>
+  ```
+
+- Run `glab -R path-with-namespace cluster agent bootstrap` if you must run the command outside of the Git repo of your target project:
+
+  ```shell
+  glab -R <full/path/to/project> cluster agent bootstrap <agent-name> --manifest-path <same_path_used_in_flux_bootstrap>
   ```
 
 By default, the command:

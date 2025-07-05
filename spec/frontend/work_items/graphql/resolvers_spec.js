@@ -55,7 +55,7 @@ describe('work items graphql resolvers', () => {
       mockApollo.clients.defaultClient.cache.writeQuery({
         query: workItemByIidQuery,
         variables: { fullPath: fullPathWithId, iid },
-        data: createWorkItemQueryResponse.data,
+        data: createWorkItemQueryResponse().data,
       });
       mockApolloClient = mockApollo.clients.defaultClient;
     });
@@ -152,6 +152,11 @@ describe('work items graphql resolvers', () => {
             id: 'gid://gitlab/WorkItem/1259',
             iid: '56',
             title: 'PARENT',
+            namespace: {
+              id: 'gid://gitlab/Group/1',
+              fullPath: 'test-project-path',
+              __typename: 'Namespace',
+            },
             webUrl: 'http://127.0.0.1:3000/groups/flightjs/-/epics/56',
             workItemType: {
               id: 'gid://gitlab/WorkItems::Type/8',
@@ -170,6 +175,11 @@ describe('work items graphql resolvers', () => {
             id: 'gid://gitlab/WorkItem/1259',
             iid: '56',
             title: 'PARENT',
+            namespace: {
+              id: 'gid://gitlab/Group/1',
+              fullPath: 'test-project-path',
+              __typename: 'Namespace',
+            },
             webUrl: 'http://127.0.0.1:3000/groups/flightjs/-/epics/56',
             workItemType: {
               id: 'gid://gitlab/WorkItems::Type/8',
@@ -191,7 +201,8 @@ describe('work items graphql resolvers', () => {
     });
 
     it('updates the local storage with every mutation', async () => {
-      const AUTO_SAVE_KEY = `autosave/new-fullPath-issue-draft`;
+      const typeSpecificAutosaveKey = `autosave/new-fullPath-issue-draft`;
+      const sharedWidgetsAutosaveKey = 'autosave/new-fullPath-widgets-draft';
 
       await mutate({ title: 'Title' });
 
@@ -207,7 +218,26 @@ describe('work items graphql resolvers', () => {
         },
       };
 
-      expect(localStorage.setItem).toHaveBeenLastCalledWith(AUTO_SAVE_KEY, JSON.stringify(object));
+      const widgets = {};
+      for (const widget of queryResult.widgets || []) {
+        if (widget.type) {
+          widgets[widget.type] = widget;
+        }
+      }
+      widgets.TITLE = queryResult.title;
+      widgets.TYPE = queryResult.workItemType;
+
+      expect(localStorage.setItem).toHaveBeenCalledTimes(2);
+      expect(localStorage.setItem).toHaveBeenNthCalledWith(
+        1,
+        typeSpecificAutosaveKey,
+        JSON.stringify(object),
+      );
+      expect(localStorage.setItem).toHaveBeenNthCalledWith(
+        2,
+        sharedWidgetsAutosaveKey,
+        JSON.stringify(widgets),
+      );
     });
   });
 });

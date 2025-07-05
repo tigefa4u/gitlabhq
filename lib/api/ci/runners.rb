@@ -122,17 +122,17 @@ module API
           use :filter_params
         end
         get do
-          runners = current_user.ci_owned_runners
+          runners = current_user.ci_owned_runners.with_api_entity_associations
           runners = filter_runners(runners, params[:scope], allowed_scopes: ::Ci::Runner::AVAILABLE_STATUSES_INCL_DEPRECATED)
           runners = apply_filter(runners, params)
 
-          present paginate(runners), with: Entities::Ci::Runner
+          present paginate(runners), with: Entities::Ci::Runner, current_user: current_user
         end
 
         desc 'Get all runners - shared and project' do
           summary 'List all runners'
           detail 'Get a list of all runners in the GitLab instance (shared and project). ' \
-                 'Access is restricted to users with administrator access.'
+                 'Access is restricted to users with either administrator access or auditor access.'
           success Entities::Ci::Runner
           failure [[400, 'Scope contains invalid value'], [401, 'Unauthorized']]
           tags %w[runners]
@@ -142,13 +142,13 @@ module API
           use :filter_params
         end
         get 'all' do
-          authenticated_as_admin!
+          authenticated_with_can_read_all_resources!
 
-          runners = ::Ci::Runner.all
+          runners = ::Ci::Runner.all.with_api_entity_associations
           runners = filter_runners(runners, params[:scope])
           runners = apply_filter(runners, params)
 
-          present paginate(runners), with: Entities::Ci::Runner
+          present paginate(runners), with: Entities::Ci::Runner, current_user: current_user
         end
 
         desc "Get runner's details" do
@@ -309,13 +309,13 @@ module API
           use :filter_params
         end
         get ':id/runners' do
-          runners = ::Ci::Runner.owned_or_instance_wide(user_project.id)
+          runners = ::Ci::Runner.owned_or_instance_wide(user_project.id).with_api_entity_associations
           # scope is deprecated (for project runners), however api documentation still supports it.
           # Not including them in `apply_filter` method as it's not supported for group runners
           runners = filter_runners(runners, params[:scope])
           runners = apply_filter(runners, params)
 
-          present paginate(runners), with: Entities::Ci::Runner
+          present paginate(runners), with: Entities::Ci::Runner, current_user: current_user
         end
 
         desc 'Assign a runner to project' do
@@ -337,7 +337,7 @@ module API
 
           result = ::Ci::Runners::AssignRunnerService.new(runner, user_project, current_user).execute
           if result.success?
-            present runner, with: Entities::Ci::Runner
+            present runner, with: Entities::Ci::Runner, current_user: current_user
           else
             render_api_error_with_reason!(:bad_request, result.message, result.reason)
           end
@@ -387,10 +387,10 @@ module API
           use :filter_params
         end
         get ':id/runners' do
-          runners = ::Ci::Runner.group_or_instance_wide(user_group)
+          runners = ::Ci::Runner.group_or_instance_wide(user_group).with_api_entity_associations
           runners = apply_filter(runners, params)
 
-          present paginate(runners), with: Entities::Ci::Runner
+          present paginate(runners), with: Entities::Ci::Runner, current_user: current_user
         end
       end
 

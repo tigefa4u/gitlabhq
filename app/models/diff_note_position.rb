@@ -4,17 +4,17 @@ class DiffNotePosition < ApplicationRecord
   belongs_to :note
   attr_accessor :line_range
 
-  enum diff_content_type: {
+  enum :diff_content_type, {
     text: 0,
     image: 1
   }
 
-  enum diff_type: {
+  enum :diff_type, {
     head: 0
   }
 
   def position
-    Gitlab::Diff::Position.new(
+    ::Gitlab::Diff::Position.new(
       old_path: old_path,
       new_path: new_path,
       old_line: old_line,

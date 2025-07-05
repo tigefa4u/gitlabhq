@@ -27,12 +27,11 @@ module Ci
 
       validates :source_project, presence: true
       validates :target_project, presence: true
-      validate :not_self_referential_link
       validate :source_project_under_link_limit, on: :create
 
       # When outbound the target project is allowed to be accessed by the source job token.
       # When inbound the source project is allowed to be accessed by the target job token.
-      enum direction: {
+      enum :direction, {
         outbound: 0,
         inbound: 1
       }
@@ -42,14 +41,6 @@ module Ci
       end
 
       private
-
-      def not_self_referential_link
-        return unless source_project && target_project
-
-        if source_project == target_project
-          self.errors.add(:target_project, _("can't be the same as the source project"))
-        end
-      end
 
       def source_project_under_link_limit
         return unless source_project

@@ -1,8 +1,8 @@
 ---
 stage: Fulfillment
-group: Provision
+group: Seat Management
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-description: Seat assignment, GitLab Duo add-on
+description: Seat assignment, GitLab Duo subscription add-on.
 title: GitLab Duo add-ons
 ---
 
@@ -13,17 +13,70 @@ title: GitLab Duo add-ons
 
 {{< /details >}}
 
+{{< history >}}
+
+- Changed to include GitLab Duo Core add-on in GitLab 18.0.
+
+{{< /history >}}
+
 GitLab Duo add-ons extend your Premium or Ultimate subscription with AI-native features.
 Use GitLab Duo to help accelerate development workflows, reduce repetitive coding tasks,
 and gain deeper insights across your projects.
 
-Purchase GitLab Duo seats and assign them to team members.
+Three add-ons are available: GitLab Duo Core, Pro, and Enterprise.
+
+Each add-on provides access to
+[a set of GitLab Duo features](../user/gitlab_duo/feature_summary.md).
+
+## GitLab Duo Core
+
+GitLab Duo Core is included automatically if you have:
+
+- GitLab 18.0 or later.
+- A Premium or Ultimate subscription.
+
+If you are a new customer in GitLab 18.0 or later, IDE features are automatically turned on and no further action is needed.
+
+If you are a pre-existing customer from GitLab 17.11 or earlier, you must [turn on IDE features](../user/gitlab_duo/turn_on_off.md#change-gitlab-duo-core-availability) to start using GitLab Duo in your IDEs. No further action is needed.
+
+Users assigned the following roles have access to GitLab Duo Core:
+
+- Reporter
+- Developer
+- Maintainer
+- Owner
+
+### GitLab Duo Core limits
+
+Usage limits, along with [the GitLab Terms of Service](https://about.gitlab.com/terms/),
+apply to Premium and Ultimate customers' use of the included Code Suggestions and GitLab Duo Chat features.
+
+GitLab will provide 30 days prior notice before enforcement of these limits take effect.
+At that time, organization administrators will have tools to monitor and manage consumption and will be able
+to purchase additional capacity.
+
+| Feature          | Requests per user per month |
+|------------------|-----------------------------|
+| Code Suggestions | 2,000                       |
+| GitLab Duo Chat  | 100                         |
+
+Limits do not apply to GitLab Duo Pro or Enterprise.
+
+## GitLab Duo Pro and Enterprise
+
+GitLab Duo Pro and Enterprise require you to purchase seats and assign them to team members.
 The seat-based model gives you control over feature access and cost management
 based on your specific team needs.
 
 ## Purchase GitLab Duo
 
-To purchase GitLab Duo Pro seats, you can use the Customers Portal, or you can contact the [GitLab Sales team](https://about.gitlab.com/solutions/gitlab-duo-pro/sales/). To purchase GitLab Duo Enterprise, contact the [GitLab Sales team](https://about.gitlab.com/solutions/gitlab-duo-pro/sales/).
+To purchase GitLab Duo Enterprise, contact the
+[GitLab Sales team](https://about.gitlab.com/solutions/gitlab-duo-pro/sales/).
+
+To purchase seats for GitLab Duo Pro, use the Customers Portal or
+contact the [GitLab Sales team](https://about.gitlab.com/solutions/gitlab-duo-pro/sales/).
+
+To use the portal:
 
 1. Sign in to the [GitLab Customers Portal](https://customers.gitlab.com/).
 1. On the subscription card, select the vertical ellipsis ({{< icon name="ellipsis_v" >}}).
@@ -75,12 +128,12 @@ Prerequisites:
 
 Prerequisites:
 
-- You must purchase a GitLab Duo add-on, or have an active GitLab Duo trial.
+- You must purchase a GitLab Duo Pro or Enterprise add-on, or have an active GitLab Duo trial.
 - For GitLab Self-Managed and GitLab Dedicated:
   - The GitLab Duo Pro add-on is available in GitLab 16.8 and later.
   - The GitLab Duo Enterprise add-on is only available in GitLab 17.3 and later.
 
-After you purchase GitLab Duo, you can assign seats to users to grant access to the add-on.
+After you purchase GitLab Duo Pro or Enterprise, you can assign seats to users to grant access to the add-on.
 
 ### For GitLab.com
 
@@ -115,10 +168,8 @@ Prerequisites:
 
 The user is sent a confirmation email.
 
-#### Configure network and proxy settings
-
-For GitLab Self-Managed instances, to enable GitLab Duo features,
-you must [enable network connectivity](../user/ai_features_enable.md).
+After you assign seats,
+[ensure GitLab Duo is set up for your GitLab Self-Managed instance](../user/gitlab_duo/setup.md).
 
 ## Assign and remove GitLab Duo seats in bulk
 
@@ -174,14 +225,28 @@ For more information, see [GitLab Duo add-on seat management with LDAP](../admin
 
 ## View assigned GitLab Duo users
 
+{{< history >}}
+
+- Last GitLab Duo activity field [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/455761) in GitLab 18.0.
+
+{{< /history >}}
+
 Prerequisites:
 
-- You must purchase a GitLab Duo add-on, or have an active GitLab Duo trial.
+- You must purchase a GitLab Duo Pro or Enterprise add-on, or have an active GitLab Duo trial.
 
-After you purchase GitLab Duo, you can assign seats to users to grant access to the add-on.
+After you purchase GitLab Duo Pro or Enterprise, you can assign seats to users to
+grant access to the add-on. Then you can view details of assigned GitLab Duo users.
 
-To retrieve the **Last Duo activity** date for assigned GitLab Duo users,
-you can also use the [GraphQL API](../api/graphql/reference/_index.md#addonuser) with the `AddOnUser` type.
+The GitLab Duo seat utilization page shows the following information for each user:
+
+- User's full name and username
+- Seat assignment status
+- Public email address: The user's email displayed on their public profile.
+- Last GitLab activity: The date the user last performed any action in GitLab.
+- Last GitLab Duo activity: The date the user last used GitLab Duo features. Refreshes on any GitLab Duo activity.
+
+These fields use data from the `AddOnUser` type in the [GraphQL API](../api/graphql/reference/_index.md#addonuser).
 
 ### For GitLab.com
 
@@ -212,95 +277,6 @@ Prerequisites:
 1. By **Seat utilization**, select **Assign seats**.
 1. To filter by users assigned to a GitLab Duo seat, in the **Filter users** bar, select **Assigned seat**, then select **Yes**.
 1. User list is filtered to only users assigned a GitLab Duo seat.
-
-## Start GitLab Duo Pro trial
-
-{{< details >}}
-
-- Tier: Premium, Ultimate
-- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
-
-{{< /details >}}
-
-### On GitLab.com
-
-Prerequisites:
-
-- You must have the Owner role for a top-level group that has an active paid Premium subscription.
-
-1. On the left sidebar, select **Search or go to** and find your group.
-1. Select **Settings > Billing**.
-1. Select **Start a free GitLab Duo Pro trial**.
-1. Complete the fields.
-1. Select **Continue**.
-1. If prompted, select the group that the trial should be applied to.
-1. Select **Activate my trial**.
-1. [Assign seats](#assign-gitlab-duo-seats) to the users who need access.
-
-### On GitLab Self-Managed and GitLab Dedicated
-
-Prerequisites:
-
-- You must have an active paid Premium subscription.
-- You must have GitLab 16.8 or later and your instance must be able to [synchronize your subscription data](self_managed/_index.md#subscription-data-synchronization) with GitLab.
-- GitLab Duo requires GitLab 17.2 and later for the best user experience and results. Earlier versions might continue to work, however the experience may be degraded.
-
-1. Go to the [GitLab Duo Pro trial page](https://about.gitlab.com/solutions/gitlab-duo-pro/sales/?toggle=gitlab-duo-pro).
-1. Complete the fields.
-
-   - To find your subscription name:
-     1. In the Customers Portal, on the **Subscriptions & purchases** page, find the subscription you want to apply the trial to.
-     1. At the top of the page, the subscription name appears in a badge.
-
-        ![Subscription name](img/subscription_name_v17_0.png)
-   - Ensure the email address you submit for trial registration matches the email address of the [subscription contact](customers_portal.md#change-your-subscription-contact).
-1. Select **Submit**.
-
-The trial automatically synchronizes to your instance within 24 hours. After the trial has synchronized, [assign seats](#assign-gitlab-duo-seats) to users that you want to access GitLab Duo.
-
-## Start GitLab Duo Enterprise trial
-
-{{< details >}}
-
-- Tier: Ultimate
-- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
-
-{{< /details >}}
-
-### On GitLab.com
-
-Prerequisites:
-
-- You must have the Owner role for a top-level group that has an active paid Ultimate subscription.
-
-1. On the left sidebar, select **Search or go to** and find your group.
-1. Select **Settings > Billing**.
-1. Select **Start a free GitLab Duo Enterprise trial**.
-1. Complete the fields.
-1. Select **Continue**.
-1. If prompted, select the group that the trial should be applied to.
-1. Select **Activate my trial**.
-1. [Assign seats](#assign-gitlab-duo-seats) to the users who need access.
-
-### On GitLab Self-Managed and GitLab Dedicated
-
-Prerequisites:
-
-- You must have an active paid Ultimate subscription.
-- You must have GitLab 17.3 or later and your instance must be able to [synchronize your subscription data](self_managed/_index.md#subscription-data-synchronization) with GitLab.
-
-1. Go to the [GitLab Duo Enterprise trial page](https://about.gitlab.com/solutions/gitlab-duo-pro/sales/?toggle=gitlab-duo-enterprise).
-1. Complete the fields.
-
-   - To find your subscription name:
-     1. In the Customers Portal, on the **Subscriptions & purchases** page, find the subscription you want to apply the trial to.
-     1. At the top of the page, the subscription name appears in a badge.
-
-        ![Subscription name](img/subscription_name_v17_0.png)
-   - Ensure the email you submit for trial registration matches the email of the [subscription contact](customers_portal.md#change-your-subscription-contact).
-1. Select **Submit**.
-
-The trial automatically syncs to your instance within 24 hours. After the trial has synced, [assign seats](#assign-gitlab-duo-seats) to users that you want to access GitLab Duo.
 
 ## Automatic seat removal
 

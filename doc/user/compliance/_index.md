@@ -3,6 +3,7 @@ stage: Software Supply Chain Security
 group: Compliance
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Compliance features for users
+description: Compliance features.
 ---
 
 {{< details >}}
@@ -17,7 +18,7 @@ GitLab compliance features for users ensure your GitLab groups and projects meet
 ## Compliant workflow automation
 
 It is important for compliance teams to be confident that their controls and
-requirements are set up correctly, but also that they _stay_ set up correctly.
+requirements are set up correctly, but also that they stay set up correctly.
 One way of doing this is manually checking settings periodically, but this is
 error prone and time consuming. A better approach is to use single-source-of-truth
 settings and automation to ensure that whatever a compliance team has configured,
@@ -26,7 +27,7 @@ compliance:
 
 | Feature                                                                                                                                  | Instances                            | Groups                               | Projects                             | Description |
 |:-----------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------|:-------------------------------------|:-------------------------------------|:------------|
-| [Compliance frameworks](compliance_frameworks.md)                                                                               | {{< icon name="dotted-circle" >}} No | {{< icon name="check-circle" >}} Yes | {{< icon name="dotted-circle" >}} No | Describe the type of compliance requirements projects must follow. |
+| [Compliance frameworks](compliance_frameworks/_index.md)                                                                      | {{< icon name="dotted-circle" >}} No | {{< icon name="check-circle" >}} Yes | {{< icon name="dotted-circle" >}} No | Describe the type of compliance requirements projects must follow. |
 | [Compliance pipelines](compliance_pipelines.md)                                                                                 | {{< icon name="dotted-circle" >}} No | {{< icon name="check-circle" >}} Yes | {{< icon name="dotted-circle" >}} No | Define a pipeline configuration to run for any projects with a given compliance framework. |
 | [Merge request approval policy approval settings](../application_security/policies/merge_request_approval_policies.md#approval_settings) | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | Enforce a merge request approval policy enforcing multiple approvers and override various project settings in all enforced groups or projects across your GitLab instance or group. |
 
@@ -60,7 +61,7 @@ and secure supply chain best practices:
 | [Granular user roles<br/>and flexible permissions](../permissions.md)                                                                                                                                                                                                  | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | Manage access and permissions with five different user roles and settings for external users. Set permissions according to people's role, rather than either read or write access to a repository. Don't share the source code with people that only need access to the issue tracker. |
 | [Merge request approvals](../project/merge_requests/approvals/_index.md)                                                                                                                                                                                               | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | Configure approvals required for merge requests. |
 | [Push rules](../project/repository/push_rules.md)                                                                                                                                                                                                                      | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | Control pushes to your repositories. |
-| Separation of duties using<br/>[protected branches](../project/repository/branches/protected.md#require-code-owner-approval-on-a-protected-branch) and<br/>[custom CI/CD configuration paths](../../ci/pipelines/settings.md#specify-a-custom-cicd-configuration-file) | {{< icon name="dotted-circle" >}} No | {{< icon name="dotted-circle" >}} No | {{< icon name="check-circle" >}} Yes | Leverage the GitLab cross-project YAML configurations to define deployers of code and developers of code. See how to use this setup to define these roles in the [Separation of Duties deploy project](https://gitlab.com/guided-explorations/separation-of-duties-deploy/blob/master/README.md) and the [Separation of Duties project](https://gitlab.com/guided-explorations/separation-of-duties/blob/master/README.md). |
+| Separation of duties using<br/>[protected branches](../project/repository/branches/protected.md#require-code-owner-approval) and<br/>[custom CI/CD configuration paths](../../ci/pipelines/settings.md#specify-a-custom-cicd-configuration-file) | {{< icon name="dotted-circle" >}} No | {{< icon name="dotted-circle" >}} No | {{< icon name="check-circle" >}} Yes | Leverage the GitLab cross-project YAML configurations to define deployers of code and developers of code. See how to use this setup to define these roles in the [Separation of Duties deploy project](https://gitlab.com/guided-explorations/separation-of-duties-deploy/blob/master/README.md) and the [Separation of Duties project](https://gitlab.com/guided-explorations/separation-of-duties/blob/master/README.md). |
 | [Security policies](../application_security/policies/_index.md)                                                                                                                                                                                                        | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | {{< icon name="check-circle" >}} Yes | Configure customizable policies that require merge request approval based on policy rules, or enforce security scanners to execute in project pipelines for compliance requirements. Policies can be enforced granularly against specific projects, or all projects in a group or subgroup. |
 
 ## Other compliance features

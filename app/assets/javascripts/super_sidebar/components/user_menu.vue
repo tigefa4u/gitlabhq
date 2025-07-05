@@ -10,8 +10,11 @@ import {
 import SafeHtml from '~/vue_shared/directives/safe_html';
 import { s__, __, sprintf } from '~/locale';
 import Tracking from '~/tracking';
-import PersistentUserCallout from '~/persistent_user_callout';
 import { SET_STATUS_MODAL_ID } from '~/set_status_modal/constants';
+import axios from '~/lib/utils/axios_utils';
+import { visitUrl } from '~/lib/utils/url_utility';
+import * as Sentry from '~/sentry/sentry_browser_wrapper';
+import { logError } from '~/lib/logger';
 import { USER_MENU_TRACKING_DEFAULTS, DROPDOWN_Y_OFFSET, IMPERSONATING_OFFSET } from '../constants';
 import UserMenuProfileItem from './user_menu_profile_item.vue';
 
@@ -128,7 +131,6 @@ export default {
         warningText: this.$options.i18n.oneOfGroupsRunningOutOfPipelineMinutes,
         href: this.data.pipeline_minutes?.buy_pipeline_minutes_path,
         extraAttrs: {
-          class: 'js-follow-link',
           ...USER_MENU_TRACKING_DEFAULTS,
           'data-track-label': 'buy_pipeline_minutes',
         },
@@ -199,14 +201,6 @@ export default {
         'current-clear-status-after': clearAfter || '',
       };
     },
-    buyPipelineMinutesCalloutData() {
-      return this.showNotificationDot
-        ? {
-            'data-feature-id': this.data.pipeline_minutes.callout_attrs.feature_id,
-            'data-dismiss-endpoint': this.data.pipeline_minutes.callout_attrs.dismiss_endpoint,
-          }
-        : {};
-    },
     showEnterAdminModeItem() {
       return (
         this.data.admin_mode.user_is_admin &&
@@ -244,25 +238,43 @@ export default {
     onShow() {
       this.initBuyCIMinsCallout();
     },
-    closeDropdown() {
+    openStatusModal() {
+      this.setStatusModalReady = true;
       this.$refs.userDropdown.close();
     },
     initBuyCIMinsCallout() {
-      if (this.showNotificationDot) {
-        PersistentUserCallout.factory(this.$refs?.buyPipelineMinutesNotificationCallout.$el);
-      }
+      const el = this.$refs?.buyPipelineMinutesNotificationCallout?.$el;
+      el?.addEventListener('click', this.onBuyCIMinutesItemClick);
     },
-    /* We're not sure this event is tracked by anyone
-      whether it stays will depend on the outcome of this discussion:
-      https://gitlab.com/gitlab-org/gitlab/-/issues/402713#note_1343072135 */
-    trackBuyCIMins() {
-      if (this.addBuyPipelineMinutesMenuItem) {
-        const {
-          'track-action': trackAction,
-          'track-label': label,
-          'track-property': property,
-        } = this.data.pipeline_minutes.tracking_attrs;
-        this.track(trackAction, { label, property });
+    async onBuyCIMinutesItemClick(event) {
+      /* NOTE: We're not sure this event is tracked by anyone
+       * whether it stays will depend on the outcome of this discussion:
+       * https://gitlab.com/gitlab-org/gitlab/-/issues/402713#note_1343072135
+       */
+      const {
+        'track-action': trackAction,
+        'track-label': label,
+        'track-property': property,
+      } = this.data.pipeline_minutes.tracking_attrs;
+      this.track(trackAction, { label, property });
+
+      // Proceed to the URL if the notification dot is not shown
+      if (!this.showNotificationDot) return;
+
+      event.preventDefault();
+      const href = this.data.pipeline_minutes?.buy_pipeline_minutes_path;
+      const featureId = this.data.pipeline_minutes.callout_attrs.feature_id;
+      const dismissEndpoint = this.data.pipeline_minutes.callout_attrs.dismiss_endpoint;
+
+      try {
+        // dismiss the notification dot Callout
+        await axios.post(dismissEndpoint, { feature_name: featureId });
+      } catch (error) {
+        logError(error);
+        Sentry.captureException(error);
+      } finally {
+        // visit the URL whether the callout notification is dismissed or not
+        visitUrl(href);
       }
     },
     trackSignOut() {
@@ -289,6 +301,9 @@ export default {
           category="tertiary"
           class="user-bar-dropdown-toggle btn-with-notification"
           data-testid="user-menu-toggle"
+          data-track-action="click_dropdown"
+          data-track-label="user_profile_menu"
+          data-track-property="nav_core_menu"
         >
           <span class="gl-sr-only">{{ toggleText }}</span>
           <gl-avatar
@@ -314,11 +329,11 @@ export default {
 
       <gl-disclosure-dropdown-group bordered>
         <gl-disclosure-dropdown-item
-          v-if="setStatusModalReady && statusModalData"
+          v-if="statusModalData"
           v-gl-modal="$options.SET_STATUS_MODAL_ID"
           :item="statusItem"
           data-testid="status-item"
-          @action="closeDropdown"
+          @action="openStatusModal"
         />
 
         <gl-disclosure-dropdown-item
@@ -340,9 +355,7 @@ export default {
           v-if="addBuyPipelineMinutesMenuItem"
           ref="buyPipelineMinutesNotificationCallout"
           :item="buyPipelineMinutesItem"
-          v-bind="buyPipelineMinutesCalloutData"
           data-testid="buy-pipeline-minutes-item"
-          @action="trackBuyCIMins"
         >
           <template #list-item>
             <span class="gl-flex gl-flex-col">
@@ -383,10 +396,9 @@ export default {
       />
     </gl-disclosure-dropdown>
     <set-status-modal
-      v-if="statusModalData"
+      v-if="setStatusModalReady"
       default-emoji="speech_balloon"
       v-bind="statusModalData"
-      @mounted="setStatusModalReady = true"
     />
   </div>
 </template>

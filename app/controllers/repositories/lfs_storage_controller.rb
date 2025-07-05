@@ -15,8 +15,15 @@ module Repositories
     urgency :low, [:upload_finalize]
 
     def download
+      return render_lfs_not_found unless project
+
       lfs_object = LfsObject.find_by_oid(oid)
+
       return render_lfs_not_found unless lfs_object&.file&.exists?
+
+      if Feature.enabled?(:validate_lfs_object_access, project)
+        return render_lfs_not_found unless lfs_object.project_allowed_access?(project) # rubocop:disable Style/SoleNestedConditional -- Using unless for clearer logic when removing feature flag
+      end
 
       send_upload(lfs_object.file, send_params: { content_type: "application/octet-stream" })
     end

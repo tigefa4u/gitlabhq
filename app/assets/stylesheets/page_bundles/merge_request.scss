@@ -4,6 +4,7 @@
 
 $tabs-holder-z-index: 250;
 $comparison-empty-state-height: 62px;
+$merge-request-sticky-header-height: 45px;
 
 .apply-suggestions-input-min-width {
   @include media-breakpoint-up(lg) {
@@ -157,26 +158,64 @@ $comparison-empty-state-height: 62px;
   }
 }
 
-.merge-request-tabs-holder {
-  top: $calc-application-header-height;
-  z-index: $tabs-holder-z-index;
-  @apply gl-border-b gl-bg-default;
+@supports (container-type: scroll-state) {
+  .merge-request-sticky-header {
+    @include media-breakpoint-up(md) {
+      @apply gl-sticky;
+      container-type: scroll-state;
+      container-name: sticky-header;
+      top: $calc-application-header-height;
+      z-index: $tabs-holder-z-index;
 
-  @include media-breakpoint-up(md) {
-    position: sticky;
-  }
+      &:has(.detail-page-description)::after {
+        height: calc(#{$merge-request-sticky-header-height} + 26px); // Height of the 2 sticky bars combined
+      }
 
-  &.affix {
-    left: 0;
-    transition: right 0.15s;
+      &::after {
+        content: '';
+        top: $calc-application-header-height;
+        height: $merge-request-sticky-header-height;
+        @include translucent-glass-background;
+        @apply gl-border-b gl-fixed gl-left-0 gl-right-0 gl-z-0 gl-hidden;
+      }
 
-    @include media-breakpoint-down(xs) {
-      right: 0;
+      @container sticky-header scroll-state(stuck: top) {
+        &::after, .merge-request-sticky-title {
+          @apply gl-block;
+        }
+
+        .merge-request-tabs {
+          @apply gl-h-auto;
+        }
+
+        .nav-links li a {
+          @apply gl-py-4;
+        }
+
+        .detail-page-description {
+          @apply gl-pt-1 gl-pb-0 gl-flex-nowrap;
+        }
+
+        time,
+        .merge-request-author-container {
+          @apply gl-hidden;
+        }
+
+        @include media-breakpoint-down(md) {
+          .merge-request-tabs-actions {
+            @apply gl-hidden;
+          }
+        }
+      }
     }
   }
+}
 
-  .nav-links {
-    border: 0;
+@supports not (container-type: scroll-state) {
+  .merge-request-sticky-header {
+    z-index: calc($top-bar-z-index - 1);
+    height: $mr-sticky-header-height;
+    @include translucent-glass-background;
   }
 }
 
@@ -192,24 +231,12 @@ $comparison-empty-state-height: 62px;
       margin: $gl-padding-4;
     }
   }
-
-  .merge-request-tabs {
-    height: $grid-size * 6;
-  }
 }
 
 .container-fluid {
   // Negative margins for mobile/tablet screen
   .diffs.tab-pane {
     margin: 0 (-$gl-padding);
-  }
-}
-
-.diffs.tab-pane {
-  @include media-breakpoint-up(md) {
-    // ensure consistent page height when selected file is loading
-    // https://gitlab.com/gitlab-org/gitlab/-/issues/426250
-    min-height: 100vh;
   }
 }
 
@@ -296,7 +323,10 @@ $comparison-empty-state-height: 62px;
   height: 12px;
 }
 
-.merge-request-review-drawer {
-  max-width: 680px;
-  width: 100%;
+// Firefox rendering bug fix - force new stacking context
+.diffs.tab-pane,
+.notes.tab-pane {
+  @supports (-moz-appearance: none) {
+    transform: translateZ(0);
+  }
 }

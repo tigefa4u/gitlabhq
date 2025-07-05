@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 description: Latest version instructions.
 title: Upgrading GitLab
@@ -29,10 +29,11 @@ Make sure to read the whole page as it contains information related to every upg
 To upgrade GitLab:
 
 1. Create an [upgrade plan](plan_your_upgrade.md) to document your upgrade steps.
-1. Familiarize yourself with the [maintenance policy documentation](../policy/maintenance.md).
+1. Familiarize yourself with the [maintenance policy documentation](../policy/maintenance.md) and the [currently maintained versions](../policy/maintenance.md#maintained-versions).
 1. Read the [release posts](https://about.gitlab.com/releases/categories/releases/) for versions you're passing over.
    In particular, deprecations, removals, and important notes on upgrading.
-1. Determine what [upgrade path](upgrade_paths.md) you should take. If your upgrade path includes required upgrade stops, you might have to perform multiple
+1. Using the [upgrade path tool](upgrade_paths.md#upgrade-path-tool), determine what [upgrade path](upgrade_paths.md) you should take.
+   If your upgrade path includes required upgrade stops, you might have to perform multiple
    upgrades to move from your current version to your target version. If
    relevant, check [OS compatibility with the target GitLab version](../administration/package_information/supported_os.md).
 1. Check for [background migrations](background_migrations.md). All migrations must finish running before each upgrade.
@@ -42,6 +43,7 @@ To upgrade GitLab:
 1. If available in your starting version, consider [turning on maintenance mode](../administration/maintenance_mode/_index.md)
    during the upgrade.
 1. Consult changes for different versions of GitLab to ensure compatibility before upgrading:
+   - [GitLab 18 changes](versions/gitlab_18_changes.md)
    - [GitLab 17 changes](versions/gitlab_17_changes.md)
    - [GitLab 16 changes](versions/gitlab_16_changes.md)
    - [GitLab 15 changes](versions/gitlab_15_changes.md)
@@ -132,6 +134,8 @@ to ensure the major components of GitLab are working:
    sudo gitlab-rake gitlab:check
    ```
 
+1. [Check the status of all background database migrations](background_migrations.md#check-for-pending-migrations).
+
 1. Confirm that encrypted database values [can be decrypted](../administration/raketasks/check.md#verify-database-values-can-be-decrypted-using-the-current-secrets):
 
    ```shell
@@ -165,7 +169,7 @@ If you upgrade your GitLab instance while the GitLab Runner is processing jobs, 
 
 As for the artifacts, the GitLab Runner attempts to upload them three times, after which the job eventually fails.
 
-To address the above two scenarios, it is advised to do the following prior to upgrading:
+To address the two previous scenarios, it is advised to do the following prior to upgrading:
 
 1. Plan your maintenance.
 1. Pause your runners, or block new jobs from starting by adding the following to your `/etc/gitlab/gitlab.rb`:
@@ -192,35 +196,7 @@ GitLab comes in two flavors: [Community Edition](https://about.gitlab.com/featur
 and [Enterprise Edition](https://about.gitlab.com/features/#enterprise) which builds on top of the Community Edition and
 includes extra features mainly aimed at organizations with more than 100 users.
 
-Below you can find some guides to help you change GitLab editions.
-
-### Community to Enterprise Edition
-
-{{< alert type="note" >}}
-
-The following guides are for subscribers of the Enterprise Edition only.
-
-{{< /alert >}}
-
-If you wish to upgrade your GitLab installation from Community to Enterprise
-Edition, follow the guides below based on the installation method:
-
-- [Source CE to EE upgrade guides](upgrading_from_ce_to_ee.md) - The steps are very similar
-  to a version upgrade: stop the server, get the code, update configuration files for
-  the new functionality, install libraries and do migrations, update the init
-  script, start the application and check its status.
-- [Linux package CE to EE](package/convert_to_ee.md) - Follow this guide to upgrade your Linux package
-  GitLab Community Edition to the Enterprise Edition.
-- [Docker CE to EE](../install/docker/upgrade.md#convert-community-edition-to-enterprise-edition) -
-  Follow this guide to upgrade your GitLab Community Edition container to an Enterprise Edition container.
-- [Helm chart (Kubernetes) CE to EE](https://docs.gitlab.com/charts/installation/deployment.html#convert-community-edition-to-enterprise-edition) -
-  Follow this guide to upgrade your GitLab Community Edition Helm deployment to Enterprise Edition.
-
-### Enterprise to Community Edition
-
-To downgrade your Enterprise Edition installation back to Community
-Edition, you can follow [this guide](../downgrade_ee_to_ce/_index.md) to make the process as smooth as
-possible.
+In the following section you can find some guides to help you change GitLab editions.
 
 ## Upgrade steps for additional features
 
@@ -237,11 +213,12 @@ If you're using Geo:
 
 - Review [Geo upgrade documentation](../administration/geo/replication/upgrading_the_geo_sites.md).
 - Read about the Geo version-specific update instructions:
+  - [GitLab 18](versions/gitlab_18_changes.md)
   - [GitLab 17](versions/gitlab_17_changes.md)
   - [GitLab 16](versions/gitlab_16_changes.md)
   - [GitLab 15](versions/gitlab_15_changes.md)
 - Review Geo-specific steps when [upgrading the database](https://docs.gitlab.com/omnibus/settings/database.html#upgrading-a-geo-instance).
-- Create an upgrade and rollback plan for _each_ Geo site (primary and each secondary).
+- Create an upgrade and rollback plan for each Geo site (primary and each secondary).
 
 ### GitLab agent for Kubernetes
 

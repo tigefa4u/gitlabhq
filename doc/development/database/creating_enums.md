@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Creating enums
 ---
 
@@ -21,7 +21,7 @@ end
 
 ## All of the key/value pairs should be defined in FOSS
 
-**Summary:** All enums needs to be defined in FOSS, if a model is also part of the FOSS.
+**Summary**: All enums needs to be defined in FOSS, if a model is also part of the FOSS.
 
 ```ruby
 class Model < ApplicationRecord

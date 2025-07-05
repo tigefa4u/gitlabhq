@@ -1,5 +1,5 @@
 import { mount, shallowMount } from '@vue/test-utils';
-import { GlTable, GlBadge, GlPagination, GlDisclosureDropdown, GlButton } from '@gitlab/ui';
+import { GlTable, GlBadge, GlPagination, GlButton } from '@gitlab/ui';
 import { nextTick } from 'vue';
 import { cloneDeep } from 'lodash';
 import { stubComponent } from 'helpers/stub_component';
@@ -35,7 +35,7 @@ const findAllBadges = () => wrapper.findAllComponents(GlBadge);
 const findBadge = (at) => findAllBadges().at(at);
 const findPagination = () => wrapper.findComponent(GlPagination);
 const findAllPodLogsButtons = () => wrapper.findAllComponents(PodLogsButton);
-const findAllActionsDropdowns = () => wrapper.findAllComponents(GlDisclosureDropdown);
+const findAllActionButtons = () => wrapper.findAll('[data-testid="delete-action-button"]');
 const findAllPodNameButtons = () => wrapper.findAllComponents(GlButton);
 
 describe('Workload table component', () => {
@@ -77,7 +77,7 @@ describe('Workload table component', () => {
         mockPodsTableItems.forEach((data, index) => {
           expect(findRow(index).text()).toContain(data.name);
           expect(findRow(index).text()).toContain(data.namespace);
-          expect(findRow(index).text()).toContain(data.status);
+          expect(findRow(index).text()).toContain(data.statusText || data.status);
           expect(findRow(index).text()).toContain(data.age);
         });
       });
@@ -87,17 +87,17 @@ describe('Workload table component', () => {
       });
 
       it.each`
-        status         | variant      | index
-        ${'Running'}   | ${'info'}    | ${0}
-        ${'Running'}   | ${'info'}    | ${1}
-        ${'Pending'}   | ${'warning'} | ${2}
-        ${'Succeeded'} | ${'success'} | ${3}
-        ${'Failed'}    | ${'danger'}  | ${4}
-        ${'Failed'}    | ${'danger'}  | ${5}
+        status         | statusText | variant      | index
+        ${'Running'}   | ${''}      | ${'info'}    | ${0}
+        ${'Running'}   | ${''}      | ${'info'}    | ${1}
+        ${'Pending'}   | ${''}      | ${'warning'} | ${2}
+        ${'Succeeded'} | ${''}      | ${'success'} | ${3}
+        ${'Failed'}    | ${'Error'} | ${'danger'}  | ${4}
+        ${'Failed'}    | ${''}      | ${'danger'}  | ${5}
       `(
         'renders "$variant" badge for status "$status" at index "$index"',
-        ({ status, variant, index }) => {
-          expect(findBadge(index).text()).toBe(status);
+        ({ status, statusText, variant, index }) => {
+          expect(findBadge(index).text()).toBe(statusText || status);
           expect(findBadge(index).props('variant')).toBe(variant);
         },
       );
@@ -112,7 +112,7 @@ describe('Workload table component', () => {
         createWrapper({ items: itemsWithContainers, fields: PODS_TABLE_FIELDS });
       });
 
-      it('renders pod-logs-button for each pod with containers', () => {
+      it('renders pod-logs-button in actions column for each pod with containers', () => {
         expect(findAllPodLogsButtons()).toHaveLength(1);
       });
 
@@ -131,6 +131,7 @@ describe('Workload table component', () => {
         {
           name: 'delete-pod',
           text: 'Delete Pod',
+          class: 'text-danger',
         },
       ];
       const podItemsWithActions = mockPodsTableItems.map((item) => {
@@ -145,25 +146,32 @@ describe('Workload table component', () => {
         createWrapper({ items: podItemsWithActions, fields: PODS_TABLE_FIELDS });
       });
 
-      it('renders actions column', () => {
+      it('renders actions column with proper label', () => {
         expect(findTable().props('fields')[lastField]).toEqual({
           key: 'actions',
-          label: '',
+          label: 'Actions',
           sortable: false,
         });
       });
 
-      it('renders actions dropdown for each row', () => {
-        expect(findAllActionsDropdowns()).toHaveLength(podItemsWithActions.length);
+      it('renders delete button for items with delete-pod action', () => {
+        expect(findAllActionButtons()).toHaveLength(podItemsWithActions.length);
       });
 
-      it('renders correct props for each dropdown', () => {
-        expect(findAllActionsDropdowns().at(0).attributes('title')).toBe('Actions');
-        expect(findAllActionsDropdowns().at(0).props('items')).toMatchObject([
-          {
-            text: 'Delete Pod',
-          },
-        ]);
+      it('renders delete button with correct props', () => {
+        expect(findAllActionButtons().at(0).props()).toMatchObject({
+          icon: 'remove',
+          size: 'small',
+          variant: 'danger',
+          category: 'tertiary',
+        });
+      });
+
+      it('emits delete-pod event when delete button is clicked', async () => {
+        await findAllActionButtons().at(0).trigger('click');
+
+        expect(wrapper.emitted('delete-pod')).toHaveLength(1);
+        expect(wrapper.emitted('delete-pod')[0]).toEqual([podItemsWithActions[0]]);
       });
     });
   });

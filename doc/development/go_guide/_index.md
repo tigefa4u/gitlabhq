@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Go standards and style guidelines
 ---
 
@@ -259,7 +259,7 @@ func Test(t *testing.T) {
         want := TestData{}
         got := FuncUnderTest()
 
-        require.Equal(t, want, got) // note that expected value comes first, then comes the actual one ("diff" semantics)
+        require.Equal(t, want, got) // expected value comes first, then comes the actual one ("diff" semantics)
     })
 }
 ```
@@ -482,7 +482,7 @@ go: downloading gitlab.com/gitlab-org/security-products/analyzers/report/v3 v3.1
 If initializing a slice, provide a capacity where possible to avoid extra
 allocations.
 
-**Don't:**
+**Don't**:
 
 ```go
 var s2 []string
@@ -491,7 +491,7 @@ for _, val := range s1 {
 }
 ```
 
-**Do:**
+**Do**:
 
 ```go
 s2 := make([]string, 0, len(s1))

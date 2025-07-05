@@ -268,6 +268,40 @@ RSpec.describe Note, feature_category: :team_planning do
   end
 
   describe 'callbacks' do
+    describe '#touch_noteable' do
+      let_it_be_with_reload(:noteable) { create(:issue) }
+
+      it 'calls #touch on the noteable' do
+        note = build(:note, project: noteable.project, noteable: noteable)
+
+        expect(note).to receive(:touch_noteable).and_call_original
+        expect(note.noteable).to receive(:touch)
+
+        note.save!
+      end
+
+      shared_examples_for 'skips #touch_noteable' do
+        it 'skips #touch_noteable' do
+          expect(note).not_to receive(:touch_noteable)
+          expect(note.noteable).not_to receive(:touch)
+
+          note.save!
+        end
+      end
+
+      context "when 'importing' is true" do
+        let(:note) { build(:note, project: noteable.project, noteable: noteable, importing: true) }
+
+        it_behaves_like 'skips #touch_noteable'
+      end
+
+      context "when 'skip_touch_noteable' is true" do
+        let(:note) { build(:note, project: noteable.project, noteable: noteable, skip_touch_noteable: true) }
+
+        it_behaves_like 'skips #touch_noteable'
+      end
+    end
+
     describe '#keep_around_commit' do
       let!(:noteable) { create(:issue) }
 
@@ -1885,22 +1919,8 @@ RSpec.describe Note, feature_category: :team_planning do
         let_it_be(:banned_user) { create(:banned_user).user }
         let_it_be(:banned_note) { create(:note, author: banned_user) }
 
-        context 'when the :hidden_notes feature is disabled' do
-          before do
-            stub_feature_flags(hidden_notes: false)
-          end
-
-          it { is_expected.to include(banned_note, note1) }
-        end
-
-        context 'when the :hidden_notes feature is enabled' do
-          before do
-            stub_feature_flags(hidden_notes: true)
-          end
-
-          it { is_expected.not_to include(banned_note) }
-          it { is_expected.to include(note1) }
-        end
+        it { is_expected.not_to include(banned_note) }
+        it { is_expected.to include(note1) }
       end
     end
 
@@ -2095,6 +2115,82 @@ RSpec.describe Note, feature_category: :team_planning do
         end
 
         it { is_expected.to be_truthy }
+      end
+    end
+  end
+
+  describe '#human_max_access' do
+    let_it_be(:user) { create(:user) }
+
+    subject { note.human_max_access }
+
+    context 'when parent is a project' do
+      let_it_be(:project) { create(:project) }
+      let_it_be(:noteable) { create(:wiki_page_meta, project: project) }
+      let(:note) { create(:note, project: project, author: user, noteable: noteable) }
+
+      before do
+        project.add_developer(user)
+      end
+
+      it { is_expected.to be('Developer') }
+    end
+  end
+
+  describe '#trigger_work_item_updated_subscription' do
+    let(:issue) { create(:issue) }
+    let(:note) { build(:note, noteable: issue, system: true, project: issue.project) }
+
+    before do
+      allow(note).to receive(:for_issue?).and_return(true)
+    end
+
+    context 'when note contains metadata with specific action' do
+      %w[branch relate cross_reference].each do |action|
+        it "triggers subscription for note with '#{action}' action" do
+          build(:system_note_metadata, note: note, action: action)
+
+          expect(GraphqlTriggers).to receive(:work_item_updated).with(issue)
+
+          note.save!
+        end
+      end
+    end
+
+    context 'when note contains metadata with non-actionable action' do
+      %w[label visible assignee].each do |action|
+        it "does not trigger subscription for note with '#{action}' action" do
+          build(:system_note_metadata, note: note, action: action)
+
+          expect(GraphqlTriggers).not_to receive(:work_item_updated)
+
+          note.save!
+        end
+      end
+    end
+
+    context 'when noteable is not an issue' do
+      let(:merge_request) { create(:merge_request) }
+      let(:note) { build(:note, noteable: merge_request, system: true, note: 'merge request created', project: merge_request.project) }
+
+      before do
+        allow(note).to receive(:for_issue?).and_return(false)
+      end
+
+      it 'does not trigger subscription' do
+        expect(GraphqlTriggers).not_to receive(:work_item_updated)
+
+        note.save!
+      end
+    end
+
+    context 'when noteable is not a system note' do
+      let(:note) { build(:note, noteable: issue, system: false, note: 'merge request created', project: issue.project) }
+
+      it 'does not trigger subscription' do
+        expect(GraphqlTriggers).not_to receive(:work_item_updated)
+
+        note.save!
       end
     end
   end

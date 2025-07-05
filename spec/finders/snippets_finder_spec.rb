@@ -349,23 +349,6 @@ RSpec.describe SnippetsFinder do
 
         expect(snippets).to be_empty
       end
-
-      context 'when hide_snippets_of_banned_users feature flag is off' do
-        before do
-          stub_feature_flags(hide_snippets_of_banned_users: false)
-        end
-
-        it 'returns banned snippets for non-admin users' do
-          snippets = described_class.new(
-            user,
-            ids: [banned_public_personal_snippet.id, banned_public_project_snippet.id]
-          ).execute
-
-          expect(snippets).to contain_exactly(
-            banned_public_personal_snippet, banned_public_project_snippet
-          )
-        end
-      end
     end
 
     context 'when the user cannot read cross project' do
@@ -426,7 +409,8 @@ RSpec.describe SnippetsFinder do
 
     it_behaves_like 'a finder with external authorization service' do
       let!(:subject) { create(:project_snippet, project: project) }
-      let(:project_params) { { project: project } }
+      let(:execute) { described_class.new(user).execute }
+      let(:project_execute) { described_class.new(user, project: project).execute }
     end
 
     it 'includes the result if the external service allows access' do

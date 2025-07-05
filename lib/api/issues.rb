@@ -2,16 +2,16 @@
 
 module API
   class Issues < ::API::Base
-    include PaginationParams
+    include ::API::Concerns::AiWorkflowsAccess
     include APIGuard
+    include PaginationParams
+
+    allow_ai_workflows_access
+
     helpers Helpers::IssuesHelpers
     helpers SpammableActions::CaptchaCheck::RestApiActionsSupport
 
     before { authenticate_non_get! }
-
-    allow_access_with_scope :ai_workflows, if: ->(request) do
-      request.get? || request.head? || request.post? || request.put?
-    end
 
     feature_category :team_planning
     urgency :low
@@ -381,23 +381,15 @@ module API
         not_found!('Project') unless new_project
 
         begin
-          issue = if user_project.work_item_move_and_clone_flag_enabled?
-                    response = ::WorkItems::DataSync::MoveService.new(
-                      work_item: issue, current_user: current_user, target_namespace: new_project.project_namespace
-                    ).execute
+          response = ::WorkItems::DataSync::MoveService.new(
+            work_item: issue, current_user: current_user, target_namespace: new_project.project_namespace
+          ).execute
 
-                    render_api_error!(response.message, 400) if response.error?
+          render_api_error!(response.message, 400) if response.error?
 
-                    response.payload[:work_item]
-                  else
-                    ::Issues::MoveService.new(
-                      container: user_project, current_user: current_user
-                    ).execute(issue, new_project)
-                  end
+          issue = response.payload[:work_item]
 
           present issue, with: Entities::Issue, current_user: current_user, project: user_project
-        rescue ::Issues::MoveService::MoveError => error
-          render_api_error!(error.message, 400)
         end
       end
       # rubocop: enable CodeReuse/ActiveRecord
@@ -421,23 +413,16 @@ module API
         not_found!('Project') unless target_project
 
         begin
-          issue = if user_project.work_item_move_and_clone_flag_enabled?
-                    response = ::WorkItems::DataSync::CloneService.new(
-                      work_item: issue, current_user: current_user, target_namespace: target_project.project_namespace,
-                      params: { clone_with_notes: params[:with_notes] }
-                    ).execute
+          response = ::WorkItems::DataSync::CloneService.new(
+            work_item: issue, current_user: current_user, target_namespace: target_project.project_namespace,
+            params: { clone_with_notes: params[:with_notes] }
+          ).execute
 
-                    render_api_error!(response.message, 400) if response.error?
+          render_api_error!(response.message, 400) if response.error?
 
-                    response.payload[:work_item]
-                  else
-                    ::Issues::CloneService.new(container: user_project, current_user: current_user)
-                      .execute(issue, target_project, with_notes: params[:with_notes])
-                  end
+          issue = response.payload[:work_item]
 
           present issue, with: Entities::Issue, current_user: current_user, project: target_project
-        rescue ::Issues::CloneService::CloneError => error
-          render_api_error!(error.message, 400)
         end
       end
       # rubocop: enable CodeReuse/ActiveRecord

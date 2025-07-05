@@ -1,8 +1,10 @@
 <script>
-import { GlLoadingIcon, GlIntersectionObserver, GlButton, GlLink } from '@gitlab/ui';
+import { GlIntersectionObserver, GlButton, GlLink } from '@gitlab/ui';
+import HiddenBadge from '~/issuable/components/hidden_badge.vue';
 import LockedBadge from '~/issuable/components/locked_badge.vue';
 import { WORKSPACE_PROJECT } from '~/issues/constants';
 import ConfidentialityBadge from '~/vue_shared/components/confidentiality_badge.vue';
+import ImportedBadge from '~/vue_shared/components/imported_badge.vue';
 import glFeatureFlagMixin from '~/vue_shared/mixins/gl_feature_flags_mixin';
 import { findNotesWidget } from '../utils';
 import TodosToggle from './shared/todos_toggle.vue';
@@ -11,9 +13,10 @@ import WorkItemNotificationsWidget from './work_item_notifications_widget.vue';
 
 export default {
   components: {
+    HiddenBadge,
+    ImportedBadge,
     LockedBadge,
     GlIntersectionObserver,
-    GlLoadingIcon,
     TodosToggle,
     ConfidentialityBadge,
     WorkItemStateBadge,
@@ -27,10 +30,6 @@ export default {
       type: Object,
       required: true,
     },
-    fullPath: {
-      type: String,
-      required: true,
-    },
     isStickyHeaderShowing: {
       type: Boolean,
       required: true,
@@ -39,27 +38,7 @@ export default {
       type: Boolean,
       required: true,
     },
-    updateInProgress: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    parentWorkItemConfidentiality: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    parentId: {
-      type: String,
-      required: false,
-      default: null,
-    },
     showWorkItemCurrentUserTodos: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    isModal: {
       type: Boolean,
       required: false,
       default: false,
@@ -68,38 +47,6 @@ export default {
       type: Array,
       required: false,
       default: () => [],
-    },
-    workItemAuthorId: {
-      type: Number,
-      required: false,
-      default: 0,
-    },
-    isGroup: {
-      type: Boolean,
-      required: true,
-    },
-    allowedChildTypes: {
-      type: Array,
-      required: false,
-      default: () => [],
-    },
-    namespaceFullName: {
-      type: String,
-      required: false,
-      default: '',
-    },
-    hasChildren: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    showSidebar: {
-      type: Boolean,
-      required: true,
-    },
-    truncationEnabled: {
-      type: Boolean,
-      required: true,
     },
   },
   computed: {
@@ -135,7 +82,7 @@ export default {
         data-testid="work-item-sticky-header"
       >
         <div
-          class="work-item-sticky-header-text gl-mx-auto gl-flex gl-items-center gl-gap-3 gl-px-5 xl:gl-px-6"
+          class="work-item-sticky-header-text gl-mx-auto gl-flex gl-items-center gl-gap-2 gl-px-5 xl:gl-px-6"
         >
           <work-item-state-badge
             v-if="workItemState"
@@ -144,7 +91,6 @@ export default {
             :duplicated-to-work-item-url="workItem.duplicatedToWorkItemUrl"
             :moved-to-work-item-url="workItem.movedToWorkItemUrl"
           />
-          <gl-loading-icon v-if="updateInProgress" />
           <confidentiality-badge
             v-if="workItem.confidential"
             :issuable-type="workItemType"
@@ -152,6 +98,8 @@ export default {
             hide-text-in-small-screens
           />
           <locked-badge v-if="isDiscussionLocked" :issuable-type="workItemType" />
+          <hidden-badge v-if="workItem.hidden" />
+          <imported-badge v-if="workItem.imported" />
           <gl-link
             class="gl-mr-auto gl-block gl-truncate gl-pr-3 gl-font-bold gl-text-strong"
             href="#top"
@@ -178,10 +126,8 @@ export default {
           />
           <work-item-notifications-widget
             v-if="newTodoAndNotificationsEnabled"
-            :full-path="fullPath"
             :work-item-id="workItem.id"
             :subscribed-to-notifications="workItemNotificationsSubscribed"
-            :can-update="canUpdate"
             @error="$emit('error')"
           />
           <slot name="actions"></slot>

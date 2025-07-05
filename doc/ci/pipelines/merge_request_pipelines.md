@@ -2,6 +2,7 @@
 stage: Verify
 group: Pipeline Execution
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+description: Learn how to use merge request pipelines in GitLab CI/CD to test changes efficiently, run targeted jobs, and improve code quality before merging.
 title: Merge request pipelines
 ---
 
@@ -24,8 +25,7 @@ This type of pipeline, called a merge request pipeline, runs when you:
 In addition, merge request pipelines:
 
 - Have access to [more predefined variables](merge_request_pipelines.md#available-predefined-variables).
-- Do not have access to [protected variables](../variables/_index.md#protect-a-cicd-variable) or
-  [protected runners](../runners/configure_runners.md#prevent-runners-from-revealing-sensitive-information).
+- Can [optionally access protected variables or runners](#control-access-to-protected-variables-and-runners).
 
 These pipelines display a `merge request` label in pipeline lists.
 
@@ -136,12 +136,6 @@ To use the UI to run a pipeline in the parent project for a merge request from a
 
 ### Prevent pipelines from fork projects
 
-{{< history >}}
-
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/325189) in GitLab 15.3.
-
-{{< /history >}}
-
 To prevent users from running new pipelines for fork projects in the parent project
 use [the projects API](../../api/projects.md#edit-a-project) to disable the `ci_allow_fork_pipelines_to_run_in_parent_project`
 setting.
@@ -162,3 +156,29 @@ When you use merge request pipelines, you can use:
   available in branch pipelines.
 - [Additional predefined variables](../variables/predefined_variables.md#predefined-variables-for-merge-request-pipelines)
   available only to jobs in merge request pipelines.
+
+## Control access to protected variables and runners
+
+{{< history >}}
+
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/188008) in GitLab 18.1
+
+{{< /history >}}
+
+You can control access to [protected CI/CD variables](../variables/_index.md#protect-a-cicd-variable)
+and [protected runners](../runners/configure_runners.md#prevent-runners-from-revealing-sensitive-information)
+from merge request pipelines.
+
+Merge request pipelines can only access these protected resources if both the source and target branches
+of the merge request are [protected](../../user/project/repository/branches/protected.md). Also, the user triggering the pipeline should have push/merge access to the target branch of the Merge Request. Merge request pipelines can only access these protected resources if both the source and target branches belong to the same project. Merge request pipelines from a fork of a repository cannot access these protected resources.
+
+Prerequisites:
+
+- You must have the Maintainer role in the project.
+
+To control access to protected variables and runners:
+
+- Go to **Settings > CI/CD**.
+- Expand **Variables**
+- Under **Access protected resources in merge request pipelines**, select or clear
+  the **Allow merge request pipelines to access protected variables and runners** option.

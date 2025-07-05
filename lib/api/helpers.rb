@@ -376,7 +376,8 @@ module API
     end
 
     def authorize_read_application_statistics!
-      authenticated_as_admin!
+      authenticate!
+      forbidden! unless current_user.can?(:read_application_statistics)
     end
 
     def authorize!(action, subject = :global, reason = nil)
@@ -727,7 +728,8 @@ module API
     # @content_disposition controls the Content-Disposition response header. nil by default. Forced to attachment for object storage disabled mode.
     # @content_type controls the Content-Type response header. By default, it will rely on the 'application/octet-stream' value or the content type detected by carrierwave.
     # @extra_response_headers. Set additional response headers. Not used in the direct download supported case.
-    def present_carrierwave_file!(file, supports_direct_download: true, content_disposition: nil, content_type: nil, extra_response_headers: {})
+    # @extra_send_url_params. Additional parameters to send to workhorse send_url call. See Gitlab::Workhorse.send_url for more information
+    def present_carrierwave_file!(file, supports_direct_download: true, content_disposition: nil, content_type: nil, extra_response_headers: {}, extra_send_url_params: {})
       return not_found! unless file&.exists?
 
       if content_disposition
@@ -749,7 +751,7 @@ module API
       else
         response_headers = extra_response_headers.merge('Content-Type' => content_type, 'Content-Disposition' => response_disposition).compact_blank
 
-        header(*Gitlab::Workhorse.send_url(file.url, response_headers: response_headers))
+        header(*Gitlab::Workhorse.send_url(file.url, response_headers: response_headers, **extra_send_url_params))
         status :ok
         body '' # to avoid an error from API::APIGuard::ResponseCoercerMiddleware
       end
@@ -809,6 +811,7 @@ module API
       finder_params[:non_public] = true if params[:membership].present?
       finder_params[:starred] = true if params[:starred].present?
       finder_params[:archived] = archived_param unless params[:archived].nil?
+      finder_params[:active] = params[:active] unless params[:active].nil?
       finder_params
     end
 
@@ -1026,7 +1029,7 @@ module API
     end
 
     def handle_job_token_failure!(project)
-      if current_user&.from_ci_job_token? && current_user&.ci_job_token_scope
+      if current_user&.from_ci_job_token? && current_user.ci_job_token_scope
         source_project = current_user.ci_job_token_scope.current_project
         error_message = format("Authentication by CI/CD job token not allowed from %{source_project_path} to %{target_project_path}.", source_project_path: source_project.path, target_project_path: project.path)
 

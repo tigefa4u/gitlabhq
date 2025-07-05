@@ -65,7 +65,9 @@ RSpec.describe Groups::GroupMembersHelper, feature_category: :groups_and_project
         group_name: shared_group.name,
         group_path: shared_group.full_path,
         can_approve_access_requests: true,
-        available_roles: available_roles
+        available_roles: available_roles,
+        allow_inactive_placeholder_reassignment: 'false',
+        allow_bypass_placeholder_confirmation: 'false'
       }
 
       expect(subject).to include(expected)
@@ -183,9 +185,48 @@ RSpec.describe Groups::GroupMembersHelper, feature_category: :groups_and_project
         )
       end
     end
+
+    context 'when allow_bypass_placeholder_confirmation for current_user is false' do
+      before do
+        expect_next_instance_of(Import::UserMapping::AdminBypassAuthorizer, current_user) do |authorizer|
+          allow(authorizer).to receive(:allowed?).and_return(false)
+        end
+      end
+
+      it 'returns "allow_inactive_placeholder_reassignment" as "false"' do
+        expect(subject[:allow_inactive_placeholder_reassignment]).to eq('false')
+      end
+
+      it 'returns "allow_bypass_placeholder_confirmation" as "false"' do
+        expect(subject[:allow_bypass_placeholder_confirmation]).to eq('false')
+      end
+    end
+
+    context 'when allow_bypass_placeholder_confirmation for current_user is true' do
+      before do
+        expect_next_instance_of(Import::UserMapping::AdminBypassAuthorizer, current_user) do |authorizer|
+          allow(authorizer).to receive(:allowed?).and_return(true)
+        end
+      end
+
+      it 'returns "allow_inactive_placeholder_reassignment" as "true"' do
+        expect(subject[:allow_inactive_placeholder_reassignment]).to eq('true')
+      end
+
+      it 'returns "allow_bypass_placeholder_confirmation" as "true"' do
+        expect(subject[:allow_bypass_placeholder_confirmation]).to eq('true')
+      end
+    end
   end
 
   describe '#group_member_header_subtext' do
+    let(:current_user) { create(:user) }
+
+    before do
+      allow(helper).to receive(:current_user).and_return(current_user)
+      allow(helper).to receive(:can?).with(current_user, :invite_group_members, group).and_return(true)
+    end
+
     it 'contains expected text with group name' do
       expect(helper.group_member_header_subtext(group)).to match("You're viewing members of .*#{group.name}")
     end

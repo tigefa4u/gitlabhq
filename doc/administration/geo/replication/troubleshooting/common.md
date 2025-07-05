@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Troubleshooting common Geo errors
@@ -34,15 +34,15 @@ to help identify if something is wrong:
 - Is the secondary site's tracking database configured?
 - Is the secondary site's tracking database connected?
 - Is the secondary site's tracking database up-to-date?
-- Is the secondary site's status less than 10 minutes old?
+- Is the secondary site's status less than 1 hour old?
 
-A site shows as "Unhealthy" if the site's status is more than 10 minutes old. In that case, try running the following in the [Rails console](../../../operations/rails_console.md) on the affected secondary site:
+A site shows as "Unhealthy" if the site's status is more than 1 hour old. In that case, try running the following in the [Rails console](../../../operations/rails_console.md) on the affected secondary site:
 
 ```ruby
 Geo::MetricsUpdateWorker.new.perform
 ```
 
-If it raises an error, then the error is probably also preventing the jobs from completing. If it takes longer than 10 minutes, then the status might flap or persist as "Unhealthy", even if the status does occasionally get updated. This might be due to growth in usage, growth in data over time, or performance bugs such as a missing database index.
+If it raises an error, then the error is probably also preventing the jobs from completing. If it takes longer than 1 hour, then the status might flap or persist as "Unhealthy", even if the status does occasionally get updated. This might be due to growth in usage, growth in data over time, or performance bugs such as a missing database index.
 
 You can monitor system CPU load with a utility like `top` or `htop`. If PostgreSQL is using a significant amount of CPU, it might indicate that there's a problem, or that the system is underprovisioned. System memory should also be monitored.
 
@@ -378,7 +378,7 @@ In GitLab 15.6 and earlier, use one of the following workarounds:
 - Add entries in `/etc/hosts` for `pool.ntp.org` to direct the request to valid local time servers.
   This fixes the long timeout and the timeout error.
 - Direct the check to any valid IP address. This resolves the timeout issue, but the check fails
-  with the `No route to host` error, as noted above.
+  with the `No route to host` error, as noted previously.
 
 [Cloud native GitLab deployments](https://docs.gitlab.com/charts/advanced/geo/#set-the-geo-primary-site)
 generate an error because containers in Kubernetes do not have access to the host clock:
@@ -684,7 +684,7 @@ To determine if you might be experiencing this issue and remove the duplicate en
    puts 'BEGIN Package File IDs', package_file_ids, 'END Package File IDs'
    ```
 
-   If the output is empty, you are not affected. Otherwise, save 
+   If the output is empty, you are not affected. Otherwise, save
    the terminal output in a text file in case you lose connection later.
 
 1. Delete all duplicates:
@@ -718,7 +718,7 @@ primary.internal_uri
 Gitlab::HTTP.get(primary.internal_uri, allow_local_requests: true, limit: 10)
 ```
 
-Make sure that the value of `internal_uri` is correct in the output above.
+Make sure that the value of `internal_uri` is correct in the previous output.
 If the URL of the primary site is incorrect, double-check it in `/etc/gitlab/gitlab.rb`, and in **Admin > Geo > Sites**.
 
 ### Excessive database IO from Geo metrics collection

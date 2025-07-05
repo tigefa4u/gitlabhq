@@ -39,9 +39,9 @@ The Windows runner virtual machine instances do not use the GitLab Docker execut
 
 You can execute your job in one of the following Windows versions:
 
-| Version      | Status        |
-|--------------|---------------|
-| Windows 2022 | `GA`          |
+| Version      | Status |
+|--------------|--------|
+| Windows 2022 | `GA`   |
 
 You can find a full list of available pre-installed software in
 the [pre-installed software documentation](https://gitlab.com/gitlab-org/ci-cd/shared-runners/images/gcp/windows-containers/-/blob/main/cookbooks/preinstalled-software/attributes/default.rb).
@@ -53,7 +53,7 @@ The `script` section of your `.gitlab-ci.yml` file therefore requires PowerShell
 
 ## Example `.gitlab-ci.yml` file
 
-Below is a sample `.gitlab-ci.yml` file that shows how to start using the runners for Windows:
+Use this example `.gitlab-ci.yml` file to get started with hosted runners on Windows:
 
 ```yaml
 .windows_job:

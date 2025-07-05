@@ -13,7 +13,7 @@ title: Merge request widgets
 
 {{< /details >}}
 
-The **Overview** page of a merge request displays status updates from services
+The overview page of a merge request displays status updates from services
 that perform actions on your merge request. All subscription levels display a
 widgets area, but the content of the area depends on your subscription level
 and the services you configure for your project.
@@ -104,4 +104,4 @@ see the status of these checks in merge requests
 
 If you enable any application security scanning tools, GitLab shows the results in the security
 scanning widget. For more information, see
-[security scanning output in merge request widget](../../application_security/detect/security_scan_results.md#merge-request).
+[security scanning output in merge request widget](../../application_security/detect/security_scanning_results.md).

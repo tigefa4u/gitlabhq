@@ -22,11 +22,21 @@ module RuboCop
         private
 
         def violates?(node)
-          table_name = node.arguments.first.try(:value)
+          table_name = node.first_argument.try(:value)
 
           return unless table_name
 
-          high_traffic_tables.include?(table_name.to_sym)
+          nullable = node.arguments.third
+
+          # constraint validation only needs to be performed when _adding_ a constraint,
+          # not when removing a constraint.
+          #
+          # rubocop:disable Lint/BooleanSymbol -- Node#type? takes the name of the primitive as a symbol
+          return unless nullable&.type?(:false)
+
+          # rubocop:enable Lint/BooleanSymbol
+
+          large_or_over_limit_tables.include?(table_name.to_sym)
         end
       end
     end

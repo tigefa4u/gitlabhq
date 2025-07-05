@@ -65,7 +65,7 @@ RSpec.describe 'Group Package and registry settings', feature_category: :package
 
       wait_for_requests
 
-      expect(page).to be_axe_clean.within('[data-testid="packages-and-registries-group-settings"]') # rubocop:todo Capybara/TestidFinders -- Doesn't cover use case, see https://gitlab.com/gitlab-org/gitlab/-/issues/442224
+      expect(page).to be_axe_clean.within_testid('packages-and-registries-group-settings')
                                   .skipping :'link-in-text-block'
     end
 
@@ -130,6 +130,17 @@ RSpec.describe 'Group Package and registry settings', feature_category: :package
         fill_in 'Identity', with: 'username'
         fill_in 'Secret', with: 'token'
 
+        click_button 'Save changes'
+      end
+
+      expect(find('.gl-toast')).to have_content('Settings saved successfully.')
+    end
+
+    it 'allows clearing Docker Hub authentication settings' do
+      visit_settings_page
+
+      within_testid 'dependency-proxy-settings-content' do
+        fill_in 'Identity', with: ''
         click_button 'Save changes'
       end
 

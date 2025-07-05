@@ -1,38 +1,59 @@
 ---
 stage: AI-powered
-group: AI Model Validation
+group: AI Framework
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: AI gateway
 ---
 
-The [AI gateway](https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/ai_gateway/) is a standalone service that gives access to AI-native GitLab Duo features.
+The AI gateway is a standalone service that gives access to AI-native GitLab Duo features.
 
-GitLab operates an instance of AI gateway that is used by GitLab Self-Managed, GitLab Dedicated, and GitLab.com through the [Cloud Connector](../../development/cloud_connector/_index.md).
+GitLab operates an instance of the AI gateway that is used by GitLab.com and GitLab
+Dedicated through the [Cloud Connector](../../development/cloud_connector/_index.md).
 
-On GitLab Self-Managed, this GitLab instance of AI gateway applies regardless of whether you are using the
-cloud-based AI gateway hosted by GitLab, or using [GitLab Duo Self-Hosted](../../administration/gitlab_duo_self_hosted/_index.md) to self-host the AI gateway.
+On GitLab Self-Managed, you can use either of the following:
+
+- The GitLab-hosted AI gateway instance, based in the cloud.
+- The self-hosted AI gateway instance with
+  [GitLab Duo Self-Hosted](../../administration/gitlab_duo_self_hosted/_index.md).
 
 This page describes where the AI gateway is deployed, and answers questions about region selection, data routing, and data sovereignty.
 
 ## Region support
 
-For GitLab Self-Managed and Dedicated customers, the ability to choose the region is planned for future implementation. Currently, the process for region selection is managed internally by GitLab.
+### GitLab Self-Managed and GitLab Dedicated
 
-Runway, is currently not available to external customers. GitLab is working on expanding support to include GitLab Self-Managed instances in the future (Epic: [Expand Platform Engineering to more runtimes](https://gitlab.com/groups/gitlab-com/gl-infra/-/epics/1330)).
+For GitLab Self-Managed and GitLab Dedicated customers, region selection
+is managed internally by GitLab.
 
-[View the available regions](https://gitlab-com.gitlab.io/gl-infra/platform/runway/runwayctl/manifest.schema.html#spec_regions).
+[View the available regions](https://gitlab-com.gitlab.io/gl-infra/platform/runway/runwayctl/manifest.schema.html#spec_regions) in the [Runway](https://gitlab.com/gitlab-com/gl-infra/platform/runway) service manifest.
 
-For GitLab.com customers, it's important to note that the current routing mechanism is based on the location of the GitLab instance, not the user's location. As GitLab.com is currently single-homed in `us-east1`, requests to the AI gateway are routed to us-east4 in almost all cases. This means that the routing may not always result in the absolute nearest deployment for every user.
+Runway is the GitLab internal developer platform. It is not available to external
+customers. Support for improvements to GitLab Self-Managed instances is proposed in
+[epic 1330](https://gitlab.com/groups/gitlab-com/gl-infra/-/epics/1330).
 
-The IDE communicates directly with the AI gateway by default, bypassing the GitLab monolith. This direct connection improves routing efficiency. To change this, you can [configure direct and indirect connections](../project/repository/code_suggestions/_index.md#direct-and-indirect-connections).
+### GitLab.com
+
+For GitLab.com customers, the routing mechanism is based on the GitLab instance
+location, instead of the user's instance location.
+
+Because GitLab.com is currently single-homed in `us-east1`, requests to the AI gateway
+are routed to `us-east4` in almost all cases. This means that the routing might
+not always result in the absolute nearest deployment for every user.
+
+### Direct and indirect connections
+
+The IDE communicates directly with the AI gateway by default, bypassing the GitLab
+monolith. This direct connection improves routing efficiency. To change this, you can
+[configure direct and indirect connections](../project/repository/code_suggestions/_index.md#direct-and-indirect-connections).
 
 ### Automatic routing
 
-GitLab leverages Cloudflare and *Google Cloud Platform* (GCP) load balancers to route AI
+GitLab leverages Cloudflare and Google Cloud Platform (GCP) load balancers to route AI
 gateway requests to the nearest available deployment automatically. This routing
 mechanism prioritizes low latency and efficient processing of user requests.
 
-You cannot manually control this routing process. The system dynamically selects the optimal region based on factors like network conditions and server load.
+You cannot manually control this routing process. The system dynamically selects the
+optimal region based on factors like network conditions and server load.
 
 ### Tracing requests to specific regions
 
@@ -50,13 +71,13 @@ It's important to acknowledge the current limitations regarding strict data sove
 
 The following factors influence where data is routed.
 
-- **Network latency:** The primary routing mechanism focuses on minimizing latency, meaning data might be processed in a region other than the nearest one if network conditions dictate.
-- **Service availability:** In case of regional outages or service disruptions, requests might be automatically rerouted to ensure uninterrupted service.
-- **Third-Party dependencies:** The GitLab AI infrastructure relies on third-party model providers, like Google Vertex AI, which have their own data handling practices.
+- **Network latency**: The primary routing mechanism focuses on minimizing latency, meaning data might be processed in a region other than the nearest one if network conditions dictate.
+- **Service availability**: In case of regional outages or service disruptions, requests might be automatically rerouted to ensure uninterrupted service.
+- **Third-Party dependencies**: The GitLab AI infrastructure relies on third-party model providers, like Google Vertex AI, which have their own data handling practices.
 
 ### AI gateway deployment regions
 
-For the most up-to-date information on AI gateway deployment regions, please refer to the [AI-assist runway configuration file](https://gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist/-/blob/main/.runway/runway.yml?ref_type=heads#L12).
+For the most up-to-date information on AI gateway deployment regions, refer to the [AI-assist runway configuration file](https://gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist/-/blob/main/.runway/runway.yml?ref_type=heads#L12).
 
 As of the last update (2023-11-21), GitLab deploys the AI gateway in the following regions:
 
@@ -64,13 +85,15 @@ As of the last update (2023-11-21), GitLab deploys the AI gateway in the followi
 - Europe (`europe-west2`, `europe-west3`, `europe-west9`)
 - Asia Pacific (`asia-northeast1`, `asia-northeast3`)
 
-Please note that deployment regions may change frequently. For the most current information, always check the configuration file linked above.
+Deployment regions may change frequently. For the most current information, always check the
+previously linked configuration file.
 
 The exact location of the LLM models used by the AI gateway is determined by the third-party model providers. Currently, there is no guarantee that the models reside in the same geographical regions as the AI gateway deployments. This implies that data may flow back to the US or other regions where the model provider operates, even if the AI gateway processes the initial request in a different region.
 
 ### Data Flow and LLM model locations
 
-GitLab is working closely with LLM providers to understand their regional data handling practices fully. Currently, there might be instances where data is transmitted to regions outside the one closest to the user due to the factors mentioned above.
+GitLab is working closely with LLM providers to understand their regional data handling practices fully.
+Currently, there might be instances where data is transmitted to regions outside the one closest to the user due to the factors mentioned in the previous section.
 
 ### Future enhancements
 

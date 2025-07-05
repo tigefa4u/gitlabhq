@@ -22,7 +22,7 @@ title: Debian packages in the package registry
 {{< alert type="warning" >}}
 
 The Debian package registry for GitLab is under development and isn't ready for production use. This [epic](https://gitlab.com/groups/gitlab-org/-/epics/6057) details the remaining
-work and timelines to make it production ready. Support for [Debian packages is an experiment](../package_registry/supported_package_managers.md), and has known security vulnerabilities.
+work and timelines to make it production ready. Support for [Debian packages is an experiment](../package_registry/supported_functionality.md), and has known security vulnerabilities.
 
 {{< /alert >}}
 
@@ -47,12 +47,12 @@ Prerequisites:
 
 Debian repository support is still a work in progress. It's gated behind a feature flag that's
 **disabled by default**.
-[GitLab administrators with access to the GitLab Rails console](../../../administration/feature_flags.md)
+[GitLab administrators with access to the GitLab Rails console](../../../administration/feature_flags/_index.md)
 can opt to enable it.
 
 {{< alert type="warning" >}}
 
-Understand the [stability and security risks of enabling features still in development](../../../administration/feature_flags.md#risks-when-enabling-features-still-in-development).
+Understand the [stability and security risks of enabling features still in development](../../../administration/feature_flags/_index.md#risks-when-enabling-features-still-in-development).
 
 {{< /alert >}}
 
@@ -74,7 +74,7 @@ The Debian group repository is also behind a second feature flag that is disable
 
 {{< alert type="warning" >}}
 
-Understand the [stability and security risks of enabling features still in development](../../../administration/feature_flags.md#risks-when-enabling-features-still-in-development).
+Understand the [stability and security risks of enabling features still in development](../../../administration/feature_flags/_index.md#risks-when-enabling-features-still-in-development).
 
 {{< /alert >}}
 
@@ -177,8 +177,8 @@ Once built, several files are created:
 - `.changes` file: Upload metadata, and list of uploaded files (all the above)
 
 To upload these files, you can use `dput-ng >= 1.32` (Debian bullseye).
-`<username>` and `<password>` are defined
-[as above](#authenticate-to-the-debian-package-repositories):
+`<username>` and `<password>` are defined like in
+[Debian package repositories](#authenticate-to-the-debian-package-repositories):
 
 ```shell
 cat <<EOF > dput.cf

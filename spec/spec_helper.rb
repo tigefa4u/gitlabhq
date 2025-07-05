@@ -78,12 +78,7 @@ quality_level = Quality::TestLevel.new
 RSpec.configure do |config|
   config.use_transactional_fixtures = true
   config.use_instantiated_fixtures = false
-
-  if ::Gitlab.next_rails?
-    config.fixture_paths = [Rails.root]
-  else
-    config.fixture_path = Rails.root
-  end
+  config.fixture_paths = [Rails.root]
 
   config.verbose_retry = true
   config.display_try_failure_messages = true
@@ -228,7 +223,10 @@ RSpec.configure do |config|
 
   config.include_context 'when rendered has no HTML escapes', type: :view
   config.include_context 'with STI disabled', type: :model
+  # Validate JSONB columns only in EE to avoid false positives in FOSS.
+  config.include_context 'with JSONB validated columns', type: :model if Gitlab.ee?
 
+  include StubCurrentOrganization
   include StubFeatureFlags
   include StubSnowplow
   include StubMember
@@ -278,10 +276,6 @@ RSpec.configure do |config|
     ::Ci::ApplicationRecord.set_open_transactions_baseline
   end
 
-  config.around do |example|
-    example.run
-  end
-
   config.append_after do
     ApplicationRecord.reset_open_transactions_baseline
     ::Ci::ApplicationRecord.reset_open_transactions_baseline
@@ -314,10 +308,6 @@ RSpec.configure do |config|
       # cause spec failures.
       stub_feature_flags(gitlab_error_tracking: false)
 
-      # Disable this to avoid the Web IDE modals popping up in tests:
-      # https://gitlab.com/gitlab-org/gitlab/-/issues/385453
-      stub_feature_flags(vscode_web_ide: false)
-
       # Disable `main_branch_over_master` as we migrate
       # from `master` to `main` accross our codebase.
       # It's done in order to preserve the concistency in tests
@@ -334,10 +324,6 @@ RSpec.configure do |config|
       stub_feature_flags(disable_anonymous_project_search: false)
       stub_feature_flags(disable_cancel_redundant_pipelines_service: false)
 
-      # Specs should not require email verification by default, this makes the sign-in flow simpler in
-      # most cases. We do test the email verification flow in the appropriate specs.
-      stub_feature_flags(require_email_verification: false)
-
       # Keep-around refs should only be turned off for specific projects/repositories.
       stub_feature_flags(disable_keep_around_refs: false)
 
@@ -353,9 +339,13 @@ RSpec.configure do |config|
       # we need the `cleanup_data_source_work_item_data` disabled by default to prevent deletion of some data
       stub_feature_flags(cleanup_data_source_work_item_data: false)
 
-      # Since we are very early in the Vue migration, there isn't much value in testing when the feature flag is enabled
-      # Please see https://gitlab.com/gitlab-org/gitlab/-/issues/523493 for tracking revisiting this.
-      stub_feature_flags(your_work_groups_vue: false)
+      # Since we are very early in development of this feature, it might cause unexpected behaviors when the flag is enabled
+      # Please see https://gitlab.com/groups/gitlab-org/-/epics/17781 for tracking the progress.
+      stub_feature_flags(repository_file_tree_browser: false)
+
+      # Since we are very early in development of this feature, it might cause unexpected behaviors when the flag is enabled
+      # Please see https://gitlab.com/groups/gitlab-org/-/epics/17482 for tracking the progress.
+      stub_feature_flags(project_commits_refactor: false)
 
       # New issue page can cause tests to fail if they link to issue or issue list page
       # Default false while we make it compatible
@@ -364,6 +354,10 @@ RSpec.configure do |config|
       # New approval rules cause tests to fail
       # Default false while we make them compatible
       stub_feature_flags(v2_approval_rules: false)
+
+      # New personal homepage is still a WIP and not functional.
+      stub_feature_flags(personal_homepage: false)
+
     else
       unstub_all_feature_flags
     end
@@ -461,7 +455,7 @@ RSpec.configure do |config|
 
   config.around do |example|
     with_sidekiq_server_middleware do |chain|
-      Gitlab::SidekiqMiddleware.server_configurator(
+      Gitlab::SidekiqMiddleware::Server.configurator(
         metrics: false, # The metrics don't go anywhere in tests
         arguments_logger: false, # We're not logging the regular messages for inline jobs
         skip_jobs: false # We're not skipping jobs for inline tests
@@ -557,6 +551,14 @@ RSpec.configure do |config|
     # See https://gitlab.com/gitlab-org/gitlab/-/issues/509629
     Users::Internal.clear_memoization(:support_bot_id)
   end
+
+  config.before do
+    # Reconfigures the Cloud Connector data loader to use YamlDataLoader as the default
+    # instead of the DatabaseDataLoader. This is because specs should not rely on
+    # database contents. But this can be overridden to use DatabaseDataLoader by explicitly specifying the
+    # data loader class in the context.
+    Gitlab::CloudConnector::Configuration.data_loader_class = Gitlab::CloudConnector::DataModel::YamlDataLoader
+  end
 end
 
 # Disabled because it's causing N+1 queries.
@@ -613,28 +615,26 @@ RedisClient.register(RedisCommands::Instrumentation)
 module UsersInternalAllowExclusiveLease
   extend ActiveSupport::Concern
 
-  class_methods do
-    def unique_internal(scope, username, email_pattern, &block)
-      # this lets skip transaction checks when Users::Internal bots are created in
-      # let_it_be blocks during test set-up.
-      #
-      # Users::Internal bot creation within examples are still checked since the RSPec.current_scope is :example
-      if ::RSpec.respond_to?(:current_scope) && ::RSpec.current_scope == :before_all
-        Gitlab::ExclusiveLease.skipping_transaction_check { super }
-      else
-        super
-      end
-    end
-
-    # TODO: Until https://gitlab.com/gitlab-org/gitlab/-/issues/442780 is resolved we're creating internal users in the
-    # first organization as a temporary workaround. Many specs lack an organization in the database, causing foreign key
-    # constraint violations when creating internal users. We're not seeding organizations before all specs for
-    # performance.
-    def create_unique_internal(scope, username, email_pattern, &creation_block)
-      Organizations::Organization.first || FactoryBot.create(:organization)
-
+  def unique_internal(scope, username, email_pattern, &block)
+    # this lets skip transaction checks when Users::Internal bots are created in
+    # let_it_be blocks during test set-up.
+    #
+    # Users::Internal bot creation within examples are still checked since the RSPec.current_scope is :example
+    if ::RSpec.respond_to?(:current_scope) && ::RSpec.current_scope == :before_all
+      Gitlab::ExclusiveLease.skipping_transaction_check { super }
+    else
       super
     end
+  end
+
+  # TODO: Until https://gitlab.com/gitlab-org/gitlab/-/issues/442780 is resolved we're creating internal users in the
+  # first organization as a temporary workaround. Many specs lack an organization in the database, causing foreign key
+  # constraint violations when creating internal users. We're not seeding organizations before all specs for
+  # performance.
+  def create_unique_internal(scope, username, email_pattern, &creation_block)
+    Organizations::Organization.first || FactoryBot.create(:organization)
+
+    super
   end
 end
 

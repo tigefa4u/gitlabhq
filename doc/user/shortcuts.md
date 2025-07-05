@@ -3,6 +3,7 @@ stage: Foundations
 group: Personal Productivity
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: GitLab keyboard shortcuts
+description: Global shortcuts, navigation, and quick access.
 ---
 
 {{< details >}}
@@ -38,6 +39,7 @@ These shortcuts are available in most areas of GitLab:
 | <kbd>Shift</kbd> + <kbd>l</kbd>    | Go to your **Milestones** page. |
 | <kbd>Shift</kbd> + <kbd>s</kbd>    | Go to your **Snippets** page. |
 | <kbd>s</kbd> / <kbd>/</kbd>        | Put cursor in the search bar. |
+| <kbd>f</kbd>                       | Focus filter bar |
 | <kbd>Shift</kbd> + <kbd>i</kbd>    | Go to your **Issues** page. |
 | <kbd>Shift</kbd> + <kbd>m</kbd>    | Go to your [**Merge requests**](project/merge_requests/_index.md) page. |
 | <kbd>Shift</kbd> + <kbd>r</kbd>    | Go to your **Review requests** page. |
@@ -51,17 +53,17 @@ Additionally, the following shortcuts are available when editing text in text
 fields (for example, comments, replies, issue descriptions, and merge request
 descriptions):
 
-| macOS shortcut | Windows shortcut | Description |
-|----------------|------------------|-------------|
-| <kbd>↑</kbd>   | <kbd>↑</kbd>     | Edit your last comment. You must be in a blank text field below a thread, and you must already have at least one comment in the thread. |
+| macOS shortcut                                       | Windows shortcut                                     | Description |
+|------------------------------------------------------|------------------------------------------------------|-------------|
+| <kbd>↑</kbd>                                         | <kbd>↑</kbd>                                         | Edit your last comment. You must be in a blank text field below a thread, and you must already have at least one comment in the thread. |
 | <kbd>Command</kbd> + <kbd>Shift</kbd> + <kbd>p</kbd> | <kbd>Control</kbd> + <kbd>Shift</kbd> + <kbd>p</kbd> | Toggle Markdown preview when editing text in a text field that has **Write** and **Preview** tabs at the top. |
-| <kbd>Command</kbd> + <kbd>b</kbd>       | <kbd>Control</kbd> + <kbd>b</kbd> | Bold the selected text (surround it with `**`). |
-| <kbd>Command</kbd> + <kbd>i</kbd>       | <kbd>Control</kbd> + <kbd>i</kbd> | Italicize the selected text (surround it with `_`). |
+| <kbd>Command</kbd> + <kbd>b</kbd>                    | <kbd>Control</kbd> + <kbd>b</kbd>                    | Bold the selected text (surround it with `**`). |
+| <kbd>Command</kbd> + <kbd>i</kbd>                    | <kbd>Control</kbd> + <kbd>i</kbd>                    | Italicize the selected text (surround it with `_`). |
 | <kbd>Command</kbd> + <kbd>Shift</kbd> + <kbd>x</kbd> | <kbd>Control</kbd> + <kbd>Shift</kbd> + <kbd>x</kbd> | Strike through the selected text (surround it with `~~`). |
-| <kbd>Command</kbd> + <kbd>k</kbd>       | <kbd>Control</kbd> + <kbd>k</kbd> | Add a link (surround the selected text with `[]()`). |
-| <kbd>Command</kbd> + <kbd>&#93;</kbd> | <kbd>Control</kbd> + <kbd>&#93;</kbd> |  Indent text. [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/351924) in GitLab 15.3. |
-| <kbd>Command</kbd> + <kbd>&#91;</kbd> | <kbd>Control</kbd> + <kbd>&#91;</kbd> |  Outdent text. [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/351924) in GitLab 15.3. |
-| <kbd>Command</kbd> + <kbd>Enter</kbd> | <kbd>Control</kbd> + <kbd>Enter</kbd> |  Submit or save changes |
+| <kbd>Command</kbd> + <kbd>k</kbd>                    | <kbd>Control</kbd> + <kbd>k</kbd>                    | Add a link (surround the selected text with `[]()`). |
+| <kbd>Command</kbd> + <kbd>[</kbd>                    | <kbd>Control</kbd> + <kbd>[</kbd>                    | Outdent text. [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/351924) in GitLab 15.3. |
+| <kbd>Command</kbd> + <kbd>]</kbd>                    | <kbd>Control</kbd> + <kbd>]</kbd>                    | Indent text. [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/351924) in GitLab 15.3. |
+| <kbd>Command</kbd> + <kbd>Enter</kbd>                | <kbd>Control</kbd> + <kbd>Enter</kbd>                | Submit or save changes |
 
 The shortcuts for editing in text fields are always enabled, even if other
 keyboard shortcuts are disabled.
@@ -118,8 +120,8 @@ These shortcuts are available when viewing [merge requests](project/merge_reques
 | <kbd>]</kbd> or <kbd>j</kbd>      |                                   | Move to next file. |
 | <kbd>&#91;</kbd> or <kbd>k</kbd>  |                                   | Move to previous file. |
 | <kbd>Command</kbd> + <kbd>p</kbd> | <kbd>Control</kbd> + <kbd>p</kbd> | Search for, and then jump to a file for review. |
-| <kbd>n</kbd>                      |                                   | Move to next unresolved discussion. |
-| <kbd>p</kbd>                      |                                   | Move to previous unresolved discussion. |
+| <kbd>n</kbd>                      |                                   | Move to next open thread. |
+| <kbd>p</kbd>                      |                                   | Move to previous open thread. |
 | <kbd>b</kbd>                      |                                   | Copy source branch name. |
 | <kbd>c</kbd> + <kbd>r</kbd>       |                                   | Copy merge request reference. |
 | <kbd>r</kbd>                      |                                   | Start writing a comment. Pre-selected text is quoted in the comment. |

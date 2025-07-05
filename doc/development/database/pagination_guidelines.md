@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Pagination guidelines
 ---
 
@@ -34,7 +34,7 @@ Rendering long lists can significantly affect both the frontend and backend perf
 
 With pagination, the data is split into equal pieces (pages). On the first visit, the user receives only a limited number of items (page size). The user can see more items by paginating forward which results in a new HTTP request and a new database query.
 
-![Project issues page with pagination](../img/project_issues_pagination_v13_11.jpg)
+![Project issues page with pagination](img/project_issues_pagination_v13_11.jpg)
 
 ## General guidelines for paginating
 
@@ -97,7 +97,7 @@ Notice that the query also orders the rows by the primary key (`id`). When pagin
 
 Example pagination bar:
 
-![Page selector rendered by Kaminari](../img/offset_pagination_ui_v13_11.jpg)
+![Page selector rendered by Kaminari](img/offset_pagination_ui_v13_11.jpg)
 
 The Kaminari gem renders a nice pagination bar on the UI with page numbers and optionally quick shortcuts the next, previous, first, and last page buttons. To render these buttons, Kaminari needs to know the number of rows, and for that, a count query is executed.
 
@@ -229,18 +229,18 @@ Keyset pagination used in both the [GraphQL API](../graphql_guide/pagination.md#
 
 Consider the following `issues` table:
 
-|`id`|`project_id`|
-|-|-|
-|1|1|
-|2|1|
-|3|2|
-|4|1|
-|5|1|
-|6|2|
-|7|2|
-|8|1|
-|9|1|
-|10|2|
+| `id` | `project_id` |
+|------|--------------|
+| 1    | 1            |
+| 2    | 1            |
+| 3    | 2            |
+| 4    | 1            |
+| 5    | 1            |
+| 6    | 2            |
+| 7    | 2            |
+| 8    | 1            |
+| 9    | 1            |
+| 10   | 2            |
 
 Let's paginate over the whole table ordered by the primary key (`id`). The query for the first page is the same as the offset pagination query, for simplicity, we use 5 as the page size:
 

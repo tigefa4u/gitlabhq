@@ -7,13 +7,13 @@ import {
   GlTooltipDirective,
 } from '@gitlab/ui';
 import { sprintf, s__ } from '~/locale';
-import { visitUrl } from '~/lib/utils/url_utility';
 import getOpenMrCountForBlobPath from '~/repository/queries/open_mr_count.query.graphql';
 import getOpenMrsForBlobPath from '~/repository/queries/open_mrs.query.graphql';
 import { nDaysBefore } from '~/lib/utils/datetime/date_calculation_utility';
 import { formatDate } from '~/lib/utils/datetime/date_format_utility';
 import { logError } from '~/lib/logger';
 import * as Sentry from '~/sentry/sentry_browser_wrapper';
+import { InternalEvents } from '~/tracking';
 import MergeRequestListItem from './merge_request_list_item.vue';
 
 const OPEN_MR_AGE_LIMIT_DAYS = 30;
@@ -27,6 +27,7 @@ export default {
     MergeRequestListItem,
   },
   directives: { GlTooltip: GlTooltipDirective },
+  mixins: [InternalEvents.mixin()],
   inject: ['currentRef'],
   props: {
     projectPath: {
@@ -82,6 +83,13 @@ export default {
       update({ project: { mergeRequests: { count } = {} } = {} } = {}) {
         return count;
       },
+      result() {
+        if (this.openMrsCount > 0) {
+          this.trackEvent('render_recent_mrs_for_file_on_branch_badge', {
+            value: this.openMrsCount,
+          });
+        }
+      },
       error(error) {
         logError(
           `Failed to fetch merge request count. See exception details for more information.`,
@@ -98,7 +106,12 @@ export default {
       skip() {
         return !this.isDropdownOpen;
       },
-      update: (data) => data?.project?.mergeRequests?.nodes || [],
+      update: (data) =>
+        data?.project?.mergeRequests?.nodes?.map((node) => ({
+          ...node,
+          text: node.title,
+          href: node.webUrl,
+        })) || [],
       error(error) {
         logError(
           `Failed to fetch merge requests. See exception details for more information.`,
@@ -106,11 +119,6 @@ export default {
         );
         Sentry.captureException(error);
       },
-    },
-  },
-  methods: {
-    handleMergeRequestClick(webUrl) {
-      visitUrl(webUrl);
     },
   },
 };
@@ -140,6 +148,7 @@ export default {
           class="gl-h-full"
           :title="badgeTitle"
           :aria-label="badgeTitle"
+          tag="a"
         >
           {{ openMRsCountText }}
         </gl-badge>
@@ -147,7 +156,7 @@ export default {
     </template>
 
     <template #header>
-      <div class="gl-border-b-1 gl-border-gray-100 gl-p-4 gl-font-bold gl-border-b-solid">
+      <div class="gl-border-b-1 gl-border-default gl-p-4 gl-font-bold gl-border-b-solid">
         {{ s__('OpenMrBadge|Open merge requests') }}
         <gl-badge>{{ openMrsCount }}</gl-badge>
       </div>
@@ -162,7 +171,7 @@ export default {
       <gl-disclosure-dropdown-item
         v-for="mergeRequest in openMrs"
         :key="mergeRequest.iid"
-        @action="handleMergeRequestClick(mergeRequest.webUrl)"
+        :item="mergeRequest"
       >
         <template #list-item>
           <merge-request-list-item :merge-request="mergeRequest" />

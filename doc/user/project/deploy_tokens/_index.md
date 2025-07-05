@@ -3,6 +3,7 @@ stage: Deploy
 group: Environments
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Deploy tokens
+description: Repository cloning, token creation, and container registry.
 ---
 
 {{< details >}}
@@ -37,6 +38,7 @@ to the following endpoints:
 
 - GitLab package registry public API.
 - [Git commands](https://git-scm.com/docs/gitcredentials#_description).
+- [GitLab virtual registry package operations](../../../api/maven_virtual_registries.md#manage-package-operations).
 
 You can create deploy tokens at either the project or group level:
 
@@ -71,7 +73,7 @@ A deploy token's scope determines the actions it can perform.
 
 {{< history >}}
 
-- Support for `gitlab-deploy-token` at the group level [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/214014) in GitLab 15.1 [with a flag](../../../administration/feature_flags.md) named `ci_variable_for_group_gitlab_deploy_token`. Enabled by default.
+- Support for `gitlab-deploy-token` at the group level [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/214014) in GitLab 15.1 [with a flag](../../../administration/feature_flags/_index.md) named `ci_variable_for_group_gitlab_deploy_token`. Enabled by default.
 - [Feature flag `ci_variable_for_group_gitlab_deploy_token`](https://gitlab.com/gitlab-org/gitlab/-/issues/363621) removed in GitLab 15.4.
 
 {{< /history >}}
@@ -118,7 +120,7 @@ jobs.
 
 Deploy tokens can't be used with the GitLab public API. However, you can use deploy tokens with some
 endpoints, such as those from the package registry. You can tell an endpoint belongs to the package registry because the URL has the string `packages/<format>`. For example: `https://gitlab.example.com/api/v4/projects/24/packages/generic/my_package/0.0.1/file.txt`. For more information, see
-[Authenticate with the registry](../../packages/package_registry/_index.md#authenticate-with-the-registry).
+[Authenticate with the registry](../../packages/package_registry/supported_functionality.md#authenticate-with-the-registry).
 
 ## Create a deploy token
 
@@ -207,7 +209,7 @@ Prerequisites:
 
 - A deploy token with the `read_package_registry` scope.
 
-For the [package type of your choice](../../packages/package_registry/supported_functionality.md#authentication-tokens), follow the authentication
+For the [package type of your choice](../../packages/package_registry/supported_functionality.md#authenticate-with-the-registry), follow the authentication
 instructions for deploy tokens.
 
 Example of installing a NuGet package from a GitLab registry:
@@ -225,7 +227,7 @@ Prerequisites:
 
 - A deploy token with the `write_package_registry` scope.
 
-For the [package type of your choice](../../packages/package_registry/supported_functionality.md#authentication-tokens), follow the authentication
+For the [package type of your choice](../../packages/package_registry/supported_functionality.md#authenticate-with-the-registry), follow the authentication
 instructions for deploy tokens.
 
 Example of publishing a NuGet package to a package registry:

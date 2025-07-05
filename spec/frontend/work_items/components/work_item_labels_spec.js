@@ -6,6 +6,7 @@ import waitForPromises from 'helpers/wait_for_promises';
 import { shallowMountExtended } from 'helpers/vue_test_utils_helper';
 import { mockTracking } from 'helpers/tracking_helper';
 import { TRACKING_CATEGORY_SHOW } from '~/work_items/constants';
+import { newWorkItemId } from '~/work_items/utils';
 import DropdownContentsCreateView from '~/sidebar/components/labels/labels_select_widget/dropdown_contents_create_view.vue';
 import groupLabelsQuery from '~/sidebar/components/labels/labels_select_widget/graphql/group_labels.query.graphql';
 import projectLabelsQuery from '~/sidebar/components/labels/labels_select_widget/graphql/project_labels.query.graphql';
@@ -26,7 +27,9 @@ import {
 
 Vue.use(VueApollo);
 
-const workItemId = 'gid://gitlab/WorkItem/1';
+const mockFullPath = 'test-project-path';
+const mockWorkItemId = 'gid://gitlab/WorkItem/1';
+const mockWorkItemType = 'Task';
 
 describe('WorkItemLabels component', () => {
   /** @type {import('helpers/vue_test_utils_helper').ExtendedWrapper} */
@@ -69,7 +72,10 @@ describe('WorkItemLabels component', () => {
     workItemQueryHandler = workItemQuerySuccess,
     searchQueryHandler = projectLabelsQueryHandler,
     updateWorkItemMutationHandler = successUpdateWorkItemMutationHandler,
+    fullPath = mockFullPath,
+    workItemId = mockWorkItemId,
     workItemIid = '1',
+    workItemType = mockWorkItemType,
   } = {}) => {
     wrapper = shallowMountExtended(WorkItemLabels, {
       apolloProvider: createMockApollo([
@@ -80,16 +86,17 @@ describe('WorkItemLabels component', () => {
       ]),
       provide: {
         canAdminLabel: true,
-        issuesListPath: 'test-project-path/issues',
-        labelsManagePath: 'test-project-path/labels',
+        issuesListPath: `${fullPath}/issues`,
+        epicsListPath: 'groups/some-group/-/epics',
+        labelsManagePath: `${fullPath}/labels`,
       },
       propsData: {
         workItemId,
         workItemIid,
         canUpdate,
         isGroup,
-        fullPath: 'test-project-path',
-        workItemType: 'Task',
+        fullPath,
+        workItemType,
       },
     });
   };
@@ -116,7 +123,7 @@ describe('WorkItemLabels component', () => {
   const getMutationInput = (addLabelIds, removeLabelIds) => {
     return {
       input: {
-        id: workItemId,
+        id: mockWorkItemId,
         labelsWidget: {
           addLabelIds,
           removeLabelIds,
@@ -207,7 +214,7 @@ describe('WorkItemLabels component', () => {
 
     expect(findWorkItemSidebarDropdownWidget().props('listItems')).toHaveLength(result);
     expect(handler).toHaveBeenCalledWith({
-      fullPath: 'test-project-path',
+      fullPath: mockFullPath,
       searchTerm,
     });
     expect(groupLabelsQueryHandler).not.toHaveBeenCalled();
@@ -262,7 +269,7 @@ describe('WorkItemLabels component', () => {
 
     await waitForPromises();
 
-    expectDropdownCountToBe(1, '1 label');
+    expectDropdownCountToBe(1, 'Label 1');
     expect(successUpdateWorkItemMutationHandler).toHaveBeenCalledWith(
       getMutationInput([label1Id], []),
     );
@@ -278,16 +285,41 @@ describe('WorkItemLabels component', () => {
 
     showDropdown();
 
-    expectDropdownCountToBe(3, '3 labels');
+    expectDropdownCountToBe(3, 'Label 1 +2 more');
 
     updateLabels([label1Id]);
 
     await waitForPromises();
 
-    expectDropdownCountToBe(1, '1 label');
+    expectDropdownCountToBe(1, 'Label 1');
     expect(successRemoveLabelWorkItemMutationHandler).toHaveBeenCalledWith(
       getMutationInput([], [label2Id, label3Id]),
     );
+  });
+
+  it('update labels when labels are removed during create mode', async () => {
+    createComponent({
+      workItemId: newWorkItemId(mockWorkItemType),
+      workItemQueryHandler: workItemQueryWithLabelsHandler,
+      updateWorkItemMutationHandler: successRemoveLabelWorkItemMutationHandler,
+    });
+
+    await waitForPromises();
+
+    findRegularLabel().vm.$emit('close', label1Id);
+
+    await nextTick();
+
+    expect(wrapper.emitted('updateWidgetDraft')).toEqual([
+      [
+        {
+          workItemType: mockWorkItemType,
+          fullPath: mockFullPath,
+          labels: [mockLabels[1], mockLabels[2]],
+        },
+      ],
+    ]);
+    expect(successRemoveLabelWorkItemMutationHandler).not.toHaveBeenCalled();
   });
 
   it('update labels when labels are added or removed at same time', async () => {
@@ -300,13 +332,13 @@ describe('WorkItemLabels component', () => {
 
     showDropdown();
 
-    expectDropdownCountToBe(2, '2 labels');
+    expectDropdownCountToBe(2, 'Label 1 and Label::2');
 
     updateLabels([label1Id, label3Id]);
 
     await waitForPromises();
 
-    expectDropdownCountToBe(2, '2 labels');
+    expectDropdownCountToBe(2, 'Label 1 and Label 3');
     expect(successAddRemoveLabelWorkItemMutationHandler).toHaveBeenCalledWith(
       getMutationInput([label3Id], [label2Id]),
     );
@@ -322,7 +354,7 @@ describe('WorkItemLabels component', () => {
 
     showDropdown();
 
-    expectDropdownCountToBe(3, '3 labels');
+    expectDropdownCountToBe(3, 'Label 1 +2 more');
 
     findWorkItemSidebarDropdownWidget().vm.$emit('updateValue', []);
 
@@ -499,8 +531,8 @@ describe('WorkItemLabels component', () => {
             toggleText: 'No labels',
           });
           expect(findDropdownContentsCreateView().props()).toEqual({
-            attrWorkspacePath: 'test-project-path',
-            fullPath: 'test-project-path',
+            attrWorkspacePath: mockFullPath,
+            fullPath: mockFullPath,
             labelCreateType: 'project',
             searchKey: '',
             workspaceType: 'project',

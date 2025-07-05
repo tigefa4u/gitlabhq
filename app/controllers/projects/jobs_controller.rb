@@ -24,7 +24,6 @@ class Projects::JobsController < Projects::ApplicationController
   before_action :verify_proxy_request!, only: :proxy_websocket_authorize
   before_action :reject_if_build_artifacts_size_refreshing!, only: [:erase]
   before_action :push_filter_by_name, only: [:index]
-  before_action :push_populate_and_use_build_source_table, only: [:index]
   layout 'project'
 
   feature_category :continuous_integration
@@ -34,7 +33,11 @@ class Projects::JobsController < Projects::ApplicationController
 
   def show
     if @build.instance_of?(::Ci::Bridge)
-      redirect_to project_pipeline_path(@build.downstream_pipeline.project, @build.downstream_pipeline.id)
+      if @build.downstream_pipeline&.project
+        redirect_to project_pipeline_path(@build.downstream_pipeline&.project, @build.downstream_pipeline&.id)
+      else
+        redirect_to project_pipeline_path(@build.project, @build.pipeline.id)
+      end
     end
 
     respond_to do |format|
@@ -242,7 +245,7 @@ class Projects::JobsController < Projects::ApplicationController
   end
 
   def force_param
-    %w[1 t true y yes].include?(params[:force].to_s.downcase)
+    params[:force] == "true"
   end
 
   def play_params
@@ -297,10 +300,6 @@ class Projects::JobsController < Projects::ApplicationController
 
   def push_filter_by_name
     push_frontend_feature_flag(:fe_search_build_by_name, @project)
-  end
-
-  def push_populate_and_use_build_source_table
-    push_frontend_feature_flag(:populate_and_use_build_source_table, @project)
   end
 end
 

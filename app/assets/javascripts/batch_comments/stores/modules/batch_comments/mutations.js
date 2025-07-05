@@ -1,4 +1,5 @@
 import * as types from './mutation_types';
+import createState from './state';
 
 const processDraft = (draft) => ({
   ...draft,
@@ -67,12 +68,12 @@ export default {
   [types.CLEAR_DRAFTS](state) {
     state.drafts = [];
   },
-  [types.SET_REVIEW_BAR_RENDERED](state) {
-    state.reviewBarRendered = true;
-  },
   [types.SET_DRAFT_EDITING](state, { draftId, isEditing }) {
     const draftIndex = state.drafts.findIndex((draft) => draft.id === draftId);
     const draft = state.drafts[draftIndex];
     state.drafts.splice(draftIndex, 1, { ...draft, isEditing });
+  },
+  reset(state) {
+    Object.assign(state, createState());
   },
 };

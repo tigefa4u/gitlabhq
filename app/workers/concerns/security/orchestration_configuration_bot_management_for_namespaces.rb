@@ -15,17 +15,18 @@ module Security
     def perform(namespace_id, current_user_id)
       namespace = Namespace.find_by_id(namespace_id)
       return unless namespace
+      return unless namespace.security_orchestration_policy_configuration
 
       return unless User.id_exists?(current_user_id)
 
-      project_ids = namespace.security_orchestration_policy_configuration.all_project_ids
-
-      worker.bulk_perform_in_with_contexts(
-        PROJECTS_BATCH_SYNC_DELAY,
-        project_ids,
-        arguments_proc: ->(project_id) { [project_id, current_user_id] },
-        context_proc: ->(namespace) { { namespace: namespace } }
-      )
+      namespace.security_orchestration_policy_configuration.all_project_ids do |project_ids|
+        worker.bulk_perform_in_with_contexts(
+          PROJECTS_BATCH_SYNC_DELAY,
+          project_ids,
+          arguments_proc: ->(project_id) { [project_id, current_user_id] },
+          context_proc: ->(namespace) { { namespace: namespace } }
+        )
+      end
 
       after_perform(namespace, current_user_id)
     end

@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Set up Geo for two single-node sites
@@ -12,7 +12,7 @@ title: Set up Geo for two single-node sites
 
 {{< /details >}}
 
-The following guide provides concise instructions on how to deploy GitLab Geo for a two single-node site installation using two Linux package instances with no external services set up.
+The following guide provides concise instructions on how to deploy GitLab Geo for a two single-node site installation using two Linux package instances with no external services set up. This guide is also applicable to installations based on [Docker](../../../install/docker/_index.md).
 
 Prerequisites:
 
@@ -29,9 +29,19 @@ Prerequisites:
 Prerequisites:
 
 - You use PostgreSQL 12 or later,
-  which includes the [`pg_basebackup` tool](https://www.postgresql.org/docs/12/app-pgbasebackup.html).
+  which includes the [`pg_basebackup` tool](https://www.postgresql.org/docs/16/app-pgbasebackup.html).
 
 ### Configure the primary site
+
+{{< alert type="note" >}}
+
+For Docker-based installations:
+
+Either apply the settings mentioned below directly to the GitLab container's `/etc/gitlab/gitlab.rb` file, or add them to the `GITLAB_OMNIBUS_CONFIG` environment variable in its [Docker Compose](../../../install/docker/installation.md#install-gitlab-by-using-docker-compose) file.
+
+When using [Docker Compose](../../../install/docker/installation.md#install-gitlab-by-using-docker-compose), use `docker-compose -f <docker-compose-file-name>.yml up` instead of `gitlab-ctl reconfigure` to apply configuration changes.
+
+{{< /alert >}}
 
 1. SSH into your GitLab primary site and sign in as root:
 
@@ -96,7 +106,7 @@ Prerequisites:
       gitlab_rails['db_password'] = '<your_db_password_here>'
       ```
 
-1. Define a password for the database [replication user](https://wiki.postgresql.org/wiki/Streaming_Replication).
+1. Define a password for the database [replication user](https://www.postgresql.org/docs/16/warm-standby.html#STREAMING-REPLICATION).
    Use the username defined in `/etc/gitlab/gitlab.rb` under the `postgresql['sql_replication_user']`
    setting. The default value is `gitlab_replicator`.
 
@@ -298,15 +308,36 @@ Prerequisites:
 1. Test that the `gitlab-psql` user can connect to the primary site database.
    The default Linux package name is `gitlabhq_production`:
 
-   ```shell
-   sudo \
-      -u gitlab-psql /opt/gitlab/embedded/bin/psql \
-      --list \
-      -U gitlab_replicator \
-      -d "dbname=gitlabhq_production sslmode=verify-ca" \
-      -W \
-      -h <primary_site_ip>
-   ```
+    {{< tabs >}}
+
+    {{< tab title="Linux package" >}}
+
+    ```shell
+    sudo \
+        -u gitlab-psql /opt/gitlab/embedded/bin/psql \
+        --list \
+        -U gitlab_replicator \
+        -d "dbname=gitlabhq_production sslmode=verify-ca" \
+        -W \
+        -h <primary_site_ip>
+    ```
+
+    {{< /tab >}}
+
+    {{< tab title="Docker" >}}
+
+    ```shell
+    docker exec -it <container_name> su - gitlab-psql -c '/opt/gitlab/embedded/bin/psql \
+        --list \
+        -U gitlab_replicator \
+        -d "dbname=gitlabhq_production sslmode=verify-ca" \
+        -W \
+        -h <primary_site_ip>'
+    ```
+
+    {{< /tab >}}
+
+    {{< /tabs >}}
 
    When prompted, enter the plaintext password you set for the `gitlab_replicator` user.
    If all worked correctly, you should see the list of the primary site databases.
@@ -592,7 +623,7 @@ You must manually replicate the secret file across all of your secondary sites, 
    1. Select **Geo > Sites**.
    1. Select **Add site**.
 
-      ![Form to add a new site with three input fields: Name, External URL, and Internal URL (optional).](../replication/img/adding_a_secondary_v15_8.png)
+      ![Form to add a new site with three input fields: Name, External URL, and Internal URL (optional).](img/adding_a_secondary_v15_8.png)
 
    1. In **Name**, enter the value for `gitlab_rails['geo_node_name']` in
       `/etc/gitlab/gitlab.rb`. The values must match exactly.
@@ -667,7 +698,7 @@ The initial replication might take some time.
 You can monitor the synchronization process on each Geo site from the primary
 site **Geo Sites** dashboard in your browser.
 
-![The Geo Sites dashboard displaying the synchronization status.](../replication/img/geo_dashboard_v14_0.png)
+![The Geo Sites dashboard displaying the synchronization status.](img/geo_dashboard_v14_0.png)
 
 ## Related topics
 

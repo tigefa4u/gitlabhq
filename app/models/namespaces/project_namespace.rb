@@ -19,12 +19,12 @@ module Namespaces
     #
     # TODO: we can remove these attribute aliases when we no longer need to sync these with project model,
     # see ProjectNamespace#sync_attributes_from_project
-    alias_attribute :namespace, :parent
+    alias_method :namespace, :parent
     alias_attribute :namespace_id, :parent_id
     has_one :project, inverse_of: :project_namespace
 
     delegate :execute_hooks, :execute_integrations, :group, to: :project, allow_nil: true
-    delegate :external_references_supported?, :default_issues_tracker?, :pending_delete?, to: :project
+    delegate :external_references_supported?, :default_issues_tracker?, :self_deletion_in_progress?, to: :project
 
     delegate :crm_group, :hashed_storage?, :disk_path, to: :project
 
@@ -69,10 +69,6 @@ module Namespaces
       end
 
       assign_attributes(attributes_to_sync)
-    end
-
-    def work_item_move_and_clone_flag_enabled?
-      project.work_item_move_and_clone_flag_enabled?
     end
 
     # It's always 1 project but it has to be an AR relation

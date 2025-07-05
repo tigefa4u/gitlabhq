@@ -31,6 +31,7 @@
 
 .rd-app-content {
   flex: 1 0;
+  min-width: 0;
 }
 
 // override .code styles because we can't apply .code directly on the diff file code class
@@ -40,12 +41,32 @@
 }
 
 .rd-app-diffs-list {
-  transition: opacity 0.2s;
+  --rd-diff-file-bottom-margin: #{$gl-padding};
+  position: relative;
+  // remove bottom margin for the last diff element
+  // we can't just use :last-child and other pseudo classes on diff files because they can be in different containers
+  margin-bottom: calc(var(--rd-diff-file-bottom-margin) * -1);
 }
 
-.rd-app-diffs-list[data-loading] {
-  opacity: 0.5;
+.rd-app-diffs-list-loading-overlay {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.2s;
   pointer-events: none;
+  background: light-dark($white, $black);
+  opacity: 0;
+  z-index: 100;
+}
+
+.rd-app-diffs-list-loading-overlay[data-loading] {
+  opacity: 0.5;
+  pointer-events: all;
+}
+
+.rd-app-diffs-loading {
+  display: flex;
+  justify-content: center;
+  padding: $gl-spacing-scale-10 0;
 }
 
 .rd-app-sidebar {
@@ -67,8 +88,15 @@
     // override .diff-tree-list, remove when fully switched to Rapid Diffs
     width: auto !important;
     position: static !important;
-    padding: 0 0 $gl-spacing-scale-4 !important;
-    min-height: auto !important;
+    padding: $gl-spacing-scale-4 !important;
+    min-height: 0 !important;
+    box-sizing: border-box;
+  }
+}
+
+.rd-app .rd-app-sidebar {
+  @include media-breakpoint-down(constants.$app-vertical-breakpoint) {
+    display: none;
   }
 }
 

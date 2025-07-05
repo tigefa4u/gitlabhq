@@ -13,8 +13,7 @@ module API
     before { authenticate_non_get! }
 
     allow_access_with_scope :ai_workflows, if: ->(request) do
-      request.get? || request.head? ||
-        (request.put? && request.path.match?(%r{/api/v\d+/projects/\d+/merge_requests/\d+$})) # Only allow basic MR updates
+      request.get? || request.head? || mr_update?(request) || mr_create?(request)
     end
 
     rescue_from ActiveRecord::QueryCanceled do |_e|
@@ -50,6 +49,14 @@ module API
       end
     end
 
+    def self.mr_update?(request)
+      request.put? && request.path.match?(%r{/api/v\d+/projects/\d+/merge_requests/\d+$})
+    end
+
+    def self.mr_create?(request)
+      request.post? && request.path.match?(%r{/api/v\d+/projects/\d+/merge_requests$})
+    end
+
     def self.update_params_at_least_one_of
       %i[
         assignee_id
@@ -82,10 +89,13 @@ module API
         args[:not][:milestone_title] = args[:not]&.delete(:milestone)
         args[:label_name] = args.delete(:labels)
         args[:not][:label_name] = args[:not]&.delete(:labels)
+        args[:sort] = "#{args[:order_by]}_#{args[:sort]}"
         args[:scope] = args[:scope].underscore if args[:scope]
 
+        parent_type = args[:project_id] ? :project : :group
+        args[:"attempt_#{parent_type}_search_optimizations"] = true
+
         merge_requests = MergeRequestsFinder.new(current_user, args).execute
-        merge_requests = order_merge_requests(merge_requests)
         merge_requests = paginate(merge_requests)
                            .preload(:source_project, :target_project)
 
@@ -164,21 +174,6 @@ module API
       def batch_process_mergeability_checks(merge_requests)
         ::MergeRequests::MergeabilityCheckBatchService.new(merge_requests, current_user).execute
       end
-
-      # rubocop: disable CodeReuse/ActiveRecord
-      def order_merge_requests(merge_requests)
-        if params[:order_by] == 'merged_at'
-          case params[:sort]
-          when 'desc'
-            return merge_requests.reorder_by_metric('merged_at', 'DESC')
-          else
-            return merge_requests.reorder_by_metric('merged_at', 'ASC')
-          end
-        end
-
-        merge_requests.reorder(order_options_with_tie_breaker(override_created_at: false))
-      end
-      # rubocop: enable CodeReuse/ActiveRecord
 
       params :merge_requests_params do
         use :merge_requests_base_params
@@ -459,23 +454,16 @@ module API
       end
       get ':id/merge_requests/:merge_request_iid/commits', feature_category: :code_review_workflow, urgency: :low do
         merge_request = find_merge_request_with_access(params[:merge_request_iid])
-        project = merge_request.target_project
         merge_request_diff = merge_request.merge_request_diff
 
-        if ::Feature.enabled?(:commits_from_gitaly, project)
-          page = params[:page] > 0 ? params[:page] : 1
-          per_page = params[:per_page] > 0 ? params[:per_page] : Kaminari.config.default_per_page
-          limit = [per_page, Kaminari.config.max_per_page].min
+        page = params[:page] > 0 ? params[:page] : 1
+        per_page = params[:per_page] > 0 ? params[:per_page] : Kaminari.config.default_per_page
+        limit = [per_page, Kaminari.config.max_per_page].min
 
-          gitaly_commits = merge_request_diff.commits(limit: limit, page: page, load_from_gitaly: true)
+        gitaly_commits = merge_request_diff.commits(limit: limit, page: page, load_from_gitaly: true)
 
-          paginatable_array = Kaminari.paginate_array(gitaly_commits, total_count: merge_request_diff.commits_count).page(page).per(limit)
-          commits = paginate(paginatable_array)
-        else
-          commits =
-            paginate(merge_request.merge_request_diff.merge_request_diff_commits)
-              .map { |commit| Commit.from_hash(commit.to_hash, merge_request.project) }
-        end
+        paginatable_array = Kaminari.paginate_array(gitaly_commits, total_count: merge_request_diff.commits_count).page(page).per(limit)
+        commits = paginate(paginatable_array)
 
         present commits, with: Entities::Commit
       end
@@ -603,7 +591,7 @@ module API
       get ':id/merge_requests/:merge_request_iid/diffs', feature_category: :code_review_workflow, urgency: :low do
         merge_request = find_merge_request_with_access(params[:merge_request_iid])
 
-        present merge_request.merge_request_diff.paginated_diffs(params[:page], params[:per_page]).diffs, with: Entities::Diff, enable_unidiff: declared_params[:unidiff]
+        present paginate(merge_request.merge_request_diff.paginated_diffs(params[:page], params[:per_page]), skip_pagination_check: true).diffs, with: Entities::Diff, enable_unidiff: declared_params[:unidiff]
       end
 
       desc 'Get the merge request raw diffs' do

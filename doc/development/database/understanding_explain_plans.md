@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Understanding EXPLAIN plans
 ---
 
@@ -86,8 +86,8 @@ Execution time: 3428.596 ms
 ```
 
 For more information, refer to the official
-[`EXPLAIN` documentation](https://www.postgresql.org/docs/current/sql-explain.html)
-and [using `EXPLAIN` guide](https://www.postgresql.org/docs/current/using-explain.html).
+[`EXPLAIN` documentation](https://www.postgresql.org/docs/16/sql-explain.html)
+and [using `EXPLAIN` guide](https://www.postgresql.org/docs/16/using-explain.html).
 
 ## Nodes
 

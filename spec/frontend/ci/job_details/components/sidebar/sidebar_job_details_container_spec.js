@@ -92,11 +92,11 @@ describe('Job Sidebar Details Container', () => {
       ['parent_pipeline', 'Source: Parent Pipeline'],
       ['pipeline', 'Source: Pipeline'],
       ['pipeline_execution_policy', 'Source: Pipeline Execution Policy'],
-      ['pipeline_execution_policy_schedule', 'Source: Pipeline Execution Policy Schedule'],
+      ['pipeline_execution_policy_schedule', 'Source: Scheduled Pipeline Execution Policy'],
       ['push', 'Source: Push'],
       ['scan_execution_policy', 'Source: Scan Execution Policy'],
       ['schedule', 'Source: Schedule'],
-      ['security_orchestration_policy', 'Source: Security Orchestration Policy'],
+      ['security_orchestration_policy', 'Source: Scheduled Scan Execution Policy'],
       ['trigger', 'Source: Trigger'],
       ['web', 'Source: Web'],
       ['webide', 'Source: Web IDE'],
@@ -162,6 +162,9 @@ describe('Job Sidebar Details Container', () => {
       expect(findTestSummary().exists()).toBe(true);
       expect(findTestSummary().text()).toContain('Test summary');
       expect(findTestSummary().text()).toContain('1');
+      expect(findTestSummary().props('path')).toBe(
+        '/root/test-unit-test-reports/-/pipelines/512/test_report?job_name=test',
+      );
     });
 
     it('does not display the test summary section', async () => {

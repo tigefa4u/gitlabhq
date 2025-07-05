@@ -1,13 +1,14 @@
 import MockAdapter from 'axios-mock-adapter';
-import axios from 'axios';
+import { setActivePinia } from 'pinia';
+import { nextTick } from 'vue';
+import axios from '~/lib/utils/axios_utils';
 import { resetHTMLFixture, setHTMLFixture } from 'helpers/fixtures';
 import { initFileBrowser } from '~/rapid_diffs/app/init_file_browser';
-import createEventHub from '~/helpers/event_hub_factory';
-import waitForPromises from 'helpers/wait_for_promises';
 import { DiffFile } from '~/rapid_diffs/diff_file';
 import { HTTP_STATUS_OK } from '~/lib/utils/http_status';
-import store from '~/mr_notes/stores';
-import { SET_TREE_DATA } from '~/diffs/store/mutation_types';
+import { useViewport } from '~/pinia/global_stores/viewport';
+import { pinia } from '~/pinia/instance';
+import { useApp } from '~/rapid_diffs/stores/app';
 
 jest.mock('~/rapid_diffs/app/file_browser.vue', () => ({
   props: jest.requireActual('~/rapid_diffs/app/file_browser.vue').default.props,
@@ -15,6 +16,24 @@ jest.mock('~/rapid_diffs/app/file_browser.vue', () => ({
     return h('div', {
       attrs: {
         'data-file-browser-component': true,
+        'data-group-blobs-list-items': JSON.stringify(this.groupBlobsListItems),
+      },
+      on: {
+        click: () => {
+          this.$emit('clickFile', { fileHash: 'first' });
+        },
+      },
+    });
+  },
+}));
+
+jest.mock('~/rapid_diffs/app/file_browser_drawer.vue', () => ({
+  props: jest.requireActual('~/rapid_diffs/app/file_browser_drawer.vue').default.props,
+  render(h) {
+    return h('div', {
+      attrs: {
+        'data-file-browser-drawer-component': true,
+        'data-group-blobs-list-items': JSON.stringify(this.groupBlobsListItems),
       },
       on: {
         click: () => {
@@ -35,9 +54,28 @@ jest.mock('~/diffs/components/file_browser_toggle.vue', () => ({
   },
 }));
 
+jest.mock('~/rapid_diffs/app/file_browser_drawer_toggle.vue', () => ({
+  render(h) {
+    return h('div', {
+      attrs: {
+        'data-file-browser-drawer-toggle-component': true,
+      },
+    });
+  },
+}));
+
 describe('Init file browser', () => {
-  const diffFilesEndpoint = '/diff-files-metadata';
+  let mockAxios;
+  let appData;
+
+  const getFileBrowserTarget = () => document.querySelector('[data-file-browser]');
+  const getFileBrowserToggleTarget = () => document.querySelector('[data-file-browser-toggle]');
   const getFileBrowser = () => document.querySelector('[data-file-browser-component]');
+  const getFileBrowserDrawer = () => document.querySelector('[data-file-browser-drawer-component]');
+  const getFileBrowserToggle = () => document.querySelector('[data-file-browser-toggle-component]');
+  const getFileBrowserDrawerToggle = () =>
+    document.querySelector('[data-file-browser-drawer-toggle-component]');
+
   const createDiffFiles = () => [
     {
       conflict_type: null,
@@ -64,20 +102,45 @@ describe('Init file browser', () => {
       file_hash: '12dc3d87e90313d83a236a944f8a4869f1dc97e2',
     },
   ];
-  let mockAxios;
-  let commit;
+
+  const initAppData = ({
+    diffFilesEndpoint = '/diff-files-metadata',
+    shouldSortMetadataFiles = true,
+  } = {}) => {
+    appData = {
+      diffFilesEndpoint,
+      shouldSortMetadataFiles,
+    };
+  };
+
+  const init = () => {
+    return initFileBrowser({
+      toggleTarget: getFileBrowserToggleTarget(),
+      browserTarget: getFileBrowserTarget(),
+      appData,
+    });
+  };
 
   beforeEach(() => {
-    window.mrTabs = { eventHub: createEventHub() };
+    setActivePinia(pinia);
+    initAppData();
+    useViewport().reset();
+    useApp().$reset();
+
     mockAxios = new MockAdapter(axios);
-    mockAxios.onGet(diffFilesEndpoint).reply(HTTP_STATUS_OK, { diff_files: createDiffFiles() });
-    commit = jest.spyOn(store, 'commit');
-    setHTMLFixture(
-      `
-        <div data-file-browser-toggle></div>
-        <div data-file-browser data-metadata-endpoint="/metadata"></div>
-        <diff-file id="first"></diff-file>
-      `,
+    mockAxios
+      .onGet(appData.diffFilesEndpoint)
+      .reply(HTTP_STATUS_OK, { diff_files: createDiffFiles() });
+
+    setHTMLFixture(`
+      <div id="js-page-breadcrumbs-extra"></div>
+      <div data-file-browser-toggle></div>
+      <div data-file-browser data-metadata-endpoint="/metadata"></div>
+      <diff-file data-file-data="{}" id="first"><div></div></diff-file>
+    `);
+
+    DiffFile.getAll().forEach((file) =>
+      file.mount({ adapterConfig: {}, appData: {}, unobserve: jest.fn() }),
     );
   });
 
@@ -89,35 +152,62 @@ describe('Init file browser', () => {
     resetHTMLFixture();
   });
 
-  it('mounts the component', async () => {
-    await initFileBrowser(diffFilesEndpoint);
-    expect(getFileBrowser()).not.toBe(null);
-  });
+  describe.each`
+    isNarrowScreen | getBrowserElement       | getBrowserToggleElement
+    ${false}       | ${getFileBrowser}       | ${getFileBrowserToggle}
+    ${true}        | ${getFileBrowserDrawer} | ${getFileBrowserDrawerToggle}
+  `(
+    'when narrow screen is $isNarrowScreen',
+    ({ isNarrowScreen, getBrowserElement, getBrowserToggleElement }) => {
+      beforeEach(() => {
+        useViewport().updateIsNarrow(isNarrowScreen);
+      });
+
+      it('mounts the components', async () => {
+        await init();
+
+        expect(getBrowserElement()).not.toBe(null);
+        expect(getBrowserToggleElement()).not.toBe(null);
+      });
+
+      it('handles file clicks', async () => {
+        const selectFile = jest.fn();
+        const spy = jest.spyOn(DiffFile, 'findByFileHash').mockReturnValue({ selectFile });
+
+        await init();
+
+        const fileBrowser = getBrowserElement();
+        fileBrowser.click();
+
+        expect(spy).toHaveBeenCalledWith('first');
+        expect(selectFile).toHaveBeenCalled();
+      });
+
+      it('passes sorting configuration to components', async () => {
+        await init();
+        expect(document.querySelector('[data-group-blobs-list-items="true"]')).not.toBe(null);
+      });
+
+      it('disables sorting when configured', async () => {
+        initAppData({ shouldSortMetadataFiles: false });
+        await init();
+        expect(document.querySelector('[data-group-blobs-list-items="false"]')).not.toBe(null);
+      });
+    },
+  );
 
   it('loads diff files data', async () => {
-    await initFileBrowser(diffFilesEndpoint);
-    expect(commit).toHaveBeenCalledWith(
-      `diffs/${SET_TREE_DATA}`,
-      expect.objectContaining({
-        tree: expect.any(Array),
-        treeEntries: expect.any(Object),
-      }),
-    );
+    await init();
+
+    expect(mockAxios.history.get).toHaveLength(1);
+    expect(mockAxios.history.get[0].url).toBe('/diff-files-metadata');
   });
 
-  it('handles file clicks', async () => {
-    const selectFile = jest.fn();
-    const spy = jest.spyOn(DiffFile, 'findByFileHash').mockReturnValue({ selectFile });
-    initFileBrowser(diffFilesEndpoint);
-    await waitForPromises();
-    getFileBrowser().click();
-    expect(spy).toHaveBeenCalledWith('first');
-    expect(selectFile).toHaveBeenCalled();
-  });
-
-  it('shows file browser toggle', async () => {
-    initFileBrowser(diffFilesEndpoint);
-    await waitForPromises();
-    expect(document.querySelector('[data-file-browser-toggle-component]')).not.toBe(null);
+  it('hides drawer toggle when app is hidden', async () => {
+    useViewport().updateIsNarrow(true);
+    await init();
+    useApp().appVisible = false;
+    await nextTick();
+    expect(getFileBrowserDrawerToggle()).toBe(null);
   });
 });

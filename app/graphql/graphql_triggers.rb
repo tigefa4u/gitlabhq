@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
 module GraphqlTriggers
-  def self.ci_pipeline_status_updated(pipeline)
-    return unless Feature.enabled?(:ci_pipeline_status_realtime, pipeline.project)
+  def self.ci_job_status_updated(job)
+    return unless Feature.enabled?(:ci_job_status_realtime, job.project)
 
+    GitlabSchema.subscriptions.trigger(:ci_job_status_updated, { job_id: job.to_gid }, job)
+  end
+
+  def self.ci_pipeline_status_updated(pipeline)
     GitlabSchema.subscriptions.trigger(:ci_pipeline_status_updated, { pipeline_id: pipeline.to_gid }, pipeline)
   end
 
@@ -88,7 +92,7 @@ module GraphqlTriggers
   end
 
   def self.user_merge_request_updated(user, merge_request)
-    return unless Feature.enabled?(:merge_request_dashboard, user, type: :wip)
+    return unless Feature.enabled?(:merge_request_dashboard, user, type: :beta)
 
     GitlabSchema.subscriptions.trigger(:user_merge_request_updated, { user_id: user.to_gid }, merge_request)
   end

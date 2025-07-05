@@ -57,6 +57,16 @@ RSpec.describe MergeRequestsFinder, feature_category: :code_review_workflow do
           end
         end
 
+        context 'using a group handle' do
+          let_it_be(:issuable_parent) { create(:project) }
+          let_it_be(:issuable_attributes) { { source_project: issuable_parent, target_project: issuable_parent } }
+          let_it_be(:issuable_factory) { :merge_request }
+          let_it_be(:factory_params) { [:simple, :unique_branches] }
+          let_it_be(:search_params) { { project_id: issuable_parent.id } }
+
+          it_behaves_like 'filterable by group handle'
+        end
+
         context 'filters by author or assignee' do
           let_it_be(:merge_request6) do
             create(
@@ -664,6 +674,25 @@ RSpec.describe MergeRequestsFinder, feature_category: :code_review_workflow do
           it { is_expected.to contain_exactly(*expected_mr) }
         end
 
+        context 'by no review requested OR only reviewer OR reviewers with state' do
+          let(:params) { { or: { reviewer_wildcard: 'none', only_reviewer_username: user2.username, review_states: %w[requested_changes] } } }
+          let(:expected_mr) { [merge_request1, merge_request2, merge_request4, merge_request5] }
+
+          it { is_expected.to contain_exactly(*expected_mr) }
+        end
+
+        context 'by no review requested OR with reviewer states' do
+          let(:params) { { or: { reviewer_wildcard: 'none', review_states: %w[requested_changes reviewed] } } }
+          let(:expected_mr) { [merge_request1, merge_request2, merge_request4, merge_request5] }
+
+          before do
+            merge_request1.merge_request_reviewers.update_all(state: :requested_changes)
+            merge_request2.merge_request_reviewers.update_all(state: :reviewed)
+          end
+
+          it { is_expected.to contain_exactly(*expected_mr) }
+        end
+
         context 'by more than a single reviewer with username' do
           let_it_be(:merge_request6) do
             create(
@@ -682,15 +711,22 @@ RSpec.describe MergeRequestsFinder, feature_category: :code_review_workflow do
 
       context 'review state filtering' do
         let(:params) { { review_state: 'requested_changes' } }
-        let(:expected_mr) { [merge_request1] }
+        let(:expected_mr) { [merge_request1, merge_request3] }
 
         subject { described_class.new(user, params).execute }
 
         before do
           merge_request1.merge_request_reviewers.update_all(state: :requested_changes)
+          merge_request3.merge_request_reviewers.update_all(state: :requested_changes)
         end
 
         it { is_expected.to contain_exactly(*expected_mr) }
+
+        context 'when ignoring a reviewer' do
+          let(:params) { { review_state: 'requested_changes', ignored_reviewer_username: user2.username } }
+
+          it { is_expected.to contain_exactly(merge_request3) }
+        end
       end
 
       context 'multiple review state filtering' do
@@ -715,6 +751,12 @@ RSpec.describe MergeRequestsFinder, feature_category: :code_review_workflow do
           end
 
           it { is_expected.to contain_exactly(*expected_mr) }
+
+          context 'when ignoring a reviewer' do
+            let(:params) { { not: { review_states: %w[requested_changes reviewed] }, ignored_reviewer_username: user2.username } }
+
+            it { is_expected.to contain_exactly(*expected_mr) }
+          end
         end
       end
 
@@ -808,48 +850,6 @@ RSpec.describe MergeRequestsFinder, feature_category: :code_review_workflow do
             merge_requests = described_class.new(user, params).execute
 
             expect(merge_requests).to contain_exactly(merge_request3, merge_request4, merge_request5)
-          end
-        end
-      end
-
-      context 'filtering by approved' do
-        before do
-          create(:approval, merge_request: merge_request3, user: user2)
-        end
-
-        context 'when flag `mr_approved_filter` is disabled' do
-          before do
-            stub_feature_flags(mr_approved_filter: false)
-          end
-
-          it 'for approved' do
-            merge_requests = described_class.new(user, { approved: true }).execute
-
-            expect(merge_requests).to contain_exactly(merge_request1, merge_request2, merge_request3, merge_request4, merge_request5)
-          end
-
-          it 'for not approved' do
-            merge_requests = described_class.new(user, { approved: false }).execute
-
-            expect(merge_requests).to contain_exactly(merge_request1, merge_request2, merge_request3, merge_request4, merge_request5)
-          end
-        end
-
-        context 'when flag `mr_approved_filter` is enabled' do
-          before do
-            stub_feature_flags(mr_approved_filter: true)
-          end
-
-          it 'for approved' do
-            merge_requests = described_class.new(user, { approved: true }).execute
-
-            expect(merge_requests).to contain_exactly(merge_request3)
-          end
-
-          it 'for not approved' do
-            merge_requests = described_class.new(user, { approved: false }).execute
-
-            expect(merge_requests).to contain_exactly(merge_request1, merge_request2, merge_request4, merge_request5)
           end
         end
       end
@@ -1174,7 +1174,8 @@ RSpec.describe MergeRequestsFinder, feature_category: :code_review_workflow do
     context 'external authorization' do
       it_behaves_like 'a finder with external authorization service' do
         let!(:subject) { create(:merge_request, source_project: project) }
-        let(:project_params) { { project_id: project.id } }
+        let(:execute) { described_class.new(user).execute }
+        let(:project_execute) { described_class.new(user, project_id: project.id).execute }
       end
     end
   end
@@ -1353,14 +1354,6 @@ RSpec.describe MergeRequestsFinder, feature_category: :code_review_workflow do
 
     context 'when the user is an admin', :enable_admin_mode do
       let_it_be(:user) { create(:user, :admin) }
-
-      it { is_expected.to include(banned_merge_request) }
-    end
-
-    context 'when the `hide_merge_requests_from_banned_users` feature flag is disabled' do
-      before do
-        stub_feature_flags(hide_merge_requests_from_banned_users: false)
-      end
 
       it { is_expected.to include(banned_merge_request) }
     end

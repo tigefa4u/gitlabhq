@@ -3,20 +3,12 @@
 
 $diff-file-header: 41px;
 
-:root {
-  --diff-warning-text-color: var(--gl-feedback-warning-text-color);
-  --diff-warning-background-color: var(--gl-feedback-warning-background-color);
-}
-
-:root.gl-dark {
-  --diff-warning-background-color: #453522;
-}
-
 // Common
 .diff-file {
   margin-bottom: $gl-padding;
 
-  table.code tr:last-of-type td:last-of-type {
+  .code.md-suggestion-diff {
+    border-bottom-left-radius: $gl-border-radius-base-inner;
     border-bottom-right-radius: $gl-border-radius-base-inner;
   }
 
@@ -28,9 +20,9 @@ $diff-file-header: 41px;
       cursor: auto;
     }
 
-    &:has(.dropdown-menu.show) {
-      z-index: $zindex-dropdown-menu;
-    }
+    &:has(.gl-new-dropdown-toggle[aria-expanded="true"]) {
+   z-index: $zindex-dropdown-menu;
+  }
 
     @media (max-width: map-get($grid-breakpoints, sm)-1) {
       .file-header-content {
@@ -348,12 +340,10 @@ $diff-file-header: 41px;
   .diff-file-container {
     .frame.deleted {
       border: 1px solid var(--gl-status-danger-icon-color);
-      background-color: inherit;
     }
 
     .frame.added {
       border: 1px solid var(--gl-status-success-icon-color);
-      background-color: inherit;
     }
 
     .swipe.view,
@@ -420,7 +410,7 @@ table.code {
   margin: 0;
   padding: 0;
   table-layout: fixed;
-  border-radius: 0 0 $gl-border-radius-base $gl-border-radius-base;
+  border-radius: 0 0 $gl-border-radius-large $gl-border-radius-large;
 
   .diff-td.highlight-top {
     box-shadow: 0 -1px var(--highlight-border-color, $blue-300);
@@ -466,6 +456,7 @@ table.code {
         transition: none;
         float: left;
         width: 100%;
+        height: 100%;
         font-weight: $gl-font-weight-normal;
 
         &[disabled] {
@@ -480,6 +471,16 @@ table.code {
 
       &:not(.js-unfold-bottom) a::before {
         content: attr(data-linenumber);
+        height: 24px;
+        min-width: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: end;
+        position: absolute;
+        top: 50%;
+        right: 0;
+        padding-inline: 10px;
+        transform: translateY(-50%);
       }
     }
 
@@ -809,7 +810,7 @@ table.code {
   margin: 0 $gl-padding $gl-padding;
 
   .notes {
-    @apply gl-rounded-base;
+    @apply gl-rounded-lg;
   }
 }
 

@@ -29,17 +29,20 @@ The **Overview** page displays:
 - Instance details
 - Maintenance windows
 - Hosted runners
+- Customer communication
 
 ## Tenant overview
 
 The top section shows important information about your tenant, including:
 
 - Tenant name and URL
-- Total Git repository capacity
+- [Total Git repository capacity](create_instance/storage_types.md#view-repository-storage-per-gitaly-node)
 - Current GitLab version
 - Reference architecture
 - Maintenance window
-- AWS regions for data storage and backup
+- Primary and secondary AWS regions for data storage, with their availability zone IDs
+- Backup AWS region
+- AWS account IDs for the tenant and hosted runners
 
 ## Maintenance windows
 
@@ -77,3 +80,15 @@ To view the current NAT gateway IP addresses for your GitLab Dedicated instance:
 1. Select your tenant.
 1. Select the **Configuration** tab.
 1. Under **Tenant Details**, find your **NAT gateways**.
+
+## Customer communication
+
+The **Customer communication** section shows the **Operational email addresses** configured for your GitLab Dedicated instance. These email addresses receive notifications about your instance, including:
+
+- Emergency maintenance
+- Incidents
+- Other critical updates
+
+You cannot turn off notifications for operational email addresses.
+
+To update your customer communication information, [submit a support ticket](https://support.gitlab.com/hc/en-us/requests/new?ticket_form_id=4414917877650).

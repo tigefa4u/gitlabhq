@@ -2,6 +2,7 @@
 stage: Plan
 group: Optimize
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+description: Gain insights into DevOps performance and identify opportunities for workflow improvements.
 title: DevOps Research and Assessment (DORA) metrics
 ---
 
@@ -117,6 +118,12 @@ The first step is to benchmark the CI/CD pipelines' efficiency between groups an
 
 ## Time to restore service
 
+{{< history >}}
+
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/356959) in GitLab 15.1.
+
+{{< /history >}}
+
 Time to restore service is the amount of time it takes an organization to recover from a failure in production.
 
 For software leaders, time to restore service reflects how long it takes an organization to recover from a failure in production.
@@ -178,7 +185,7 @@ The first step is to benchmark the quality and stability, between groups and pro
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/96561) in GitLab 15.4 [with a flag](../../administration/feature_flags.md) named `dora_configuration`. Disabled by default. This feature is an [experiment](../../policy/development_stages_support.md).
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/96561) in GitLab 15.4 [with a flag](../../administration/feature_flags/_index.md) named `dora_configuration`. Disabled by default. This feature is an [experiment](../../policy/development_stages_support.md).
 
 {{< /history >}}
 
@@ -247,7 +254,7 @@ to automatically create a GitLab incident for each PagerDuty incident.
 This configuration requires you to make changes in both PagerDuty and GitLab.
 
 For other incident management tools, you can set up the
-[HTTP integration](../../operations/incident_management/integrations.md#http-endpoints),
+[HTTP integration](../../operations/incident_management/integrations.md#alerting-endpoints),
 and use it to automatically:
 
 1. [Create an incident when an alert is triggered](../../operations/incident_management/manage_incidents.md#automatically-when-an-alert-is-triggered).

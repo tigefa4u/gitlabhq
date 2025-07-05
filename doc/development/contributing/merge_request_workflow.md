@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Merge requests workflow
 ---
 
@@ -105,7 +105,7 @@ Commit messages should follow the guidelines below, for reasons explained by Chr
 - The merge request should not contain more than 10 commit messages.
 - The commit subject should contain at least 3 words.
 
-**Important notes:**
+**Important notes**:
 
 - If the guidelines are not met, the MR may not pass the [Danger checks](https://gitlab.com/gitlab-org/ruby/gems/gitlab-dangerfiles/-/blob/master/lib/danger/rules/commit_messages/Dangerfile).
 - Consider enabling [Squash and merge](../../user/project/merge_requests/squash_and_merge.md)
@@ -203,7 +203,7 @@ To reach the definition of done, the merge request must create no regressions an
 - Verified as supporting [Geo](../../administration/geo/_index.md) through the [self-service framework](../geo/framework.md). For more information, see [Geo is a requirement in the definition of done](../geo/framework.md#geo-is-a-requirement-in-the-definition-of-done).
 
 If a regression occurs, we prefer you revert the change.
-Your contribution is *incomplete* until you have made sure it meets all of these
+Your contribution is incomplete until you have made sure it meets all of these
 requirements.
 
 ### Functionality
@@ -277,7 +277,7 @@ requirements.
 
 1. Use available components from the GitLab Design System,
    [Pajamas](https://design.gitlab.com/).
-1. The MR must include *Before* and *After* screenshots if UI changes are made.
+1. The MR must include "Before" and "After" screenshots if UI changes are made.
 1. If the MR changes CSS classes, include the list of affected pages, which
    can be found by running `grep css-class ./app -R`.
 

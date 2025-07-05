@@ -1,17 +1,17 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Transaction guidelines
 ---
 
 This document gives a few examples of the usage of database transactions in application code.
 
-For further reference, check PostgreSQL documentation about [transactions](https://www.postgresql.org/docs/current/tutorial-transactions.html).
+For further reference, check PostgreSQL documentation about [transactions](https://www.postgresql.org/docs/16/tutorial-transactions.html).
 
 ## Database decomposition and sharding
 
-The [Pods group](https://handbook.gitlab.com/handbook/engineering/infrastructure/core-platform/data_stores/tenant-scale/) plans
+The [Tenant Scale group](https://handbook.gitlab.com/handbook/engineering/infrastructure-platforms/tenant-scale/) plans
 to split the main GitLab database and move some of the database tables to other database servers.
 
 We start decomposing the `ci_*`-related database tables first. To maintain the current application

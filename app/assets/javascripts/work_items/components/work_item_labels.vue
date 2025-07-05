@@ -3,7 +3,7 @@ import { GlButton, GlDisclosureDropdown, GlLabel } from '@gitlab/ui';
 import { difference, unionBy } from 'lodash';
 import fuzzaldrinPlus from 'fuzzaldrin-plus';
 import { WORKSPACE_GROUP, WORKSPACE_PROJECT } from '~/issues/constants';
-import { __, n__, s__ } from '~/locale';
+import { __, createListFormat, s__, sprintf } from '~/locale';
 import WorkItemSidebarDropdownWidget from '~/work_items/components/shared/work_item_sidebar_dropdown_widget.vue';
 import DropdownContentsCreateView from '~/sidebar/components/labels/labels_select_widget/dropdown_contents_create_view.vue';
 import groupLabelsQuery from '~/sidebar/components/labels/labels_select_widget/graphql/group_labels.query.graphql';
@@ -13,8 +13,7 @@ import Tracking from '~/tracking';
 import { ISSUABLE_CHANGE_LABEL } from '~/behaviors/shortcuts/keybindings';
 import workItemByIidQuery from '../graphql/work_item_by_iid.query.graphql';
 import updateWorkItemMutation from '../graphql/update_work_item.mutation.graphql';
-import updateNewWorkItemMutation from '../graphql/update_new_work_item.mutation.graphql';
-import { i18n, TRACKING_CATEGORY_SHOW } from '../constants';
+import { i18n, TRACKING_CATEGORY_SHOW, WORK_ITEM_TYPE_NAME_EPIC } from '../constants';
 import {
   findLabelsWidget,
   formatLabelForListbox,
@@ -23,6 +22,7 @@ import {
 } from '../utils';
 
 export default {
+  ISSUABLE_CHANGE_LABEL,
   components: {
     DropdownContentsCreateView,
     GlButton,
@@ -31,7 +31,12 @@ export default {
     WorkItemSidebarDropdownWidget,
   },
   mixins: [Tracking.mixin()],
-  inject: ['canAdminLabel', 'issuesListPath', 'labelsManagePath'],
+  inject: {
+    canAdminLabel: 'canAdminLabel',
+    issuesListPath: 'issuesListPath',
+    labelsManagePath: 'labelsManagePath',
+    epicsListPath: { default: '' },
+  },
   props: {
     fullPath: {
       type: String,
@@ -64,15 +69,13 @@ export default {
       searchLabels: [],
       searchTerm: '',
       searchStarted: false,
+      selectedLabelsIds: [],
       showLabelForm: false,
       updateInProgress: false,
       workItem: {},
       createdLabelId: undefined,
-      removeLabelIds: [],
-      addLabelIds: [],
       labelsCache: [],
       labelsToShowAtTopOfListbox: [],
-      shortcut: ISSUABLE_CHANGE_LABEL,
     };
   },
   computed: {
@@ -84,6 +87,9 @@ export default {
         ? newWorkItemFullPath(this.fullPath, this.workItemType)
         : this.fullPath;
     },
+    isEpic() {
+      return this.workItemType === WORK_ITEM_TYPE_NAME_EPIC;
+    },
     // eslint-disable-next-line vue/no-unused-properties
     tracking() {
       return {
@@ -93,11 +99,20 @@ export default {
       };
     },
     dropdownText() {
-      const selectedLabelsCount =
-        this.addLabelIds.length + this.widgetLabelsIds.length - this.removeLabelIds.length;
-      return this.addLabelIds.length > 0 || this.widgetLabelsIds.length > 0
-        ? n__('%d label', '%d labels', selectedLabelsCount)
-        : __('No labels');
+      if (!this.selectedLabelsIds.length) {
+        return __('No labels');
+      }
+
+      const selectedLabelTitles = this.labelsCache
+        .filter(({ id }) => this.selectedLabelsIds.includes(id))
+        .map((label) => label.title);
+
+      return selectedLabelTitles.length > 2
+        ? sprintf(s__('LabelSelect|%{firstLabelName} +%{remainingLabelCount} more'), {
+            firstLabelName: selectedLabelTitles.at(0),
+            remainingLabelCount: selectedLabelTitles.length - 1,
+          })
+        : createListFormat().format(selectedLabelTitles);
     },
     isLoadingLabels() {
       return this.$apollo.queries.searchLabels.loading;
@@ -146,12 +161,8 @@ export default {
   watch: {
     searchTerm(newVal, oldVal) {
       if (newVal === '' && oldVal !== '') {
-        const selectedIds = [...this.widgetLabelsIds, ...this.addLabelIds].filter(
-          (x) => !this.removeLabelIds.includes(x),
-        );
-
         this.labelsToShowAtTopOfListbox = this.labelsCache.filter(({ id }) =>
-          selectedIds.includes(id),
+          this.selectedLabelsIds.includes(id),
         );
       }
     },
@@ -174,6 +185,7 @@ export default {
       result({ data }) {
         const labels = findLabelsWidget(data?.workspace?.workItem)?.labels?.nodes || [];
         this.labelsCache = unionBy(this.labelsCache, labels, 'id');
+        this.selectedLabelsIds = labels.map(({ id }) => id);
       },
       skip() {
         return !this.workItemIid;
@@ -219,77 +231,78 @@ export default {
       this.searchTerm = searchTerm;
     },
     removeLabel({ id }) {
-      this.removeLabelIds.push(id);
-      this.updateLabels();
+      this.updateLabels({ removeLabelIds: [id] });
     },
-    updateLabel(labels) {
-      this.removeLabelIds = difference(this.widgetLabelsIds, labels);
-      this.addLabelIds = difference(labels, this.widgetLabelsIds);
+    setLabels(labels) {
+      this.selectedLabelsIds = labels;
     },
-    async updateLabels(labels) {
+    async submitLabels(labels) {
+      this.setLabels(labels);
+      let removeLabelIds = difference(this.widgetLabelsIds, labels);
+      let addLabelIds = difference(labels, this.widgetLabelsIds);
+
       if (labels?.length === 0) {
-        this.removeLabelIds = this.widgetLabelsIds;
-        this.addLabelIds = [];
+        removeLabelIds = this.widgetLabelsIds;
+        addLabelIds = [];
       }
 
-      if (!this.addLabelIds.length && !this.removeLabelIds.length) {
+      if (!addLabelIds.length && !removeLabelIds.length) {
         return;
       }
-
-      this.updateInProgress = true;
 
       if (this.isCreateFlow) {
-        const selectedIds = [...this.widgetLabelsIds, ...this.addLabelIds].filter(
-          (x) => !this.removeLabelIds.includes(x),
-        );
-
-        await this.$apollo.mutate({
-          mutation: updateNewWorkItemMutation,
-          variables: {
-            input: {
-              workItemType: this.workItemType,
-              fullPath: this.fullPath,
-              labels: this.labelsCache.filter(({ id }) => selectedIds.includes(id)),
-            },
-          },
-        });
-
-        this.updateInProgress = false;
-        this.addLabelIds = [];
-        this.removeLabelIds = [];
-        return;
+        await this.updateDraftCache();
+      } else {
+        await this.updateLabels({ addLabelIds, removeLabelIds });
+      }
+    },
+    updateDraftCache(removeLabelIds = []) {
+      let labels = this.labelsCache.filter(({ id }) => this.selectedLabelsIds.includes(id));
+      if (removeLabelIds.length) {
+        labels = labels.filter(({ id }) => !removeLabelIds.includes(id));
       }
 
+      this.$emit('updateWidgetDraft', {
+        workItemType: this.workItemType,
+        fullPath: this.fullPath,
+        labels,
+      });
+    },
+    async updateLabels({ addLabelIds = [], removeLabelIds = [] }) {
       try {
-        const {
-          data: {
-            workItemUpdate: { errors },
-          },
-        } = await this.$apollo.mutate({
-          mutation: updateWorkItemMutation,
-          variables: {
-            input: {
-              id: this.workItemId,
-              labelsWidget: {
-                addLabelIds: this.addLabelIds,
-                removeLabelIds: this.removeLabelIds,
+        this.updateInProgress = true;
+
+        if (this.isCreateFlow) {
+          this.updateDraftCache(removeLabelIds);
+        } else {
+          const {
+            data: {
+              workItemUpdate: { errors },
+            },
+          } = await this.$apollo.mutate({
+            mutation: updateWorkItemMutation,
+            variables: {
+              input: {
+                id: this.workItemId,
+                labelsWidget: {
+                  addLabelIds,
+                  removeLabelIds,
+                },
               },
             },
-          },
-        });
+          });
 
-        if (errors.length > 0) {
-          throw new Error();
+          if (errors.length > 0) {
+            throw new Error();
+          }
+
+          this.track('updated_labels');
         }
-
-        this.track('updated_labels');
-        this.$emit('labelsUpdated', [...this.addLabelIds, ...this.removeLabelIds]);
+        this.$emit('labelsUpdated', [...addLabelIds, ...removeLabelIds]);
       } catch {
         this.$emit('error', i18n.updateError);
       } finally {
         this.searchTerm = '';
-        this.addLabelIds = [];
-        this.removeLabelIds = [];
         this.updateInProgress = false;
       }
     },
@@ -297,12 +310,12 @@ export default {
       return this.allowsScopedLabels && isScopedLabel(label);
     },
     labelFilterUrl(label) {
-      return `${this.issuesListPath}?label_name[]=${encodeURIComponent(label.title)}`;
+      return `${this.isEpic ? this.epicsListPath : this.issuesListPath}?label_name[]=${encodeURIComponent(label.title)}`;
     },
     handleLabelCreated(label) {
       this.showLabelForm = false;
       this.createdLabelId = label.id;
-      this.addLabelIds.push(label.id);
+      this.selectedLabelsIds.push(label.id);
     },
   },
 };
@@ -316,20 +329,20 @@ export default {
     dropdown-name="label"
     :loading="isLoadingLabels"
     :list-items="listboxItems"
-    :item-value="widgetLabelsIds"
+    :item-value="selectedLabelsIds"
     :update-in-progress="updateInProgress"
     :toggle-dropdown-text="dropdownText"
     :header-text="__('Select labels')"
     :reset-button-label="__('Clear')"
-    :shortcut="shortcut"
+    :shortcut="$options.ISSUABLE_CHANGE_LABEL"
     show-footer
     multi-select
     clear-search-on-item-select
     data-testid="work-item-labels"
     @dropdownShown="onDropdownShown"
     @searchStarted="search"
-    @updateValue="updateLabels"
-    @updateSelected="updateLabel"
+    @updateValue="submitLabels"
+    @updateSelected="setLabels"
   >
     <template #list-item="{ item }">
       <div class="gl-flex gl-items-center gl-gap-3 gl-break-anywhere">

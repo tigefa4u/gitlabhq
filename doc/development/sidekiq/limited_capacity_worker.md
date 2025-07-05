@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Sidekiq limited capacity worker
 ---
 
@@ -9,7 +9,7 @@ title: Sidekiq limited capacity worker
 
 The following documentation for limited capacity worker relates to a specific
 type of worker that usually does not take arguments but instead gets work from
-a custom queue (e.g. a PostgresSQL backlog of work). It cannot be used for
+a custom queue (for example, a PostgreSQL backlog of work). It cannot be used for
 throttling normal Sidekiq workers. To restrict the concurrency of a normal
 Sidekiq worker you can use a [concurrency limit](worker_attributes.md#concurrency-limit).
 

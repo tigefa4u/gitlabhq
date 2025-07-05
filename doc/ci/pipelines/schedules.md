@@ -19,7 +19,7 @@ Use scheduled pipelines to run GitLab CI/CD [pipelines](_index.md) at regular in
 For a scheduled pipeline to run:
 
 - The schedule owner must have the Developer role. For pipelines on protected branches,
-  the schedule owner must be [allowed to merge](../../user/project/repository/branches/protected.md#add-protection-to-existing-branches)
+  the schedule owner must be [allowed to merge](../../user/project/repository/branches/protected.md#protect-a-branch)
   to the branch.
 - The `.gitlab-ci.yml` file must have valid syntax.
 
@@ -61,7 +61,7 @@ The owner of a pipeline schedule can edit it:
 1. Select **Build > Pipeline schedules**.
 1. Next to the schedule, select **Edit** ({{< icon name="pencil" >}}) and fill in the form.
 
-The user must have the Developer role or above for the project. If the user is
+The user must have at least the Developer role for the project. If the user is
 not the owner of the schedule, they must first [take ownership](#take-ownership)
 of the schedule.
 

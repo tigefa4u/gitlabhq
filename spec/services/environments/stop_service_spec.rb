@@ -24,6 +24,14 @@ RSpec.describe Environments::StopService, feature_category: :continuous_delivery
         review_job.success!
       end
 
+      it 'calls the managed resource deletion service' do
+        expect_next_instance_of(Environments::DeleteManagedResourcesService, environment, current_user: user) do |service|
+          expect(service).to receive(:execute).and_call_original
+        end
+
+        subject
+      end
+
       context 'without stop action' do
         let!(:environment) { create(:environment, :available, project: project) }
 
@@ -240,6 +248,18 @@ RSpec.describe Environments::StopService, feature_category: :continuous_delivery
 
         it 'does not affect environments that are not associated to the merge request' do
           expect(environment3.reload).to be_available
+        end
+      end
+
+      context 'and merge request has legacy associated environments' do
+        before do
+          review_job.persisted_environment.update_column(:merge_request_id, nil)
+
+          subject
+        end
+
+        it 'stops the associated environments' do
+          expect(review_job.persisted_environment.reload).to be_stopping
         end
       end
 

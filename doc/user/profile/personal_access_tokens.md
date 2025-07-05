@@ -2,6 +2,7 @@
 stage: Software Supply Chain Security
 group: Authentication
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+description: Use personal access tokens to authenticate with the GitLab API or Git over HTTPS. Includes creation, rotation, revocation, scopes, and expiration settings.
 title: Personal access tokens
 ---
 
@@ -85,14 +86,13 @@ You can create as many personal access tokens as you like.
 Save the personal access token somewhere safe. After you leave the page,
 you no longer have access to the token.
 
-### Prefill personal access token name and scopes
+### Prefill personal access token details
 
-You can link directly to the personal access token page and have the form prefilled with a name and
-list of scopes. To do this, you can append a `name` parameter and a list of comma-separated scopes
-to the URL. For example:
+You can prefill the details of the personal access token by appending the name, description, and
+list of scopes to the URL. For example:
 
 ```plaintext
-https://gitlab.example.com/-/user_settings/personal_access_tokens?name=Example+Access+token&scopes=api,read_user,read_registry
+https://gitlab.example.com/-/user_settings/personal_access_tokens?name=Example+Access+token&description=My+description&scopes=api,read_user
 ```
 
 {{< alert type="warning" >}}
@@ -107,6 +107,7 @@ for guidance on managing personal access tokens (for example, setting a short ex
 {{< history >}}
 
 - Ability to use the UI to rotate a personal access token [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/241523) in GitLab 17.7.
+- [Updated UI](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/194582) in GitLab 18.1.
 
 {{< /history >}}
 
@@ -115,7 +116,8 @@ At any time, you can use the UI to revoke or, in GitLab 17.7 and later, rotate a
 1. On the left sidebar, select your avatar.
 1. Select **Edit profile**.
 1. On the left sidebar, select **Access tokens**.
-1. In the **Active personal access tokens** area, for the relevant token, select **Revoke** ({{< icon name="remove" >}}) or **Rotate** ({{< icon name="retry" >}}).
+1. Next to an active token, select the vertical ellipsis ({{< icon name="ellipsis_v" >}}).
+1. Select **Revoke** ({{< icon name="remove" >}}) or **Rotate** ({{< icon name="retry" >}}).
 1. On the confirmation dialog, select **Revoke** or **Rotate**.
 
    {{< alert type="warning" >}}
@@ -176,7 +178,7 @@ In GitLab 17.3 and later, you can use the Admin UI to disable personal access to
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/369504) in GitLab 16.11 [with a flag](../../administration/feature_flags.md) named `enterprise_disable_personal_access_tokens`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/369504) in GitLab 16.11 [with a flag](../../administration/feature_flags/_index.md) named `enterprise_disable_personal_access_tokens`. Disabled by default.
 - [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/369504) in GitLab 17.2
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/369504) in GitLab 17.3 . Feature flag `enterprise_disable_personal_access_tokens` removed.
 
@@ -214,7 +216,7 @@ When you delete or block an enterprise user account, their personal access token
 
 - In GitLab 16.0 and earlier, token usage information is updated every 24 hours.
 - The frequency of token usage information updates [changed](https://gitlab.com/gitlab-org/gitlab/-/issues/410168) in GitLab 16.1 from 24 hours to 10 minutes.
-- Ability to view IP addresses [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/428577) in GitLab 17.8 [with a flag](../../administration/feature_flags.md) named `pat_ip`. Enabled by default in 17.9.
+- Ability to view IP addresses [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/428577) in GitLab 17.8 [with a flag](../../administration/feature_flags/_index.md) named `pat_ip`. Enabled by default in 17.9.
 - Ability to view IP addresses made [generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/513302) in GitLab 17.10. Feature flag `pat_ip` removed.
 
 {{< /history >}}
@@ -237,7 +239,7 @@ To view the last time a token was used, and the IP addresses from where the toke
 {{< history >}}
 
 - Personal access tokens no longer being able to access container or package registries [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/387721) in GitLab 16.0.
-- `k8s_proxy` [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/422408) in GitLab 16.4 [with a flag](../../administration/feature_flags.md) named `k8s_proxy_pat`. Enabled by default.
+- `k8s_proxy` [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/422408) in GitLab 16.4 [with a flag](../../administration/feature_flags/_index.md) named `k8s_proxy_pat`. Enabled by default.
 - Feature flag `k8s_proxy_pat` [removed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/131518) in GitLab 16.5.
 - `read_service_ping` [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/42692#note_1222832412) in GitLab 17.1.
 - `manage_runner` [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/460721) in GitLab 17.1.
@@ -335,7 +337,7 @@ automatically applied:
 
 {{< history >}}
 
-- 60 and 30 day expiry notifications [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/464040) in GitLab 17.6 [with a flag](../../administration/feature_flags.md) named `expiring_pats_30d_60d_notifications`. Disabled by default.
+- 60 and 30 day expiry notifications [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/464040) in GitLab 17.6 [with a flag](../../administration/feature_flags/_index.md) named `expiring_pats_30d_60d_notifications`. Disabled by default.
 - 60 and 30 day notifications [generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/173792) in GitLab 17.7. Feature flag `expiring_pats_30d_60d_notifications` removed.
 
 {{< /history >}}
@@ -351,7 +353,7 @@ You can subscribe to an iCalendar endpoint which contains events at the expiry d
 
 ### Create a service account personal access token with no expiry date
 
-You can [create a personal access token for a service account](../../api/group_service_accounts.md#create-a-personal-access-token-for-a-service-account-user) with no expiry date. These personal access tokens never expire, unlike non-service account personal access tokens.
+You can [create a personal access token for a service account](../../api/group_service_accounts.md#create-a-personal-access-token-for-a-group-service-account) with no expiry date. These personal access tokens never expire, unlike non-service account personal access tokens.
 
 {{< alert type="note" >}}
 
@@ -384,7 +386,7 @@ Prerequisites:
 
 You can now create personal access tokens for a service account user with no expiry date.
 
-## Require DPoP headers with personal access tokens
+## Use DPoP with personal access tokens
 
 {{< details >}}
 
@@ -395,7 +397,7 @@ You can now create personal access tokens for a service account user with no exp
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/181053) in GitLab 17.10 [with a flag](../../administration/feature_flags.md) named `dpop_authentication`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/181053) in GitLab 17.10 [with a flag](../../administration/feature_flags/_index.md) named `dpop_authentication`. Disabled by default.
 
 {{< /history >}}
 
@@ -414,14 +416,17 @@ signed DPoP header requires your corresponding private SSH key.
 
 {{< alert type="note" >}}
 
-If you enable this feature, all REST and GraphQL API requests without a valid DPoP header fail with a `DpopValidationError`.
+If you enable this feature, all API requests without a valid DPoP header return a `DpopValidationError` error.
+
+DPoP header is not required for Git operations over HTTPS that include an access token.
 
 {{< /alert >}}
 
 Prerequisites:
 
-- You must have [added at least one public SSH key](../ssh.md#add-an-ssh-key-to-your-gitlab-account)
-  to your account, with the **Usage type** of **Signing**, or **Authentication & Signing**.
+- You must [add at least one public SSH key](../ssh.md#add-an-ssh-key-to-your-gitlab-account)
+  to your account, with a **Usage type** of **Signing** or **Authentication & Signing**.
+  - Your SSH key type must be RSA.
 - You must have installed and configured the [GitLab CLI](../../editor_extensions/gitlab_cli/_index.md)
   for your GitLab account.
 
@@ -430,14 +435,14 @@ To require DPoP on all calls to the REST and GraphQL APIs:
 1. On the left sidebar, select your avatar.
 1. Select **Edit profile**.
 1. On the left sidebar, select **Access Tokens**.
-1. Go to the **Use Demonstrating Proof of Possession** section, and select **Enable DPoP**.
+1. Go to the **Use Demonstrating Proof of Possession (DPoP)** section, and select **Enable DPoP**.
 1. Select **Save changes**.
 1. To generate a DPoP header with the [GitLab CLI](../../editor_extensions/gitlab_cli/_index.md),
    run this command in your terminal. Replace `<your_access_token>` with your access token, and `~/.ssh/id_rsa`
    with the location of your private key:
 
    ```shell
-    bin/glab auth dpop-gen --pat "<your_access_token>" --private-key ~/.ssh/id_rsa
+    glab auth dpop-gen --pat "<your_access_token>" --private-key ~/.ssh/id_rsa
    ```
 
 The DPoP header you generated in the CLI can be used:
@@ -463,7 +468,7 @@ The DPoP header you generated in the CLI can be used:
    "https://gitlab.example.com/api/graphql"
   ```
 
-To learn more about DPoP headers, see the blueprint
+To learn more about DPoP, see the blueprint
 [Sender Constraining Personal Access Tokens](https://gitlab.com/gitlab-com/gl-security/product-security/appsec/security-feature-blueprints/-/tree/main/sender_constraining_access_tokens).
 
 ## Create a personal access token programmatically

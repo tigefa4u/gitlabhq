@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Data Access
 group: Gitaly
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Gitaly Cluster recovery options and tools
@@ -70,8 +70,8 @@ current assignments: gitaly-1, gitaly-2, gitaly-3
 
 This ensures that the repository is replicated to the new node and the `repository_assignments` table gets updated with the name of new Gitaly node.
 
-If the [default replication factor](praefect.md#configure-replication-factor) is set, new nodes are not automatically included in replication. You must follow the steps
-described above.
+If the [default replication factor](praefect.md#configure-replication-factor) is set, new nodes are not automatically included in replication.
+You must follow the steps described previously.
 
 After you [verify](#check-for-data-loss) that repository is successfully replicated to the new node:
 

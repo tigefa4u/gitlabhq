@@ -1,8 +1,8 @@
 ---
-stage: Foundations
+stage: AI-powered
 group: Global Search
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-title: Troubleshooting Elasticsearch indexing
+title: Troubleshooting Elasticsearch indexing and searching
 ---
 
 {{< details >}}
@@ -12,7 +12,7 @@ title: Troubleshooting Elasticsearch indexing
 
 {{< /details >}}
 
-When working with Elasticsearch indexing, you might encounter the following issues.
+When working with Elasticsearch indexing or searching, you might encounter the following issues.
 
 ## Create an empty index
 
@@ -34,7 +34,7 @@ You can check for errors during project indexing.
 Errors might occur on:
 
 - The GitLab instance: if you cannot fix them yourself, contact GitLab Support for guidance.
-- The Elasticsearch instance: [if the error is not listed](../../advanced_search/elasticsearch_troubleshooting.md), contact your Elasticsearch administrator.
+- The Elasticsearch instance: [if the error is not listed](../../elasticsearch/troubleshooting/_index.md), contact your Elasticsearch administrator.
 
 If indexing does not return errors, check the status of indexed projects with the following Rake tasks:
 
@@ -62,6 +62,12 @@ have to [reindex](../../advanced_search/elasticsearch.md#zero-downtime-reindexin
 
 ## No search results after indexing all repositories
 
+{{< alert type="note" >}}
+
+Don't use these instructions for scenarios that only index a [subset of namespaces](../../advanced_search/elasticsearch.md#limit-the-amount-of-namespace-and-project-data-to-index).
+
+{{< /alert >}}
+
 Make sure you [indexed all the database data](../../advanced_search/elasticsearch.md#enable-advanced-search).
 
 If there aren't any results (hits) in the UI search, check if you are seeing the same results via the rails console (`sudo gitlab-rails console`):
@@ -85,12 +91,6 @@ If the results:
 - Sync up, check that you are using [supported syntax](../../../user/search/advanced_search.md#syntax). Advanced search does not support [exact substring matching](https://gitlab.com/gitlab-org/gitlab/-/issues/325234).
 - Do not match up, this indicates a problem with the documents generated from the project. It is best to [reindex that project](../../advanced_search/elasticsearch.md#indexing-a-range-of-projects-or-a-specific-project).
 
-{{< alert type="note" >}}
-
-The above instructions are not to be used for scenarios that only index a [subset of namespaces](../../advanced_search/elasticsearch.md#limit-the-amount-of-namespace-and-project-data-to-index).
-
-{{< /alert >}}
-
 See [Elasticsearch Index Scopes](../../advanced_search/elasticsearch.md#advanced-search-index-scopes) for more information on searching for specific types of data.
 
 ## No search results after switching Elasticsearch servers
@@ -99,7 +99,7 @@ To reindex the database, repositories, and wikis, [index the instance](../../adv
 
 ## Indexing fails with `error: elastic: Error 429 (Too Many Requests)`
 
-If `ElasticCommitIndexerWorker` Sidekiq workers are failing with this error during indexing, it usually means that Elasticsearch is unable to keep up with the concurrency of indexing request. To address change the following settings:
+If `Search::Elastic::CommitIndexerWorker` Sidekiq workers are failing with this error during indexing, it usually means that Elasticsearch is unable to keep up with the concurrency of indexing request. To address change the following settings:
 
 - To decrease the indexing throughput you can decrease `Bulk request concurrency` (see [Advanced search settings](../../advanced_search/elasticsearch.md#advanced-search-configuration)). This is set to `10` by default, but you change it to as low as 1 to reduce the number of concurrent indexing operations.
 - If changing `Bulk request concurrency` didn't help, you can use the [routing rules](../../../administration/sidekiq/processing_specific_job_classes.md#routing-rules) option to [limit indexing jobs only to specific Sidekiq nodes](../../advanced_search/elasticsearch.md#index-large-instances-with-dedicated-sidekiq-nodes-or-processes), which should reduce the number of indexing requests.
@@ -158,6 +158,16 @@ To resolve this error, disconnect one of the GitLab instances from using the Ela
 
 For more information, see [issue 3421](https://gitlab.com/gitlab-org/gitlab/-/issues/3421).
 
+## Search fails with `too_many_clauses: maxClauseCount is set to 1024`
+
+This error occurs when a query has more clauses than defined in the `indices.query.bool.max_clause_count` setting:
+
+- [In Elasticsearch 7.17 and earlier](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/search-settings.html), the default value is `1024`.
+- [In Elasticsearch 8.0](https://www.elastic.co/guide/en/elasticsearch/reference/8.0/search-settings.html), the default value is `4096`.
+- [In Elasticsearch 8.1 and later](https://www.elastic.co/guide/en/elasticsearch/reference/8.1/search-settings.html), the setting is deprecated and the value is dynamically determined.
+
+To resolve this issue, increase the value or upgrade Elasticsearch 8.1 or later. Increasing the value may lead to performance degradation.
+
 ## Last resort to recreate an index
 
 There may be cases where somehow data never got indexed and it's not in the
@@ -172,7 +182,7 @@ does not show correct search results until the indexing is complete. You might
 want to clear the **Search with Elasticsearch enabled** checkbox
 while the indexing is running.
 
-If you are sure you've read the above caveats and want to proceed, then you
+If you are sure you've read the previous caveats and want to proceed, then you
 should run the following Rake task to recreate the entire index from scratch.
 
 {{< tabs >}}

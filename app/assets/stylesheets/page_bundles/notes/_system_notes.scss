@@ -14,6 +14,10 @@
 }
 
 .system-note {
+  .note-body:has(.note-text p:first-child:last-child) {
+    display: none;
+  }
+
   .note-text {
     // System notes render the text twice; this hides the second one. Do not remove!
     p:first-child {
@@ -141,4 +145,8 @@
   .note-headline-light p {
     margin-bottom: 0;
   }
+}
+
+.duo-code-review-system-note p {
+  display: inline;
 }

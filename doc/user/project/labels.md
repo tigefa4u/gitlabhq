@@ -3,6 +3,7 @@ stage: Plan
 group: Project Management
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Labels
+description: Project labels, group labels, nested scopes, and filtering.
 ---
 
 {{< details >}}
@@ -24,17 +25,19 @@ Labels:
 
 ## Types of labels
 
-You can use two types of labels in GitLab:
+Use three types of labels in GitLab:
 
 - **Project labels** can be assigned to issues and merge requests in that project only.
 - **Group labels** can be assigned to issues, merge requests, and [epics](../group/epics/_index.md)
   in any project in the selected group or its subgroups.
+- **Instance labels** [are created](../../administration/labels.md) by instance
+  administrators and are copied to all new projects.
 
 ## Assign and unassign labels
 
 {{< history >}}
 
-- Real-time updates in the sidebar [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/241538) in GitLab 14.10 with a [feature flag](../../administration/feature_flags.md) named `realtime_labels`, disabled by default.
+- Real-time updates in the sidebar [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/241538) in GitLab 14.10 with a [feature flag](../../administration/feature_flags/_index.md) named `realtime_labels`, disabled by default.
 - Real-time updates in the sidebar [enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/357370#note_991987201) in GitLab 15.1.
 - Real-time updates in the sidebar [enabled by default](https://gitlab.com/gitlab-org/gitlab/-/issues/357370) in GitLab 15.5.
 - Real-time updates in the sidebar [generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/103199) in GitLab 15.6. Feature flag `realtime_labels` removed.
@@ -421,7 +424,7 @@ Filtering by scoped labels not available on the issues or merge requests dashboa
 
 ### Scoped labels examples
 
-**Example 1.** Updating issue priority:
+**Example 1**. Updating issue priority:
 
 1. You decide that an issue is of low priority, and assign it the `priority::low` label.
 1. After more review, you realize the issue's priority is higher increased, and you assign it the
@@ -429,7 +432,7 @@ Filtering by scoped labels not available on the issues or merge requests dashboa
 1. Because an issue shouldn't have two priority labels at the same time, GitLab removes the
    `priority::low` label.
 
-**Example 2.** You want a custom field in issues to track the operating system platform
+**Example 2**. You want a custom field in issues to track the operating system platform
 that your features target, where each issue should only target one platform.
 
 You create three labels:
@@ -441,7 +444,7 @@ You create three labels:
 If you assign any of these labels to an issue automatically removes any other existing label that
 starts with `platform::`.
 
-**Example 3.** You can use scoped labels to represent the workflow states of your teams.
+**Example 3**. You can use scoped labels to represent the workflow states of your teams.
 
 Suppose you have the following labels:
 
@@ -549,7 +552,7 @@ To learn what happens when you sort by priority or label priority, see
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/408676) in GitLab 16.3 [with a flag](../../administration/feature_flags.md) named `enforce_locked_labels_on_merge`. This feature is [beta](../../policy/development_stages_support.md). Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/408676) in GitLab 16.3 [with a flag](../../administration/feature_flags/_index.md) named `enforce_locked_labels_on_merge`. This feature is [beta](../../policy/development_stages_support.md). Disabled by default.
 - Minimum role to lock labels [changed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/169256) from Reporter to Planner in GitLab 17.7.
 
 {{< /history >}}
@@ -587,7 +590,7 @@ To set a label to get locked on merge:
 
 ## Related topics
 
-Practice working with labels in the following tutorials:
-
-- [Set up a single project for issue triage](../../tutorials/issue_triage/_index.md)
-- [Set up issue boards for team hand-off](../../tutorials/boards_for_teams/_index.md)
+- Tutorials:
+  - [Set up a single project for issue triage](../../tutorials/issue_triage/_index.md)
+  - [Set up issue boards for team hand-off](../../tutorials/boards_for_teams/_index.md)
+- [Labels administration](../../administration/labels.md)

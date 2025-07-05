@@ -18,13 +18,16 @@ import WorkItemLinkChildMetadata from 'ee_else_ce/work_items/components/shared/w
 import RichTimestampTooltip from '../rich_timestamp_tooltip.vue';
 import WorkItemTypeIcon from '../work_item_type_icon.vue';
 import WorkItemStateBadge from '../work_item_state_badge.vue';
-import { canRouterNav, findLinkedItemsWidget, getDisplayReference } from '../../utils';
+import {
+  canRouterNav,
+  findLinkedItemsWidget,
+  findStatusWidget,
+  getDisplayReference,
+} from '../../utils';
 import {
   STATE_OPEN,
-  STATE_CLOSED,
   WIDGET_TYPE_ASSIGNEES,
   WIDGET_TYPE_LABELS,
-  LINKED_CATEGORIES_MAP,
   INJECTION_LINK_CHILD_PREVENT_ROUTER_NAVIGATION,
 } from '../../constants';
 import WorkItemRelationshipIcons from './work_item_relationship_icons.vue';
@@ -85,6 +88,11 @@ export default {
       required: false,
       default: true,
     },
+    contextualViewEnabled: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   computed: {
     labels() {
@@ -140,23 +148,31 @@ export default {
     displayLabels() {
       return this.showLabels && this.labels.length;
     },
+    workItemStatus() {
+      return findStatusWidget(this.childItem)?.status?.name;
+    },
+    showState() {
+      return this.glFeatures.workItemStatusFeatureFlag
+        ? !this.workItemStatus || !this.isChildItemOpen
+        : true;
+    },
     displayReference() {
       return getDisplayReference(this.workItemFullPath, this.childItem.reference);
     },
-    filteredLinkedChildItems() {
-      const linkedChildWorkItems = findLinkedItemsWidget(this.childItem).linkedItems?.nodes || [];
-      return linkedChildWorkItems.filter((item) => {
-        return (
-          item.linkType !== LINKED_CATEGORIES_MAP.RELATES_TO && item.workItemState !== STATE_CLOSED
-        );
-      });
+    linkedItemsWidget() {
+      return findLinkedItemsWidget(this.childItem);
+    },
+    blockingCount() {
+      return this.linkedItemsWidget?.blockingCount || 0;
+    },
+    blockedByCount() {
+      return this.linkedItemsWidget?.blockedByCount || 0;
+    },
+    hasBlockingRelationships() {
+      return this.blockingCount > 0 || this.blockedByCount > 0;
     },
     issueAsWorkItem() {
-      return (
-        !this.isGroup &&
-        (this.glFeatures.workItemViewForIssues ||
-          (this.glFeatures.workItemsViewPreference && gon.current_user_use_work_items_view))
-      );
+      return !this.isGroup && this.glFeatures.workItemViewForIssues;
     },
     childItemUniqueId() {
       return `listItem-${this.childItemFullPath}/${getIdFromGraphQLId(this.childItem.id)}`;
@@ -168,7 +184,7 @@ export default {
     },
     handleItemClick(e) {
       const workItem = this.childItem;
-      if (e.metaKey || e.ctrlKey) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey) {
         return;
       }
       const shouldDefaultNavigate =
@@ -198,11 +214,18 @@ export default {
 
 <template>
   <div
-    class="item-body work-item-link-child gl-relative gl-flex gl-min-w-0 gl-grow gl-gap-3 gl-hyphens-auto gl-break-words gl-rounded-base gl-p-3"
     data-testid="links-child"
+    class="item-body work-item-link-child gl-relative gl-flex gl-min-w-0 gl-grow gl-gap-3 gl-hyphens-auto gl-break-words gl-rounded-base gl-p-3"
     @click="handleItemClick"
   >
-    <div ref="stateIcon" class="gl-cursor-help">
+    <a
+      v-if="contextualViewEnabled"
+      :href="childItemWebUrl"
+      class="!gl-absolute gl-left-0 gl-top-0 !gl-z-1 !gl-flex gl-h-full gl-w-full"
+      data-testid="issuable-card-link-overlay"
+      :aria-label="__('Work item')"
+    ></a>
+    <div ref="stateIcon" class="gl-z-2 gl-cursor-help">
       <work-item-type-icon
         :icon-variant="childItemTypeIconVariant"
         :work-item-type="childItemType"
@@ -211,7 +234,12 @@ export default {
         {{ childItemType }}
       </gl-tooltip>
     </div>
-    <div class="gl-flex gl-min-w-0 gl-grow gl-flex-col gl-flex-wrap">
+    <div
+      class="gl-flex gl-min-w-0 gl-grow gl-flex-col gl-flex-wrap"
+      :class="{
+        'issue-clickable': contextualViewEnabled,
+      }"
+    >
       <div class="gl-mb-2 gl-min-w-0 gl-justify-between gl-gap-3 sm:gl-flex">
         <div class="item-title gl-mb-2 gl-min-w-0 sm:gl-mb-0">
           <span v-if="childItem.confidential">
@@ -254,14 +282,17 @@ export default {
             </template>
           </gl-avatars-inline>
           <work-item-relationship-icons
-            v-if="isChildItemOpen && filteredLinkedChildItems.length"
+            v-if="isChildItemOpen && hasBlockingRelationships"
             :work-item-type="childItemType"
-            :linked-work-items="filteredLinkedChildItems"
             :work-item-full-path="childItemFullPath"
             :work-item-iid="childItemIid"
             :work-item-web-url="childItemWebUrl"
+            :blocking-count="blockingCount"
+            :blocked-by-count="blockedByCount"
           />
+          <slot name="child-contents"></slot>
           <span
+            v-if="showState"
             :id="`statusIcon-${childItem.id}`"
             class="gl-cursor-help"
             data-testid="item-status-icon"
@@ -277,7 +308,6 @@ export default {
       </div>
       <work-item-link-child-metadata
         :reference="displayReference"
-        :iid="childItem.iid"
         :is-child-item-open="isChildItemOpen"
         :metadata-widgets="metadataWidgets"
         :show-weight="showWeight"
@@ -301,7 +331,7 @@ export default {
     <div v-if="canUpdate">
       <gl-button
         v-gl-tooltip
-        class="-gl-mr-2 -gl-mt-1"
+        class="gl-relative gl-z-2 -gl-mr-2 -gl-mt-1"
         category="tertiary"
         size="small"
         icon="close"

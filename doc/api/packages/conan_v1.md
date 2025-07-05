@@ -20,7 +20,7 @@ For Conan v2 operations, see [Conan v2 API](conan_v2.md).
 
 Use this API to interact with the Conan v1 package manager. These endpoints work for both
 projects and instances. For more information,
-see [Conan packages in the package registry](../../user/packages/conan_repository/_index.md).
+see [Conan packages in the package registry](../../user/packages/conan_1_repository/_index.md).
 
 Generally, these endpoints are used by the [Conan 1 package manager client](https://docs.conan.io/en/latest/)
 and are not meant for manual consumption.
@@ -30,10 +30,38 @@ and are not meant for manual consumption.
 - These endpoints do not adhere to the standard API authentication methods.
 See each route for details on how credentials are expected to be passed. Undocumented authentication methods might be removed in the future.
 
-- The Conan registry is not FIPS compliant and is disabled when [FIPS mode](../../development/fips_gitlab.md) is enabled.
+- The Conan registry is not FIPS compliant and is disabled when FIPS mode is enabled.
 These endpoints all return `404 Not Found`.
 
 {{< /alert >}}
+
+## Create an authentication token
+
+Creates a JSON Web Token (JWT) for use as a Bearer header in other requests to the Conan package manager client.
+
+```shell
+"Authorization: Bearer <authenticate_token>"
+```
+
+```plaintext
+GET /packages/conan/v1/users/authenticate
+GET /projects/:id/packages/conan/v1/users/authenticate
+```
+
+| Attribute | Type | Required | Description |
+| --------- | ---- | -------- | ----------- |
+| `id`      | string | Conditionally | The project ID or full project path. Required only for the project endpoint. |
+
+```shell
+curl --user <username>:<your_access_token> \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/users/authenticate"
+```
+
+Example response:
+
+```shell
+eyJhbGciOiJIUzI1NiIiheR5cCI6IkpXVCJ9.eyJhY2Nlc3NfdG9rZW4iOjMyMTQyMzAsqaVzZXJfaWQiOjQwNTkyNTQsImp0aSI6IjdlNzBiZTNjLWFlNWQtNDEyOC1hMmIyLWZiOThhZWM0MWM2OSIsImlhd3r1MTYxNjYyMzQzNSwibmJmIjoxNjE2NjIzNDMwLCJleHAiOjE2MTY2MjcwMzV9.QF0Q3ZIB2GW5zNKyMSIe0HIFOITjEsZEioR-27Rtu7E
+```
 
 ## Verify availability of a Conan repository
 
@@ -49,7 +77,7 @@ GET /projects/:id/packages/conan/v1/ping
 | `id`      | string | Conditionally | The project ID or full project path. Required only for the project endpoint. |
 
 ```shell
-curl "https://gitlab.example.com/api/v4/packages/conan/v1/ping"
+curl --url "https://gitlab.example.com/api/v4/packages/conan/v1/ping"
 ```
 
 Example response:
@@ -73,7 +101,8 @@ GET /projects/:id/packages/conan/v1/conans/search
 | `q`       | string | yes | Search query. You can use `*` as a wildcard. |
 
 ```shell
-curl --user <username>:<personal_access_token> "https://gitlab.example.com/api/v4/packages/conan/v1/conans/search?q=Hello*"
+curl --user <username>:<your_access_token> \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/conans/search?q=Hello*"
 ```
 
 Example response:
@@ -92,35 +121,6 @@ Example response:
 }
 ```
 
-## Create an authentication token
-
-Creates a JSON Web Token (JWT) for use as a Bearer header in other requests.
-
-```shell
-"Authorization: Bearer <token>
-```
-
-The Conan package manager client automatically uses this token.
-
-```plaintext
-GET /packages/conan/v1/users/authenticate
-GET /projects/:id/packages/conan/v1/users/authenticate
-```
-
-| Attribute | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `id`      | string | Conditionally | The project ID or full project path. Required only for the project endpoint. |
-
-```shell
-curl --user <username>:<personal_access_token> "https://gitlab.example.com/api/v4/packages/conan/v1/users/authenticate"
-```
-
-Example response:
-
-```shell
-eyJhbGciOiJIUzI1NiIiheR5cCI6IkpXVCJ9.eyJhY2Nlc3NfdG9rZW4iOjMyMTQyMzAsqaVzZXJfaWQiOjQwNTkyNTQsImp0aSI6IjdlNzBiZTNjLWFlNWQtNDEyOC1hMmIyLWZiOThhZWM0MWM2OSIsImlhd3r1MTYxNjYyMzQzNSwibmJmIjoxNjE2NjIzNDMwLCJleHAiOjE2MTY2MjcwMzV9.QF0Q3ZIB2GW5zNKyMSIe0HIFOITjEsZEioR-27Rtu7E
-```
-
 ## Verify authentication credentials
 
 Verifies the validity of Basic Auth credentials or a Conan JWT generated from the [`/authenticate`](#create-an-authentication-token) endpoint.
@@ -135,7 +135,8 @@ GET /projects/:id/packages/conan/v1/users/check_credentials
 | `id`      | string | Conditionally | The project ID or full project path. Required only for the project endpoint. |
 
 ```shell
-curl --header "Authorization: Bearer <authenticate_token>" "https://gitlab.example.com/api/v4/packages/conan/v1/users/check_credentials
+curl --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/users/check_credentials"
 ```
 
 Example response:
@@ -163,7 +164,8 @@ GET /projects/:id/packages/conan/v1/conans/:package_version/:package_username/:p
 | `package_channel`   | string | yes | Channel of a package. |
 
 ```shell
-curl --header "Authorization: Bearer <authenticate_token>" "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable"
+curl --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable"
 ```
 
 Example response:
@@ -196,7 +198,8 @@ GET /projects/:id/packages/conan/v1/conans/:package_name/:package_version/:packa
 | `conan_package_reference` | string | yes | Reference hash of a Conan package. Conan generates this value. |
 
 ```shell
-curl --header "Authorization: Bearer <authenticate_token>" "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f"
+curl --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f"
 ```
 
 Example response:
@@ -227,7 +230,8 @@ GET /projects/:id/packages/conan/v1/conans/:package_name/:package_version/:packa
 | `package_channel`   | string | yes | Channel of a package. |
 
 ```shell
-curl --header "Authorization: Bearer <authenticate_token>" "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/digest"
+curl --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/digest"
 ```
 
 Example response:
@@ -240,16 +244,13 @@ Example response:
 }
 ```
 
-The URLs in the response have the same route prefix used to request them. If you request them with
-the project-level route, the returned URLs contain `/projects/:id`.
-
 ## Get a package manifest
 
 Gets a manifest that includes a list of files and associated download URLs for a specified package.
 
 ```plaintext
 GET /packages/conan/v1/conans/:package_name/:package_version/:package_username/:package_channel/packages/:conan_package_reference/digest
-GET /projects/:id/packages/conan/v1/conans/:package_version/:package_username/:package_channel/packages/:conan_package_reference/digest
+GET /projects/:id/packages/conan/v1/conans/:package_name/:package_version/:package_username/:package_channel/packages/:conan_package_reference/digest
 ```
 
 | Attribute | Type | Required | Description |
@@ -262,7 +263,8 @@ GET /projects/:id/packages/conan/v1/conans/:package_version/:package_username/:p
 | `conan_package_reference` | string | yes | Reference hash of a Conan package. Conan generates this value. |
 
 ```shell
-curl --header "Authorization: Bearer <authenticate_token>" "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f/digest"
+curl --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f/digest"
 ```
 
 Example response:
@@ -274,9 +276,6 @@ Example response:
   "conanmanifest.txt": "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f/0/conanmanifest.txt"
 }
 ```
-
-The URLs in the response have the same route prefix used to request them. If you request them with
-the project-level route, the returned URLs contain `/projects/:id`.
 
 ## List all recipe download URLs
 
@@ -297,7 +296,8 @@ GET /projects/:id/packages/conan/v1/conans/:package_name/:package_version/:packa
 | `package_channel`   | string | yes | Channel of a package. |
 
 ```shell
-curl --header "Authorization: Bearer <authenticate_token>" "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/digest"
+curl --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/digest"
 ```
 
 Example response:
@@ -309,9 +309,6 @@ Example response:
   "conanmanifest.txt": "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/0/export/conanmanifest.txt"
 }
 ```
-
-The URLs in the response have the same route prefix used to request them. If you request them with
-the project-level route, the returned URLs contain `/projects/:id`.
 
 ## List all package download URLs
 
@@ -333,7 +330,8 @@ GET /projects/:id/packages/conan/v1/conans/:package_name/:package_version/:packa
 | `conan_package_reference` | string | yes | Reference hash of a Conan package. Conan generates this value. |
 
 ```shell
-curl --header "Authorization: Bearer <authenticate_token>" "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f/download_urls"
+curl --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f/download_urls"
 ```
 
 Example response:
@@ -345,9 +343,6 @@ Example response:
   "conanmanifest.txt": "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f/0/conanmanifest.txt"
 }
 ```
-
-The URLs in the response have the same route prefix used to request them. If you request them with
-the project-level route, the returned URLs contain `/projects/:id`.
 
 ## List all recipe upload URLs
 
@@ -383,7 +378,7 @@ curl --request POST \
      --header "Authorization: Bearer <authenticate_token>" \
      --header "Content-Type: application/json" \
      --data '{"conanfile.py":410,"conanmanifest.txt":130}' \
-     "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/upload_urls"
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/upload_urls"
 ```
 
 Example response:
@@ -394,9 +389,6 @@ Example response:
   "conanmanifest.txt": "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/0/export/conanmanifest.txt"
 }
 ```
-
-The URLs in the response have the same route prefix used to request them. If you request them with
-the project-level route, the returned URLs contain `/projects/:id`.
 
 ## List all package upload URLs
 
@@ -426,15 +418,15 @@ The payload must include both the name and size of the file.
   "conan_package.tgz": 5412,
   "conanmanifest.txt": 130,
   "conaninfo.txt": 210
-  }
+}
 ```
 
 ```shell
 curl --request POST \
      --header "Authorization: Bearer <authenticate_token>" \
      --header "Content-Type: application/json" \
-     --data '{"conan_package.tgz":5412,"conanmanifest.txt":130,"conaninfo.txt":210}'
-     "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f/upload_urls"
+     --data '{"conan_package.tgz":5412,"conanmanifest.txt":130,"conaninfo.txt":210}' \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f/upload_urls"
 ```
 
 Example response:
@@ -447,17 +439,14 @@ Example response:
 }
 ```
 
-The URLs in the response have the same route prefix used to request them. If you request them with
-the project-level route, the returned URLs contain `/projects/:id`.
-
 ## Get a recipe file
 
 Gets a recipe file from the package registry. You must use the download URL returned from the
 [recipe download URLs](#list-all-recipe-download-urls) endpoint.
 
 ```plaintext
-GET packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/export/:file_name
-GET projects/:id/packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/export/:file_name
+GET /packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/export/:file_name
+GET /projects/:id/packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/export/:file_name
 ```
 
 | Attribute | Type | Required | Description |
@@ -471,13 +460,16 @@ GET projects/:id/packages/conan/v1/files/:package_name/:package_version/:package
 | `file_name`         | string | yes | The name and file extension of the requested file. |
 
 ```shell
-curl --header "Authorization: Bearer <authenticate_token>" "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/0/export/conanfile.py"
+curl --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/0/export/conanfile.py"
 ```
 
 You can also write the output to a file by using:
 
 ```shell
-curl --header "Authorization: Bearer <authenticate_token>" "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/0/export/conanfile.py" >> conanfile.py
+curl --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/0/export/conanfile.py" \
+     >> conanfile.py
 ```
 
 This example writes to `conanfile.py` in the current directory.
@@ -488,8 +480,8 @@ Uploads a specified recipe file in the package registry. You must use the upload
 [recipe upload URLs](#list-all-recipe-upload-urls) endpoint.
 
 ```plaintext
-PUT packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/export/:file_name
-PUT projects/:id/packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/export/:file_name
+PUT /packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/export/:file_name
+PUT /projects/:id/packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/export/:file_name
 ```
 
 | Attribute | Type | Required | Description |
@@ -508,7 +500,7 @@ Provide the file context in the request body:
 curl --request PUT \
      --user <username>:<personal_access_token> \
      --upload-file path/to/conanfile.py \
-     "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/0/export/conanfile.py"
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/0/export/conanfile.py"
 ```
 
 ## Get a package file
@@ -517,8 +509,8 @@ Gets a package file from the package registry. You must use the download URL ret
 [package download URLs](#list-all-package-download-urls) endpoint.
 
 ```plaintext
-GET packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/package/:conan_package_reference/:package_revision/:file_name
-GET projects/:id/packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/package/:conan_package_reference/:package_revision/:file_name
+GET /packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/package/:conan_package_reference/:package_revision/:file_name
+GET /projects/:id/packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/package/:conan_package_reference/:package_revision/:file_name
 ```
 
 | Attribute | Type | Required | Description |
@@ -534,13 +526,16 @@ GET projects/:id/packages/conan/v1/files/:package_name/:package_version/:package
 | `file_name`         | string | yes | The name and file extension of the requested file. |
 
 ```shell
-curl --header "Authorization: Bearer <authenticate_token>" "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f/0/conaninfo.txt"
+curl --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f/0/conaninfo.txt"
 ```
 
 You can also write the output to a file by using:
 
 ```shell
-curl --header "Authorization: Bearer <authenticate_token>" "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f/0/conaninfo.txt" >> conaninfo.txt
+curl --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/packages/103f6067a947f366ef91fc1b7da351c588d1827f/0/conaninfo.txt" \
+     >> conaninfo.txt
 ```
 
 This example writes to `conaninfo.txt` in the current directory.
@@ -551,8 +546,8 @@ Uploads a specified package file in the package registry. You must use the uploa
 [package upload URLs](#list-all-package-upload-urls) endpoint.
 
 ```plaintext
-PUT packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/package/:conan_package_reference/:package_revision/:file_name
-PUT projects/:id/packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/package/:conan_package_reference/:package_revision/:file_name
+PUT /packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/package/:conan_package_reference/:package_revision/:file_name
+PUT /projects/:id/packages/conan/v1/files/:package_name/:package_version/:package_username/:package_channel/:recipe_revision/package/:conan_package_reference/:package_revision/:file_name
 ```
 
 | Attribute | Type | Required | Description |
@@ -571,9 +566,9 @@ Provide the file context in the request body:
 
 ```shell
 curl --request PUT \
-     --user <username>:<personal_access_token> \
+     --user <username>:<your_access_token> \
      --upload-file path/to/conaninfo.txt \
-     "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/0/package/103f6067a947f366ef91fc1b7da351c588d1827f/0/conaninfo.txt"
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/files/my-package/1.0/my-group+my-project/stable/0/package/103f6067a947f366ef91fc1b7da351c588d1827f/0/conaninfo.txt"
 ```
 
 ## Delete a recipe and package
@@ -581,8 +576,8 @@ curl --request PUT \
 Deletes a specified Conan recipe and the associated package files from the package registry.
 
 ```plaintext
-DELETE packages/conan/v1/conans/:package_name/:package_version/:package_username/:package_channel
-DELETE projects/:id/packages/conan/v1/conans/:package_name/:package_version/:package_username/:package_channel
+DELETE /packages/conan/v1/conans/:package_name/:package_version/:package_username/:package_channel
+DELETE /projects/:id/packages/conan/v1/conans/:package_name/:package_version/:package_username/:package_channel
 ```
 
 | Attribute | Type | Required | Description |
@@ -594,7 +589,9 @@ DELETE projects/:id/packages/conan/v1/conans/:package_name/:package_version/:pac
 | `package_channel`   | string | yes | Channel of a package. |
 
 ```shell
-curl --request DELETE --header "Authorization: Bearer <authenticate_token>" "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable"
+curl --request DELETE \
+     --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable"
 ```
 
 Example response:
@@ -612,3 +609,56 @@ Example response:
   "status": "default"
 }
 ```
+
+## Get package references metadata
+
+Gets the metadata for all package references of a package.
+
+```plaintext
+GET /packages/conan/v1/conans/:package_name/:package_version/:package_username/:package_channel/search
+GET /projects/:id/packages/conan/v1/conans/:package_name/:package_version/:package_username/:package_channel/search
+```
+
+| Attribute | Type | Required | Description |
+| --------- | ---- | -------- | ----------- |
+| `id`                | string | Conditionally | The project ID or full project path. Required only for the project endpoint. |
+| `package_name`      | string | yes | Name of a package. |
+| `package_version`   | string | yes | Version of a package. |
+| `package_username`  | string | yes | Conan username of a package. This attribute is the `+`-separated full path of your project. |
+| `package_channel`   | string | yes | Channel of a package. |
+
+```shell
+curl --header "Authorization: Bearer <authenticate_token>" \
+     --url "https://gitlab.example.com/api/v4/packages/conan/v1/conans/my-package/1.0/my-group+my-project/stable/search"
+```
+
+Example response:
+
+```json
+{
+  "103f6067a947f366ef91fc1b7da351c588d1827f": {
+    "settings": {
+      "arch": "x86_64",
+      "build_type": "Release",
+      "compiler": "gcc",
+      "compiler.libcxx": "libstdc++",
+      "compiler.version": "9",
+      "os": "Linux"
+    },
+    "options": {
+      "shared": "False"
+    },
+    "requires": {
+      "zlib/1.2.11": null
+    },
+    "recipe_hash": "75151329520e7685dcf5da49ded2fec0"
+  }
+}
+```
+
+The response includes the following metadata for each package reference:
+
+- `settings`: The build settings used for the package.
+- `options`: The package options.
+- `requires`: The dependencies required for the package.
+- `recipe_hash`: The hash of the recipe.

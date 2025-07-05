@@ -1,11 +1,23 @@
-@use 'components/rapid_diffs/constants';
 @import 'mixins_and_variables_and_functions';
 @import 'components/rapid_diffs';
 
-.rd-app {
-  --rd-app-sticky-top: calc(#{$calc-application-header-height} + #{$mr-sticky-header-height});
+@supports (content-visibility: hidden) {
+  // cache diffs rendering state for better performance when switching tabs
+  .tab-pane[style="display: none;"] {
+    display: block !important;
+    content-visibility: hidden;
+  }
+}
 
-  @include media-breakpoint-down(constants.$app-vertical-breakpoint) {
+.container-fluid .diffs.tab-pane {
+  margin: 0;
+}
+
+.rd-app {
+  --rd-app-sticky-top: calc(#{$calc-application-header-height} + #{$mr-sticky-header-height} - 1px);
+
+  // merge request sticky header appears after sm breakpoint
+  @include media-breakpoint-down(sm) {
     --rd-app-sticky-top: calc(#{$calc-application-header-height});
   }
 }

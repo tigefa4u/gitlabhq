@@ -23,7 +23,6 @@ import {
   getAggregationsUrl,
   prepareSearchAggregations,
   setDataToLS,
-  skipBlobESCount,
   buildDocumentTitle,
 } from './utils';
 
@@ -105,13 +104,17 @@ export const setFrequentProject = ({ state, commit }, item) => {
   commit(types.LOAD_FREQUENT_ITEMS, { key: PROJECTS_LOCAL_STORAGE_KEY, data: frequentItems });
 };
 
-export const fetchSidebarCount = ({ commit, state }) => {
+const filterBlobs = (navigationItemScope, skipBlobs) => {
+  return navigationItemScope !== SCOPE_BLOB ? true : skipBlobs;
+};
+
+export const fetchSidebarCount = ({ commit, state }, skipBlobs) => {
   const items = Object.values(state.navigation)
     .filter(
       (navigationItem) =>
         !navigationItem.active &&
         navigationItem.count_link &&
-        skipBlobESCount(state, navigationItem.scope),
+        filterBlobs(navigationItem.scope, skipBlobs),
     )
     .map((navItem) => {
       const navigationItem = { ...navItem };
@@ -143,7 +146,7 @@ export const fetchSidebarCount = ({ commit, state }) => {
   return Promise.all(promises);
 };
 
-export const setQuery = async ({ state, commit, getters }, { key, value }) => {
+export const setQuery = async ({ state, commit, getters, dispatch }, { key, value }) => {
   commit(types.SET_QUERY, { key, value });
 
   if (SIDEBAR_PARAMS.includes(key)) {
@@ -154,17 +157,32 @@ export const setQuery = async ({ state, commit, getters }, { key, value }) => {
     setDataToLS(LS_REGEX_HANDLE, value);
   }
 
-  if (
-    state.searchType === SEARCH_TYPE_ZOEKT &&
-    getters.currentScope === SCOPE_BLOB &&
-    gon.features?.zoektMultimatchFrontend
-  ) {
-    const newUrl = setUrlParams({ ...state.query }, window.location.href, false, true);
+  const isZoektSearch =
+    state.searchType === SEARCH_TYPE_ZOEKT && getters.currentScope === SCOPE_BLOB;
+
+  if (isZoektSearch && key === 'search') {
+    const shouldResetPage = state.query?.page > 1 || state.urlQuery?.page > 1;
+    const query = shouldResetPage ? { ...state.query, page: 1 } : { ...state.query };
+    const newUrl = setUrlParams(query, window.location.href, true, true);
     document.title = buildDocumentTitle(state.query.search);
-    updateHistory({ state: state.query, title: state.query.search, url: newUrl, replace: false });
+
+    updateHistory({ state: query, title: state.query.search, url: newUrl, replace: true });
+
+    if (shouldResetPage) {
+      commit(types.SET_QUERY, { key: 'page', value: 1 });
+    }
 
     await nextTick();
-    fetchSidebarCount({ state, commit });
+    dispatch('fetchSidebarCount');
+  }
+
+  if (isZoektSearch && key === 'page') {
+    updateHistory({
+      state: state.query,
+      title: state.query.search,
+      url: setUrlParams({ ...state.query }, window.location.href, true, true),
+      replace: true,
+    });
   }
 };
 

@@ -46,7 +46,7 @@ This guide is a comprehensive, end-to-end set of instructions for getting the de
 
 #### Resources & Operating System
 
-We will install GitLab, GitLab AI Gateway and Ollama each in their own separate virtual machine. While we used Ubuntu 24.0x in this guide, you have flexibility in choosing any Unix-based operating system that meets your organization's requirements and preferences. However, please note that using a Unix-based operating system is mandatory for this setup. This ensures system stability, security, and compatibility with the required software stack. This setup provides a good balance between cost and performance for testing and evaluation phases, though you may need to upgrade the GPU instance type when moving to production, depending on your usage requirements and team size.
+We will install GitLab, GitLab AI Gateway and Ollama each in their own separate virtual machine. While we used Ubuntu 24.0x in this guide, you have flexibility in choosing any Unix-based operating system that meets your organization's requirements and preferences. However, using a Unix-based operating system is mandatory for this setup. This ensures system stability, security, and compatibility with the required software stack. This setup provides a good balance between cost and performance for testing and evaluation phases, though you may need to upgrade the GPU instance type when moving to production, depending on your usage requirements and team size.
 
 |                | **GCP**       | **AWS**     | **OS**    | **Disk** |
 |----------------|---------------|-------------|-----------|----------|
@@ -54,7 +54,7 @@ We will install GitLab, GitLab AI Gateway and Ollama each in their own separate 
 | **AI Gateway** | e2-medium     | t2.medium   | Ubuntu 24 | 20 GB    |
 | **Ollama**     | n1-standard-4 | g4dn.xlarge | Ubuntu 24 | 50 GB    |
 
-For details on the [AI Gateway](../../user/gitlab_duo/gateway.md) component and its purpose, please refer to the documentation page.
+For more information about the component and its purpose, see [AI Gateway](../../user/gitlab_duo/gateway.md).
 
 ```mermaid
 flowchart LR
@@ -88,7 +88,7 @@ Why Use Internal IPs?
 
 ### GitLab
 
-The rest of this guide assumes you already have a instance of GitLab up and running that meets the requirements below:
+The rest of this guide assumes you already have an instance of GitLab up and running that meets the following requirements:
 
 #### Licensing
 
@@ -139,7 +139,7 @@ When you host an AI model yourself, you'll also need to choose a serving platfor
 
 In this analogy, the brain part for ChatGPT is the GPT-4 model, while in the Anthropic ecosystem, it's the Claude 3.7 Sonnet model. The serving platform acts as the vital framework that connects the brain to the world, enabling it to "think" and interact effectively.
 
-For further information about supported serving platforms and models, please refer to the documentation for [LLM Serving Platforms](../../administration/gitlab_duo_self_hosted/supported_llm_serving_platforms.md) and [Models](../../administration/gitlab_duo_self_hosted/supported_models_and_hardware_requirements.md).
+For further information about supported serving platforms and models, see [LLM Serving Platforms](../../administration/gitlab_duo_self_hosted/supported_llm_serving_platforms.md) and [Models](../../administration/gitlab_duo_self_hosted/supported_models_and_hardware_requirements.md).
 
 **What is Ollama?**
 
@@ -147,25 +147,25 @@ Ollama is a streamlined, open-source framework for running Large Language Models
 
 Key Highlights:
 
-1. **Simplified Deployment:** A user-friendly command-line interface ensures quick setup and hassle-free installation.
-1. **Wide Model Support:** Compatible with popular open-source models like Llama 2, Mistral, and Code Llama.
-1. **Optimized Performance:** Operates seamlessly across both GPU and CPU environments for resource efficiency.
-1. **Integration-Ready:** Features an OpenAI-compatible API for easy integration with existing tools and workflows.
-1. **No Containers Needed:** Runs directly on host systems, eliminating the need for Docker or containerized environments.
-1. **Versatile Hosting Options:** Deployable on local machines, on-premises servers, or cloud GPU instances.
+1. **Simplified Deployment**: A user-friendly command-line interface ensures quick setup and hassle-free installation.
+1. **Wide Model Support**: Compatible with popular open-source models like Llama 2, Mistral, and Code Llama.
+1. **Optimized Performance**: Operates seamlessly across both GPU and CPU environments for resource efficiency.
+1. **Integration-Ready**: Features an OpenAI-compatible API for easy integration with existing tools and workflows.
+1. **No Containers Needed**: Runs directly on host systems, eliminating the need for Docker or containerized environments.
+1. **Versatile Hosting Options**: Deployable on local machines, on-premises servers, or cloud GPU instances.
 
 Designed for simplicity and performance, Ollama empowers users to harness the power of LLMs without the complexity of traditional AI infrastructure. Further details on setup and supported models will be covered later in the documentation.
 
-- [Ollama Installation](../../development/ai_features/local_models.md)
 - [Ollama Model Support](https://ollama.com/search)
 
 ## Installation
 
 ### AI Gateway
 
-While the official installation guide is available [here](../../install/install_ai_gateway.md), here's a streamlined approach for setting up the AI Gateway. Note that, as of January 2025, the image `gitlab/model-gateway:self-hosted-v17.6.0-ee` has been verified to work with GitLab 17.7.
+While the official installation guide is available in [Install the GitLab AI gateway](../../install/install_ai_gateway.md), here's a streamlined approach for setting up the AI Gateway. As of January 
+2025, the image `gitlab/model-gateway:self-hosted-v17.6.0-ee` has been verified to work with GitLab 17.7.
 
-1. Please ensure that ...
+1. Ensure that ...
 
    - TCP port 5052 to the API Gateway VM is permitted (check security group configuration)
    - You replace `GITLAB_DOMAIN` with the domain name to YOUR instance of GitLab in the following code snippet:
@@ -181,7 +181,7 @@ While the official installation guide is available [here](../../install/install_
      gitlab/model-gateway:self-hosted-v17.6.0-ee
    ```
 
-Below is a table explaining key environment variables and their roles in setting up your instance:
+The following table explains key environment variables and their roles in setting up your instance:
 
 | **Variable**                 | **Description** |
 |------------------------------|-----------------|
@@ -284,7 +284,7 @@ Enabling Duo for just the root user is sufficient for initial setup and testing.
 
 1. Access GitLab Duo Self-Hosted Configuration
 
-   - Navigate to Admin Area > GitLab Duo > "Self-hosted models"
+   - Navigate to Admin Area > GitLab Duo > "Configure GitLab Duo Self-hosted"
    - Click "Add self-hosted model" button
 
    ![Configure Self-Hosted Model](img/self_hosted_model/self-hosted-model-initial_v17_10.png)
@@ -308,7 +308,7 @@ Enabling Duo for just the root user is sufficient for initial setup and testing.
 
 1. Enable AI Features
 
-   - Navigate to the "AI-powered features" tab
+   - Navigate to the "AI-native features" tab
    - Assign the configured model to the following features:
      - Code Suggestions > Code Generation
      - Code Suggestions > Code Completion

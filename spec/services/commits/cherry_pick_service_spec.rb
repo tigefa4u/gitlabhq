@@ -4,11 +4,11 @@ require 'spec_helper'
 
 RSpec.describe Commits::CherryPickService, feature_category: :source_code_management do
   let(:project) { create(:project, :repository) }
-  # *   ddd0f15ae83993f5cb66a927a28673882e99100b (HEAD -> master, origin/master, origin/HEAD) Merge branch 'po-fix-test-en
+  # *   ddd0f15 (HEAD -> master, origin/master, origin/HEAD) Merge branch 'po-fix-test-en
   # |\
-  # | * 2d1db523e11e777e49377cfb22d368deec3f0793 Correct test_env.rb path for adding branch
+  # | * 2d1db52 Correct test_env.rb path for adding branch
   # |/
-  # *   1e292f8fedd741b75372e19097c76d327140c312 Merge branch 'cherry-pick-ce369011' into 'master'
+  # *   1e292f8 Merge branch 'cherry-pick-ce369011' into 'master'
 
   let_it_be(:merge_commit_sha) { 'ddd0f15ae83993f5cb66a927a28673882e99100b' }
   let_it_be(:merge_base_sha)   { '1e292f8fedd741b75372e19097c76d327140c312' }
@@ -16,7 +16,7 @@ RSpec.describe Commits::CherryPickService, feature_category: :source_code_manage
 
   let(:repository) { project.repository }
   let(:commit) { project.commit }
-  let(:user) { create(:user) }
+  let(:user) { create(:user, :commit_email) }
 
   before do
     project.add_maintainer(user)
@@ -50,7 +50,7 @@ RSpec.describe Commits::CherryPickService, feature_category: :source_code_manage
 
         commit = branch.dereferenced_target
         expect(commit.author_name).to eq(user.name)
-        expect(commit.author_email).to eq(user.email)
+        expect(commit.author_email).to eq(user.commit_email)
         expect(commit.message).to include("(cherry picked from commit #{merge_commit_sha})")
         expect(commit.message).to include(
           "Co-authored-by: #{source_commit.author_name} <#{source_commit.author_email}>"
@@ -69,7 +69,16 @@ RSpec.describe Commits::CherryPickService, feature_category: :source_code_manage
     it_behaves_like 'successful cherry-pick'
 
     context 'when picking a merge-request' do
-      let!(:merge_request) { create(:merge_request, :simple, :merged, author: user, source_project: project, merge_commit_sha: merge_commit_sha) }
+      let!(:merge_request) do
+        create(
+          :merge_request,
+          :simple,
+          :merged,
+          author: user,
+          source_project: project,
+          merge_commit_sha: merge_commit_sha
+        )
+      end
 
       it_behaves_like 'successful cherry-pick'
 

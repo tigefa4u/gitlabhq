@@ -56,7 +56,7 @@ CI/CD Variables:
 
 ## Define input parameters with `spec:inputs`
 
-Use `spec:inputs` in the CI/CD configuration [header](../yaml/_index.md) to define input parameters that
+Use `spec:inputs` in the CI/CD configuration [header](../yaml/_index.md#header-keywords) to define input parameters that
 can be passed to the configuration file.
 
 Use the `$[[ inputs.input-id ]]` interpolation format outside the header section to declare where to use
@@ -252,7 +252,7 @@ spec:
 
         Based on the policy for inactive issues, this is now being closed.
 
-        If this issue requires further attention, please reopen this issue.'
+        If this issue requires further attention, reopen this issue.'
 ---
 ```
 
@@ -322,9 +322,8 @@ include:
 
 Inputs provide advantages over variables including type checking, validation and a clear contract.
 Unexpected inputs are rejected.
-
-Inputs for pipelines can be defined in the [`spec:inputs` header](#define-input-parameters-with-specinputs)
-of the `.gitlab-ci.yml`.
+Inputs for pipelines must be defined in the [`spec:inputs` header](#define-input-parameters-with-specinputs)
+of the main `.gitlab-ci.yml` file. You cannot use inputs defined in included files for pipeline-level configuration.
 
 {{< alert type="note" >}}
 
@@ -384,11 +383,9 @@ trigger-job:
 trigger-job:
   trigger:
     strategy: depend
-    include:
-      - project: project-group/my-downstream-project
-        file: ".gitlab-ci.yml"
-        inputs:
-          job-name: "defined"
+    project: project-group/my-downstream-project
+    inputs:
+      job-name: "defined"
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
 ```

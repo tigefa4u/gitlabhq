@@ -21,6 +21,7 @@ class User < ApplicationRecord
   include OptionallySearch
   include FromUnion
   include BatchDestroyDependentAssociations
+  include BatchDeleteDependentAssociations
   include BatchNullifyDependentAssociations
   include UpdateHighestRole
   include HasUserType
@@ -30,24 +31,12 @@ class User < ApplicationRecord
   include StripAttribute
   include EachBatch
   include IgnorableColumns
-  include CrossDatabaseIgnoredTables
   include UseSqlFunctionForPrimaryKeyLookups
   include Todoable
-
-  # `ensure_namespace_correct` needs to be moved to an after_commit (?)
-  cross_database_ignore_tables %w[namespaces namespace_settings], url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/424279'
-
-  # `notification_settings_for` is called, and elsewhere `save` is then called.
-  cross_database_ignore_tables %w[notification_settings], url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/424284'
-
-  # Associations with dependent: option
-  cross_database_ignore_tables(
-    %w[namespaces projects project_authorizations issues merge_requests merge_requests issues issues merge_requests events],
-    url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/424285',
-    on: :destroy
-  )
+  include Gitlab::InternalEventsTracking
 
   ignore_column :last_access_from_pipl_country_at, remove_after: '2024-11-17', remove_with: '17.7'
+  ignore_column %i[role skype], remove_after: '2025-09-18', remove_with: '18.4'
 
   DEFAULT_NOTIFICATION_LEVEL = :participating
 
@@ -62,8 +51,6 @@ class User < ApplicationRecord
 
   MAX_USERNAME_LENGTH = 255
   MIN_USERNAME_LENGTH = 2
-
-  MAX_LIMIT_FOR_ASSIGNEED_ISSUES_COUNT = 100
 
   SECONDARY_EMAIL_ATTRIBUTES = [
     :commit_email,
@@ -112,7 +99,7 @@ class User < ApplicationRecord
 
   devise :two_factor_backupable, otp_number_of_backup_codes: 10
   devise :two_factor_backupable_pbkdf2
-  serialize :otp_backup_codes, JSON # rubocop:disable Cop/ActiveRecordSerialize
+  serialize :otp_backup_codes, coder: JSON # rubocop:disable Cop/ActiveRecordSerialize
 
   devise :lockable, :recoverable, :rememberable, :trackable,
     :validatable, :omniauthable, :confirmable, :registerable
@@ -200,6 +187,7 @@ class User < ApplicationRecord
   # Namespaces
   has_many :members
   has_many :member_namespaces, through: :members
+  has_many :namespace_deletion_schedules, class_name: '::Namespaces::DeletionSchedule', inverse_of: :deleting_user
 
   # Groups
   has_many :group_members, -> { where(requested_at: nil).where("access_level >= ?", Gitlab::Access::GUEST) }, class_name: 'GroupMember'
@@ -212,7 +200,6 @@ class User < ApplicationRecord
     -> { where(members: { access_level: [Gitlab::Access::MAINTAINER, Gitlab::Access::OWNER] }) },
     through: :group_members,
     source: :group
-  alias_attribute :masters_groups, :maintainers_groups
   has_many :developer_maintainer_owned_groups,
     -> { where(members: { access_level: [Gitlab::Access::DEVELOPER, Gitlab::Access::MAINTAINER, Gitlab::Access::OWNER] }) },
     through: :group_members,
@@ -228,8 +215,8 @@ class User < ApplicationRecord
   has_many :groups_projects,          through: :groups, source: :projects
   has_many :personal_projects,        through: :namespace, source: :projects
   has_many :project_members, -> { where(requested_at: nil) }
-  has_many :projects,                 through: :project_members
-  has_many :created_projects,         foreign_key: :creator_id, class_name: 'Project', dependent: :nullify # rubocop:disable Cop/ActiveRecordDependent
+  has_many :projects, through: :project_members
+  has_many :created_projects, foreign_key: :creator_id, class_name: 'Project', dependent: :nullify # rubocop:disable Cop/ActiveRecordDependent
   has_many :created_namespace_details, foreign_key: :creator_id, class_name: 'Namespace::Detail'
   has_many :projects_with_active_memberships, -> { where(members: { state: ::Member::STATE_ACTIVE }) }, through: :project_members, source: :project
   has_many :users_star_projects, dependent: :destroy # rubocop:disable Cop/ActiveRecordDependent
@@ -261,7 +248,7 @@ class User < ApplicationRecord
   has_many :abuse_trust_scores,       class_name: 'AntiAbuse::TrustScore', foreign_key: :user_id
   has_many :builds,                   class_name: 'Ci::Build'
   has_many :pipelines,                class_name: 'Ci::Pipeline'
-  has_many :todos,                    dependent: :destroy # rubocop:disable Cop/ActiveRecordDependent
+  has_many :todos,                    dependent: :delete_all # rubocop:disable Cop/ActiveRecordDependent -- legacy behavior
   has_many :authored_todos, class_name: 'Todo', dependent: :destroy, foreign_key: :author_id # rubocop:disable Cop/ActiveRecordDependent
   has_many :notification_settings
   has_many :award_emoji, dependent: :destroy # rubocop:disable Cop/ActiveRecordDependent
@@ -279,6 +266,7 @@ class User < ApplicationRecord
 
   has_many :bulk_imports
   has_one :namespace_import_user, class_name: 'Import::NamespaceImportUser', inverse_of: :import_user
+  has_one :placeholder_user_detail, class_name: 'Import::PlaceholderUserDetail', foreign_key: :placeholder_user_id, inverse_of: :placeholder_user
 
   has_many :custom_attributes, class_name: 'UserCustomAttribute'
   has_one  :trusted_with_spam_attribute, -> { UserCustomAttribute.trusted_with_spam }, class_name: 'UserCustomAttribute'
@@ -290,6 +278,8 @@ class User < ApplicationRecord
   belongs_to :created_by, class_name: 'User', optional: true
 
   has_many :organization_users, class_name: 'Organizations::OrganizationUser', inverse_of: :user
+  has_many :organization_user_aliases, class_name: 'Organizations::OrganizationUserAlias', inverse_of: :user # deprecated
+  has_many :organization_user_details, class_name: 'Organizations::OrganizationUserDetail', inverse_of: :user
 
   has_many :organizations, through: :organization_users, class_name: 'Organizations::Organization', inverse_of: :users,
     disable_joins: true
@@ -422,7 +412,8 @@ class User < ApplicationRecord
     issues: 6,
     merge_requests: 7,
     operations: 8,
-    followed_user_activity: 9
+    followed_user_activity: 9,
+    homepage: 12
   }
 
   # User's Project preference
@@ -440,6 +431,7 @@ class User < ApplicationRecord
     :show_whitespace_in_diffs, :show_whitespace_in_diffs=,
     :view_diffs_file_by_file, :view_diffs_file_by_file=,
     :pass_user_identities_to_ci_jwt, :pass_user_identities_to_ci_jwt=,
+    :dark_color_scheme_id, :dark_color_scheme_id=,
     :tab_width, :tab_width=,
     :sourcegraph_enabled, :sourcegraph_enabled=,
     :gitpod_enabled, :gitpod_enabled=,
@@ -447,7 +439,6 @@ class User < ApplicationRecord
     :extensions_marketplace_opt_in_url, :extensions_marketplace_opt_in_url=,
     :organization_groups_projects_sort, :organization_groups_projects_sort=,
     :organization_groups_projects_display, :organization_groups_projects_display=,
-    :setup_for_company, :setup_for_company=,
     :project_shortcut_buttons, :project_shortcut_buttons=,
     :keyboard_shortcuts_enabled, :keyboard_shortcuts_enabled=,
     :render_whitespace_in_code, :render_whitespace_in_code=,
@@ -473,16 +464,16 @@ class User < ApplicationRecord
   delegate :webauthn_xid, :webauthn_xid=, to: :user_detail, allow_nil: true
   delegate :pronouns, :pronouns=, to: :user_detail, allow_nil: true
   delegate :pronunciation, :pronunciation=, to: :user_detail, allow_nil: true
-  delegate :registration_objective, :registration_objective=, to: :user_detail, allow_nil: true
   delegate :bluesky, :bluesky=, to: :user_detail, allow_nil: true
+  delegate :orcid, :orcid=, to: :user_detail, allow_nil: true
   delegate :mastodon, :mastodon=, to: :user_detail, allow_nil: true
   delegate :linkedin, :linkedin=, to: :user_detail, allow_nil: true
   delegate :twitter, :twitter=, to: :user_detail, allow_nil: true
-  delegate :skype, :skype=, to: :user_detail, allow_nil: true
   delegate :website_url, :website_url=, to: :user_detail, allow_nil: true
   delegate :location, :location=, to: :user_detail, allow_nil: true
   delegate :organization, :organization=, to: :user_detail, allow_nil: true
   delegate :discord, :discord=, to: :user_detail, allow_nil: true
+  delegate :github, :github=, to: :user_detail, allow_nil: true
   delegate :email_reset_offered_at, :email_reset_offered_at=, to: :user_detail, allow_nil: true
   delegate :project_authorizations_recalculated_at, :project_authorizations_recalculated_at=, to: :user_detail, allow_nil: true
   delegate :bot_namespace, :bot_namespace=, to: :user_detail, allow_nil: true
@@ -602,19 +593,11 @@ class User < ApplicationRecord
     end
 
     after_transition any => :active do |user|
-      user.class.temporary_ignore_cross_database_tables(
-        %w[projects], url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/424278'
-      ) do
-        user.starred_projects.update_counters(star_count: 1)
-      end
+      user.starred_projects.update_counters(star_count: 1)
     end
 
     after_transition active: any do |user|
-      user.class.temporary_ignore_cross_database_tables(
-        %w[projects], url: 'https://gitlab.com/gitlab-org/gitlab/-/issues/424278'
-      ) do
-        user.starred_projects.where('star_count > 0').update_counters(star_count: -1)
-      end
+      user.starred_projects.where('star_count > 0').update_counters(star_count: -1)
     end
   end
 
@@ -684,6 +667,7 @@ class User < ApplicationRecord
   scope :dormant, -> { with_state(:active).human_or_service_user.where('last_activity_on <= ?', Gitlab::CurrentSettings.deactivate_dormant_users_period.day.ago.to_date) }
   scope :with_no_activity, -> { with_state(:active).human_or_service_user.where(last_activity_on: nil).where('created_at <= ?', MINIMUM_DAYS_CREATED.day.ago.to_date) }
   scope :by_provider_and_extern_uid, ->(provider, extern_uid) { joins(:identities).merge(Identity.with_extern_uid(provider, extern_uid)) }
+  scope :ldap, -> { joins(:identities).where('identities.provider LIKE ?', 'ldap%') }
   scope :by_ids, ->(ids) { where(id: ids) }
   scope :by_ids_or_usernames, ->(ids, usernames) { where(username: usernames).or(where(id: ids)) }
   scope :without_forbidden_states, -> { where.not(state: FORBIDDEN_SEARCH_STATES) }
@@ -702,11 +686,23 @@ class User < ApplicationRecord
     .includes(:projects)
   end
 
+  scope :with_organization_user_details, -> do
+    includes(organization_user_details: [:organization])
+  end
+
   scope :left_join_user_detail, -> { left_joins(:user_detail) }
   scope :preload_user_detail, -> { preload(:user_detail) }
 
   scope :by_bot_namespace_ids, ->(namespace_ids) do
     project_bot.joins(:user_detail).where(user_detail: { bot_namespace_id: namespace_ids })
+  end
+
+  scope :with_incoming_email_token, ->(token_values) do
+    where(incoming_email_token: Array.wrap(token_values))
+  end
+
+  scope :with_feed_token, ->(token_values) do
+    where(feed_token: Array.wrap(token_values))
   end
 
   def self.supported_keyset_orderings
@@ -888,12 +884,18 @@ class User < ApplicationRecord
         without_projects
       when 'external'
         external
-      when "trusted"
+      when 'trusted'
         trusted
-      when "placeholder"
+      when 'placeholder'
         placeholder
-      when "without_placeholders"
+      when 'without_placeholders'
         without_placeholders
+      when 'ldap_sync'
+        ldap
+      when "without_bots"
+        without_bots
+      when "bots"
+        bots
       else
         all_without_ghosts
       end
@@ -1105,7 +1107,13 @@ class User < ApplicationRecord
     end
 
     def generate_incoming_mail_token
-      "#{INCOMING_MAIL_TOKEN_PREFIX}#{SecureRandom.hex.to_i(16).to_s(36)}"
+      "#{prefix_for_incoming_mail_token}#{SecureRandom.hex.to_i(16).to_s(36)}"
+    end
+
+    def prefix_for_incoming_mail_token
+      return INCOMING_MAIL_TOKEN_PREFIX unless Feature.enabled?(:custom_prefix_for_all_token_types, :instance)
+
+      ::Authn::TokenField::PrefixHelper.prepend_instance_prefix(INCOMING_MAIL_TOKEN_PREFIX)
     end
 
     def username_exists?(username)
@@ -1222,7 +1230,7 @@ class User < ApplicationRecord
   # to the session cookie. When remember me is disabled this method ensures these
   # values aren't set.
   def remember_me!
-    super if ::Gitlab::Database.read_write? && ::Gitlab::CurrentSettings.remember_me_enabled?
+    super if ::Gitlab::Database.read_write? && ::Gitlab::CurrentSettings.allow_user_remember_me?
   end
 
   def forget_me!
@@ -1248,7 +1256,7 @@ class User < ApplicationRecord
   # and compares to the stored value. When remember me is disabled this method ensures
   # the upstream comparison does not happen.
   def remember_me?(token, generated_at)
-    return false unless ::Gitlab::CurrentSettings.remember_me_enabled?
+    return false unless ::Gitlab::CurrentSettings.allow_user_remember_me?
 
     super
   end
@@ -1477,16 +1485,6 @@ class User < ApplicationRecord
     authorizations.where('project_authorizations.access_level >= ?', min_access_level)
   end
 
-  # Returns the projects this user has reporter (or greater) access to, limited
-  # to at most the given projects.
-  #
-  # This method is useful when you have a list of projects and want to
-  # efficiently check to which of these projects the user has at least reporter
-  # access.
-  def projects_with_reporter_access_limited_to(projects)
-    authorized_projects(Gitlab::Access::REPORTER).where(id: projects)
-  end
-
   def owned_projects
     @owned_projects ||= Project.from_union(
       [
@@ -1569,8 +1567,12 @@ class User < ApplicationRecord
     can?(:create_group)
   end
 
+  def can_leave_group?(group)
+    can?(:destroy_group_member, group.member(self))
+  end
+
   def can_select_namespace?
-    several_namespaces? || admin
+    has_groups_allowing_project_creation? || admin
   end
 
   def can?(action, subject = :global, **opts)
@@ -1614,15 +1616,6 @@ class User < ApplicationRecord
     end
   end
   # rubocop: enable CodeReuse/ServiceClass
-
-  def several_namespaces?
-    union_sql = ::Gitlab::SQL::Union.new(
-      [owned_groups,
-        maintainers_groups,
-        groups_with_developer_project_access]).to_sql
-
-    ::Group.from("(#{union_sql}) #{::Group.table_name}").any?
-  end
 
   def namespace_id
     namespace.try :id
@@ -2009,14 +2002,13 @@ class User < ApplicationRecord
     enabled_following && user.enabled_following
   end
 
-  def has_forkable_groups?
-    Groups::AcceptingProjectCreationsFinder.new(self).execute.exists?
+  def has_groups_allowing_project_creation?
+    groups_allowing_project_creation.exists?
   end
 
   def forkable_namespaces
     strong_memoize(:forkable_namespaces) do
       personal_namespace = Namespace.where(id: namespace_id)
-      groups_allowing_project_creation = Groups::AcceptingProjectCreationsFinder.new(self).execute
 
       Namespace.from_union(
         [
@@ -2095,14 +2087,28 @@ class User < ApplicationRecord
   end
 
   def ci_owned_runners
-    @ci_owned_runners ||= Ci::Runner
-        .from_union([ci_owned_project_runners_from_project_members,
-          ci_owned_project_runners_from_group_members,
-          ci_owned_group_runners])
+    @ci_owned_runners ||= if Feature.enabled?(:optimize_ci_owned_project_runners_query, self)
+                            Ci::Runner.from_union([ci_owned_project_runners, ci_owned_group_runners])
+                          else
+                            Ci::Runner.from_union([
+                              ci_owned_project_runners_from_project_members,
+                              ci_owned_project_runners_from_group_members,
+                              ci_owned_group_runners
+                            ])
+                          end
   end
 
   def owns_runner?(runner)
     runner = runner.__getobj__ if runner.is_a?(Ci::RunnerPresenter)
+
+    # NOTE: This is a workaround to the fact that `ci_owned_group_runners` does not return the group runners that the
+    # user has access to in group A, when the user is owner of group B, and group B has been invited as owner
+    # to group A. Instead it only returns group runners that belong to a group that the user is a direct owner of.
+    # Ideally, we'd add a `min_access_level` argument to `User#authorized_groups`, similar to `User#authorized_projects`
+    # and that would get used by `ci_owned_group_runners`, but that would require deeper changes
+    # from the ~"group::authorization" team.
+    # TODO: Remove this workaround when https://gitlab.com/gitlab-org/gitlab/-/issues/549985 is resolved
+    return Ability.allowed?(self, :admin_runner, runner.owner) if runner.group_type?
 
     ci_owned_runners.include?(runner)
   end
@@ -2171,13 +2177,18 @@ class User < ApplicationRecord
   end
 
   def merge_request_dashboard_enabled?
-    Feature.enabled?(:merge_request_dashboard, self, type: :wip)
+    Feature.enabled?(:merge_request_dashboard, self, type: :beta)
   end
 
   def assigned_open_merge_requests_count(force: false)
     Rails.cache.fetch(['users', id, 'assigned_open_merge_requests_count', merge_request_dashboard_enabled?], force: force, expires_in: COUNT_CACHE_VALIDITY_PERIOD) do
-      params = { assignee_id: id, state: 'opened', non_archived: true }
-      params[:reviewer_id] = 'none' if merge_request_dashboard_enabled?
+      params = { state: 'opened', non_archived: true }
+
+      if merge_request_dashboard_enabled?
+        params = params.merge(include_assigned: true, author_id: id, or: { reviewer_wildcard: 'none', review_states: %w[reviewed requested_changes], only_reviewer_username: ::Users::Internal.duo_code_review_bot.username })
+      else
+        params[:assignee_id] = id
+      end
 
       MergeRequestsFinder.new(self, params).execute.count
     end
@@ -2185,11 +2196,10 @@ class User < ApplicationRecord
 
   def review_requested_open_merge_requests_count(force: false)
     Rails.cache.fetch(['users', id, 'review_requested_open_merge_requests_count', merge_request_dashboard_enabled?], force: force, expires_in: COUNT_CACHE_VALIDITY_PERIOD) do
-      if merge_request_dashboard_enabled?
-        MergeRequestsFinder.new(self, assigned_user_id: id, reviewer_review_states: %w[unreviewed unapproved review_started], assigned_review_states: %w[requested_changes reviewed], state: 'opened', non_archived: true).execute.count
-      else
-        MergeRequestsFinder.new(self, reviewer_id: id, state: 'opened', non_archived: true).execute.count
-      end
+      params = { reviewer_id: id, state: 'opened', non_archived: true }
+      params[:review_states] = %w[unapproved unreviewed review_started] if merge_request_dashboard_enabled?
+
+      MergeRequestsFinder.new(self, params).execute.count
     end
   end
 
@@ -2201,7 +2211,7 @@ class User < ApplicationRecord
 
   def todos_pending_count(force: false)
     Rails.cache.fetch(['users', id, 'todos_pending_count'], force: force, expires_in: COUNT_CACHE_VALIDITY_PERIOD) do
-      TodosFinder.new(self, state: :pending).execute.count
+      TodosFinder.new(users: self, state: :pending).execute.count
     end
   end
 
@@ -2586,15 +2596,6 @@ class User < ApplicationRecord
     true
   end
 
-  def has_composite_identity?
-    # Since this is called in a number of places in both Sidekiq and Web,
-    # be extra paranoid that this column exists before reading it. This check
-    # can be removed in GitLab 17.8 or later.
-    return false unless has_attribute?(:composite_identity_enforced)
-
-    composite_identity_enforced
-  end
-
   def uploads_sharding_key
     {}
   end
@@ -2627,7 +2628,7 @@ class User < ApplicationRecord
 
   # override, from Devise::Validatable
   def password_required?
-    return false if internal? || project_bot? || security_policy_bot?
+    return false if internal? || project_bot? || security_policy_bot? || placeholder?
 
     super
   end
@@ -2888,9 +2889,7 @@ class User < ApplicationRecord
   def ci_owned_project_runners_from_project_members
     project_ids = ci_project_ids_for_project_members(Gitlab::Access::MAINTAINER)
 
-    Ci::Runner
-      .joins(:runner_projects)
-      .where(runner_projects: { project: project_ids })
+    Ci::Runner.belonging_to_project(project_ids)
   end
 
   def ci_owned_project_runners_from_group_members
@@ -2911,6 +2910,27 @@ class User < ApplicationRecord
       .with(cte_project_ids.to_arel)
       .joins(:runner_projects)
       .where('ci_runner_projects.project_id IN (SELECT project_id FROM cte_project_ids)')
+  end
+
+  def ci_owned_project_runners
+    project_ids = project_authorizations.where(access_level: Gitlab::Access::MAINTAINER..).pluck(:project_id)
+
+    # track the size of project_ids to optimise this query further in future
+    track_ci_owned_project_runners_query(project_ids.size)
+
+    # Load all project IDs upfront to handle indirect project access through group invitations
+    # and avoid CTE query when filtering runners for better performance
+    Ci::Runner.belonging_to_project(project_ids)
+  end
+
+  def track_ci_owned_project_runners_query(size_of_project_ids)
+    track_internal_event(
+      'query_ci_owned_project_runners_with_project_ids',
+      user: self,
+      additional_properties: {
+        value: size_of_project_ids
+      }
+    )
   end
 
   def ci_owned_group_runners
@@ -2942,9 +2962,7 @@ class User < ApplicationRecord
   def self.prefix_for_feed_token
     return FEED_TOKEN_PREFIX unless Feature.enabled?(:custom_prefix_for_all_token_types, :instance)
 
-    # Manually remove gl - we'll add this from the configuration.
-    # Once the feature flag has been removed, we can change FEED_TOKEN_PREFIX to `ft-`
-    ::Authn::TokenField::PrefixHelper.prepend_instance_prefix(FEED_TOKEN_PREFIX.delete_prefix('gl'))
+    ::Authn::TokenField::PrefixHelper.prepend_instance_prefix(FEED_TOKEN_PREFIX)
   end
 
   # method overridden in EE
@@ -2958,6 +2976,10 @@ class User < ApplicationRecord
       # We cannot disclose the Pages unique domain, hence returning generic error message
       errors.add(:username, _('has already been taken'))
     end
+  end
+
+  def groups_allowing_project_creation
+    Groups::AcceptingProjectCreationsFinder.new(self).execute
   end
 end
 

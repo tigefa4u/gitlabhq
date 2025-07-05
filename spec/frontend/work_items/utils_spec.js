@@ -2,6 +2,9 @@ import {
   NEW_WORK_ITEM_IID,
   STATE_CLOSED,
   STATE_OPEN,
+  WIDGET_TYPE_DESCRIPTION,
+  WIDGET_TYPE_ASSIGNEES,
+  WIDGET_TYPE_HIERARCHY,
   WORK_ITEM_TYPE_ENUM_EPIC,
   WORK_ITEM_TYPE_ENUM_INCIDENT,
   WORK_ITEM_TYPE_ENUM_ISSUE,
@@ -24,10 +27,11 @@ import {
 import {
   autocompleteDataSources,
   convertTypeEnumToName,
+  formatLabelForListbox,
+  formatUserForListbox,
   markdownPreviewPath,
   newWorkItemPath,
   isReference,
-  getWorkItemIcon,
   workItemRoadmapPath,
   saveToggleToLocalStorage,
   getToggleFromLocalStorage,
@@ -39,9 +43,60 @@ import {
   preserveDetailsState,
   getParentGroupName,
   createBranchMRApiPathHelper,
+  getNewWorkItemAutoSaveKey,
+  getNewWorkItemWidgetsAutoSaveKey,
+  getWorkItemWidgets,
+  updateDraftWorkItemType,
+  getDraftWorkItemType,
 } from '~/work_items/utils';
 import { useLocalStorageSpy } from 'helpers/local_storage_helper';
 import { TYPE_EPIC } from '~/issues/constants';
+import { workItemQueryResponse } from './mock_data';
+
+describe('formatLabelForListbox', () => {
+  const label = {
+    __typename: 'Label',
+    id: 'gid://gitlab/Label/1',
+    title: 'Label 1',
+    description: '',
+    color: '#f00',
+    textColor: '#00f',
+  };
+
+  it('formats as expected', () => {
+    expect(formatLabelForListbox(label)).toEqual({
+      text: 'Label 1',
+      value: 'gid://gitlab/Label/1',
+      color: '#f00',
+    });
+  });
+});
+
+describe('formatUserForListbox', () => {
+  const user = {
+    __typename: 'UserCore',
+    id: 'gid://gitlab/User/1',
+    avatarUrl: '',
+    webUrl: '',
+    webPath: '/doe_I',
+    name: 'John Doe',
+    username: 'doe_I',
+  };
+
+  it('formats as expected', () => {
+    expect(formatUserForListbox(user)).toEqual({
+      __typename: 'UserCore',
+      id: 'gid://gitlab/User/1',
+      avatarUrl: '',
+      webUrl: '',
+      webPath: '/doe_I',
+      name: 'John Doe',
+      username: 'doe_I',
+      text: 'John Doe',
+      value: 'gid://gitlab/User/1',
+    });
+  });
+});
 
 describe('autocompleteDataSources', () => {
   beforeEach(() => {
@@ -170,6 +225,12 @@ describe('markdownPreviewPath', () => {
       '/foobar/groups/group/-/preview_markdown?target_type=WorkItem&target_id=2',
     );
   });
+
+  it('returns correct data sources with NEW_WORK_ITEM_IID', () => {
+    expect(markdownPreviewPath({ fullPath: 'group', iid: NEW_WORK_ITEM_IID, isGroup: true })).toBe(
+      '/foobar/groups/group/-/preview_markdown?target_type=WorkItem',
+    );
+  });
 });
 
 describe('newWorkItemPath', () => {
@@ -185,7 +246,7 @@ describe('newWorkItemPath', () => {
 
   it('returns correct path for workItemType', () => {
     expect(
-      newWorkItemPath({ fullPath: 'group/project', workItemTypeName: WORK_ITEM_TYPE_ENUM_ISSUE }),
+      newWorkItemPath({ fullPath: 'group/project', workItemType: WORK_ITEM_TYPE_NAME_ISSUE }),
     ).toBe('/foobar/group/project/-/issues/new');
   });
 
@@ -194,7 +255,7 @@ describe('newWorkItemPath', () => {
       newWorkItemPath({
         fullPath: 'group',
         isGroup: true,
-        workItemTypeName: WORK_ITEM_TYPE_ENUM_EPIC,
+        workItemType: WORK_ITEM_TYPE_NAME_EPIC,
       }),
     ).toBe('/foobar/groups/group/-/epics/new');
   });
@@ -203,6 +264,16 @@ describe('newWorkItemPath', () => {
     expect(newWorkItemPath({ fullPath: 'project', query: '?foo=bar' })).toBe(
       '/foobar/project/-/work_items/new?foo=bar',
     );
+  });
+
+  it('returns `work_items` path for group issues', () => {
+    expect(
+      newWorkItemPath({
+        fullPath: 'my-group',
+        isGroup: true,
+        workItemType: WORK_ITEM_TYPE_NAME_ISSUE,
+      }),
+    ).toBe('/foobar/groups/my-group/-/work_items/new');
   });
 });
 
@@ -220,12 +291,6 @@ describe('convertTypeEnumToName', () => {
     ${WORK_ITEM_TYPE_NAME_TICKET}       | ${WORK_ITEM_TYPE_ENUM_TICKET}
   `('returns %name when given the enum %enumValue', ({ name, enumValue }) => {
     expect(convertTypeEnumToName(enumValue)).toBe(name);
-  });
-});
-
-describe('getWorkItemIcon', () => {
-  it.each(['epic', 'issue-type-epic'])('returns epic icon in case of %s', (icon) => {
-    expect(getWorkItemIcon(icon)).toBe('epic');
   });
 });
 
@@ -354,6 +419,183 @@ describe('`makeDrawerUrlParam`', () => {
     expect(result).toEqual(
       btoa(JSON.stringify({ iid: '123', full_path: 'gitlab-org/gitlab', id: 1 })),
     );
+  });
+});
+
+describe('getNewWorkItemAutoSaveKey', () => {
+  let originalWindowLocation;
+
+  beforeEach(() => {
+    originalWindowLocation = window.location;
+    delete window.location;
+    window.location = new URL('https://gitlab.example.com');
+  });
+
+  afterEach(() => {
+    window.location = originalWindowLocation;
+  });
+
+  it('returns autosave key for a new work item', () => {
+    const autosaveKey = getNewWorkItemAutoSaveKey({
+      fullPath: 'gitlab-org/gitlab',
+      workItemType: 'issue',
+    });
+    expect(autosaveKey).toEqual('new-gitlab-org/gitlab-issue-draft');
+  });
+
+  it.each`
+    locationSearch                            | expectedAutosaveKey
+    ${'vulnerability_id=1'}                   | ${'new-gitlab-org/gitlab-issue-vulnerability_id=1-draft'}
+    ${'discussion_to_resolve=2'}              | ${'new-gitlab-org/gitlab-issue-discussion_to_resolve=2-draft'}
+    ${'issue[issue_type]=Issue'}              | ${'new-gitlab-org/gitlab-issue-issue%5Bissue_type%5D=Issue-draft'}
+    ${'issuable_template=FeatureIssue'}       | ${'new-gitlab-org/gitlab-issue-issuable_template=FeatureIssue-draft'}
+    ${'discussion_to_resolve=2&state=opened'} | ${'new-gitlab-org/gitlab-issue-discussion_to_resolve=2-draft'}
+  `(
+    'returns autosave key with query params $locationSearch',
+    ({ locationSearch, expectedAutosaveKey }) => {
+      window.location.search = locationSearch;
+      const autosaveKey = getNewWorkItemAutoSaveKey({
+        fullPath: 'gitlab-org/gitlab',
+        workItemType: 'issue',
+      });
+
+      expect(autosaveKey).toEqual(expectedAutosaveKey);
+    },
+  );
+
+  it('returns autosave key for new related item', () => {
+    const autosaveKey = getNewWorkItemAutoSaveKey({
+      fullPath: 'gitlab-org/gitlab',
+      workItemType: 'issue',
+      relatedItemId: 'gid://gitlab/WorkItem/22',
+    });
+
+    expect(autosaveKey).toEqual('new-gitlab-org/gitlab-issue-related-22-draft');
+  });
+});
+
+describe('getNewWorkItemWidgetsAutoSaveKey', () => {
+  it('returns autosave key for a new work item', () => {
+    const autosaveKey = getNewWorkItemWidgetsAutoSaveKey({
+      fullPath: 'gitlab-org/gitlab',
+    });
+    expect(autosaveKey).toEqual('new-gitlab-org/gitlab-widgets-draft');
+  });
+
+  it('returns autosave key for new related item', () => {
+    const autosaveKey = getNewWorkItemWidgetsAutoSaveKey({
+      fullPath: 'gitlab-org/gitlab',
+      relatedItemId: 'gid://gitlab/WorkItem/22',
+    });
+
+    expect(autosaveKey).toEqual('new-gitlab-org/gitlab-related-22-widgets-draft');
+  });
+});
+
+describe('getWorkItemWidgets', () => {
+  it('returns the correct widgets for a work item', () => {
+    const result = getWorkItemWidgets({
+      workspace: {
+        workItem: workItemQueryResponse.data.workItem,
+      },
+    });
+
+    const { widgets } = workItemQueryResponse.data.workItem;
+    expect(result).toEqual({
+      TITLE: workItemQueryResponse.data.workItem.title,
+      TYPE: workItemQueryResponse.data.workItem.workItemType,
+      [WIDGET_TYPE_DESCRIPTION]: widgets.find((widget) => widget.type === WIDGET_TYPE_DESCRIPTION),
+      [WIDGET_TYPE_ASSIGNEES]: widgets.find((widget) => widget.type === WIDGET_TYPE_ASSIGNEES),
+      [WIDGET_TYPE_HIERARCHY]: widgets.find((widget) => widget.type === WIDGET_TYPE_HIERARCHY),
+    });
+  });
+});
+
+describe('updateDraftWorkItemType', () => {
+  useLocalStorageSpy();
+
+  const workItemWidgetsAutosaveKey = 'autosave/new-gitlab-org/gitlab-widgets-draft';
+  const workItemType = {
+    id: 'gid://gitlab/WorkItemType/1',
+    name: WORK_ITEM_TYPE_NAME_ISSUE,
+    iconName: 'issue-type-issue',
+  };
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('sets `TYPE` with workItemType to localStorage widgets drafts key when it does not exist', () => {
+    updateDraftWorkItemType({
+      fullPath: 'gitlab-org/gitlab',
+      workItemType,
+    });
+
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      workItemWidgetsAutosaveKey,
+      JSON.stringify({ TYPE: workItemType }),
+    );
+  });
+
+  it('updates `TYPE` with workItemType to localStorage widgets drafts key when it already exists', () => {
+    localStorage.setItem(workItemWidgetsAutosaveKey, JSON.stringify({ TITLE: 'Some work item' }));
+
+    updateDraftWorkItemType({
+      fullPath: 'gitlab-org/gitlab',
+      workItemType,
+    });
+
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      workItemWidgetsAutosaveKey,
+      JSON.stringify({ TITLE: 'Some work item', TYPE: workItemType }),
+    );
+  });
+
+  it('updates `TYPE` with workItemType to localStorage widgets for related item drafts key when it already exists', () => {
+    const workItemWidgetsKey = 'autosave/new-gitlab-org/gitlab-related-22-widgets-draft';
+    localStorage.setItem(workItemWidgetsKey, JSON.stringify({ TITLE: 'Some work item' }));
+
+    updateDraftWorkItemType({
+      fullPath: 'gitlab-org/gitlab',
+      relatedItemId: 'gid://gitlab/WorkItem/22',
+      workItemType,
+    });
+
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      workItemWidgetsKey,
+      JSON.stringify({ TITLE: 'Some work item', TYPE: workItemType }),
+    );
+  });
+});
+
+describe('getDraftWorkItemType', () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('gets `TYPE` from localStorage widgets draft when it exists', () => {
+    localStorage.setItem(
+      'autosave/new-gitlab-org/gitlab-widgets-draft',
+      JSON.stringify({ TYPE: 'Issue' }),
+    );
+    const workItemType = getDraftWorkItemType({
+      fullPath: 'gitlab-org/gitlab',
+    });
+
+    expect(workItemType).toBe('Issue');
+  });
+
+  it('gets `TYPE` from localStorage widgets for related item draft when it exists', () => {
+    localStorage.setItem(
+      'autosave/new-gitlab-org/gitlab-related-22-widgets-draft',
+      JSON.stringify({ TYPE: 'Issue' }),
+    );
+    const workItemType = getDraftWorkItemType({
+      fullPath: 'gitlab-org/gitlab',
+      relatedItemId: 'gid://gitlab/WorkItem/22',
+    });
+
+    expect(workItemType).toBe('Issue');
   });
 });
 

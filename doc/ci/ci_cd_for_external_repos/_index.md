@@ -3,6 +3,7 @@ stage: Verify
 group: Pipeline Execution
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: GitLab CI/CD for external repositories
+description: GitHub, Bitbucket, external sources, mirroring, and cross-platform.
 ---
 
 {{< details >}}
@@ -70,7 +71,7 @@ except-pull-requests:
     - when: on_success
 ```
 
-### How it works
+### Pipeline execution for external pull requests
 
 When a repository is imported from GitHub, GitLab subscribes to webhooks
 for `push` and `pull_request` events. Once a `pull_request` event is received,

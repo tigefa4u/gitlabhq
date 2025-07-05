@@ -33,6 +33,8 @@ Allows you to receive information about file in repository like name, size, and
 content. File content is Base64 encoded. You can access this endpoint
 without authentication, if the repository is publicly accessible.
 
+For blobs larger than 10 MB, this endpoint has a rate limit of 5 requests per minute.
+
 ```plaintext
 GET /projects/:id/repository/files/:file_path
 ```
@@ -237,7 +239,7 @@ GET /projects/:id/repository/files/:file_path/raw
 |-------------|----------------|----------|------------|
 | `file_path` | string         | yes      | URL-encoded full path to new file, such as `lib%2Fclass%2Erb`. |
 | `id`        | integer or string | yes   | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths). |
-| `lfs`       | boolean        | no       | Determines if the response should be Git LFS file contents, rather than the pointer. Ignored if the file is not tracked by Git LFS. Defaults to `false`. [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/27892) in GitLab 15.7. |
+| `lfs`       | boolean        | no       | Determines if the response should be Git LFS file contents, rather than the pointer. Ignored if the file is not tracked by Git LFS. Defaults to `false`. |
 | `ref`       | string         | no       | The name of branch, tag or commit. Default is the `HEAD` of the project. |
 
 ```shell

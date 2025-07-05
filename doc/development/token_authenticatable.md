@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Using the `TokenAuthenticatable` concern
 ---
 
@@ -36,7 +36,7 @@ end
 
 - `encrypted: :required`: Stores the encrypted token in the `token_field_encrypted` column.
   The `token_field_encrypted` column needs to exist. We strongly encourage to use this strategy.
-- `encrypted: :migrating`: Stores the encrypted and plaintext tokens respectively in `token_field_encrypted` and `token_field`.
+- `encrypted: :migrating`: Stores the encrypted and plaintext tokens in `token_field_encrypted` and `token_field`.
   Always reads the plaintext token. This should be used while an attribute is transitioning to be encrypted.
   Both `token_field` and `token_field_encrypted` columns need to exist.
 - `encrypted: :optional`: Stores the encrypted token in the `token_field_encrypted` column.
@@ -50,6 +50,12 @@ end
 {{< alert type="note" >}}
 
 By default, the `SHA256` digest of the tokens are stored in the database, if no storage strategy is chosen.
+
+{{< /alert >}}
+
+{{< alert type="note" >}}
+
+The `token_field_encrypted` column should always be indexed, because it is used to perform uniqueness checks and lookups on the token.
 
 {{< /alert >}}
 

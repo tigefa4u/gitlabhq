@@ -39,6 +39,38 @@ RSpec.describe Gitlab::Search::Params, feature_category: :global_search do
     end
   end
 
+  describe '#slice' do
+    let(:controller_params) { ActionController::Parameters.new(group_id: 123, search: search, exclude_forks: true) }
+    let(:params) { described_class.new(controller_params) }
+
+    it 'returns a new params object with only the specified keys' do
+      sliced = params.slice(:exclude_forks, :group_id, :project_id)
+
+      expect(sliced).to be_a(Hash)
+      expect(sliced[:exclude_forks]).to be(true)
+      expect(sliced[:group_id]).to eq(123)
+      expect(sliced[:project_id]).to be_nil
+    end
+
+    it 'works with string keys' do
+      sliced = params.slice('exclude_forks', 'group_id', 'project_id')
+
+      expect(sliced).to be_a(Hash)
+      expect(sliced['exclude_forks']).to be(true)
+      expect(sliced['group_id']).to eq(123)
+      expect(sliced['project_id']).to be_nil
+    end
+
+    it 'handles mixed string and symbol keys' do
+      sliced = params.slice(:exclude_forks, 'group_id')
+
+      expect(sliced).to be_a(Hash)
+      expect(sliced[:exclude_forks]).to be(true)
+      expect(sliced[:group_id]).to eq(123)
+      expect(sliced[:project_id]).to be_nil
+    end
+  end
+
   describe '#query_string' do
     let(:term) { 'term' }
 
@@ -182,50 +214,16 @@ RSpec.describe Gitlab::Search::Params, feature_category: :global_search do
       end
     end
 
-    describe 'for confidential' do
-      let(:params) { ActionController::Parameters.new(group_id: 123, search: search, confidential: input) }
+    described_class::BOOLEAN_PARAMS.each do |boolean_param|
+      describe "for #{boolean_param}" do
+        let(:params) { ActionController::Parameters.new(group_id: 123, search: search, boolean_param => input) }
 
-      include_context 'with inputs'
+        include_context 'with inputs'
 
-      with_them do
-        it 'transforms param' do
-          expect(search_params[:confidential]).to eq(expected)
-        end
-      end
-    end
-
-    describe 'for include_archived' do
-      let(:params) { ActionController::Parameters.new(group_id: 123, search: search, include_archived: input) }
-
-      include_context 'with inputs'
-
-      with_them do
-        it 'transforms param' do
-          expect(search_params[:include_archived]).to eq(expected)
-        end
-      end
-    end
-
-    describe 'for include_forked' do
-      let(:params) { ActionController::Parameters.new(group_id: 123, search: search, include_forked: input) }
-
-      include_context 'with inputs'
-
-      with_them do
-        it 'transforms param' do
-          expect(search_params[:include_forked]).to eq(expected)
-        end
-      end
-    end
-
-    describe 'for exclude_forks' do
-      let(:params) { ActionController::Parameters.new(group_id: 123, search: search, exclude_forks: input) }
-
-      include_context 'with inputs'
-
-      with_them do
-        it 'transforms param' do
-          expect(search_params[:exclude_forks]).to eq(expected)
+        with_them do
+          it 'transforms param' do
+            expect(search_params[boolean_param]).to eq(expected)
+          end
         end
       end
     end

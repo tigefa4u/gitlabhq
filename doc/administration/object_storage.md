@@ -1,7 +1,8 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+gitlab_dedicated: no
 title: Object storage
 ---
 
@@ -69,7 +70,7 @@ Configuring the object storage using the consolidated form has a number of advan
 - It [uploads files to S3 with proper `Content-MD5` headers](https://gitlab.com/gitlab-org/gitlab-workhorse/-/issues/222).
 
 When the consolidated form is used,
-[direct upload](../development/uploads/_index.md#direct-upload) is enabled
+direct upload is enabled
 automatically. Thus, only the following providers can be used:
 
 - [Amazon S3-compatible providers](#amazon-s3)
@@ -138,7 +139,7 @@ For an example, see how to [use the consolidated form and Amazon S3](#full-examp
 
 #### Disable object storage for specific features
 
-As seen above, object storage can be disabled for specific types by
+As seen previously, object storage can be disabled for specific types by
 setting the `enabled` flag to `false`. For example, to disable object
 storage for CI artifacts:
 
@@ -184,7 +185,7 @@ supported by the consolidated form, refer to the following guides:
 | [LFS objects](lfs/_index.md#storing-lfs-objects-in-remote-object-storage) | {{< icon name="check-circle" >}} Yes |
 | [Uploads](uploads.md#using-object-storage) | {{< icon name="check-circle" >}} Yes |
 | [Merge request diffs](merge_request_diffs.md#using-object-storage) | {{< icon name="check-circle" >}} Yes |
-| [Packages](packages/_index.md#use-object-storage) (optional feature) | {{< icon name="check-circle" >}} Yes |
+| [Packages](packages/_index.md#migrate-packages-between-object-storage-and-local-storage) (optional feature) | {{< icon name="check-circle" >}} Yes |
 | [Dependency Proxy](packages/dependency_proxy.md#using-object-storage) (optional feature) | {{< icon name="check-circle" >}} Yes |
 | [Terraform state files](terraform_state.md#using-object-storage) | {{< icon name="check-circle" >}} Yes |
 | [Pages content](pages/_index.md#object-storage-settings) | {{< icon name="check-circle" >}} Yes |
@@ -208,7 +209,7 @@ The connection settings match those provided by [fog-aws](https://github.com/fog
 | `region`                                    | AWS region.                        | |
 | `host`                                      | DEPRECATED: Use `endpoint` instead. S3 compatible host for when not using AWS. For example, `localhost` or `storage.example.com`. HTTPS and port 443 is assumed. | `s3.amazonaws.com` |
 | `endpoint`                                  | Can be used when configuring an S3 compatible service such as [MinIO](https://min.io), by entering a URL such as `http://127.0.0.1:9000`. This takes precedence over `host`. Always use `endpoint` for consolidated form. | (optional) |
-| `path_style`                                | Set to `true` to use `host/bucket_name/object` style paths instead of `bucket_name.host/object`. Set to `true` for using [MinIO](https://min.io). Leave as `false` for AWS S3. | `false`. |
+| `path_style`                                | Set to `true` to use `host/bucket_name/object` style paths instead of `bucket_name.host/object`. Set to `true` for using [MinIO](https://min.io). Leave as `false` for AWS S3. | `false` |
 | `use_iam_profile`                           | Set to `true` to use IAM profile instead of access keys. | `false` |
 | `aws_credentials_refresh_threshold_seconds` | Sets the [automatic refresh threshold](https://github.com/fog/fog-aws#controlling-credential-refresh-time-with-iam-authentication) in seconds when using temporary credentials in IAM. | `15` |
 | `disable_imds_v2`                           | Force the use of IMDS v1 by disabling access to the IMDS v2 endpoint that retrieves `X-aws-ec2-metadata-token`. | `false` |
@@ -342,7 +343,7 @@ If you use ADC, be sure that:
   Typically this is done by granting the `Service Account Token Creator` role to the service account.
 - If you are using Google Compute virtual machines, ensure they have the [correct access scopes to access Google Cloud APIs](https://cloud.google.com/compute/docs/access/create-enable-service-accounts-for-instances#changeserviceaccountandscopes). If the machines do not have the right scope, the error logs may show:
 
-  ```markdown
+  ```shell
   Google::Apis::ClientError (insufficientPermissions: Request had insufficient authentication scopes.)
   ```
 
@@ -812,7 +813,7 @@ Connections to HCP may return an error stating `SignatureDoesNotMatch - The requ
 
 {{< /alert >}}
 
-[HCP](https://docs.hitachivantara.com/r/en-us/content-platform-for-cloud-scale/2.6.x/mk-hcpcs008/getting-started/introducing-hcp-for-cloud-scale/support-for-the-amazon-s3-api) provides an S3-compatible API. Use the following configuration example:
+[HCP](https://docs.hitachivantara.com/r/en-us/content-platform/9.7.x/mk-95hcph001/hcp-management-api-reference/introduction-to-the-hcp-management-api/support-for-the-amazon-s3-api) provides an S3-compatible API. Use the following configuration example:
 
 ```ruby
 gitlab_rails['object_store']['connection'] = {
@@ -1102,7 +1103,7 @@ To migrate existing local data to object storage see the following guides:
 - [LFS objects](lfs/_index.md#migrating-to-object-storage)
 - [Uploads](raketasks/uploads/migrate.md#migrate-to-object-storage)
 - [Merge request diffs](merge_request_diffs.md#using-object-storage)
-- [Packages](packages/_index.md#migrate-local-packages-to-object-storage) (optional feature)
+- [Packages](packages/_index.md#migrate-packages-between-object-storage-and-local-storage) (optional feature)
 - [Dependency Proxy](packages/dependency_proxy.md#migrate-local-dependency-proxy-blobs-and-manifests-to-object-storage)
 - [Terraform state files](terraform_state.md#migrate-to-object-storage)
 - [Pages content](pages/_index.md#migrate-pages-deployments-to-object-storage)
@@ -1138,7 +1139,7 @@ additional complexity and unnecessary redundancy. Because both GitLab
 Rails and Workhorse components need access to object storage, the
 consolidated form avoids excessive duplication of credentials.
 
-The consolidated form is used _only_ if all lines from
+The consolidated form is used only if all lines from
 the original form is omitted. To move to the consolidated form, remove the
 original configuration (for example, `artifacts_object_store_enabled`, or
 `uploads_object_store_connection`)
@@ -1355,7 +1356,7 @@ does not support this and [returns a 404 error when files are copied during the 
 
 The feature can be disabled using the `:s3_multithreaded_uploads`
 feature flag. To disable the feature, ask a GitLab administrator with
-[Rails console access](feature_flags.md#how-to-enable-and-disable-features-behind-flags)
+[Rails console access](feature_flags/_index.md#how-to-enable-and-disable-features-behind-flags)
 to run the following command:
 
 ```ruby
@@ -1451,6 +1452,19 @@ ENV['DEBUG'] = "1"
 
 {{< /tabs >}}
 
+### Reset the Geo tracking database to ensure full objects consistency
+
+Assume the following Geo scenario:
+
+- An environment consists of a Geo primary and secondary node.
+- You [migrated to object storage](#migrate-to-object-storage) on the primary.
+  - The secondary uses separate object storage buckets.
+  - The option "Allow this secondary site to replicate content on Object Storage" is activated.
+
+Such migrations can cause objects to be marked as synced in the tracking database while being physically missing from object storage.
+In that case, [Reset your Geo secondary site replication](geo/replication/troubleshooting/synchronization_verification.md#resetting-geo-secondary-site-replication)
+to ensure objects state remains consistent post migration.
+
 ### Inconsistencies after migrating to object storage
 
 Data inconsistencies can occur when migrating from local to object storage.
@@ -1472,7 +1486,7 @@ Assume the following Geo scenario:
 - Both systems have been migrated to object storage
   - The secondary uses the same object storage as the primary
   - The option `Allow this secondary site to replicate content on Object Storage` is deactivated
-- Multiple *uploads* were manually deleted before the object storage migration
+- Multiple uploads were manually deleted before the object storage migration
   - For this example, two images which were uploaded to an issue
 
 In such a scenario, the secondary does no longer need to replicate any data as
@@ -1483,9 +1497,9 @@ On the primary site:
 
 1. On the left sidebar, at the bottom, select **Admin**.
 1. Select **Geo > Sites**.
-1. Look at the **primary site** and check the verification information. Take note that all *uploads* were verified:
+1. Look at the **primary site** and check the verification information. All uploads were verified:
    ![The Geo Sites dashboard displaying successful verification of the primary.](img/geo_primary_uploads_verification_v17_11.png)
-1. Look at the **secondary site** and check the verification information. Notice that two *uploads* are still being synced, even though the secondary should use the same object storage. Meaning it should not have to synchronize any uploads:
+1. Look at the **secondary site** and check the verification information. Notice that two uploads are still being synced, even though the secondary should use the same object storage. Meaning it should not have to synchronize any uploads:
    ![The Geo Sites dashboard displaying inconsistencies of the secondary.](img/geo_secondary_uploads_inconsistencies_v17_11.png)
 
 #### Clean up inconsistencies
@@ -1519,8 +1533,8 @@ Proceed as follows to properly delete potential leftovers:
    | Terraform state files    | `Terraform::StateVersion`                               |
    | Pages content            | `PagesDeployment`                                       |
 
-1. Start a [Rails console](operations/rails_console.md). When using Geo, run it on the primary site.
-1. Query for all "files" which are still stored locally (instead of in object storage) based on the *model name* of the previous step. In this case, as uploads are affected, the model name `Upload` is used. Observe how `openbao.png` is still stored locally:
+1. Start a [Rails console](operations/rails_console.md).
+1. Query for all "files" which are still stored locally (instead of in object storage) based on the model name of the previous step. In this case, as uploads are affected, the model name `Upload` is used. Observe how `openbao.png` is still stored locally:
 
    ```ruby
    Upload.with_files_stored_locally
@@ -1565,3 +1579,34 @@ Proceed as follows to properly delete potential leftovers:
    ```
 
 Repeat the steps for all affected object storage types.
+
+### Job logs are missing in a multi-node GitLab instance
+
+On GitLab instances with more than one Rails node (servers running the web services or Sidekiq)
+there needs to be a mechanism to make job logs available to all nodes after they have
+been sent from the Runner. Jobs logs can be stored on local disk or in object storage.
+
+If NFS is not being used, and the
+[incremental logging feature](cicd/job_logs.md#incremental-logging)
+has not been enabled, then job logs can be lost:
+
+1. The node which receives the log from the runner writes the log to local disk.
+1. When GitLab tries to archive the log, often the job runs on a different server which cannot access the log.
+1. Uploading to object storage fails.
+
+The following error might also be logged to `/var/log/gitlab/gitlab-rails/exceptions_json.log`:
+
+```yaml
+{
+  "severity": "ERROR",
+  "exception.class": "Ci::AppendBuildTraceService::TraceRangeError",
+  "extra.build_id": 425187,
+  "extra.body_end": 12955,
+  "extra.stream_size": 720,
+  "extra.stream_class": {},
+  "extra.stream_range": "0-12954"
+}
+```
+
+If CI artifacts are written to object storage in a multi-node environment, you must
+[enable the incremental logging feature](cicd/job_logs.md#configure-incremental-logging).

@@ -13,12 +13,14 @@ import {
   GlSkeletonLoader,
 } from '@gitlab/ui';
 import CrudComponent from '~/vue_shared/components/crud_component.vue';
-import ContainerProtectionTagRuleForm from '~/packages_and_registries/settings/project/components/container_protection_tag_rule_form.vue';
+import ContainerProtectionTagRuleForm from 'ee_else_ce/packages_and_registries/settings/project/components/container_protection_tag_rule_form.vue';
 import getContainerProtectionTagRulesQuery from '~/packages_and_registries/settings/project/graphql/queries/get_container_protection_tag_rules.query.graphql';
 import deleteContainerProtectionTagRuleMutation from '~/packages_and_registries/settings/project/graphql/mutations/delete_container_protection_tag_rule.mutation.graphql';
 import { __, s__ } from '~/locale';
 import { getAccessLevelLabel } from '~/packages_and_registries/settings/project/utils';
-import { InternalEvents } from '~/tracking';
+import { DRAWER_Z_INDEX } from '~/lib/utils/constants';
+import { getContentWrapperHeight } from '~/lib/utils/dom_utils';
+
 import * as Sentry from '~/sentry/sentry_browser_wrapper';
 
 const MAX_LIMIT = 5;
@@ -43,7 +45,6 @@ export default {
     GlModal: GlModalDirective,
     GlTooltip: GlTooltipDirective,
   },
-  mixins: [InternalEvents.mixin()],
   inject: ['projectPath'],
   apollo: {
     protectionRulesQueryPayload: {
@@ -84,10 +85,18 @@ export default {
     containsTableItems() {
       return this.tagProtectionRulesCount > 0;
     },
+    description() {
+      return s__(
+        'ContainerRegistry|When a container image tag is protected, only certain user roles can create, update, and delete the protected tag, which helps to prevent unauthorized changes. You can add up to 5 protection rules per project.',
+      );
+    },
     drawerTitle() {
       return this.protectionRuleMutationItem
         ? s__('ContainerRegistry|Edit protection rule')
         : s__('ContainerRegistry|Add protection rule');
+    },
+    getDrawerHeaderHeight() {
+      return getContentWrapperHeight();
     },
     isLoadingProtectionRules() {
       return this.$apollo.queries.protectionRulesQueryPayload.loading;
@@ -111,6 +120,8 @@ export default {
           minimumAccessLevelForPush: protectionRule.minimumAccessLevelForPush,
           minimumAccessLevelForDelete: protectionRule.minimumAccessLevelForDelete,
           tagNamePattern: protectionRule.tagNamePattern,
+          immutable: protectionRule.immutable,
+          userPermissions: protectionRule.userPermissions,
         };
       });
     },
@@ -153,7 +164,6 @@ export default {
         }
         this.refetchProtectionRules();
         this.$toast.show(s__('ContainerRegistry|Container protection rule deleted.'));
-        this.trackEvent('container_protection_tag_rule_deleted');
       } catch (error) {
         this.alertErrorMessage = error.message;
         Sentry.captureException(error);
@@ -165,6 +175,9 @@ export default {
       this.$toast.show(this.toastMessage);
       this.closeDrawer();
       this.refetchProtectionRules();
+    },
+    isEditable({ immutable }) {
+      return !immutable;
     },
     openEditFormDrawer(item) {
       this.protectionRuleMutationItem = item;
@@ -181,7 +194,7 @@ export default {
       this.protectionRuleMutationItem = null;
       this.protectionRuleMutationInProgress = false;
     },
-    showProtectionRuleDeletionConfirmModal(protectionRule) {
+    showDeletionConfirmModal(protectionRule) {
       this.protectionRuleMutationItem = protectionRule;
       this.showModal = true;
     },
@@ -213,7 +226,7 @@ export default {
     deleteIconButton: __('Delete'),
     editIconButton: __('Edit'),
     title: s__('ContainerRegistry|Protected container image tags'),
-    protectionRuleDeletionConfirmModal: {
+    deletionConfirmModal: {
       title: s__('ContainerRegistry|Delete protection rule'),
       description: s__(
         'ContainerRegistry|Are you sure you want to delete the protected container tags rule %{tagNamePattern}?',
@@ -232,6 +245,7 @@ export default {
   modalActionCancel: {
     text: __('Cancel'),
   },
+  DRAWER_Z_INDEX,
 };
 </script>
 
@@ -239,10 +253,15 @@ export default {
   <crud-component
     :collapsed="false"
     :title="$options.i18n.title"
+    :description="description"
     :toggle-text="toggleText"
     data-testid="project-container-protection-tag-rules-settings"
     @showForm="openNewFormDrawer"
   >
+    <template #description>
+      <slot name="description"></slot>
+    </template>
+
     <template v-if="containsTableItems" #count>
       <gl-badge>
         <gl-sprintf :message="s__('ContainerRegistry|%{count} of %{max}')">
@@ -269,18 +288,6 @@ export default {
     </template>
 
     <template #default>
-      <p
-        class="gl-pb-0 gl-text-subtle"
-        :class="{ 'gl-px-5 gl-pt-4': containsTableItems }"
-        data-testid="description"
-      >
-        {{
-          s__(
-            'ContainerRegistry|When a container image tag is protected, only certain user roles can create, update, and delete the protected tag, which helps to prevent unauthorized changes. You can add up to 5 protection rules per project.',
-          )
-        }}
-      </p>
-
       <gl-alert
         v-if="alertErrorMessage"
         class="gl-mb-5"
@@ -304,6 +311,17 @@ export default {
           <gl-loading-icon size="sm" class="gl-my-5" data-testid="table-loading-icon" />
         </template>
 
+        <template #cell(tagNamePattern)="{ item }">
+          <span
+            class="gl-flex gl-flex-nowrap gl-items-center gl-justify-end gl-gap-2 md:gl-justify-start"
+          >
+            <span data-testid="tag-name-pattern" class="gl-break-all">
+              {{ item.tagNamePattern }}
+            </span>
+            <slot name="tag-badge" :item="item"></slot>
+          </span>
+        </template>
+
         <template #cell(minimumAccessLevelForPush)="{ item }">
           <span data-testid="minimum-access-level-push-value">
             {{ $options.getAccessLevelLabel(item.minimumAccessLevelForPush) }}
@@ -319,6 +337,7 @@ export default {
         <template #cell(rowActions)="{ item }">
           <div class="gl-flex gl-justify-end">
             <gl-button
+              v-if="isEditable(item)"
               v-gl-tooltip
               category="tertiary"
               icon="pencil"
@@ -327,13 +346,14 @@ export default {
               @click="openEditFormDrawer(item)"
             />
             <gl-button
+              v-if="item.userPermissions.destroyContainerRegistryProtectionTagRule"
               v-gl-tooltip
               v-gl-modal="$options.modal.id"
               category="tertiary"
               icon="remove"
               :title="$options.i18n.deleteIconButton"
               :aria-label="$options.i18n.deleteIconButton"
-              @click="showProtectionRuleDeletionConfirmModal(item)"
+              @click="showDeletionConfirmModal(item)"
             />
           </div>
         </template>
@@ -342,7 +362,12 @@ export default {
         {{ s__('ContainerRegistry|No container image tags are protected.') }}
       </p>
 
-      <gl-drawer :z-index="1039" :open="showDrawer" @close="closeDrawer">
+      <gl-drawer
+        :z-index="$options.DRAWER_Z_INDEX"
+        :header-height="getDrawerHeaderHeight"
+        :open="showDrawer"
+        @close="closeDrawer"
+      >
         <template #title>
           <h2 class="gl-my-0 gl-text-size-h2 gl-leading-24">
             {{ drawerTitle }}
@@ -361,13 +386,13 @@ export default {
         v-model="showModal"
         :modal-id="$options.modal.id"
         size="sm"
-        :title="$options.i18n.protectionRuleDeletionConfirmModal.title"
+        :title="$options.i18n.deletionConfirmModal.title"
         :action-primary="$options.modalActionPrimary"
         :action-cancel="$options.modalActionCancel"
         @primary="deleteProtectionRule(protectionRuleMutationItem)"
       >
         <p>
-          <gl-sprintf :message="$options.i18n.protectionRuleDeletionConfirmModal.description">
+          <gl-sprintf :message="$options.i18n.deletionConfirmModal.description">
             <template #tagNamePattern>
               <strong>{{ mutationItemTagNamePattern }}</strong>
             </template>

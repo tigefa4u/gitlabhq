@@ -38,7 +38,8 @@ GET /projects/:id/remote_mirrors
 Example request:
 
 ```shell
-curl --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/42/remote_mirrors"
+curl --header "PRIVATE-TOKEN: <your_access_token>" \
+  --url "https://gitlab.example.com/api/v4/projects/42/remote_mirrors"
 ```
 
 Example response:
@@ -72,7 +73,8 @@ GET /projects/:id/remote_mirrors/:mirror_id
 Example request:
 
 ```shell
-curl --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/42/remote_mirrors/101486"
+curl --header "PRIVATE-TOKEN: <your_access_token>" \
+  --url "https://gitlab.example.com/api/v4/projects/42/remote_mirrors/101486"
 ```
 
 Example response:
@@ -144,7 +146,6 @@ project pull mirroring API.
 
 {{< history >}}
 
-- Field `mirror_branch_regex` [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/381667) in GitLab 15.8 [with a flag](../administration/feature_flags.md) named `mirror_only_branches_match_regex`. Disabled by default.
 - [Enabled by default](https://gitlab.com/gitlab-org/gitlab/-/issues/381667) in GitLab 16.0.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/410354) in GitLab 16.2. Feature flag `mirror_only_branches_match_regex` removed.
 - Field `auth_method` [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/75155) in GitLab 16.10.
@@ -170,8 +171,10 @@ POST /projects/:id/remote_mirrors
 Example request:
 
 ```shell
-curl --request POST --data "url=https://username:token@example.com/gitlab/example.git" \
-     --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/42/remote_mirrors"
+curl --request POST \
+  --data "url=https://username:token@example.com/gitlab/example.git" \
+  --header "PRIVATE-TOKEN: <your_access_token>" \
+  --url "https://gitlab.example.com/api/v4/projects/42/remote_mirrors"
 ```
 
 Example response:
@@ -219,7 +222,10 @@ PUT /projects/:id/remote_mirrors/:mirror_id
 Example request:
 
 ```shell
-curl --request PUT --data "enabled=false" --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/42/remote_mirrors/101486"
+curl --request PUT \
+  --data "enabled=false" \
+  --header "PRIVATE-TOKEN: <your_access_token>" \
+  --url "https://gitlab.example.com/api/v4/projects/42/remote_mirrors/101486"
 ```
 
 Example response:
@@ -266,7 +272,9 @@ If successful, returns [`204`](rest/troubleshooting.md#status-codes).
 Example request:
 
 ```shell
-curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/42/remote_mirrors/101486/sync"
+curl --request POST \
+  --header "PRIVATE-TOKEN: <your_access_token>" \
+  --url "https://gitlab.example.com/api/v4/projects/42/remote_mirrors/101486/sync"
 ```
 
 Example response:
@@ -288,5 +296,7 @@ DELETE /projects/:id/remote_mirrors/:mirror_id
 Example request:
 
 ```shell
-curl --request DELETE --header "PRIVATE-TOKEN: <your_access_token>" "https://gitlab.example.com/api/v4/projects/42/remote_mirrors/101486"
+curl --request DELETE \
+  --header "PRIVATE-TOKEN: <your_access_token>" \
+  --url "https://gitlab.example.com/api/v4/projects/42/remote_mirrors/101486"
 ```

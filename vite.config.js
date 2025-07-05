@@ -4,7 +4,6 @@ import path from 'node:path';
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue2';
 import graphql from '@rollup/plugin-graphql';
-import { viteCommonjs } from '@originjs/vite-plugin-commonjs';
 import webpackConfig from './config/webpack.config';
 import {
   IS_EE,
@@ -23,6 +22,7 @@ import { FixedRubyPlugin } from './config/helpers/vite_plugin_ruby_fixed.mjs';
 import { StylePlugin } from './config/helpers/vite_plugin_style.mjs';
 import { IconsPlugin } from './config/helpers/vite_plugin_icons.mjs';
 import { ImagesPlugin } from './config/helpers/vite_plugin_images.mjs';
+import { CrossOriginWorkerPlugin } from './config/helpers/vite_plugin_cross_origin_worker';
 
 let viteGDKConfig;
 try {
@@ -107,9 +107,7 @@ export default defineConfig({
       },
     }),
     graphql(),
-    viteCommonjs({
-      include: [path.resolve(javascriptsPath, 'locale/ensure_single_line.cjs')],
-    }),
+    CrossOriginWorkerPlugin(),
   ],
   define: {
     // window can be undefined in a Web Worker
@@ -124,20 +122,24 @@ export default defineConfig({
     'process.env.GITLAB_WEB_IDE_PUBLIC_PATH': JSON.stringify(GITLAB_WEB_IDE_PUBLIC_PATH),
     'window.IS_VITE': JSON.stringify(true),
     'window.VUE_DEVTOOLS_CONFIG.openInEditorHost': JSON.stringify(
-      viteGDKConfig.hmr
-        ? `${process.env.VITE_HMR_HTTP_URL}/vite-dev/`
-        : `http://${viteGDKConfig.host}:${viteGDKConfig.port}/vite-dev/`,
+      `${viteGDKConfig.https?.enabled ? 'https' : 'http'}://${viteGDKConfig.public_host}:${viteGDKConfig.port}/vite-dev/`,
     ),
     'process.env.PDF_JS_WORKER_PUBLIC_PATH': JSON.stringify(PDF_JS_WORKER_PUBLIC_PATH),
     'process.env.PDF_JS_CMAPS_UBLIC_PATH': JSON.stringify(PDF_JS_CMAPS_PUBLIC_PATH),
   },
   server: {
+    // this fixes Vite server being unreachable on some configurations
+    host: '0.0.0.0',
     cors: true,
     warmup: {
       clientFiles: ['javascripts/entrypoints/main.js', 'javascripts/entrypoints/super_sidebar.js'],
     },
-    hmr: viteGDKConfig.hmr,
-    https: false,
+    https: viteGDKConfig.https?.enabled
+      ? {
+          key: viteGDKConfig.https?.key,
+          cert: viteGDKConfig.https?.certificate,
+        }
+      : false,
     watch:
       viteGDKConfig.hmr === null
         ? null
@@ -161,5 +163,13 @@ export default defineConfig({
   },
   worker: {
     format: 'es',
+  },
+  build: {
+    // speed up build in CI by disabling sourcemaps and compression
+    // TODO: allow sourcemaps and compression when we are ready for Vite in production
+    sourcemap: false,
+    minify: false,
+    cssMinify: false,
+    reportCompressedSize: false,
   },
 });

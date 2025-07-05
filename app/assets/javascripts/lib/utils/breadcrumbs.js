@@ -1,6 +1,6 @@
 import Vue from 'vue';
-
-export const staticBreadcrumbs = Vue.observable({});
+import { destroySuperSidebarBreadcrumbs } from '~/super_sidebar/super_sidebar_breadcrumbs';
+import { staticBreadcrumbs } from './breadcrumbs_state';
 
 export const injectVueAppBreadcrumbs = (
   router,
@@ -15,19 +15,24 @@ export const injectVueAppBreadcrumbs = (
     return false;
   }
 
-  // Hide the last of the static breadcrumbs by nulling its values.
-  // This way, the separator "/" stays visible and also the new "last" static item isn't displayed in bold font.
-  staticBreadcrumbs.items[staticBreadcrumbs.items.length - 1].text = '';
-  staticBreadcrumbs.items[staticBreadcrumbs.items.length - 1].href = '';
+  destroySuperSidebarBreadcrumbs();
+
+  const { items } = staticBreadcrumbs;
 
   return new Vue({
     el: injectBreadcrumbEl,
+    name: 'CustomBreadcrumbsRoot',
     router,
     apolloProvider,
     provide,
     render(createElement) {
       return createElement(BreadcrumbsComponent, {
         class: injectBreadcrumbEl.className,
+        props: {
+          // The last item from the static breadcrumb set is replaced by the
+          // root of the vue app, so the last item should be removed
+          staticBreadcrumbs: items.slice(0, -1),
+        },
       });
     },
   });

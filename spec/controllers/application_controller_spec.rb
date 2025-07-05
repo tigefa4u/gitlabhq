@@ -872,6 +872,23 @@ RSpec.describe ApplicationController, feature_category: :shared do
     end
   end
 
+  describe 'rescue_from Gitlab::Auth::TooManyIps' do
+    controller(described_class) do
+      skip_before_action :authenticate_user!
+
+      def index
+        raise Gitlab::Auth::TooManyIps.new(1, '1.2.3.4', 10)
+      end
+    end
+
+    it 'returns a 403' do
+      get :index
+
+      expect(response).to have_gitlab_http_status(:forbidden)
+      expect(response.headers['Retry-After']).to eq(Gitlab::Auth::UniqueIpsLimiter.config.unique_ips_limit_time_window.to_s)
+    end
+  end
+
   describe '#set_current_context' do
     controller(described_class) do
       feature_category :team_planning
@@ -1173,6 +1190,20 @@ RSpec.describe ApplicationController, feature_category: :shared do
 
         expect(response).to redirect_to(user_settings_profile_path)
       end
+    end
+  end
+
+  describe '#set_current_ip_address' do
+    controller(described_class) do
+      def index; end
+    end
+
+    it 'tracks current client IP address' do
+      ip = '192.168.1.2'
+      expect(::Gitlab::IpAddressState).to receive(:with).with(ip).once.and_call_original
+
+      controller.request.env['REMOTE_ADDR'] = ip
+      get :index
     end
   end
 end

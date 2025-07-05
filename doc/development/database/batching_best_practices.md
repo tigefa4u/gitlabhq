@@ -23,7 +23,7 @@ Batching performance is closely related to pagination performance since the unde
 
 There are two main aspects to consider when implementing batching in background jobs: total runtime and data modification volume.
 
-Background jobs shouldn't run for a long time. A Sidekiq process can crash or it can be forcefully stopped (e.g. on restart or deployment). Additionally, due to our [error budget](../stage_group_observability/_index.md#error-budget) rules, after 5 minutes of runtime, error budget violations will be added to the group where the feature is registered. When implementing batching in background jobs, make sure that you're familiar with our guidelines related to [idempotent jobs](../sidekiq/idempotent_jobs.md)
+Background jobs shouldn't run for a long time. A Sidekiq process can crash or it can be forcefully stopped (for example, on restart or deployment). Additionally, due to our [error budget](../stage_group_observability/_index.md#error-budget) rules, after 5 minutes of runtime, error budget violations will be added to the group where the feature is registered. When implementing batching in background jobs, make sure that you're familiar with our guidelines related to [idempotent jobs](../sidekiq/idempotent_jobs.md)
 
 Updating or deleting a large volume of records can increase database replication lag and it can add extra strain to the primary database. It's advisable to limit the total number of records we process (or batch over) within the background job.
 
@@ -296,6 +296,7 @@ Pros:
 
 Cons:
 
+- Query performance degrades in subsequent loops due to [negative side effects](https://gitlab.com/gitlab-org/gitlab/-/issues/544662) from repeated scans of stale index entries and visibility checks. As such, this strategy is only suitable for short-lived operations affecting a relatively small volume of data. The safe limit is generally at most 10k rows, but this can vary based on factors such as table size and index structure.
 - Thorough testing and manual verification of the underlying `DELETE` or `UPDATE` query is a must. There are some issues with [CTEs](../sql.md#when-to-use-common-table-expressions) when updating or deleting records.
 - If the `break` logic has a bug we might end up in an infinite loop.
 
@@ -478,7 +479,7 @@ def perform(project_id)
 end
 ```
 
-The snippet above can be a short term fix until a proper solution is in place. It's important to note that offset pagination gets slower as the page number increases which means that there might be a chance where the offset paginated query times out the same way as the original query. The chances are reduced to some extent by the database buffer cache which keeps the previously loaded records in memory; Thus, the consecutive (short-term) lookup of the same rows will not have very high impact on the performance.
+The snippet above can be a short term fix until a proper solution is in place. Offset pagination gets slower as the page number increases which means that there might be a chance where the offset paginated query times out the same way as the original query. The chances are reduced to some extent by the database buffer cache which keeps the previously loaded records in memory; Thus, the consecutive (short-term) lookup of the same rows will not have very high impact on the performance.
 
 Pros:
 

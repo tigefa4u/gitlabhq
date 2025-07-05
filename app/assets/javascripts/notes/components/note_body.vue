@@ -1,18 +1,13 @@
 <script>
 import { escape } from 'lodash';
-// eslint-disable-next-line no-restricted-imports
-import {
-  mapActions as mapVuexActions,
-  mapGetters as mapVuexGetters,
-  mapState as mapVuexState,
-} from 'vuex';
-import { mapState } from 'pinia';
+import { mapState, mapActions } from 'pinia';
 import SafeHtml from '~/vue_shared/directives/safe_html';
 import { __, sprintf } from '~/locale';
 import Suggestions from '~/vue_shared/components/markdown/suggestions.vue';
 import { renderGFM } from '~/behaviors/markdown/render_gfm';
 import { useLegacyDiffs } from '~/diffs/stores/legacy_diffs';
 import { useMrNotes } from '~/mr_notes/store/legacy_mr_notes';
+import { useNotes } from '~/notes/store/legacy_notes';
 import NoteAttachment from './note_attachment.vue';
 import NoteAwardsList from './note_awards_list.vue';
 import NoteEditedText from './note_edited_text.vue';
@@ -72,12 +67,14 @@ export default {
     },
   },
   computed: {
-    ...mapVuexGetters(['getDiscussion', 'suggestionsCount', 'getSuggestionsFilePaths']),
     ...mapState(useLegacyDiffs, ['suggestionCommitMessage']),
     ...mapState(useMrNotes, ['failedToLoadMetadata']),
-    ...mapVuexState({
-      batchSuggestionsInfo: (state) => state.notes.batchSuggestionsInfo,
-    }),
+    ...mapState(useNotes, [
+      'batchSuggestionsInfo',
+      'getDiscussion',
+      'suggestionsCount',
+      'getSuggestionsFilePaths',
+    ]),
     discussion() {
       if (!this.note.isDraft) return {};
 
@@ -115,8 +112,7 @@ export default {
       return escape(suggestion);
     },
     isDuoFirstReviewComment() {
-      // Must be a Duo bot comment of type DiffNote
-      if (this.note.author.user_type !== 'duo_code_review_bot' || this.note.type !== 'DiffNote') {
+      if (this.note.author.user_type !== 'duo_code_review_bot') {
         return false;
       }
       // Get the discussion
@@ -124,19 +120,24 @@ export default {
       // If can't get discussion or this is not the first note, don't show feedback
       return discussion?.notes?.length > 0 && discussion.notes[0].id === this.note.id;
     },
+    isDiffNote() {
+      return this.note.type === 'DiffNote';
+    },
     defaultAwardsList() {
-      return this.isDuoFirstReviewComment ? ['thumbsup', 'thumbsdown'] : [];
+      return this.isDuoFirstReviewComment && this.isDiffNote ? ['thumbsup', 'thumbsdown'] : [];
     },
     duoFeedbackText() {
       return sprintf(
         __(
-          'Rate this response %{separator} %{codeStart}%{botUser}%{codeEnd} in reply for more questions',
+          'Rate this response %{emoji} %{separator} Mention %{codeStart}%{botUser}%{codeEnd} to continue the conversation.',
         ),
         {
           separator: '•',
           codeStart: '<code>',
           botUser: '@GitLabDuo',
           codeEnd: '</code>',
+          emoji:
+            '<gl-emoji data-name="thumbsup"></gl-emoji> <gl-emoji data-name="thumbsdown"></gl-emoji>',
         },
         false,
       );
@@ -153,7 +154,7 @@ export default {
     },
   },
   methods: {
-    ...mapVuexActions([
+    ...mapActions(useNotes, [
       'submitSuggestion',
       'submitSuggestionBatch',
       'addSuggestionInfoToBatch',
@@ -223,7 +224,7 @@ export default {
     />
     <div v-else v-safe-html:[$options.safeHtmlConfig]="note.note_html" class="note-text md"></div>
     <duo-code-review-feedback
-      v-if="note.author.user_type === 'duo_code_review_bot' && note.type !== 'DiffNote'"
+      v-if="isDuoFirstReviewComment && !isDiffNote"
       class="gl-mt-3"
       data-testid="code-review-feedback"
     />
@@ -261,12 +262,12 @@ export default {
       class="note_edited_ago"
     />
     <div
-      v-if="isDuoFirstReviewComment"
+      v-if="isDuoFirstReviewComment && isDiffNote"
       v-safe-html:[$options.safeHtmlConfig]="duoFeedbackText"
       class="gl-text-md gl-mt-4 gl-text-gray-500"
     ></div>
     <note-awards-list
-      v-if="isDuoFirstReviewComment || (note.award_emoji && note.award_emoji.length)"
+      v-if="defaultAwardsList.length || (note.award_emoji && note.award_emoji.length)"
       :note-id="note.id"
       :note-author-id="note.author.id"
       :awards="note.award_emoji"

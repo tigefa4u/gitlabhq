@@ -3,8 +3,11 @@ import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
 import { Fragment } from '@tiptap/pm/model';
 import { mergeAttributes, textblockTypeInputRule } from '@tiptap/core';
 import { VueNodeViewRenderer } from '@tiptap/vue-2';
+import { __ } from '~/locale';
 import languageLoader from '../services/code_block_language_loader';
 import CodeBlockWrapper from '../components/wrappers/code_block.vue';
+
+const DEFAULT_GLQL_VIEW_CONTENT = `query: assignee = currentUser()\nfields: title, createdAt, milestone, assignee\ntitle: ${__('Issues assigned to current user')}`;
 
 const extractLanguage = (element) => element.dataset.canonicalLang ?? element.getAttribute('lang');
 
@@ -55,6 +58,27 @@ export default CodeBlockLowlight.extend({
         getAttributes,
       }),
     ];
+  },
+  addCommands() {
+    return {
+      ...this.parent?.(),
+      insertGLQLView:
+        () =>
+        ({ commands }) => {
+          return commands.insertContent({
+            type: this.type.name,
+            attrs: {
+              language: 'glql',
+            },
+            content: [
+              {
+                type: 'text',
+                text: DEFAULT_GLQL_VIEW_CONTENT,
+              },
+            ],
+          });
+        },
+    };
   },
   parseHTML() {
     return [
@@ -116,7 +140,7 @@ export default CodeBlockLowlight.extend({
       'pre',
       {
         ...mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
-        class: `content-editor-code-block ${gon.user_color_scheme} ${HTMLAttributes.class}`,
+        class: `content-editor-code-block code-syntax-highlight-theme ${HTMLAttributes.class}`,
       },
       ['code', {}, 0],
     ];

@@ -123,11 +123,25 @@ RSpec.describe API::Files, feature_category: :source_code_management do
         expect(response).to have_gitlab_http_status(expected_status)
       end
 
+      context 'when the user has agentic chat permission for the project' do
+        before do
+          allow(Ability).to receive(:allowed?).and_call_original
+          allow(Ability).to receive(:allowed?).with(user, :access_duo_agentic_chat, project)
+                                              .and_return(true)
+        end
+
+        it 'is successful' do
+          file_action
+
+          expect(response).to have_gitlab_http_status(expected_status)
+        end
+      end
+
       context 'when the user does not have duo_workflow permission for the project' do
         before do
           allow(Ability).to receive(:allowed?).and_call_original
           allow(Ability).to receive(:allowed?).with(user, :duo_workflow, project)
-                                            .and_return(false)
+            .and_return(false)
         end
 
         it 'returns a forbidden error' do
@@ -509,6 +523,17 @@ RSpec.describe API::Files, feature_category: :source_code_management do
         subject(:file_action) { get api(route(file_path), oauth_access_token: oauth_token), params: params }
 
         let(:expected_status) { :ok }
+      end
+    end
+
+    context 'when a large file/blob is requested' do
+      it 'rate limits user when thresholds hit' do
+        stub_const("API::Helpers::BlobHelpers::MAX_BLOB_SIZE", 5)
+        allow(::Gitlab::ApplicationRateLimiter).to receive(:throttled_request?).and_return(true)
+
+        get api(route(file_path), user), params: params
+
+        expect(response).to have_gitlab_http_status(:too_many_requests)
       end
     end
   end

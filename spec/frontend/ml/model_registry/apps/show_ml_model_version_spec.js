@@ -14,6 +14,7 @@ import ModelVersionActionsDropdown from '~/ml/model_registry/components/model_ve
 import deleteModelVersionMutation from '~/ml/model_registry/graphql/mutations/delete_model_version.mutation.graphql';
 import TitleArea from '~/vue_shared/components/registry/title_area.vue';
 import LoadOrErrorOrShow from '~/ml/model_registry/components/load_or_error_or_show.vue';
+import SidebarItem from '~/ml/model_registry/components/model_sidebar_item.vue';
 import createMockApollo from 'helpers/mock_apollo_helper';
 import getModelVersionQuery from '~/ml/model_registry/graphql/queries/get_model_version.query.graphql';
 import waitForPromises from 'helpers/wait_for_promises';
@@ -111,6 +112,7 @@ describe('ml/model_registry/apps/show_model_version.vue', () => {
         GlSprintf,
         GlLink,
         TimeAgoTooltip,
+        SidebarItem,
       },
     });
 
@@ -131,6 +133,9 @@ describe('ml/model_registry/apps/show_model_version.vue', () => {
   const findPerformanceTab = () => wrapper.findAllComponents(GlTab).at(2);
   const findModelVersionPerformance = () => wrapper.findComponent(ModelVersionPerformance);
   const findModelVersionArtifacts = () => wrapper.findComponent(ModelVersionArtifacts);
+  const findMlflowRunId = () => wrapper.findByTestId('mlflow-id');
+  const findCopyMlflowIdButton = () => wrapper.findByTestId('mlflow-id-button');
+  const findCandidateLink = () => wrapper.findByTestId('mlflow-id-link');
 
   it('renders the title', () => {
     createWrapper();
@@ -181,6 +186,35 @@ describe('ml/model_registry/apps/show_model_version.vue', () => {
         expect(wrapper.findByTestId('sidebar-author').text()).toBe('None');
       });
     });
+
+    describe('mlflow run ID', () => {
+      beforeEach(async () => {
+        const resolver = jest.fn().mockResolvedValue(modelVersionQueryWithAuthor);
+        createWrapper({ resolver });
+        await waitForPromises();
+      });
+
+      it('shows the copy mlflow id button', () => {
+        expect(findCopyMlflowIdButton().exists()).toBe(true);
+        expect(findCopyMlflowIdButton().props('icon')).toBe('copy-to-clipboard');
+      });
+
+      it('shows the mlflow label string', () => {
+        expect(findMlflowRunId().props('title')).toBe('MLflow run ID');
+      });
+
+      it('shows the mlflow id', () => {
+        expect(findMlflowRunId().text()).toContain(
+          modelVersionWithCandidateAndAuthor.candidate.eid,
+        );
+      });
+
+      it('links to candidate', () => {
+        expect(findCandidateLink().attributes('href')).toBe(
+          modelVersionWithCandidateAndAuthor.candidate._links.showPath,
+        );
+      });
+    });
   });
 
   it('Requests data with the right parameters', async () => {
@@ -226,7 +260,7 @@ describe('ml/model_registry/apps/show_model_version.vue', () => {
     await waitForPromises();
 
     expect(findModelMetadata().findComponent(GlIcon).props('name')).toBe('machine-learning');
-    expect(findModelMetadata().text()).toBe('Version created in 3 years by Root');
+    expect(findModelMetadata().text()).toBe('Version created Dec 6, 2023 by Root');
 
     expect(findTimeAgoTooltip().props('time')).toBe(modelVersionWithCandidateAndAuthor.createdAt);
     expect(findTimeAgoTooltip().props('tooltipPlacement')).toBe('top');

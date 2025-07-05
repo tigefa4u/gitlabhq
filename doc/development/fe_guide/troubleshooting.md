@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Troubleshooting frontend development issues
 ---
 
@@ -98,7 +98,7 @@ VueApollo will skip manually running `provide()` if it sees that an `apolloProvi
 
 If you see errors like `Missing field 'descriptionHtml' while writing result` , it means we are not adhering to the GraphQL response structure while writing to the Apollo client cache. It seems you're encountering a GraphQL error ("Missing field 'description'") within your web application, likely related to how you're handling Apollo Client's cache and data updates. The error stack trace provides clues about the specific parts of the Apollo Client code where the problem occurs.
 
-**The Core Issue:**
+**The Core Issue**:
 
 The error "Missing field 'description'" indicates that your GraphQL query expects a field named "description" in the response, but the data you're receiving from your backend (or how it's being processed by Apollo Client) is missing that field. This is causing Apollo Client's cache to fail when it tries to update the store with the incomplete data.
 
@@ -120,7 +120,7 @@ Missing field 'description' while writing result {
 1. The backend might not be returning the "description" field in the response for the "WorkItemWidgetDescription" type. Verify that your backend API is correctly sending the data as expected.
 1. Use the `cache.readQuery` method to inspect the contents of the Apollo Client cache. Verify that the "description" field is present in the cached data for the relevant query
 1. Open the error stack trace suggesting that the issue might be related to how Apollo Client is writing data to its cache. It's possible that the cache is not being updated correctly, leading to missing fields
-1. Add console logs within your Apollo Client code (e.g., before and after writing to the cache) to track the data being processed and identify where the "description" field might be missing.
+1. Add console logs within your Apollo Client code (for example, before and after writing to the cache) to track the data being processed and identify where the "description" field might be missing.
 
 **Solution**
 
@@ -133,7 +133,7 @@ You should be able to see the method in the stack trace where this is originatin
 Apollo GraphQL queries may not be cached in several scenarios:
 
 1. Cache Misses or Partial Caches/Query Invalidation or Changes:
-If the query only returns partial data or there’s a cache miss (when part of the requested data isn’t in the cache), Apollo might not be able to cache the result effectively.
+If the query only returns partial data or there's a cache miss (when part of the requested data isn't in the cache), Apollo might not be able to cache the result effectively.
 
 If data related to a query has been invalidated or updated, the cache might not have valid information. For example:
 
@@ -175,17 +175,17 @@ query workItemTreeQuery($id: WorkItemID!, $pageSize: Int = 100, $endCursor: Stri
 ```
 
 1. `fetchPolicy` Settings:
-Apollo Client uses a fetchPolicy to control how queries interact with the cache. Depending on the policy, the query may bypass caching entirely if the fetchPolicy is `no-cache`. This policy ensures that no part of the query is written to the cache. Each query directly fetches data from the server and doesn't store any results in the cache and hence multiple queries are being fetched
+   Apollo Client uses a fetchPolicy to control how queries interact with the cache. Depending on the policy, the query may bypass caching entirely if the fetchPolicy is `no-cache`. This policy ensures that no part of the query is written to the cache. Each query directly fetches data from the server and doesn't store any results in the cache and hence multiple queries are being fetched
 
 1. When the same query is fired from different Apollo Client instances. It may be that the clients firing the two queries are from different clients.
 
 1. Missing `id` or `__typename`:
-Apollo Client uses `id` and `__typename` to uniquely identify entities and cache them. If these fields are missing from your query response, Apollo may not be able to cache the result properly.
+   Apollo Client uses `id` and `__typename` to uniquely identify entities and cache them. If these fields are missing from your query response, Apollo may not be able to cache the result properly.
 
 1. Complex or Nested Queries:
-Some queries might be too complex or involve nested queries that Apollo Client might struggle to cache correctly. This can happen if the structure of the data returned doesn’t map cleanly to the cache schema, requiring manual cache management.
+   Some queries might be too complex or involve nested queries that Apollo Client might struggle to cache correctly. This can happen if the structure of the data returned doesn't map cleanly to the cache schema, requiring manual cache management.
 
 1. Pagination Queries:
-For queries involving pagination, like those using fetchMore, Apollo might not cache results properly unless the cache is explicitly updated.
+   For queries involving pagination, like those using fetchMore, Apollo might not cache results properly unless the cache is explicitly updated.
 
-In all of these cases, you may need to configure Apollo’s cache policies or manually update the cache to handle query caching effectively.
+In all of these cases, you may need to configure Apollo's cache policies or manually update the cache to handle query caching effectively.

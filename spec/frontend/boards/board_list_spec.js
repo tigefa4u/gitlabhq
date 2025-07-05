@@ -2,12 +2,16 @@ import { GlIntersectionObserver } from '@gitlab/ui';
 import Draggable from 'vuedraggable';
 import { nextTick } from 'vue';
 import { DraggableItemTypes, ListType, WIP_ITEMS, WIP_WEIGHT } from 'ee_else_ce/boards/constants';
-import { DETAIL_VIEW_QUERY_PARAM_NAME } from '~/work_items/constants';
+import { DETAIL_VIEW_QUERY_PARAM_NAME, WORK_ITEM_TYPE_ENUM_ISSUE } from '~/work_items/constants';
+import { TYPE_ISSUE, WORKSPACE_PROJECT } from '~/issues/constants';
+import * as cacheUpdates from '~/boards/graphql/cache_updates';
 import { useFakeRequestAnimationFrame } from 'helpers/fake_request_animation_frame';
+import issueCreateMutation from '~/boards/graphql/issue_create.mutation.graphql';
 import waitForPromises from 'helpers/wait_for_promises';
 import createComponent from 'jest/boards/board_list_helper';
 import { ESC_KEY_CODE } from '~/lib/utils/keycodes';
 import BoardCard from '~/boards/components/board_card.vue';
+import BoardNewIssue from '~/boards/components/board_new_issue.vue';
 import BoardCutLine from '~/boards/components/board_cut_line.vue';
 import BoardCardMoveToPosition from '~/boards/components/board_card_move_to_position.vue';
 import listIssuesQuery from '~/boards/graphql/lists_issues.query.graphql';
@@ -27,7 +31,8 @@ describe('Board list component', () => {
   const findMoveToPositionComponent = () => wrapper.findComponent(BoardCardMoveToPosition);
   const findIntersectionObserver = () => wrapper.findComponent(GlIntersectionObserver);
   const findBoardListCount = () => wrapper.find('.board-list-count');
-  const findBoardCardButtons = () => wrapper.findAll('button.board-card-button');
+  const findBoardCardButtons = () => wrapper.findAll('a.board-card-button');
+  const queryHandlerFailure = jest.fn().mockRejectedValue(new Error('error'));
 
   const maxIssueWeightOrCountWarningClass = '.gl-bg-red-50';
 
@@ -38,6 +43,7 @@ describe('Board list component', () => {
       item: {
         dataset: {
           draggableItemType: DraggableItemTypes.card,
+          itemId: mockIssues[0].id,
         },
       },
     },
@@ -199,12 +205,16 @@ describe('Board list component', () => {
   });
   describe('drag & drop issue', () => {
     describe('when dragging is allowed', () => {
-      beforeEach(() => {
+      beforeEach(async () => {
         wrapper = createComponent({
+          apolloQueryHandlers: [
+            [listIssuesQuery, jest.fn().mockResolvedValue(mockGroupIssuesResponse())],
+          ],
           componentProps: {
             disabled: false,
           },
         });
+        await waitForPromises();
       });
 
       it('Draggable is used', () => {
@@ -239,6 +249,14 @@ describe('Board list component', () => {
           await nextTick();
 
           expect(document.addEventListener).toHaveBeenCalledWith('keyup', expect.any(Function));
+        });
+
+        it('emits the `dragStart` event with the item type to the parent', () => {
+          startDrag();
+
+          expect(wrapper.emitted('dragStart')[0]).toEqual([
+            { itemType: WORK_ITEM_TYPE_ENUM_ISSUE },
+          ]);
         });
       });
 
@@ -283,6 +301,12 @@ describe('Board list component', () => {
           await nextTick();
 
           expect(document.removeEventListener).toHaveBeenCalledWith('keyup', expect.any(Function));
+        });
+
+        it('emits the `dragStop` event with the item type to the parent', () => {
+          endDrag(getDragEndParam(DraggableItemTypes.card));
+
+          expect(wrapper.emitted('dragStop')).toEqual([[]]);
         });
       });
 
@@ -343,6 +367,42 @@ describe('Board list component', () => {
       await findBoardCardButtons().at(1).trigger('keydown.up');
       expect(document.activeElement).toEqual(findBoardCardButtons().at(0).element);
     });
+  });
+
+  it('does not set active board item when add new list item results in error', async () => {
+    const listResolver = jest.fn().mockResolvedValue(mockGroupIssuesResponse());
+    const mutationHandler = jest.fn();
+    cacheUpdates.setError = jest.fn();
+    wrapper = createComponent({
+      componentProps: { showNewForm: true },
+      provide: {
+        boardType: WORKSPACE_PROJECT,
+        issuableType: TYPE_ISSUE,
+        isProjectBoard: true,
+        isGroupBoard: false,
+        isEpicBoard: false,
+      },
+      apolloQueryHandlers: [
+        [listIssuesQuery, listResolver],
+        [issueCreateMutation, queryHandlerFailure],
+      ],
+      apolloResolvers: {
+        Mutation: {
+          setActiveBoardItem: mutationHandler,
+        },
+      },
+      stubs: {
+        BoardNewIssue,
+      },
+    });
+
+    expect(wrapper.findComponent(BoardNewIssue).exists()).toBe(true);
+    wrapper.findComponent(BoardNewIssue).vm.$emit('addNewIssue', { title: 'Foo' });
+
+    await waitForPromises();
+
+    expect(cacheUpdates.setError).toHaveBeenCalled();
+    expect(mutationHandler).not.toHaveBeenCalled();
   });
 
   describe('when the URL contains a `show` parameter', () => {

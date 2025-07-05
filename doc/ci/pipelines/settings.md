@@ -25,14 +25,14 @@ For public and internal projects, you can change who can see your:
 - Pipelines
 - Job output logs
 - Job artifacts
-- [Pipeline security dashboard](../../user/application_security/vulnerability_report/pipeline.md#view-vulnerabilities-in-a-pipeline)
+- [Pipeline security results](../../user/application_security/detect/security_scanning_results.md)
 
 To change the visibility of your pipelines and related features:
 
 1. On the left sidebar, select **Search or go to** and find your project.
 1. Select **Settings > CI/CD**.
 1. Expand **General pipelines**.
-1. Select or clear the **Public pipelines** checkbox.
+1. Select or clear the **Project-based pipeline visibility** checkbox.
    When it is selected, pipelines and related features are visible:
 
    - For [**Public**](../../user/public_access.md) projects, to everyone.
@@ -57,7 +57,7 @@ This setting has no effect when:
 
 - Project visibility is set to [**Internal** or **Private**](../../user/public_access.md),
   because non-project members cannot access internal or private projects.
-- The [**Public pipelines**](#change-which-users-can-view-your-pipelines) setting is disabled.
+- The [**Project-based pipeline visibility**](#change-which-users-can-view-your-pipelines) setting is disabled.
 
 To change the pipeline visibility for non-project members:
 
@@ -88,12 +88,6 @@ running job can be canceled before it completes. After a job with
 `interruptible: false` starts, the entire pipeline is no longer considered interruptible.
 
 ## Prevent outdated deployment jobs
-
-{{< history >}}
-
-- Also preventing outdated manual or retried deployment jobs from running [added](https://gitlab.com/gitlab-org/gitlab/-/issues/363328) in GitLab 15.5.
-
-{{< /history >}}
 
 Your project may have multiple concurrent deployment jobs that are
 scheduled to run in the same time frame.
@@ -208,7 +202,7 @@ You can choose how your repository is fetched from GitLab when a job runs.
      for every job. However, the local working copy is always pristine.
    - `git fetch` is faster because it re-uses the local working copy (and falls
      back to clone if it doesn't exist). This is recommended, especially for
-     [large repositories](../../user/project/repository/monorepos/_index.md#git-strategy).
+     [large repositories](../../user/project/repository/monorepos/_index.md#use-git-fetch-in-cicd-operations).
 
 The configured Git strategy can be overridden by the [`GIT_STRATEGY` variable](../runners/configure_runners.md#git-strategy)
 in the `.gitlab-ci.yml` file.
@@ -227,7 +221,7 @@ a repository.
 
 Newly created projects have a default `git depth` value of `20`.
 
-This value can be overridden by the [`GIT_DEPTH` variable](../../user/project/repository/monorepos/_index.md#shallow-cloning)
+This value can be overridden by the [`GIT_DEPTH` variable](../../user/project/repository/monorepos/_index.md#use-shallow-clones-in-cicd-processes)
 in the `.gitlab-ci.yml` file.
 
 ## Set a limit for how long jobs can run
@@ -243,7 +237,10 @@ You can define how long a job can run before it times out.
 
 Jobs that exceed the timeout are marked as failed.
 
-You can override this value [for individual runners](../runners/configure_runners.md#set-the-maximum-job-timeout).
+When both a project timeout and a [runner timeout](../runners/configure_runners.md#set-the-maximum-job-timeout)
+are set, the lower value takes precedence.
+
+Jobs without an output for one hour are dropped regardless of the timeout. To prevent this from happening, add a script to continuously output progress. For more information, see [issue 25359](https://gitlab.com/gitlab-org/gitlab/-/issues/25359#workaround).
 
 ## Pipeline badges
 
@@ -284,7 +281,7 @@ These changes do not apply to projects in an [external integration](../../user/p
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/498969) in GitLab 17.7 [with a flag](../../administration/feature_flags.md) named `ci_delete_old_pipelines`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/498969) in GitLab 17.7 [with a flag](../../administration/feature_flags/_index.md) named `ci_delete_old_pipelines`. Disabled by default.
 - [Feature flag `ci_delete_old_pipelines`](https://gitlab.com/gitlab-org/gitlab/-/issues/503153) removed in GitLab 17.9.
 
 {{< /history >}}

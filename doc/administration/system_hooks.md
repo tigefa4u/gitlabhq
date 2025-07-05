@@ -1,14 +1,15 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Create
+group: Import
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+gitlab_dedicated: yes
 title: System hooks
 ---
 
 {{< details >}}
 
 - Tier: Free, Premium, Ultimate
-- Offering: GitLab Self-Managed
+- Offering: GitLab Self-Managed, GitLab Dedicated
 
 {{< /details >}}
 
@@ -43,7 +44,7 @@ requests and are triggered on the following events:
 
 {{< alert type="note" >}}
 
-Some events follow a newer schema-based format. Instead of `event_name`, these events use `object_kind`, `action`, 
+Some events follow a newer schema-based format. Instead of `event_name`, these events use `object_kind`, `action`,
 and `object_attributes`:
 
 - `gitlab_subscription_member_approval` (`action`: `enqueue`)
@@ -107,7 +108,7 @@ To create a system hook:
 X-Gitlab-Event: System Hook
 ```
 
-**Project created:**
+**Project created**:
 
 ```json
 {
@@ -129,7 +130,7 @@ X-Gitlab-Event: System Hook
 }
 ```
 
-**Project destroyed:**
+**Project destroyed**:
 
 ```json
 {
@@ -151,7 +152,7 @@ X-Gitlab-Event: System Hook
 }
 ```
 
-**Project renamed:**
+**Project renamed**:
 
 ```json
 {
@@ -177,7 +178,7 @@ X-Gitlab-Event: System Hook
 `project_rename` is not triggered if the namespace changes.
 Refer to `group_rename` and `user_rename` for that case.
 
-**Project transferred:**
+**Project transferred**:
 
 ```json
 {
@@ -200,7 +201,7 @@ Refer to `group_rename` and `user_rename` for that case.
 }
 ```
 
-**Project updated:**
+**Project updated**:
 
 ```json
 {
@@ -222,7 +223,7 @@ Refer to `group_rename` and `user_rename` for that case.
 }
 ```
 
-**Access request for group removed:**
+**Access request for group removed**:
 
 ```json
 {
@@ -240,7 +241,7 @@ Refer to `group_rename` and `user_rename` for that case.
 }
 ```
 
-**Access request for project removed:**
+**Access request for project removed**:
 
 ```json
 {
@@ -260,7 +261,7 @@ Refer to `group_rename` and `user_rename` for that case.
 }
 ```
 
-**Access request for group created:**
+**Access request for group created**:
 
 ```json
 {
@@ -278,7 +279,7 @@ Refer to `group_rename` and `user_rename` for that case.
 }
 ```
 
-**Access request for project created:**
+**Access request for project created**:
 
 ```json
 {
@@ -298,7 +299,7 @@ Refer to `group_rename` and `user_rename` for that case.
 }
 ```
 
-**New Team Member:**
+**New Team Member**:
 
 ```json
 {
@@ -318,7 +319,7 @@ Refer to `group_rename` and `user_rename` for that case.
 }
 ```
 
-**Team Member Removed:**
+**Team Member Removed**:
 
 ```json
 {
@@ -338,7 +339,7 @@ Refer to `group_rename` and `user_rename` for that case.
 }
 ```
 
-**Team Member Updated:**
+**Team Member Updated**:
 
 ```json
 {
@@ -358,7 +359,7 @@ Refer to `group_rename` and `user_rename` for that case.
 }
 ```
 
-**User created:**
+**User created**:
 
 ```json
 {
@@ -372,7 +373,7 @@ Refer to `group_rename` and `user_rename` for that case.
 }
 ```
 
-**User removed:**
+**User removed**:
 
 ```json
 {
@@ -386,7 +387,7 @@ Refer to `group_rename` and `user_rename` for that case.
 }
 ```
 
-**User failed login:**
+**User failed login**:
 
 ```json
 {
@@ -403,7 +404,7 @@ Refer to `group_rename` and `user_rename` for that case.
 
 If the user is blocked through LDAP, `state` is `ldap_blocked`.
 
-**User renamed:**
+**User renamed**:
 
 ```json
 {
@@ -444,7 +445,7 @@ If the user is blocked through LDAP, `state` is `ldap_blocked`.
 }
 ```
 
-**Group created:**
+**Group created**:
 
 ```json
 {
@@ -457,7 +458,7 @@ If the user is blocked through LDAP, `state` is `ldap_blocked`.
 }
 ```
 
-**Group removed:**
+**Group removed**:
 
 ```json
 {
@@ -470,7 +471,7 @@ If the user is blocked through LDAP, `state` is `ldap_blocked`.
 }
 ```
 
-**Group renamed:**
+**Group renamed**:
 
 ```json
 {
@@ -486,7 +487,7 @@ If the user is blocked through LDAP, `state` is `ldap_blocked`.
 }
 ```
 
-**New Group Member:**
+**New Group Member**:
 
 ```json
 {
@@ -504,7 +505,7 @@ If the user is blocked through LDAP, `state` is `ldap_blocked`.
 }
 ```
 
-**Group Member Removed:**
+**Group Member Removed**:
 
 ```json
 {
@@ -522,7 +523,7 @@ If the user is blocked through LDAP, `state` is `ldap_blocked`.
 }
 ```
 
-**Group Member Updated:**
+**Group Member Updated**:
 
 ```json
 {
@@ -551,7 +552,7 @@ It generates one event per modified branch.
 X-Gitlab-Event: System Hook
 ```
 
-**Request body:**
+**Request body**:
 
 ```json
 {
@@ -617,7 +618,7 @@ It generates one event per modified tag.
 X-Gitlab-Event: System Hook
 ```
 
-**Request body:**
+**Request body**:
 
 ```json
 {
@@ -833,7 +834,7 @@ Triggered only once when you push to the repository (including tags).
 X-Gitlab-Event: System Hook
 ```
 
-**Request body:**
+**Request body**:
 
 ```json
 {
@@ -880,7 +881,7 @@ These events are triggered if [administrator approval for role promotions](setti
 X-Gitlab-Event: System Hook
 ```
 
-**Member queued for promotion management:**
+**Member queued for promotion management**:
 
 ```json
 {
@@ -899,7 +900,7 @@ X-Gitlab-Event: System Hook
 }
 ```
 
-**User approved on a billable role by instance admin:**
+**User approved on a billable role by instance admin**:
 
 ```json
 {
@@ -915,7 +916,7 @@ X-Gitlab-Event: System Hook
 }
 ```
 
-**User denied on a billable role by instance admin:**
+**User denied on a billable role by instance admin**:
 
 ```json
 {
@@ -934,15 +935,3 @@ X-Gitlab-Event: System Hook
 
 [Requests to local network by system hooks](../security/webhooks.md) can be allowed
 or blocked by an administrator.
-
-<!-- ## Troubleshooting
-
-Include any troubleshooting steps that you can foresee. If you know beforehand what issues
-one might have when setting this up, or when something is changed, or on upgrading, it's
-important to describe those, too. Think of things that may go wrong and include them here.
-This is important to minimize requests for support, and to avoid doc comments with
-questions that you know someone might ask.
-
-Each scenario can be a third-level heading, for example `### Getting error message X`.
-If you have none to add when creating a doc, leave this section in place
-but commented out to help encourage others to add to it in the future. -->

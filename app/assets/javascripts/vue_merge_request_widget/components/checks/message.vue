@@ -14,11 +14,6 @@ export default {
       type: Object,
       required: true,
     },
-    mr: {
-      type: Object,
-      required: false,
-      default: () => ({}),
-    },
   },
   computed: {
     iconName() {
@@ -44,6 +39,7 @@ export default {
       <status-icon v-else :icon-name="iconName" :level="2" />
       <div class="gl-w-full gl-min-w-0">
         <div class="gl-flex">{{ failureReason }}</div>
+        <slot name="reason-footer"></slot>
       </div>
       <slot></slot>
       <slot v-if="check.status === 'FAILED'" name="failed"></slot>

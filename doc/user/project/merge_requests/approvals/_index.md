@@ -76,7 +76,7 @@ Use cases include:
 - Specify categories of reviewers, such as backend, frontend, quality assurance, database, or documentation.
 - Use the [Code Owners](../../codeowners/_index.md) files to determine reviewers.
 - Require approval for [declining test coverage](../../../../ci/testing/code_coverage/_index.md#add-a-coverage-check-approval-rule).
-- GitLab Ultimate: [Require security team approval](../../../application_security/_index.md#security-approvals-in-merge-requests) for potential vulnerabilities.
+- GitLab Ultimate: [Require security team approval](../../../application_security/policies/merge_request_approval_policies.md) for potential vulnerabilities.
 
 ## View approval status
 
@@ -158,7 +158,7 @@ Approved merge requests display a green check mark ({{< icon name="check-circle-
 After a merge request receives the required approvals, it is ready to merge, unless it's blocked due to:
 
 - [Merge conflicts](../conflicts.md)
-- [Unresolved threads](../_index.md#prevent-merge-unless-all-threads-are-resolved)
+- [Open threads](../_index.md#prevent-merge-unless-all-threads-are-resolved)
 - [Failed CI/CD pipeline](../auto_merge.md)
 
 ### Prevent author approval
@@ -174,8 +174,6 @@ don't affect existing merge requests, except for [target branch](rules.md#approv
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/334698) in GitLab 15.1.
-- [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/389905) in GitLab 15.11 [with a flag](../../../../administration/feature_flags.md) named `invalid_scan_result_policy_prevents_merge`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/405023) in GitLab 16.2. Feature flag `invalid_scan_result_policy_prevents_merge` removed.
 
 {{< /history >}}

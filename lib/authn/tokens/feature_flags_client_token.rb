@@ -4,7 +4,10 @@ module Authn
   module Tokens
     class FeatureFlagsClientToken
       def self.prefix?(plaintext)
-        plaintext.start_with?(::Operations::FeatureFlagsClient::FEATURE_FLAGS_CLIENT_TOKEN_PREFIX)
+        feature_flags_client_token_prefixes = [::Operations::FeatureFlagsClient.prefix_for_feature_flags_client_token,
+          ::Operations::FeatureFlagsClient::FEATURE_FLAGS_CLIENT_TOKEN_PREFIX].uniq
+
+        plaintext.start_with?(*feature_flags_client_token_prefixes)
       end
 
       attr_reader :revocable, :source

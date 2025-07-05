@@ -37,6 +37,7 @@ module Admin
     feature_category :pages, [:lets_encrypt_terms_of_service]
     feature_category :observability, [:reset_error_tracking_access_token]
     feature_category :global_search, [:search]
+    feature_category :environment_management, [:usage_quotas]
 
     VALID_SETTING_PANELS = %w[general repository
       ci_cd reporting metrics_and_profiling
@@ -204,6 +205,7 @@ module Admin
         :pipeline_limit_per_project_user_sha,
         :default_branch_name,
         :auto_approve_pending_users,
+        :pipeline_variables_default_allowed,
         { disabled_oauth_sign_in_sources: [],
           import_sources: [],
           package_metadata_purl_types: [],

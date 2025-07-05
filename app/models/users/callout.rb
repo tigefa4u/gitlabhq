@@ -6,6 +6,7 @@ module Users
 
     self.table_name = 'user_callouts'
 
+    # NOTE: to avoid false-positive dismissals, use new consecutive enum values for new callout IDs
     enum :feature_name, {
       gke_cluster_integration: 1,
       gcp_signup_offer: 2,
@@ -96,14 +97,21 @@ module Users
       openssl_callout: 94,
       # 95 removed in https://gitlab.com/gitlab-org/gitlab/-/merge_requests/170868
       new_mr_dashboard_banner: 96,
-      planner_role_callout: 97,
+      # 97 removed in https://gitlab.com/gitlab-org/gitlab/-/merge_requests/196130
       # EE-only
       pipl_compliance_alert: 98,
       new_merge_request_dashboard_welcome: 99,
       pipeline_inputs_announcement_banner: 100,
       pipeline_new_inputs_adoption_banner: 101,
       pipeline_schedules_inputs_adoption_banner: 102,
-      product_usage_data_collection_changes: 103
+      product_usage_data_collection_changes: 103,
+      dora_dashboard_migration_group: 104,
+      dora_dashboard_migration_project: 105,
+      enable_duo_banner_admin_duo_settings_page: 106, # EE-only
+      enable_duo_banner_admin_dashboard: 107, # EE-only
+      explore_duo_core_banner: 108, # EE-only
+      merge_request_dashboard_display_preferences_popover: 109,
+      vulnerability_archival: 110 # EE-only
     }
 
     validates :feature_name,

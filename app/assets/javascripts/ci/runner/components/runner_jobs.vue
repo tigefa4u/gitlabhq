@@ -1,13 +1,12 @@
 <script>
 import { createAlert } from '~/alert';
 import CrudComponent from '~/vue_shared/components/crud_component.vue';
+import HelpPopover from '~/vue_shared/components/help_popover.vue';
+import { TYPENAME_CI_RUNNER } from '~/graphql_shared/constants';
+import { convertToGraphQLId } from '~/graphql_shared/utils';
+
 import runnerJobsQuery from '../graphql/show/runner_jobs.query.graphql';
-import {
-  I18N_FETCH_ERROR,
-  I18N_JOBS,
-  I18N_NO_JOBS_FOUND,
-  RUNNER_DETAILS_JOBS_PAGE_SIZE,
-} from '../constants';
+import { I18N_FETCH_ERROR, RUNNER_DETAILS_JOBS_PAGE_SIZE } from '../constants';
 import { captureException } from '../sentry_utils';
 import { getPaginationVariables } from '../utils';
 import RunnerJobsTable from './runner_jobs_table.vue';
@@ -18,19 +17,26 @@ export default {
   name: 'RunnerJobs',
   components: {
     CrudComponent,
+    HelpPopover,
     RunnerJobsTable,
     RunnerPagination,
     RunnerJobsEmptyState,
   },
   props: {
-    runner: {
-      type: Object,
+    runnerId: {
+      type: String,
       required: true,
+    },
+    showAccessHelp: {
+      type: Boolean,
+      required: false,
+      default: false,
     },
   },
   data() {
     return {
       jobs: {
+        count: '',
         items: [],
         pageInfo: {},
       },
@@ -45,6 +51,7 @@ export default {
       },
       update({ runner }) {
         return {
+          count: runner?.jobCount || '',
           items: runner?.jobs?.nodes || [],
           pageInfo: runner?.jobs?.pageInfo || {},
         };
@@ -57,9 +64,8 @@ export default {
   },
   computed: {
     variables() {
-      const { id } = this.runner;
       return {
-        id,
+        id: convertToGraphQLId(TYPENAME_CI_RUNNER, this.runnerId),
         ...getPaginationVariables(this.pagination, RUNNER_DETAILS_JOBS_PAGE_SIZE),
       };
     },
@@ -72,19 +78,22 @@ export default {
       this.pagination = value;
     },
   },
-  I18N_JOBS,
-  I18N_NO_JOBS_FOUND,
 };
 </script>
 
 <template>
   <crud-component
-    :title="$options.I18N_JOBS"
+    :title="s__('Runners|Jobs')"
     icon="pipeline"
-    :count="runner.jobCount"
+    :count="jobs.count"
     :is-loading="loading"
-    class="gl-mt-5"
   >
+    <template v-if="showAccessHelp" #count>
+      <help-popover>
+        {{ s__('Runners|Jobs in projects you have access to.') }}
+      </help-popover>
+    </template>
+
     <runner-jobs-table v-if="jobs.items.length" :jobs="jobs.items" />
     <runner-jobs-empty-state v-else />
 

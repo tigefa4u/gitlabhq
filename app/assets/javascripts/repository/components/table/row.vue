@@ -244,10 +244,13 @@ export default {
       <template v-if="isSubmodule">
         @ <gl-link :href="submoduleTreeUrl" class="commit-sha">{{ shortSha }}</gl-link>
       </template>
+      <!-- The z-index of the lock must be the same (or higher) as tree-item-link::before in files.scss -->
       <gl-icon
         v-if="hasLockLabel"
         v-gl-tooltip
+        class="gl-relative gl-z-1"
         :title="commitData.lockLabel"
+        :aria-label="commitData.lockLabel"
         name="lock"
         :size="12"
       />
@@ -266,7 +269,11 @@ export default {
     </td>
     <td class="tree-time-ago cursor-default gl-text-right gl-text-subtle">
       <gl-intersection-observer @appear="rowAppeared" @disappear="rowDisappeared">
-        <timeago-tooltip v-if="commitData" :time="commitData.committedDate" />
+        <timeago-tooltip
+          v-if="commitData"
+          :time="commitData.committedDate"
+          :show-date-when-over-a-year="false"
+        />
       </gl-intersection-observer>
       <gl-skeleton-loader v-if="showSkeletonLoader" :lines="1" />
     </td>

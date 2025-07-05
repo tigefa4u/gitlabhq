@@ -3,18 +3,29 @@ import VueRouter from 'vue-router';
 import { GlDisclosureDropdownItem, GlModal } from '@gitlab/ui';
 import { shallowMount } from '@vue/test-utils';
 import waitForPromises from 'helpers/wait_for_promises';
+import { useLocalStorageSpy } from 'helpers/local_storage_helper';
 import CreateWorkItem from '~/work_items/components/create_work_item.vue';
 import CreateWorkItemModal from '~/work_items/components/create_work_item_modal.vue';
 import {
+  WORK_ITEM_TYPE_NAME_EPIC,
+  WORK_ITEM_TYPE_NAME_INCIDENT,
+  WORK_ITEM_TYPE_NAME_ISSUE,
   WORK_ITEM_TYPE_NAME_KEY_RESULT,
+  WORK_ITEM_TYPE_NAME_OBJECTIVE,
+  WORK_ITEM_TYPE_NAME_REQUIREMENTS,
+  WORK_ITEM_TYPE_NAME_TASK,
+  WORK_ITEM_TYPE_NAME_TEST_CASE,
+  WORK_ITEM_TYPE_NAME_TICKET,
+  WORK_ITEM_TYPE_ROUTE_EPIC,
+  WORK_ITEM_TYPE_ROUTE_ISSUE,
   WORK_ITEM_TYPE_ROUTE_WORK_ITEM,
-  WORK_ITEMS_TYPE_MAP,
 } from '~/work_items/constants';
 import CreateWorkItemCancelConfirmationModal from '~/work_items/components/create_work_item_cancel_confirmation_modal.vue';
 
 const showToast = jest.fn();
 
 describe('CreateWorkItemModal', () => {
+  useLocalStorageSpy();
   Vue.use(VueRouter);
   let wrapper;
   const router = new VueRouter({
@@ -40,22 +51,20 @@ describe('CreateWorkItemModal', () => {
   const createComponent = ({
     asDropdownItem = false,
     hideButton = false,
-    preselectedWorkItemType = 'EPIC',
+    preselectedWorkItemType = WORK_ITEM_TYPE_NAME_EPIC,
     relatedItem = null,
     alwaysShowWorkItemTypeSelect = false,
     namespaceFullName = 'GitLab.org / GitLab',
   } = {}) => {
     wrapper = shallowMount(CreateWorkItemModal, {
       propsData: {
+        fullPath: 'full-path',
         preselectedWorkItemType,
         asDropdownItem,
         hideButton,
         relatedItem,
         alwaysShowWorkItemTypeSelect,
         namespaceFullName,
-      },
-      provide: {
-        fullPath: 'full-path',
       },
       mocks: {
         $toast: {
@@ -68,6 +77,47 @@ describe('CreateWorkItemModal', () => {
       router,
     });
   };
+
+  beforeEach(() => {
+    gon.current_user_id = 1;
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('renders create-work-item component with preselectedWorkItemType prop set from localStorage draft', async () => {
+    localStorage.setItem(
+      'autosave/new-full-path-widgets-draft',
+      JSON.stringify({ TYPE: { name: WORK_ITEM_TYPE_NAME_ISSUE } }),
+    );
+
+    createComponent();
+
+    await waitForPromises();
+
+    expect(findForm().props('preselectedWorkItemType')).toBe(WORK_ITEM_TYPE_NAME_ISSUE);
+  });
+
+  it('renders create-work-item component with preselectedWorkItemType prop set from localStorage draft with related item id', async () => {
+    localStorage.setItem(
+      'autosave/new-full-path-related-22-widgets-draft',
+      JSON.stringify({ TYPE: { name: WORK_ITEM_TYPE_NAME_ISSUE } }),
+    );
+
+    createComponent({
+      relatedItem: {
+        id: 'gid://gitlab/WorkItem/22',
+        type: 'Issue',
+        reference: 'full-path#22',
+        webUrl: '/full-path/-/issues/22',
+      },
+    });
+
+    await waitForPromises();
+
+    expect(findForm().props('preselectedWorkItemType')).toBe(WORK_ITEM_TYPE_NAME_ISSUE);
+  });
 
   it('shows toast on workItemCreated', async () => {
     createComponent();
@@ -102,6 +152,19 @@ describe('CreateWorkItemModal', () => {
       const mockEvent = { preventDefault: jest.fn(), ctrlKey: true };
       findTrigger().vm.$emit('click', mockEvent);
 
+      await nextTick();
+
+      expect(findCreateModal().props('visible')).toBe(false);
+      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it('does not open modal or prevent link default when user is signed out', async () => {
+      window.gon = { current_user_id: undefined };
+      createComponent();
+      await waitForPromises();
+
+      const mockEvent = { preventDefault: jest.fn(), ctrlKey: true };
+      findTrigger().vm.$emit('click', mockEvent);
       await nextTick();
 
       expect(findCreateModal().props('visible')).toBe(false);
@@ -151,24 +214,38 @@ describe('CreateWorkItemModal', () => {
     expect(findCreateModal().props('visible')).toBe(false);
   });
 
-  for (const [preselectedWorkItemType, vals] of Object.entries(WORK_ITEMS_TYPE_MAP)) {
-    it(`has link to new work item page in modal header for ${preselectedWorkItemType}`, async () => {
-      createComponent({ preselectedWorkItemType });
-
-      const routeParamName = vals.routeParamName || WORK_ITEM_TYPE_ROUTE_WORK_ITEM;
-
+  it.each`
+    workItemType                        | routeParamName
+    ${WORK_ITEM_TYPE_NAME_EPIC}         | ${WORK_ITEM_TYPE_ROUTE_EPIC}
+    ${WORK_ITEM_TYPE_NAME_ISSUE}        | ${WORK_ITEM_TYPE_ROUTE_ISSUE}
+    ${WORK_ITEM_TYPE_NAME_INCIDENT}     | ${WORK_ITEM_TYPE_ROUTE_WORK_ITEM}
+    ${WORK_ITEM_TYPE_NAME_KEY_RESULT}   | ${WORK_ITEM_TYPE_ROUTE_WORK_ITEM}
+    ${WORK_ITEM_TYPE_NAME_OBJECTIVE}    | ${WORK_ITEM_TYPE_ROUTE_WORK_ITEM}
+    ${WORK_ITEM_TYPE_NAME_REQUIREMENTS} | ${WORK_ITEM_TYPE_ROUTE_WORK_ITEM}
+    ${WORK_ITEM_TYPE_NAME_TASK}         | ${WORK_ITEM_TYPE_ROUTE_WORK_ITEM}
+    ${WORK_ITEM_TYPE_NAME_TEST_CASE}    | ${WORK_ITEM_TYPE_ROUTE_WORK_ITEM}
+    ${WORK_ITEM_TYPE_NAME_TICKET}       | ${WORK_ITEM_TYPE_ROUTE_WORK_ITEM}
+  `(
+    `has link to new work item page in modal header for $workItemType`,
+    async ({ workItemType, routeParamName }) => {
+      createComponent({ preselectedWorkItemType: workItemType });
       await waitForPromises();
 
       expect(findOpenInFullPageButton().attributes().href).toBe(
         `/full-path/-/${routeParamName}/new`,
       );
-    });
-  }
+    },
+  );
 
   describe('when there is a related item', () => {
     beforeEach(async () => {
       createComponent({
-        relatedItem: { id: 'gid://gitlab/WorkItem/843', type: 'Epic', reference: 'flightjs#53' },
+        relatedItem: {
+          id: 'gid://gitlab/WorkItem/843',
+          type: 'Epic',
+          reference: 'flightjs#53',
+          webUrl: 'http://gdk.test:3000/flightjs/Flight',
+        },
       });
       await waitForPromises();
       await nextTick();

@@ -14,7 +14,7 @@ class Packages::Package < ApplicationRecord
   DETAILED_INFO_STATUSES = [:default, :deprecated].freeze
   STATUS_MESSAGE_MAX_LENGTH = 255
 
-  enum package_type: {
+  enum :package_type, {
     maven: 1,
     npm: 2,
     conan: 3,
@@ -31,7 +31,7 @@ class Packages::Package < ApplicationRecord
     ml_model: 14
   }
 
-  enum status: { default: 0, hidden: 1, processing: 2, error: 3, pending_destruction: 4, deprecated: 5 }
+  enum :status, { default: 0, hidden: 1, processing: 2, error: 3, pending_destruction: 4, deprecated: 5 }
 
   belongs_to :project
   belongs_to :creator, class_name: 'User'
@@ -50,16 +50,12 @@ class Packages::Package < ApplicationRecord
   validates :project, presence: true
   validates :name, presence: true
 
-  validates :name, format: { with: Gitlab::Regex.package_name_regex }, unless: -> { conan? || generic? || debian? }
-
   validates :name,
     uniqueness: {
       scope: %i[project_id version package_type],
       conditions: -> { not_pending_destruction }
     },
     unless: -> { pending_destruction? || conan? }
-
-  validates :version, format: { with: Gitlab::Regex.maven_version_regex }, if: -> { version? && maven? }
 
   scope :for_projects, ->(project_ids) { where(project_id: project_ids) }
   scope :with_name, ->(name) { where(name: name) }

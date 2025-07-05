@@ -10,8 +10,8 @@
     - .default-before_script
     - .production
     - .ruby-cache
-    - .preflight:rules:rails-production-server-boot
     - .use-pg16
+    - .preflight:rules:rails-production-server-boot
   artifacts:
     expire_in: 7d
     when: always

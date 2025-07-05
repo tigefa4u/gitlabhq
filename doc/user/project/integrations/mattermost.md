@@ -1,6 +1,6 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Create
+group: Import
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Mattermost notifications
 ---
@@ -68,6 +68,6 @@ to send the notifications:
    - **Labels to be notified**: Optional. Labels required for the issue or merge request
      to trigger a notification. Leave blank to notify for all issues and merge requests.
    - **Labels to be notified behavior**: When you use the **Labels to be notified** filter,
-     messages are sent when an issue or merge request contains _any_ of the labels specified
+     messages are sent when an issue or merge request contains any of the labels specified
      in the filter. You can also choose to trigger messages only when the issue or merge request
-     contains _all_ the labels defined in the filter.
+     contains all the labels defined in the filter.

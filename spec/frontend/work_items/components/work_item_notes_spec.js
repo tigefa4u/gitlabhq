@@ -6,7 +6,12 @@ import setWindowLocation from 'helpers/set_window_location_helper';
 import createMockApollo from 'helpers/mock_apollo_helper';
 import { stubComponent } from 'helpers/stub_component';
 import waitForPromises from 'helpers/wait_for_promises';
+import { setHTMLFixture, resetHTMLFixture } from 'helpers/fixtures';
 import { scrollToTargetOnResize } from '~/lib/utils/resize_observer';
+import { CopyAsGFM } from '~/behaviors/markdown/copy_as_gfm';
+import { Mousetrap } from '~/lib/mousetrap';
+import { ISSUABLE_COMMENT_OR_REPLY, keysFor } from '~/behaviors/shortcuts/keybindings';
+import gfmEventHub from '~/vue_shared/components/markdown/eventhub';
 import SystemNote from '~/work_items/components/notes/system_note.vue';
 import WorkItemNotes from '~/work_items/components/work_item_notes.vue';
 import WorkItemDiscussion from '~/work_items/components/notes/work_item_discussion.vue';
@@ -79,10 +84,11 @@ describe('WorkItemNotes component', () => {
   const findNotesLoading = () => wrapper.findComponent(WorkItemNotesLoading);
   const findActivityHeader = () => wrapper.findComponent(WorkItemNotesActivityHeader);
   const findSystemNoteAtIndex = (index) => findAllSystemNotes().at(index);
-  const findAllWorkItemCommentNotes = () => wrapper.findAllComponents(WorkItemDiscussion);
-  const findWorkItemCommentNoteAtIndex = (index) => findAllWorkItemCommentNotes().at(index);
+  const findAllWorkItemDiscussions = () => wrapper.findAllComponents(WorkItemDiscussion);
+  const findWorkItemDiscussionAtIndex = (index) => findAllWorkItemDiscussions().at(index);
   const findDeleteNoteModal = () => wrapper.findComponent(GlModal);
   const findWorkItemAddNote = () => wrapper.findComponent(WorkItemAddNote);
+  const findCommentsSection = () => wrapper.find('.issuable-discussion');
 
   const workItemNoteQueryHandler = jest.fn().mockResolvedValue(mockWorkItemNoteResponse);
   const workItemNotesQueryHandler = jest.fn().mockResolvedValue(mockWorkItemNotesByIidResponse);
@@ -109,6 +115,7 @@ describe('WorkItemNotes component', () => {
     workItemIid = mockWorkItemIid,
     defaultWorkItemNotesQueryHandler = workItemNotesQueryHandler,
     deleteWINoteMutationHandler = deleteWorkItemNoteMutationSuccessHandler,
+    canCreateNote = false,
     isGroup = false,
     isDrawer = false,
     isModal = false,
@@ -116,7 +123,16 @@ describe('WorkItemNotes component', () => {
     parentId = null,
     propsData = {},
   } = {}) => {
+    setHTMLFixture(`
+      <div class="work-item-overview">
+        <div class="js-work-item-description">
+          <p>Work Item Description</p>
+        </div>
+        <div id="root"></div>
+      </div>
+    `);
     wrapper = shallowMount(WorkItemNotes, {
+      attachTo: '#root',
       apolloProvider: createMockApollo([
         [workItemNoteQuery, workItemNoteQueryHandler],
         [workItemNotesByIidQuery, defaultWorkItemNotesQueryHandler],
@@ -130,6 +146,7 @@ describe('WorkItemNotes component', () => {
       },
       propsData: {
         fullPath: 'test-path',
+        uploadsPath: '/group/project/uploads',
         workItemId,
         workItemIid,
         workItemType: 'task',
@@ -137,6 +154,7 @@ describe('WorkItemNotes component', () => {
         isModal,
         isWorkItemConfidential,
         parentId,
+        canCreateNote,
         ...propsData,
       },
       stubs: {
@@ -149,6 +167,10 @@ describe('WorkItemNotes component', () => {
     createComponent();
   });
 
+  afterEach(() => {
+    resetHTMLFixture();
+  });
+
   it('has the work item note activity header', () => {
     expect(findActivityHeader().exists()).toBe(true);
   });
@@ -156,6 +178,14 @@ describe('WorkItemNotes component', () => {
   describe('when notes are loading', () => {
     it('renders skeleton loader', () => {
       expect(findNotesLoading().exists()).toBe(true);
+    });
+
+    it('renders the main discussion container even when notes are loading', () => {
+      expect(findCommentsSection().exists()).toBe(true);
+    });
+
+    it('renders the comment form even when notes are loading', () => {
+      expect(findWorkItemAddNote().exists()).toBe(true);
     });
 
     it('does not render system notes', () => {
@@ -255,8 +285,8 @@ describe('WorkItemNotes component', () => {
 
       await waitForPromises();
 
-      expect(findWorkItemCommentNoteAtIndex(0).props('discussion')).toEqual(
-        mockWorkItemNoteResponse.data.note.discussion.notes.nodes,
+      expect(findWorkItemDiscussionAtIndex(0).props('discussion')).toEqual(
+        mockWorkItemNoteResponse.data.note.discussion,
       );
     });
   });
@@ -277,6 +307,16 @@ describe('WorkItemNotes component', () => {
         pageSize: 20,
       });
       expect(findAllSystemNotes()).toHaveLength(mockNotesWidgetResponse.discussions.nodes.length);
+    });
+
+    it('renders the main discussion container when notes are loaded', async () => {
+      await waitForPromises();
+      expect(findCommentsSection().exists()).toBe(true);
+    });
+
+    it('renders the comment form even when notes are loaded', async () => {
+      await waitForPromises();
+      expect(findWorkItemAddNote().exists()).toBe(true);
     });
   });
 
@@ -359,15 +399,15 @@ describe('WorkItemNotes component', () => {
 
     it('should have work item notes', () => {
       expect(workItemNotesWithCommentsQueryHandler).toHaveBeenCalled();
-      expect(findAllWorkItemCommentNotes()).toHaveLength(mockDiscussions.length);
+      expect(findAllWorkItemDiscussions()).toHaveLength(mockDiscussions.length);
     });
 
     it('should pass all the correct props to work item comment note', () => {
       const commentIndex = 0;
-      const firstCommentNote = findWorkItemCommentNoteAtIndex(commentIndex);
+      const firstDiscussion = findWorkItemDiscussionAtIndex(commentIndex);
 
-      expect(firstCommentNote.props()).toMatchObject({
-        discussion: mockDiscussions[commentIndex].notes.nodes,
+      expect(firstDiscussion.props()).toMatchObject({
+        discussion: mockDiscussions[commentIndex],
         autocompleteDataSources: autocompleteDataSources({
           fullPath: 'test-path',
           iid: mockWorkItemIid,
@@ -386,7 +426,7 @@ describe('WorkItemNotes component', () => {
     });
     await waitForPromises();
 
-    findWorkItemCommentNoteAtIndex(0).vm.$emit('deleteNote', { id: '1', isLastNote: false });
+    findWorkItemDiscussionAtIndex(0).vm.$emit('deleteNote', { id: '1', isLastNote: false });
     expect(showModal).toHaveBeenCalled();
   });
 
@@ -401,7 +441,7 @@ describe('WorkItemNotes component', () => {
     it('sends the mutation with correct variables', () => {
       const noteId = 'some-test-id';
 
-      findWorkItemCommentNoteAtIndex(0).vm.$emit('deleteNote', { id: noteId });
+      findWorkItemDiscussionAtIndex(0).vm.$emit('deleteNote', { id: noteId });
       findDeleteNoteModal().vm.$emit('primary');
 
       expect(deleteWorkItemNoteMutationSuccessHandler).toHaveBeenCalledWith({
@@ -412,22 +452,22 @@ describe('WorkItemNotes component', () => {
     });
 
     it('successfully removes the note from the discussion', async () => {
-      expect(findWorkItemCommentNoteAtIndex(0).props('discussion')).toHaveLength(2);
+      expect(findWorkItemDiscussionAtIndex(0).props('discussion').notes.nodes).toHaveLength(2);
 
-      findWorkItemCommentNoteAtIndex(0).vm.$emit('deleteNote', {
+      findWorkItemDiscussionAtIndex(0).vm.$emit('deleteNote', {
         id: mockDiscussions[0].notes.nodes[0].id,
       });
       findDeleteNoteModal().vm.$emit('primary');
 
       await waitForPromises();
-      expect(findWorkItemCommentNoteAtIndex(0).props('discussion')).toHaveLength(1);
+      expect(findWorkItemDiscussionAtIndex(0).props('discussion').notes.nodes).toHaveLength(1);
     });
 
     it('successfully removes the discussion from work item if discussion only had one note', async () => {
-      const secondDiscussion = findWorkItemCommentNoteAtIndex(1);
+      const secondDiscussion = findWorkItemDiscussionAtIndex(1);
 
-      expect(findAllWorkItemCommentNotes()).toHaveLength(2);
-      expect(secondDiscussion.props('discussion')).toHaveLength(1);
+      expect(findAllWorkItemDiscussions()).toHaveLength(2);
+      expect(secondDiscussion.props('discussion').notes.nodes).toHaveLength(1);
 
       secondDiscussion.vm.$emit('deleteNote', {
         id: mockDiscussions[1].notes.nodes[0].id,
@@ -436,7 +476,7 @@ describe('WorkItemNotes component', () => {
       findDeleteNoteModal().vm.$emit('primary');
 
       await waitForPromises();
-      expect(findAllWorkItemCommentNotes()).toHaveLength(1);
+      expect(findAllWorkItemDiscussions()).toHaveLength(1);
     });
   });
 
@@ -447,7 +487,7 @@ describe('WorkItemNotes component', () => {
     });
     await waitForPromises();
 
-    findWorkItemCommentNoteAtIndex(0).vm.$emit('deleteNote', {
+    findWorkItemDiscussionAtIndex(0).vm.$emit('deleteNote', {
       id: mockDiscussions[0].notes.nodes[0].id,
     });
     findDeleteNoteModal().vm.$emit('primary');
@@ -493,7 +533,7 @@ describe('WorkItemNotes component', () => {
     });
     await waitForPromises();
 
-    expect(findWorkItemCommentNoteAtIndex(0).props('isWorkItemConfidential')).toBe(true);
+    expect(findWorkItemDiscussionAtIndex(0).props('isWorkItemConfidential')).toBe(true);
   });
 
   describe('when project context', () => {
@@ -511,7 +551,7 @@ describe('WorkItemNotes component', () => {
         defaultWorkItemNotesQueryHandler: workItemNotesWithCommentsQueryHandler,
       });
       await waitForPromises();
-      expect(findAllWorkItemCommentNotes().at(0).props('isExpandedOnLoad')).toBe(true);
+      expect(findAllWorkItemDiscussions().at(0).props('isExpandedOnLoad')).toBe(true);
     });
 
     it('should be collapsed when the discussion is resolved', async () => {
@@ -522,7 +562,7 @@ describe('WorkItemNotes component', () => {
       });
 
       await waitForPromises();
-      expect(findAllWorkItemCommentNotes().at(0).props('isExpandedOnLoad')).toBe(false);
+      expect(findAllWorkItemDiscussions().at(0).props('isExpandedOnLoad')).toBe(false);
     });
 
     it('should be expanded when the notes are resolved but the target note hash has note id', async () => {
@@ -537,7 +577,7 @@ describe('WorkItemNotes component', () => {
       await waitForPromises();
       await nextTick();
 
-      expect(findAllWorkItemCommentNotes().at(0).props('isExpandedOnLoad')).toBe(true);
+      expect(findAllWorkItemDiscussions().at(0).props('isExpandedOnLoad')).toBe(true);
     });
   });
 
@@ -593,7 +633,147 @@ describe('WorkItemNotes component', () => {
       expect(findWorkItemAddNote().props('hideFullscreenMarkdownButton')).toBe(true);
     });
     it('passes prop to work-item-discussion', () => {
-      expect(findAllWorkItemCommentNotes().at(0).props('hideFullscreenMarkdownButton')).toBe(true);
+      expect(findAllWorkItemDiscussions().at(0).props('hideFullscreenMarkdownButton')).toBe(true);
     });
+  });
+
+  describe('r key (reply) shortcut', () => {
+    const triggerReplyShortcut = async () => {
+      Mousetrap.trigger(keysFor(ISSUABLE_COMMENT_OR_REPLY)[0]);
+      await nextTick();
+    };
+
+    beforeEach(async () => {
+      window.gon.current_user_id = 1;
+      createComponent({
+        defaultWorkItemNotesQueryHandler: jest
+          .fn()
+          .mockResolvedValue(mockWorkItemNotesResponseWithComments()),
+        canCreateNote: true,
+      });
+
+      jest.spyOn(gfmEventHub, '$emit');
+      jest.spyOn(wrapper.vm, 'appendText').mockImplementation(() => {});
+
+      await waitForPromises();
+    });
+
+    it('emits `quote-reply` event on $root when reply quotes an existing discussion', async () => {
+      jest.spyOn(CopyAsGFM, 'selectionToGfm').mockReturnValueOnce('foo');
+      jest.spyOn(wrapper.vm, 'getDiscussionIdFromSelection').mockReturnValue('discussion-1');
+      await triggerReplyShortcut();
+
+      expect(gfmEventHub.$emit).toHaveBeenCalledWith('quote-reply', {
+        discussionId: 'discussion-1',
+        text: 'foo',
+        event: expect.any(Object),
+      });
+    });
+
+    it.each`
+      sortDirection | description
+      ${ASC}        | ${'oldest-first'}
+      ${DESC}       | ${'newest-first'}
+    `(
+      'calls on appendText on work-item-add-note form with discussion sort direction set to $description',
+      async ({ sortDirection }) => {
+        jest.spyOn(CopyAsGFM, 'selectionToGfm').mockReturnValueOnce('foo');
+
+        findActivityHeader().vm.$emit('changeSort', sortDirection);
+        await nextTick();
+
+        await triggerReplyShortcut();
+
+        expect(gfmEventHub.$emit).not.toHaveBeenCalledWith();
+        expect(wrapper.vm.appendText).toHaveBeenCalledWith('foo');
+      },
+    );
+  });
+
+  describe('up-arrow key (edit last note) shortcut', () => {
+    const setupComponent = async ({
+      notesResponse = mockWorkItemNotesResponseWithComments(),
+    } = {}) => {
+      window.gon.current_user_id = 1;
+
+      jest.clearAllMocks();
+
+      jest.spyOn(gfmEventHub, '$emit').mockImplementation(jest.fn());
+      jest.spyOn(gfmEventHub, '$on').mockImplementation(jest.fn());
+
+      createComponent({
+        defaultWorkItemNotesQueryHandler: jest.fn().mockResolvedValue(notesResponse),
+        canCreateNote: true,
+      });
+
+      await waitForPromises();
+    };
+
+    it('attaches `edit-current-user-last-note` event listener on mount', async () => {
+      await setupComponent();
+
+      expect(gfmEventHub.$on).toHaveBeenCalledWith(
+        'edit-current-user-last-note',
+        wrapper.vm.editCurrentUserLastNote,
+      );
+    });
+
+    it('emits `edit-note` on markdown-editor event-hub with last user note', async () => {
+      const mockLastNote =
+        mockWorkItemNotesWidgetResponseWithComments.discussions.nodes[1].notes.nodes[0];
+      await setupComponent();
+
+      const registeredHandler = gfmEventHub.$on.mock.calls.find(
+        (call) => call[0] === 'edit-current-user-last-note',
+      )[1];
+
+      const mockEvent = {
+        target: wrapper.findComponent(WorkItemAddNote).element,
+      };
+
+      await registeredHandler(mockEvent);
+
+      expect(gfmEventHub.$emit).toHaveBeenCalledWith('edit-note', {
+        note: {
+          ...mockLastNote,
+        },
+      });
+    });
+
+    it('does not emit `edit-note` on markdown-editor event-hub when no last user note is found', async () => {
+      await setupComponent({
+        notesResponse: mockWorkItemNotesByIidResponse,
+      });
+
+      const registeredHandler = gfmEventHub.$on.mock.calls.find(
+        (call) => call[0] === 'edit-current-user-last-note',
+      )[1];
+
+      const mockEvent = {
+        target: wrapper.findComponent(WorkItemAddNote).element,
+      };
+
+      await registeredHandler(mockEvent);
+
+      expect(gfmEventHub.$emit).not.toHaveBeenCalledWith('edit-note');
+    });
+  });
+
+  it('emits `focus` event when WorkItemAddNote emits `focus`', async () => {
+    createComponent();
+    await waitForPromises();
+
+    findWorkItemAddNote().vm.$emit('focus');
+
+    expect(wrapper.emitted('focus')).toHaveLength(1);
+  });
+
+  it('emits `blur` event when WorkItemAddNote emits `blur`', async () => {
+    createComponent();
+    await waitForPromises();
+
+    findWorkItemAddNote().vm.$emit('blur');
+
+    expect(wrapper.emitted('blur')).toHaveLength(1);
   });
 });

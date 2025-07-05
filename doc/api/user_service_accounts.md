@@ -12,24 +12,21 @@ title: Service account users API
 
 {{< /details >}}
 
-Use this API to interact with service accounts. For more information, see [Service accounts](../user/profile/service_accounts.md).
+Use this API to interact with instance service accounts. Instance service accounts are available to
+an entire GitLab instance, but must still be added to groups and projects like a human user.
+For more information, see [service accounts](../user/profile/service_accounts.md).
 
-## List all service account users
+You can also interact with service accounts through the [users API](users.md).
 
-{{< details >}}
-
-- Tier: Premium, Ultimate
-- Offering: GitLab Self-Managed, GitLab Dedicated
-
-{{< /details >}}
+## List all instance service accounts
 
 {{< history >}}
 
-- List all service account users [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/416729) in GitLab 17.1.
+- List all service accounts [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/416729) in GitLab 17.1.
 
 {{< /history >}}
 
-Lists all service account users.
+Lists all instance service accounts.
 
 Use the `page` and `per_page` [pagination parameters](rest/_index.md#offset-based-pagination) to filter the results.
 
@@ -44,9 +41,9 @@ GET /service_accounts
 Supported attributes:
 
 | Attribute  | Type   | Required | Description |
-|:-----------|:-------|:---------|:------------|
+| ---------- | ------ | -------- | ----------- |
 | `order_by` | string | no       | Attribute to order results by. Possible values: `id` or `username`. Default value: `id`. |
-| `sort`     | string | no       | Direction to sort results by. Possible values: `desc` or `asc`. Default value: `desc`.   |
+| `sort`     | string | no       | Direction to sort results by. Possible values: `desc` or `asc`. Default value: `desc`. |
 
 Example request:
 
@@ -71,16 +68,17 @@ Example response:
 ]
 ```
 
-## Create a service account user
+## Create an instance service account
 
 {{< history >}}
 
-- Create a service account user was [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/406782) in GitLab 16.1
-- Username and name attributes [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/144841) in GitLab 16.10.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/406782) in GitLab 16.1
+- `username` and `name` attributes [added](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/144841) in GitLab 16.10.
+- `email` attribute [added](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/178689) in GitLab 17.9.
 
 {{< /history >}}
 
-Creates a service account user.
+Creates an instance service account.
 
 Prerequisites:
 
@@ -88,15 +86,16 @@ Prerequisites:
 
 ```plaintext
 POST /service_accounts
+POST /service_accounts?email=custom_email@gitlab.example.com
 ```
 
 Supported attributes:
 
 | Attribute  | Type   | Required | Description |
-|:-----------|:-------|:---------|:------------|
+| ---------- | ------ | -------- | ----------- |
 | `name`     | string | no       | Name of the user. If not set, uses `Service account user`. |
-| `username` | string | no       | Username of the user account. If not set, generates a name prepended with `service_account_`. |
-| `email`    | string | no       | Email of the user account. If not set, generates a no-reply email address. |
+| `username` | string | no       | Username of the user account. If undefined, generates a name prepended with `service_account_`. |
+| `email`    | string | no       | Email of the user account. If undefined, generates a no-reply email address. |
 
 Example request:
 
@@ -115,38 +114,5 @@ Example response:
 }
 ```
 
-### Specify a custom email address
-
-{{< history >}}
-
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/178689) in GitLab 17.9.
-
-{{< /history >}}
-
-You can specify a custom email address at service account creation to receive
-notifications on this service account's actions.
-
-Example request:
-
-```shell
-curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" --data "email=custom_email@gitlab.example.com" "https://gitlab.example.com/api/v4/service_accounts"
-```
-
-Example response:
-
-```json
-{
-  "id": 57,
-  "username": "service_account_6018816a18e515214e0c34c2b33523fc",
-  "name": "Service account user",
-  "email": "custom_email@gitlab.example.com"
-}
-```
-
-This fails if the email address has already been taken by another user:
-
-```json
-{
-  "message": "400 Bad request - Email has already been taken"
-}
-```
+If the email address defined by the `email` attribute is already in use by another user,
+returns a `400 Bad request` error.

@@ -92,42 +92,6 @@ RSpec.describe GitlabSchema.types['Note'], feature_category: :team_planning do
     end
   end
 
-  describe '#body_first_line_html' do
-    let(:note_text) { 'note body content' }
-    let(:note) { build(:note, note: note_text, project: project) }
-
-    subject(:resolve_result) { resolve_field(:body_first_line_html, note, current_user: user) }
-
-    it 'calls first_line_in_markdown with the expected arguments' do
-      expect_next_instance_of(described_class) do |note_type|
-        expect(note_type).to receive(:first_line_in_markdown)
-          .with(kind_of(NotePresenter), :note, 125, project: note.project)
-          .and_call_original
-      end
-
-      resolve_result
-    end
-
-    context 'when the note body is shorter than 125 characters' do
-      it 'returns the content unchanged' do
-        expect(resolve_result).to eq('<p>note body content</p>')
-      end
-    end
-
-    context 'when the note body is longer than 125 characters' do
-      let(:note_text) do
-        'this is a note body content which is very, very, very, veeery, long and is supposed ' \
-          'to be longer that 125 characters in length, with a few extra'
-      end
-
-      it 'returns the content trimmed with an ellipsis' do
-        expect(resolve_result).to eq(
-          '<p>this is a note body content which is very, very, very, veeery, long and is supposed ' \
-            'to be longer that 125 characters in le...</p>')
-      end
-    end
-  end
-
   describe '#project' do
     subject(:note_project) { resolve_field(:project, note, current_user: user) }
 
@@ -168,6 +132,21 @@ RSpec.describe GitlabSchema.types['Note'], feature_category: :team_planning do
 
       it 'returns nil' do
         expect(note_position).to be_nil
+      end
+    end
+  end
+
+  describe '.authorization_scopes' do
+    it 'allows ai_workflows scope token' do
+      expect(described_class.authorization_scopes).to include(:ai_workflows)
+    end
+  end
+
+  describe 'fields with :ai_workflows scope' do
+    %w[author body createdAt id].each do |field_name|
+      it "includes :ai_workflows scope for the #{field_name} field" do
+        field = described_class.fields[field_name]
+        expect(field.instance_variable_get(:@scopes)).to include(:ai_workflows)
       end
     end
   end

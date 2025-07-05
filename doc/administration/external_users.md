@@ -12,75 +12,80 @@ title: External users
 
 {{< /details >}}
 
-In cases where it is desired that a user has access only to some internal or
-private projects, there is the option of creating **External Users**. This
-feature may be useful when for example a contractor is working on a given
-project and should only have access to that project.
+External users have limited access to internal or private groups and projects in the instance. Unlike regular users, external users must be explicitly added to a group or project. However, like regular users, external users are assigned a member role and gain all the associated [permissions](../user/permissions.md#project-members-permissions).
 
 External users:
 
-- Cannot create project, groups, and snippets in their personal namespaces.
-- Can only create projects (including forks), subgroups, and snippets within top-level groups to which they are explicitly granted access.
-- Can access public groups and public projects.
-- Can only access projects and groups to which they are explicitly granted access. External users cannot access internal or private projects or groups that they are not granted access to.
-- Can only access public snippets.
+- Can access public groups, projects, and snippets.
+- Can access internal or private groups and projects where they are members.
+- Can create subgroups, projects, and snippets in any top-level groups where they are members.
+- Cannot create groups, projects, or snippets in their personal namespace.
 
-Access can be granted by adding the user as member to the project or group.
-Like usual users, they receive a role for the project or group with all
-the abilities that are mentioned in the [permissions table](../user/permissions.md#project-members-permissions).
-For example, if an external user is added as Guest, and your project is internal or
-private, they do not have access to the code; you need to grant the external
-user access at the Reporter level or above if you want them to have access to the code. You should
-always take into account the
-[project's visibility](../user/public_access.md#change-project-visibility) and [permissions settings](../user/project/settings/_index.md#configure-project-features-and-permissions)
-as well as the permission level of the user.
+External users are commonly created when a user outside an organization needs access to only a
+specific project. When assigning a role to an external user, you should be aware of the
+[project visibility](../user/public_access.md#change-project-visibility) and
+[permissions](../user/project/settings/_index.md#configure-project-features-and-permissions)
+associated with the role. For example, if an external user is assigned the Guest role for a
+private project, they cannot access the code.
 
 {{< alert type="note" >}}
 
-External users still count towards a license seat, unless the user has the [Guest role](../subscriptions/self_managed/_index.md#free-guest-users) in the Ultimate tier.
+An external user counts as a billable user and consumes a license seat.
 
 {{< /alert >}}
 
-An administrator can flag a user as external by either of the following methods:
+## Create an external user
 
-- [Through the API](../api/users.md#modify-a-user).
-- Using the GitLab UI:
-  1. On the left sidebar, at the bottom, select **Admin**.
-  1. On the left sidebar, select **Overview > Users** to create a new user or edit an existing one.
-     There, you can find the option to flag the user as external.
+To create a new external user:
 
-Additionally, users can be set as external users using:
+1. On the left sidebar, at the bottom, select **Admin**.
+1. Select **Overview > Users**.
+1. Select **New user**.
+1. In the **Account** section, enter the required account information.
+1. Optional. In the **Access** section, configure any project limits or user type settings.
+1. Select the **External** checkbox.
+1. Select **Create user**.
+
+You can also create external users with:
 
 - [SAML groups](../integration/saml.md#external-groups).
 - [LDAP groups](auth/ldap/ldap_synchronization.md#external-groups).
-- the [External providers list](../integration/omniauth.md#create-an-external-providers-list).
+- The [External providers list](../integration/omniauth.md#create-an-external-providers-list).
+- The [users API](../api/users.md).
 
-## Set a new user to external
+## Make new users external by default
 
-By default, new users are not set as external users. This behavior can be changed
-by an administrator:
+You can configure your instance to make all new users external by default. You can modify these user
+accounts later to remove the external designation.
+
+When you configure this feature, you can also define a regular expression used to identify email
+addresses. New users with a matching email are excluded and not marked as an external user. This
+regular expression must:
+
+- Use the Ruby format.
+- Be convertible to JavaScript.
+- Have the ignore case flag set (`/regex pattern/i`).
+
+For example:
+
+- `\.int@example\.com$`: Matches email addresses that end with `.int@domain.com`.
+- `^(?:(?!\.ext@example\.com).)*$\r?`: Matches email address that don't include `.ext@example.com`.
+
+{{< alert type="warning" >}}
+
+Adding an regular expression can increase the risk of a regular expression denial of service (ReDoS) attack.
+
+{{< /alert >}}
+
+Prerequisites:
+
+- You must be an administrator for the GitLab Self-Managed instance.
+
+To make new users external by default:
 
 1. On the left sidebar, at the bottom, select **Admin**.
 1. Select **Settings > General**.
 1. Expand the **Account and limit** section.
-
-If you change the default behavior of creating new users as external, you
-have the option to narrow it down by defining a set of internal users.
-The **Internal users** field allows specifying an email address regex pattern to
-identify default internal users. New users whose email address matches the regex
-pattern are set to internal by default rather than an external collaborator.
-
-The regex pattern format is in Ruby, but it needs to be convertible to JavaScript,
-and the ignore case flag is set (`/regex pattern/i`). Here are some examples:
-
-- Use `\.internal@domain\.com$` to mark email addresses ending with
-  `.internal@domain.com` as internal.
-- Use `^(?:(?!\.ext@domain\.com).)*$\r?` to mark users with email addresses
-  not including `.ext@domain.com` as internal.
-
-{{< alert type="warning" >}}
-
-Be aware that this regex could lead to a
-[regular expression denial of service (ReDoS) attack](https://en.wikipedia.org/wiki/ReDoS).
-
-{{< /alert >}}
+1. Select the **Make new users external by default** checkbox.
+1. Optional. In the **Email exclusion pattern** field, enter a regular expression.
+1. Select **Save changes**.

@@ -1,7 +1,6 @@
 <script>
 import { GlButton, GlIcon, GlSkeletonLoader, GlTooltipDirective } from '@gitlab/ui';
 import { isLoggedIn } from '~/lib/utils/common_utils';
-import { TYPE_DESIGN } from '~/import/constants';
 import { s__ } from '~/locale';
 import ImportedBadge from '~/vue_shared/components/imported_badge.vue';
 import TodosToggle from '../../shared/todos_toggle.vue';
@@ -61,6 +60,10 @@ export default {
       required: false,
       default: () => [],
     },
+    canUpdateDesign: {
+      type: Boolean,
+      required: false,
+    },
   },
   computed: {
     toggleCommentsButtonLabel() {
@@ -69,7 +72,6 @@ export default {
         : this.$options.i18n.showCommentsButtonLabel;
     },
   },
-  TYPE_DESIGN,
 };
 </script>
 
@@ -86,11 +88,7 @@ export default {
           </span>
           <gl-icon name="chevron-right" class="gl-shrink-0" variant="subtle" />
           <span class="gl-truncate gl-font-normal">{{ design.filename }}</span>
-          <imported-badge
-            v-if="design.imported"
-            :importable-type="$options.TYPE_DESIGN"
-            class="gl-ml-2"
-          />
+          <imported-badge v-if="design.imported" class="gl-ml-2" />
         </h2>
       </div>
       <close-button class="gl-ml-auto md:gl-hidden" />
@@ -116,7 +114,7 @@ export default {
         :aria-label="$options.i18n.downloadButtonLabel"
       />
       <archive-design-button
-        v-if="isLatestVersion"
+        v-if="isLatestVersion && canUpdateDesign"
         v-gl-tooltip.bottom
         button-size="medium"
         :title="$options.i18n.archiveButtonLabel"

@@ -52,6 +52,8 @@ default:
     - gem install bundler --version "$bundle_version" --no-document # Bundler is not installed with the image
     - bundle config                             # Show bundler configuration
     - bundle install --jobs=$(nproc) --retry=3
+  after_script:
+    - source $CI_PROJECT_DIR/scripts/utils.sh
 
 .ruby_matrix:
   parallel:
@@ -65,7 +67,7 @@ default:
   parallel:
     matrix:
       - RUBY_VERSION: ["${RUBY_VERSION_DEFAULT}", "${RUBY_VERSION_NEXT}"]
-        POSTGRES_VERSION: ["12", "13", "14"]
+        POSTGRES_VERSION: ["14", "15", "16"]
 
 validate-gem:
   rules:
@@ -77,23 +79,26 @@ validate-gem:
     - $CI_PROJECT_DIR/scripts/validate-monorepo-gem "$[[inputs.gem_name]]"
 
 validate-gemfile-lock:
-  extends: .ruby_matrix
   rules:
     # Validate all Gemfile.lock stored in `gems/`.
     - if: "'$[[inputs.gem_path_prefix]]' == 'gems/'"
       exists: ["$[[inputs.gem_path_prefix]]$[[inputs.gem_name]]/Gemfile.lock"]
+  extends:
+    - .ruby_matrix
   script:
     - bundle lock --add-checksums
 
 rubocop:
-  extends: .ruby_matrix
   rules:
     - exists: ["$[[inputs.gem_path_prefix]]$[[inputs.gem_name]]/.rubocop.yml"]
+  extends:
+    - .ruby_matrix
   script:
     - bundle exec rubocop
 
 rspec:
-  extends: .ruby_and_postgres_matrix
+  extends:
+    - .ruby_and_postgres_matrix
   variables:
     POSTGRES_USER: gitlab
     POSTGRES_PASSWORD: password

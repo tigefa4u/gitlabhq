@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: GraphQL
 ---
 
@@ -755,7 +755,7 @@ Here:
 
 When we fetch data with a connection type, we can pass cursor as `after` or `before`
 parameter, indicating a starting or ending point of our pagination. They should be
-followed with `first` or `last` parameter respectively to indicate _how many_ items
+followed with `first` or `last` parameter to indicate _how many_ items
 we want to fetch after or before a given endpoint.
 
 For example, here we're fetching 10 designs after a cursor (let us call this `projectQuery`):

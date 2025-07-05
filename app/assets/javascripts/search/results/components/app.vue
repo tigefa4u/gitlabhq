@@ -3,8 +3,10 @@
 import { mapState } from 'vuex';
 import { __, s__ } from '~/locale';
 import getBlobSearchQuery from '~/search/graphql/blob_search_zoekt.query.graphql';
+import { ERROR_POLICY_NONE } from '~/lib/graphql';
 import { parseBoolean } from '~/lib/utils/common_utils';
 import { logError } from '~/lib/logger';
+import { EXCLUDE_FORKS_FILTER_PARAM } from '~/search/sidebar/constants';
 import { DEFAULT_FETCH_CHUNKS } from '../constants';
 import { RECEIVE_NAVIGATION_COUNT } from '../../store/mutation_types';
 import EmptyResult from './result_empty.vue';
@@ -31,6 +33,7 @@ export default {
     return {
       hasError: false,
       blobSearch: {},
+      loaded: false,
     };
   },
   apollo: {
@@ -38,7 +41,7 @@ export default {
       query() {
         return getBlobSearchQuery;
       },
-      errorPolicy: 'none',
+      errorPolicy: ERROR_POLICY_NONE,
       variables() {
         const variables = {
           search: this.query.search || '',
@@ -46,7 +49,7 @@ export default {
           chunkCount: DEFAULT_FETCH_CHUNKS,
           regex: parseBoolean(this.query?.regex),
           includeArchived: parseBoolean(this.query?.include_archived),
-          includeForked: parseBoolean(this.query?.include_forked),
+          excludeForks: parseBoolean(this.query?.[EXCLUDE_FORKS_FILTER_PARAM]),
         };
 
         if (this.query?.group_id) {
@@ -59,11 +62,9 @@ export default {
 
         return variables;
       },
-      skip() {
-        return !this.query.search;
-      },
       result({ data }) {
         this.hasError = false;
+        this.loaded = true;
         this.blobSearch = data?.blobSearch;
         this.$store.commit(RECEIVE_NAVIGATION_COUNT, {
           key: 'blobs',
@@ -73,6 +74,7 @@ export default {
       debounce: 500,
       error(error) {
         logError(error);
+        this.loaded = true;
         this.hasError = true;
       },
     },
@@ -83,6 +85,10 @@ export default {
       return this.query?.page ? parseInt(this.query?.page, 10) : 1;
     },
     isLoading() {
+      if (!this.loaded && !this.$apollo?.queries?.blobSearch?.loading) {
+        return true;
+      }
+
       return this.$apollo.queries.blobSearch.loading;
     },
     hasResults() {
@@ -97,13 +103,13 @@ export default {
     <error-result v-if="hasError" />
     <section v-else>
       <status-bar v-if="!isLoading" :blob-search="blobSearch" />
-      <empty-result v-if="!hasResults && !isLoading" />
       <zoekt-blob-results
         v-if="hasResults || isLoading"
         :blob-search="blobSearch"
         :has-results="hasResults"
         :is-loading="isLoading"
       />
+      <empty-result v-else />
     </section>
   </div>
 </template>

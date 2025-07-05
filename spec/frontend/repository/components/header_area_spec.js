@@ -27,6 +27,8 @@ const defaultMockRoute = {
   },
 };
 
+const mockRootRef = 'root-ref';
+
 describe('HeaderArea', () => {
   let wrapper;
 
@@ -43,13 +45,16 @@ describe('HeaderArea', () => {
   const findFileIcon = () => wrapper.findComponent(FileIcon);
   const findRepositoryOverflowMenu = () => wrapper.findComponent(RepositoryOverflowMenu);
   const findBlobControls = () => wrapper.findComponent(BlobControls);
+  const findTreeControls = () => wrapper.findByTestId('tree-controls-container');
 
   const { bindInternalEventDocument } = useMockInternalEventsTracking();
 
   const createComponent = ({
     props = {},
     route = { name: 'blobPathDecoded' },
-    provided = {},
+    provided = {
+      rootRef: mockRootRef,
+    },
   } = {}) => {
     return shallowMountExtended(HeaderArea, {
       provide: {
@@ -72,6 +77,10 @@ describe('HeaderArea', () => {
         $route: {
           ...defaultMockRoute,
           ...route,
+          params: {
+            ...defaultMockRoute.params,
+            ...(route.params || {}),
+          },
         },
       },
     });
@@ -85,8 +94,15 @@ describe('HeaderArea', () => {
     expect(wrapper.exists()).toBe(true);
   });
 
-  it('renders RefSelector', () => {
-    expect(findRefSelector().exists()).toBe(true);
+  describe('Ref selector', () => {
+    it('renders correctly', () => {
+      expect(findRefSelector().props('defaultBranch')).toBe(mockRootRef);
+    });
+
+    it('renders correctly when branch names ending with .json', () => {
+      createComponent({ props: { refSelectorValue: 'ends-with.json' } });
+      expect(findRefSelector().exists()).toBe(true);
+    });
   });
 
   it('renders Breadcrumbs component', () => {
@@ -95,6 +111,13 @@ describe('HeaderArea', () => {
 
   it('renders PageHeading component', () => {
     expect(findPageHeading().exists()).toBe(true);
+  });
+
+  describe('showTreeControls', () => {
+    it('should not render tree controls for blob view', () => {
+      wrapper = createComponent({}, { name: 'blobPathDecoded' });
+      expect(findTreeControls().exists()).toBe(false);
+    });
   });
 
   describe('when rendered for tree view', () => {
@@ -182,6 +205,7 @@ describe('HeaderArea', () => {
             directoryCodeDropdownUpdates: true,
           },
           newWorkspacePath: '/workspaces/new',
+          organizationId: '1',
         },
       });
     });
@@ -202,31 +226,54 @@ describe('HeaderArea', () => {
         webIdeUrl: headerAppInjected.webIdeUrl,
         gitpodUrl: headerAppInjected.gitpodUrl,
         showWebIdeButton: headerAppInjected.showWebIdeButton,
-        showGitpodButton: headerAppInjected.isGitpodEnabledForInstance,
+        isGitpodEnabledForInstance: headerAppInjected.isGitpodEnabledForInstance,
+        isGitpodEnabledForUser: headerAppInjected.isGitpodEnabledForUser,
         currentPath: defaultMockRoute.params.path,
         directoryDownloadLinks: headerAppInjected.downloadLinks,
       });
     });
 
     describe('RepositoryOverflowMenu', () => {
-      it('does not render RepositoryOverflowMenu component on default ref', () => {
-        expect(findRepositoryOverflowMenu().exists()).toBe(false);
+      it('renders RepositoryOverflowMenu component with correct props when on default branch', () => {
+        wrapper = createComponent({
+          route: { name: 'treePathDecoded' },
+        });
+        expect(findRepositoryOverflowMenu().props()).toStrictEqual({
+          currentRef: 'main',
+          fullPath: 'test/project',
+          path: 'index.js',
+        });
       });
 
-      it('renders RepositoryOverflowMenu component with correct props when on ref different than default branch', () => {
+      it('renders RepositoryOverflowMenu component with correct props when on non-default branch', () => {
         wrapper = createComponent({
           route: { name: 'treePathDecoded' },
           provided: { comparePath: 'test/project/compare' },
         });
-        expect(findRepositoryOverflowMenu().exists()).toBe(true);
-        expect(findRepositoryOverflowMenu().props('comparePath')).toBe(
-          headerAppInjected.comparePath,
-        );
+        expect(findRepositoryOverflowMenu().props()).toStrictEqual({
+          currentRef: 'main',
+          fullPath: 'test/project',
+          path: 'index.js',
+        });
       });
     });
   });
 
   describe('when rendered for blob view', () => {
+    describe('showBlobControls', () => {
+      it('should not render blob controls when filePath does not exist', () => {
+        wrapper = createComponent({ route: { name: 'blobPathDecoded', params: { path: null } } });
+        expect(findBlobControls().exists()).toBe(false);
+      });
+
+      it('should not render blob controls when route name is not blobPathDecoded', () => {
+        wrapper = createComponent({
+          route: { name: 'blobPath', params: { path: '/some/file.js' } },
+        });
+        expect(findBlobControls().exists()).toBe(false);
+      });
+    });
+
     it('renders BlobControls component with correct props', () => {
       wrapper = createComponent({ props: { refType: 'branch' } });
       expect(findBlobControls().exists()).toBe(true);
@@ -252,30 +299,75 @@ describe('HeaderArea', () => {
   });
 
   describe('when rendered for readme project overview', () => {
-    beforeEach(() => {
-      wrapper = createComponent({
-        route: { name: 'treePathDecoded' },
-        provided: { isReadmeView: true },
+    describe('when directory_code_dropdown_updates flag is false', () => {
+      beforeEach(() => {
+        wrapper = createComponent({
+          route: { name: 'treePathDecoded' },
+          provided: { isReadmeView: true },
+        });
+      });
+
+      it('does not render directory name and icon', () => {
+        expect(findPageHeading().exists()).toBe(false);
+        expect(findFileIcon().exists()).toBe(false);
+      });
+
+      it('does not render RefSelector or Breadcrumbs', () => {
+        expect(findRefSelector().exists()).toBe(false);
+        expect(findBreadcrumbs().exists()).toBe(false);
+      });
+
+      it('does not render AddToTree component', () => {
+        expect(findAddToTreeDropdown().exists()).toBe(false);
+      });
+
+      it('does not render CodeDropdown and SourceCodeDownloadDropdown', () => {
+        expect(findCodeDropdown().exists()).toBe(false);
+        expect(findSourceCodeDownloadDropdown().exists()).toBe(false);
+      });
+
+      it('does not render CompactCodeDropdown', () => {
+        expect(findCompactCodeDropdown().exists()).toBe(false);
       });
     });
 
-    it('does not render directory name and icon', () => {
-      expect(findPageHeading().exists()).toBe(false);
-      expect(findFileIcon().exists()).toBe(false);
-    });
+    describe('when directory_code_dropdown_updates flag is true', () => {
+      beforeEach(() => {
+        wrapper = createComponent({
+          route: { name: 'treePathDecoded' },
+          provided: {
+            glFeatures: {
+              directoryCodeDropdownUpdates: true,
+            },
+            newWorkspacePath: '/workspaces/new',
+            organizationId: '1',
+            isReadmeView: true,
+          },
+        });
+      });
 
-    it('does not render RefSelector or Breadcrumbs', () => {
-      expect(findRefSelector().exists()).toBe(false);
-      expect(findBreadcrumbs().exists()).toBe(false);
-    });
+      it('does render CompactCodeDropdown', () => {
+        expect(findCompactCodeDropdown().exists()).toBe(true);
+      });
 
-    it('does not render AddToTree component', () => {
-      expect(findAddToTreeDropdown().exists()).toBe(false);
-    });
+      it('does not render directory name and icon', () => {
+        expect(findPageHeading().exists()).toBe(false);
+        expect(findFileIcon().exists()).toBe(false);
+      });
 
-    it('does not render CodeDropdown and SourceCodeDownloadDropdown', () => {
-      expect(findCodeDropdown().exists()).toBe(false);
-      expect(findSourceCodeDownloadDropdown().exists()).toBe(false);
+      it('does not render RefSelector or Breadcrumbs', () => {
+        expect(findRefSelector().exists()).toBe(false);
+        expect(findBreadcrumbs().exists()).toBe(false);
+      });
+
+      it('does not render AddToTree component', () => {
+        expect(findAddToTreeDropdown().exists()).toBe(false);
+      });
+
+      it('does not render CodeDropdown and SourceCodeDownloadDropdown', () => {
+        expect(findCodeDropdown().exists()).toBe(false);
+        expect(findSourceCodeDownloadDropdown().exists()).toBe(false);
+      });
     });
   });
 

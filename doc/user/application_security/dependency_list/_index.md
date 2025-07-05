@@ -3,6 +3,7 @@ stage: Security Risk Management
 group: Security Insights
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Dependency list
+description: Vulnerabilities, licenses, filtering, and exporting.
 ---
 
 {{< details >}}
@@ -14,7 +15,7 @@ title: Dependency list
 
 {{< history >}}
 
-- Group-level dependency list [introduced](https://gitlab.com/groups/gitlab-org/-/epics/8090) in GitLab 16.2 [with a flag](../../../administration/feature_flags.md) named `group_level_dependencies`. Disabled by default.
+- Group-level dependency list [introduced](https://gitlab.com/groups/gitlab-org/-/epics/8090) in GitLab 16.2 [with a flag](../../../administration/feature_flags/_index.md) named `group_level_dependencies`. Disabled by default.
 - Group-level dependency list [enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/411257) in GitLab 16.4.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/132015) in GitLab 16.5. Feature flag `group_level_dependencies` removed.
 
@@ -42,7 +43,7 @@ You can use the [CycloneDX Web Tool](https://cyclonedx.github.io/cyclonedx-web-t
 {{< alert type="note" >}}
 
 Although this is not mandatory for populating the dependency list, the SBOM document must include and comply with the
-[GitLab CycloneDX property taxonomy](../../../development/sec/cyclonedx_property_taxonomy.md) to provide some properties and to enable some security features.
+GitLab CycloneDX property taxonomy to provide some properties and to enable some security features.
 
 {{< /alert >}}
 
@@ -52,7 +53,7 @@ Although this is not mandatory for populating the dependency list, the SBOM docu
 
 - In GitLab 17.2, the `location` field no longer links to the commit where the dependency was last detected when the feature flag `skip_sbom_occurrences_update_on_pipeline_id_change` is enabled. The flag is disabled by default.
 - In GitLab 17.3 the `location` field always links to the commit where the dependency was first detected. Feature flag `skip_sbom_occurrences_update_on_pipeline_id_change` removed.
-- View dependency paths option [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/519965) in GitLab 17.11 [with a flag](../../../administration/feature_flags.md) named `dependency_paths`. Disabled by default.
+- View dependency paths option [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/519965) in GitLab 17.11 [with a flag](../../../administration/feature_flags/_index.md) named `dependency_paths`. Disabled by default.
 
 {{< /history >}}
 
@@ -79,18 +80,19 @@ Details of each dependency are listed, sorted by decreasing severity of vulnerab
 | Packager  | The packager used to install the dependency. |
 | Location  | For system dependencies, this field lists the image that was scanned. For application dependencies, this field shows a link to the packager-specific lock file in your project that declared the dependency. It also shows the direct [dependents](#dependency-paths), if any. If there are transitive dependencies, selecting **View dependency paths** shows the full path of all dependents. Transitive dependencies are indirect dependents that have a direct dependent as an ancestor. |
 | License (for projects only) | Links to dependency's software licenses. A warning badge that includes the number of vulnerabilities detected in the dependency. |
-| Projects (for groups only) | Links to the project with the dependency. If multiple projects have the same dependency, the total number of these projects is shown. To go to a project with this dependency, select the **Projects** number, then search for and select its name. The project search feature is supported only on groups that have up to 600 occurrences in their group hierarchy. |
-
-![Dependency list](img/dependency_list_v16_3.png)
+| Projects (for groups only) | Links to the project with the dependency. If multiple projects have the same dependency, the total number of these projects is shown. To go to a project with this dependency, select the **Projects** number, then search for and select its name. |
 
 ## Filter dependency list
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/422356) dependency filtering for groups in GitLab 16.7 [with a flag](../../../administration/feature_flags.md) named `group_level_dependencies_filtering`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/422356) dependency filtering for groups in GitLab 16.7 [with a flag](../../../administration/feature_flags/_index.md) named `group_level_dependencies_filtering`. Disabled by default.
 - Dependency filtering for group [generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/422356) in GitLab 16.10. Feature flag `group_level_dependencies_filtering` removed.
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/513320) dependency filtering for projects in GitLab 17.9 with a flag named [`project_component_filter`](../../../administration/feature_flags.md). Enabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/513320) dependency filtering for projects in GitLab 17.9 with a flag named [`project_component_filter`](../../../administration/feature_flags/_index.md). Enabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/513321) in GitLab 17.10. Feature flag `project_component_filter` removed.
+- Dependency version filtering introduced for [projects](https://gitlab.com/gitlab-org/gitlab/-/issues/520771) and [groups](https://gitlab.com/gitlab-org/gitlab/-/issues/523061) in GitLab 18.0 with [flags](../../../administration/feature_flags/_index.md) named `version_filtering_on_project_level_dependency_list` and `version_filtering_on_group_level_dependency_list`. Disabled by default.
+- Dependency version filtering [enabled](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192291) on GitLab.com, GitLab Self-Managed, and GitLab Dedicated in GitLab 18.1.
+- Feature flags `version_filtering_on_project_level_dependency_list` and `version_filtering_on_group_level_dependency_list` removed.
 
 {{< /history >}}
 
@@ -102,14 +104,18 @@ For groups, you can filter by:
 - Project
 - License
 - Components
+- Component version
 
 For projects, you can filter by:
 
 - Components
+- Component version
+
+To filter by component version, you must filter by exactly one component first.
 
 To filter the dependency list:
 
-1. On the left sidebar, at the top, select **Search GitLab** ({{< icon name="search" >}}) to find your group or project.
+1. On the left sidebar, select **Search or go to** and find your project or group.
 1. Select **Secure > Dependency list**.
 1. Select the filter bar.
 1. Select a filter, then from the dropdown list select one or more criteria.
@@ -122,7 +128,7 @@ The dependency list shows only dependencies that match your filters.
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/500551) in GitLab 17.9 [with a flag](../../../administration/feature_flags.md) named `update_sbom_occurrences_vulnerabilities_on_cvs`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/500551) in GitLab 17.9 [with a flag](../../../administration/feature_flags/_index.md) named `update_sbom_occurrences_vulnerabilities_on_cvs`. Disabled by default.
 - [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/514223) in GitLab 17.9.
 
 {{< /history >}}
@@ -143,7 +149,7 @@ select the vulnerability's description. The [vulnerability's details](../vulnera
 
 {{< history >}}
 
-- Dependency path information from CycloneDX SBOM was [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/393061) in GitLab 16.9 [with a flag](../../../administration/feature_flags.md) named `project_level_sbom_occurrences`. Disabled by default.
+- Dependency path information from CycloneDX SBOM was [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/393061) in GitLab 16.9 [with a flag](../../../administration/feature_flags/_index.md) named `project_level_sbom_occurrences`. Disabled by default.
 - Dependency path information from CycloneDX SBOM was [enabled on GitLab.com, GitLab Self-Managed, and GitLab Dedicated](https://gitlab.com/gitlab-org/gitlab/-/issues/434371) in GitLab 17.0.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/457633) in GitLab 17.4. Feature flag `project_level_sbom_occurrences` removed.
 
@@ -156,8 +162,6 @@ The dependency list shows the direct dependents of a listed component if the com
 The dependency path is only displayed for dependencies that have vulnerabilities.
 
 {{< /alert >}}
-
-![Dependency path](img/yarn_dependency_path_v13_6.png)
 
 Dependency paths are supported for the following package managers:
 
@@ -181,16 +185,21 @@ Dependency paths are supported for the following package managers only when usin
 If the [Dependency Scanning](../dependency_scanning/_index.md) CI job is configured,
 [discovered licenses](../../compliance/license_scanning_of_cyclonedx_files/_index.md) are displayed on this page.
 
-## Download the dependency list
+## Export
 
-You can download the full list of dependencies and their details in JSON, CSV, or CycloneDX format.
-The dependency list shows only the results of the last successful pipeline that ran on the default branch.
+You can export the dependency list in:
+
+- JSON
+- CSV
+- CycloneDX format (for projects only)
 
 To download the dependency list:
 
 1. On the left sidebar, select **Search or go to** and find your project or group.
 1. Select **Secure > Dependency list**.
-1. Select **Export**.
+1. Select **Export** and then select the file format.
+
+When the exported details are available, you'll receive an email. To download the exported details, select the link in the email.
 
 ## Troubleshooting
 

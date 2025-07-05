@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Sentry monitoring in the frontend development of GitLab
 ---
 
@@ -93,8 +93,8 @@ work area.
 
 We mark errors with two additional custom `tags` to help identify their source:
 
-- `feature_category`: The feature area of the page. (For example, `code_review_workflow` or `continuous_integration`.) **Source:** `gon.feature_category`
-- `page`: Identifier of method called in the controller to render the page. (For example, `projects:merge_requests:index` or `projects:pipelines:index`.) **Source:** [`body_data_page`](https://gitlab.com/gitlab-org/gitlab/blob/b2ea95b8b1f15228a2fd5fa3fbd316857d5676b8/app/helpers/application_helper.rb#L144).
+- `feature_category`: The feature area of the page. (For example, `code_review_workflow` or `continuous_integration`.) **Source**: `gon.feature_category`
+- `page`: Identifier of method called in the controller to render the page. (For example, `projects:merge_requests:index` or `projects:pipelines:index`.) **Source**: [`body_data_page`](https://gitlab.com/gitlab-org/gitlab/blob/b2ea95b8b1f15228a2fd5fa3fbd316857d5676b8/app/helpers/application_helper.rb#L144).
 
 Frontend engineering team members can filter errors relevant to their group and/or page.
 

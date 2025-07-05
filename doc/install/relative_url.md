@@ -1,6 +1,6 @@
 ---
-stage: Systems
-group: Distribution
+stage: GitLab Delivery
+group: Self Managed
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Install GitLab under a relative URL
 ---
@@ -61,13 +61,12 @@ relative URL. The relative URL support is implemented by GitLab Workhorse.
 
 ---
 
-Before following the steps below to enable relative URL in GitLab, some
-assumptions are made:
+This process assumes:
 
 - GitLab is served under `/gitlab`
 - The directory under which GitLab is installed is `/home/git/`
 
-Make sure to follow all steps below:
+To enable relative URLs in GitLab:
 
 1. Optional. If you run short on resources, you can temporarily free up some
    memory by shutting down the GitLab service with the following command:
@@ -122,7 +121,7 @@ Make sure to follow all steps below:
 
    {{< alert type="note" >}}
 
-   If you are using a custom init script, make sure to edit the above
+   If you are using a custom init script, make sure to edit the previous
    GitLab Workhorse setting as needed.
 
    {{< /alert >}}
@@ -135,17 +134,5 @@ To disable the relative URL:
 
 1. Remove `/home/git/gitlab/config/initializers/relative_url.rb`
 
-1. Follow the same as above starting from 2. and set up the
+1. Follow the previous steps starting from 2. and set up the
    GitLab URL to one that doesn't contain a relative path.
-
-<!-- ## Troubleshooting
-
-Include any troubleshooting steps that you can foresee. If you know beforehand what issues
-one might have when setting this up, or when something is changed, or on upgrading, it's
-important to describe those, too. Think of things that may go wrong and include them here.
-This is important to minimize requests for support, and to avoid doc comments with
-questions that you know someone might ask.
-
-Each scenario can be a third-level heading, for example `### Getting error message X`.
-If you have none to add when creating a doc, leave this section in place
-but commented out to help encourage others to add to it in the future. -->

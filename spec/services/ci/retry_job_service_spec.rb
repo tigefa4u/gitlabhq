@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Ci::RetryJobService, feature_category: :continuous_integration do
+RSpec.describe Ci::RetryJobService, :clean_gitlab_redis_shared_state, feature_category: :continuous_integration do
   using RSpec::Parameterized::TableSyntax
   let_it_be(:reporter) { create(:user) }
   let_it_be(:developer) { create(:user) }

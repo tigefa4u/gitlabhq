@@ -13,6 +13,13 @@ RSpec.describe 'Sort Issuable List', feature_category: :team_planning do
   let(:first_updated_issuable) { issuables.order_updated_asc.first }
   let(:last_updated_issuable) { issuables.order_updated_desc.first }
 
+  before do
+    # TODO: When removing the feature flag,
+    # we won't need the tests for the issues listing page, since we'll be using
+    # the work items listing page.
+    stub_feature_flags(work_item_planning_view: false)
+  end
+
   context 'for merge requests' do
     include MergeRequestHelpers
 
@@ -48,7 +55,7 @@ RSpec.describe 'Sort Issuable List', feature_category: :team_planning do
         it 'is "created date"' do
           visit_merge_requests_with_state(project, 'opened')
 
-          expect(selected_sort_order).to eq('created date')
+          expect(page).to have_button 'Created date'
           expect(first_merge_request).to include(last_created_issuable.title)
           expect(last_merge_request).to include(first_created_issuable.title)
         end
@@ -207,10 +214,6 @@ RSpec.describe 'Sort Issuable List', feature_category: :team_planning do
         expect(page).to have_css('.issue:last-child', text: last_updated_issuable.title)
       end
     end
-  end
-
-  def selected_sort_order
-    find('.sort-dropdown-container').text.downcase
   end
 
   def visit_merge_requests_with_state(project, state)

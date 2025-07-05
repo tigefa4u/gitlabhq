@@ -1,7 +1,7 @@
 ---
 stage: AI-powered
 group: AI Framework
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Testing and Validation
 ---
 
@@ -32,7 +32,7 @@ This command is responsible for seeding group and project resources for testing 
 It's mainly used by the following scenarios:
 
 - Developers or UX designers have a local GDK but don't know how to set up the group and project resources to test a feature in UI.
-- Evaluators (e.g. CEF) have input dataset that refers to a group or project resource e.g. (`Summarize issue #123` requires a corresponding issue record in PosstgreSQL)
+- Evaluators (for example, CEF) have input dataset that refers to a group or project resource (for instance, `Summarize issue #123` requires a corresponding issue record in PostgreSQL)
 
 Currently, the input dataset of evaluators and this development seed file are managed separately.
 To ensure that the integration keeps working, this seeder has to create the **same** group/project resources every time.
@@ -55,7 +55,7 @@ To prevent regressions, we also have CI jobs to make sure our tools are working 
 
 Monitor the following during migration:
 
-- **Performance Metrics:**
+- **Performance Metrics**:
   - Error ratio and response latency apdex for each AI action on [Sidekiq Service dashboard](https://dashboards.gitlab.net/d/sidekiq-main/sidekiq-overview)
   - Spent tokens, usage of each AI feature and other statistics on [periscope dashboard](https://app.periscopedata.com/app/gitlab/1137231/Ai-Features)
   - [AI gateway logs](https://log.gprd.gitlab.net/app/r/s/zKEel)

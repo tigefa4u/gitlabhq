@@ -1,7 +1,7 @@
 ---
-stage: Systems
-group: Cloud Connector
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+stage: none
+group: unassigned
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: 'Cloud Connector: Architecture'
 ---
 
@@ -18,31 +18,31 @@ resource to the main developer documentation.
 When talking about Cloud Connector's constituents and mechanics, we use the following
 terms:
 
-- **GitLab Rails:** The main GitLab application.
-- **GitLab.com:** The multi-tenant GitLab SaaS deployment operated by GitLab Inc.
-- **GitLab Dedicated:** A single-tenant GitLab SaaS deployment operated by GitLab Inc.
-- **GitLab Self-Managed:** Any GitLab instance operated by a customer, potentially deployed to a private cloud.
-- **GitLab instance:** Any of the above.
-- **Backend service:** A GitLab-operated web service invoked by a GitLab instance to deliver functionality
+- **GitLab Rails**: The main GitLab application.
+- **GitLab.com**: The multi-tenant GitLab SaaS deployment operated by GitLab Inc.
+- **GitLab Dedicated**: A single-tenant GitLab SaaS deployment operated by GitLab Inc.
+- **GitLab Self-Managed**: Any GitLab instance operated by a customer, potentially deployed to a private cloud.
+- **GitLab instance**: Any of the above.
+- **Backend service**: A GitLab-operated web service invoked by a GitLab instance to deliver functionality
   that's part of the Cloud Connector set of features. The AI gateway is one example.
-- **CustomersDot:** The [GitLab Customers Portal](https://gitlab.com/gitlab-org/customers-gitlab-com),
+- **CustomersDot**: The [GitLab Customers Portal](https://gitlab.com/gitlab-org/customers-gitlab-com),
   used by customers to manage their GitLab subscriptions.
-- **OIDC:** [OpenID Connect](https://auth0.com/docs/authenticate/protocols/openid-connect-protocol),
+- **OIDC**: [OpenID Connect](https://auth0.com/docs/authenticate/protocols/openid-connect-protocol),
   an open standard for implementing identity providers and authN/authZ. JWT
   issuers provide OIDC compliant discovery endpoints to publish keys for JWT validators.
-- **JWT:** [JSON Web Token](https://auth0.com/docs/secure/tokens/json-web-tokens), an open standard to encode and transmit identity data in the form of a
+- **JWT**: [JSON Web Token](https://auth0.com/docs/secure/tokens/json-web-tokens), an open standard to encode and transmit identity data in the form of a
   cryptographically signed token. This token is used to authorize requests between a GitLab instance or user and a
   backend service. It can be scoped to either a GitLab instance or a user.
-- **JWT issuer:** A GitLab-operated web service providing endpoints to issue JWTs. The OAuth specification refers to this as an `Authorization Server`.
+- **JWT issuer**: A GitLab-operated web service providing endpoints to issue JWTs. The OAuth specification refers to this as an `Authorization Server`.
   and/or endpoints to provide the public keys necessary to validate such a token.
   GitLab.com, CustomersDot and AI gateway are all JWT issuers.
-- **JWT validator:** A backend service that validates GitLab instance requests carrying a JWT. The OAuth specification refers to this as a `Resource Server`.
+- **JWT validator**: A backend service that validates GitLab instance requests carrying a JWT. The OAuth specification refers to this as a `Resource Server`.
   using public keys obtained from a JWT issuer. The AI gateway is one example of a JWT validator.
-- **IJWT:** An Instance JSON Web Token, a JWT created for a GitLab instance.
-- **UJWT:** A User JSON Web Token, a JWT created for a GitLab user with a shorter lifespan and less permissions than a IJWT.
-- **JWKS:** [JSON Web Key Set](https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-key-sets),
+- **IJWT**: An Instance JSON Web Token, a JWT created for a GitLab instance.
+- **UJWT**: A User JSON Web Token, a JWT created for a GitLab user with a shorter lifespan and less permissions than a IJWT.
+- **JWKS**: [JSON Web Key Set](https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-key-sets),
   an open standard to encode cryptographic keys to validate JWTs.
-- **Unit primitives:** The logical feature that a permission/access scope can govern.
+- **Unit primitives**: The logical feature that a permission/access scope can govern.
 - **Add-On** The group of unit primitives that are bundled and sold together.
   Example: `code_suggestions` and `duo_chat` are 2 UPs sold together under the `DUO_PRO` add-on.
 
@@ -140,7 +140,7 @@ There are two levels of access control when making requests into backend service
    we issue short-lived tokens for each request. These tokens are implemented as JWTs and are
    cryptographically signed by the issuer.
 1. **User access.** We currently expect all end-user requests to go through the respective GitLab instance
-   first at least once. For certain requests (e.g. code completions) we allow users to make requests to
+   first at least once. For certain requests (for example, code completions) we allow users to make requests to
    a backend service directly using a backend-scoped UJWT.
    This token has a more limited lifespan and access than an instance token. To get a user token
    the user will first have to go through the respective GitLab instance to request the token.
@@ -150,13 +150,13 @@ There are two levels of access control when making requests into backend service
 The JWT issued for instance access carries the following claims (not exhaustive, subject to change):
 
 - `aud`: The audience. This is the name of the backend service (for example, `gitlab-ai-gateway`).
-- `sub`: The subject. This is the UUID of the GitLab instance the token was issued for (e.g.: `8f6e4253-58ce-42b9-869c-97f5c2287ad2`).
+- `sub`: The subject. This is the UUID of the GitLab instance the token was issued for (for example: `8f6e4253-58ce-42b9-869c-97f5c2287ad2`).
 - `iss`: The issuer URL. Either `https://gitlab.com` or `https://customers.gitlab.com`.
 - `exp`: The expiration time of the token (UNIX timestamp). Currently 1 hour for GitLab.com and 3 days
   for SM/Dedicated.
 - `nbf`: The time this token can not be used before (UNIX timestamp), this is set to 5 seconds before the time the token was issued.
 - `iat`: The time this token was issued at (UNIX timestamp), this is set to the time the token was issued.
-- `jti`: The JWT ID, set to a randomly created UUID (e.g.: `0099dd6c-b66e-4787-8ae2-c451d86025ae`).
+- `jti`: The JWT ID, set to a randomly created UUID (for example: `0099dd6c-b66e-4787-8ae2-c451d86025ae`).
 - `gitlab_realm`: A string to differentiate between requests from GitLab Self-Managed and GitLab.com.
   This is `self-managed` when issued by the Customers Portal and `saas` when issued by GitLab.com.
 - `scopes`: A list of access scopes that define which features this token is valid for. We obtain these
@@ -165,12 +165,12 @@ The JWT issued for instance access carries the following claims (not exhaustive,
 The JWT issues for user access carries the following claims (not exhaustive, subject to change):
 
 - `aud`: The audience. This is the name of the backend service (`gitlab-ai-gateway`).
-- `sub`: The subject. This is a globally unique anonymous user ID hash of the GitLab user the token was issued for (e.g.: `W2HPShrOch8RMah8ZWsjrXtAXo+stqKsNX0exQ1rsQQ=`).
+- `sub`: The subject. This is a globally unique anonymous user ID hash of the GitLab user the token was issued for (for example: `W2HPShrOch8RMah8ZWsjrXtAXo+stqKsNX0exQ1rsQQ=`).
 - `iss`: The issuer (`gitlab-ai-gateway`).
 - `exp`: The expiration time of the token (UNIX timestamp). Currently 1 hour after the issued at time.
 - `nbf`: The time this token can not be used before (UNIX timestamp), this is set to the time the token was issued.
 - `iat`: The time this token was issued at (UNIX timestamp), this is set to the time the token was issued.
-- `jti`: The JWT ID, set to a randomly created UUID (e.g.: `0099dd6c-b66e-4787-8ae2-c451d86025ae`).
+- `jti`: The JWT ID, set to a randomly created UUID (for example: `0099dd6c-b66e-4787-8ae2-c451d86025ae`).
 - `gitlab_realm`: A string to differentiate between requests from GitLab Self-Managed and GitLab.com. Either `self-managed` or `saas`.
 - `scopes`: A list of access scopes that define which features this token is valid for. We obtain these
   based on decisions such as how paid features are bundled into GitLab tiers and add-ons as well as what features

@@ -39,6 +39,16 @@ export default {
       type: String,
       default: null,
     },
+    toggleId: {
+      type: String,
+      required: false,
+      default: undefined,
+    },
+    projectNamespaceFullPath: {
+      required: false,
+      type: String,
+      default: '',
+    },
   },
   data() {
     return {
@@ -55,16 +65,19 @@ export default {
       },
       variables() {
         return {
-          fullPath: this.fullPath,
+          // The `projectNamespaceFullPath` is available in case
+          // project belongs to user's personal namespace.
+          fullPath: this.projectNamespaceFullPath || this.fullPath,
           projectSearch: this.searchKey,
-          includeArchived: false,
         };
       },
       update(data) {
         return data.namespace?.projects?.nodes;
       },
       result() {
-        this.selectedProject = this.findSelectedProject(this.selectedProjectFullPath);
+        this.selectedProject =
+          this.findSelectedProject(this.selectedProjectFullPath) || this.projects?.at(0);
+        this.$emit('selectProject', this.selectedProject?.fullPath);
       },
     },
   },
@@ -78,7 +91,7 @@ export default {
          * name_with_namespace doesn't exist. Therefore we rely on
          * namespace directly.
          * */
-        return this.selectedProject.nameWithNamespace || this.selectedProject.namespace;
+        return this.selectedProject.name || this.selectedProject.namespace;
       }
       return this.selectedProjectFullPath && this.currentProjectName
         ? this.currentProjectName
@@ -202,11 +215,6 @@ export default {
         return { ...item, avatar_url: item.avatarUrl, web_url: item.webUrl };
       });
     },
-    handleFrequentProjectSelection(selectedProject) {
-      this.project = this.projects.find((proj) => {
-        return `/${proj.fullPath}` === selectedProject.webUrl;
-      });
-    },
   },
 };
 </script>
@@ -218,6 +226,7 @@ export default {
     is-check-centered
     :items="listItems"
     :selected="selectedProjectFullPath"
+    :toggle-id="toggleId"
     :toggle-text="dropdownToggleText"
     :searching="projectsLoading"
     fluid-width

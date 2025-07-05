@@ -2,7 +2,7 @@
 stage: AI-powered
 group: Duo Chat
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-title: GitLab Duo Chat troubleshooting
+title: Troubleshooting GitLab Duo Chat
 ---
 
 When working with GitLab Duo Chat, you might encounter the following issues.
@@ -25,6 +25,7 @@ If this does not work, you can also check the following troubleshooting document
 - [Microsoft Visual Studio](../../editor_extensions/visual_studio/visual_studio_troubleshooting.md).
 - [JetBrains IDEs](../../editor_extensions/jetbrains_ide/jetbrains_troubleshooting.md).
 - [Neovim](../../editor_extensions/neovim/neovim_troubleshooting.md).
+- [Eclipse](../../editor_extensions/eclipse/troubleshooting.md).
 - [Troubleshooting GitLab Duo](../gitlab_duo/troubleshooting.md).
 - [Troubleshooting GitLab Duo Self-Hosted](../../administration/gitlab_duo_self_hosted/troubleshooting.md).
 
@@ -206,13 +207,6 @@ You might get an error that states
 
 This error occurs when ReAct agent failed to find a solution for your query. Try a different prompt or clear your conversation history with `/clear`.
 
-## `Error A9999`
-
-You might get an error that states
-`I'm sorry, I couldn't respond in time. Please try again. Error code: A9999`.
-
-This error occurs when an unknown error occurs in ReAct agent. Try your request again.
-
 ## `Error A6000`
 
 You might get an error that states
@@ -220,6 +214,13 @@ You might get an error that states
 
 This is a fallback error that occurs when there is a problem with GitLab Duo Chat.
 Try a more specific request, enter `/clear` to start a new chat, or leave feedback to help us improve.
+
+## `Error A9999`
+
+You might get an error that states
+`I'm sorry, I couldn't respond in time. Please try again. Error code: A9999`.
+
+This error occurs when an unknown error occurs in ReAct agent. Try your request again.
 
 ## `Error G3001`
 

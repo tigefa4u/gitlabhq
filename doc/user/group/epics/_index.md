@@ -3,6 +3,7 @@ stage: Plan
 group: Product Planning
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Epics
+description: Roadmaps, hierarchies, planning, and issue progress.
 ---
 
 {{< details >}}
@@ -45,7 +46,6 @@ The possible relationships between epics and other items are:
 - An epic is the parent of one or more issues.
 - An epic is the parent of one or more [child epics](manage_epics.md#multi-level-child-epics). Ultimate only.
 - An epic is [linked](linked_epics.md) to one or more task, objective, or key result.
-  [The new look for epics](epic_work_items.md) must be enabled.
 
 Example set of relationships:
 
@@ -74,14 +74,6 @@ graph TD
 
 ### Child issues from different group hierarchies
 
-{{< history >}}
-
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/371081) in GitLab 15.5 [with a flag](../../../administration/feature_flags.md) named `epic_issues_from_different_hierarchies`. Disabled by default.
-- [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/373304) in GitLab 15.5.
-- Feature flag `epic_issues_from_different_hierarchies` removed in GitLab 15.6.
-
-{{< /history >}}
-
 You can add issues from a different group hierarchy to an epic.
 To do it, paste the issue URL when
 [adding an existing issue](manage_epics.md#add-an-existing-issue-to-an-epic).
@@ -95,19 +87,32 @@ To do it, paste the issue URL when
 
 {{< /details >}}
 
-If your epic contains one or more [child epics](manage_epics.md#multi-level-child-epics) that
-have a start or due date, you can go to a [roadmap](../roadmap/_index.md)
-of the child epics from the epic.
-
-![Child epics roadmap](img/epic_view_roadmap_v12_9.png)
-
-<!-- When epics as work items are generally available, the steps below should be the only ones here. -->
-
-If [the new look for epics](epic_work_items.md) is enabled:
-
-- On the **Child items** section header, select **More actions** ({{< icon name="ellipsis_v" >}}) **> View on a roadmap**.
+On the **Child items** section header, select **More actions** ({{< icon name="ellipsis_v" >}}) **> View on a roadmap**.
 
 A roadmap filtered for the parent epic opens.
+
+## Epics as work items
+
+{{< history >}}
+
+- [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/9290) in GitLab 17.2 [with a flag](../../../administration/feature_flags/_index.md) named `work_item_epics`. Disabled by default. Introduced in [beta](../../../policy/development_stages_support.md#beta).
+- [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/470685) in GitLab 17.6.
+- [Enabled by default on GitLab Self-Managed and GitLab Dedicated](https://gitlab.com/gitlab-org/gitlab/-/issues/468310) in GitLab 17.7.
+- [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/468310) in GitLab 18.1. Feature flag `work_item_epics` removed.
+
+{{< /history >}}
+
+We have changed how epics look by migrating them to a unified framework for work items to better
+meet the product needs of our Agile Planning offering.
+
+For more information, see [epic 9290](https://gitlab.com/groups/gitlab-org/-/epics/9290) and the
+following blog posts:
+
+- [First look: The new Agile planning experience in GitLab](https://about.gitlab.com/blog/2024/06/18/first-look-the-new-agile-planning-experience-in-gitlab/) (June 2024)
+- [Unveiling a new epic experience for improved Agile planning](https://about.gitlab.com/blog/2024/07/03/unveiling-a-new-epic-experience-for-improved-agile-planning/) (July 2024)
+
+If you run into any issues while trying out this change, you can use the
+[feedback issue](https://gitlab.com/gitlab-org/gitlab/-/issues/494462) to provide more details.
 
 ## Related topics
 
@@ -118,15 +123,3 @@ A roadmap filtered for the parent epic opens.
 - [Add an emoji reaction](../../emoji_reactions.md) to an epic or its comments.
 - Collaborate on an epic by posting comments in a [thread](../../discussions/_index.md).
 - Use [health status](manage_epics.md#health-status) to track your progress.
-
-<!-- ## Troubleshooting
-
-Include any troubleshooting steps that you can foresee. If you know beforehand what issues
-one might have when setting this up, or when something is changed, or on upgrading, it's
-important to describe those, too. Think of things that may go wrong and include them here.
-This is important to minimize requests for support, and to avoid doc comments with
-questions that you know someone might ask.
-
-Each scenario can be a third-level heading, for example `### Getting error message X`.
-If you have none to add when creating a doc, leave this section in place
-but commented out to help encourage others to add to it in the future. -->

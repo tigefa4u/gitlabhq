@@ -6,6 +6,8 @@ module QA
     module Project
       module WebIDE
         class VSCode < Page::Base
+          COMMIT_SUCCESS_MESSAGE = 'Success! Your changes have been committed and pushed to the remote repository.'
+
           view 'app/views/shared/_broadcast_message.html.haml' do
             element 'broadcast-notification-container'
             element 'close-button'
@@ -167,7 +169,7 @@ module QA
             end
           end
 
-          # Used for stability, due to feature_caching of vscode_web_ide
+          # Used for stability
           # @param file_name [string] wait for file to be loaded (optional)
           def wait_for_ide_to_load(file_name = nil)
             page.driver.browser.switch_to.window(page.driver.browser.window_handles.last)
@@ -201,7 +203,7 @@ module QA
             Support::Waiter.wait_until { !has_text?("Loading GitLab Web IDE...", wait: 1) }
           end
 
-          def commit_and_push_to_existing_branch(file_name, message: 'Success! Your changes have been committed.')
+          def commit_and_push_to_existing_branch(file_name, message: COMMIT_SUCCESS_MESSAGE)
             commit_toggle(file_name)
             push_to_existing_branch(message: message)
             Support::Waiter.wait_until { !has_text?("Loading GitLab Web IDE...", wait: 1) }
@@ -228,7 +230,7 @@ module QA
               message: 'The secret detection scan encountered one or more findings.')
           end
 
-          def push_to_existing_branch(message: 'Success! Your changes have been committed.')
+          def push_to_existing_branch(message: COMMIT_SUCCESS_MESSAGE)
             within_vscode_editor do
               click_continue_with_existing_branch
             end
@@ -243,7 +245,7 @@ module QA
               send_keys(:enter)
             end
 
-            return if commit_shows_message?('Success! Your changes have been committed.')
+            return if commit_shows_message?(COMMIT_SUCCESS_MESSAGE)
 
             raise "failed to push_to_new_branch"
           end
@@ -367,12 +369,6 @@ module QA
           end
 
           def right_click_file_explorer
-            # NOTE: Web IDE prompts for clipboard permission to open the file explorer context menu
-            # https://gitlab.com/gitlab-org/gitlab/-/merge_requests/177778#note_2295036716
-            # https://gitlab.com/gitlab-org/gitlab-web-ide/-/issues/433
-            page.driver.browser.add_permission("clipboard-read", "granted")
-            page.driver.browser.add_permission("clipboard-write", "granted")
-
             page.find('.explorer-folders-view', visible: true).right_click
           end
 

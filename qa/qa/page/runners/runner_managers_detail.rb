@@ -4,12 +4,17 @@ module QA
   module Page
     module Runners
       class RunnerManagersDetail < Page::Base
-        view "app/assets/javascripts/ci/runner/components/runner_managers_detail.vue" do
-          element "runner-button"
+        view "app/assets/javascripts/ci/runner/components/runner_managers.vue" do
+          element "runner-managers"
+        end
+
+        view "app/assets/javascripts/vue_shared/components/crud_component.vue" do
+          element "crud-collapse-toggle"
         end
 
         def expand_runners
-          find_element("runner-button").click
+          toggle_button = find_element("crud-collapse-toggle")
+          toggle_button.click if toggle_button['aria-expanded'] == 'false'
         end
 
         def has_online_runner?

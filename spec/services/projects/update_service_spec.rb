@@ -31,24 +31,25 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
     let_it_be(:developer) { create(:user) }
     let_it_be(:owner) { create(:user) }
 
+    before do
+      stub_container_registry_config(enabled: false)
+    end
+
     context 'when changing restrict_user_defined_variables' do
       using RSpec::Parameterized::TableSyntax
 
-      where(:current_user_role, :project_minimum_role, :from_value, :to_value, :expected_value, :expected_role, :status) do
-        :owner      | :developer  | true  | false | false | :developer  | :success
-        :owner      | :maintainer | true  | false | false | :developer  | :success
-        :owner      | :developer  | false | true  | true  | :maintainer | :success
-        :owner      | :maintainer | false | true  | true  | :maintainer | :success
-        :maintainer | :developer  | true  | false | false | :developer  | :success
-        :maintainer | :maintainer | true  | false | false | :developer  | :success
-        :maintainer | :owner      | true  | false | true  | :owner      | :api_error
-        :maintainer | :owner      | false | true  | true  | :owner      | :success
-        :maintainer | :owner      | true  | true  | true  | :owner      | :success
-        :developer  | :owner      | true  | false | true  | :owner      | :api_error
-        :developer  | :developer  | true  | false | false | :developer  | :success
-        :developer  | :maintainer | true  | false | true  | :maintainer | :api_error
-        :developer  | :maintainer | false | true  | false | :developer  | :api_error
-        :guest      | :developer  | false | true  | false | :developer  | :api_error
+      where(:current_user_role, :project_minimum_role, :to_value, :expected_value, :expected_role, :status) do
+        :owner      | :maintainer | false | false | :developer  | :success
+        :owner      | :developer  | true  | true  | :maintainer | :success
+        :maintainer | :maintainer | false | false | :developer  | :success
+        :maintainer | :maintainer | false | false | :developer  | :success
+        :maintainer | :owner      | false | true  | :owner      | :api_error
+        :maintainer | :developer  | true  | true  | :maintainer | :success
+        :maintainer | :owner      | true  | true  | :owner      | :success
+        :developer  | :owner      | false | true  | :owner      | :api_error
+        :developer  | :maintainer | false | true  | :maintainer | :api_error
+        :developer  | :developer  | true  | false | :developer  | :api_error
+        :guest      | :developer  | true  | false | :developer  | :api_error
       end
 
       with_them do
@@ -62,7 +63,6 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
 
           ci_cd_settings = project.ci_cd_settings
           ci_cd_settings[:pipeline_variables_minimum_override_role] = project_minimum_role
-          ci_cd_settings[:restrict_user_defined_variables] = from_value
           ci_cd_settings.save!
         end
 
@@ -71,7 +71,7 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
           expect(result[:status]).to eq(status)
 
           project.reload
-          expect(project.restrict_user_defined_variables).to eq(expected_value)
+          expect(project.restrict_user_defined_variables?).to eq(expected_value)
           expect(project.ci_pipeline_variables_minimum_override_role).to eq(expected_role.to_s)
         end
       end
@@ -80,18 +80,16 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
     context 'when changing ci_pipeline_variables_minimum_override_role' do
       using RSpec::Parameterized::TableSyntax
 
-      where(:current_user_role, :restrict_user_defined_variables, :from_value, :to_value, :status) do
-        :owner      | true  | :owner      | :developer  | :success
-        :owner      | true  | :owner      | :maintainer | :success
-        :owner      | true  | :developer  | :maintainer | :success
-        :owner      | true  | :maintainer | :owner      | :success
-        :maintainer | true  | :owner      | :developer  | :api_error
-        :maintainer | true  | :owner      | :maintainer | :api_error
-        :maintainer | true  | :developer  | :maintainer | :success
-        :maintainer | true  | :maintainer | :owner      | :api_error
-        :owner      | false | :owner      | :maintainer | :success
-        :maintainer | false | :owner      | :developer  | :success
-        :maintainer | false | :maintainer | :owner      | :api_error
+      where(:current_user_role, :from_value, :to_value, :status) do
+        :owner      | :owner      | :developer  | :success
+        :owner      | :owner      | :maintainer | :success
+        :owner      | :developer  | :maintainer | :success
+        :owner      | :maintainer | :owner      | :success
+        :maintainer | :owner      | :developer  | :api_error
+        :maintainer | :owner      | :maintainer | :api_error
+        :maintainer | :developer  | :maintainer | :success
+        :maintainer | :maintainer | :owner      | :api_error
+        :developer  | :maintainer | :owner      | :api_error
       end
 
       with_them do
@@ -104,7 +102,6 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
 
           ci_cd_settings = project.ci_cd_settings
           ci_cd_settings[:pipeline_variables_minimum_override_role] = from_value
-          ci_cd_settings[:restrict_user_defined_variables] = restrict_user_defined_variables
           ci_cd_settings.save!
         end
 
@@ -117,16 +114,16 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
       context 'when changing both restrict_user_defined_variables and ci_pipeline_variables_minimum_override_role' do
         using RSpec::Parameterized::TableSyntax
 
-        where(:current_user_role, :from_restrict, :to_restrict, :from_role, :to_role, :expected_restrict, :expected_role, :status) do
-          :owner      | true  | false | :owner      | :developer  | false | :developer  | :success
-          :owner      | true  | false | :owner      | :maintainer | false | :developer  | :success
-          :owner      | false | true  | :developer  | :maintainer | true  | :maintainer | :success
-          :owner      | false | true  | :maintainer | :developer  | false | :developer  | :success
-          :maintainer | true  | false | :owner      | :developer  | true  | :owner      | :api_error
-          :maintainer | false | true  | :developer  | :maintainer | true  | :maintainer | :success
-          :maintainer | false | true  | :maintainer | :developer  | false | :developer  | :success
-          :developer  | true  | false | :maintainer | :owner      | true  | :maintainer | :api_error
-          :developer  | false | true  | :owner      | :maintainer | false | :developer  | :api_error
+        where(:current_user_role, :to_restrict, :from_role, :to_role, :expected_restrict, :expected_role, :status) do
+          :owner      | false | :owner      | :developer  | false | :developer  | :success
+          :owner      | false | :owner      | :maintainer | true  | :maintainer | :success
+          :owner      | true  | :developer  | :maintainer | true  | :maintainer | :success
+          :owner      | true  | :maintainer | :developer  | false | :developer  | :success
+          :maintainer | false | :owner      | :developer  | true  | :owner      | :api_error
+          :maintainer | true  | :developer  | :maintainer | true  | :maintainer | :success
+          :maintainer | true  | :maintainer | :developer  | false | :developer  | :success
+          :developer  | false | :maintainer | :owner      | true  | :maintainer | :api_error
+          :developer  | true  | :owner      | :maintainer | true  | :owner      | :api_error
         end
 
         with_them do
@@ -139,7 +136,6 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
 
             ci_cd_settings = project.ci_cd_settings
             ci_cd_settings[:pipeline_variables_minimum_override_role] = from_role
-            ci_cd_settings[:restrict_user_defined_variables] = from_restrict
             ci_cd_settings.save!
           end
 
@@ -150,7 +146,7 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
             expect(result[:status]).to eq(status)
 
             project.reload
-            expect(project.restrict_user_defined_variables).to eq(expected_restrict)
+            expect(project.restrict_user_defined_variables?).to eq(expected_restrict)
             expect(project.ci_pipeline_variables_minimum_override_role).to eq(expected_role.to_s)
           end
         end
@@ -513,6 +509,12 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
     end
 
     context 'when archiving a project' do
+      before do
+        allow(Projects::UnlinkForkService).to receive(:new).and_return(unlink_fork_service)
+      end
+
+      let(:unlink_fork_service) { instance_double(Projects::UnlinkForkService, execute: true) }
+
       it_behaves_like 'publishing Projects::ProjectAttributesChangedEvent',
         params: { archived: true },
         attributes: %w[updated_at archived]
@@ -525,6 +527,24 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
             namespace_id: project.namespace_id,
             root_namespace_id: project.root_namespace.id
           )
+      end
+
+      context 'when project is being archived' do
+        it 'calls UnlinkForkService' do
+          project.update!(archived: false)
+
+          expect(Projects::UnlinkForkService).to receive(:new).with(project, user).and_return(unlink_fork_service)
+
+          update_project(project, user, archived: true)
+        end
+      end
+
+      context 'when project is not being archived' do
+        it 'does not call UnlinkForkService' do
+          expect(Projects::UnlinkForkService).not_to receive(:new)
+
+          update_project(project, user, archived: false)
+        end
       end
     end
 
@@ -615,7 +635,7 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
         end
 
         def stub_rename_base_repository_in_registry(dry_run:, result: nil)
-          options = { name: new_name }
+          options = { name: new_name, project: project }
           options[:dry_run] = true if dry_run
 
           allow(ContainerRegistry::GitlabApiClient)
@@ -625,7 +645,7 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
         end
 
         def expect_rename_of_base_repository_in_registry(dry_run:, path: nil)
-          options = { name: new_name }
+          options = { name: new_name, project: project }
           options[:dry_run] = true if dry_run
 
           expect(ContainerRegistry::GitlabApiClient)
@@ -1167,6 +1187,90 @@ RSpec.describe Projects::UpdateService, feature_category: :groups_and_projects d
 
         it 'does not trigger event' do
           expect { service_action }.not_to trigger_internal_events('disable_inbound_job_token_scope')
+        end
+      end
+    end
+
+    describe 'with `remove_deletion_schedule` param' do
+      subject(:service_action) { update_project(project, admin, **params) }
+
+      context 'when true' do
+        let(:params) { { remove_deletion_schedule: true } }
+
+        context 'when project is marked for deletion' do
+          let_it_be_with_reload(:project) { create(:project, :aimed_for_deletion) }
+
+          it 'destroys deletion schedule' do
+            service_action
+
+            expect(project.project_namespace.reload.deletion_schedule).to be_nil
+          end
+
+          context 'when deletion schedule destroy failed' do
+            before do
+              allow(project.deletion_schedule)
+                .to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed, 'destroy failed')
+            end
+
+            it 'returns error result', :aggregate_failures do
+              result = service_action
+
+              expect(result[:status]).to eq(:error)
+              expect(result[:message]).to eq('Project could not be updated!')
+            end
+
+            it 'does not destroy deletion schedule' do
+              service_action
+
+              expect(project.project_namespace.reload.deletion_schedule).not_to be_nil
+            end
+
+            context 'when updating other columns' do
+              let(:params) { { remove_deletion_schedule: true, description: 'new' } }
+
+              it 'does not persist other changes' do
+                service_action
+
+                expect(project.reload.description).not_to eq('new')
+              end
+            end
+          end
+
+          context 'when `replicate_deletion_schedule_operations` flag is disabled' do
+            before do
+              stub_feature_flags(replicate_deletion_schedule_operations: false)
+            end
+
+            it 'does not destroy deletion schedule', :aggregate_failures do
+              result = service_action
+
+              expect(result[:status]).to eq(:success)
+              expect(project.project_namespace.reload.deletion_schedule).not_to be_nil
+            end
+          end
+        end
+
+        context 'when project is not marked for deletion' do
+          let_it_be(:project) { create(:project) }
+
+          it 'does not raise error' do
+            result = service_action
+
+            expect(result[:status]).to eq(:success)
+          end
+        end
+      end
+
+      context 'when false' do
+        let_it_be(:project) { create(:project, :aimed_for_deletion) }
+
+        let(:params) { { remove_deletion_schedule: false } }
+
+        it 'does not destroy deletion schedule', :aggregate_failures do
+          result = service_action
+
+          expect(result[:status]).to eq(:success)
+          expect(project.project_namespace.reload.deletion_schedule).not_to be_nil
         end
       end
     end

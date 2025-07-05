@@ -190,7 +190,7 @@ Before you ask GitLab for help, search the [GitLab documentation](https://docs.g
 
 ### Security best practices
 
-Review the [GitLab Security documentation](_index.md) for what suggestions will work best for your environment and needs. For GitLab Self-Managed, consider reviewing our [diagram of GitLab components](../development/architecture.md#simplified-component-overview) to familiarize yourself with the various parts of a GitLab installation.
+Review the [GitLab Security documentation](_index.md) for suggestions on managing your environment.
 
 #### Hardening Recommendations
 
@@ -202,4 +202,4 @@ You can also consider implementing abuse rate limiting as detailed in [Git abuse
 
 GitLab SIRT maintains an active repository of detections in the [GitLab SIRT public project](https://gitlab.com/gitlab-security-oss/guard/-/tree/main/detections).
 
-The detections in this repository are based on the audit events and in the general Sigma rule format. You can use sigma rule converter to get the rules in your desired format. Please refer to the repository for more information about Sigma format and tools related to it. Make sure you have GitLab audit logs ingested to your SIEM. You should follow the audit event streaming guide [for your self-managed instance](../administration/audit_event_streaming/_index.md) or [GitLab.com top-level group](../user/compliance/audit_event_streaming.md) to stream audit events to your desired destination.
+The detections in this repository are based on the audit events and in the general Sigma rule format. You can use sigma rule converter to get the rules in your desired format. Visit the repository for more information about Sigma format and tools related to it. Make sure you have GitLab audit logs ingested to your SIEM. You should follow the audit event streaming guide [for your self-managed instance](../administration/audit_event_streaming/_index.md) or [GitLab.com top-level group](../user/compliance/audit_event_streaming.md) to stream audit events to your desired destination.

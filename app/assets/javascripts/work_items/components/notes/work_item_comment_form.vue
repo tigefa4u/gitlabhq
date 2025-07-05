@@ -2,15 +2,11 @@
 import { GlButton, GlFormCheckbox, GlTooltipDirective } from '@gitlab/ui';
 import { helpPagePath } from '~/helpers/help_page_helper';
 import { s__, __ } from '~/locale';
+import { detectAndConfirmSensitiveTokens } from '~/lib/utils/secret_detection';
 import { capitalizeFirstCharacter } from '~/lib/utils/text_utility';
-import {
-  STATE_OPEN,
-  WORK_ITEM_TYPE_NAME_TASK,
-  WIDGET_TYPE_EMAIL_PARTICIPANTS,
-  i18n,
-} from '~/work_items/constants';
+import { STATE_OPEN, i18n } from '~/work_items/constants';
 import { getDraft, clearDraft, updateDraft } from '~/lib/utils/autosave';
-import { findWidget } from '~/issues/list/utils';
+import gfmEventHub from '~/vue_shared/components/markdown/eventhub';
 import { confirmAction } from '~/lib/utils/confirm_via_gl_modal/confirm_via_gl_modal';
 import glAbilitiesMixin from '~/vue_shared/mixins/gl_abilities_mixin';
 import MarkdownEditor from '~/vue_shared/components/markdown/markdown_editor.vue';
@@ -19,19 +15,7 @@ import WorkItemStateToggle from '~/work_items/components/work_item_state_toggle.
 import CommentFieldLayout from '~/notes/components/comment_field_layout.vue';
 import workItemByIidQuery from '../../graphql/work_item_by_iid.query.graphql';
 import workItemEmailParticipantsByIidQuery from '../../graphql/notes/work_item_email_participants_by_iid.query.graphql';
-
-const DOCS_WORK_ITEM_LOCKED_TASKS_PATH = helpPagePath('user/tasks.html', {
-  anchor: 'lock-discussion',
-});
-const DOCS_WORK_ITEM_CONFIDENTIAL_TASKS_PATH = helpPagePath('user/tasks.html', {
-  anchor: 'confidential-tasks',
-});
-const DOCS_WORK_ITEM_LOCKED_OKRS_PATH = helpPagePath('user/okrs.html', {
-  anchor: 'lock-discussion',
-});
-const DOCS_WORK_ITEM_CONFIDENTIAL_OKRS_PATH = helpPagePath('user/okrs.html', {
-  anchor: 'confidential-okrs',
-});
+import { findEmailParticipantsWidget } from '../../utils';
 
 export default {
   i18n: {
@@ -204,23 +188,11 @@ export default {
     commentButtonTextComputed() {
       return this.isNoteInternal ? this.$options.i18n.addInternalNote : this.commentButtonText;
     },
-    docsLinks() {
-      return this.workItemType === WORK_ITEM_TYPE_NAME_TASK
-        ? {
-            confidential_issues_docs_path: DOCS_WORK_ITEM_CONFIDENTIAL_TASKS_PATH,
-            locked_discussion_docs_path: DOCS_WORK_ITEM_LOCKED_TASKS_PATH,
-          }
-        : {
-            confidential_issues_docs_path: DOCS_WORK_ITEM_CONFIDENTIAL_OKRS_PATH,
-            locked_discussion_docs_path: DOCS_WORK_ITEM_LOCKED_OKRS_PATH,
-          };
-    },
     getWorkItemData() {
       return {
         confidential: this.isWorkItemConfidential,
         discussion_locked: this.isDiscussionLocked,
         issue_email_participants: this.emailParticipants,
-        ...this.docsLinks,
       };
     },
     workItemTypeKey() {
@@ -230,7 +202,7 @@ export default {
       return !this.isNewDiscussion && this.isDiscussionResolvable && this.hasReplies;
     },
     resolveCheckboxLabel() {
-      return this.isDiscussionResolved ? __('Unresolve thread') : __('Resolve thread');
+      return this.isDiscussionResolved ? __('Reopen thread') : __('Resolve thread');
     },
     canMarkNoteAsInternal() {
       return this.workItem?.userPermissions?.markNoteAsInternal;
@@ -269,8 +241,7 @@ export default {
       },
       update(data) {
         return (
-          findWidget(WIDGET_TYPE_EMAIL_PARTICIPANTS, data?.workspace?.workItem)?.emailParticipants
-            ?.nodes || []
+          findEmailParticipantsWidget(data?.workspace?.workItem)?.emailParticipants?.nodes || []
         );
       },
     },
@@ -294,6 +265,11 @@ export default {
     },
   },
   methods: {
+    handleKeydownUpArrow(e) {
+      if (this.commentText === '') {
+        gfmEventHub.$emit('edit-current-user-last-note', e);
+      }
+    },
     setCommentText(newText) {
       /**
        * https://gitlab.com/gitlab-org/gitlab/-/issues/388314
@@ -312,6 +288,12 @@ export default {
       }
     },
     async cancelEditing() {
+      // Don't cancel if autosuggest open in plain text editor
+      if (
+        this.$refs.markdownEditor.$el.querySelector('textarea')?.classList.contains('at-who-active')
+      ) {
+        return;
+      }
       if (this.commentText && this.commentText !== this.initialValue) {
         const msg = s__('WorkItem|Are you sure you want to cancel editing?');
 
@@ -329,7 +311,7 @@ export default {
       this.$emit('cancelEditing');
       clearDraft(this.autosaveKey);
     },
-    submitForm(shouldMeasureTemperature = true) {
+    async submitForm(shouldMeasureTemperature = true) {
       this.isMeasuringCommentTemperature =
         this.glAbilities.measureCommentTemperature && shouldMeasureTemperature;
 
@@ -341,6 +323,12 @@ export default {
       if (this.isSubmitting) {
         return;
       }
+
+      const confirmSubmit = await detectAndConfirmSensitiveTokens({ content: this.commentText });
+      if (!confirmSubmit) {
+        return;
+      }
+
       if (this.toggleResolveChecked) {
         this.$emit('toggleResolveDiscussion');
       }
@@ -362,9 +350,9 @@ export default {
           :is-internal-note="isDiscussionInternal || isNoteInternal"
           :note="commentText"
           :noteable-data="getWorkItemData"
-          :noteable-type="workItemTypeKey"
         >
           <markdown-editor
+            ref="markdownEditor"
             class="js-gfm-wrapper"
             :value="commentText"
             :render-markdown-path="markdownPreviewPath"
@@ -380,7 +368,10 @@ export default {
             supports-quick-actions
             :autofocus="autofocus"
             :restricted-tool-bar-items="restrictedToolBarItems"
+            @focus="$emit('focus')"
+            @blur="$emit('blur')"
             @input="setCommentText"
+            @keydown.up="handleKeydownUpArrow"
             @keydown.meta.enter="submitForm()"
             @keydown.ctrl.enter="submitForm()"
             @keydown.esc.stop="cancelEditing"

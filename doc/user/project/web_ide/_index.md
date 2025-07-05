@@ -15,25 +15,16 @@ title: Web IDE
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/95169) in GitLab 15.7 [with a flag](../../../administration/feature_flags.md) named `vscode_web_ide`. Disabled by default.
-- [Enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/371084) in GitLab 15.7.
-- [Enabled on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/115741) in GitLab 15.11.
+- [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/188427) in GitLab 18.0. Feature flag `vscode_web_ide` removed.
 
 {{< /history >}}
-
-{{< alert type="flag" >}}
-
-The availability of this feature is controlled by a feature flag.
-For more information, see the history.
-
-{{< /alert >}}
 
 The Web IDE is an advanced editor where you can edit multiple files, stage changes, and create
 commits directly in the GitLab UI. Unlike the [Web Editor](../repository/web_editor.md), the Web
 IDE provides a full-featured development environment with source control management.
 
 Support for [GitLab Flavored Markdown](../../markdown.md) preview in the Web IDE is proposed in
-[issue 645](https://gitlab.com/gitlab-org/gitlab-vscode-extension/-/issues/645).
+[epic 15810](https://gitlab.com/groups/gitlab-org/-/epics/15810).
 
 ## Open the Web IDE
 
@@ -44,10 +35,16 @@ You can access the Web IDE through several methods.
 1. On the left sidebar, select **Search or go to** and find your project.
 1. Use the <kbd>.</kbd> keyboard shortcut.
 
-### From a file or directory
+### From a directory
 
 1. On the left sidebar, select **Search or go to** and find your project.
-1. Go to your file or directory.
+1. Go to your directory.
+1. Select **Code > Open in Web IDE**.
+
+### From a file
+
+1. On the left sidebar, select **Search or go to** and find your project.
+1. Go to your file.
 1. Select **Edit > Open in Web IDE**.
 
 ### From a merge request
@@ -255,25 +252,25 @@ To view any notification you might have missed:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/151352) as a [beta](../../../policy/development_stages_support.md#beta) in GitLab 17.0 [with flags](../../../administration/feature_flags.md) named `web_ide_oauth` and `web_ide_extensions_marketplace`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/151352) as a [beta](../../../policy/development_stages_support.md#beta) in GitLab 17.0 [with flags](../../../administration/feature_flags/_index.md) named `web_ide_oauth` and `web_ide_extensions_marketplace`. Disabled by default.
 - `web_ide_oauth` [enabled on GitLab.com, GitLab Self-Managed, and GitLab Dedicated](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/163181) in GitLab 17.4.
 - `web_ide_extensions_marketplace` [enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/459028) in GitLab 17.4.
 - `web_ide_oauth` [removed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/167464) in GitLab 17.5.
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/508996) the `vscode_extension_marketplace_settings` [feature flag](../../../administration/feature_flags.md) in GitLab 17.10. Disabled by default.
-- `web_ide_extensions_marketplace` and `vscode_extension_marketplace_settings` [enabled on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/459028) in GitLab 17.11.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/508996) the `vscode_extension_marketplace_settings` [feature flag](../../../administration/feature_flags/_index.md) in GitLab 17.10. Disabled by default.
+- `web_ide_extensions_marketplace` [enabled on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/184662), and `vscode_extension_marketplace_settings` [enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/184662) in GitLab 17.11.
+- [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/192659) in GitLab 18.1. Feature flags `web_ide_extensions_marketplace` and `vscode_extension_marketplace_settings` removed.
 
 {{< /history >}}
-
-{{< alert type="flag" >}}
-
-The availability of this feature is controlled by a feature flag.
-For more information, see the history.
-
-{{< /alert >}}
 
 The VS Code Extension Marketplace provides you with access to extensions that enhance the
 functionality of the Web IDE. By default, the GitLab Web IDE instance is configured to use the
 [Open VSX Registry](https://open-vsx.org/).
+
+{{< alert type="note" >}}
+
+To access the VS Code Extension Marketplace, your web browser must be able to access the `.cdn.web-ide.gitlab-static.net` assets host. This security requirement ensures that third-party extensions run in isolation, and cannot access your account.
+
+{{< /alert >}}
 
 Before you can manage and use extensions in the Web IDE:
 
@@ -315,6 +312,10 @@ With the Extensions Marketplace, you can add Vim keybindings to the Web IDE.
 
 To enable Vim keybindings, install the [Vim](https://open-vsx.org/extension/vscodevim/vim)
 extension. For more information, see [install an extension](#install-an-extension).
+
+#### ASCIIDoc Support
+
+The [ASCIIDoc](https://open-vsx.org/extension/asciidoctor/asciidoctor-vscode) extension provides live preview, syntax highlighting, and snippets for ASCIIDoc files in the Web IDE. To use ASCIIDoc markup preview in the Web IDE, you must install the ASCIIDoc extension. For more information, see [install an extension](#install-an-extension).
 
 ## Related topics
 
@@ -393,13 +394,14 @@ see [access token expiration](../../../integration/oauth_provider.md#access-toke
 
 {{< /details >}}
 
-On GitLab Self-Managed, [Workhorse](../../../development/workhorse/_index.md) must be installed
-and running in front of the GitLab Rails server.
-Otherwise, you might encounter issues when you open the Web IDE or
-use certain features like Markdown preview.
+On GitLab Self-Managed, Workhorse must be installed and running in front of the GitLab Rails
+server. If it is not, you might encounter issues when you open the Web IDE or use certain
+features like Markdown preview.
 
-For more information about this dependency,
-see [features that rely on Workhorse](../../../development/workhorse/gitlab_features.md#5-web-ide).
+For security, some parts of the Web IDE must run in a separate origin. To support this
+approach, the Web IDE uses Workhorse to route requests appropriately to and from Web IDE
+assets. The Web IDE assets are static frontend assets, so it's unnecessary overhead to rely
+on Rails for this effort.
 
 ### Report a problem
 

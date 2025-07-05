@@ -95,8 +95,6 @@ FactoryBot.define do
     active { true }
     api_url { 'https://prometheus.example.com/' }
     manual_configuration { true }
-    google_iap_audience_client_id { 'IAP_CLIENT_ID.apps.googleusercontent.com' }
-    google_iap_service_account_json { '{ type: "service_account", project_id: "123" }' }
   end
 
   factory :bamboo_integration, class: 'Integrations::Bamboo' do
@@ -280,6 +278,7 @@ FactoryBot.define do
     project
     active { true }
     type { 'Integrations::Discord' }
+    webhook { 'https://discord.com/api/webhooks/12345/token_12-34' }
   end
 
   factory :mattermost_integration, class: 'Integrations::Mattermost' do
@@ -529,5 +528,6 @@ FactoryBot.define do
   trait :instance do
     project { nil }
     instance { true }
+    organization { association(:organization) }
   end
 end

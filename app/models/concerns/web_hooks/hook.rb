@@ -7,6 +7,7 @@ module WebHooks
     InterpolationError = Class.new(StandardError)
 
     SECRET_MASK = '************'
+    MAX_PARAM_LENGTH = 8192
 
     # See app/validators/json_schemas/web_hooks_url_variables.json
     VARIABLE_REFERENCE_RE = /\{([A-Za-z]+[0-9]*(?:[._-][A-Za-z0-9]+)*)\}/
@@ -14,20 +15,21 @@ module WebHooks
     included do
       include Sortable
       include WebHooks::AutoDisabling
+      include Gitlab::EncryptedAttribute
 
       attr_encrypted :token,
         mode: :per_attribute_iv,
         algorithm: 'aes-256-gcm',
-        key: Settings.attr_encrypted_db_key_base_32
+        key: :db_key_base_32
 
       attr_encrypted :url,
         mode: :per_attribute_iv,
         algorithm: 'aes-256-gcm',
-        key: Settings.attr_encrypted_db_key_base_32
+        key: :db_key_base_32
 
       attr_encrypted :url_variables,
         mode: :per_attribute_iv,
-        key: Settings.attr_encrypted_db_key_base_32,
+        key: :db_key_base_32,
         algorithm: 'aes-256-gcm',
         marshal: true,
         marshaler: ::Gitlab::Json,
@@ -36,7 +38,7 @@ module WebHooks
 
       attr_encrypted :custom_headers,
         mode: :per_attribute_iv,
-        key: Settings.attr_encrypted_db_key_base_32,
+        key: :db_key_base_32,
         algorithm: 'aes-256-gcm',
         marshal: true,
         marshaler: ::Gitlab::Json,
@@ -44,9 +46,14 @@ module WebHooks
         encode_iv: false
 
       validates :url, presence: true
-      validates :url, public_url: true, if: ->(hook) { hook.validate_public_url? && !hook.url_variables? }
+      validates :url, length: { maximum: MAX_PARAM_LENGTH }
+      validates :url, public_url: true, if: ->(hook) {
+        # Apply the validation up to the point where the length validation above would make the record invalid.
+        # See https://gitlab.com/gitlab-org/gitlab/-/issues/524020#note_2529307579
+        (hook.url&.length&.<= MAX_PARAM_LENGTH) && hook.validate_public_url? && !hook.url_variables?
+      }
 
-      validates :token, format: { without: /\n/ }
+      validates :token, length: { maximum: MAX_PARAM_LENGTH }, format: { without: /\n/ }
 
       after_initialize :initialize_url_variables
       after_initialize :initialize_custom_headers
@@ -168,11 +175,21 @@ module WebHooks
       end
 
       def decrypt_url_was
-        self.class.decrypt_url(encrypted_url_was, iv: Base64.decode64(encrypted_url_iv_was))
+        options = {
+          key: dynamic_encryption_key_for_operation(attr_encrypted_encrypted_attributes[:url][:key]),
+          iv: Base64.decode64(encrypted_url_iv_was)
+        }
+
+        self.class.attr_encrypted_decrypt(:url, encrypted_url_was, options)
       end
 
       def url_variables_were
-        self.class.decrypt_url_variables(encrypted_url_variables_was, iv: encrypted_url_variables_iv_was)
+        options = {
+          key: dynamic_encryption_key_for_operation(attr_encrypted_encrypted_attributes[:url_variables][:key]),
+          iv: encrypted_url_variables_iv_was
+        }
+
+        self.class.attr_encrypted_decrypt(:url_variables, encrypted_url_variables_was, options)
       end
 
       def initialize_url_variables

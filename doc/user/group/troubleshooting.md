@@ -50,7 +50,7 @@ If you need to find all the groups that are pending deletion, you can use the fo
 
 ```ruby
 Group.all.each do |g|
- if g.marked_for_deletion?
+ if g.self_deletion_scheduled?
     puts "Group ID: #{g.id}"
     puts "Group name: #{g.name}"
     puts "Group path: #{g.full_path}"
@@ -112,3 +112,9 @@ This error typically occurs when a user attempts to remove the `container_regist
 1. Unarchive the project.
 1. Delete the `container_registry` images.
 1. Archive the project.
+
+## Group owner unable to approve pending users with `Awaiting user signup` badge
+
+Email invitations to non-GitLab users are listed under `Pending members` with the `Awaiting user signup` status.
+When the user registers for GitLab.com, the status updates to `Pending owner action` and the group Owner can
+complete the approval process.

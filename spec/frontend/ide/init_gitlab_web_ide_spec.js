@@ -4,8 +4,8 @@ import { initGitlabWebIDE } from '~/ide/init_gitlab_web_ide';
 import {
   handleTracking,
   handleUpdateUrl,
-  isMultiDomainEnabled,
   getBaseConfig,
+  getWebIDEWorkbenchConfig,
 } from '~/ide/lib/gitlab_web_ide';
 import Tracking from '~/tracking';
 import setWindowLocation from 'helpers/set_window_location_helper';
@@ -20,8 +20,9 @@ jest.mock('~/lib/utils/csrf', () => ({
 }));
 jest.mock('~/tracking');
 jest.mock('~/ide/render_web_ide_error');
-jest.mock('~/ide/lib/gitlab_web_ide/is_multi_domain_enabled');
+jest.mock('~/ide/lib/gitlab_web_ide/get_web_ide_workbench_config');
 jest.mock('~/ide/lib/gitlab_web_ide/get_base_config');
+jest.mock('~/ide/lib/gitlab_web_ide/get_web_ide_workbench_config');
 
 const ROOT_ELEMENT_ID = 'ide';
 const TEST_NONCE = 'test123nonce';
@@ -31,6 +32,8 @@ const TEST_BRANCH_NAME = '12345-foo-patch';
 const TEST_USER_PREFERENCES_PATH = '/user/preferences';
 const TEST_GITLAB_WEB_IDE_PUBLIC_PATH = 'test/webpack/assets/gitlab-web-ide/public/path';
 const TEST_FILE_PATH = 'foo/README.md';
+const TEST_LINE_NUMBER = { beginning: 42, end: 42 };
+const TEST_LINE_RANGE = { beginning: 42, end: 46 };
 const TEST_MR_ID = '7';
 const TEST_MR_TARGET_PROJECT = 'gitlab-org/the-real-gitlab';
 const TEST_SIGN_IN_PATH = 'sign-in';
@@ -54,6 +57,12 @@ const TEST_OAUTH_CALLBACK_URL = getMockCallbackUrl();
 const TEST_BASE_CONFIG = {
   embedderOriginUrl: 'https://embedder.example.com',
   gitlabUrl: 'https://gitlab.example.com',
+};
+
+const TEST_WORKBENCH_CONFIG = {
+  featureFlags: {
+    crossOriginExtensionHost: true,
+  },
   workbenchBaseUrl: 'https://workbench.example.com',
   extensionsHostBaseUrl: 'https://extensions.example.com',
 };
@@ -98,8 +107,8 @@ describe('ide/init_gitlab_web_ide', () => {
     gon.features = { webIdeLanguageServer: true };
     process.env.GITLAB_WEB_IDE_PUBLIC_PATH = TEST_GITLAB_WEB_IDE_PUBLIC_PATH;
 
-    getBaseConfig.mockResolvedValue(TEST_BASE_CONFIG);
-    isMultiDomainEnabled.mockReturnValue(false);
+    getBaseConfig.mockReturnValue(TEST_BASE_CONFIG);
+    getWebIDEWorkbenchConfig.mockResolvedValue(TEST_WORKBENCH_CONFIG);
 
     createRootElement();
   });
@@ -121,9 +130,11 @@ describe('ide/init_gitlab_web_ide', () => {
       expect(start).toHaveBeenCalledTimes(1);
       expect(start).toHaveBeenCalledWith(findRootElement(), {
         ...TEST_BASE_CONFIG,
+        ...TEST_WORKBENCH_CONFIG,
         projectPath: TEST_PROJECT_PATH,
         ref: TEST_BRANCH_NAME,
         filePath: TEST_FILE_PATH,
+        lineRange: null,
         mrId: TEST_MR_ID,
         mrTargetProject: '',
         forkInfo: null,
@@ -139,9 +150,9 @@ describe('ide/init_gitlab_web_ide', () => {
           signIn: TEST_SIGN_IN_PATH,
         },
         featureFlags: {
-          crossOriginExtensionHost: false,
           languageServerWebIDE: gon.features.webIdeLanguageServer,
-          dedicatedWebIDEOrigin: false,
+          dedicatedWebIDEOrigin: true,
+          crossOriginExtensionHost: true,
         },
         editorFont: {
           fallbackFontFamily: 'monospace',
@@ -188,6 +199,39 @@ describe('ide/init_gitlab_web_ide', () => {
         findRootElement(),
         expect.objectContaining({
           mrTargetProject: TEST_MR_TARGET_PROJECT,
+        }),
+      );
+    });
+  });
+
+  describe('when URL has lineNumber in hash', () => {
+    beforeEach(() => {
+      setWindowLocation(`https://example.com/-/ide/path/to/file#L42`);
+
+      createSubject();
+    });
+
+    it('includes line number', () => {
+      expect(start).toHaveBeenCalledWith(
+        findRootElement(),
+        expect.objectContaining({
+          lineRange: TEST_LINE_NUMBER,
+        }),
+      );
+    });
+  });
+
+  describe('when URL has lineRange in hash', () => {
+    beforeEach(() => {
+      setWindowLocation(`https://example.com/-/ide/path/to/file#L42-46`);
+
+      createSubject();
+    });
+    it('includes line range', () => {
+      expect(start).toHaveBeenCalledWith(
+        findRootElement(),
+        expect.objectContaining({
+          lineRange: TEST_LINE_RANGE,
         }),
       );
     });
@@ -288,21 +332,6 @@ describe('ide/init_gitlab_web_ide', () => {
       );
     });
 
-    it('calls start with element and crossOriginExtensionHost flag if extensionMarketplaceSettings is enabled', async () => {
-      await setMockExtensionMarketplaceSettingsDataset();
-      expect(start).toHaveBeenCalledTimes(1);
-      expect(start).toHaveBeenCalledWith(
-        findRootElement(),
-        expect.objectContaining({
-          featureFlags: {
-            crossOriginExtensionHost: true,
-            languageServerWebIDE: gon.features.webIdeLanguageServer,
-            dedicatedWebIDEOrigin: false,
-          },
-        }),
-      );
-    });
-
     it('calls start with settingsContextHash', async () => {
       await setMockExtensionMarketplaceSettingsDataset();
 
@@ -314,29 +343,5 @@ describe('ide/init_gitlab_web_ide', () => {
         }),
       );
     });
-
-    it.each(['opt_in_unset', 'opt_in_disabled'])(
-      'calls start with element and crossOriginExtensionHost flag if extensionMarketplaceSettings reason is $reason',
-      async (reason) => {
-        const mockExtensionMarketplaceDisabledSettings = {
-          enabled: false,
-          reason,
-        };
-
-        await setMockExtensionMarketplaceSettingsDataset(mockExtensionMarketplaceDisabledSettings);
-
-        expect(start).toHaveBeenCalledTimes(1);
-        expect(start).toHaveBeenCalledWith(
-          findRootElement(),
-          expect.objectContaining({
-            featureFlags: {
-              crossOriginExtensionHost: true,
-              languageServerWebIDE: gon.features.webIdeLanguageServer,
-              dedicatedWebIDEOrigin: false,
-            },
-          }),
-        );
-      },
-    );
   });
 });

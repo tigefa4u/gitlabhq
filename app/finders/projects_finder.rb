@@ -34,10 +34,12 @@
 #     language: int
 #     language_name: string
 #     active: boolean - Whether to include projects that are not archived.
+#     namespace_path: string - Full path of the project's namespace (group or user).
 class ProjectsFinder < UnionFinder
   include CustomAttributesFilter
   include UpdatedAtFilter
   include Projects::SearchFilter
+  include Gitlab::Utils::StrongMemoize
 
   attr_accessor :params
   attr_reader :current_user, :project_ids_relation
@@ -51,6 +53,8 @@ class ProjectsFinder < UnionFinder
   end
 
   def execute
+    return Project.none if params[:namespace_path].present? && namespace_id.nil?
+
     user = params.delete(:user)
     collection =
       if user
@@ -78,6 +82,7 @@ class ProjectsFinder < UnionFinder
 
   # EE would override this to add more filters
   def filter_projects(collection)
+    collection = by_namespace_path(collection)
     collection = by_deleted_status(collection)
     collection = by_ids(collection)
     collection = by_full_paths(collection)
@@ -179,6 +184,10 @@ class ProjectsFinder < UnionFinder
     params[:full_paths].present? ? items.where_full_path_in(params[:full_paths], preload_routes: false) : items
   end
 
+  def by_namespace_path(items)
+    params[:namespace_path].present? ? items.in_namespace(namespace_id) : items
+  end
+
   def union(items)
     find_union(items, Project).with_route
   end
@@ -224,19 +233,19 @@ class ProjectsFinder < UnionFinder
   def by_marked_for_deletion_on(items)
     return items unless params[:marked_for_deletion_on].present?
 
-    items.by_marked_for_deletion_on(params[:marked_for_deletion_on])
+    items.marked_for_deletion_on(params[:marked_for_deletion_on])
   end
 
   def by_aimed_for_deletion(items)
     if ::Gitlab::Utils.to_boolean(params[:aimed_for_deletion])
-      items.aimed_for_deletion(Date.current)
+      items.self_or_ancestors_aimed_for_deletion
     else
       items
     end
   end
 
   def by_not_aimed_for_deletion(items)
-    params[:not_aimed_for_deletion].present? ? items.not_aimed_for_deletion : items
+    params[:not_aimed_for_deletion].present? ? items.self_and_ancestors_not_aimed_for_deletion : items
   end
 
   def by_last_activity_after(items)
@@ -270,24 +279,28 @@ class ProjectsFinder < UnionFinder
     items
   end
 
-  def sort(items)
-    return items.projects_order_id_desc unless params[:sort]
+  def should_sort_by_similarity?
+    params[:search].present? && (params[:sort].nil? || params[:sort].to_s == 'similarity')
+  end
 
-    return items.sorted_by_similarity_desc(params[:search]) if params[:sort] == 'similarity' && params[:search].present?
+  def sort(items)
+    return items.sorted_by_similarity_desc(params[:search]) if should_sort_by_similarity?
+
+    return items.projects_order_id_desc unless params[:sort]
 
     items.sort_by_attribute(params[:sort])
   end
 
   def by_archived(projects)
     if params[:non_archived]
-      projects.non_archived
-    elsif params.key?(:archived)
+      projects.self_and_ancestors_non_archived
+    elsif params.key?(:archived) && !params[:archived].nil?
       if params[:archived] == 'only'
-        projects.archived
+        projects.self_or_ancestors_archived
       elsif Gitlab::Utils.to_boolean(params[:archived])
         projects
       else
-        projects.non_archived
+        projects.self_and_ancestors_non_archived
       end
     else
       projects
@@ -310,15 +323,7 @@ class ProjectsFinder < UnionFinder
   def by_active(items)
     return items if params[:active].nil?
 
-    params[:active] ? active(items) : inactive(items)
-  end
-
-  def active(items)
-    items.non_archived.not_aimed_for_deletion
-  end
-
-  def inactive(items)
-    items.archived.or(items.aimed_for_deletion(Date.current))
+    params[:active] ? items.self_and_ancestors_active : items.self_or_ancestors_inactive
   end
 
   def finder_params
@@ -337,6 +342,11 @@ class ProjectsFinder < UnionFinder
       organization_ids.flatten.uniq.compact
     end
   end
+
+  def namespace_id
+    Namespace.find_by_full_path(params[:namespace_path])&.id
+  end
+  strong_memoize_attr :namespace_id
 end
 
 ProjectsFinder.prepend_mod_with('ProjectsFinder')

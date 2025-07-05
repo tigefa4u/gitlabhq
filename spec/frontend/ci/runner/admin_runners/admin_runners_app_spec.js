@@ -38,7 +38,6 @@ import {
   I18N_GROUP_TYPE,
   I18N_PROJECT_TYPE,
   INSTANCE_TYPE,
-  JOBS_ROUTE_PATH,
   PARAM_KEY_PAUSED,
   PARAM_KEY_STATUS,
   PARAM_KEY_TAG,
@@ -106,7 +105,7 @@ describe('AdminRunnersApp', () => {
   const findRunnerPagination = () => extendedWrapper(wrapper.findComponent(RunnerPagination));
   const findRunnerPaginationNext = () => findRunnerPagination().findByText('Next');
   const findRunnerFilteredSearchBar = () => wrapper.findComponent(RunnerFilteredSearchBar);
-  const findNewInstanceRunnerButton = () => wrapper.findByText('New instance runner');
+  const findNewInstanceRunnerButton = () => wrapper.findByText('Create instance runner');
 
   const createComponent = ({
     props = {},
@@ -278,6 +277,7 @@ describe('AdminRunnersApp', () => {
     expect(runnerActions.props()).toEqual({
       runner,
       editUrl: runner.editAdminUrl,
+      size: 'medium',
     });
   });
 
@@ -390,7 +390,6 @@ describe('AdminRunnersApp', () => {
         .findComponent(RunnerJobStatusBadge);
 
       expect(badge.props('jobStatus')).toBe(mockRunners[0].jobExecutionStatus);
-      expect(badge.attributes('href')).toBe(`${adminUrl}#${JOBS_ROUTE_PATH}`);
     });
 
     it('When runner is paused or unpaused, some data is refetched', () => {
@@ -493,6 +492,22 @@ describe('AdminRunnersApp', () => {
     createComponent();
     expect(findRunnerList().props('loading')).toBe(true);
     expect(findRunnerPagination().attributes('disabled')).toBeDefined();
+  });
+
+  describe('Bulk pause', () => {
+    describe('When runners are deleted', () => {
+      beforeEach(async () => {
+        await createComponent({ mountFn: mountExtended });
+      });
+      it('toast is shown', () => {
+        expect(showToast).toHaveBeenCalledTimes(0);
+
+        findRunnerList().vm.$emit('toggledPaused', { message: 'runners paused' });
+
+        expect(showToast).toHaveBeenCalledTimes(1);
+        expect(showToast).toHaveBeenCalledWith('runners paused');
+      });
+    });
   });
 
   describe('Bulk delete', () => {

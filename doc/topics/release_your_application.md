@@ -13,11 +13,18 @@ You can deploy your application internally or to the public.
 Preview a release in a review app, and use feature flags to
 release features incrementally.
 
-| | | |
-|--|--|--|
-| [**Getting started**](../user/get_started/get_started_deploy_release.md)<br>Overview of how features fit together. | [**Packages and registries**](../user/packages/_index.md)<br>Package management, container registry, artifact storage, dependency management. | [**Environments**](../ci/environments/_index.md)<br>Environments, variables, dashboards, review apps. |
-| [**Deployments**](../ci/environments/deployments.md)<br>Deployments, rollbacks, safety, approvals. | [**Releases**](../user/project/releases/_index.md)<br>Releases, versioning, assets, tags, milestones, evidence. | [**Roll out an application incrementally**](../ci/environments/incremental_rollouts.md)<br>Kubernetes, CI/CD, risk mitigation, deployment. |
-| [**Feature flags**](../operations/feature_flags.md)<br>Progressive delivery, controlled deployment, risk reduction. | [**GitLab Pages**](../user/project/pages/_index.md)<br>Static site hosting, documentation publishing, project websites, custom domains. | |
+{{< cards >}}
+
+- [Getting started](../user/get_started/get_started_deploy_release.md)
+- [Packages and registries](../user/packages/_index.md)
+- [Environments](../ci/environments/_index.md)
+- [Deployments](../ci/environments/deployments.md)
+- [Releases](../user/project/releases/_index.md)
+- [Roll out an application incrementally](../ci/environments/incremental_rollouts.md)
+- [Feature flags](../operations/feature_flags.md)
+- [GitLab Pages](../user/project/pages/_index.md)
+
+{{< /cards >}}
 
 ## Related topics
 
@@ -32,5 +39,5 @@ release features incrementally.
 - Use GitLab CI/CD to target any type of infrastructure accessible by GitLab Runner.
   [User and pre-defined environment variables](../ci/variables/_index.md) and CI/CD templates
   support setting up a vast number of deployment strategies.
-- Use GitLab [Cloud Seed](../cloud_seed/_index.md), an open-source Incubation Engineering program,
+- Use GitLab [Cloud Seed](../cloud_seed/_index.md)
   to set up deployment credentials and deploy your application to Google Cloud Run with minimal friction.

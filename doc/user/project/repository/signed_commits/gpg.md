@@ -27,7 +27,7 @@ For GitLab to consider a commit verified:
 
 - The committer must have a GPG public/private key pair.
 - The committer's public key must be uploaded to their GitLab account.
-- One of the email addresses in the GPG public key must match a **verified** email address
+- One of the email addresses in the GPG public key must match a verified email address
   used by the committer in GitLab. To keep this address private, use the automatically generated
   [private commit email address](../../../profile/_index.md#use-an-automatically-generated-private-commit-email)
   GitLab provides in your profile.
@@ -126,9 +126,9 @@ To add a GPG key to your user settings:
 1. Sign in to GitLab.
 1. On the left sidebar, select your avatar.
 1. Select **Edit profile**.
-1. Select **GPG Keys** ({{< icon name="key" >}}).
+1. Select **GPG keys** ({{< icon name="key" >}}).
 1. Select **Add new key**.
-1. In **Key**, paste your _public_ key.
+1. In **Key**, paste your public key.
 1. To add the key to your account, select **Add key**.
 
 GitLab shows the key's fingerprint, email address, and creation date.
@@ -237,7 +237,7 @@ To revoke a GPG key:
 
 1. On the left sidebar, select your avatar.
 1. Select **Edit profile**.
-1. Select **GPG Keys** ({{< icon name="key" >}}).
+1. Select **GPG keys** ({{< icon name="key" >}}).
 1. Select **Revoke** next to the GPG key you want to delete.
 
 ## Remove a GPG key
@@ -252,7 +252,7 @@ To remove a GPG key from your account:
 
 1. On the left sidebar, select your avatar.
 1. Select **Edit profile**.
-1. Select **GPG Keys** ({{< icon name="key" >}}).
+1. Select **GPG keys** ({{< icon name="key" >}}).
 1. Select **Remove** ({{< icon name="remove" >}}) next to the GPG key you want to delete.
 
 If you must unverify both future and past commits,
@@ -267,6 +267,7 @@ If you must unverify both future and past commits,
   - [OpenPGP Best Practices](https://riseup.net/en/security/message-security/openpgp/best-practices)
   - [Creating a new GPG key with subkeys](https://www.void.gr/kargig/blog/2013/12/02/creating-a-new-gpg-key-with-subkeys/) (advanced)
   - [View GPG keys in your instance](../../../../administration/credentials_inventory.md#view-gpg-keys)
+  - [Beyond Identity integration](../../integrations/beyond_identity.md)
 
 ## Troubleshooting
 

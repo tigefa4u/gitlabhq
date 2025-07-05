@@ -2,6 +2,7 @@
 // eslint-disable-next-line no-restricted-imports
 import { mapState } from 'vuex';
 import {
+  GlTooltipDirective,
   GlBadge,
   GlTab,
   GlTabs,
@@ -14,7 +15,6 @@ import {
   GlLink,
   GlSprintf,
 } from '@gitlab/ui';
-import glFeatureFlagsMixin from '~/vue_shared/mixins/gl_feature_flags_mixin';
 import { s__, __, n__, sprintf } from '~/locale';
 import { queryToObject, setUrlParams, updateHistory } from '~/lib/utils/url_utility';
 import { convertObjectPropsToCamelCase } from '~/lib/utils/common_utils';
@@ -77,10 +77,17 @@ export default {
     KeepAllAsPlaceholderModal,
   },
   directives: {
+    GlTooltip: GlTooltipDirective,
     GlModal: GlModalDirective,
   },
-  mixins: [glFeatureFlagsMixin()],
-  inject: ['group'],
+  inject: {
+    group: {
+      default: {},
+    },
+    allowBypassPlaceholderConfirmation: {
+      default: false,
+    },
+  },
   data() {
     return {
       selectedTabIndex: 0,
@@ -140,9 +147,6 @@ export default {
       }
 
       return PLACEHOLDER_USER_STATUS.REASSIGNED;
-    },
-    isCsvReassignmentEnabled() {
-      return this.glFeatures.importerUserMappingReassignmentCsv;
     },
     sortOptions() {
       return [
@@ -323,7 +327,7 @@ export default {
 
 <template>
   <div>
-    <gl-alert variant="warning" :dismissible="false" class="mt-3">
+    <gl-alert variant="warning" :dismissible="false" class="gl-mt-3">
       <gl-sprintf
         :message="
           s__(
@@ -335,6 +339,20 @@ export default {
           <gl-link :href="$options.helpUrl" target="_blank">{{ content }}</gl-link>
         </template>
       </gl-sprintf>
+
+      <p v-if="allowBypassPlaceholderConfirmation" class="gl-mb-0 gl-mt-3">
+        <gl-sprintf
+          :message="
+            s__(
+              'UserMapping|The %{strongStart}Skip confirmation when administrators reassign placeholder users%{strongEnd} setting is enabled. Users do not have to approve the reassignment, and contributions are reassigned immediately.',
+            )
+          "
+        >
+          <template #strong="{ content }">
+            <strong>{{ content }}</strong>
+          </template>
+        </gl-sprintf>
+      </p>
     </gl-alert>
     <gl-tabs
       v-model="selectedTabIndex"
@@ -403,23 +421,21 @@ export default {
 
       <template #tabs-end>
         <div class="gl-ml-auto gl-flex gl-gap-2">
-          <template v-if="isCsvReassignmentEnabled">
-            <gl-button
-              v-gl-modal="$options.uploadCsvModalId"
-              variant="link"
-              icon="media"
-              data-testid="reassign-csv-button"
-            >
-              {{ s__('UserMapping|Reassign with CSV file') }}
-            </gl-button>
-            <csv-upload-modal :modal-id="$options.uploadCsvModalId" />
-          </template>
+          <gl-button
+            v-gl-modal="$options.uploadCsvModalId"
+            icon="media"
+            data-testid="reassign-csv-button"
+          >
+            {{ s__('UserMapping|Reassign with CSV file') }}
+          </gl-button>
+          <csv-upload-modal :modal-id="$options.uploadCsvModalId" />
           <gl-disclosure-dropdown
+            v-gl-tooltip.hover.focus="__('More actions')"
             icon="ellipsis_v"
-            placement="bottom-end"
             category="tertiary"
             no-caret
-            block
+            text-sr-only
+            :toggle-text="__('More actions')"
             :auto-close="false"
           >
             <gl-disclosure-dropdown-item

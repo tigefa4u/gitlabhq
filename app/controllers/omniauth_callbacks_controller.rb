@@ -25,7 +25,6 @@ class OmniauthCallbacksController < Devise::OmniauthCallbacksController
   after_action :verify_known_sign_in
 
   protect_from_forgery except: [:failure] + AuthHelper.saml_providers, with: :exception, prepend: true
-  before_action :log_saml_response, only: [:saml]
 
   feature_category :system_access
 
@@ -84,6 +83,7 @@ class OmniauthCallbacksController < Devise::OmniauthCallbacksController
   end
 
   def saml
+    log_saml_response
     omniauth_flow(Gitlab::Auth::Saml)
   rescue Gitlab::Auth::Saml::IdentityLinker::UnverifiedRequest
     redirect_unverified_saml_initiation
@@ -129,9 +129,7 @@ class OmniauthCallbacksController < Devise::OmniauthCallbacksController
   end
 
   def omniauth_login_counter
-    @counter ||= Gitlab::Metrics.counter(
-      :gitlab_omniauth_login_total,
-      'Counter of OmniAuth login attempts')
+    Gitlab::Auth::OAuth::BeforeRequestPhaseOauthLoginCounterIncrement.counter
   end
 
   def log_failed_login(user, provider)
@@ -229,7 +227,7 @@ class OmniauthCallbacksController < Devise::OmniauthCallbacksController
 
   # Overridden in EE
   def build_auth_user_params
-    { organization_id: Current.organization&.id }
+    { organization_id: Current.organization.id }
   end
 
   # Overridden in EE

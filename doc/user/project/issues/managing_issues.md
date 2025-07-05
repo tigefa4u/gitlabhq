@@ -47,7 +47,7 @@ To edit an issue:
 
 {{< details >}}
 
-- Tier: Ultimate
+- Tier: Premium, Ultimate
 - Add-on: GitLab Duo Enterprise
 - Offering: GitLab.com
 - Status: Experiment
@@ -58,10 +58,14 @@ To edit an issue:
 
 - [Introduced](https://gitlab.com/groups/gitlab-org/-/epics/10762) in GitLab 16.3 as an [experiment](../../../policy/development_stages_support.md#experiment).
 - Changed to require GitLab Duo add-on in GitLab 17.6 and later.
+- Changed to include Premium in GitLab 18.0.
 
 {{< /history >}}
 
 Generate a detailed description for an issue based on a short summary you provide.
+
+<i class="fa fa-youtube-play youtube" aria-hidden="true"></i> [Watch an overview](https://www.youtube.com/watch?v=-BWBQat7p5M)
+<!-- Video published on 2024-12-18 -->
 
 Prerequisites:
 
@@ -190,7 +194,7 @@ You can also use the `/move` [quick action](../quick_actions.md) in a comment or
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/371252) in GitLab 16.9 [with a flag](../../../administration/feature_flags.md) named `move_issue_children`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/371252) in GitLab 16.9 [with a flag](../../../administration/feature_flags/_index.md) named `move_issue_children`. Disabled by default.
 - [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/371252) in GitLab 16.11.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/371252) in GitLab 17.3. Feature flag `move_issue_children` removed.
 
@@ -400,7 +404,7 @@ to close. Users can include issue closing patterns in the merge request descript
 of a commit message. Closing messages in commit messages are easy to miss. In both cases, the merge request widget
 shows information about the issue to close on merge:
 
-![This merge request closes issue #2754.](../merge_requests/img/closing_pattern_v17_4.png)
+![This merge request closes issue #2754.](img/closing_pattern_v17_4.png)
 
 When you merge a merge request, GitLab checks that you have permission to close the targeted issues.
 In public repositories, this check is important, because external users can create both merge requests
@@ -513,8 +517,6 @@ of your installation.
 
 {{< /history >}}
 
-<!-- When issues as work items are GA and feature flag `work_items_view_preference` is removed, remove the prerequisite below. -->
-
 If an issue description is long, GitLab displays only part of it.
 To see the whole description, you must select **Read more**.
 This truncation makes it easier to find other elements on the page without scrolling through lengthy text.
@@ -537,8 +539,6 @@ This setting is remembered and affects all issues, tasks, epics, objectives, and
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/181184) in GitLab 17.10.
 
 {{< /history >}}
-
-<!-- When issues as work items are GA and feature flag `work_items_view_preference` is removed, remove the prerequisite below. -->
 
 Issue attributes are shown in a sidebar to the right of the description when space allows.
 
@@ -728,7 +728,7 @@ The following sections describe how to work with the issue list.
 
 {{< history >}}
 
-- Filtering by type was [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/322755) in GitLab 13.10 [with a flag](../../../administration/feature_flags.md) named `vue_issues_list`. Disabled by default.
+- Filtering by type was [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/322755) in GitLab 13.10 [with a flag](../../../administration/feature_flags/_index.md) named `vue_issues_list`. Disabled by default.
 - Filtering by type was [enabled on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/322755) in GitLab 14.10.
 - Filtering by type is generally available in GitLab 15.1. [Feature flag `vue_issues_list`](https://gitlab.com/gitlab-org/gitlab/-/issues/359966) removed.
 - Filtering by health status [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/218711) in GitLab 15.5.
@@ -760,7 +760,7 @@ To filter the list issues for text in a title or description:
 1. In the dropdown list that appears, select **Search within**, and then either **Titles** or **Descriptions**.
 1. Press <kbd>Enter</kbd> or select the search icon ({{< icon name="search" >}}).
 
-Filtering issues uses [PostgreSQL full text search](https://www.postgresql.org/docs/current/textsearch-intro.html)
+Filtering issues uses [PostgreSQL full text search](https://www.postgresql.org/docs/16/textsearch-intro.html)
 to match meaningful and significant words to answer a query.
 
 For example, if you search for `I am securing information for M&A`,
@@ -774,8 +774,8 @@ It's a limitation of PostgreSQL full text search.
 
 {{< history >}}
 
-- OR filtering for author and assignee was [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/23532) in GitLab 15.6 [with a flag](../../../administration/feature_flags.md) named `or_issuable_queries`. Disabled by default.
-- OR filtering for label was [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/23532) in GitLab 15.8 [with a flag](../../../administration/feature_flags.md) named `or_issuable_queries`. Disabled by default.
+- OR filtering for author and assignee was [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/23532) in GitLab 15.6 [with a flag](../../../administration/feature_flags/_index.md) named `or_issuable_queries`. Disabled by default.
+- OR filtering for label was [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/23532) in GitLab 15.8 [with a flag](../../../administration/feature_flags/_index.md) named `or_issuable_queries`. Disabled by default.
 - [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/104292) in GitLab 15.9.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/296031) in GitLab 17.0. Feature flag `or_issuable_queries` removed.
 
@@ -808,8 +808,8 @@ You can use the OR operator (**is one of: `||`**) when you [filter the list of i
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/464063) in GitLab 17.4 [with a flag](../../../administration/feature_flags.md) named `issues_list_drawer`. Disabled by default.
-- In GitLab 17.11, if [the new look for issues](issue_work_items.md) is enabled, this feature is also enabled.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/464063) in GitLab 17.4 [with a flag](../../../administration/feature_flags/_index.md) named `issues_list_drawer`. Disabled by default.
+- In GitLab 17.11 and later, if [the new look for issues](issue_work_items.md) is enabled, this feature is also enabled.
 
 {{< /history >}}
 

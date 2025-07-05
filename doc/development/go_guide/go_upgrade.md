@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Managing Go versions
 ---
 
@@ -44,6 +44,32 @@ ensure that all projects have been updated to test against the new Go version
 before changing the package builders to use it. Despite [Go's compatibility promise](https://go.dev/doc/go1compat),
 changes between minor versions can expose bugs or cause problems in our projects.
 
+### Version in `go.mod`
+
+**Key Requirements:**
+
+- Always use `0` as the patch version (for example, `go 1.23.0`, not `go 1.23.4`).
+- Do not set a version newer than what is used in CNG and Omnibus, otherwise this will cause build failures.
+
+The Go version in your `go.mod` affects all downstream projects.
+When you specify a minimum Go version, any project that imports your package must use that version or newer.
+This can create impossible situations for projects with different Go version constraints.
+
+For example, if CNG uses Go 1.23.4 but your project declares `go 1.23.5` as the minimum required version, CNG will
+fail to build your package.
+Similarly, other projects importing your package will be forced to upgrade their Go version, which may not be feasible.
+
+[See above](#testing-against-shipped-go-versions) to find out what versions are used in CNG and Omnibus.
+
+From the [Go Modules Reference](https://go.dev/ref/mod#go-mod-file-go):
+
+> The go directive sets the minimum version of Go required to use this module.
+
+You don't need to set `go 1.24.0` to be compatible with Go 1.24.0.
+Having it at `go 1.23.0` works fine.
+Go 1.23.0 and any newer version will almost certainly build your package without issues thanks to the
+[Go 1 compatibility promise](https://go.dev/doc/go1compat).
+
 ### Upgrade cadence
 
 GitLab adopts major Go versions within eight months of their release
@@ -68,89 +94,20 @@ The upgrade process involves several key steps:
 
 #### Tracking work
 
-Use [the product categories page](https://handbook.gitlab.com/handbook/product/categories/)
-if you need help finding the correct person or labels:
-
-1. Create the epic in `gitlab-org` group:
-   - Title the epic `Update Go version to <VERSION_NUMBER>`.
-   - Ping the engineering managers responsible for [the projects listed below](#known-dependencies-using-go).
-     - Most engineering managers can be identified on
-       [the product page](https://handbook.gitlab.com/handbook/product/categories/) or the
-       [feature page](https://handbook.gitlab.com/handbook/product/categories/features/).
-     - If you still can't find the engineering manager, use
-       [Git blame](../../user/project/repository/files/git_blame.md) to identify a maintainer
-       involved in the project.
-
-1. Create an upgrade issue for each dependency in the
-   [location indicated below](#known-dependencies-using-go) titled
-   `Support building with Go <VERSION_NUMBER>`. Add the proper labels to each issue
-   for easier triage. These should include the stage, group and section.
-   - The issue should be assigned by a member of the maintaining group.
-   - The milestone should be assigned by a member of the maintaining group.
-
-   {{< alert type="note" >}}
-
-   Some overlap exists between project dependencies. When creating an issue for a
-   dependency that is part of a larger product, note the relationship in the issue
-   body. For example: Projects built in the context of Omnibus GitLab have their
-   runtime Go version managed by Omnibus, but "support" and compatibility should
-   be a concern of the individual project. Issues in the parent project's dependencies
-   issue should be about adding support for the updated Go version.
-
-   {{< /alert >}}
-
-   {{< alert type="note" >}}
-
-   The upgrade issues must include [upgrade validation items](#upgrade-validation)
-   in their definition of done. Creating a second [performance testing issue](#upgrade-validation)
-   titled `Validate operation and performance at scale with Go <VERSION_NUMBER>`
-   is strongly recommended to help with scheduling tasks and managing workloads.
-   {{< /alert >}}
-
-1. Schedule an update with the [GitLab Development Kit](https://gitlab.com/gitlab-org/gitlab-development-kit/-/issues):
-   - Title the issue `Support using Go version <VERSION_NUMBER>`.
-   - Set the issue as related to every issue created in the previous step.
-1. Schedule one issue per Sec Section team that maintains Go based Security Analyzers and add the `section::sec` label to each:
-   - [Static Analysis tracker](https://gitlab.com/gitlab-org/gitlab/-/issues).
-   - [Composition Analysis tracker](https://gitlab.com/gitlab-org/gitlab/-/issues).
-   - [Container Security tracker](https://gitlab.com/gitlab-org/gitlab/-/issues).
-
-   {{< alert type="note" >}}
-
-   Updates to these Security analyzers should not block upgrades to Charts or Omnibus since
-   the analyzers are built independently as separate container images.
-
-   {{< /alert >}}
-
-1. Schedule builder updates with Distribution projects:
-   - Dependency and GitLab Development Kit issues created in previous steps should be set as blockers.
-   - Each issue should have the title `Support building with Go <VERSION_NUMBER>` and description as noted:
-     - [Cloud-Native GitLab](https://gitlab.com/gitlab-org/charts/gitlab/-/issues)
-
-       ```plaintext
-       Update the `GO_VERSION` in `ci_files/variables.yml`.
-       ```
-
-     - [Omnibus GitLab Builder](https://gitlab.com/gitlab-org/gitlab-omnibus-builder/-/issues)
-
-       ```plaintext
-       Update `GO_VERSION` in `docker/VERSIONS`.
-       ```
-
-     - [Omnibus GitLab](https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues)
-
-       ```plaintext
-       Update `BUILDER_IMAGE_REVISION` in `.gitlab-ci.yml` to match tag from builder.
-       ```
-
-   {{< alert type="note" >}}
-
-   If the component is not automatically upgraded for [Omnibus GitLab](https://gitlab.com/gitlab-org/omnibus-gitlab/-/issues)
-   and [Cloud Native GitLab](https://gitlab.com/gitlab-org/charts/gitlab/-/issues),
-   issues should be opened in their respective trackers titled `Updated bundled version of COMPONENT_NAME`
-   and set as blocked by the component's upgrade issue.
-
-   {{< /alert >}}
+1. Navigate to the [Build Architecture Configuration pipelines page](https://gitlab.com/gitlab-org/distribution/build-architecture/framework/configuration/-/pipelines).
+1. Create a new pipeline for a dry run with these variables:
+   - Set `COMPONENT_UPGRADE` to `true`.
+   - Set `COMPONENT_NAME` to `golang.`
+   - Set `COMPONENT_VERSION` to the target upgrade version.
+1. Run the pipeline.
+1. Check for errors in the dry run pipeline. If any subscriber files throw errors because labels changed or directly responsible individuals are no
+   longer valid, contact the subscriber project and request they update their configuration.
+1. After a successful dry-run pipeline, create another pipeline with these variables to create the upgrade epic and all associated issues:
+   - Set `COMPONENT_UPGRADE` to `true`.
+   - Set `COMPONENT_NAME` to `golang.`
+   - Set `COMPONENT_VERSION` to the target upgrade version.
+   - Set `EPIC_DRY_RUN` to `false`.
+1. Run the pipeline.
 
 #### Known dependencies using Go
 

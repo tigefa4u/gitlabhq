@@ -1,8 +1,9 @@
 ---
-stage: Foundations
+stage: AI-powered
 group: Global Search
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Searching in GitLab
+description: Basic, advanced, exact, search scope, and commit SHA search.
 ---
 
 {{< details >}}
@@ -19,11 +20,33 @@ Choose from three types of search to match your needs: **basic search**,
 
 For code search, GitLab uses these types in this order:
 
-- **Exact code search:** where you can use exact match and regular expression modes.
-- **Advanced search:** when exact code search is not available.
-- **Basic search:** when exact code search and advanced search are not available
+- **Exact code search**: where you can use exact match and regular expression modes.
+- **Advanced search**: when exact code search is not available.
+- **Basic search**: when exact code search and advanced search are not available
   or when you search against a non-default branch.
   This type does not support group or global search.
+
+## Available scopes
+
+Scopes describe the type of data you're searching.
+The following scopes are available for basic search:
+
+| Scope          | Global <sup>1</sup>                         | Group                                       | Project |
+|----------------|:-------------------------------------------:|:-------------------------------------------:|:-------:|
+| Code           | {{< icon name="dash-circle" >}} No          | {{< icon name="dash-circle" >}} No          | {{< icon name="check-circle-filled" >}} Yes |
+| Comments       | {{< icon name="dash-circle" >}} No          | {{< icon name="dash-circle" >}} No          | {{< icon name="check-circle-filled" >}} Yes |
+| Commits        | {{< icon name="dash-circle" >}} No          | {{< icon name="dash-circle" >}} No          | {{< icon name="check-circle-filled" >}} Yes |
+| Epics          | {{< icon name="dash-circle" >}} No          | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="dash-circle" >}} No |
+| Issues         | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="check-circle-filled" >}} Yes |
+| Merge requests | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="check-circle-filled" >}} Yes |
+| Milestones     | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="check-circle-filled" >}} Yes |
+| Projects       | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="dash-circle" >}} No |
+| Users          | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="check-circle-filled" >}} Yes | {{< icon name="check-circle-filled" >}} Yes |
+| Wikis          | {{< icon name="dash-circle" >}} No          | {{< icon name="dash-circle" >}} No          | {{< icon name="check-circle-filled" >}} Yes |
+
+**Footnotes**:
+
+1. An administrator can [disable global search scopes](#disable-global-search-scopes).
 
 ## Specify a search type
 
@@ -52,9 +75,10 @@ For more information, see [issue 477333](https://gitlab.com/gitlab-org/gitlab/-/
 
 {{< history >}}
 
-- Restricting global search to authenticated users [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/41041) in GitLab 13.4 [with a flag](../../administration/feature_flags.md) named `block_anonymous_global_searches`. Disabled by default.
-- Enabling or disabling anonymous searches [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/138975) in GitLab 16.7 [with a flag](../../administration/feature_flags.md) named `allow_anonymous_searches`. Enabled by default.
-- Enabling or disabling anonymous searches [generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/186727) in GitLab 17.11 as a UI option, instead of the `block_anonymous_global_searches` flag.
+- Restricting global search to authenticated users [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/41041) in GitLab 13.4 [with a flag](../../administration/feature_flags/_index.md) named `block_anonymous_global_searches`. Disabled by default.
+- Allowing search for unauthenticated users [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/138975) in GitLab 16.7 [with a flag](../../administration/feature_flags/_index.md) named `allow_anonymous_searches`. Enabled by default.
+- Restricting global search to authenticated users [generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/186727) in GitLab 17.11. Feature flag `block_anonymous_global_searches` removed.
+- Allowing search for unauthenticated users [generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/190090) in GitLab 18.0. Feature flag `allow_anonymous_searches` removed.
 
 {{< /history >}}
 
@@ -66,16 +90,22 @@ By default, requests to `/search` and global search are available for unauthenti
 
 To restrict `/search` to authenticated users only, do one of the following:
 
-- [Restrict public visibility](../../administration/settings/visibility_and_access_controls.md#restrict-visibility-levels)
-  of the project or group.
-- Disable the [feature flag](../../administration/feature_flags.md) `allow_anonymous_searches`.
+- [Restrict visibility levels](../../administration/settings/visibility_and_access_controls.md#restrict-visibility-levels)
+  for the project or group.
+- Restrict access in the **Admin** area:
+
+  1. On the left sidebar, at the bottom, select **Admin**.
+  1. Select **Settings > Search**.
+  1. Expand **Advanced search**.
+  1. Clear the **Allow unauthenticated users to use search** checkbox.
+  1. Select **Save changes**.
 
 To restrict global search to authenticated users only:
 
 1. On the left sidebar, at the bottom, select **Admin**.
 1. Select **Settings > Search**.
-1. Expand **Global search**
-1. Select **Enable blocking of anonymous global search requests**.
+1. Expand **Visibility and access controls**
+1. Select the **Restrict global search to authenticated users only** checkbox.
 1. Select **Save changes**.
 
 ## Disable global search scopes
@@ -105,7 +135,7 @@ To disable one or more global search scopes:
 
 1. On the left sidebar, at the bottom, select **Admin**.
 1. Select **Settings > Search**.
-1. Expand **Global search**.
+1. Expand **Visibility and access controls**.
 1. Clear the checkboxes for the scopes you want to disable.
 1. Select **Save changes**.
 
@@ -113,7 +143,7 @@ To disable one or more global search scopes:
 
 {{< history >}}
 
-- Support for partial matches in issue search [removed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/71913) in GitLab 14.9 [with a flag](../../administration/feature_flags.md) named `issues_full_text_search`. Disabled by default.
+- Support for partial matches in issue search [removed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/71913) in GitLab 14.9 [with a flag](../../administration/feature_flags/_index.md) named `issues_full_text_search`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/124703) in GitLab 16.2. Feature flag `issues_full_text_search` removed.
 
 {{< /history >}}
@@ -140,7 +170,7 @@ However, the query matches all possible variations of the string (for example, `
 
 {{< history >}}
 
-- Showing only users from authorized projects and groups [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/442091) in GitLab 17.10 [with flags](../../administration/feature_flags.md) named `users_search_scoped_to_authorized_namespaces_advanced_search`, `users_search_scoped_to_authorized_namespaces_basic_search`, and `users_search_scoped_to_authorized_namespaces_basic_search_by_ids`. Disabled by default.
+- Showing only users from authorized projects and groups [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/442091) in GitLab 17.10 [with flags](../../administration/feature_flags/_index.md) named `users_search_scoped_to_authorized_namespaces_advanced_search`, `users_search_scoped_to_authorized_namespaces_basic_search`, and `users_search_scoped_to_authorized_namespaces_basic_search_by_ids`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/185577) in GitLab 17.11. Feature flags `users_search_scoped_to_authorized_namespaces_advanced_search`, `users_search_scoped_to_authorized_namespaces_basic_search`, and `users_search_scoped_to_authorized_namespaces_basic_search_by_ids` removed.
 
 {{< /history >}}
@@ -167,7 +197,7 @@ As you type in the search box, autocomplete suggestions are displayed for:
 
 To search in all GitLab:
 
-1. On the left sidebar, at the top, select **Search or go to**.
+1. On the left sidebar, select **Search or go to**.
 1. Type your search query. You must type at least two characters.
 1. Press <kbd>Enter</kbd> to search, or select from the list.
 
@@ -187,7 +217,7 @@ The results are displayed. To filter the results, on the left sidebar, select a 
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/108906) in GitLab 15.9 [with a flag](../../administration/feature_flags.md) named `full_path_project_search`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/108906) in GitLab 15.9 [with a flag](../../administration/feature_flags/_index.md) named `full_path_project_search`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/114932) in GitLab 15.11. Feature flag `full_path_project_search` removed.
 
 {{< /history >}}
@@ -204,7 +234,7 @@ For example:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/121981) in GitLab 16.1 [with a flag](../../administration/feature_flags.md) named `search_projects_hide_archived` for project search. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/121981) in GitLab 16.1 [with a flag](../../administration/feature_flags/_index.md) named `search_projects_hide_archived` for project search. Disabled by default.
 - [Generally available](https://gitlab.com/groups/gitlab-org/-/epics/10957) in GitLab 16.6 for all search scopes.
 
 {{< /history >}}

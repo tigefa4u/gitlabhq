@@ -5,6 +5,7 @@ import TabsWithList from '~/groups_projects/components/tabs_with_list.vue';
 import {
   FILTERED_SEARCH_TOKEN_LANGUAGE,
   FILTERED_SEARCH_TOKEN_MIN_ACCESS_LEVEL,
+  PAGINATION_TYPE_KEYSET,
 } from '~/groups_projects/constants';
 import { RECENT_SEARCHES_STORAGE_KEY_PROJECTS } from '~/filtered_search/recent_searches_storage_keys';
 import {
@@ -47,6 +48,7 @@ describe('YourWorkProjectsApp', () => {
       filteredSearchTermKey: FILTERED_SEARCH_TERM_KEY,
       filteredSearchNamespace: FILTERED_SEARCH_NAMESPACE,
       filteredSearchRecentSearchesStorageKey: RECENT_SEARCHES_STORAGE_KEY_PROJECTS,
+      filteredSearchInputPlaceholder: 'Filter or search (3 character minimum)',
       sortOptions: SORT_OPTIONS,
       defaultSortOption: SORT_OPTION_UPDATED,
       timestampTypeMap: {
@@ -65,9 +67,18 @@ describe('YourWorkProjectsApp', () => {
         pagination: 'click_pagination_on_your_work_projects',
         tabs: 'click_tab_on_your_work_projects',
         sort: 'click_sort_on_your_work_projects',
+        clickStat: 'click_stat_on_your_work_projects',
+        hoverStat: 'hover_stat_on_your_work_projects',
+        hoverVisibility: 'hover_visibility_icon_on_your_work_projects',
+        initialLoad: 'initial_load_on_your_work_projects',
+        clickItemAfterFilter: 'click_project_after_filter_on_your_work_projects',
+        clickTopic: 'click_topic_on_your_work_projects',
       },
       tabCountsQuery: projectCountsQuery,
       tabCountsQueryErrorMessage: 'An error occurred loading the project counts.',
+      shouldUpdateActiveTabCountFromTabQuery: true,
+      paginationType: PAGINATION_TYPE_KEYSET,
+      userPreferencesSortKey: 'projectsSort',
     });
   });
 });

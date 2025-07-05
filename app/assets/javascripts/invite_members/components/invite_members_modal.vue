@@ -7,7 +7,11 @@ import Api from '~/api';
 import Tracking from '~/tracking';
 import { BV_SHOW_MODAL, BV_HIDE_MODAL } from '~/lib/utils/constants';
 import { n__, sprintf } from '~/locale';
-import { memberName, triggerExternalAlert } from 'ee_else_ce/invite_members/utils/member_utils';
+import {
+  memberName,
+  triggerExternalAlert,
+  baseBindingAttributes,
+} from 'ee_else_ce/invite_members/utils/member_utils';
 import { responseFromSuccess } from 'ee_else_ce/invite_members/utils/response_message_parser';
 import { captureException } from '~/ci/runner/sentry_utils';
 import { helpPagePath } from '~/helpers/help_page_helper';
@@ -16,7 +20,6 @@ import {
   BLOCKED_SEAT_OVERAGES_BODY,
   BLOCKED_SEAT_OVERAGES_CTA,
   BLOCKED_SEAT_OVERAGES_CTA_DOCS,
-  USERS_FILTER_ALL,
   MEMBER_MODAL_LABELS,
   INVITE_MEMBER_MODAL_TRACKING_CATEGORY,
 } from '../constants';
@@ -90,16 +93,6 @@ export default {
     helpLink: {
       type: String,
       required: true,
-    },
-    usersFilter: {
-      type: String,
-      required: false,
-      default: USERS_FILTER_ALL,
-    },
-    filterId: {
-      type: Number,
-      required: false,
-      default: null,
     },
     fullPath: {
       type: String,
@@ -211,6 +204,9 @@ export default {
     },
     primaryButtonText() {
       return this.hasBsoEnabled ? BLOCKED_SEAT_OVERAGES_CTA_DOCS : BLOCKED_SEAT_OVERAGES_CTA;
+    },
+    baseBindingAttributes() {
+      return baseBindingAttributes(this.hasInvalidMembers);
     },
   },
   watch: {
@@ -400,6 +396,7 @@ export default {
     :root-group-id="rootId"
     :users-limit-dataset="usersLimitDataset"
     :full-path="fullPath"
+    v-bind="baseBindingAttributes"
     @close="onClose"
     @cancel="onCancel"
     @reset="resetFields"
@@ -495,8 +492,6 @@ export default {
         aria-labelledby="empty-invites-alert"
         :input-id="inputId"
         :exception-state="exceptionState"
-        :users-filter="usersFilter"
-        :filter-id="filterId"
         :users-with-warning="usersWithWarning"
         :invalid-members="invalidMembers"
         @clear="clearValidation"

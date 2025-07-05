@@ -2,6 +2,7 @@
 stage: Package
 group: Container Registry
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+description: Learn how to authenticate with the container registry using your GitLab login credentials, a token, or CI/CD variables such as a CI job token.
 title: Authenticate with the container registry
 ---
 
@@ -114,7 +115,7 @@ To use CI/CD to authenticate with the container registry, you can use:
 
 ### `docker login` command fails with `access forbidden`
 
-The container registry [returns the GitLab API URL to the Docker client](../../../administration/packages/container_registry.md#architecture-of-gitlab-container-registry)
+The container registry [returns the GitLab API URL to the Docker client](../../../administration/packages/container_registry.md#container-registry-architecture)
 to validate credentials. The Docker client uses basic auth, so the request contains
 the `Authorization` header. If the `Authorization` header is missing in the request to the
 `/jwt/auth` endpoint configured in the `token_realm` for the registry configuration,

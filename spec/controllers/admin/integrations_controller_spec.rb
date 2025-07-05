@@ -2,8 +2,9 @@
 
 require 'spec_helper'
 
-RSpec.describe Admin::IntegrationsController, feature_category: :integrations do
+RSpec.describe Admin::IntegrationsController, :with_current_organization, feature_category: :integrations do
   let_it_be(:admin) { create(:admin) }
+  let_it_be(:organization) { current_organization }
 
   before do
     stub_feature_flags(remove_monitor_metrics: false)
@@ -45,12 +46,13 @@ RSpec.describe Admin::IntegrationsController, feature_category: :integrations do
     include JiraIntegrationHelpers
 
     let(:integration) { create(:jira_integration, :instance) }
+    let(:integration_name) { integration.class.to_param }
 
     before do
       stub_jira_integration_test
       allow(PropagateIntegrationWorker).to receive(:perform_async)
 
-      put :update, params: { id: integration.class.to_param, service: params }
+      put :update, params: { id: integration_name, service: params }
     end
 
     context 'with valid params' do
@@ -63,6 +65,23 @@ RSpec.describe Admin::IntegrationsController, feature_category: :integrations do
 
       it 'calls to PropagateIntegrationWorker' do
         expect(PropagateIntegrationWorker).to have_received(:perform_async).with(integration.id)
+      end
+
+      describe 'organization setting' do
+        context 'for existing integration' do
+          it 'does not update organization id' do
+            expect(integration.reload.organization_id).not_to eq(organization.id)
+          end
+        end
+
+        context 'when new integration is created' do
+          let(:integration) { nil }
+          let(:integration_name) { 'jira' }
+
+          it 'sets organization id to current organization' do
+            expect(Integrations::Jira.last.organization_id).to eq(organization.id)
+          end
+        end
       end
     end
 

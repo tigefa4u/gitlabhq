@@ -12,20 +12,17 @@ title: Store all of your packages in one GitLab project
 
 {{< /details >}}
 
-You can store all of your packages in one project's package registry. Rather than using
-a GitLab repository to store code, you can use the repository to store all your packages.
-Then you can configure your remote repositories to point to the project in GitLab.
+You can store all packages in one project's package registry and configure your remote repositories to
+point to this project in GitLab.
 
-You might want to do this because:
+Use this approach when you want to:
 
-- You want to publish your packages in GitLab, but to a different project from where your code is stored.
-- You want to group packages together in one project. For example, you might want to put all npm packages,
-  or all packages for a specific department, or all private packages in the same project.
-- When you install packages for other projects, you want to use one remote.
-- You want to migrate your packages from a third-party package registry to a single place in GitLab and do not
-  want to worry about setting up separate projects for each package.
-- You want to have your CI/CD pipelines build all of your packages to one project, so the person responsible for
-  validating packages can manage them all in one place.
+- Publish packages to GitLab in a different project than where your code is stored
+- Group packages together in one project (for example, all npm packages, all packages for a specific
+  department, or all private packages in the same project)
+- Use one remote repository when installing packages for other projects
+- Migrate packages from a third-party package registry to a single location in GitLab
+- Have CI/CD pipelines build all packages to one project so you can manage packages in the same location
 
 ## Example walkthrough
 
@@ -73,21 +70,30 @@ appropriate URL for your project, as described in the [GitLab Maven Repository d
 Then, you need to add a `settings.xml` file and [include your access token](../maven_repository/_index.md#authenticate-to-the-package-registry).
 Now you can [publish Maven packages](../maven_repository/_index.md#publish-a-package) to your project.
 
-### Conan
+### Conan 1
 
-For Conan, you need to add GitLab as a Conan registry remote. Follow the instructions in the
-[GitLab Conan Repository docs](../conan_repository/_index.md#add-the-package-registry-as-a-conan-remote).
+For Conan 1, you must add GitLab as a Conan registry remote. For instructions, see
+[Add the package registry as a Conan remote](../conan_1_repository/_index.md#add-the-package-registry-as-a-conan-remote).
 Then, create your package using the plus-separated (`+`) project path as your Conan user. For example,
 if your project is located at `https://gitlab.com/foo/bar/my-proj`,
-[create your Conan package](../conan_repository/_index.md) using `conan create . foo+bar+my-proj/channel`.
+[create your Conan package](build_packages.md#conan-1) using `conan create . foo+bar+my-proj/channel`.
 `channel` is your package channel (such as `stable` or `beta`).
 
-After you create your package, you're ready to [publish your package](../conan_repository/_index.md#publish-a-conan-package),
+After you create your package, you're ready to [publish your package](../conan_1_repository/_index.md#publish-a-conan-package),
 depending on your final package recipe. For example:
 
 ```shell
 CONAN_LOGIN_USERNAME=<gitlab-username> CONAN_PASSWORD=<personal_access_token> conan upload MyPackage/1.0.0@foo+bar+my-proj/channel --all --remote=gitlab
 ```
+
+### Conan 2
+
+For Conan 2, you must add GitLab as a Conan registry remote. For instructions, see
+[Add the package registry as a Conan remote](../conan_2_repository/_index.md#add-the-package-registry-as-a-conan-remote).
+Then, [create your Conan 2 package](build_packages.md#conan-2).
+
+After you create your package, you're ready to [publish your package](../conan_2_repository/_index.md#publish-a-conan-2-package),
+depending on your final package recipe.
 
 ### Composer
 

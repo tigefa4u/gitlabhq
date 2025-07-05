@@ -75,30 +75,37 @@ module ApplicationSettingsHelper
   def global_search_settings_checkboxes(form)
     [
       form.gitlab_ui_checkbox_component(
+        :anonymous_searches_allowed,
+        _("Allow unauthenticated users to use search"),
+        checkbox_options: {
+          checked: @application_setting.anonymous_searches_allowed, multiple: false
+        }
+      ),
+      form.gitlab_ui_checkbox_component(
         :global_search_block_anonymous_searches_enabled,
-        _("Enable blocking of anonymous global search requests"),
+        _("Restrict global search to authenticated users only"),
         checkbox_options: {
           checked: @application_setting.global_search_block_anonymous_searches_enabled, multiple: false
         }
       ),
       form.gitlab_ui_checkbox_component(
         :global_search_issues_enabled,
-        _("Enable issues tab in global search results"),
+        _("Show issues in global search results"),
         checkbox_options: { checked: @application_setting.global_search_issues_enabled, multiple: false }
       ),
       form.gitlab_ui_checkbox_component(
         :global_search_merge_requests_enabled,
-        _("Enable merge requests tab in global search results"),
+        _("Show merge requests in global search results"),
         checkbox_options: { checked: @application_setting.global_search_merge_requests_enabled, multiple: false }
       ),
       form.gitlab_ui_checkbox_component(
         :global_search_snippet_titles_enabled,
-        _("Enable snippet tab in global search results"),
+        _("Show snippets in global search results"),
         checkbox_options: { checked: @application_setting.global_search_snippet_titles_enabled, multiple: false }
       ),
       form.gitlab_ui_checkbox_component(
         :global_search_users_enabled,
-        _("Enable users tab in global search results"),
+        _("Show users in global search results"),
         checkbox_options: { checked: @application_setting.global_search_users_enabled, multiple: false }
       )
     ]
@@ -141,14 +148,18 @@ module ApplicationSettingsHelper
   end
 
   def import_sources_checkboxes(form)
-    Gitlab::ImportSources.options.map do |name, source|
-      checked = @application_setting.import_sources.include?(source)
+    import_sources_without_templates = Gitlab::ImportSources.import_table.reject do |importer|
+      Gitlab::ImportSources.template?(importer.name)
+    end
+
+    import_sources_without_templates.map do |source|
+      checked = @application_setting.import_sources.include?(source.name)
 
       form.gitlab_ui_checkbox_component(
         :import_sources,
-        name,
+        source.title,
         checkbox_options: { checked: checked, multiple: true, autocomplete: 'off' },
-        checked_value: source,
+        checked_value: source.name,
         unchecked_value: nil
       )
     end
@@ -267,7 +278,10 @@ module ApplicationSettingsHelper
       :auto_devops_domain,
       :autocomplete_users_limit,
       :autocomplete_users_unauthenticated_limit,
+      :allow_bypass_placeholder_confirmation,
+      :ci_delete_pipelines_in_seconds_limit_human_readable,
       :ci_job_live_trace_enabled,
+      :ci_partitions_size_limit,
       :concurrent_github_import_jobs_limit,
       :concurrent_bitbucket_import_jobs_limit,
       :concurrent_bitbucket_server_import_jobs_limit,
@@ -287,7 +301,9 @@ module ApplicationSettingsHelper
       :default_projects_limit,
       :default_snippet_visibility,
       :default_syntax_highlighting_theme,
+      :default_dark_syntax_highlighting_theme,
       :delete_inactive_projects,
+      :deletion_adjourned_period,
       :deny_all_requests_except_allowed,
       :disable_admin_oauth_scopes,
       :disable_feed_token,
@@ -316,6 +332,7 @@ module ApplicationSettingsHelper
       :enabled_git_access_protocol,
       :enforce_ci_inbound_job_token_scope_enabled,
       :enforce_email_subaddress_restrictions,
+      :require_email_verification_on_account_locked,
       :enforce_terms,
       :error_tracking_enabled,
       :error_tracking_api_url,
@@ -363,6 +380,10 @@ module ApplicationSettingsHelper
       :max_attachment_size,
       :max_decompressed_archive_size,
       :max_export_size,
+      :max_github_response_size_limit,
+      :max_github_response_json_value_count,
+      :max_http_decompressed_size,
+      :max_http_response_size_limit,
       :max_import_size,
       :max_import_remote_file_size,
       :max_login_attempts,
@@ -430,6 +451,9 @@ module ApplicationSettingsHelper
       :throttle_authenticated_api_enabled,
       :throttle_authenticated_api_period_in_seconds,
       :throttle_authenticated_api_requests_per_period,
+      :throttle_authenticated_git_http_enabled,
+      :throttle_authenticated_git_http_period_in_seconds,
+      :throttle_authenticated_git_http_requests_per_period,
       :throttle_authenticated_git_lfs_enabled,
       :throttle_authenticated_git_lfs_period_in_seconds,
       :throttle_authenticated_git_lfs_requests_per_period,
@@ -466,6 +490,7 @@ module ApplicationSettingsHelper
       :throttle_protected_paths_enabled,
       :throttle_protected_paths_period_in_seconds,
       :throttle_protected_paths_requests_per_period,
+      :top_level_group_creation_enabled,
       :protected_paths_raw,
       :protected_paths_for_get_request_raw,
       :time_tracking_limit_to_hours,
@@ -550,6 +575,7 @@ module ApplicationSettingsHelper
       :can_create_organization,
       :bulk_import_concurrent_pipeline_batch_limit,
       :concurrent_relation_batch_export_limit,
+      :relation_export_batch_size,
       :bulk_import_enabled,
       :bulk_import_max_download_file_size,
       :silent_admin_exports_enabled,
@@ -601,10 +627,14 @@ module ApplicationSettingsHelper
       :global_search_issues_enabled,
       :global_search_merge_requests_enabled,
       :global_search_block_anonymous_searches_enabled,
+      :enable_language_server_restrictions,
+      :minimum_language_server_version,
       :vscode_extension_marketplace,
       :vscode_extension_marketplace_enabled,
       :reindexing_minimum_index_size,
-      :reindexing_minimum_relative_bloat_size
+      :reindexing_minimum_relative_bloat_size,
+      :anonymous_searches_allowed,
+      :git_push_pipeline_limit
     ].tap do |settings|
       unless Gitlab.com?
         settings << :resource_usage_limits
@@ -703,9 +733,6 @@ module ApplicationSettingsHelper
   end
 
   def vscode_extension_marketplace_settings_view
-    # NOTE: This is intentionally not scoped to a specific actor since it affects instance-level settings.
-    return unless Feature.enabled?(:vscode_extension_marketplace_settings, nil)
-
     presets = ::WebIde::ExtensionMarketplacePreset.all.map do |preset|
       preset.to_h.deep_transform_keys { |key| key.to_s.camelize(:lower) }
     end

@@ -1,11 +1,11 @@
-import { GlEmptyState, GlIcon, GlLoadingIcon } from '@gitlab/ui';
+import { GlEmptyState, GlLoadingIcon } from '@gitlab/ui';
 import Vue, { nextTick } from 'vue';
 import VueApollo from 'vue-apollo';
 import MockAdapter from 'axios-mock-adapter';
 import { mountExtended, extendedWrapper } from 'helpers/vue_test_utils_helper';
 import createMockApollo from 'helpers/mock_apollo_helper';
 import waitForPromises from 'helpers/wait_for_promises';
-import { createMockDirective, getBinding } from 'helpers/vue_mock_directive';
+import { createMockDirective } from 'helpers/vue_mock_directive';
 import { createAlert } from '~/alert';
 import { HTTP_STATUS_OK, HTTP_STATUS_TOO_MANY_REQUESTS } from '~/lib/utils/http_status';
 import axios from '~/lib/utils/axios_utils';
@@ -64,7 +64,6 @@ describe('import table', () => {
     extendedWrapper(rowWrapper).findByTestId('target-namespace-input');
   const findPaginationDropdownText = () => findPaginationDropdown().find('button').text();
   const findSelectionCount = () => wrapper.findByTestId('selection-count');
-  const findNewPathCol = () => wrapper.findByTestId('new-path-col');
   const findHistoryLink = () => wrapper.findByTestId('history-link');
   const findUnavailableFeaturesWarning = () => wrapper.findByTestId('unavailable-features-alert');
   const findImportProjectsWarning = () => wrapper.findByTestId('import-projects-warning');
@@ -240,13 +239,13 @@ describe('import table', () => {
       });
 
       it('does not validate by default', () => {
-        expect(wrapper.find('tbody tr').text()).not.toContain('Please select a parent group.');
+        expect(wrapper.find('tbody tr').text()).not.toContain('Select a parent group.');
       });
 
       it('triggers validations when import button is clicked', async () => {
         await findRowImportDropdownAtIndex(0).trigger('click');
 
-        expect(wrapper.find('tbody tr').text()).toContain('Please select a parent group.');
+        expect(wrapper.find('tbody tr').text()).toContain('Select a parent group.');
       });
 
       it('is valid when root namespace is selected', async () => {
@@ -255,7 +254,7 @@ describe('import table', () => {
         });
         await findRowImportDropdownAtIndex(0).trigger('click');
 
-        expect(wrapper.find('tbody tr').text()).not.toContain('Please select a parent group.');
+        expect(wrapper.find('tbody tr').text()).not.toContain('Select a parent group.');
         expect(findFirstImportTargetNamespaceText()).toBe('No parent');
       });
 
@@ -265,7 +264,7 @@ describe('import table', () => {
         });
         await findRowImportDropdownAtIndex(0).trigger('click');
 
-        expect(wrapper.find('tbody tr').text()).not.toContain('Please select a parent group.');
+        expect(wrapper.find('tbody tr').text()).not.toContain('Select a parent group.');
         expect(findFirstImportTargetNamespaceText()).toBe('gitlab-org');
       });
     });
@@ -453,7 +452,7 @@ describe('import table', () => {
 
     expect(createAlert).not.toHaveBeenCalled();
     expect(wrapper.find('tbody tr').text()).toContain(
-      'Over six imports in one minute were attempted. Wait at least one minute and try again.',
+      'More than six imports were attempted in one minute. Try again after a minute.',
     );
   });
 
@@ -566,24 +565,6 @@ describe('import table', () => {
         expect.anything(),
       );
     });
-
-    it('updates status text when page is changed', async () => {
-      const REQUESTED_PAGE = 2;
-      bulkImportSourceGroupsQueryMock.mockResolvedValue({
-        nodes: [FAKE_GROUP],
-        pageInfo: {
-          page: 2,
-          total: 38,
-          perPage: 20,
-          totalPages: 2,
-        },
-        versionValidation: FAKE_VERSION_VALIDATION,
-      });
-      wrapper.findComponent(PaginationLinks).props().change(REQUESTED_PAGE);
-      await waitForPromises();
-
-      expect(wrapper.text()).toContain('Showing 21-21 of 38 groups that you own from');
-    });
   });
 
   describe('filters', () => {
@@ -621,21 +602,6 @@ describe('import table', () => {
         expect.objectContaining({ filter: FILTER_VALUE }),
         expect.anything(),
         expect.anything(),
-      );
-    });
-
-    it('updates status string when search box is submitted', async () => {
-      createComponent({
-        bulkImportSourceGroups: bulkImportSourceGroupsQueryMock,
-      });
-      await waitForPromises();
-
-      const FILTER_VALUE = 'foo';
-      await setFilter(FILTER_VALUE);
-      await waitForPromises();
-
-      expect(wrapper.text()).toContain(
-        'Showing 1-1 of 40 groups that you own matching filter "foo" from',
       );
     });
 
@@ -745,7 +711,7 @@ describe('import table', () => {
 
       expect(findImportProjectsWarning().props('name')).toBe('warning');
       expect(findImportProjectsWarning().attributes('title')).toBe(
-        'Some groups will be imported without projects.',
+        'Some groups are imported without projects.',
       );
     });
 
@@ -848,26 +814,6 @@ describe('import table', () => {
     expect(wrapper.getComponent(PaginationBar).props('storageKey')).toBe(
       ImportTable.LOCAL_STORAGE_KEY,
     );
-  });
-
-  it('displays info icon with a tooltip', async () => {
-    const NEW_GROUPS = [generateFakeEntry({ id: 1, status: STATUSES.NONE })];
-
-    createComponent({
-      bulkImportSourceGroups: () => ({
-        nodes: NEW_GROUPS,
-        pageInfo: FAKE_PAGE_INFO,
-        versionValidation: FAKE_VERSION_VALIDATION,
-      }),
-    });
-    jest.spyOn(apolloProvider.defaultClient, 'mutate');
-    await waitForPromises();
-
-    const icon = findNewPathCol().findComponent(GlIcon);
-    const tooltip = getBinding(icon.element, 'gl-tooltip');
-
-    expect(tooltip).toBeDefined();
-    expect(tooltip.value).toBe('Path of the new group.');
   });
 
   describe('re-import', () => {

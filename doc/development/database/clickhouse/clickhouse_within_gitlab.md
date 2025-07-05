@@ -320,6 +320,10 @@ module ClickHouse
 end
 ```
 
+## Best practices
+
+When building features that require data from ClickHouse, you should first replicate raw data from PostgreSQL tables (such as events or issues) using [Sidekiq workers](#implementing-sidekiq-workers) or another strategy. Then, build separate aggregations on top of that data. By avoiding direct aggregation from PostgreSQL, you can improve maintainability and enable data reprocessing.
+
 ## Testing
 
 ClickHouse is enabled on CI/CD but to avoid significantly affecting the pipeline runtime we've decided to run the ClickHouse server for test cases tagged with `:click_house` only.
@@ -368,6 +372,56 @@ end
 
 Additionally, to view the executed ClickHouse queries in web interactions, on the performance bar, next to the `ch` label select the count.
 
+## Handling Siphon Errors in Tests
+
+GitLab uses a tool called [Siphon](https://gitlab.com/gitlab-org/analytics-section/siphon) to constantly synchronise data from specified tables in PostgreSQL to ClickHouse.
+This process requires that for each specified table, the ClickHouse schema must contain a copy of the PostgreSQL schema.
+
+During GitLab development, if you add a new column to PostgreSQL without adding a matching column in ClickHouse it will fail with an error:
+
+```plaintext
+This table is synchronised to ClickHouse and you've added a new column!
+```
+
+To resolve this, you should add a migration to add the column to ClickHouse too.
+
+### Example
+
+1. Add a new column `new_int` of type `int4`  to a table that is being synchronised to ClickHouse, such as `milestones`.
+1. Note that CI will fail with the error:
+
+   ```plaintext
+   This table is synchronised to ClickHouse and you've added a new column!
+   ```
+
+1. Generate a new ClickHouse migration to add the new column, note that the ClickHouse table is prefixed with `siphon_`:
+
+   ```plaintext
+   bundle exec rails generate gitlab:click_house:migration add_new_int_to_siphon_milestones
+   ```
+
+1. In the generated file, define up/down methods to add/remove the new column. ClickHouse data types map approximately to PostgreSQL.
+   Check `Gitlab::ClickHouse::SiphonGenerator::PG_TYPE_MAP` for the appropriate mapping for the new column. Using the wrong type will trigger a different error.
+   Additionally, consider making use of [`LowCardinaility`](https://clickhouse.com/docs/sql-reference/data-types/lowcardinality) where appropriate and use [`Nullable`](https://clickhouse.com/docs/sql-reference/data-types/nullable) sparingly opting for default values instead where possible.
+
+   ```ruby
+    class AddNewIntToSiphonMilestones < ClickHouse::Migration
+      def up
+        execute <<~SQL
+          ALTER TABLE siphon_milestones ADD COLUMN new_int Int64 DEFAULT 42;
+        SQL
+      end
+
+      def down
+        execute <<~SQL
+          ALTER TABLE siphon_milestones DROP COLUMN new_int;
+        SQL
+      end
+    end
+   ```
+
+If you need further assistance, reach out to `#f_siphon` internally.
+
 ### Getting help
 
-For additional information or specific questions, please reach out to the ClickHouse Datastore working group in the `#f_clickhouse` Slack channel, or mention `@gitlab-org/maintainers/clickhouse` in a comment on GitLab.com.
+For additional information or specific questions, reach out to the ClickHouse Datastore working group in the `#f_clickhouse` Slack channel, or mention `@gitlab-org/maintainers/clickhouse` in a comment on GitLab.com.

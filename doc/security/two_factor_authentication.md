@@ -109,7 +109,8 @@ You can enforce 2FA for all users in a group or subgroup.
 
 {{< alert type="note" >}}
 
-2FA enforcement applies to both [direct and inherited members](../user/project/members/_index.md#membership-types) group members. If 2FA is enforced on a subgroup, members of the parent group must also enroll an authentication factor.
+2FA enforcement applies to both [direct and inherited members](../user/project/members/_index.md#membership-types) group members.
+If 2FA is enforced on a subgroup, inherited members (members of the ancestor groups) must also enroll an authentication factor.
 
 {{< /alert >}}
 
@@ -138,6 +139,13 @@ The GitLab [incoming email](../administration/incoming_email.md) feature does no
 
 By default, each subgroup can configure 2FA requirements that might differ from the parent group.
 
+{{< alert type="note" >}}
+
+Inherited members might also have different 2FA requirements applied at higher levels in the hierarchy.
+In such cases, the most restrictive requirement takes precedence.
+
+{{< /alert >}}
+
 To prevent subgroups from setting individual 2FA requirements:
 
 1. Go to the top-level group's **Settings > General**.
@@ -150,9 +158,9 @@ If a project belonging to a group that enables or enforces 2FA is [shared](../us
 with a group that does not enable or enforce 2FA, members of the non-2FA group can access that project
 without using 2FA. For example:
 
-- Group *A* has 2FA enabled and enforced. Group *B* does not have 2FA enabled.
-- If a project, *P*, that belongs to group *A* is shared with group *B*, members
-  of group *B* can access project *P* without 2FA.
+- Group A has 2FA enabled and enforced. Group B does not have 2FA enabled.
+- If a project, P, that belongs to group A is shared with group B, members
+  of group B can access project P without 2FA.
 
 To ensure this does not occur, [prevent sharing of projects](../user/project/members/sharing_projects_groups.md#prevent-a-project-from-being-shared-with-groups)
 for the 2FA group.
@@ -186,6 +194,22 @@ when they next sign in to GitLab.
 
 {{< /alert >}}
 
+### For all users
+
+To disable 2FA for all users even when forced 2FA is disabled, use the following Rake task.
+
+- For installations that use the Linux package:
+
+  ```shell
+  sudo gitlab-rake gitlab:two_factor:disable_for_all_users
+  ```
+
+- For self-compiled installations:
+
+  ```shell
+  sudo -u git -H bundle exec rake gitlab:two_factor:disable_for_all_users RAILS_ENV=production
+  ```
+
 ### For a single user
 
 #### Administrators
@@ -204,7 +228,7 @@ The administrator is notified that 2FA has been disabled.
 
 #### Non-administrators
 
-In GitLab 15.2 and later, you can use either the Rails console or the
+You can use either the Rails console or the
 [API endpoint](../api/users.md#disable-two-factor-authentication-for-a-user) to disable 2FA
 for a non-administrator.
 
@@ -212,21 +236,25 @@ You can disable 2FA for your own account.
 
 You cannot use the API endpoint to disable 2FA for administrators.
 
-### For all users
+#### Enterprise users
 
-To disable 2FA for all users even when forced 2FA is disabled, use the following Rake task.
+{{< details >}}
 
-- For installations that use the Linux package:
+- Tier: Premium, Ultimate
+- Offering: GitLab.com
 
-  ```shell
-  sudo gitlab-rake gitlab:two_factor:disable_for_all_users
-  ```
+{{< /details >}}
 
-- For self-compiled installations:
+Top-level group Owners can disable two-factor authentication (2FA) for enterprise users.
 
-  ```shell
-  sudo -u git -H bundle exec rake gitlab:two_factor:disable_for_all_users RAILS_ENV=production
-  ```
+To disable 2FA:
+
+1. On the left sidebar, select **Search or go to** and find your group.
+1. Select **Manage > Members**.
+1. Find a user with the **Enterprise** and **2FA** badges.
+1. Select **More actions** ({{< icon name="ellipsis_v" >}}) and select **Disable two-factor authentication**.
+
+You can also [use the API](../api/group_enterprise_users.md#disable-two-factor-authentication-for-an-enterprise-user) to disable 2FA for enterprise users, including enterprise users who are no longer a member of the group.
 
 ## 2FA for Git over SSH operations
 
@@ -237,21 +265,14 @@ To disable 2FA for all users even when forced 2FA is disabled, use the following
 
 {{< /details >}}
 
-{{< history >}}
-
-- It's deployed behind a feature flag, disabled by default.
-- Push notification support [introduced](https://gitlab.com/gitlab-org/gitlab-shell/-/issues/506) in GitLab 15.3.
-
-{{< /history >}}
-
 {{< alert type="flag" >}}
 
-On GitLab Self-Managed, by default this feature is not available. To make it available, an administrator can [enable the feature flag](../administration/feature_flags.md) named `two_factor_for_cli`. On GitLab.com and GitLab Dedicated, this feature is not available. This feature is not ready for production use. This feature flag also affects [session duration for Git Operations when 2FA is enabled](../administration/settings/account_and_limit_settings.md#customize-session-duration-for-git-operations-when-2fa-is-enabled).
+By default this feature is not available. To make it available, an administrator can [enable the feature flag](../administration/feature_flags/_index.md) named `two_factor_for_cli`. This feature is not ready for production use. This feature flag also affects [session duration for Git Operations when 2FA is enabled](../administration/settings/account_and_limit_settings.md#customize-session-duration-for-git-operations-when-2fa-is-enabled).
 
 {{< /alert >}}
 
-You can enforce 2FA for [Git over SSH operations](../development/gitlab_shell/features.md#git-operations). However, you should use
-[ED25519_SK](../user/ssh.md#ed25519_sk-ssh-keys) or [ECDSA_SK](../user/ssh.md#ecdsa_sk-ssh-keys) SSH keys instead. 2FA is enforced for Git operations only, and internal commands such as [`personal_access_token`](../development/gitlab_shell/features.md#personal-access-token) are excluded.
+You can enforce 2FA for Git over SSH operations. However, you should use
+[ED25519_SK](../user/ssh.md#ed25519_sk-ssh-keys) or [ECDSA_SK](../user/ssh.md#ecdsa_sk-ssh-keys) SSH keys instead. 2FA is enforced for Git operations only, and internal commands from GitLab Shell such as `personal_access_token` are excluded.
 
 To perform one-time password (OTP) verification, run:
 
@@ -262,27 +283,15 @@ ssh git@<hostname> 2fa_verify
 Then authenticate by either:
 
 - Entering the correct OTP.
-- In GitLab 15.3 and later, responding to a device push notification if
+- Responding to a device push notification if
   [FortiAuthenticator is enabled](../user/profile/account/two_factor_authentication.md#enable-a-one-time-password-authenticator-using-fortiauthenticator).
 
-After successful authentication, you can perform [Git over SSH operations](../development/gitlab_shell/features.md#git-operations) for 15 minutes (default) with the associated
+After successful authentication, you can perform Git over SSH operations for 15 minutes (default) with the associated
 SSH key.
 
 ### Security limitation
 
-2FA does not protect users with compromised *private* SSH keys.
+2FA does not protect users with compromised private SSH keys.
 
 Once an OTP is verified, anyone can run Git over SSH with that private SSH key for
 the configured [session duration](../administration/settings/account_and_limit_settings.md#customize-session-duration-for-git-operations-when-2fa-is-enabled).
-
-<!-- ## Troubleshooting
-
-Include any troubleshooting steps that you can foresee. If you know beforehand what issues
-one might have when setting this up, or when something is changed, or on upgrading, it's
-important to describe those, too. Think of things that may go wrong and include them here.
-This is important to minimize requests for support, and to avoid doc comments with
-questions that you know someone might ask.
-
-Each scenario can be a third-level heading, for example `### Getting error message X`.
-If you have none to add when creating a doc, leave this section in place
-but commented out to help encourage others to add to it in the future. -->

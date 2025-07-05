@@ -86,7 +86,7 @@ export default {
       return this.job?.runner?.admin_path || '';
     },
     hasTestSummaryDetails() {
-      return Object.keys(this.testSummary).length > 0;
+      return Object.keys(this.testSummary).length > 0 && this.job?.test_suite_name;
     },
     testSummaryDescription() {
       let message;
@@ -106,7 +106,7 @@ export default {
     },
     testReportUrlWithJobName() {
       const urlParams = {
-        job_name: this.job.name,
+        job_name: this.job.test_suite_name,
       };
 
       return mergeUrlParams(urlParams, this.pipelineTestReportUrl);
@@ -137,11 +137,11 @@ export default {
       parent_pipeline: s__('JobSource|Parent Pipeline'),
       pipeline: s__('JobSource|Pipeline'),
       pipeline_execution_policy: s__('JobSource|Pipeline Execution Policy'),
-      pipeline_execution_policy_schedule: s__('JobSource|Pipeline Execution Policy Schedule'),
+      pipeline_execution_policy_schedule: s__('JobSource|Scheduled Pipeline Execution Policy'),
       push: s__('JobSource|Push'),
       scan_execution_policy: s__('JobSource|Scan Execution Policy'),
       schedule: s__('JobSource|Schedule'),
-      security_orchestration_policy: s__('JobSource|Security Orchestration Policy'),
+      security_orchestration_policy: s__('JobSource|Scheduled Scan Execution Policy'),
       trigger: s__('JobSource|Trigger'),
       web: s__('JobSource|Web'),
       webide: s__('JobSource|Web IDE'),

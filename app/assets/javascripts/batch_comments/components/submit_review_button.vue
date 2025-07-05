@@ -11,17 +11,27 @@ export default {
     DraftsCount,
   },
   computed: {
-    ...mapState(useBatchComments, ['draftsCount', 'draftsCount', 'isReviewer']),
+    ...mapState(useBatchComments, ['draftsCount', 'isReviewer', 'shouldAnimateReviewButton']),
+  },
+  mounted() {
+    this.fetchDrafts();
   },
   methods: {
-    ...mapActions(useBatchComments, ['setDrawerOpened']),
+    ...mapActions(useBatchComments, ['fetchDrafts', 'setDrawerOpened']),
   },
 };
 </script>
 
 <template>
-  <div v-if="draftsCount > 0 || isReviewer">
-    <gl-button variant="confirm" data-testid="review-drawer-toggle" @click="setDrawerOpened(true)">
+  <div v-if="draftsCount > 0 || isReviewer" data-testid="review-drawer-toggle">
+    <gl-button
+      variant="confirm"
+      data-testid="review-drawer-toggle"
+      :class="{
+        'motion-safe:gl-animate-[review-btn-animate_300ms_ease-in]': shouldAnimateReviewButton,
+      }"
+      @click="setDrawerOpened(true)"
+    >
       {{ __('Your review') }}
       <drafts-count
         v-if="draftsCount > 0"

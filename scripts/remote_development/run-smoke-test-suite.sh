@@ -82,6 +82,9 @@ function run_rspec_fast {
 function run_jest {
   trap onexit_err ERR
 
+  printf "\n\n${BBlue}Running 'yarn check --integrity' and 'yarn install' if needed${Color_Off}\n\n"
+  yarn check --integrity || yarn install
+
   printf "\n\n${BBlue}Running Remote Development frontend Jest specs${Color_Off}\n\n"
   yarn jest ee/spec/frontend/workspaces
 }
@@ -93,9 +96,13 @@ function run_rspec_non_fast {
 
   files_for_non_fast=()
 
+  # Note that we do NOT exclude the fast_spec_helper specs here, because sometimes specs may pass
+  # when run with fast_spec_helper, but fail when run with the full spec_helper. This happens when
+  # they are run as part of a larger suite of mixed fast and slow files, for example, in CI jobs.
+  # Running all fast and slow specs here ensures that we catch those cases.
   while IFS='' read -r file; do
       files_for_non_fast+=("$file")
-  done < <(git grep -L -E '^require .fast_spec_helper' -- '**/remote_development/*_spec.rb' | grep -v 'qa/qa' | grep -v '/features/')
+  done < <(git ls-files -- '**/remote_development/*_spec.rb' | grep -v 'qa/qa' | grep -v '/features/')
 
   files_for_non_fast+=(
       "ee/spec/graphql/resolvers/clusters/agents_resolver_spec.rb"
@@ -118,7 +125,7 @@ function run_rspec_non_fast {
 function run_rspec_feature {
   trap onexit_err ERR
 
-  printf "\n\n${BBlue}Running backend RSpec feature specs (NOTE: These sometimes are flaky (see https://gitlab.com/gitlab-org/gitlab/-/issues/478601)! If one fails, try running it focused, or just ignore it and let CI run it)...${Color_Off}\n\n"
+  printf "\n\n${BBlue}Running backend RSpec feature specs${Color_Off}\n\n"
   files_for_feature=()
   while IFS='' read -r file; do
       files_for_feature+=("$file")
@@ -147,7 +154,7 @@ function main {
   [ -z "${SKIP_FAST}" ] && run_rspec_fast
   [ -z "${SKIP_JEST}" ] && run_jest
   [ -z "${SKIP_NON_FAST}" ] && run_rspec_non_fast
-  [ "${SKIP_FEATURE:-1}" -eq 0 ] && run_rspec_feature
+  [ -z "${SKIP_FEATURE}" ] && run_rspec_feature
 
   # Convenience ENV vars to run focused sections, copy and paste as a prefix to script command, and remove the one(s) you want to run focused
   # SKIP_RUBOCOP=1 SKIP_FP=1 SKIP_FAST=1 SKIP_JEST=1 SKIP_NON_FAST=1 SKIP_FEATURE=1

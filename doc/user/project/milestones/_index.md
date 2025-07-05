@@ -3,6 +3,7 @@ stage: Plan
 group: Project Management
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Milestones
+description: Burndown charts, goals, progress tracking, and releases.
 ---
 
 {{< details >}}
@@ -15,7 +16,7 @@ title: Milestones
 Milestones help track and organize work in GitLab.
 Milestones:
 
-- Group related issues and merge requests to track progress toward a goal.
+- Group related issues, epics, and merge requests to track progress toward a goal.
 - Support time-based planning with optional start and due dates.
 - Work alongside iterations to track concurrent timeboxes.
 - Track releases and generate release evidence.
@@ -23,7 +24,7 @@ Milestones:
 
 Milestones can belong to a [project](../_index.md) or [group](../../group/_index.md).
 Project milestones apply to issues and merge requests in that project only.
-Group milestones apply to any issue or merge request in that group's projects.
+Group milestones apply to any issue, epic or merge request in that group's projects.
 
 For information about project and group milestones API, see:
 
@@ -48,7 +49,7 @@ milestones with the [Releases feature](../releases/_index.md#associate-milestone
 A milestone can belong to [project](../_index.md) or [group](../../group/_index.md).
 
 You can assign **project milestones** to issues or merge requests in that project only.
-You can assign **group milestones** to any issue or merge request of any project in that group.
+You can assign **group milestones** to any issue, epic, or merge request of any project in that group.
 
 For information about project and group milestones API, see:
 
@@ -100,7 +101,7 @@ in the **Milestones** page, select the title of the milestone you want to view.
 The milestone view shows the title and description.
 The tabs below the title and description show the following:
 
-- **Issues**: Shows all issues assigned to the milestone. Issues are displayed in three columns named:
+- **Work Items**: Shows all work items assigned to the milestone. Work items are displayed in three columns named:
   - Unstarted Issues (open and unassigned)
   - Ongoing Issues (open and assigned)
   - Completed Issues (closed)
@@ -123,10 +124,10 @@ showing the progress of completing a milestone.
 
 The sidebar on the milestone view shows the following:
 
-- Percentage complete, which is calculated as number of closed issues divided by total number of issues.
+- Percentage complete, which is calculated as number of closed work items divided by total number of work items.
 - The start date and due date.
-- The total time spent on all issues and merge requests assigned to the milestone.
-- The total issue weight of all issues assigned to the milestone.
+- The total time spent on all work items and merge requests assigned to the milestone.
+- The total issue weight of all work items assigned to the milestone.
 - The count of total, open, closed, and merged merge requests.
 - Links to associated releases.
 - The milestone's reference you can copy to your clipboard.
@@ -139,6 +140,7 @@ The sidebar on the milestone view shows the following:
 
 - [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/343889) the minimum user role from Developer to Reporter in GitLab 15.0.
 - [Changed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/169256) the minimum user role from Reporter to Planner in GitLab 17.7.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/195530) milestones to Epic work items in GitLab 18.2.
 
 {{< /history >}}
 
@@ -185,10 +187,14 @@ To edit a milestone:
 
 {{< history >}}
 
-- [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/343889) the minimum user role from Developer to Reporter in GitLab 15.0.
 - [Changed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/169256) the minimum user role from Reporter to Planner in GitLab 17.7.
 
 {{< /history >}}
+
+A milestone closes after its due date.
+You can also close a milestone manually.
+
+When a milestone is closed, its open issues remain open.
 
 Prerequisites:
 
@@ -261,15 +267,21 @@ To promote a project milestone:
    - Select the milestone title, and then select **Milestone actions** ({{< icon name="ellipsis_v" >}}) > **Promote**.
 1. Select **Promote Milestone**.
 
-## Assign a milestone to an issue or merge request
+## Assign a milestone to an item
 
-Every issue and merge request can be assigned one milestone.
+{{< history >}}
+
+- Ability to assign milestones to epics [introduced](https://gitlab.com/groups/gitlab-org/-/epics/329) in GitLab 18.2.
+
+{{< /history >}}
+
+Every issue, epic, or merge request can be assigned one milestone.
 The milestones are visible on every issue and merge request page, on the right sidebar.
-They are also visible in the issue board.
+They are also visible in the work item board.
 
 To assign or unassign a milestone:
 
-1. View an issue or a merge request.
+1. View an issue, an epic, or a merge request.
 1. On the right sidebar, next to **Milestones**, select **Edit**.
 1. In the **Assign milestone** list, search for a milestone by typing its name.
    You can select from both project and group milestones.
@@ -302,37 +314,16 @@ From [group issue boards](../issue_board.md#group-issue-boards), you can filter 
 
 ### Special milestone filters
 
+{{< history >}}
+
+- Logic for **Started** and **Upcoming** filters [changed](https://gitlab.com/gitlab-org/gitlab/-/issues/429728) in GitLab 18.0.
+
+{{< /history >}}
+
 When filtering by milestone, in addition to choosing a specific project milestone or group milestone, you can choose a special milestone filter.
 
 - **None**: Show issues or merge requests with no assigned milestone.
-- **Any**: Show issues or merge requests that have an assigned milestone.
-- **Upcoming**: Show issues or merge requests that have been assigned the open milestone and has the nearest due date in the future.
-- **Started**: Show issues or merge requests that have an open assigned milestone with a start date that is before today.
-
-<!--- When Upcoming and Started milestones change in GitLab 18.0, integrate the contents
-of the below topic into "Special milestone filters" -->
-
-#### "Upcoming" and "Started" filters (deprecated)
-
-{{< alert type="warning" >}}
-
-This feature was [deprecated](https://gitlab.com/gitlab-org/gitlab/-/issues/501294) in GitLab 17.7
-and is [planned for change](https://gitlab.com/gitlab-org/gitlab/-/issues/429728) in 18.0.
-
-{{< /alert >}}
-
-The behavior of "Upcoming" and "Started" special filters is planned to change in upcoming GitLab major release 18.0.
-The new behavior of both the filters is outlined in
-[issue 429728](https://gitlab.com/gitlab-org/gitlab/-/issues/429728#proposed-issue-filter-logic-for-upcoming-and-started-milestones).
-
-<!-- ## Troubleshooting
-
-Include any troubleshooting steps that you can foresee. If you know beforehand what issues
-one might have when setting this up, or when something is changed, or on upgrading, it's
-important to describe those, too. Think of things that may go wrong and include them here.
-This is important to minimize requests for support, and to avoid doc comments with
-questions that you know someone might ask.
-
-Each scenario can be a third-level heading, for example `### Getting error message X`.
-If you have none to add when creating a doc, leave this section in place
-but commented out to help encourage others to add to it in the future. -->
+- **Any**: Show issues or merge requests with an assigned milestone.
+- **Upcoming**: Show issues or merge requests with an open assigned milestone starting in the future.
+- **Started**: Show issues or merge requests with an open assigned milestone that overlaps with the current date. The
+  list excludes milestones without a defined start and due date.

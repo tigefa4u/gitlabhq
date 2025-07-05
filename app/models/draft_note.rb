@@ -28,7 +28,10 @@ class DraftNote < ApplicationRecord
   validates :discussion_id, allow_nil: true, format: { with: /\A\h{40}\z/ }
   validates :line_code, length: { maximum: 255 }, allow_nil: true
 
-  enum note_type: {
+  validates :position, :original_position, :change_position,
+    'notes/position_serialized_size': { max_bytesize: 100.kilobytes }
+
+  enum :note_type, {
     Note: 0,
     DiffNote: 1,
     DiscussionNote: 2
@@ -42,6 +45,18 @@ class DraftNote < ApplicationRecord
     where.not(position: nil)
       .select(:position)
       .map(&:position)
+  end
+
+  def self.bulk_insert_and_keep_commits!(items, **options)
+    inserted_records = bulk_insert!(items, **options)
+
+    keep_commits_for_records(items)
+
+    inserted_records
+  end
+
+  def self.keep_commits_for_records(records)
+    records.find(&:on_diff?)&.keep_around_commits
   end
 
   def project

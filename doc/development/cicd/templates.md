@@ -1,7 +1,7 @@
 ---
 stage: Verify
 group: Pipeline Authoring
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Development guide for GitLab CI/CD templates (Deprecated)
 ---
 
@@ -46,7 +46,7 @@ in this directory, but certain template types have a specific directory reserved
 them. The ability to [select a template in new file UI](#make-sure-the-new-template-can-be-selected-in-ui)
 is determined by the directory it is in:
 
-| Sub-directory  | Selectable in UI | Template type |
+| Subdirectory  | Selectable in UI | Template type |
 |----------------|------------------|---------------|
 | `/*` (root)    | Yes              | General templates. |
 | `/AWS/*`       | No               | Templates related to Cloud Deployment (AWS). |
@@ -142,7 +142,7 @@ job:
 
 #### Use `rules` instead of `only` or `except`
 
-Avoid using [`only` or `except`](../../ci/yaml/_index.md#only--except) if possible.
+Avoid using [`only` or `except`](../../ci/yaml/deprecated_keywords.md#only--except) if possible.
 Only and except is not being developed any more, and [`rules`](../../ci/yaml/_index.md#rules)
 is now the preferred syntax:
 
@@ -246,7 +246,7 @@ separating words.
     - echo "$SECRET_TOKEN" | docker login -u my-user --password-stdin my-registry
 ```
 
-Lower-case naming can optionally be used for variables which are defined locally in
+Lowercase naming can optionally be used for variables which are defined locally in
 one of the `script` keywords:
 
 ```yaml
@@ -260,11 +260,11 @@ job1:
 ### Backward compatibility
 
 A template might be dynamically included with the `include:template:` keyword. If
-you make a change to an *existing* template, you **must** make sure that it doesn't break
+you make a change to an existing template, you **must** make sure that it doesn't break
 CI/CD in existing projects.
 
 For example, changing a job name in a template could break pipelines in an existing project.
-Let's say there is a template named `Performance.gitlab-ci.yml` with the following content:
+In this example, a template named `Performance.gitlab-ci.yml` has the following content:
 
 ```yaml
 performance:

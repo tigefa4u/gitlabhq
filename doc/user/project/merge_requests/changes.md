@@ -39,10 +39,10 @@ The header for each file in the diff contains:
 
 The diff also includes navigation and comment aids to the left of the file, in the gutter:
 
-- **Show more context**: Select **Previous 20 lines** ({{< icon name="expand-up" >}}) to display
+- Show more context: Select **Previous 20 lines** ({{< icon name="expand-up" >}}) to display
   the previous 20 unchanged lines, or **Next 20 lines** ({{< icon name="expand-down" >}}) to
   show the next 20 unchanged lines.
-- **Line numbers** are shown in two columns. Previous line numbers are shown on
+- Line numbers are shown in two columns. Previous line numbers are shown on
   the left, and proposed line numbers on the right. To interact with a line:
   - To show [comment options](#add-a-comment-to-a-merge-request-file), hover over a line number.
   - To copy a link to the line, press <kbd>Command</kbd> and select (or right-click)
@@ -51,7 +51,7 @@ The diff also includes navigation and comment aids to the left of the file, in t
 
 ## Show a list of changed files
 
-Use the **file browser** to view a list of files changed in a merge request:
+Use the file browser to view a list of files changed in a merge request:
 
 1. On the left sidebar, select **Search or go to** and find your project.
 1. Select **Code > Merge requests** and find your merge request.
@@ -87,7 +87,7 @@ GitLab collapses files with many changes to improve performance, and displays th
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/387246) in GitLab 16.9 [with a flag](../../../administration/feature_flags.md) named `pinned_file`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/387246) in GitLab 16.9 [with a flag](../../../administration/feature_flags/_index.md) named `pinned_file`. Disabled by default.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/162503) in GitLab 17.4. Feature flag `pinned_file` removed.
 
 {{< /history >}}
@@ -115,7 +115,7 @@ first in the list of changed files. To copy a merge request link that shows your
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/140180) in GitLab 16.8 [with a flag](../../../administration/feature_flags.md) named `collapse_generated_diff_files`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/140180) in GitLab 16.8 [with a flag](../../../administration/feature_flags/_index.md) named `collapse_generated_diff_files`. Disabled by default.
 - [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/145100) in GitLab 16.10.
 - `generated_file` [generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/148478) in GitLab 16.11. Feature flag `collapse_generated_diff_files` removed.
 
@@ -205,7 +205,7 @@ To select another file to view when this setting is enabled, either:
 
 - Scroll to the end of the file and select either **Prev** or **Next**.
 - If [keyboard shortcuts are enabled](../../shortcuts.md#enable-keyboard-shortcuts),
-  press <kbd>&#91;</kbd>, <kbd>]</kbd>, <kbd>k</kbd>, or <kbd>j</kbd>.
+  press <kbd>\[</kbd>, <kbd>]</kbd>, <kbd>k</kbd>, or <kbd>j</kbd>.
 - Select **Show file browser** ({{< icon name="file-tree" >}}) and select another file to view.
 
 ## Compare changes
@@ -257,7 +257,6 @@ To change how a merge request shows changed lines:
 
 {{< history >}}
 
-- Introduced in GitLab 15.11 as an [experiment](../../../policy/development_stages_support.md#experiment) on GitLab.com.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/429915) in GitLab 16.8.
 - Changed to require GitLab Duo add-on in GitLab 17.6 and later.
 
@@ -266,6 +265,9 @@ To change how a merge request shows changed lines:
 If you spend a lot of time trying to understand code that others have created, or
 you struggle to understand code written in a language you are not familiar with,
 you can ask GitLab Duo to explain the code to you.
+
+- <i class="fa fa-youtube-play youtube" aria-hidden="true"></i> [Watch an overview](https://youtu.be/1izKaLmmaCA?si=O2HDokLLujRro_3O)
+<!-- Video published on 2023-11-18 -->
 
 Prerequisites:
 
@@ -285,7 +287,7 @@ To explain the code in a merge request:
 1. On the new tab, select the lines you want to have explained.
 1. On the left side, select the question mark ({{< icon name="question" >}}). You might have to scroll to the first line of your selection to view it.
 
-   ![explain code in a merge request](../repository/img/explain_code_v17_1.png)
+   ![explain code in a merge request](img/explain_code_v17_1.png)
 
 Duo Chat explains the code. It might take a moment for the explanation to be generated.
 
@@ -348,13 +350,6 @@ Files marked as viewed are not shown to you again unless either:
 
 ## Show merge request conflicts in diff
 
-{{< history >}}
-
-- [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/276918) in GitLab 15.7.
-- [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/276918) in GitLab 15.8. Feature flag `display_merge_conflicts_in_diff` removed.
-
-{{< /history >}}
-
 To avoid displaying changes already on target branch, we compare the merge request's
 source branch with the `HEAD` of the target branch.
 
@@ -381,7 +376,7 @@ You can show scanner findings in the diff. For details, see:
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/123515) in GitLab 16.1 [with a flag](../../../administration/feature_flags.md) named `comment_on_files`. Enabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/123515) in GitLab 16.1 [with a flag](../../../administration/feature_flags/_index.md) named `comment_on_files`. Enabled by default.
 - [Feature flag removed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/125130) in GitLab 16.2.
 
 {{< /history >}}
@@ -405,8 +400,3 @@ This comment can also be a thread.
 1. Select the location where you want to comment.
 
 GitLab shows an icon and a comment field on the image.
-
-## Resources
-
-- For technical details on how GitLab calculates the diff between the two revisions,
-  see [Working with diffs](../../../development/merge_request_concepts/diffs/_index.md).

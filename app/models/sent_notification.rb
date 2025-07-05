@@ -3,17 +3,23 @@
 class SentNotification < ApplicationRecord
   include EachBatch
 
+  INVALID_NOTEABLE = Class.new(StandardError)
+
   belongs_to :project
   belongs_to :noteable, polymorphic: true # rubocop:disable Cop/PolymorphicAssociations
   belongs_to :recipient, class_name: "User"
   belongs_to :issue_email_participant
+  belongs_to :namespace
 
-  validates :recipient, presence: true
+  validates :recipient, :namespace_id, presence: true
   validates :reply_key, presence: true, uniqueness: true
   validates :noteable_id, presence: true, unless: :for_commit?
-  validates :commit_id, presence: true, if: :for_commit?
+  validates :commit_id, :project, presence: true, if: :for_commit?
   validates :in_reply_to_discussion_id, format: { with: /\A\h{40}\z/, allow_nil: true }
   validate :note_valid
+
+  before_validation :ensure_sharding_key
+  before_create :ensure_created_at
 
   class << self
     def reply_key
@@ -101,6 +107,36 @@ class SentNotification < ApplicationRecord
 
   private
 
+  # TODO: Remove in 18.1 as this is only necessary while the default is loaded via the migration.
+  # See https://gitlab.com/gitlab-org/gitlab/-/merge_requests/186703#note_2432949624
+  def ensure_created_at
+    self.created_at = Time.current
+  end
+
+  def ensure_sharding_key
+    self.namespace_id = namespace_id_from_noteable
+  end
+
+  def namespace_id_from_noteable
+    case noteable
+    when DesignManagement::Design, Issue
+      noteable.namespace_id
+    when MergeRequest, ProjectSnippet
+      noteable.project.project_namespace_id
+    when Commit
+      project&.project_namespace_id
+    when WikiPage::Meta
+      noteable.namespace_id || noteable.project.project_namespace_id
+    else
+      # Raising an error here to make sure that the correct sharding key is set if support
+      # for a new `noteable_type` is added.
+      raise(
+        INVALID_NOTEABLE,
+        _("%{noteable_type} is not supported") % { noteable_type: noteable_type }
+      )
+    end
+  end
+
   def reply_params
     {
       noteable_type: self.noteable_type,
@@ -121,3 +157,5 @@ class SentNotification < ApplicationRecord
     end
   end
 end
+
+SentNotification.prepend_mod

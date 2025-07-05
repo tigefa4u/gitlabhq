@@ -29,7 +29,17 @@
   - 1
 - - admin_emails
   - 1
+- - ai_active_context_code_process_pending_enabled_namespace_event
+  - 1
+- - ai_active_context_code_repository_index
+  - 1
+- - ai_active_context_code_saas_initial_indexing_event
+  - 1
+- - ai_knowledge_graph_indexing_task
+  - 1
 - - ai_repository_xray_scan_dependencies
+  - 1
+- - analytics_ai_usage_events_backfill
   - 1
 - - analytics_code_review_metrics
   - 1
@@ -71,9 +81,13 @@
   - 1
 - - auth_saml_group_sync
   - 1
+- - authn_cleanup_scim_group_memberships
+  - 1
 - - authn_sync_group_scim_identity_record
   - 1
 - - authn_sync_group_scim_token_record
+  - 1
+- - authn_sync_scim_group_members
   - 1
 - - authn_sync_scim_identity_record
   - 1
@@ -82,6 +96,8 @@
 - - authorized_keys
   - 2
 - - authorized_project_update:authorized_project_update_enqueue_group_members_refresh_authorized_projects
+  - 1
+- - authorized_project_update:authorized_project_update_enqueue_users_refresh_authorized_projects
   - 1
 - - authorized_project_update:authorized_project_update_project_recalculate
   - 1
@@ -95,6 +111,12 @@
   - 2
 - - authorized_projects
   - 2
+- - authz_user_group_member_roles_destroy_for_group
+  - 1
+- - authz_user_group_member_roles_destroy_for_shared_group
+  - 1
+- - authz_user_group_member_roles_update_for_group
+  - 1
 - - auto_devops
   - 2
 - - auto_merge
@@ -213,6 +235,8 @@
   - 1
 - - ci_runners_update_project_runners_owner
   - 1
+- - ci_safe_disable_pipeline_variables
+  - 1
 - - ci_unlock_pipelines_in_queue
   - 1
 - - ci_update_approval_rules_for_related_mrs
@@ -252,6 +276,10 @@
 - - compliance_management_compliance_framework_project_compliance_statuses_removal
   - 1
 - - compliance_management_compliance_framework_project_requirement_statuses_export_mailer
+  - 1
+- - compliance_management_compliance_framework_projects_compliance_enqueue
+  - 1
+- - compliance_management_compliance_violation_detection
   - 1
 - - compliance_management_framework_export_mailer
   - 1
@@ -311,6 +339,8 @@
   - 1
 - - counters_cleanup_refresh
   - 1
+- - counters_flush_stale_counter_increments
+  - 1
 - - create_commit_signature
   - 2
 - - create_github_webhook
@@ -358,8 +388,6 @@
 - - dora_metrics
   - 1
 - - elastic_association_indexer
-  - 1
-- - elastic_commit_indexer
   - 1
 - - elastic_delete_project
   - 1
@@ -433,6 +461,8 @@
   - 1
 - - gitlab_subscriptions_add_on_purchases_refresh_user_assignments
   - 1
+- - gitlab_subscriptions_gitlab_com_duo_core_todo_notification
+  - 1
 - - gitlab_subscriptions_member_management_apply_pending_member_approvals
   - 1
 - - gitlab_subscriptions_members_added
@@ -442,6 +472,10 @@
 - - gitlab_subscriptions_members_record_last_activity
   - 1
 - - gitlab_subscriptions_refresh_seats
+  - 1
+- - gitlab_subscriptions_seat_assignments_group_links_create_or_update_seats
+  - 1
+- - gitlab_subscriptions_self_managed_duo_core_todo_notification
   - 1
 - - gitlab_subscriptions_trials_apply_trial
   - 1
@@ -605,7 +639,13 @@
   - 1
 - - merge_requests_notify_approvers
   - 1
+- - merge_requests_policy_violations_detected_audit_event
+  - 1
+- - merge_requests_policy_violations_resolved_audit_event
+  - 1
 - - merge_requests_process_auto_merge_from_event
+  - 1
+- - merge_requests_process_draft_note_published
   - 1
 - - merge_requests_process_merge_audit_event
   - 1
@@ -628,6 +668,8 @@
 - - ml_experiment_tracking_associate_ml_candidate_to_package
   - 1
 - - namespaces_cascade_duo_features_enabled
+  - 1
+- - namespaces_cascade_web_based_commit_signing_enabled
   - 1
 - - namespaces_free_user_cap_group_over_limit_notification
   - 1
@@ -801,6 +843,8 @@
   - 1
 - - sbom_create_occurrences_vulnerabilities
   - 1
+- - sbom_graphs
+  - 1
 - - sbom_process_transfer_events
   - 1
 - - sbom_process_vulnerabilities
@@ -827,8 +871,6 @@
   - 1
 - - search_wiki_elastic_delete_group_wiki
   - 1
-- - search_zoekt_adjust_indices_reserved_storage_bytes_event
-  - 1
 - - search_zoekt_default_branch_changed
   - 1
 - - search_zoekt_delete_project_event
@@ -842,8 +884,6 @@
 - - search_zoekt_index_marked_as_to_delete_event
   - 1
 - - search_zoekt_index_to_evict_event
-  - 1
-- - search_zoekt_index_watermark_changed_event
   - 1
 - - search_zoekt_indexing_task
   - 1
@@ -871,6 +911,20 @@
   - 1
 - - secrets_management_provision_project_secrets_manager
   - 1
+- - security_analyzer_namespace_statuses_adjustment
+  - 1
+- - security_analyzers_status_process_archived_events
+  - 1
+- - security_analyzers_status_process_deleted_events
+  - 1
+- - security_analyzers_status_process_group_transfer_events
+  - 1
+- - security_analyzers_status_process_project_transfer_events
+  - 1
+- - security_analyzers_status_schedule_setting_changed_update
+  - 1
+- - security_analyzers_status_setting_changed_update
+  - 1
 - - security_configuration_set_group_secret_push_protection
   - 1
 - - security_create_security_policy_project
@@ -895,9 +949,15 @@
   - 1
 - - security_persist_security_policies
   - 1
+- - security_pipeline_analyzers_status_update
+  - 1
 - - security_pipeline_execution_policies_run_schedule
   - 1
+- - security_policies_project_transfer
+  - 1
 - - security_process_scan_result_policy
+  - 1
+- - security_recreate_orchestration_configuration
   - 1
 - - security_refresh_compliance_framework_security_policies
   - 1
@@ -1009,9 +1069,19 @@
   - 1
 - - vulnerabilities_namespace_statistics_adjustment
   - 1
+- - vulnerabilities_namespace_statistics_process_group_delete_events
+  - 1
+- - vulnerabilities_namespace_statistics_process_group_transfer_events
+  - 1
+- - vulnerabilities_namespace_statistics_process_project_delete_events
+  - 1
+- - vulnerabilities_namespace_statistics_process_project_transfer_events
+  - 1
 - - vulnerabilities_process_archived_events
   - 1
 - - vulnerabilities_process_bulk_dismissed_events
+  - 1
+- - vulnerabilities_process_bulk_redetected_events
   - 1
 - - vulnerabilities_process_transfer_events
   - 1
@@ -1058,6 +1128,10 @@
 - - work_items_user_preferences_destroy
   - 1
 - - work_items_validate_epic_work_item_sync
+  - 1
+- - work_items_weights_update_rolled_up_weights_event_handler
+  - 1
+- - work_items_weights_update_weights
   - 1
 - - x509_certificate_revoke
   - 1

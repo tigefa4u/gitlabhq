@@ -69,15 +69,19 @@ generate-apollo-graphql-schema:
     paths:
       - "${GRAPHQL_SCHEMA_APOLLO_FILE}"
 
-eslint:
+.eslint-base:
   extends:
     - .static-analysis-base
     - .yarn-cache
-    - .frontend:rules:default-frontend-jobs
   needs: ['generate-apollo-graphql-schema']
   variables:
     USE_BUNDLE_INSTALL: "false"
     ESLINT_CODE_QUALITY_REPORT: "gl-code-quality-report.json"
+
+eslint-changed-files:
+  extends:
+    - .eslint-base
+    - .frontend:rules:eslint-changed-files
   script:
     - |
       function eslint_script() {
@@ -87,6 +91,18 @@ eslint:
 
       run_with_custom_exit_code eslint_script
 
+eslint:
+  extends:
+    - .eslint-base
+    - .frontend:rules:eslint-default
+  script:
+    - |
+      function eslint_script() {
+        yarn_install_script
+        yarn run lint:eslint:all --format gitlab
+      }
+
+      run_with_custom_exit_code eslint_script
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -113,19 +129,12 @@ haml-lint:
     - .ruby-cache
     - .static-analysis:rules:haml-lint
   script:
-    - bundle exec haml-lint --parallel app/views
+    - bundle exec haml-lint --parallel
   artifacts:
     expire_in: 31d
     when: always
     paths:
       - tmp/feature_flags/
-
-haml-lint ee:
-  extends:
-    - "haml-lint"
-    - .static-analysis:rules:haml-lint-ee
-  script:
-    - bundle exec haml-lint --parallel ee/app/views
 
 rubocop:
   extends:
@@ -235,12 +244,10 @@ semgrep-appsec-custom-rules:
   image: ${GITLAB_DEPENDENCY_PROXY_ADDRESS}returntocorp/semgrep:1.99.0
   needs: []
   script:
-    - git fetch origin master
-    - git clone $CUSTOM_RULES_REPOSITORY "${CI_BUILDS_DIR}/sast-custom-rules"
-    # Include/exclude list isn't ideal https://github.com/returntocorp/semgrep/issues/5399
+    - git clone $CUSTOM_RULES_REPOSITORY sast-custom-rules
     - |
-      rm "${CI_BUILDS_DIR}/sast-custom-rules/.gitlab-ci.yml" # semgrep fails when there are yaml files that are not rules
-      semgrep ci --metrics off --config "${CI_BUILDS_DIR}/sast-custom-rules" \
+      rm "sast-custom-rules/.gitlab-ci.yml" # semgrep fails when there are yaml files that are not rules
+      semgrep ci --metrics off --config "sast-custom-rules" \
         --include app --include lib --include workhorse \
         --exclude '*_test.go' --exclude spec --exclude qa --exclude tooling --json --verbose > gl-sast-report.json || true
 
@@ -325,7 +332,7 @@ ping-appsec-for-dependency-review:
   variables:
     GIT_CHECKOUT: "false"
     DISABLE_MENTIONS: "false"
-    DISABLE_SCORING: "true"
+    DISABLE_SCORING: "false"
     DISABLE_COMMENTING: "false"
     DEPENDENCY_REVIEW_BOT_CI_REG: "${CI_REGISTRY}/gitlab-com/gl-security/product-security/appsec/tooling/depscore/master"
   extends: [".ping-appsec-for-dependency-review:rules", ".use-docker-in-docker"]

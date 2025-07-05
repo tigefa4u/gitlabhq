@@ -5,6 +5,7 @@ import VueDraggable from 'vuedraggable';
 import * as Sentry from '~/sentry/sentry_browser_wrapper';
 import { s__ } from '~/locale';
 import glFeatureFlagMixin from '~/vue_shared/mixins/gl_feature_flags_mixin';
+import { validateImageName } from '~/lib/utils/file_upload';
 import { isLoggedIn } from '~/lib/utils/common_utils';
 import { TYPENAME_DESIGN_VERSION } from '~/graphql_shared/constants';
 import { convertToGraphQLId } from '~/graphql_shared/utils';
@@ -76,6 +77,11 @@ export default {
       required: false,
       default: false,
     },
+    canPasteDesign: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
     workItemFullPath: {
       type: String,
       required: true,
@@ -87,6 +93,21 @@ export default {
     isGroup: {
       type: Boolean,
       required: true,
+    },
+    isBoard: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    canAddDesign: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    canUpdateDesign: {
+      type: Boolean,
+      required: false,
+      default: false,
     },
   },
   apollo: {
@@ -205,20 +226,44 @@ export default {
         : s__('DesignManagement|Select all');
     },
     issueAsWorkItem() {
-      return Boolean(
-        !this.isGroup &&
-          (this.glFeatures.workItemViewForIssues ||
-            (this.glFeatures.workItemsViewPreference && gon.current_user_use_work_items_view)),
-      );
+      return Boolean(!this.isGroup && this.glFeatures.workItemViewForIssues);
     },
     canUseRouter() {
-      return canRouterNav({
-        fullPath: this.fullPath,
-        webUrl: this.workItemWebUrl,
-        isGroup: this.isGroup,
-        issueAsWorkItem: this.issueAsWorkItem,
-      });
+      return (
+        canRouterNav({
+          fullPath: this.fullPath,
+          webUrl: this.workItemWebUrl,
+          isGroup: this.isGroup,
+          issueAsWorkItem: this.issueAsWorkItem,
+        }) && !this.isBoard
+      );
     },
+    isDesignDetailActive() {
+      return this.$route.path.includes('/designs/') || this.$route.name === 'design';
+    },
+    enablePasteOnNoDesign() {
+      return (
+        !this.hasDesigns && this.canPasteDesign && this.canAddDesign && !this.isDesignDetailActive
+      );
+    },
+  },
+  watch: {
+    enablePasteOnNoDesign: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) {
+          this.toggleOnPasteListener();
+        } else {
+          this.toggleOffPasteListener();
+        }
+      },
+    },
+  },
+  unmounted() {
+    this.toggleOffPasteListener();
+  },
+  destroyed() {
+    this.toggleOffPasteListener();
   },
   methods: {
     dismissError() {
@@ -327,8 +372,8 @@ export default {
     },
     onPointerUp(event) {
       const { clientX, clientY } = event;
-      const deltaX = Math.abs(clientX - this.dragStartPosition.x);
-      const deltaY = Math.abs(clientY - this.dragStartPosition.y);
+      const deltaX = this.dragStartPosition ? Math.abs(clientX - this.dragStartPosition.x) : 0;
+      const deltaY = this.dragStartPosition ? Math.abs(clientY - this.dragStartPosition.y) : 0;
 
       // Checking if the mouse movement was below the drag threshold of 5px
       // to treat the event as a click, not a drag
@@ -363,6 +408,53 @@ export default {
         this.isDraggingDesign = false;
       }, 100);
     },
+    isValidDragDataType(files) {
+      return files.some((item) =>
+        this.$options.VALID_DESIGN_FILE_MIMETYPE.mimetype.includes(item.type),
+      );
+    },
+    onDesignPaste(event) {
+      if (!this.canPasteDesign) return;
+
+      const { clipboardData } = event;
+      if (!clipboardData || !clipboardData.files.length) return;
+
+      const files = Array.from(clipboardData.files);
+      if (!this.isValidDragDataType(files)) return;
+
+      event.preventDefault();
+
+      // Use a counter for multiple files in the same paste operation of name image.png
+      let duplicateCounter = 0;
+
+      files.forEach((file) => {
+        let filename = validateImageName(file);
+
+        // Generate a unique filename for invalid or default names
+        if (!filename || filename === 'image.png') {
+          const timestamp = new Date().toISOString().replace(/[T:Z]/g, '_').replace(/\..+/, '');
+
+          filename =
+            duplicateCounter === 0
+              ? `image_${timestamp}.png`
+              : `image_${timestamp}_${duplicateCounter}.png`;
+
+          duplicateCounter += 1;
+        }
+
+        // Create and upload the new file
+        const newFile = new File([file], filename);
+        this.$emit('upload', [newFile]);
+      });
+    },
+    toggleOnPasteListener() {
+      if (this.canAddDesign && !this.isDesignDetailActive) {
+        document.addEventListener('paste', this.onDesignPaste);
+      }
+    },
+    toggleOffPasteListener() {
+      document.removeEventListener('paste', this.onDesignPaste);
+    },
   },
   dragOptions: {
     animation: 200,
@@ -385,7 +477,13 @@ export default {
 </script>
 
 <template>
-  <div class="work-item-design-widget-container">
+  <div
+    class="work-item-design-widget-container gl-rounded-base focus:gl-focus"
+    :class="{ 'gl-mt-5': hasDesignsAndVersions }"
+    :tabindex="0"
+    @mouseenter="toggleOnPasteListener"
+    @mouseleave="toggleOffPasteListener"
+  >
     <slot v-if="!hasDesignsAndVersions" name="empty-state"></slot>
     <crud-component
       v-if="hasDesignsAndVersions"
@@ -393,7 +491,7 @@ export default {
       anchor-id="designs"
       :title="s__('DesignManagement|Designs')"
       data-testid="designs-root"
-      class="gl-relative gl-mt-5"
+      class="gl-relative !gl-mt-0"
       :body-class="crudBodyClass"
       is-collapsible
       persist-collapsed-state
@@ -404,7 +502,7 @@ export default {
 
       <template #actions>
         <gl-button
-          v-if="isLatestVersion"
+          v-if="isLatestVersion && canUpdateDesign"
           category="tertiary"
           size="small"
           variant="link"
@@ -416,7 +514,7 @@ export default {
           {{ selectAllButtonText }}
         </gl-button>
         <archive-design-button
-          v-if="isLatestVersion"
+          v-if="isLatestVersion && canUpdateDesign"
           data-testid="archive-button"
           button-class="work-item-design-hidden-xs work-item-design-show-sm"
           :has-selected-designs="hasSelectedDesigns"
@@ -426,7 +524,7 @@ export default {
           {{ $options.i18n.archiveDesignText }}
         </archive-design-button>
         <archive-design-button
-          v-if="isLatestVersion"
+          v-if="isLatestVersion && canUpdateDesign"
           v-gl-tooltip.bottom
           data-testid="archive-button"
           button-class="work-item-design-hidden-sm"
@@ -438,6 +536,7 @@ export default {
           @archive-selected-designs="onArchiveDesign"
         />
         <gl-button
+          v-if="canAddDesign"
           size="small"
           data-testid="add-design"
           :disabled="isSaving"
@@ -454,6 +553,7 @@ export default {
           multiple
           @change="onDesignUploadChange"
         />
+        <router-view :key="$route.fullPath" :all-designs="designs" :all-versions="allVersions" />
       </template>
 
       <template #default>
@@ -464,7 +564,8 @@ export default {
         >
           {{ error || uploadError }}
         </gl-alert>
-        <design-dropzone
+        <component
+          :is="canAddDesign ? 'design-dropzone' : 'div'"
           show-upload-design-overlay
           validate-design-upload-on-dragover
           :accept-design-formats="$options.VALID_DESIGN_FILE_MIMETYPE.mimetype"
@@ -506,7 +607,7 @@ export default {
               />
 
               <gl-form-checkbox
-                v-if="isLatestVersion"
+                v-if="isLatestVersion && canUpdateDesign"
                 :id="`design-checkbox-${design.id}`"
                 :name="design.filename"
                 :checked="isDesignSelected(design.filename)"
@@ -518,8 +619,7 @@ export default {
               />
             </li>
           </vue-draggable>
-        </design-dropzone>
-        <router-view :key="$route.fullPath" :all-designs="designs" :all-versions="allVersions" />
+        </component>
       </template>
     </crud-component>
   </div>

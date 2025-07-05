@@ -3,7 +3,15 @@ stage: Deploy
 group: Environments
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Connecting a Kubernetes cluster with GitLab
+description: Kubernetes integration, GitOps, CI/CD, agent deployment, and cluster management.
 ---
+
+{{< details >}}
+
+- Tier: Free, Premium, Ultimate
+- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
+
+{{< /details >}}
 
 {{< history >}}
 
@@ -68,9 +76,9 @@ GitLab in a Kubernetes cluster, you might need a different version of Kubernetes
 You can upgrade your
 Kubernetes version to a supported version at any time:
 
+- 1.32 (support ends when GitLab version 18.10 is released or when 1.35 becomes supported)
 - 1.31 (support ends when GitLab version 18.7 is released or when 1.34 becomes supported)
 - 1.30 (support ends when GitLab version 18.2 is released or when 1.33 becomes supported)
-- 1.29 (support ends when GitLab version 17.10 is released or when 1.32 becomes supported)
 
 GitLab aims to support a new minor Kubernetes version three months after its initial release. GitLab supports at least three production-ready Kubernetes minor
 versions at any given time.
@@ -94,7 +102,7 @@ You can choose from two primary workflows. The GitOps workflow is recommended.
 
 ### GitOps workflow
 
-GitLab recommends using [Flux for GitOps](gitops.md). To get started, see [Tutorial: Set up Flux for GitOps](gitops/flux_tutorial.md).
+GitLab recommends using [Flux for GitOps](gitops.md). To get started, see [Tutorial: Set up Flux for GitOps](getting_started.md).
 
 ### GitLab CI/CD workflow
 

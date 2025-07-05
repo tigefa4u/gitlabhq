@@ -1,7 +1,7 @@
 ---
 stage: none
 group: unassigned
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Sidekiq worker attributes
 ---
 
@@ -258,7 +258,7 @@ they prefer read replicas and wait for replicas to catch up:
 | **Data consistency**  | **Description**  | **Guideline** |
 |--------------|-----------------------------|----------|
 | `:always`    | The job is required to use the primary database for all queries. (Deprecated) | **Deprecated** Only needed for jobs that encounter edge cases around primary stickiness. |
-| `:sticky`    | The job prefers replicas, but switches to the primary for writes or when encountering replication lag. (Default) | This is the default option. It should be used for jobs that require to be executed as fast as possible. Replicas are guaranteed to be caught up to the point at which the job was enqueued in Sidekiq. |
+| `:sticky`    | The job prefers replicas, but switches to the primary for writes or when encountering replication lag. | This is the preferred option. It should be used for jobs that require to be executed as fast as possible. Replicas are guaranteed to be caught up to the point at which the job was enqueued in Sidekiq. |
 | `:delayed`   | The job prefers replicas, but switches to the primary for writes. When encountering replication lag before the job starts, the job is retried once. If the replica is still not up to date on the next retry, it switches to the primary. | It should be used for jobs where delaying execution further typically does not matter, such as cache expiration or web hooks execution. It should not be used for jobs where retry is disabled, such as cron jobs. |
 
 In all cases workers read either from a replica that is fully caught up,
@@ -388,7 +388,7 @@ end
 
 {{< alert type="warning" >}}
 
-In case you want to remove the middleware for a worker, please set the strategy to `:deprecated` to disable it and wait until
+In case you want to remove the middleware for a worker, set the strategy to `:deprecated` to disable it and wait until
 a required stop before removing it completely. That ensures that all paused jobs are resumed correctly.
 
 {{< /alert >}}

@@ -437,38 +437,6 @@ class NotificationService
     send_service_desk_notification(note)
   end
 
-  def send_new_note_notifications(note)
-    notify_method = "note_#{note.noteable_ability_name}_email".to_sym
-
-    recipients = NotificationRecipients::BuildService.build_new_note_recipients(note)
-    recipients.each do |recipient|
-      mailer.send(notify_method, recipient.user.id, note.id, recipient.reason).deliver_later
-    end
-  end
-
-  def send_service_desk_notification(note)
-    return unless note.noteable_type == 'Issue'
-    return if note.confidential
-    return unless note.project && ::ServiceDesk.enabled?(note.project)
-
-    issue = note.noteable
-    recipients = issue.issue_email_participants
-
-    return unless recipients.any?
-
-    # Only populated if note is from external participant
-    note_external_author = note.note_metadata&.email_participant&.downcase
-
-    recipients.each do |recipient|
-      # Don't send Service Desk notification if the recipient is the author of the note.
-      # We store emails as-is but compare downcased versions.
-      next if recipient.email.downcase == note_external_author
-
-      mailer.service_desk_new_note_email(issue.id, note.id, recipient).deliver_later
-      Gitlab::Metrics::BackgroundTransaction.current&.add_event(:service_desk_new_note_email)
-    end
-  end
-
   # Notify users when a new release is created
   def send_new_release_notifications(release)
     unless release.author&.can_trigger_notifications?
@@ -580,13 +548,18 @@ class NotificationService
     mailer.project_was_not_exported_email(current_user, project, errors).deliver_later
   end
 
+  def email_template_name(status)
+    "pipeline_#{status}_email"
+  end
+
   def pipeline_finished(pipeline, ref_status: nil, recipients: nil)
     # Must always check project configuration since recipients could be a list of emails
     # from the PipelinesEmailService integration.
     return if pipeline.project.emails_disabled?
 
+    # If changing the next line don't forget to do the same in EE section
     status = pipeline_notification_status(ref_status, pipeline)
-    email_template = "pipeline_#{status}_email"
+    email_template = email_template_name(status)
 
     return unless mailer.respond_to?(email_template)
 
@@ -600,6 +573,12 @@ class NotificationService
 
     recipients.each do |recipient|
       mailer.public_send(email_template, pipeline, recipient).deliver_later
+    end
+  end
+
+  def pipeline_schedule_owner_unavailable(schedule)
+    schedule.project.owners_and_maintainers.each do |recipient|
+      mailer.pipeline_schedule_owner_unavailable_email(schedule, recipient).deliver_later
     end
   end
 
@@ -894,6 +873,38 @@ class NotificationService
   end
 
   private
+
+  def send_new_note_notifications(note)
+    notify_method = :"note_#{note.noteable_ability_name}_email"
+
+    recipients = NotificationRecipients::BuildService.build_new_note_recipients(note)
+    recipients.each do |recipient|
+      mailer.send(notify_method, recipient.user.id, note.id, recipient.reason).deliver_later
+    end
+  end
+
+  def send_service_desk_notification(note)
+    return unless note.noteable_type == 'Issue'
+    return if note.confidential
+    return unless note.project && ::ServiceDesk.enabled?(note.project)
+
+    issue = note.noteable
+    recipients = issue.issue_email_participants
+
+    return unless recipients.any?
+
+    # Only populated if note is from external participant
+    note_external_author = note.note_metadata&.email_participant&.downcase
+
+    recipients.each do |recipient|
+      # Don't send Service Desk notification if the recipient is the author of the note.
+      # We store emails as-is but compare downcased versions.
+      next if recipient.email.downcase == note_external_author
+
+      mailer.service_desk_new_note_email(issue.id, note.id, recipient).deliver_later
+      Gitlab::Metrics::BackgroundTransaction.current&.add_event(:service_desk_new_note_email)
+    end
+  end
 
   def owners_without_invites(project)
     recipients = project.members.active_without_invites_and_requests.owners

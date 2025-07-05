@@ -32,6 +32,8 @@ module API
         optional :sort, type: String, values: %w[asc desc], default: 'asc', desc: 'Sort by asc (ascending) or desc (descending)'
         optional :min_access_level, type: Integer, values: Gitlab::Access.all_values, desc: 'Minimum access level of authenticated user'
         optional :top_level_only, type: Boolean, desc: 'Only include top-level groups'
+        optional :marked_for_deletion_on, type: Date, desc: 'Return groups that are marked for deletion on this date'
+        optional :active, type: Boolean, desc: 'Limit by groups that are not archived and not marked for deletion'
         use :optional_group_list_params_ee
         use :pagination
       end
@@ -60,7 +62,8 @@ module API
         [:all_available,
           :custom_attributes,
           :owned, :min_access_level,
-          :include_parent_descendants, :search, :visibility, :archived]
+          :include_parent_descendants, :search, :visibility, :archived,
+          :active, :marked_for_deletion_on]
       end
 
       # This is a separate method so that EE can extend its behaviour, without
@@ -171,7 +174,7 @@ module API
       def immediately_delete_subgroup_error(group)
         if !group.subgroup?
           '`permanently_remove` option is only available for subgroups.'
-        elsif !group.marked_for_deletion_on.present?
+        elsif !group.self_deletion_scheduled?
           'Group must be marked for deletion first.'
         elsif group.full_path != params[:full_path]
           '`full_path` is incorrect. You must enter the complete path for the subgroup.'
@@ -181,13 +184,13 @@ module API
       def delete_group(group)
         permanently_remove = ::Gitlab::Utils.to_boolean(params[:permanently_remove])
 
-        if permanently_remove && group.adjourned_deletion?
+        if permanently_remove
           error = immediately_delete_subgroup_error(group)
 
           render_api_error!(error, 400) if error
         end
 
-        if permanently_remove || !group.adjourned_deletion?
+        if permanently_remove
           destroy_conditionally!(group) do
             ::Groups::DestroyService.new(group, current_user).async_execute
           end
@@ -273,9 +276,7 @@ module API
         use :with_custom_attributes
       end
       get feature_category: :groups_and_projects do
-        if Feature.enabled?(:rate_limit_groups_and_projects_api, current_user)
-          check_rate_limit_by_user_or_ip!(:groups_api)
-        end
+        check_rate_limit_by_user_or_ip!(:groups_api)
 
         groups = find_groups(declared_params(include_missing: false), params[:id])
         present_groups_with_pagination_strategies params, groups
@@ -289,7 +290,7 @@ module API
         requires :name, type: String, desc: 'The name of the group'
         requires :path, type: String, desc: 'The path of the group'
         optional :parent_id, type: Integer, desc: 'The parent group id for creating nested group'
-        optional :organization_id, type: Integer, default: -> { Current.organization&.id },
+        optional :organization_id, type: Integer, default: -> { Current.organization.id },
           desc: 'The organization id for the group'
 
         use :optional_params
@@ -357,9 +358,7 @@ module API
         tags %w[groups]
       end
       post ':id/archive', feature_category: :groups_and_projects do
-        if Feature.enabled?(:rate_limit_groups_and_projects_api, current_user)
-          check_rate_limit_by_user_or_ip!(:group_archive_unarchive_api)
-        end
+        check_rate_limit_by_user_or_ip!(:group_archive_unarchive_api)
 
         group = find_group!(params[:id])
         authorize!(:archive_group, group)
@@ -382,9 +381,7 @@ module API
         tags %w[groups]
       end
       post ':id/unarchive', feature_category: :groups_and_projects do
-        if Feature.enabled?(:rate_limit_groups_and_projects_api, current_user)
-          check_rate_limit_by_user_or_ip!(:group_archive_unarchive_api)
-        end
+        check_rate_limit_by_user_or_ip!(:group_archive_unarchive_api)
 
         group = find_group!(params[:id])
         authorize!(:archive_group, group)
@@ -409,9 +406,7 @@ module API
       end
       # TODO: Set higher urgency after resolving https://gitlab.com/gitlab-org/gitlab/-/issues/357841
       get ":id", feature_category: :groups_and_projects, urgency: :low do
-        if Feature.enabled?(:rate_limit_groups_and_projects_api, current_user)
-          check_rate_limit_by_user_or_ip!(:group_api)
-        end
+        check_rate_limit_by_user_or_ip!(:group_api)
 
         group = find_group!(params[:id])
         group.preload_shared_group_links
@@ -433,7 +428,6 @@ module API
       desc 'Restore a group.'
       post ':id/restore', feature_category: :groups_and_projects do
         authorize! :remove_group, user_group
-        break not_found! unless user_group.adjourned_deletion?
 
         result = ::Groups::RestoreService.new(user_group, current_user).execute
         user_group.preload_shared_group_links
@@ -462,9 +456,7 @@ module API
         use :with_custom_attributes
       end
       get ":id/groups/shared", feature_category: :groups_and_projects do
-        if Feature.enabled?(:rate_limit_groups_and_projects_api, current_user)
-          check_rate_limit_by_user_or_ip!(:group_shared_groups_api)
-        end
+        check_rate_limit_by_user_or_ip!(:group_shared_groups_api)
 
         group = find_group!(params[:id])
         groups = ::Namespaces::Groups::SharedGroupsFinder.new(group, current_user, declared(params)).execute
@@ -524,9 +516,7 @@ module API
       end
       # TODO: Set higher urgency after resolving https://gitlab.com/gitlab-org/gitlab/-/issues/211498
       get ":id/projects", feature_category: :groups_and_projects, urgency: :low do
-        if Feature.enabled?(:rate_limit_groups_and_projects_api, current_user)
-          check_rate_limit_by_user_or_ip!(:group_projects_api)
-        end
+        check_rate_limit_by_user_or_ip!(:group_projects_api)
 
         finder_options = {
           exclude_shared: !params[:with_shared],

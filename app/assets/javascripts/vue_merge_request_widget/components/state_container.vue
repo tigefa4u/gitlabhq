@@ -1,5 +1,5 @@
 <script>
-import { GlButton, GlTooltipDirective } from '@gitlab/ui';
+import { GlButton, GlTooltipDirective, GlAnimatedChevronLgDownUpIcon } from '@gitlab/ui';
 import { __ } from '~/locale';
 import { STATUS_CLOSED, STATUS_MERGED } from '~/issues/constants';
 import StatusIcon from './mr_widget_status_icon.vue';
@@ -8,6 +8,7 @@ import Actions from './action_buttons.vue';
 export default {
   components: {
     GlButton,
+    GlAnimatedChevronLgDownUpIcon,
     StatusIcon,
     Actions,
   },
@@ -29,11 +30,6 @@ export default {
       type: Boolean,
       required: false,
       default: false,
-    },
-    mr: {
-      type: Object,
-      required: false,
-      default: null,
     },
     isLoading: {
       type: Boolean,
@@ -63,8 +59,8 @@ export default {
   },
   computed: {
     wrapperClasses() {
-      if (this.status === STATUS_MERGED) return 'gl-bg-feedback-info';
-      if (this.status === STATUS_CLOSED) return 'gl-bg-feedback-danger';
+      if (this.status === STATUS_MERGED) return 'gl-bg-feedback-info widget-merge-status';
+      if (this.status === STATUS_CLOSED) return 'gl-bg-feedback-danger widget-merge-status';
       return null;
     },
     hasActionsSlot() {
@@ -125,13 +121,14 @@ export default {
             :title="collapsed ? expandDetailsTooltip : collapseDetailsTooltip"
             :aria-label="collapsed ? expandDetailsTooltip : collapseDetailsTooltip"
             :aria-expanded="collapsed ? 'false' : 'true'"
-            :icon="collapsed ? 'chevron-lg-down' : 'chevron-lg-up'"
             category="tertiary"
             size="small"
-            class="gl-align-top"
+            class="btn-icon"
             data-testid="widget-toggle"
             @click="() => $emit('toggle')"
-          />
+          >
+            <gl-animated-chevron-lg-down-up-icon :is-on="!collapsed" />
+          </gl-button>
         </div>
       </div>
       <button

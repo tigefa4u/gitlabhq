@@ -39,7 +39,6 @@ describe('ContainerProtectionTagRules', () => {
   let wrapper;
 
   const findCrudComponent = () => wrapper.findComponent(CrudComponent);
-  const findDescription = () => wrapper.findByTestId('description');
   const findEmptyText = () => wrapper.findByTestId('empty-text');
   const findMaxRulesText = () => wrapper.findByTestId('max-rules');
   const findLoader = () => wrapper.findByTestId('loading-icon');
@@ -96,13 +95,10 @@ describe('ContainerProtectionTagRules', () => {
       createComponent();
     });
 
-    it('renders card component with title', () => {
+    it('renders card component with title and description', () => {
       expect(findCrudComponent().props('title')).toBe('Protected container image tags');
       expect(findCrudComponent().props('toggleText')).toBeNull();
-    });
-
-    it('renders card component with description', () => {
-      expect(findDescription().text()).toBe(
+      expect(findCrudComponent().props('description')).toBe(
         'When a container image tag is protected, only certain user roles can create, update, and delete the protected tag, which helps to prevent unauthorized changes. You can add up to 5 protection rules per project.',
       );
     });
@@ -202,7 +198,7 @@ describe('ContainerProtectionTagRules', () => {
       });
     });
 
-    describe('shows table rows', () => {
+    describe('table rows', () => {
       beforeEach(async () => {
         createComponent({
           mountFn: mountExtended,
@@ -211,7 +207,7 @@ describe('ContainerProtectionTagRules', () => {
         await waitForPromises();
       });
 
-      it('with container protection tag rules', () => {
+      it('contains container protection tag rules', () => {
         tagRules.forEach((protectionRule, i) => {
           expect(findTableRowCell(i, 0).text()).toBe(protectionRule.tagNamePattern);
           expect(findTableRowCell(i, 1).text()).toBe(

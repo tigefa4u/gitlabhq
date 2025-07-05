@@ -178,7 +178,7 @@ export default {
       >
         <div class="gl-flex gl-w-full gl-items-center gl-gap-2">
           <status-badge :issuable-type="$options.TYPE_MERGE_REQUEST" :state="badgeState.state" />
-          <imported-badge v-if="isImported" :importable-type="$options.TYPE_MERGE_REQUEST" />
+          <imported-badge v-if="isImported" />
           <a
             v-safe-html:[$options.safeHtmlConfig]="titleHtml"
             href="#top"
@@ -237,7 +237,7 @@ export default {
             </gl-sprintf>
           </div>
         </div>
-        <div class="gl-flex gl-w-full">
+        <div class="gl-flex gl-w-full gl-justify-between">
           <ul
             class="merge-request-tabs nav-tabs nav nav-links gl-m-0 gl-flex gl-flex-nowrap gl-border-b-0 gl-p-0"
           >
@@ -259,10 +259,9 @@ export default {
               </gl-link>
             </li>
           </ul>
-          <div class="gl-ml-auto gl-hidden gl-items-center lg:gl-flex">
+          <div class="gl-hidden gl-items-center gl-gap-3 lg:gl-flex">
             <discussion-counter :blocks-merge="blocksMerge" hide-options />
-            <submit-review-button v-if="glFeatures.improvedReviewExperience" class="gl-mr-3" />
-            <div v-if="isSignedIn" :class="{ 'gl-flex gl-gap-3': isNotificationsTodosButtons }">
+            <template v-if="isSignedIn">
               <todo-widget
                 :issuable-id="issuableId"
                 :issuable-iid="issuableIid"
@@ -275,7 +274,8 @@ export default {
                 :full-path="projectPath"
                 issuable-type="merge_request"
               />
-            </div>
+            </template>
+            <submit-review-button />
           </div>
         </div>
       </div>

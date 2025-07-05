@@ -203,6 +203,41 @@ RSpec.describe API::Ci::Runners, :aggregate_failures, factory_default: :keep, fe
           end
         end
       end
+
+      context 'job_execution_status attribute' do
+        context 'when no executing builds present for runners' do
+          it 'returns "idle" as job execution status' do
+            perform_request
+
+            expect(json_response.find { |runner| runner['id'] == project_runner.id }['job_execution_status']).to eq 'idle'
+          end
+        end
+
+        context 'when executing build present' do
+          before do
+            create(:ci_build, :running, runner: project_runner, project: project)
+          end
+
+          it 'returns "active" as job execution status' do
+            perform_request
+
+            expect(json_response.find { |runner| runner['id'] == project_runner.id }['job_execution_status']).to eq 'active'
+          end
+        end
+
+        context 'N+1 query performance' do
+          it 'does not trigger N+1 query for job_execution_status', :use_sql_query_cache do
+            control = ActiveRecord::QueryRecorder.new(skip_cached: false) { get api(path, current_user) }
+            create_list(:ci_runner, 5, :project, projects: [project], creator: users.first)
+
+            expect do
+              perform_request
+
+              expect(json_response).to all(include('job_execution_status'))
+            end.not_to exceed_query_limit(control)
+          end
+        end
+      end
     end
 
     context 'unauthorized user' do
@@ -228,14 +263,45 @@ RSpec.describe API::Ci::Runners, :aggregate_failures, factory_default: :keep, fe
         let(:runner) { shared_runner }
         let(:manager) { runner.runner_managers.first }
 
+        before do
+          create(:ci_build, :running, runner_manager: manager, runner: shared_runner)
+        end
+
         it 'returns all managers of the runner' do
           perform_request
 
           expect(response).to have_gitlab_http_status(:ok)
 
           expect(json_response).to contain_exactly(
-            a_hash_including('id' => manager.id, 'version' => manager.version, 'architecture' => manager.architecture)
+            a_hash_including('id' => manager.id, 'version' => manager.version, 'architecture' => manager.architecture,
+              'job_execution_status' => 'active')
           )
+        end
+
+        context 'job_execution_status' do
+          before do
+            create(:ci_build, :running, runner_manager: manager, project: project)
+          end
+
+          it 'returns job execution status' do
+            perform_request
+
+            expect(json_response).to all(include('job_execution_status'))
+            expect(json_response.find { |runner_manager| runner_manager['id'] == manager.id }['job_execution_status']).to eq 'active'
+          end
+
+          context 'N+1 query performance' do
+            it 'does not trigger N+1 query for job_execution_status', :use_sql_query_cache do
+              control = ActiveRecord::QueryRecorder.new(skip_cached: false) { get api(path, current_user) }
+              create_list(:ci_runner_machine, 5, runner: runner)
+
+              expect do
+                perform_request
+
+                expect(json_response).to all(include('job_execution_status'))
+              end.not_to exceed_query_limit(control)
+            end
+          end
         end
       end
 
@@ -293,6 +359,30 @@ RSpec.describe API::Ci::Runners, :aggregate_failures, factory_default: :keep, fe
             a_hash_including('description' => 'Group runner B', 'is_shared' => false, 'runner_type' => 'group_type'),
             a_hash_including('description' => 'Shared runner', 'is_shared' => true, 'runner_type' => 'instance_type')
           ]
+        end
+
+        context 'created_by' do
+          let_it_be(:runner_with_creator) { create(:ci_runner, :project, creator: admin, projects: [project]) }
+
+          it 'returns created_at and created_by in the response' do
+            perform_request
+
+            expect(json_response.find { |runner| runner['id'] == runner_with_creator.id }['created_by']['username'])
+              .to eq(admin.username)
+            expect(json_response).to all(include('created_at'))
+          end
+
+          it 'does not trigger N+1 query for creator', :use_sql_query_cache do
+            control = ActiveRecord::QueryRecorder.new(skip_cached: false) do
+              get api(path, current_user)
+            end
+
+            create_list(:ci_runner, 5, :project, projects: [project], creator: users.first)
+
+            expect do
+              perform_request
+            end.not_to exceed_query_limit(control)
+          end
         end
 
         context 'with request authorized with access token' do
@@ -2227,7 +2317,7 @@ RSpec.describe API::Ci::Runners, :aggregate_failures, factory_default: :keep, fe
         let(:runner) { project_runner }
 
         it 'avoids changes' do
-          expect { perform_request }.to change { project.runners.count }.by(0)
+          expect { perform_request }.not_to change { project.runners.count }
 
           expect(response).to have_gitlab_http_status(:bad_request)
         end

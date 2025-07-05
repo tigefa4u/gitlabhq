@@ -212,7 +212,7 @@ RSpec.describe Gitlab::Database::BackgroundMigration::BatchedMigrationRunner, fe
             expect(job_record).to eq(previous_job)
           end
 
-          expect { runner.run_migration_job(migration) }.to change { job_relation.count }.by(0)
+          expect { runner.run_migration_job(migration) }.not_to change { job_relation.count }
         end
 
         context 'when failed job has reached the maximum number of attempts' do
@@ -223,7 +223,7 @@ RSpec.describe Gitlab::Database::BackgroundMigration::BatchedMigrationRunner, fe
           it 'marks the migration as failed' do
             expect(migration_wrapper).not_to receive(:perform)
 
-            expect { runner.run_migration_job(migration) }.to change { job_relation.count }.by(0)
+            expect { runner.run_migration_job(migration) }.not_to change { job_relation.count }
 
             expect(migration).to be_failed
           end
@@ -240,7 +240,7 @@ RSpec.describe Gitlab::Database::BackgroundMigration::BatchedMigrationRunner, fe
             expect(job_record).to eq(previous_job)
           end
 
-          expect { runner.run_migration_job(migration.reload) }.to change { job_relation.count }.by(0)
+          expect { runner.run_migration_job(migration.reload) }.not_to change { job_relation.count }
         end
       end
 
@@ -252,7 +252,7 @@ RSpec.describe Gitlab::Database::BackgroundMigration::BatchedMigrationRunner, fe
         it 'keeps the migration active' do
           expect(migration_wrapper).not_to receive(:perform)
 
-          expect { runner.run_migration_job(migration) }.to change { job_relation.count }.by(0)
+          expect { runner.run_migration_job(migration) }.not_to change { job_relation.count }
 
           expect(migration.reload).to be_active
         end
@@ -276,7 +276,7 @@ RSpec.describe Gitlab::Database::BackgroundMigration::BatchedMigrationRunner, fe
             expect(job_record).to eq(previous_job)
           end
 
-          expect { runner.run_migration_job(migration.reload) }.to change { job_relation.count }.by(0)
+          expect { runner.run_migration_job(migration.reload) }.not_to change { job_relation.count }
         end
       end
     end
@@ -365,7 +365,7 @@ RSpec.describe Gitlab::Database::BackgroundMigration::BatchedMigrationRunner, fe
         table_name: table_name,
         column_name: column_name,
         job_arguments: job_arguments,
-        pause_ms: 0
+        pause_ms: 100
       )
     end
 
@@ -389,7 +389,7 @@ RSpec.describe Gitlab::Database::BackgroundMigration::BatchedMigrationRunner, fe
           batched_migration: batched_migration,
           batch_size: 2,
           sub_batch_size: 1,
-          pause_ms: 0
+          pause_ms: 100
         }
 
         create(:batched_background_migration_job, :succeeded, common_attributes.merge(min_value: 1, max_value: 2))

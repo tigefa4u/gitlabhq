@@ -1,19 +1,17 @@
 <script>
-import { GlButton, GlTabs } from '@gitlab/ui';
+import { GlButton, GlAlert } from '@gitlab/ui';
 import CrudComponent from '~/vue_shared/components/crud_component.vue';
 import RegistrationDropdown from '~/ci/runner/components/registration/registration_dropdown.vue';
-import RunnersTab from '~/ci/runner/project_runners_settings/components/runners_tab.vue';
-import InstanceRunnersTab from '~/ci/runner/project_runners_settings/components/instance_runners_tab.vue';
+import RunnersTabs from '~/ci/runner/project_runners_settings/components/runners_tabs.vue';
 
 export default {
   name: 'ProjectRunnersSettingsApp',
   components: {
+    GlAlert,
     GlButton,
-    GlTabs,
     CrudComponent,
     RegistrationDropdown,
-    RunnersTab,
-    InstanceRunnersTab,
+    RunnersTabs,
   },
   props: {
     canCreateRunner: {
@@ -34,31 +32,52 @@ export default {
       required: false,
       default: null,
     },
-    groupFullPath: {
+    projectFullPath: {
       type: String,
       required: true,
+    },
+  },
+  data() {
+    return {
+      errors: [],
+    };
+  },
+  methods: {
+    onError({ message }) {
+      if (this.errors.indexOf(message) === -1) {
+        this.errors.push(message);
+      }
+    },
+    onDismissError(message) {
+      this.errors = this.errors.filter((m) => m !== message);
     },
   },
 };
 </script>
 <template>
-  <crud-component :title="s__('Runners|Runners')" body-class="!gl-m-0">
-    <template #actions>
-      <gl-button v-if="canCreateRunner" size="small" :href="newProjectRunnerPath">{{
-        s__('Runners|New project runner')
-      }}</gl-button>
-      <registration-dropdown
-        size="small"
-        type="PROJECT_TYPE"
-        :allow-registration-token="allowRegistrationToken"
-        :registration-token="registrationToken"
-      />
-    </template>
-
-    <gl-tabs>
-      <runners-tab :title="__('Project')" type="project" :group-full-path="groupFullPath" />
-      <runners-tab :title="__('Group')" type="group" :group-full-path="groupFullPath" />
-      <instance-runners-tab />
-    </gl-tabs>
-  </crud-component>
+  <div>
+    <gl-alert
+      v-for="error in errors"
+      :key="error"
+      class="gl-mb-4"
+      variant="danger"
+      @dismiss="onDismissError(error)"
+    >
+      {{ error }}
+    </gl-alert>
+    <crud-component :title="s__('Runners|Available Runners')" body-class="!gl-m-0">
+      <template #actions>
+        <gl-button v-if="canCreateRunner" size="small" :href="newProjectRunnerPath">{{
+          s__('Runners|Create project runner')
+        }}</gl-button>
+        <registration-dropdown
+          size="small"
+          type="PROJECT_TYPE"
+          :allow-registration-token="allowRegistrationToken"
+          :registration-token="registrationToken"
+        />
+      </template>
+      <runners-tabs :project-full-path="projectFullPath" @error="onError" />
+    </crud-component>
+  </div>
 </template>

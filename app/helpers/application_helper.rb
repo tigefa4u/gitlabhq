@@ -336,7 +336,6 @@ module ApplicationHelper
   end
 
   def body_scroll_classes
-    return '' unless Feature.enabled?(:force_scrollbar, current_user, type: :beta)
     return '' if content_for(:disable_fixed_body_scroll).present?
 
     # Custom class is used instead of Tailwind so people can discover this, do not replace this with Tailwind analog
@@ -397,6 +396,12 @@ module ApplicationHelper
     external_redirect_path(url: "https://bsky.app/profile/#{user.bluesky}")
   end
 
+  def orcid_url(user)
+    return '' if user.orcid.blank?
+
+    external_redirect_path(url: "https://orcid.org/#{user.orcid}")
+  end
+
   def mastodon_url(user)
     return '' if user.mastodon.blank?
 
@@ -407,6 +412,12 @@ module ApplicationHelper
     else
       external_redirect_path(url: "https://#{url[2]}/@#{url[1]}")
     end
+  end
+
+  def github_url(user)
+    return '' if user.github.blank?
+
+    "https://github.com/#{user.github}"
   end
 
   def collapsed_super_sidebar?

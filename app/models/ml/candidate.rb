@@ -6,7 +6,7 @@ module Ml
     include Presentable
     include AtomicInternalId
 
-    enum status: { running: 0, scheduled: 1, finished: 2, failed: 3, killed: 4 }
+    enum :status, { running: 0, scheduled: 1, finished: 2, failed: 3, killed: 4 }
 
     PACKAGE_PREFIX = 'candidate_'
 
@@ -60,7 +60,9 @@ module Ml
         )
     end
 
-    alias_attribute :artifact, :package
+    alias_method :artifact, :package
+    alias_method :artifact=, :package=
+
     alias_attribute :iid, :internal_id
 
     delegate :package_name, to: :experiment

@@ -19,6 +19,12 @@ require 'spec_helper'
 # Though these contexts assume a particular usage which reduces flexibility.
 # Please check existing specs for examples.
 
+RSpec.shared_context "when project has files" do |files|
+  let_it_be(:files_for_repo) { files.index_with('') }
+  let_it_be(:project) { create(:project, :custom_repo, files: files_for_repo) }
+  let_it_be(:user) { project.first_owner }
+end
+
 RSpec.shared_context 'with CI variables' do |variables|
   before do
     variables.each do |(key, value)|
@@ -74,6 +80,15 @@ RSpec.shared_context 'with MR pipeline setup' do
   end
 end
 
+RSpec.shared_examples 'missing stage' do |stage_name|
+  it "fails due to missing '#{stage_name}' stage" do
+    expect(pipeline.builds.pluck(:name)).to be_empty
+    expect(pipeline.errors.full_messages.first).to match(
+      /job: chosen stage #{stage_name} does not exist; available stages are/
+    )
+  end
+end
+
 RSpec.shared_examples 'has expected jobs' do |jobs|
   it 'includes jobs', if: jobs.any? do
     expect(pipeline.builds.pluck(:name)).to match_array(jobs)
@@ -86,6 +101,23 @@ RSpec.shared_examples 'has expected jobs' do |jobs|
     expect(pipeline.builds.pluck(:name)).to be_empty
     expect(pipeline.errors.full_messages).to match_array(
       [sanitize_message(Ci::Pipeline.rules_failure_message)])
+  end
+end
+
+RSpec.shared_examples 'has expected image' do |job, image|
+  it "uses image #{image} for job #{job}" do
+    build = pipeline.builds.find_by(name: job)
+    expect(expand_job_image(build)).to eql(image)
+  end
+end
+
+RSpec.shared_examples 'uses SECURE_ANALYZERS_PREFIX' do |jobs|
+  jobs.each do |job|
+    it "uses SECURE_ANALYZERS_PREFIX for the image of job #{job}" do
+      build = pipeline.builds.find_by(name: job)
+      image_without_tag = expand_job_image(build).rpartition(':').first
+      expect(image_without_tag).to start_with('my.custom-registry')
+    end
   end
 end
 
@@ -128,4 +160,22 @@ RSpec.shared_examples 'has jobs that can be disabled' do |key, disabled_values, 
 
     include_examples 'has expected jobs', jobs
   end
+end
+
+# TODO: remove (need to update all templates)
+RSpec.shared_examples 'acts as branch pipeline' do |jobs|
+  context 'when branch pipeline' do
+    let(:pipeline_branch) { default_branch }
+    let(:service) { Ci::CreatePipelineService.new(project, user, ref: pipeline_branch) }
+    let(:pipeline) { service.execute(:push).payload }
+
+    it 'includes a job' do
+      expect(pipeline.builds.pluck(:name)).to match_array(jobs)
+    end
+  end
+end
+
+def expand_job_image(build)
+  variables = build.variables.sort_and_expand_all
+  ExpandVariables.expand(build.image.name, variables)
 end

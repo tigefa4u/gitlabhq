@@ -29,8 +29,6 @@ class Note < ApplicationRecord
   include EachBatch
   include Spammable
 
-  ignore_column :attachment, remove_with: '18.1', remove_after: '2025-05-15'
-
   cache_markdown_field :note, pipeline: :note, issuable_reference_expansion_enabled: true
 
   redact_field :note
@@ -63,6 +61,9 @@ class Note < ApplicationRecord
 
   # Attribute used to determine whether keep_around_commits will be skipped for diff notes.
   attr_accessor :skip_keep_around_commits
+
+  # Attribute used to skip updates of `updated_at` for the noteable when it could impact database health.
+  attr_accessor :skip_touch_noteable
 
   attribute :system, default: false
 
@@ -116,6 +117,9 @@ class Note < ApplicationRecord
 
   validate :does_not_exceed_notes_limit?, on: :create, unless: [:system?, :importing?]
 
+  validates :position, :original_position, :change_position,
+    'notes/position_serialized_size': { max_bytesize: 100.kilobytes }
+
   # Scopes
   scope :for_commit_id, ->(commit_id) { where(noteable_type: "Commit", commit_id: commit_id) }
   scope :system, -> { where(system: true) }
@@ -168,11 +172,7 @@ class Note < ApplicationRecord
   scope :with_metadata, -> { includes(:system_note_metadata) }
 
   scope :without_hidden, -> {
-    if Feature.enabled?(:hidden_notes)
-      where_not_exists(Users::BannedUser.where('notes.author_id = banned_users.user_id'))
-    else
-      all
-    end
+    where_not_exists(Users::BannedUser.where('notes.author_id = banned_users.user_id'))
   }
 
   scope :for_note_or_capitalized_note, ->(text) { where(note: [text, text.capitalize]) }
@@ -183,7 +183,7 @@ class Note < ApplicationRecord
   # https://gitlab.com/gitlab-org/gitlab/-/issues/367923
   before_create :set_internal_flag
   after_save :keep_around_commit, if: :for_project_noteable?, unless: -> { importing? || skip_keep_around_commits }
-  after_save :touch_noteable, unless: :importing?
+  after_save :touch_noteable, if: :touch_noteable?
   after_commit :notify_after_create, on: :create
   after_commit :notify_after_destroy, on: :destroy
 
@@ -191,6 +191,7 @@ class Note < ApplicationRecord
   after_commit :trigger_note_subscription_update, on: :update
   after_commit :trigger_note_subscription_destroy, on: :destroy
   after_commit :broadcast_noteable_notes_changed, unless: :importing?
+  after_commit :trigger_work_item_updated_subscription, on: :create, if: :system?
 
   def trigger_note_subscription_create
     return unless trigger_note_subscription?
@@ -219,6 +220,13 @@ class Note < ApplicationRecord
     }
 
     GraphqlTriggers.work_item_note_deleted(noteable.to_work_item_global_id, deleted_note_data)
+  end
+
+  def trigger_work_item_updated_subscription
+    return unless trigger_note_subscription?
+    return unless system_note_work_item_reference?
+
+    GraphqlTriggers.work_item_updated(noteable)
   end
 
   class << self
@@ -415,6 +423,7 @@ class Note < ApplicationRecord
     project&.team&.contributor?(self.author_id)
   end
 
+  # overridden in ee
   def human_max_access
     project&.team&.human_max_access(self.author_id)
   end
@@ -715,6 +724,10 @@ class Note < ApplicationRecord
 
   private
 
+  def touch_noteable?
+    !importing? && !skip_touch_noteable
+  end
+
   def trigger_note_subscription?
     for_issue? && noteable
   end
@@ -830,6 +843,10 @@ class Note < ApplicationRecord
 
   def set_internal_flag
     self.internal = confidential if confidential
+  end
+
+  def system_note_work_item_reference?
+    note.present? && system_note_metadata&.about_relation?
   end
 end
 

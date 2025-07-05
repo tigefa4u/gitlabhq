@@ -81,8 +81,8 @@ When applied, the suggestion replaces from 2 lines above to 2 lines below the co
 
 ![Multi-line suggestion preview](img/multi-line-suggestion-preview_v16_6.png)
 
-GitLab limits multi-line suggestions to 100 lines _above_ and 100
-lines _below_ the commented diff line. This allows for up to 201 changed lines per
+GitLab limits multi-line suggestions to 100 lines above and 100
+lines below the commented diff line. This allows for up to 201 changed lines per
 suggestion.
 
 Multi-line comments display the comment's line numbers above the body of the comment:
@@ -93,7 +93,7 @@ Multi-line comments display the comment's line numbers above the body of the com
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/388449) in GitLab 16.1 [with a flag](../../../../administration/feature_flags.md) named `content_editor_on_issues`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/388449) in GitLab 16.1 [with a flag](../../../../administration/feature_flags/_index.md) named `content_editor_on_issues`. Disabled by default.
 - [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/375172) in GitLab 16.2.
 - Feature flag `content_editor_on_issues` removed in GitLab 16.5.
 

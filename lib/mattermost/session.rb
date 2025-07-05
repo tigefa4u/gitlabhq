@@ -72,25 +72,25 @@ module Mattermost
     end
 
     def params
-      { organization_id: Organizations::Organization::DEFAULT_ORGANIZATION_ID }
+      { organization_id: @current_resource_owner.organizations.first.id }
         .merge(Rack::Utils.parse_query(oauth_uri.query).symbolize_keys)
     end
 
     def get(path, options = {})
       handle_exceptions do
-        Gitlab::HTTP.get(path, build_options(options))
+        Integrations::Clients::HTTP.get(path, build_options(options))
       end
     end
 
     def post(path, options = {})
       handle_exceptions do
-        Gitlab::HTTP.post(path, build_options(options))
+        Integrations::Clients::HTTP.post(path, build_options(options))
       end
     end
 
     def delete(path, options = {})
       handle_exceptions do
-        Gitlab::HTTP.delete(path, build_options(options))
+        Integrations::Clients::HTTP.delete(path, build_options(options))
       end
     end
 

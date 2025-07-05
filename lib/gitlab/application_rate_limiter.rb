@@ -27,6 +27,7 @@ module Gitlab
           bulk_import: { threshold: 6, interval: 1.minute },
           code_suggestions_api_endpoint: { threshold: -> { application_settings.code_suggestions_api_rate_limit }, interval: 1.minute },
           create_organization_api: { threshold: -> { application_settings.create_organization_api_limit }, interval: 1.minute },
+          delete_all_todos: { threshold: 1, interval: 5.minutes },
           downstream_pipeline_trigger: {
             threshold: -> { application_settings.downstream_pipeline_trigger_limit_per_project_user_sha }, interval: 1.minute
           },
@@ -34,6 +35,7 @@ module Gitlab
           email_verification_code_send: { threshold: 10, interval: 1.hour },
           expanded_diff_files: { threshold: 6, interval: 1.minute },
           fetch_google_ip_list: { threshold: 10, interval: 1.minute },
+          github_import: { threshold: 6, interval: 1.minute },
           fogbugz_import: { threshold: 1, interval: 1.minute },
           gitlab_shell_operation: { threshold: application_settings.gitlab_shell_operation_limit, interval: 1.minute },
           glql: { threshold: 1, interval: 15.minutes },
@@ -49,6 +51,7 @@ module Gitlab
           import_source_user_notification: { threshold: 1, interval: 8.hours },
           issues_create: { threshold: -> { application_settings.issues_create_limit }, interval: 1.minute },
           jobs_index: { threshold: -> { application_settings.project_jobs_api_rate_limit }, interval: 1.minute },
+          large_blob_download: { threshold: 5, interval: 1.minute },
           members_delete: { threshold: -> { application_settings.members_delete_limit }, interval: 1.minute },
           namespace_exists: { threshold: 20, interval: 1.minute },
           notes_create: { threshold: -> { application_settings.notes_create_limit }, interval: 1.minute },

@@ -1,7 +1,7 @@
 ---
 stage: Data Access
 group: Database Frameworks
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: '`NOT NULL` constraints'
 ---
 
@@ -160,7 +160,7 @@ end
 
 #### Check if all records are fixed (next release)
 
-Use postgres.ai to [create a thin clone](https://handbook.gitlab.com/handbook/engineering/infrastructure/core-platform/data_stores/database/doc/gitlab-com-database/#use-postgresai-to-work-with-a-thin-clone-of-the-database-includes-direct-psql-access-to-the-thin-clone)
+Use postgres.ai to [create a thin clone](https://handbook.gitlab.com/handbook/engineering/infrastructure-platforms/data-access/database-framework/doc/gitlab-com-database/#use-postgresai-to-work-with-a-thin-clone-of-the-database-includes-direct-psql-access-to-the-thin-clone)
 of the production database and check if all records on GitLab.com have the attribute set.
 If not go back to [Prevent new invalid records](#prevent-new-invalid-records-current-release) step and figure out where
 in the code the attribute is explicitly set to `nil`. Fix the code path then reschedule the migration to fix the existing
@@ -352,20 +352,20 @@ scheduled after the background migration has completed, which could be several r
    Run the command `\d+ table_name` and ensure that `NOT VALID` has been removed from the check constraint definition.
    - Add the migration to validate the `NOT NULL` constraint:
 
-      ```ruby
-      # db/post_migrate/
-      class ValidateMergeRequestDiffsProjectIdNullConstraint < Gitlab::Database::Migration[2.2]
-        milestone '16.10'
+     ```ruby
+     # db/post_migrate/
+     class ValidateMergeRequestDiffsProjectIdNullConstraint < Gitlab::Database::Migration[2.2]
+       milestone '16.10'
 
-        def up
-          validate_not_null_constraint :merge_request_diffs, :project_id
-        end
+       def up
+         validate_not_null_constraint :merge_request_diffs, :project_id
+       end
 
-        def down
-          # no-op
-        end
-      end
-      ```
+       def down
+         # no-op
+       end
+     end
+     ```
 
 For these cases, consult the database team early in the update cycle. The `NOT NULL`
 constraint may not be required or other options could exist that do not affect really large
@@ -451,7 +451,7 @@ allowed.
 
 ### Dropping a `NOT NULL` constraint with a check constraint on the column
 
-First, please verify there's a constraint in place on the column. You can do this in several ways:
+First, verify there's a constraint in place on the column. You can do this in several ways:
 
 - Query the [`Gitlab::Database::PostgresConstraint`](https://gitlab.com/gitlab-org/gitlab/-/blob/71892a3c97f52ddcef819dd210ab32864e90c85c/lib/gitlab/database/postgres_constraint.rb) view in rails console
 - Use `psql` to check the table itself: `\d+ table_name`
@@ -468,7 +468,7 @@ CREATE TABLE labels (
 
 {{< alert type="note" >}}
 
-The milestone number is just an example. Please use the correct version.
+The milestone number is just an example. Use the correct version.
 
 {{< /alert >}}
 
@@ -535,7 +535,7 @@ CREATE TABLE labels (
 
 {{< alert type="note" >}}
 
-The milestone number is just an example. Please use the correct version.
+The milestone number is just an example. Use the correct version.
 
 {{< /alert >}}
 

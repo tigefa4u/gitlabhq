@@ -8,10 +8,9 @@ export const extractGroupOrProject = (url = window.location.href) => {
 
   const isGroup = fullPath.startsWith('/groups');
   fullPath = fullPath.replace(/^\/groups\//, '').replace(/^\//g, '');
-  return {
-    group: isGroup ? fullPath : undefined,
-    project: !isGroup ? fullPath : undefined,
-  };
+  if (isGroup) return { group: fullPath };
+  if (fullPath) return { project: fullPath };
+  return {};
 };
 
 export const toSentenceCase = (str) => {

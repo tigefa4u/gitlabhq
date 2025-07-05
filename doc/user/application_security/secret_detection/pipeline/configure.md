@@ -80,7 +80,7 @@ To enable a historic scan, set the variable `SECRET_DETECTION_HISTORIC_SCAN` to 
 
 ### Run jobs in merge request pipelines
 
-See [Use security scanning tools with merge request pipelines](../../detect/roll_out_security_scanning.md#use-security-scanning-tools-with-merge-request-pipelines).
+See [Use security scanning tools with merge request pipelines](../../detect/security_configuration.md#use-security-scanning-tools-with-merge-request-pipelines).
 
 ### Override the analyzer jobs
 
@@ -88,7 +88,7 @@ To override a job definition, (for example, change properties like `variables` o
 declare a job with the same name as the `secret_detection` job to override. Place this new job after
 the template inclusion and specify any additional keys under it.
 
-In the following example _extract_ of a `.gitlab-ci.yml` file:
+In the following example extract of a `.gitlab-ci.yml` file:
 
 - The `Jobs/Secret-Detection` CI template is [included](../../../../ci/yaml/_index.md#include).
 - In the `secret_detection` job, the CI/CD variable `SECRET_DETECTION_HISTORIC_SCAN` is set to
@@ -165,7 +165,7 @@ There are multiple kinds of customizations available:
 
 To create a ruleset configuration file:
 
-1. Create a `.gitlab` directory at the root of your project, if one doesn’t already exist.
+1. Create a `.gitlab` directory at the root of your project, if one doesn't already exist.
 1. Create a file named `secret-detection-ruleset.toml` in the `.gitlab` directory.
 
 ### Modify rules from the default ruleset
@@ -256,7 +256,7 @@ variables:
   SECRET_DETECTION_RULESET_GIT_REFERENCE: "gitlab.com/example-group/remote-ruleset-project"
 ```
 
-Pipeline secret detection assumes the configuration is defined in `.gitlab/secret-detection-ruleset.toml` file in the repository referenced by the CI variable where the remote ruleset is stored. If that file doesn't exist, please make sure to [create one](#create-a-ruleset-configuration-file) and follow the steps to [override](#override-a-rule) or [disable](#disable-a-rule) a predefined rule as outlined above.
+Pipeline secret detection assumes the configuration is defined in `.gitlab/secret-detection-ruleset.toml` file in the repository referenced by the CI variable where the remote ruleset is stored. If that file doesn't exist, make sure to [create one](#create-a-ruleset-configuration-file) and follow the steps to [override](#override-a-rule) or [disable](#disable-a-rule) a predefined rule as previously outlined.
 
 {{< alert type="note" >}}
 
@@ -316,7 +316,7 @@ regex = '''Custom Raw Ruleset T[est]{3}'''
 """
 ```
 
-The above example replaces the default ruleset with a rule that checks for the regex defined - `Custom Raw Ruleset T` with a suffix of 3 characters from either one of `e`, `s`, or `t` letters.
+The previous example replaces the default ruleset with a rule that checks for the regex defined - `Custom Raw Ruleset T` with a suffix of 3 characters from either one of `e`, `s`, or `t` letters.
 
 For more information on the passthrough syntax to use, see [Schema](custom_rulesets_schema.md#schema).
 
@@ -340,7 +340,7 @@ For more information on the passthrough syntax to use, see [Schema](custom_rules
 
 #### With a remote ruleset
 
-You can replace the default ruleset with configuration defined in a remote Git repository or a file stored somewhere online using the `git` and `url` passthroughs, respectively.
+You can replace the default ruleset with configuration defined in a remote Git repository or a file stored somewhere online using the `git` and `url` passthroughs.
 
 A remote ruleset can be used across multiple projects. For example, you may want to apply the same
 ruleset to a number of projects in one of your namespaces, in such case, you may use either type of
@@ -473,7 +473,7 @@ To do that with a `git` passthrough, add the following to `.gitlab/secret-detect
 
 Pipeline secret detection assumes the remote ruleset configuration file is called `gitleaks.toml`, and is stored in `config` directory on the `main` branch of the referenced repository.
 
-To extend the default ruleset, the `gitleaks.toml` file should use `[extend]` directive similar to the example above:
+To extend the default ruleset, the `gitleaks.toml` file should use `[extend]` directive similar to the previous example:
 
 ```toml
 # https://gitlab.com/user_group/central_repository_with_shared_ruleset/-/raw/main/config/gitleaks.toml
@@ -565,6 +565,30 @@ path = "/gitleaks.toml"
 ```
 
 This ignores any secrets detected in either `/gitleaks.toml` file or any file ending with one of the specified extensions.
+
+From [Gitleaks v8.20.0](https://github.com/gitleaks/gitleaks/releases/tag/v8.20.0), you can also use `regexTarget` with `[allowlist]`. This means you can configure a [personal access token prefix](../../../../administration/settings/account_and_limit_settings.md#personal-access-token-prefix) or a [custom instance prefix](../../../../administration/settings/account_and_limit_settings.md#instance-token-prefix) by overriding existing rules. For example, for `personal access tokens`, you could configure:
+
+```toml
+# extended-gitleaks-config.toml
+[extend]
+# Extends default packaged ruleset, NOTE: do not change the path.
+path = "/gitleaks.toml"
+
+[[rules]]
+# Rule id you want to override:
+id = "gitlab_personal_access_token"
+# all the other attributes from the default rule are inherited
+    [[rules.allowlists]]
+    regexTarget = "line"
+    regexes = [ '''CUSTOMglpat-''' ]
+
+[[rules]]
+id = "gitlab_personal_access_token_with_custom_prefix"
+regex = '<Regex that match a personal access token starting with your CUSTOM prefix>'
+
+```
+
+Keep in mind that you need to account for all rules configured in the [default ruleset](https://gitlab.com/gitlab-org/security-products/secret-detection/secret-detection-rules/-/blob/main/rules/mit/gitlab/gitlab.toml).
 
 For more information on the passthrough syntax to use, see [Schema](custom_rulesets_schema.md#schema).
 

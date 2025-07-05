@@ -190,6 +190,17 @@ RSpec.describe API::Repositories, feature_category: :source_code_management do
           let(:request) { get api(route, current_user) }
         end
       end
+
+      context 'when a large blob is requested' do
+        it 'rate limits user when thresholds hit' do
+          stub_const("API::Helpers::BlobHelpers::MAX_BLOB_SIZE", 5)
+          allow(::Gitlab::ApplicationRateLimiter).to receive(:throttled_request?).and_return(true)
+
+          get api(route, current_user)
+
+          expect(response).to have_gitlab_http_status(:too_many_requests)
+        end
+      end
     end
 
     context 'when unauthenticated', 'and project is public' do
@@ -1096,6 +1107,33 @@ RSpec.describe API::Repositories, feature_category: :source_code_management do
       expect(response).to have_gitlab_http_status(:ok)
     end
 
+    it 'supports a config file ref' do
+      spy = instance_spy(::Repositories::ChangelogService)
+
+      expect(::Repositories::ChangelogService)
+        .to receive(:new)
+        .with(
+          project,
+          user,
+          config_file_ref: 'branch',
+          version: '1.0.0',
+          trailer: 'Changelog'
+        )
+        .and_return(spy)
+
+      expect(spy).to receive(:execute).with(commit_to_changelog: false)
+
+      get(
+        api("/projects/#{project.id}/repository/changelog", user),
+        params: {
+          version: '1.0.0',
+          config_file_ref: 'branch'
+        }
+      )
+
+      expect(response).to have_gitlab_http_status(:ok)
+    end
+
     it 'rate limits user when thresholds hit' do
       allow(::Gitlab::ApplicationRateLimiter).to receive(:throttled?).and_return(true)
 
@@ -1231,7 +1269,7 @@ RSpec.describe API::Repositories, feature_category: :source_code_management do
       expect(json_response['message']).to eq('Failed to generate the changelog: oops')
     end
 
-    it "support specified config file path" do
+    it "supports specified config file path" do
       spy = instance_spy(::Repositories::ChangelogService)
 
       expect(::Repositories::ChangelogService)
@@ -1265,6 +1303,38 @@ RSpec.describe API::Repositories, feature_category: :source_code_management do
           config_file: 'specified_changelog_config.yml',
           file: 'FOO.md',
           message: 'Commit message'
+        }
+      )
+
+      expect(response).to have_gitlab_http_status(:ok)
+    end
+
+    it "supports specified config file ref" do
+      spy = instance_spy(::Repositories::ChangelogService)
+
+      expect(::Repositories::ChangelogService)
+        .to receive(:new)
+        .with(
+          project,
+          user,
+          version: '1.0.0',
+          trailer: 'Foo',
+          file: 'FOO.md',
+          config_file: 'specified_changelog_config.yml',
+          config_file_ref: 'foo'
+        )
+        .and_return(spy)
+
+      allow(spy).to receive(:execute).with(commit_to_changelog: true)
+
+      post(
+        api("/projects/#{project.id}/repository/changelog", user),
+        params: {
+          version: '1.0.0',
+          trailer: 'Foo',
+          file: 'FOO.md',
+          config_file: 'specified_changelog_config.yml',
+          config_file_ref: 'foo'
         }
       )
 

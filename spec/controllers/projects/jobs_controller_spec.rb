@@ -24,7 +24,7 @@ RSpec.describe Projects::JobsController, :clean_gitlab_redis_shared_state, featu
     project.add_guest(guest)
     create_default(:owner)
     create_default(:user)
-    create_default(:ci_trigger_request, project_id: project.id)
+    create_default(:ci_trigger, project_id: project.id)
     create_default(:ci_stage)
   end
 
@@ -34,7 +34,7 @@ RSpec.describe Projects::JobsController, :clean_gitlab_redis_shared_state, featu
   let_it_be(:default_pipeline) { create_default(:ci_pipeline) }
 
   before do
-    stub_feature_flags(ci_enable_live_trace: true)
+    stub_application_setting(ci_job_live_trace_enabled: true)
     stub_not_protect_default_branch
   end
 
@@ -109,7 +109,7 @@ RSpec.describe Projects::JobsController, :clean_gitlab_redis_shared_state, featu
 
       def create_job(name, status)
         user = create(:user)
-        pipeline = create(:ci_pipeline, project: project, user: user)
+        pipeline = create(:ci_pipeline, :triggered, project: project, user: user)
         create(
           :ci_build, :tags, :triggered, :artifacts,
           pipeline: pipeline, name: name, status: status, user: user
@@ -155,14 +155,27 @@ RSpec.describe Projects::JobsController, :clean_gitlab_redis_shared_state, featu
       end
 
       context 'when the job is a bridge' do
-        let!(:downstream_pipeline) { create(:ci_pipeline, child_of: pipeline) }
-        let(:job) { downstream_pipeline.source_job }
+        context 'with a downstream pipeline' do
+          let!(:downstream_pipeline) { create(:ci_pipeline, child_of: pipeline) }
+          let(:job) { downstream_pipeline.source_job }
 
-        it 'redirects to the downstream pipeline page' do
-          get_show(id: job.id)
+          it 'redirects to the downstream pipeline page' do
+            get_show(id: job.id)
 
-          expect(response).to have_gitlab_http_status(:found)
-          expect(response).to redirect_to(namespace_project_pipeline_path(id: downstream_pipeline.id))
+            expect(response).to have_gitlab_http_status(:found)
+            expect(response).to redirect_to(namespace_project_pipeline_path(id: downstream_pipeline.id))
+          end
+        end
+
+        context 'without a downstream pipeline' do
+          let(:job) { create(:ci_bridge, pipeline: pipeline) }
+
+          it 'redirects to the job pipeline path' do
+            get_show(id: job.id)
+
+            expect(response).to have_gitlab_http_status(:found)
+            expect(response).to redirect_to(project_pipeline_path(project, pipeline.id))
+          end
         end
       end
     end
@@ -538,8 +551,7 @@ RSpec.describe Projects::JobsController, :clean_gitlab_redis_shared_state, featu
     context 'when requesting triggered job JSON' do
       let_it_be(:trigger) { create(:ci_trigger, project: project) }
       let_it_be(:pipeline) { create(:ci_pipeline, project: project, trigger: trigger) }
-      let_it_be(:trigger_request) { create(:ci_trigger_request, pipeline: pipeline, trigger: trigger) }
-      let_it_be(:job) { create(:ci_build, pipeline: pipeline, trigger_request: trigger_request) }
+      let_it_be(:job) { create(:ci_build, pipeline: pipeline) }
       let(:user) { developer }
 
       before do

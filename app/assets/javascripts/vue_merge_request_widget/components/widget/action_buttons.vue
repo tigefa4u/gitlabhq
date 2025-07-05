@@ -18,11 +18,6 @@ export default {
     GlTooltip: GlTooltipDirective,
   },
   props: {
-    widget: {
-      type: String,
-      required: false,
-      default: '',
-    },
     tertiaryButtons: {
       type: Array,
       required: true,
@@ -108,7 +103,7 @@ export default {
     <gl-button
       v-for="(btn, index) in tertiaryButtons"
       :id="btn.id"
-      :key="index"
+      :key="btn.id || index"
       v-gl-tooltip.hover
       :title="setTooltip(btn)"
       :href="btn.href"

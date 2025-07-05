@@ -4,11 +4,15 @@ module Types
   class ProjectType < BaseObject
     graphql_name 'Project'
 
-    include ::NamespacesHelper
+    include ::Namespaces::DeletableHelper
 
     connection_type_class Types::CountableConnectionType
 
     authorize :read_project
+
+    def self.authorization_scopes
+      super + [:ai_workflows]
+    end
 
     expose_permissions Types::PermissionTypes::Project
 
@@ -17,7 +21,8 @@ module Types
 
     field :id, GraphQL::Types::ID,
       null: false,
-      description: 'ID of the project.'
+      description: 'ID of the project.',
+      scopes: [:api, :read_api, :ai_workflows]
 
     field :ci_config_path_or_default, GraphQL::Types::String,
       null: false,
@@ -56,6 +61,7 @@ module Types
 
     field :full_path, GraphQL::Types::ID,
       null: false,
+      scopes: [:api, :read_api, :ai_workflows],
       description: 'Full path of the project.'
 
     field :path, GraphQL::Types::String,
@@ -78,7 +84,8 @@ module Types
 
     field :name, GraphQL::Types::String,
       null: false,
-      description: 'Name of the project without the namespace.'
+      description: 'Name of the project without the namespace.',
+      scopes: [:api, :read_api, :ai_workflows]
 
     field :name_with_namespace, GraphQL::Types::String,
       null: false,
@@ -86,7 +93,8 @@ module Types
 
     field :description, GraphQL::Types::String,
       null: true,
-      description: 'Short description of the project.'
+      description: 'Short description of the project.',
+      scopes: [:api, :read_api, :ai_workflows]
 
     field :tag_list, GraphQL::Types::String,
       null: true,
@@ -101,15 +109,18 @@ module Types
 
     field :http_url_to_repo, GraphQL::Types::String,
       null: true,
-      description: 'URL to connect to the project via HTTPS.'
+      description: 'URL to connect to the project via HTTPS.',
+      scopes: [:api, :read_api, :ai_workflows]
 
     field :ssh_url_to_repo, GraphQL::Types::String,
       null: true,
-      description: 'URL to connect to the project via SSH.'
+      description: 'URL to connect to the project via SSH.',
+      scopes: [:api, :read_api, :ai_workflows]
 
     field :web_url, GraphQL::Types::String,
       null: true,
-      description: 'Web URL of the project.'
+      description: 'Web URL of the project.',
+      scopes: [:api, :read_api, :ai_workflows]
 
     field :forks_count, GraphQL::Types::Int,
       null: false,
@@ -136,20 +147,22 @@ module Types
       null: true,
       description: 'Indicates the archived status of the project.'
 
+    field :marked_for_deletion, GraphQL::Types::Boolean,
+      null: true,
+      description: 'Indicates if the project or any ancestor is scheduled for deletion.',
+      method: :scheduled_for_deletion_in_hierarchy_chain?,
+      experiment: { milestone: '18.1' }
+
     field :marked_for_deletion_on, ::Types::TimeType,
       null: true,
       description: 'Date when project was scheduled to be deleted.',
       experiment: { milestone: '16.10' }
 
-    field :is_adjourned_deletion_enabled, GraphQL::Types::Boolean,
-      null: false,
-      description: 'Indicates if delayed project deletion is enabled.',
-      method: :adjourned_deletion?,
-      experiment: { milestone: '16.11' }
-
     field :permanent_deletion_date, GraphQL::Types::String,
       null: true,
-      description: 'Date when project will be deleted if delayed project deletion is enabled.',
+      description: "For projects pending deletion, returns the project's scheduled deletion date. " \
+        'For projects not pending deletion, returns a theoretical date based on current settings ' \
+        'if marked for deletion today.',
       experiment: { milestone: '16.11' }
 
     field :visibility, GraphQL::Types::String,
@@ -310,6 +323,7 @@ module Types
       Types::WorkItemType.connection_type,
       null: true,
       experiment: { milestone: '15.1' },
+      scopes: [:api, :read_api, :ai_workflows],
       description: 'Work items of the project.',
       extras: [:lookahead],
       resolver: Resolvers::WorkItemsResolver
@@ -409,6 +423,7 @@ module Types
 
     field :pipelines,
       null: true,
+      calls_gitaly: true,
       description: 'Pipelines of the project.',
       extras: [:lookahead],
       resolver: Resolvers::Ci::ProjectPipelinesResolver
@@ -522,7 +537,8 @@ module Types
     field :alert_management_integrations, Types::AlertManagement::IntegrationType.connection_type,
       null: true,
       description: 'Integrations which can receive alerts for the project.',
-      resolver: Resolvers::AlertManagement::IntegrationsResolver
+      resolver: Resolvers::AlertManagement::IntegrationsResolver,
+      deprecated: { reason: 'Use `alertManagementHttpIntegrations`', milestone: '18.2' }
 
     field :alert_management_http_integrations, Types::AlertManagement::HttpIntegrationType.connection_type,
       null: true,
@@ -571,7 +587,6 @@ module Types
 
     field :container_protection_tag_rules,
       Types::ContainerRegistry::Protection::TagRuleType.connection_type,
-      method: :container_registry_protection_tag_rules,
       null: true,
       experiment: { milestone: '17.8' },
       description: 'Container repository tag protection rules for the project.'
@@ -677,6 +692,10 @@ module Types
     field :merge_request_title_regex, GraphQL::Types::String,
       null: true,
       description: 'Regex used to validate the title of merge requests.'
+
+    field :merge_request_title_regex_description, GraphQL::Types::String,
+      null: true,
+      description: 'Description of the regex used to validate the title of merge requests.'
 
     field :labels, Types::LabelType.connection_type,
       null: true,
@@ -873,6 +892,11 @@ module Types
       end
     end
 
+    def container_protection_tag_rules
+      # Immutable tag rules are added in EE extension
+      object.container_registry_protection_tag_rules.mutable
+    end
+
     {
       issues: "Issues are",
       merge_requests: "Merge requests are",
@@ -1039,18 +1063,14 @@ module Types
       )
     end
 
+    # marked_for_deletion_at is deprecated in our v5 REST API in favor of marked_for_deletion_on
+    # https://docs.gitlab.com/ee/api/projects.html#removals-in-api-v5
     def marked_for_deletion_on
-      ## marked_for_deletion_at is deprecated in our v5 REST API in favor of marked_for_deletion_on
-      ## https://docs.gitlab.com/ee/api/projects.html#removals-in-api-v5
-      return unless project.adjourned_deletion?
-
       project.marked_for_deletion_at
     end
 
     def permanent_deletion_date
-      return unless project.adjourned_deletion_configured?
-
-      permanent_deletion_date_formatted(Date.current)
+      permanent_deletion_date_formatted(project) || permanent_deletion_date_formatted
     end
 
     private

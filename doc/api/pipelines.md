@@ -12,20 +12,14 @@ title: Pipelines API
 
 {{< /details >}}
 
-## Pipelines pagination
-
-By default, `GET` requests return 20 results at a time because the API results
-are paginated.
-
-Read more on [pagination](rest/_index.md#pagination).
+Use this API to interact with [CI/CD pipelines](../ci/pipelines/_index.md).
 
 ## List project pipelines
 
 {{< history >}}
 
-- `iid` in response [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/342223) in GitLab 14.6.
-- `name` in response [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/115310) in GitLab 15.11 [with a flag](../administration/feature_flags.md) named `pipeline_name_in_api`. Disabled by default.
-- `name` in request [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/115310) in 15.11 [with a flag](../administration/feature_flags.md) named `pipeline_name_search`. Disabled by default.
+- `name` in response [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/115310) in GitLab 15.11 [with a flag](../administration/feature_flags/_index.md) named `pipeline_name_in_api`. Disabled by default.
+- `name` in request [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/115310) in 15.11 [with a flag](../administration/feature_flags/_index.md) named `pipeline_name_search`. Disabled by default.
 - `name` in response [generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/398131) in GitLab 16.3. Feature flag `pipeline_name_in_api` removed.
 - `name` in request [generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/385864) in GitLab 16.9. Feature flag `pipeline_name_search` removed.
 - Support for returning child pipelines with `source` set to `parent_pipeline` [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/39503) in GitLab 17.0.
@@ -40,6 +34,9 @@ are not included in the results. To return child pipelines, set `source` to `par
 ```plaintext
 GET /projects/:id/pipelines
 ```
+
+Use the `page` and `per_page` [pagination](rest/_index.md#offset-based-pagination) parameters to
+control the pagination of results.
 
 | Attribute        | Type           | Required | Description |
 |------------------|----------------|----------|-------------|
@@ -100,8 +97,7 @@ Example of response
 
 {{< history >}}
 
-- `iid` in response [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/342223) in GitLab 14.6.
-- `name` in response [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/115310) in GitLab 15.11 [with a flag](../administration/feature_flags.md) named `pipeline_name_in_api`. Disabled by default.
+- `name` in response [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/115310) in GitLab 15.11 [with a flag](../administration/feature_flags/_index.md) named `pipeline_name_in_api`. Disabled by default.
 - `name` in response [generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/398131) in GitLab 16.3. Feature flag `pipeline_name_in_api` removed.
 
 {{< /history >}}
@@ -113,6 +109,9 @@ You can also get a single [child pipeline](../ci/pipelines/downstream_pipelines.
 ```plaintext
 GET /projects/:id/pipelines/:pipeline_id
 ```
+
+Use the `page` and `per_page` [pagination](rest/_index.md#offset-based-pagination) parameters to
+control the pagination of results.
 
 | Attribute     | Type           | Required | Description |
 |---------------|----------------|----------|-------------|
@@ -169,11 +168,11 @@ Example of response
 }
 ```
 
-### Get the latest pipeline
+## Get the latest pipeline
 
 {{< history >}}
 
-- `name` in response [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/115310) in GitLab 15.11 [with a flag](../administration/feature_flags.md) named `pipeline_name_in_api`. Disabled by default.
+- `name` in response [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/115310) in GitLab 15.11 [with a flag](../administration/feature_flags/_index.md) named `pipeline_name_in_api`. Disabled by default.
 - `name` in response [generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/398131) in GitLab 16.3. Feature flag `pipeline_name_in_api` removed.
 
 {{< /history >}}
@@ -183,6 +182,9 @@ Get the latest pipeline for the most recent commit on a specific ref in a projec
 ```plaintext
 GET /projects/:id/pipelines/latest
 ```
+
+Use the `page` and `per_page` [pagination](rest/_index.md#offset-based-pagination) parameters to
+control the pagination of results.
 
 | Attribute | Type   | Required | Description |
 |-----------|--------|----------|-------------|
@@ -238,7 +240,7 @@ Example of response
 }
 ```
 
-### Get variables of a pipeline
+## Get variables for a pipeline
 
 Get the variables of a pipeline. Does not include variables that come from a pipeline schedule.
 For more information, see [issue 250850](https://gitlab.com/gitlab-org/gitlab/-/issues/250850).
@@ -246,6 +248,9 @@ For more information, see [issue 250850](https://gitlab.com/gitlab-org/gitlab/-/
 ```plaintext
 GET /projects/:id/pipelines/:pipeline_id/variables
 ```
+
+Use the `page` and `per_page` [pagination](rest/_index.md#offset-based-pagination) parameters to
+control the pagination of results.
 
 | Attribute     | Type           | Required | Description |
 |---------------|----------------|----------|-------------|
@@ -272,7 +277,7 @@ Example of response
 ]
 ```
 
-### Get a pipeline's test report
+## Get a test report for a pipeline
 
 {{< alert type="note" >}}
 
@@ -283,6 +288,9 @@ This API route is part of the [Unit test report](../ci/testing/unit_test_reports
 ```plaintext
 GET /projects/:id/pipelines/:pipeline_id/test_report
 ```
+
+Use the `page` and `per_page` [pagination](rest/_index.md#offset-based-pagination) parameters to
+control the pagination of results.
 
 | Attribute     | Type           | Required | Description |
 |---------------|----------------|----------|-------------|
@@ -329,7 +337,7 @@ Sample response:
 }
 ```
 
-### Get a pipeline's test report summary
+## Get a test report summary for a pipeline
 
 {{< alert type="note" >}}
 
@@ -340,6 +348,9 @@ This API route is part of the [Unit test report](../ci/testing/unit_test_reports
 ```plaintext
 GET /projects/:id/pipelines/:pipeline_id/test_report_summary
 ```
+
+Use the `page` and `per_page` [pagination](rest/_index.md#offset-based-pagination) parameters to
+control the pagination of results.
 
 | Attribute     | Type           | Required | Description |
 |---------------|----------------|----------|-------------|
@@ -388,7 +399,8 @@ Sample response:
 {{< history >}}
 
 - `iid` in response [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/342223) in GitLab 14.6.
-- `inputs` attribute [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/519958) in GitLab 17.10 [with a flag](../administration/feature_flags.md) named `ci_inputs_for_pipelines`. Enabled by default.
+- `inputs` attribute [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/519958) in GitLab 17.10 [with a flag](../administration/feature_flags/_index.md) named `ci_inputs_for_pipelines`. Enabled by default.
+- `inputs` attribute [generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/536548) in GitLab 18.1. Feature flag `ci_inputs_for_pipelines` removed.
 
 {{< /history >}}
 
@@ -508,7 +520,7 @@ Response:
 }
 ```
 
-## Cancel a pipeline's jobs
+## Cancel all jobs for a pipeline
 
 ```plaintext
 POST /projects/:id/pipelines/:pipeline_id/cancel
@@ -567,7 +579,7 @@ Response:
 
 Deleting a pipeline expires all pipeline caches, and deletes all immediately
 related objects, such as builds, logs, artifacts, and triggers.
-**This action cannot be undone.**
+**This action cannot be undone**.
 
 Deleting a pipeline does not automatically delete its
 [child pipelines](../ci/pipelines/downstream_pipelines.md#parent-child-pipelines).

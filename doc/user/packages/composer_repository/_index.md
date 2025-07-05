@@ -45,7 +45,7 @@ Prerequisites:
   error (`Validation failed: Version is invalid`) occurs when you publish.
 - A valid `composer.json` file at the project root directory.
 - The Packages feature is enabled in a GitLab repository.
-- The project ID, which is displayed on the [project overview page](../../project/working_with_projects.md#access-a-project-by-using-the-project-id).
+- The project ID, which is displayed on the [project overview page](../../project/working_with_projects.md#find-the-project-id).
 - One of the following token types:
   - A [personal access token](../../profile/personal_access_tokens.md) with the scope set to `api`.
   - A [deploy token](../../project/deploy_tokens/_index.md)
@@ -348,7 +348,7 @@ You can install from source by pulling the Git repository directly. To do so, ei
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/119739) in GitLab 16.4 [with a flag](../../../administration/feature_flags.md) named `composer_use_ssh_source_urls`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/119739) in GitLab 16.4 [with a flag](../../../administration/feature_flags/_index.md) named `composer_use_ssh_source_urls`. Disabled by default.
 - [Enabled on GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/329246) GitLab 16.5.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/135467) in GitLab 16.6. Feature flag `composer_use_ssh_source_urls` removed.
 

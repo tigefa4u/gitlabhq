@@ -53,3 +53,5 @@ module ContainerRegistry
     end
   end
 end
+
+ContainerRegistry::Protection::UpdateTagRuleService.prepend_mod

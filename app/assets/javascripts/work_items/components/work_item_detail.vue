@@ -38,7 +38,6 @@ import {
   WIDGET_TYPE_DESIGNS,
   WORK_ITEM_REFERENCE_CHAR,
   WORK_ITEM_TYPE_NAME_EPIC,
-  WIDGET_TYPE_WEIGHT,
   WIDGET_TYPE_DEVELOPMENT,
   STATE_OPEN,
   WIDGET_TYPE_ERROR_TRACKING,
@@ -89,11 +88,11 @@ import DesignWidget from './design_management/design_management_widget.vue';
 import DesignUploadButton from './design_management/upload_button.vue';
 import WorkItemDevelopment from './work_item_development/work_item_development.vue';
 import WorkItemCreateBranchMergeRequestSplitButton from './work_item_development/work_item_create_branch_merge_request_split_button.vue';
-
-const WorkItemErrorTracking = () => import('~/work_items/components/work_item_error_tracking.vue');
+import WorkItemMetadataProvider from './work_item_metadata_provider.vue';
 
 const defaultWorkspacePermissions = {
   createDesign: false,
+  updateDesign: false,
   moveDesign: false,
 };
 
@@ -128,7 +127,7 @@ export default {
     WorkItemTree,
     WorkItemNotes,
     WorkItemRelationships,
-    WorkItemErrorTracking,
+    WorkItemErrorTracking: () => import('~/work_items/components/work_item_error_tracking.vue'),
     WorkItemStickyHeader,
     WorkItemAncestors,
     WorkItemTitle,
@@ -139,9 +138,10 @@ export default {
     WorkItemCreateBranchMergeRequestSplitButton,
     WorkItemVulnerabilities: () =>
       import('ee_component/work_items/components/work_item_vulnerabilities.vue'),
+    WorkItemMetadataProvider,
   },
   mixins: [glFeatureFlagMixin(), trackingMixin],
-  inject: ['fullPath', 'groupPath', 'hasSubepicsFeature', 'hasLinkedItemsEpicsFeature'],
+  inject: ['groupPath', 'hasSubepicsFeature', 'hasLinkedItemsEpicsFeature'],
   props: {
     isModal: {
       type: Boolean,
@@ -158,7 +158,7 @@ export default {
       required: false,
       default: null,
     },
-    modalWorkItemFullPath: {
+    workItemFullPath: {
       type: String,
       required: false,
       default: '',
@@ -178,6 +178,11 @@ export default {
       required: false,
       default: () => [],
     },
+    isBoard: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   data() {
     return {
@@ -185,8 +190,6 @@ export default {
       updateError: undefined,
       workItem: {},
       updateInProgress: false,
-      modalWorkItemIid: getParameterByName('work_item_iid'),
-      modalWorkItemNamespaceFullPath: '',
       isReportModalOpen: false,
       reportedUrl: '',
       reportedUserId: 0,
@@ -207,6 +210,8 @@ export default {
       info: getParameterByName('resolves_discussion'),
       showSidebar: true,
       truncationEnabled: true,
+      lastRealtimeUpdatedAt: new Date(),
+      isRefetching: false,
     };
   },
   apollo: {
@@ -238,6 +243,10 @@ export default {
         return data.workspace.workItem ?? {};
       },
       error() {
+        if (this.isRefetching) {
+          this.isRefetching = false;
+          return;
+        }
         this.setEmptyState();
       },
       result(res) {
@@ -300,9 +309,6 @@ export default {
     },
   },
   computed: {
-    workItemFullPath() {
-      return this.modalWorkItemFullPath || this.fullPath;
-    },
     workItemProjectId() {
       return this.workItem?.project?.id;
     },
@@ -345,6 +351,9 @@ export default {
     hasBlockedWorkItemsFeature() {
       return this.workItem.userPermissions?.blockedWorkItems;
     },
+    canCreateNote() {
+      return this.workItem.userPermissions?.createNote;
+    },
     isDiscussionLocked() {
       return this.workItemNotes?.discussionLocked;
     },
@@ -377,20 +386,14 @@ export default {
     parentWorkItemConfidentiality() {
       return this.parentWorkItem?.confidential;
     },
-    parentWorkItemType() {
-      return this.parentWorkItem?.workItemType?.name;
-    },
-    workItemIconName() {
-      return this.workItem.workItemType?.iconName;
-    },
     hasDescriptionWidget() {
       return this.findWidget(WIDGET_TYPE_DESCRIPTION);
     },
     hasDesignWidget() {
-      return this.findWidget(WIDGET_TYPE_DESIGNS) && this.$router;
+      return this.findWidget(WIDGET_TYPE_DESIGNS) && (this.$router || this.isBoard);
     },
     showUploadDesign() {
-      return this.hasDesignWidget && this.workspacePermissions.createDesign;
+      return this.hasDesignWidget && this.canAddDesign;
     },
     canReorderDesign() {
       return this.hasDesignWidget && this.workspacePermissions.moveDesign;
@@ -421,9 +424,6 @@ export default {
     },
     workItemNotes() {
       return this.findWidget(WIDGET_TYPE_NOTES);
-    },
-    workItemWeight() {
-      return this.findWidget(WIDGET_TYPE_WEIGHT);
     },
     workItemDevelopment() {
       return this.findWidget(WIDGET_TYPE_DEVELOPMENT);
@@ -456,12 +456,9 @@ export default {
     showWorkItemTree() {
       return this.findWidget(WIDGET_TYPE_HIERARCHY) && this.allowedChildTypes?.length > 0;
     },
-    showWorkItemVulnerabilities() {
-      return this.glFeatures.workItemRelatedVulnerabilities;
-    },
     titleClassHeader() {
       return {
-        'sm:!gl-hidden gl-mt-3': this.shouldShowAncestors,
+        'sm:!gl-hidden !gl-mt-3': this.shouldShowAncestors,
         'sm:!gl-block': !this.shouldShowAncestors,
         'gl-w-full': !this.shouldShowAncestors && !this.editMode,
         'editable-wi-title': this.editMode && !this.shouldShowAncestors,
@@ -470,7 +467,7 @@ export default {
     titleClassComponent() {
       return {
         'sm:!gl-block': !this.shouldShowAncestors,
-        'gl-hidden sm:!gl-block gl-mt-3': this.shouldShowAncestors,
+        'gl-hidden sm:!gl-block !gl-mt-3': this.shouldShowAncestors,
         'editable-wi-title': this.workItemsAlphaEnabled,
       };
     },
@@ -533,11 +530,7 @@ export default {
       return this.workItem?.namespace?.fullName || '';
     },
     contextualViewEnabled() {
-      return (
-        gon.current_user_use_work_items_view ||
-        this.workItemsAlphaEnabled ||
-        this.glFeatures?.workItemViewForIssues
-      );
+      return this.workItemsAlphaEnabled || this.glFeatures?.workItemViewForIssues;
     },
     hasChildren() {
       return this.workItemHierarchy?.hasChildren;
@@ -584,9 +577,28 @@ export default {
       const rootPath = this.workItem?.namespace?.webUrl || '';
       return this.isGroupWorkItem ? `${rootPath}/-/uploads` : `${rootPath}/uploads`;
     },
+    canAddDesign() {
+      return this.workspacePermissions.createDesign;
+    },
+    canUpdateDesign() {
+      return this.workspacePermissions.updateDesign;
+    },
+    canPasteDesign() {
+      return !this.isSaving && !this.isAddingNotes && !this.editMode && !this.activeChildItem;
+    },
+    commentTemplatePaths() {
+      // Fallback to the newCommentTemplatePaths prop if field from work item is null/undefined or empty
+      return this.workItem?.commentTemplatesPaths?.length
+        ? this.workItem.commentTemplatesPaths
+        : this.newCommentTemplatePaths;
+    },
+  },
+  beforeDestroy() {
+    document.removeEventListener('actioncable:reconnected', this.refetchIfStale);
   },
   mounted() {
     addShortcutsExtension(ShortcutsWorkItems);
+    document.addEventListener('actioncable:reconnected', this.refetchIfStale);
   },
   methods: {
     handleWorkItemCreated() {
@@ -727,7 +739,7 @@ export default {
       this.editMode = false;
     },
     isValidDesignUpload(files) {
-      if (!this.workspacePermissions.createDesign) return false;
+      if (!this.canAddDesign) return false;
 
       if (files.length > MAXIMUM_FILE_UPLOAD_LIMIT) {
         this.designUploadError = MAXIMUM_FILE_UPLOAD_LIMIT_REACHED;
@@ -830,17 +842,6 @@ export default {
       this.isValidDragDataType(event);
       if (this.isDesignUploadButtonInViewport) this.isEmptyStateVisible = true;
     },
-    onDragLeave(event) {
-      const emptyStateDesignDropzone =
-        this.$refs.emptyStateDesignDropzone?.$el || this.$refs.emptyStateDesignDropzone;
-      if (!emptyStateDesignDropzone.contains(event.relatedTarget)) {
-        this.dragCounter -= 1;
-      }
-
-      if (this.dragCounter === 0) {
-        this.isEmptyStateVisible = false; // Hide dropzone
-      }
-    },
     onDragLeaveMain(event) {
       // Check if the drag is leaving the main container entirely
       const mainContainerRef = this.$refs.workItemDetail;
@@ -869,6 +870,15 @@ export default {
         label: this.truncationEnabled.toString(), // New user truncation setting
       });
     },
+    refetchIfStale() {
+      const now = new Date();
+      const staleThreshold = 5 * 60 * 1000; // 5 minutes in milliseconds
+      if (now - this.lastRealtimeUpdatedAt > staleThreshold) {
+        this.isRefetching = true;
+        this.$apollo.queries.workItem.refetch();
+        this.lastRealtimeUpdatedAt = now;
+      }
+    },
   },
   WORK_ITEM_TYPE_NAME_OBJECTIVE,
   WORKSPACE_PROJECT,
@@ -877,161 +887,80 @@ export default {
 </script>
 
 <template>
-  <div
-    ref="workItemDetail"
-    @dragstart.prevent.stop
-    @dragend.prevent.stop
-    @dragenter.prevent.stop="onDragEnter"
-    @dragover.prevent.stop="onDragOver"
-    @dragleave.prevent.stop="onDragLeaveMain"
-    @drop.prevent.stop="onDrop"
-  >
-    <work-item-sticky-header
-      v-if="showIntersectionObserver"
-      :current-user-todos="currentUserTodos"
-      :show-work-item-current-user-todos="showWorkItemCurrentUserTodos"
-      :parent-work-item-confidentiality="parentWorkItemConfidentiality"
-      :update-in-progress="updateInProgress"
-      :full-path="workItemFullPath"
-      :is-modal="isModal"
-      :work-item="workItem"
-      :is-sticky-header-showing="isStickyHeaderShowing"
-      :work-item-notifications-subscribed="workItemNotificationsSubscribed"
-      :work-item-author-id="workItemAuthorId"
-      :is-group="isGroupWorkItem"
-      :allowed-child-types="allowedChildTypes"
-      :parent-id="parentWorkItemId"
-      :namespace-full-name="namespaceFullName"
-      :has-children="hasChildren"
-      :show-sidebar="showSidebar"
-      :truncation-enabled="truncationEnabled"
-      @hideStickyHeader="hideStickyHeader"
-      @showStickyHeader="showStickyHeader"
-      @deleteWorkItem="$emit('deleteWorkItem', { workItemType, workItemId: workItem.id })"
-      @toggleWorkItemConfidentiality="toggleConfidentiality"
-      @error="updateError = $event"
-      @promotedToObjective="$emit('promotedToObjective', iid)"
-      @workItemTypeChanged="workItemTypeChanged"
-      @toggleEditMode="enableEditMode"
-      @workItemStateUpdated="$emit('workItemStateUpdated')"
-      @toggleReportAbuseModal="toggleReportAbuseModal"
-      @todosUpdated="updateWorkItemCurrentTodosWidgetCache"
+  <work-item-metadata-provider :full-path="workItemFullPath">
+    <div
+      ref="workItemDetail"
+      data-testid="work-item-detail"
+      @dragstart.prevent.stop
+      @dragend.prevent.stop
+      @dragenter.prevent.stop="onDragEnter"
+      @dragover.prevent.stop="onDragOver"
+      @dragleave.prevent.stop="onDragLeaveMain"
+      @drop.prevent.stop="onDrop"
     >
-      <template #actions>
-        <work-item-actions
-          v-if="workItemPresent"
-          v-bind="workItemActionProps"
-          @deleteWorkItem="$emit('deleteWorkItem', { workItemType, workItemId: workItem.id })"
-          @toggleWorkItemConfidentiality="toggleConfidentiality"
-          @error="updateError = $event"
-          @promotedToObjective="$emit('promotedToObjective', iid)"
-          @workItemStateUpdated="$emit('workItemStateUpdated')"
-          @workItemTypeChanged="workItemTypeChanged"
-          @toggleReportAbuseModal="toggleReportAbuseModal"
-          @workItemCreated="handleWorkItemCreated"
-          @toggleSidebar="handleToggleSidebar"
-          @toggleTruncationEnabled="handleTruncationEnabled"
-        />
-      </template>
-    </work-item-sticky-header>
-    <section class="work-item-view">
-      <component :is="isModalOrDrawer ? 'h2' : 'h1'" v-if="editMode" class="gl-sr-only">{{
-        s__('WorkItem|Edit work item')
-      }}</component>
-      <gl-alert
-        v-if="info"
-        class="gl-mb-3"
-        variant="info"
-        data-testid="info-alert"
-        @dismiss="dismissInfo"
+      <work-item-sticky-header
+        v-if="showIntersectionObserver"
+        :current-user-todos="currentUserTodos"
+        :show-work-item-current-user-todos="showWorkItemCurrentUserTodos"
+        :parent-work-item-confidentiality="parentWorkItemConfidentiality"
+        :full-path="workItemFullPath"
+        :is-modal="isModal"
+        :work-item="workItem"
+        :is-sticky-header-showing="isStickyHeaderShowing"
+        :work-item-notifications-subscribed="workItemNotificationsSubscribed"
+        @hideStickyHeader="hideStickyHeader"
+        @showStickyHeader="showStickyHeader"
+        @deleteWorkItem="$emit('deleteWorkItem', { workItemType, workItemId: workItem.id })"
+        @toggleWorkItemConfidentiality="toggleConfidentiality"
+        @error="updateError = $event"
+        @promotedToObjective="$emit('promotedToObjective', iid)"
+        @workItemTypeChanged="workItemTypeChanged"
+        @toggleEditMode="enableEditMode"
+        @workItemStateUpdated="$emit('workItemStateUpdated')"
+        @toggleReportAbuseModal="toggleReportAbuseModal"
+        @todosUpdated="updateWorkItemCurrentTodosWidgetCache"
       >
-        {{ flashNoticeMessage }}
-      </gl-alert>
-      <section v-if="updateError" class="flash-container flash-container-page sticky">
-        <gl-alert class="gl-mb-3" variant="danger" @dismiss="updateError = undefined">
-          {{ updateError }}
-        </gl-alert>
-      </section>
-      <section :class="workItemBodyClass">
-        <div :class="modalCloseButtonClass">
-          <gl-button
-            v-if="isModal"
-            class="gl-ml-auto"
-            category="tertiary"
-            data-testid="work-item-close"
-            icon="close"
-            :aria-label="__('Close')"
-            @click="$emit('close')"
+        <template #actions>
+          <work-item-actions
+            v-if="workItemPresent"
+            v-bind="workItemActionProps"
+            :update-in-progress="updateInProgress"
+            @deleteWorkItem="$emit('deleteWorkItem', { workItemType, workItemId: workItem.id })"
+            @toggleWorkItemConfidentiality="toggleConfidentiality"
+            @error="updateError = $event"
+            @promotedToObjective="$emit('promotedToObjective', iid)"
+            @workItemStateUpdated="$emit('workItemStateUpdated')"
+            @workItemTypeChanged="workItemTypeChanged"
+            @toggleReportAbuseModal="toggleReportAbuseModal"
+            @workItemCreated="handleWorkItemCreated"
+            @toggleSidebar="handleToggleSidebar"
+            @toggleTruncationEnabled="handleTruncationEnabled"
           />
-        </div>
-        <work-item-loading v-if="workItemLoading" />
-        <gl-empty-state
-          v-else-if="error"
-          :title="s__('WorkItem|Work item not found')"
-          :description="error"
-          :svg-path="$options.noAccessSvg"
-        />
-        <div v-else data-testid="detail-wrapper">
-          <div class="gl-block gl-flex-row gl-items-start gl-gap-3 sm:!gl-flex">
-            <work-item-ancestors v-if="shouldShowAncestors" :work-item="workItem" class="gl-mb-1" />
-            <div v-if="!error" :class="titleClassHeader" data-testid="work-item-type">
-              <work-item-title
-                v-if="workItem.title"
-                ref="title"
-                :is-editing="editMode"
-                :is-modal="isModalOrDrawer"
-                :title="workItem.title"
-                @updateWorkItem="updateWorkItem"
-                @updateDraft="updateDraft('title', $event)"
-                @error="updateError = $event"
-              />
-            </div>
-            <div class="gl-ml-auto gl-mt-1 gl-flex gl-gap-3 gl-self-start">
-              <gl-button
-                v-if="shouldShowEditButton"
-                v-gl-tooltip.bottom.html
-                :title="editTooltip"
-                category="secondary"
-                data-testid="work-item-edit-form-button"
-                class="shortcut-edit-wi-description"
-                @click="enableEditMode"
-              >
-                {{ __('Edit') }}
-              </gl-button>
-              <todos-toggle
-                v-if="showWorkItemCurrentUserTodos"
-                :item-id="workItem.id"
-                :current-user-todos="currentUserTodos"
-                todos-button-type="secondary"
-                @todosUpdated="updateWorkItemCurrentTodosWidgetCache"
-                @error="updateError = $event"
-              />
-              <work-item-notifications-widget
-                v-if="newTodoAndNotificationsEnabled"
-                :full-path="workItemFullPath"
-                :work-item-id="workItem.id"
-                :subscribed-to-notifications="workItemNotificationsSubscribed"
-                :can-update="canUpdate"
-                @error="updateError = $event"
-              />
-              <work-item-actions
-                v-if="workItemPresent"
-                v-bind="workItemActionProps"
-                @deleteWorkItem="$emit('deleteWorkItem', { workItemType, workItemId: workItem.id })"
-                @toggleWorkItemConfidentiality="toggleConfidentiality"
-                @error="updateError = $event"
-                @promotedToObjective="$emit('promotedToObjective', iid)"
-                @workItemStateUpdated="$emit('workItemStateUpdated')"
-                @workItemTypeChanged="workItemTypeChanged"
-                @toggleReportAbuseModal="toggleReportAbuseModal"
-                @workItemCreated="handleWorkItemCreated"
-                @toggleSidebar="handleToggleSidebar"
-                @toggleTruncationEnabled="handleTruncationEnabled"
-              />
-            </div>
+        </template>
+      </work-item-sticky-header>
+      <section class="work-item-view">
+        <component :is="isModalOrDrawer ? 'h2' : 'h1'" v-if="editMode" class="gl-sr-only">{{
+          s__('WorkItem|Edit work item')
+        }}</component>
+        <gl-alert
+          v-if="info"
+          class="gl-mb-3"
+          variant="info"
+          data-testid="info-alert"
+          @dismiss="dismissInfo"
+        >
+          {{ flashNoticeMessage }}
+        </gl-alert>
+        <section v-if="updateError" class="flash-container flash-container-page sticky">
+          <gl-alert class="gl-mb-3" variant="danger" @dismiss="updateError = undefined">
+            {{ updateError }}
+          </gl-alert>
+        </section>
+        <section :class="workItemBodyClass">
+          <div :class="modalCloseButtonClass">
             <gl-button
               v-if="isModal"
-              class="gl-hidden sm:!gl-block"
+              class="gl-ml-auto"
               category="tertiary"
               data-testid="work-item-close"
               icon="close"
@@ -1039,252 +968,344 @@ export default {
               @click="$emit('close')"
             />
           </div>
-          <div :class="{ 'gl-mt-3': !editMode }">
-            <work-item-title
-              v-if="workItem.title && shouldShowAncestors"
-              ref="title"
-              :is-editing="editMode"
-              :is-modal="isModalOrDrawer"
-              :class="titleClassComponent"
-              :title="workItem.title"
-              @error="updateError = $event"
-              @updateWorkItem="updateWorkItem"
-              @updateDraft="updateDraft('title', $event)"
-            />
-            <div class="gl-flex gl-items-center gl-gap-3">
-              <work-item-created-updated
-                v-if="!editMode"
-                :full-path="workItemFullPath"
-                :work-item-iid="iid"
-                :update-in-progress="updateInProgress"
-                class="gl-grow"
+          <work-item-loading v-if="workItemLoading" />
+          <gl-empty-state
+            v-else-if="error"
+            :title="s__('WorkItem|Work item not found')"
+            :description="error"
+            :svg-path="$options.noAccessSvg"
+          />
+          <div v-else data-testid="detail-wrapper">
+            <div class="gl-block gl-flex-row gl-items-start gl-gap-3 sm:!gl-flex">
+              <work-item-ancestors
+                v-if="shouldShowAncestors"
+                :work-item="workItem"
+                class="gl-mb-1"
               />
-              <div v-if="!showSidebar" class="work-item-container-xs-hidden gl-hidden md:gl-block">
+              <div v-if="!error" :class="titleClassHeader" data-testid="work-item-type">
+                <work-item-title
+                  v-if="workItem.title"
+                  ref="title"
+                  :is-editing="editMode"
+                  :is-modal="isModalOrDrawer"
+                  :title="workItem.title"
+                  :title-html="workItem.titleHtml"
+                  @updateWorkItem="updateWorkItem"
+                  @updateDraft="updateDraft('title', $event)"
+                  @error="updateError = $event"
+                />
+              </div>
+              <div class="gl-ml-auto gl-mt-1 gl-flex gl-gap-3 gl-self-start">
                 <gl-button
-                  size="small"
+                  v-if="shouldShowEditButton"
+                  v-gl-tooltip.bottom.html
+                  :title="editTooltip"
                   category="secondary"
-                  data-testid="work-item-show-sidebar-button"
-                  icon="sidebar-right"
-                  @click="handleToggleSidebar"
+                  data-testid="work-item-edit-form-button"
+                  class="shortcut-edit-wi-description"
+                  @click="enableEditMode"
                 >
-                  {{ s__('WorkItem|Show sidebar') }}
+                  {{ __('Edit') }}
                 </gl-button>
+                <todos-toggle
+                  v-if="showWorkItemCurrentUserTodos"
+                  :item-id="workItem.id"
+                  :current-user-todos="currentUserTodos"
+                  todos-button-type="secondary"
+                  @todosUpdated="updateWorkItemCurrentTodosWidgetCache"
+                  @error="updateError = $event"
+                />
+                <work-item-notifications-widget
+                  v-if="newTodoAndNotificationsEnabled"
+                  :work-item-id="workItem.id"
+                  :subscribed-to-notifications="workItemNotificationsSubscribed"
+                  @error="updateError = $event"
+                />
+                <work-item-actions
+                  v-if="workItemPresent"
+                  v-bind="workItemActionProps"
+                  :update-in-progress="updateInProgress"
+                  @deleteWorkItem="
+                    $emit('deleteWorkItem', { workItemType, workItemId: workItem.id })
+                  "
+                  @toggleWorkItemConfidentiality="toggleConfidentiality"
+                  @error="updateError = $event"
+                  @promotedToObjective="$emit('promotedToObjective', iid)"
+                  @workItemStateUpdated="$emit('workItemStateUpdated')"
+                  @workItemTypeChanged="workItemTypeChanged"
+                  @toggleReportAbuseModal="toggleReportAbuseModal"
+                  @workItemCreated="handleWorkItemCreated"
+                  @toggleSidebar="handleToggleSidebar"
+                  @toggleTruncationEnabled="handleTruncationEnabled"
+                />
+              </div>
+              <gl-button
+                v-if="isModal"
+                class="gl-hidden sm:!gl-block"
+                category="tertiary"
+                data-testid="work-item-close"
+                icon="close"
+                :aria-label="__('Close')"
+                @click="$emit('close')"
+              />
+            </div>
+            <div>
+              <work-item-title
+                v-if="workItem.title && shouldShowAncestors"
+                ref="title"
+                :is-editing="editMode"
+                :is-modal="isModalOrDrawer"
+                :class="titleClassComponent"
+                :title="workItem.title"
+                :title-html="workItem.titleHtml"
+                @error="updateError = $event"
+                @updateWorkItem="updateWorkItem"
+                @updateDraft="updateDraft('title', $event)"
+              />
+              <div class="gl-flex gl-items-center gl-gap-3">
+                <work-item-created-updated
+                  v-if="!editMode"
+                  :full-path="workItemFullPath"
+                  :work-item-iid="iid"
+                  class="gl-grow"
+                />
+                <div
+                  v-if="!showSidebar"
+                  class="work-item-container-xs-hidden gl-hidden md:gl-block"
+                >
+                  <gl-button
+                    size="small"
+                    category="secondary"
+                    data-testid="work-item-show-sidebar-button"
+                    icon="sidebar-right"
+                    @click="handleToggleSidebar"
+                  >
+                    {{ s__('WorkItem|Show sidebar') }}
+                  </gl-button>
+                </div>
               </div>
             </div>
-          </div>
-          <div
-            data-testid="work-item-overview"
-            class="work-item-overview"
-            :class="{ 'sidebar-hidden': !showSidebar }"
-          >
-            <section>
+            <div
+              data-testid="work-item-overview"
+              class="work-item-overview"
+              :class="{ 'sidebar-hidden': !showSidebar }"
+            >
+              <section>
+                <local-storage-sync
+                  v-model="truncationEnabled"
+                  :storage-key="$options.ENABLE_TRUNCATION_STORAGE_KEY"
+                />
+                <work-item-description
+                  v-if="hasDescriptionWidget"
+                  :edit-mode="editMode"
+                  :full-path="workItemFullPath"
+                  :work-item-id="workItem.id"
+                  :work-item-iid="workItem.iid"
+                  :update-in-progress="updateInProgress"
+                  :without-heading-anchors="isDrawer"
+                  :hide-fullscreen-markdown-button="isDrawer"
+                  :truncation-enabled="truncationEnabled"
+                  :uploads-path="uploadsPath"
+                  @updateWorkItem="updateWorkItem"
+                  @updateDraft="updateDraft('description', $event)"
+                  @cancelEditing="cancelEditing"
+                  @error="updateError = $event"
+                />
+                <div class="gl-mt-3 gl-flex gl-flex-wrap gl-justify-between gl-gap-y-3">
+                  <work-item-award-emoji
+                    v-if="workItemAwardEmoji"
+                    :work-item-archived="workItem.archived"
+                    :work-item-id="workItem.id"
+                    :work-item-fullpath="workItemFullPath"
+                    :award-emoji="workItemAwardEmoji.awardEmoji"
+                    :work-item-iid="iid"
+                    @error="updateError = $event"
+                    @emoji-updated="$emit('work-item-emoji-updated', $event)"
+                  />
+                  <div class="gl-mt-2 gl-flex gl-flex-wrap gl-gap-3 gl-gap-y-3">
+                    <gl-intersection-observer
+                      v-if="showUploadDesign"
+                      @appear="isDesignUploadButtonInViewport = true"
+                      @disappear="isDesignUploadButtonInViewport = false"
+                    >
+                      <design-upload-button
+                        v-if="showUploadDesign"
+                        :is-saving="isSaving"
+                        data-testid="design-upload-button"
+                        @upload="onUploadDesign"
+                        @error="onUploadDesignError"
+                      />
+                    </gl-intersection-observer>
+                    <work-item-create-branch-merge-request-split-button
+                      v-if="showCreateBranchMergeRequestSplitButton"
+                      :work-item-iid="iid"
+                      :work-item-full-path="workItemFullPath"
+                      :work-item-type="workItem.workItemType.name"
+                      :is-confidential-work-item="workItem.confidential"
+                      :project-id="workItemProjectId"
+                    />
+                  </div>
+                </div>
+              </section>
               <local-storage-sync
-                v-model="truncationEnabled"
-                :storage-key="$options.ENABLE_TRUNCATION_STORAGE_KEY"
+                v-model="showSidebar"
+                :storage-key="$options.SHOW_SIDEBAR_STORAGE_KEY"
               />
-              <work-item-description
-                v-if="hasDescriptionWidget"
-                :edit-mode="editMode"
+              <aside
+                data-testid="work-item-overview-right-sidebar"
+                class="work-item-overview-right-sidebar"
+                :class="{ 'is-modal': isModal, 'md:gl-hidden': !showSidebar }"
+              >
+                <work-item-attributes-wrapper
+                  :class="{ 'gl-top-11': isDrawer }"
+                  :full-path="workItemFullPath"
+                  :work-item="workItem"
+                  :group-path="groupPath"
+                  :is-group="isGroupWorkItem"
+                  @error="updateError = $event"
+                  @attributesUpdated="$emit('attributesUpdated', $event)"
+                />
+              </aside>
+
+              <work-item-error-tracking
+                v-if="workItemErrorTracking.identifier"
+                :full-path="workItemFullPath"
+                :iid="iid"
+              />
+
+              <design-widget
+                v-if="hasDesignWidget"
+                :class="{ 'gl-mt-0': isDrawer }"
+                :work-item-id="workItem.id"
+                :work-item-iid="iid"
+                :work-item-full-path="workItemFullPath"
+                :work-item-web-url="workItem.webUrl"
+                :is-group="isGroupWorkItem"
+                :upload-error="designUploadError"
+                :upload-error-variant="designUploadErrorVariant"
+                :is-saving="isSaving"
+                :can-reorder-design="canReorderDesign"
+                :is-board="isBoard"
+                :can-add-design="canAddDesign"
+                :can-update-design="canUpdateDesign"
+                :can-paste-design="canPasteDesign"
+                @upload="onUploadDesign"
+                @dismissError="designUploadError = null"
+              >
+                <template #empty-state>
+                  <design-dropzone
+                    v-if="isEmptyStateVisible && !isSaving && isDragDataValid && !isAddingNotes"
+                    class="gl-relative gl-mt-5"
+                    show-upload-design-overlay
+                    validate-design-upload-on-dragover
+                    hide-upload-text-on-dragging
+                    :accept-design-formats="$options.VALID_DESIGN_FILE_MIMETYPE.mimetype"
+                    @change="onUploadDesign"
+                  >
+                    <template #upload-text>
+                      {{ s__('DesignManagement|Drag images here to add designs.') }}
+                    </template>
+                  </design-dropzone>
+                </template>
+              </design-widget>
+
+              <work-item-tree
+                v-if="showWorkItemTree"
+                :full-path="workItemFullPath"
+                :is-group="isGroupWorkItem"
+                :work-item-type="workItemType"
+                :parent-work-item-type="workItem.workItemType.name"
+                :work-item-id="workItem.id"
+                :work-item-iid="iid"
+                :parent-iteration="workItemIteration"
+                :parent-milestone="workItemMilestone"
+                :active-child-item-id="activeChildItemId"
+                :can-update="canUpdate"
+                :can-update-children="canUpdateChildren"
+                :confidential="workItem.confidential"
+                :allowed-child-types="allowedChildTypes"
+                :is-drawer="isDrawer"
+                :contextual-view-enabled="contextualViewEnabled"
+                @show-modal="openContextualView"
+                @addChild="$emit('addChild')"
+              />
+              <work-item-relationships
+                v-if="workItemLinkedItems"
+                :is-group="isGroupWorkItem"
+                :work-item-id="workItem.id"
+                :work-item-iid="iid"
+                :work-item-full-path="workItemFullPath"
+                :work-item-type="workItem.workItemType.name"
+                :can-admin-work-item-link="canAdminWorkItemLink"
+                :active-child-item-id="activeChildItemId"
+                :has-blocked-work-items-feature="hasBlockedWorkItemsFeature"
+                :contextual-view-enabled="contextualViewEnabled"
+                @showModal="openContextualView"
+              />
+
+              <work-item-development
+                v-if="workItemDevelopment"
+                :is-modal="isModal"
+                :work-item-id="workItem.id"
+                :work-item-iid="iid"
+                :work-item-full-path="workItemFullPath"
+              />
+
+              <work-item-vulnerabilities
+                :work-item-iid="iid"
+                :work-item-full-path="workItemFullPath"
+                data-testid="work-item-vulnerabilities"
+              />
+
+              <work-item-notes
+                v-if="workItemNotes"
                 :full-path="workItemFullPath"
                 :work-item-id="workItem.id"
                 :work-item-iid="workItem.iid"
-                :update-in-progress="updateInProgress"
-                :without-heading-anchors="isDrawer"
+                :work-item-type="workItemType"
+                :is-modal="isModal"
+                :is-drawer="isDrawer"
+                :assignees="workItemAssignees && workItemAssignees.assignees.nodes"
+                :can-set-work-item-metadata="canAssignUnassignUser"
+                :can-summarize-comments="canSummarizeComments"
+                :can-create-note="canCreateNote"
+                :is-discussion-locked="isDiscussionLocked"
+                :is-work-item-confidential="workItem.confidential"
+                :new-comment-template-paths="commentTemplatePaths"
+                class="gl-pt-5"
+                :use-h2="!isModalOrDrawer"
+                :small-header-style="isModal"
+                :parent-id="parentWorkItemId"
                 :hide-fullscreen-markdown-button="isDrawer"
-                :truncation-enabled="truncationEnabled"
                 :uploads-path="uploadsPath"
-                @updateWorkItem="updateWorkItem"
-                @updateDraft="updateDraft('description', $event)"
-                @cancelEditing="cancelEditing"
                 @error="updateError = $event"
+                @openReportAbuse="openReportAbuseModal"
+                @startEditing="isAddingNotes = true"
+                @stopEditing="isAddingNotes = false"
+                @focus="isAddingNotes = true"
+                @blur="isAddingNotes = false"
               />
-              <div class="gl-mt-3 gl-flex gl-flex-wrap gl-justify-between gl-gap-y-3">
-                <work-item-award-emoji
-                  v-if="workItemAwardEmoji"
-                  :work-item-id="workItem.id"
-                  :work-item-fullpath="workItemFullPath"
-                  :award-emoji="workItemAwardEmoji.awardEmoji"
-                  :work-item-iid="iid"
-                  @error="updateError = $event"
-                  @emoji-updated="$emit('work-item-emoji-updated', $event)"
-                />
-                <div class="gl-mt-2 gl-flex gl-flex-wrap gl-gap-3 gl-gap-y-3">
-                  <gl-intersection-observer
-                    v-if="showUploadDesign"
-                    @appear="isDesignUploadButtonInViewport = true"
-                    @disappear="isDesignUploadButtonInViewport = false"
-                  >
-                    <design-upload-button
-                      v-if="showUploadDesign"
-                      :is-saving="isSaving"
-                      data-testid="design-upload-button"
-                      @upload="onUploadDesign"
-                      @error="onUploadDesignError"
-                    />
-                  </gl-intersection-observer>
-                  <work-item-create-branch-merge-request-split-button
-                    v-if="showCreateBranchMergeRequestSplitButton"
-                    :work-item-id="workItem.id"
-                    :work-item-iid="iid"
-                    :work-item-full-path="workItemFullPath"
-                    :work-item-type="workItem.workItemType.name"
-                    :is-confidential-work-item="workItem.confidential"
-                    :project-id="workItemProjectId"
-                  />
-                </div>
-              </div>
-            </section>
-            <local-storage-sync
-              v-model="showSidebar"
-              :storage-key="$options.SHOW_SIDEBAR_STORAGE_KEY"
-            />
-            <aside
-              data-testid="work-item-overview-right-sidebar"
-              class="work-item-overview-right-sidebar"
-              :class="{ 'is-modal': isModal, 'md:gl-hidden': !showSidebar }"
-            >
-              <work-item-attributes-wrapper
-                :class="{ 'gl-top-11': isDrawer }"
-                :full-path="workItemFullPath"
-                :work-item="workItem"
-                :group-path="groupPath"
-                :is-group="isGroupWorkItem"
-                @error="updateError = $event"
-                @attributesUpdated="$emit('attributesUpdated', $event)"
-              />
-            </aside>
-
-            <work-item-error-tracking
-              v-if="workItemErrorTracking.identifier"
-              :full-path="workItemFullPath"
-              :iid="iid"
-            />
-
-            <design-widget
-              v-if="hasDesignWidget"
-              :class="{ 'gl-mt-0': isDrawer }"
-              :work-item-id="workItem.id"
-              :work-item-iid="iid"
-              :work-item-full-path="workItemFullPath"
-              :work-item-web-url="workItem.webUrl"
-              :is-group="isGroupWorkItem"
-              :upload-error="designUploadError"
-              :upload-error-variant="designUploadErrorVariant"
-              :is-saving="isSaving"
-              :can-reorder-design="canReorderDesign"
-              @upload="onUploadDesign"
-              @dismissError="designUploadError = null"
-            >
-              <template #empty-state>
-                <design-dropzone
-                  v-if="isEmptyStateVisible && !isSaving && isDragDataValid && !isAddingNotes"
-                  ref="emptyStateDesignDropzone"
-                  class="gl-relative gl-mt-5"
-                  show-upload-design-overlay
-                  validate-design-upload-on-dragover
-                  hide-upload-text-on-dragging
-                  :accept-design-formats="$options.VALID_DESIGN_FILE_MIMETYPE.mimetype"
-                  @change="onUploadDesign"
-                >
-                  <template #upload-text>
-                    {{ s__('DesignManagement|Drag images here to add designs.') }}
-                  </template>
-                </design-dropzone>
-              </template>
-            </design-widget>
-
-            <work-item-tree
-              v-if="showWorkItemTree"
-              :full-path="workItemFullPath"
-              :is-group="isGroupWorkItem"
-              :work-item-type="workItemType"
-              :parent-work-item-type="workItem.workItemType.name"
-              :work-item-id="workItem.id"
-              :work-item-iid="iid"
-              :parent-iteration="workItemIteration"
-              :parent-milestone="workItemMilestone"
-              :active-child-item-id="activeChildItemId"
-              :can-update="canUpdate"
-              :can-update-children="canUpdateChildren"
-              :confidential="workItem.confidential"
-              :allowed-child-types="allowedChildTypes"
-              :is-drawer="isDrawer"
-              @show-modal="openContextualView"
-              @addChild="$emit('addChild')"
-            />
-            <work-item-relationships
-              v-if="workItemLinkedItems"
-              :is-group="isGroupWorkItem"
-              :work-item-id="workItem.id"
-              :work-item-iid="iid"
-              :work-item-full-path="workItemFullPath"
-              :work-item-type="workItem.workItemType.name"
-              :can-admin-work-item-link="canAdminWorkItemLink"
-              :active-child-item-id="activeChildItemId"
-              :has-blocked-work-items-feature="hasBlockedWorkItemsFeature"
-              @showModal="openContextualView"
-            />
-
-            <work-item-development
-              v-if="workItemDevelopment"
-              :is-modal="isModal"
-              :work-item-id="workItem.id"
-              :work-item-iid="iid"
-              :work-item-full-path="workItemFullPath"
-            />
-
-            <work-item-vulnerabilities
-              v-if="showWorkItemVulnerabilities"
-              :work-item-iid="iid"
-              :work-item-full-path="workItemFullPath"
-              data-testid="work-item-vulnerabilities"
-            />
-
-            <work-item-notes
-              v-if="workItemNotes"
-              :full-path="workItemFullPath"
-              :work-item-id="workItem.id"
-              :work-item-iid="workItem.iid"
-              :work-item-type="workItemType"
-              :is-modal="isModal"
-              :is-drawer="isDrawer"
-              :assignees="workItemAssignees && workItemAssignees.assignees.nodes"
-              :can-set-work-item-metadata="canAssignUnassignUser"
-              :can-summarize-comments="canSummarizeComments"
-              :is-discussion-locked="isDiscussionLocked"
-              :is-work-item-confidential="workItem.confidential"
-              :new-comment-template-paths="newCommentTemplatePaths"
-              class="gl-pt-5"
-              :use-h2="!isModalOrDrawer"
-              :small-header-style="isModal"
-              :parent-id="parentWorkItemId"
-              :hide-fullscreen-markdown-button="isDrawer"
-              :uploads-path="uploadsPath"
-              @error="updateError = $event"
-              @openReportAbuse="openReportAbuseModal"
-              @startEditing="isAddingNotes = true"
-              @stopEditing="isAddingNotes = false"
-            />
+            </div>
           </div>
-        </div>
+        </section>
       </section>
-    </section>
-    <work-item-drawer
-      v-if="contextualViewEnabled && !isDrawer"
-      :active-item="activeChildItem"
-      :open="isItemSelected"
-      :issuable-type="activeChildItemType"
-      :new-comment-template-paths="newCommentTemplatePaths"
-      click-outside-exclude-selector=".issuable-list"
-      @close="activeChildItem = null"
-      @workItemDeleted="deleteChildItem"
-    />
-    <work-item-abuse-modal
-      v-if="isReportModalOpen"
-      :show-modal="isReportModalOpen"
-      :reported-user-id="reportedUserId"
-      :reported-from-url="reportedUrl"
-      @close-modal="toggleReportAbuseModal(false)"
-    />
-  </div>
+      <work-item-drawer
+        v-if="contextualViewEnabled && !isDrawer"
+        :active-item="activeChildItem"
+        :open="isItemSelected"
+        :issuable-type="activeChildItemType"
+        :new-comment-template-paths="commentTemplatePaths"
+        click-outside-exclude-selector=".issuable-list"
+        @close="activeChildItem = null"
+        @workItemDeleted="deleteChildItem"
+      />
+      <work-item-abuse-modal
+        v-if="isReportModalOpen"
+        :show-modal="isReportModalOpen"
+        :reported-user-id="reportedUserId"
+        :reported-from-url="reportedUrl"
+        @close-modal="toggleReportAbuseModal(false)"
+      />
+    </div>
+  </work-item-metadata-provider>
 </template>

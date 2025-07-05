@@ -16,6 +16,7 @@ import {
 } from '@gitlab/ui';
 import { debounce, isNumber, isUndefined } from 'lodash';
 import PageHeading from '~/vue_shared/components/page_heading.vue';
+import EmptyResult from '~/vue_shared/components/empty_result.vue';
 import { createAlert } from '~/alert';
 import * as Sentry from '~/sentry/sentry_browser_wrapper';
 import { s__, __, n__, sprintf } from '~/locale';
@@ -74,6 +75,7 @@ export default {
     PaginationBar,
     HelpPopover,
     PageHeading,
+    EmptyResult,
   },
   directives: {
     GlTooltip: GlTooltipDirective,
@@ -153,13 +155,12 @@ export default {
     },
     {
       key: 'importTarget',
-      label: s__('BulkImport|New group'),
+      label: s__('BulkImport|Path of the new group'),
       thClass: `gl-w-1/2`,
     },
     {
       key: 'progress',
       label: __('Status'),
-      tdClass: '!gl-align-middle',
       tdAttr: { 'data-testid': 'import-status-indicator' },
     },
     {
@@ -225,7 +226,8 @@ export default {
         this.hasSelectedGroups &&
         this.groupsTableData.some(
           (group) =>
-            this.selectedGroupsIds.includes(group.id) && !group.flags.isProjectCreationAllowed,
+            this.selectedGroupsIds.includes(group.id) &&
+            group.flags.isProjectCreationAllowed === false,
         )
       );
     },
@@ -244,14 +246,6 @@ export default {
 
     hasEmptyFilter() {
       return this.filter.length > 0 && !this.hasGroups;
-    },
-
-    statusMessage() {
-      return this.filter.length === 0
-        ? s__('BulkImport|Showing %{start}-%{end} of %{total} that you own from %{link}')
-        : s__(
-            'BulkImport|Showing %{start}-%{end} of %{total} that you own matching filter "%{filter}" from %{link}',
-          );
     },
 
     paginationInfo() {
@@ -277,10 +271,13 @@ export default {
     },
 
     unavailableFeaturesAlertTitle() {
-      return sprintf(s__('BulkImport| %{host} is running outdated GitLab version (v%{version})'), {
-        host: this.sourceUrl,
-        version: this.bulkImportSourceGroups.versionValidation.features.sourceInstanceVersion,
-      });
+      return sprintf(
+        s__('BulkImport|%{host} is running an outdated GitLab version (v%{version})'),
+        {
+          host: this.sourceUrl,
+          version: this.bulkImportSourceGroups.versionValidation.features.sourceInstanceVersion,
+        },
+      );
     },
 
     pageInfo() {
@@ -676,18 +673,21 @@ export default {
         </gl-button>
       </template>
       <template #description>
-        {{ s__('BulkImport|Select the groups and projects you want to import.') }}
         <gl-sprintf
           :message="
-            s__('BulkImport|Importing projects is a %{docsLinkStart}beta%{docsLinkEnd} feature.')
+            s__(
+              'BulkImport|Only groups that you have the %{role} role for from %{source} are listed for import.',
+            )
           "
         >
-          <template #docsLink="{ content }"
-            ><gl-link :href="$options.betaFeatureHelpPath" target="_blank">{{
-              content
-            }}</gl-link></template
-          >
+          <template #role>
+            <gl-link :href="$options.permissionsHelpPath" target="_blank">{{
+              $options.i18n.OWNER
+            }}</gl-link>
+          </template>
+          <template #source>{{ sourceUrl }}</template>
         </gl-sprintf>
+        {{ s__('BulkImport|Select the groups you want to import.') }}
       </template>
     </page-heading>
 
@@ -701,7 +701,7 @@ export default {
       <gl-sprintf
         :message="
           s__(
-            'BulkImport|Following data will not be migrated: %{bullets} Contact system administrator of %{host} to upgrade GitLab if you need this data in your migration',
+            'BulkImport|The following items are not migrated: %{bullets} To include these items, ask the administrator of %{host} to upgrade GitLab.',
           )
         "
       >
@@ -742,43 +742,9 @@ export default {
         </template>
       </gl-sprintf>
     </gl-alert>
-    <div class="gl-border-0 gl-border-b-1 gl-border-solid gl-border-b-default gl-py-5">
-      <span v-if="!$apollo.loading && hasGroups">
-        <gl-sprintf :message="statusMessage">
-          <template #start>
-            <strong>{{ paginationInfo.start }}</strong>
-          </template>
-          <template #end>
-            <strong>{{ paginationInfo.end }}</strong>
-          </template>
-          <template #total>
-            <strong>{{ groupsCount(paginationInfo.total) }}</strong>
-          </template>
-          <template #filter>
-            <strong>{{ filter }}</strong>
-          </template>
-          <template #link>
-            {{ sourceUrl }}
-          </template>
-        </gl-sprintf>
-        <help-popover :options="$options.popoverOptions">
-          <gl-sprintf
-            :message="
-              s__(
-                'BulkImport|Only groups that you have the %{role} role for are listed as groups you can import.',
-              )
-            "
-          >
-            <template #role>
-              <gl-link class="gl-text-sm" :href="$options.permissionsHelpPath" target="_blank">{{
-                $options.i18n.OWNER
-              }}</gl-link>
-            </template>
-          </gl-sprintf>
-        </help-popover>
-      </span>
-    </div>
-    <div class="gl-flex gl-flex-col gl-gap-3 gl-bg-subtle gl-p-5 gl-pb-4">
+    <div
+      class="gl-flex gl-flex-col gl-gap-3 gl-border-t-1 gl-border-t-default gl-bg-subtle gl-p-5 gl-pb-4 gl-border-t-solid"
+    >
       <gl-search-box-by-click
         data-testid="filter-groups"
         :placeholder="s__('BulkImport|Filter by source group')"
@@ -789,11 +755,7 @@ export default {
 
     <gl-loading-icon v-if="$apollo.loading" size="lg" class="gl-mt-5" />
     <template v-else>
-      <gl-empty-state
-        v-if="hasEmptyFilter"
-        :title="__('Sorry, your filter produced no results')"
-        :description="__('To widen your search, change or remove filters above.')"
-      />
+      <empty-result v-if="hasEmptyFilter" type="search" />
       <gl-empty-state v-else-if="!hasGroups" :title="$options.i18n.NO_GROUPS_FOUND">
         <template #description>
           <gl-sprintf
@@ -835,7 +797,7 @@ export default {
             <span v-if="showImportProjectsWarning" class="gl-shrink-0">
               <gl-icon
                 v-gl-tooltip
-                :title="s__('BulkImport|Some groups will be imported without projects.')"
+                :title="s__('BulkImport|Some groups are imported without projects.')"
                 name="warning"
                 variant="warning"
                 data-testid="import-projects-warning"
@@ -885,14 +847,7 @@ export default {
             />
           </template>
           <template #head(importTarget)="data">
-            <span data-testid="new-path-col">
-              <span class="gl-mr-2">{{ data.label }}</span
-              ><gl-icon
-                v-gl-tooltip="s__('BulkImport|Path of the new group.')"
-                name="information"
-                :size="12"
-              />
-            </span>
+            {{ data.label }}
           </template>
           <template #cell(selected)="{ rowSelected, selectRow, unselectRow, item: group }">
             <gl-form-checkbox
@@ -915,7 +870,7 @@ export default {
             />
           </template>
           <template #cell(progress)="{ item: group }">
-            <div class="gl-mt-3">
+            <div class="gl-mt-2 gl-pt-1">
               <import-status-cell
                 class="gl-items-end lg:gl-items-start"
                 :status="group.visibleStatus"

@@ -9,13 +9,36 @@ module Mutations
 
       MAX_WORK_ITEMS = 100
 
-      description 'Allows updating several properties for a set of issues. ' \
-        'Does nothing if the `bulk_update_issues_mutation` feature flag is disabled.'
+      description 'Allows updating several properties for a set of work items. '
 
+      argument :assignees_widget,
+        ::Types::WorkItems::Widgets::AssigneesInputType,
+        required: false,
+        description: 'Input for assignees widget.',
+        experiment: { milestone: '18.2' }
+      argument :confidential,
+        GraphQL::Types::Boolean,
+        required: false,
+        description: 'Sets the work item confidentiality.',
+        experiment: { milestone: '18.2' }
       argument :ids, [::Types::GlobalIDType[::WorkItem]],
         required: true,
         description: 'Global ID array of the issues that will be updated. ' \
           "IDs that the user can\'t update will be ignored. A max of #{MAX_WORK_ITEMS} can be provided."
+      argument :milestone_widget,
+        ::Types::WorkItems::Widgets::MilestoneInputType,
+        required: false,
+        description: 'Input for milestone widget.',
+        experiment: { milestone: '18.2' }
+      argument :state_event, ::Types::WorkItems::StateEventEnum,
+        required: false,
+        description: 'Close or reopen multiple work items at once.',
+        experiment: { milestone: '18.2' }
+      argument :subscription_event, ::Types::WorkItems::SubscriptionEventEnum,
+        required: false,
+        description: 'Subscribe or unsubscribe from the work items.',
+        experiment: { milestone: '18.2' }
+
       argument :parent_id, ::Types::GlobalIDType[::WorkItems::Parent],
         required: true,
         description: 'Global ID of the parent to which the bulk update will be scoped. ' \
@@ -25,8 +48,12 @@ module Mutations
       argument :labels_widget,
         ::Types::WorkItems::Widgets::LabelsUpdateInputType,
         required: false,
-        description: 'Input for labels widget.',
-        prepare: ->(input, _) { input.to_h }
+        description: 'Input for labels widget.'
+
+      argument :hierarchy_widget, ::Types::WorkItems::Widgets::HierarchyCreateInputType,
+        required: false,
+        description: 'Input for hierarchy widget.',
+        experiment: { milestone: '18.2' }
 
       field :updated_work_item_count, GraphQL::Types::Int,
         null: true,
@@ -51,7 +78,7 @@ module Mutations
           parent: parent,
           current_user: current_user,
           work_item_ids: ids.map(&:model_id),
-          widget_params: attributes
+          attributes: attributes
         ).execute
 
         if result.success?

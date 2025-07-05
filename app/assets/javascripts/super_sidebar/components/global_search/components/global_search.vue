@@ -80,7 +80,7 @@ export default {
     SEARCH_DESCRIBED_BY_WITH_RESULTS,
     SEARCH_DESCRIBED_BY_DEFAULT,
     SEARCH_DESCRIBED_BY_UPDATED,
-    SEARCH_OR_COMMAND_MODE_PLACEHOLDER: s__('GlobalSearch|Type to search...'),
+    SEARCH_OR_COMMAND_MODE_PLACEHOLDER: s__('GlobalSearch|Type to search…'),
     SEARCH_RESULTS_LOADING,
     MIN_SEARCH_TERM,
     COMMAND_PALETTE_TIP,
@@ -439,7 +439,7 @@ export default {
     hide-footer
     scrollable
     :title="$options.i18n.COMMAND_PALETTE"
-    body-class="!gl-p-0 !gl-min-h-26"
+    body-class="!gl-p-0"
     modal-class="global-search-modal"
     content-class="gl-mt-2"
     :centered="false"

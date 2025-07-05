@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Tenant Scale
 group: Geo
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Disabling Geo
@@ -57,7 +57,7 @@ Geo node in a PostgreSQL console (`sudo gitlab-psql`):
 
   ```sql
   SELECT slot_name, slot_type, active FROM pg_replication_slots; -- view present replication slots
-  SELECT pg_drop_replication_slot('slot_name'); -- where slot_name is the one expected from above
+  SELECT pg_drop_replication_slot('slot_name'); -- where slot_name is the one expected from the previous command
   ```
 
 - To remove all secondary replication slots:

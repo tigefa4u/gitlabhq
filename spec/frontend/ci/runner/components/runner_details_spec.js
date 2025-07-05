@@ -10,7 +10,8 @@ import RunnerDetail from '~/ci/runner/components/runner_detail.vue';
 import RunnerGroups from '~/ci/runner/components/runner_groups.vue';
 import RunnerTags from '~/ci/runner/components/runner_tags.vue';
 import RunnerTag from '~/ci/runner/components/runner_tag.vue';
-import RunnerManagersDetail from '~/ci/runner/components/runner_managers_detail.vue';
+import RunnerManagers from '~/ci/runner/components/runner_managers.vue';
+import RunnerJobs from '~/ci/runner/components/runner_jobs.vue';
 
 import { runnerData, runnerWithGroupData } from '../mock_data';
 
@@ -25,13 +26,15 @@ describe('RunnerDetails', () => {
   useFakeDate(mockNow);
 
   const findDetailGroups = () => wrapper.findComponent(RunnerGroups);
-  const findRunnerManagersDetail = () => wrapper.findComponent(RunnerManagersDetail);
+  const findRunnerManagers = () => wrapper.findComponent(RunnerManagers);
+  const findRunnerJobs = () => wrapper.findComponent(RunnerJobs);
 
   const findDdContent = (label) => findDd(label, wrapper).text().replace(/\s+/g, ' ');
 
   const createComponent = ({ props = {}, stubs, mountFn = shallowMountExtended } = {}) => {
     wrapper = mountFn(RunnerDetails, {
       propsData: {
+        runnerId: mockRunner.id,
         ...props,
       },
       stubs: {
@@ -40,6 +43,12 @@ describe('RunnerDetails', () => {
       },
     });
   };
+
+  it('shows no content if no runner is provided', () => {
+    createComponent();
+
+    expect(wrapper.text()).toBe('');
+  });
 
   describe('Details tab', () => {
     describe.each`
@@ -58,7 +67,6 @@ describe('RunnerDetails', () => {
       ${'Maximum job timeout'} | ${{ maximumTimeout: 10 * 60 + 5 }}                                 | ${'10 minutes 5 seconds'}
       ${'Token expiry'}        | ${{ tokenExpiresAt: mockOneHourAgo }}                              | ${'1 hour ago'}
       ${'Token expiry'}        | ${{ tokenExpiresAt: null }}                                        | ${'Never expires'}
-      ${'Runners'}             | ${{ managers: { count: 2 } }}                                      | ${`2 ${'Show details'}`}
     `('"$field" field', ({ field, runner, expectedValue }) => {
       beforeEach(() => {
         createComponent({
@@ -72,7 +80,6 @@ describe('RunnerDetails', () => {
             GlIntersperse,
             GlSprintf,
             TimeAgo,
-            RunnerManagersDetail,
           },
         });
       });
@@ -109,15 +116,27 @@ describe('RunnerDetails', () => {
       });
     });
 
-    describe('"Runners" field', () => {
-      it('displays runner managers count of $count', () => {
+    describe('Status', () => {
+      it('displays runner managers', () => {
         createComponent({
           props: {
             runner: mockRunner,
           },
         });
 
-        expect(findRunnerManagersDetail().props('runner')).toEqual(mockRunner);
+        expect(findRunnerManagers().props('runner')).toEqual(mockRunner);
+      });
+
+      it('displays runner jobs', () => {
+        createComponent({
+          props: {
+            runner: mockRunner,
+            showAccessHelp: true,
+          },
+        });
+
+        expect(findRunnerJobs().props('runnerId')).toEqual(mockRunner.id);
+        expect(findRunnerJobs().props('showAccessHelp')).toEqual(true);
       });
     });
 

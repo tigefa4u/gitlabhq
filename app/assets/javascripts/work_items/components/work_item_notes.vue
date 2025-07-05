@@ -7,8 +7,13 @@ import {
   TYPENAME_DISCUSSION_NOTE,
   TYPENAME_NOTE,
   TYPENAME_GROUP,
+  TYPENAME_USER,
 } from '~/graphql_shared/constants';
+import { Mousetrap } from '~/lib/mousetrap';
+import { ISSUABLE_COMMENT_OR_REPLY, keysFor } from '~/behaviors/shortcuts/keybindings';
+import { CopyAsGFM } from '~/behaviors/markdown/copy_as_gfm';
 import SystemNote from '~/work_items/components/notes/system_note.vue';
+import gfmEventHub from '~/vue_shared/components/markdown/eventhub';
 import WorkItemNotesLoading from '~/work_items/components/notes/work_item_notes_loading.vue';
 import WorkItemNotesActivityHeader from '~/work_items/components/notes/work_item_notes_activity_header.vue';
 import {
@@ -92,6 +97,11 @@ export default {
       required: false,
       default: false,
     },
+    canCreateNote: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
     isDiscussionLocked: {
       type: Boolean,
       required: false,
@@ -141,6 +151,7 @@ export default {
       workItemNamespace: null,
       previewNote: null,
       workItemNotes: [],
+      notesCached: null,
     };
   },
   computed: {
@@ -149,9 +160,6 @@ export default {
     },
     initialLoading() {
       return this.$apollo.queries.workItemNotes.loading && !this.isLoadingMore;
-    },
-    someNotesLoaded() {
-      return !this.initialLoading || this.previewNote;
     },
     pageInfo() {
       return this.workItemNotes?.pageInfo;
@@ -197,8 +205,13 @@ export default {
         parentId: this.parentId,
       };
     },
+    // On the first component load, we want to show per-page skeleton notes
+    // On any subsequent refetch, we want to show the cached notes until all notes are loaded
+    notesSource() {
+      return this.notesCached ?? this.workItemNotes;
+    },
     notesArray() {
-      const notes = this.workItemNotes?.nodes || [];
+      const notes = this.notesSource.nodes || [];
 
       let visibleNotes = collapseSystemNotes(notes);
 
@@ -230,6 +243,11 @@ export default {
 
       return visibleNotes;
     },
+    userComments() {
+      return this.notesArray
+        .flatMap((discussion) => discussion.notes.nodes)
+        .filter((note) => !note.system);
+    },
     commentsDisabled() {
       return this.discussionFilter === WORK_ITEM_NOTES_FILTER_ONLY_HISTORY;
     },
@@ -258,7 +276,7 @@ export default {
         });
       }
 
-      const notes = this.workItemNotes?.nodes || [];
+      const notes = this.notesSource?.nodes || [];
       const n = notes.find(matchingNoteId);
       return Boolean(n);
     },
@@ -266,6 +284,16 @@ export default {
   mounted() {
     if (this.shouldLoadPreviewNote) {
       this.cleanupScrollListener = scrollToTargetOnResize();
+    }
+    if (this.canCreateNote) {
+      Mousetrap.bind(keysFor(ISSUABLE_COMMENT_OR_REPLY), (e) => this.quoteReply(e));
+      gfmEventHub.$on('edit-current-user-last-note', this.editCurrentUserLastNote);
+    }
+  },
+  beforeDestroy() {
+    if (this.canCreateNote) {
+      Mousetrap.unbind(keysFor(ISSUABLE_COMMENT_OR_REPLY), this.quoteReply);
+      gfmEventHub.$off('edit-current-user-last-note', this.editCurrentUserLastNote);
     }
   },
   apollo: {
@@ -322,6 +350,7 @@ export default {
           this.fetchMoreNotes();
         } else {
           this.cleanupScrollListener?.();
+          this.notesCached = this.workItemNotes;
         }
       },
       subscribeToMore: [
@@ -368,9 +397,77 @@ export default {
     },
   },
   methods: {
+    editCurrentUserLastNote(e) {
+      const currentUserId = convertToGraphQLId(TYPENAME_USER, gon.current_user_id);
+      const isToplevelCommentForm = Boolean(e.target.closest('.js-comment-form'));
+      let availableNotes = [];
+
+      if (isToplevelCommentForm) {
+        // User hit `Up` key from top-level comment form, populate all the comments,
+        // also ensure to reverse them only if sort order is set to newest-first (DESC).
+        availableNotes = this.formAtTop ? [...this.userComments] : [...this.userComments].reverse();
+      } else {
+        // User hit `Up` key from a comment form within an existing thread, populate
+        // all the comments, from this thread, and reverse order so the latest comments come first.
+        const discussionId = convertToGraphQLId(
+          TYPENAME_DISCUSSION_NOTE,
+          e.target.closest('.js-timeline-entry').dataset.discussionId,
+        );
+        availableNotes = [
+          ...this.notesArray.find((discussion) => discussion.id === discussionId).notes.nodes,
+        ].reverse();
+      }
+
+      // Find current user's last note.
+      const currentUserLastNote = availableNotes.find((note) => note.author.id === currentUserId);
+
+      if (!currentUserLastNote) return;
+
+      gfmEventHub.$emit('edit-note', {
+        note: currentUserLastNote,
+      });
+    },
+    getDiscussionIdFromSelection() {
+      const selection = window.getSelection();
+      if (selection.rangeCount <= 0) return null;
+
+      // Return early if selection is from description, we need to use the top-level comment field.
+      if (selection.anchorNode?.parentElement?.closest('.js-work-item-description')) return null;
+
+      const el = selection.getRangeAt(0).startContainer;
+      const node = el.nodeType === Node.TEXT_NODE ? el.parentNode : el;
+      return node.closest('.js-timeline-entry').getAttribute('discussion-id');
+    },
+    async quoteReply(e) {
+      const discussionId = this.getDiscussionIdFromSelection();
+      const text = await CopyAsGFM.selectionToGfm();
+
+      // Prevent 'r' being written.
+      if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+      }
+
+      // Check if selection is coming from an existing discussion
+      if (discussionId) {
+        gfmEventHub.$emit('quote-reply', {
+          discussionId,
+          text,
+          event: e,
+        });
+      } else {
+        // Selection is from description, append it to top-level comment form,
+        this.appendText(text);
+      }
+    },
+    appendText(text) {
+      // Based on selected sort order of discussion timeline,
+      // we have to choose correct <work-item-add-note/> reference.
+      // We're using `append` method from ~/vue_shared/components/markdown/markdown_editor.vue
+      this.$refs[this.formAtTop ? 'addNoteTop' : 'addNoteBottom'].appendText(text);
+    },
     getDiscussionKey(discussion) {
       // discussion key is important like this since after first comment changes
-      const discussionId = discussion.notes.nodes[0].id;
+      const discussionId = discussion.id;
       return discussionId.split('/')[discussionId.split('/').length - 1];
     },
     isSystemNote(note) {
@@ -395,10 +492,7 @@ export default {
       );
     },
     isDiscussionExpandedOnLoad(discussion) {
-      return !this.isDiscussionResolved(discussion) || this.isHashTargeted(discussion);
-    },
-    isDiscussionResolved(discussion) {
-      return discussion.notes.nodes[0]?.discussion?.resolved;
+      return !discussion.resolved || this.isHashTargeted(discussion);
     },
     async fetchMoreNotes() {
       this.isLoadingMore = true;
@@ -415,14 +509,14 @@ export default {
     showDeleteNoteModal(note, discussion) {
       const isLastNote = discussion.notes.nodes.length === 1;
       this.$refs.deleteNoteModal.show();
-      this.noteToDelete = { ...note, isLastNote };
+      this.noteToDelete = { ...note, isLastNote, discussionId: discussion.id };
     },
     cancelDeletingNote() {
       this.noteToDelete = null;
     },
     async deleteNote() {
       try {
-        const { id, isLastNote, discussion } = this.noteToDelete;
+        const { id, isLastNote, discussionId } = this.noteToDelete;
         await this.$apollo.mutate({
           mutation: deleteNoteMutation,
           variables: {
@@ -432,7 +526,7 @@ export default {
           },
           update(cache) {
             const deletedObject = isLastNote
-              ? { __typename: TYPENAME_DISCUSSION, id: discussion.id }
+              ? { __typename: TYPENAME_DISCUSSION, id: discussionId }
               : { __typename: TYPENAME_NOTE, id };
             cache.modify({
               id: cache.identify(deletedObject),
@@ -469,11 +563,11 @@ export default {
       @changeSort="setSort"
       @changeFilter="setFilter"
     />
-    <work-item-notes-loading v-if="initialLoading" class="gl-mt-5" />
-    <div v-if="someNotesLoaded" class="issuable-discussion gl-mb-5 !gl-clearfix">
+    <div class="issuable-discussion gl-mb-5 !gl-clearfix">
       <div v-if="formAtTop && !commentsDisabled" class="js-comment-form">
         <ul class="notes notes-form timeline">
           <work-item-add-note
+            ref="addNoteTop"
             v-bind="workItemCommentFormProps"
             :hide-fullscreen-markdown-button="hideFullscreenMarkdownButton"
             :is-group-work-item="isGroupWorkItem"
@@ -484,7 +578,9 @@ export default {
           />
         </ul>
       </div>
-      <work-item-notes-loading v-if="formAtTop && isLoadingMore" />
+      <work-item-notes-loading
+        v-if="initialLoading || (formAtTop && isLoadingMore && !notesCached)"
+      />
       <ul class="notes main-notes-list timeline">
         <template v-for="discussion in notesArray">
           <system-note
@@ -495,7 +591,8 @@ export default {
           <template v-else>
             <work-item-discussion
               :key="getDiscussionKey(discussion)"
-              :discussion="discussion.notes.nodes"
+              ref="workItemDiscussion"
+              :discussion="discussion"
               :full-path="fullPath"
               :work-item-id="workItemId"
               :work-item-iid="workItemIid"
@@ -522,10 +619,11 @@ export default {
 
         <work-item-history-only-filter-note v-if="commentsDisabled" @changeFilter="setFilter" />
       </ul>
-      <work-item-notes-loading v-if="!formAtTop && isLoadingMore" />
+      <work-item-notes-loading v-if="!formAtTop && isLoadingMore && !notesCached" />
       <div v-if="!formAtTop && !commentsDisabled" class="js-comment-form">
         <ul class="notes notes-form timeline">
           <work-item-add-note
+            ref="addNoteBottom"
             v-bind="workItemCommentFormProps"
             :hide-fullscreen-markdown-button="hideFullscreenMarkdownButton"
             :is-group-work-item="isGroupWorkItem"
@@ -533,6 +631,8 @@ export default {
             @startEditing="$emit('startEditing')"
             @stopEditing="$emit('stopEditing')"
             @error="$emit('error', $event)"
+            @focus="$emit('focus')"
+            @blur="$emit('blur')"
           />
         </ul>
       </div>

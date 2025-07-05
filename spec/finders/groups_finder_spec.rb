@@ -351,6 +351,29 @@ RSpec.describe GroupsFinder, feature_category: :groups_and_projects do
       end
     end
 
+    context 'with archived' do
+      let_it_be(:non_archived) { create(:group) }
+      let_it_be(:non_archived_subgroup) { create(:group, parent: non_archived) }
+
+      let_it_be(:archived_group) { create(:group, :archived) }
+      let_it_be(:archived_subgroup_with_non_archived_parent) { create(:group, :archived, parent: non_archived) }
+      let_it_be(:non_archived_subgroup_with_archived_parent) { create(:group, parent: archived_group) }
+
+      where(:archived, :result) do
+        nil   | lazy { [non_archived, non_archived_subgroup, archived_group, archived_subgroup_with_non_archived_parent, non_archived_subgroup_with_archived_parent] }
+        false | lazy { [non_archived, non_archived_subgroup] }
+        true  | lazy { [archived_group, archived_subgroup_with_non_archived_parent, non_archived_subgroup_with_archived_parent] }
+      end
+
+      with_them do
+        let(:params) { { archived: archived } }
+
+        subject { described_class.new(nil, params).execute.to_a }
+
+        it { is_expected.to match_array(result) }
+      end
+    end
+
     context 'with organization' do
       let_it_be(:organization_user) { create(:organization_user) }
       let_it_be(:organization) { organization_user.organization }
@@ -483,6 +506,32 @@ RSpec.describe GroupsFinder, feature_category: :groups_and_projects do
             private_sub_subgroup,
             private_sub_sub_subgroup
           )
+        end
+      end
+    end
+
+    context 'with active' do
+      let_it_be(:active_group) { create(:group, :public) }
+      let_it_be(:marked_for_deletion_group) { create(:group_with_deletion_schedule, :public) }
+      let_it_be(:archived_group) do
+        create(:group, :public, namespace_settings: create(:namespace_settings, archived: true))
+      end
+
+      subject { described_class.new(nil, params).execute.to_a }
+
+      context 'when true' do
+        let(:params) { { active: true } }
+
+        it 'returns active projects only' do
+          is_expected.to contain_exactly(active_group)
+        end
+      end
+
+      context 'when false' do
+        let(:params) { { active: false } }
+
+        it 'returns inactive projects only' do
+          is_expected.to contain_exactly(archived_group, marked_for_deletion_group)
         end
       end
     end

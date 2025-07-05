@@ -20,7 +20,7 @@ import { containerProtectionTagRuleMutationInput } from '../mock_data';
 
 Vue.use(VueApollo);
 
-describe('container Protection Rule Form', () => {
+describe('Container Protection Rule Form', () => {
   let wrapper;
   let fakeApollo;
 
@@ -351,6 +351,19 @@ describe('container Protection Rule Form', () => {
           });
         },
       );
+    });
+  });
+
+  describe('when isProtectedTagRuleType prop is passed', () => {
+    it.each`
+      propValue | label                                         | description
+      ${true}   | ${'Protect container tags matching'}          | ${'Tags with names that match this regex pattern are protected. Must be less than 100 characters. What regex patterns are supported?'}
+      ${false}  | ${'Apply immutability rule to tags matching'} | ${'Tags with names that match this regex pattern are immutable. Must be less than 100 characters. What regex patterns are supported?'}
+    `('test', ({ propValue, label, description }) => {
+      mountComponent({ props: { isProtectedTagRuleType: propValue } });
+
+      expect(wrapper.text()).toContain(label);
+      expect(wrapper.text()).toContain(description);
     });
   });
 });

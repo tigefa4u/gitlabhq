@@ -1,7 +1,8 @@
 ---
 stage: none
 group: unassigned
-info: This is a GitLab Incubation Engineering program. No technical writer assigned to this group.
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
+ignore_in_report: true
 title: Cloud Seed
 ---
 
@@ -14,13 +15,13 @@ title: Cloud Seed
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/371332) in GitLab 15.4 [with a flag](../administration/feature_flags.md) named `google_cloud`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/371332) in GitLab 15.4 [with a flag](../administration/feature_flags/_index.md) named `google_cloud`. Disabled by default.
 - [Enabled on GitLab Self-Managed and GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/100545) in GitLab 15.5.
 
 {{< /history >}}
 
 Cloud Seed is an open-source program led
-by [GitLab Incubation Engineering](https://handbook.gitlab.com/handbook/engineering/development/incubation/) in collaboration with
+by GitLab in collaboration with
 [Google Cloud](https://cloud.google.com/).
 
 Cloud Seed combines Heroku-like ease-of-use with hyper-cloud flexibility. We do this by using OAuth 2 to provision
@@ -28,7 +29,7 @@ services on a hyper-cloud based on a foundation of Terraform and infrastructure-
 
 ## Purpose
 
-We believe that it should be **trivial** to deploy web applications (and other workloads) from GitLab to major cloud
+We believe that it should be trivial to deploy web applications (and other workloads) from GitLab to major cloud
 providers.
 
 To support this effort, Cloud Seed makes it straightforward and intuitive to consume appropriate Google Cloud services
@@ -170,7 +171,7 @@ There are several ways you can contribute to Cloud Seed:
 
 - Use Cloud Seed and [share feedback](https://gitlab.com/gitlab-org/incubation-engineering/five-minute-production/feedback/-/issues/new?template=general_feedback).
 - If you are familiar with Ruby on Rails or Vue.js,
-  consider [contributing to GitLab](../development/contributing/_index.md) as a developer.
+  consider contributing to GitLab as a developer.
   - Much of Cloud Seed is an internal module in the GitLab codebase.
 - If you are familiar with GitLab pipelines, consider contributing to
   the [Cloud Seed Library](https://gitlab.com/gitlab-org/incubation-engineering/five-minute-production/library) project.

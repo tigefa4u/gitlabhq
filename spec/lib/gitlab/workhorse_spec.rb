@@ -537,18 +537,22 @@ RSpec.describe Gitlab::Workhorse, feature_category: :shared do
     let(:url) { 'http://example.com' }
     let(:allow_localhost) { true }
     let(:ssrf_filter) { false }
-    let(:allowed_uris) { [] }
+    let(:allowed_endpoints) { [] }
     let(:expected_params) do
       {
         'URL' => url,
         'AllowRedirects' => false,
         'AllowLocalhost' => allow_localhost,
-        'AllowedURIs' => allowed_uris.map(&:to_s),
+        'AllowedEndpoints' => allowed_endpoints.map(&:to_s),
         'SSRFFilter' => ssrf_filter,
         'Header' => {},
         'ResponseHeaders' => {},
         'Body' => '',
-        'Method' => 'GET'
+        'Method' => 'GET',
+        'RestrictForwardedResponseHeaders' => {
+          'Enabled' => false,
+          'AllowList' => []
+        }
       }
     end
 
@@ -626,11 +630,11 @@ RSpec.describe Gitlab::Workhorse, feature_category: :shared do
       end
     end
 
-    context 'when `allowed_uris` paramter is set' do
-      let(:allowed_uris) { [URI('http://172.16.123.1:9000')] }
+    context 'when `allowed_endpoints` paramter is set' do
+      let(:allowed_endpoints) { [URI('http://172.16.123.1:9000')] }
 
       it 'sets the header correctly' do
-        key, command, params = decode_workhorse_header(described_class.send_url(url, allowed_uris: allowed_uris))
+        key, command, params = decode_workhorse_header(described_class.send_url(url, allowed_endpoints: allowed_endpoints))
 
         expect(key).to eq('Gitlab-Workhorse-Send-Data')
         expect(command).to eq('send-url')
@@ -643,6 +647,26 @@ RSpec.describe Gitlab::Workhorse, feature_category: :shared do
 
       it 'sets the header correctly' do
         key, command, params = decode_workhorse_header(described_class.send_url(url, allow_localhost: allow_localhost))
+
+        expect(key).to eq('Gitlab-Workhorse-Send-Data')
+        expect(command).to eq('send-url')
+        expect(params).to eq(expected_params)
+      end
+    end
+
+    context 'when `restrict_forwarded_repsonse_headers` is set' do
+      let(:expected_params) do
+        super().merge('RestrictForwardedResponseHeaders' => {
+          'Enabled' => true,
+          'AllowList' => ['x-optional-header']
+        })
+      end
+
+      it 'sets the header correctly' do
+        key, command, params = decode_workhorse_header(described_class.send_url(
+          url,
+          restrict_forwarded_response_headers: { enabled: true, allow_list: ['x-optional-header'] }
+        ))
 
         expect(key).to eq('Gitlab-Workhorse-Send-Data')
         expect(command).to eq('send-url')
@@ -681,11 +705,13 @@ RSpec.describe Gitlab::Workhorse, feature_category: :shared do
     let(:upload_config) { { method: upload_method, headers: upload_headers, url: upload_url, authorized_upload_response: authorized_upload_response }.compact_blank! }
     let(:ssrf_filter) { false }
     let(:allow_localhost) { true }
-    let(:allowed_uris) { [] }
+    let(:allowed_endpoints) { [] }
+    let(:restrict_forwarded_response_headers) { {} }
+    let(:expected_restrict_forwarded_response_headers) { { 'Enabled' => false, 'AllowList' => [] } }
 
     subject do
       described_class.send_dependency(
-        headers, url, upload_config: upload_config, ssrf_filter: ssrf_filter, allow_localhost: allow_localhost, allowed_uris: allowed_uris
+        headers, url, upload_config:, ssrf_filter:, allow_localhost:, allowed_endpoints:, restrict_forwarded_response_headers:
       )
     end
 
@@ -696,8 +722,9 @@ RSpec.describe Gitlab::Workhorse, feature_category: :shared do
           'AllowLocalhost' => allow_localhost,
           'Headers' => headers.transform_values { |v| Array.wrap(v) },
           'SSRFFilter' => ssrf_filter,
-          'AllowedURIs' => allowed_uris.map(&:to_s),
+          'AllowedEndpoints' => allowed_endpoints.map(&:to_s),
           'Url' => url,
+          'RestrictForwardedResponseHeaders' => expected_restrict_forwarded_response_headers,
           'UploadConfig' => {
             'Method' => upload_method,
             'Url' => upload_url,
@@ -747,14 +774,26 @@ RSpec.describe Gitlab::Workhorse, feature_category: :shared do
       it_behaves_like 'setting the header correctly'
     end
 
-    context 'when `allowed_uris` parameter is set' do
-      let(:allowed_uris) { [URI('http://172.16.123.1:9000')] }
+    context 'when `allowed_endpoints` parameter is set' do
+      let(:allowed_endpoints) { [URI('http://172.16.123.1:9000')] }
 
       it_behaves_like 'setting the header correctly'
     end
 
     context 'when local requests are not allowed' do
       let(:allow_localhost) { false }
+
+      it_behaves_like 'setting the header correctly'
+    end
+
+    context 'when `restrict_forwarded_response_headers` parameter is set' do
+      let(:restrict_forwarded_response_headers) { { enabled: true, allow_list: ['x-optional-header'] } }
+      let(:expected_restrict_forwarded_response_headers) do
+        super().merge(
+          'Enabled' => true,
+          'AllowList' => ['x-optional-header']
+        )
+      end
 
       it_behaves_like 'setting the header correctly'
     end

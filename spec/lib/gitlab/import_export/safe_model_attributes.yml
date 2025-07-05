@@ -386,7 +386,6 @@ Ci::Build:
 - options
 - allow_failure
 - stage
-- trigger_request_id
 - stage_idx
 - stage_id
 - tag
@@ -438,7 +437,6 @@ Ci::Bridge:
 - options
 - allow_failure
 - stage
-- trigger_request_id
 - stage_idx
 - stage_id
 - tag
@@ -490,7 +488,6 @@ GenericCommitStatus:
 - options
 - allow_failure
 - stage
-- trigger_request_id
 - stage_idx
 - stage_id
 - tag
@@ -622,6 +619,7 @@ ProjectHook:
 - confidential_note_events
 - repository_update_events
 - releases_events
+- milestone_events
 - emoji_events
 - resource_access_token_events
 ProtectedBranch:
@@ -696,6 +694,7 @@ Project:
 - squash_commit_template
 - issue_branch_template
 - merge_request_title_regex
+- merge_request_title_regex_description
 Author:
 - name
 ProjectFeature:
@@ -1110,7 +1109,6 @@ Vulnerabilities::Finding:
   - severity
   - report_type
   - project_id
-  - project_fingerprint
   - location_fingerprint
   - name
   - metadata_version

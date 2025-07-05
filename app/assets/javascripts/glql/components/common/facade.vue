@@ -53,8 +53,7 @@ export default {
         action: null,
       },
 
-      // eslint-disable-next-line @gitlab/require-i18n-strings
-      preClasses: `code highlight ${gon.user_color_scheme}`,
+      preClasses: 'code highlight code-syntax-highlight-theme',
     };
   },
   computed: {
@@ -83,6 +82,10 @@ export default {
 
     copySource() {
       navigator.clipboard.writeText(this.wrappedQuery);
+    },
+
+    reload() {
+      this.reloadGlqlBlock();
     },
 
     async copyAsGFM() {
@@ -206,7 +209,7 @@ export default {
     <template v-if="hasError">
       <gl-alert
         :variant="error.variant"
-        class="gl-mb-3"
+        class="gl-my-3"
         :primary-button-text="error.action"
         @dismiss="dismissAlert"
         @primaryAction="reloadGlqlBlock"

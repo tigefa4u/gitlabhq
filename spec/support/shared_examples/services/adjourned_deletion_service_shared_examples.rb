@@ -1,10 +1,6 @@
 # frozen_string_literal: true
 
 RSpec.shared_examples 'adjourned deletion service' do
-  before do
-    stub_licensed_features(adjourned_deletion_for_projects_and_groups: true)
-  end
-
   shared_examples 'user can remove resource' do
     it 'enqueues the resource destroy worker' do
       expect(destroy_worker).to receive(perform_method).with(*destroy_worker_params)
@@ -24,7 +20,7 @@ RSpec.shared_examples 'adjourned deletion service' do
     it 'uses admin bot to restore the resource', :enable_admin_mode do
       service.execute
 
-      expect(resource.reload.marked_for_deletion?).to be(false)
+      expect(resource.reload.self_deletion_scheduled?).to be(false)
     end
   end
 

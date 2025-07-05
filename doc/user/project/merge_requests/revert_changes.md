@@ -15,7 +15,7 @@ title: Revert changes
 
 Mistakes happen in code. Version control makes it possible to fix those mistakes by reverting them.
 
-When you revert a commit, you create a new commit (a **revert commit**) that reverses the
+When you revert a commit, you create a new commit (a revert commit) that reverses the
 bad change, rather than erasing the existence of the problem from your project's history. Revert commits
 provide a clear audit trail, rather than a gap where the previous commit was. The revert commit
 follows your project's access controls and processes, and:
@@ -111,7 +111,7 @@ the command line, see [Revert and undo changes with Git](../../../topics/git/und
 
 {{< history >}}
 
-- Introduced in GitLab 17.1 [with a flag](../../../administration/feature_flags.md) named `rewrite_history_ui`. Disabled by default. GitLab team members can view more information in this confidential issue: `https://gitlab.com/gitlab-org/gitlab/-/issues/450701`
+- Introduced in GitLab 17.1 [with a flag](../../../administration/feature_flags/_index.md) named `rewrite_history_ui`. Disabled by default. GitLab team members can view more information in this confidential issue: `https://gitlab.com/gitlab-org/gitlab/-/issues/450701`
 - Enabled on GitLab.com in confidential issue `https://gitlab.com/gitlab-org/gitlab/-/issues/462999` in GitLab 17.2.
 - Enabled on GitLab Self-Managed and GitLab Dedicated in confidential issue `https://gitlab.com/gitlab-org/gitlab/-/issues/462999` in GitLab 17.3.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/472018) in GitLab 17.9. Feature flag `rewrite_history_ui` removed.
@@ -124,17 +124,38 @@ Replaces a list of strings with `***REMOVED***`.
 
 {{< alert type="warning" >}}
 
-**This action is irreversible.**
+This action is irreversible.
 After rewriting history and running housekeeping, the changes are permanent.
 Be aware of the following impacts when redacting text from your repository:
 
 {{< /alert >}}
 
 - Open merge requests might fail to merge and require manual rebasing.
-- Existing local clones are incompatible with the updated repository and must be re-cloned.
+- This is a destructive operation. Existing local clones are incompatible with the updated repository and must be re-cloned.
 - Pipelines referencing old commit SHAs might break and require reconfiguration.
 - Historical tags and branches based on the old commit history might not function correctly.
 - Commit signatures are dropped during the rewrite process.
+- Commit hashes are updated because their content is updated by the redact operation.
+
+While the redact feature in GitLab removes exposed secrets, it also:
+
+- Corrupts the Git history state.
+- Requires all developers to re-clone the repository after redaction.
+- Breaks features that depend on commit hashes, including:
+  - Open merge requests.
+  - Links to previous commits, which results in 404 errors.
+
+For better repository integrity, you should instead:
+
+- Revoke or rotate exposed secrets.
+- Implement [the secret detection capabilities of GitLab](../../application_security/secret_detection/_index.md).
+
+This approach:
+
+- Proactively prevents future secret leaks.
+- Maintains Git history while ensuring security compliance.
+
+For more information, see [secret push protection](../../application_security/secret_detection/secret_push_protection/_index.md).
 
 Alternatively, to completely delete specific files from a repository, see
 [Remove blobs](../repository/repository_size.md#remove-blobs).
@@ -156,7 +177,16 @@ To redact text from your repository:
 1. Select **Yes, redact matching strings**.
 1. On the left sidebar, select **Settings > General**.
 1. Expand **Advanced**.
-1. Select **Run housekeeping**.
+1. Select **Run housekeeping**. Wait at least 30 minutes for the operation to complete.
+1. In the same **Settings > General > Advanced** section, select **Prune unreachable objects**.
+   This operation takes approximately 5-10 minutes to complete.
+
+{{< alert type="note" >}}
+
+If the project containing the sensitive information has been forked, the housekeeping task may not be able to complete this redaction process [to maintain the integrity of the special object pool repository which contains the forked data](../../../administration/housekeeping.md#object-pool-repositories).
+For help, contact GitLab Support.
+
+{{< /alert >}}
 
 ## Related topics
 

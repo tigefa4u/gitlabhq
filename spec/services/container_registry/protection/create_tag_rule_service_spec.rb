@@ -28,8 +28,8 @@ RSpec.describe ContainerRegistry::Protection::CreateTagRuleService, '#execute', 
             be_a(ContainerRegistry::Protection::TagRule)
             .and(have_attributes(
               tag_name_pattern: params[:tag_name_pattern],
-              minimum_access_level_for_push: params[:minimum_access_level_for_push].to_s,
-              minimum_access_level_for_delete: params[:minimum_access_level_for_delete].to_s
+              minimum_access_level_for_push: params[:minimum_access_level_for_push]&.to_s,
+              minimum_access_level_for_delete: params[:minimum_access_level_for_delete]&.to_s
             ))
           }
         )
@@ -75,14 +75,14 @@ RSpec.describe ContainerRegistry::Protection::CreateTagRuleService, '#execute', 
 
   it_behaves_like 'a successful service response'
 
-  context 'with invalid params' do
+  context 'with invalid params', unless: Gitlab.ee? do
     using RSpec::Parameterized::TableSyntax
 
     where(:params_invalid, :message_expected) do
       { tag_name_pattern: '' }      | ["Tag name pattern can't be blank"]
       { tag_name_pattern: '*' }     | ["Tag name pattern not valid RE2 syntax: no argument for repetition operator: *"]
-      { minimum_access_level_for_delete: nil }  | ['Access levels should either both be present or both be nil']
-      { minimum_access_level_for_push: nil }    | ['Access levels should either both be present or both be nil']
+      { minimum_access_level_for_delete: nil }  | ['Access levels should both be present']
+      { minimum_access_level_for_push: nil }    | ['Access levels should both be present']
       { minimum_access_level_for_delete: 1000 } | "'1000' is not a valid minimum_access_level_for_delete"
       { minimum_access_level_for_push: 1000 }   | "'1000' is not a valid minimum_access_level_for_push"
     end
@@ -91,8 +91,6 @@ RSpec.describe ContainerRegistry::Protection::CreateTagRuleService, '#execute', 
       let(:params) { super().merge(params_invalid) }
 
       it_behaves_like 'an erroneous service response', message: params[:message_expected]
-
-      it { is_expected.to have_attributes message: message_expected }
     end
   end
 
@@ -144,6 +142,37 @@ RSpec.describe ContainerRegistry::Protection::CreateTagRuleService, '#execute', 
 
     it_behaves_like 'an erroneous service response',
       message: 'Maximum number of protection rules have been reached.'
+  end
+
+  describe 'user roles' do
+    using RSpec::Parameterized::TableSyntax
+
+    where(:user_role, :success) do
+      :owner      | true
+      :maintainer | true
+      :developer  | false
+      :reporter   | false
+      :guest      | false
+    end
+
+    with_them do
+      before do
+        project.send(:"add_#{user_role}", current_user)
+      end
+
+      if params[:success]
+        it_behaves_like 'a successful service response'
+      else
+        it_behaves_like 'an erroneous service response',
+          message: 'Unauthorized to create a protection rule for container image tags'
+      end
+    end
+
+    context 'when the current user is an admin', :enable_admin_mode do
+      let(:current_user) { build_stubbed(:admin) }
+
+      it_behaves_like 'a successful service response'
+    end
   end
 
   context 'when the GitLab API is not supported' do

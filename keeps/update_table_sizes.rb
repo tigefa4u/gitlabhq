@@ -54,9 +54,7 @@ module Keeps
     strong_memoize_attr :table_sizes
 
     def table_has_data?(table_name)
-      result = postgres_ai.table_has_data?(table_name)
-
-      Gitlab::Utils.to_boolean(result.first.fetch('exists'))
+      postgres_ai.table_has_data?(table_name)
     end
 
     def fetch_table_classification(table_name)
@@ -93,12 +91,13 @@ module Keeps
       change.reviewers = reviewer('maintainer::database')
 
       change.description = <<~MARKDOWN
-      Updates database dictionary entries for `#{table_names.join(', ')}`
+      Updates database dictionary entries for `#{table_names.join(', ')}`.
 
-      You can read more about our process to classify table size in
-      https://docs.gitlab.com/ee/development/database/large_tables_limitations.html.
+      The classification of table size changed as defined in the [database dictionary](https://docs.gitlab.com/development/database/database_dictionary/#schema).
 
-      Verify this MR as it was automatically created by `gitlab-housekeeper`.
+      Read more about our process to classify table size in our [documentation](https://docs.gitlab.com/ee/development/database/large_tables_limitations.html).
+
+      Verify this MR by inspecting the `postgres_table_sizes` view for each affected table.
       MARKDOWN
 
       change

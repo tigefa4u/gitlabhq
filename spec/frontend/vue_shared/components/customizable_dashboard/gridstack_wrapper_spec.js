@@ -48,6 +48,7 @@ describe('GridstackWrapper', () => {
     });
   };
 
+  const findGrid = () => wrapper.findByTestId('gridstack-grid');
   const findGridStackPanels = () => wrapper.findAllByTestId('grid-stack-panel');
   const findGridItemContentById = (panelId) =>
     wrapper.find(`[gs-id="${panelId}"]`).find('.grid-stack-item-content');
@@ -77,17 +78,20 @@ describe('GridstackWrapper', () => {
     });
 
     it('sets up GridStack', () => {
-      expect(GridStack.init).toHaveBeenCalledWith({
-        alwaysShowResizeHandle: true,
-        staticGrid: true,
-        animate: true,
-        margin: GRIDSTACK_MARGIN,
-        handle: GRIDSTACK_CSS_HANDLE,
-        cellHeight: GRIDSTACK_CELL_HEIGHT,
-        minRow: GRIDSTACK_MIN_ROW,
-        columnOpts: { breakpoints: [{ w: breakpoints.md, c: 1 }] },
-        float: true,
-      });
+      expect(GridStack.init).toHaveBeenCalledWith(
+        {
+          alwaysShowResizeHandle: true,
+          staticGrid: true,
+          animate: true,
+          margin: GRIDSTACK_MARGIN,
+          handle: GRIDSTACK_CSS_HANDLE,
+          cellHeight: GRIDSTACK_CELL_HEIGHT,
+          minRow: GRIDSTACK_MIN_ROW,
+          columnOpts: { breakpoints: [{ w: breakpoints.md, c: 1 }] },
+          float: true,
+        },
+        findGrid().element,
+      );
     });
 
     it('loads the parsed dashboard config', () => {
@@ -176,6 +180,7 @@ describe('GridstackWrapper', () => {
         expect.objectContaining({
           staticGrid: false,
         }),
+        findGrid().element,
       );
     });
 
@@ -236,6 +241,59 @@ describe('GridstackWrapper', () => {
           },
         ],
       ]);
+    });
+  });
+
+  describe('when panel properties change', () => {
+    beforeEach(() => {
+      loadCSSFile.mockResolvedValue();
+      createWrapper({
+        value: {
+          ...dashboard,
+          panels: [{ ...dashboard.panels[0], loading: true }],
+        },
+      });
+    });
+
+    const getLatestPanelData = () => panelSlots.at(-1).panel;
+
+    it('updates the UI when panel properties change', async () => {
+      const updatedPanel = {
+        ...dashboard.panels[0],
+        loading: false,
+      };
+
+      expect(getLatestPanelData().loading).toBe(true);
+
+      await wrapper.setProps({
+        value: {
+          ...dashboard,
+          panels: [updatedPanel],
+        },
+      });
+
+      expect(getLatestPanelData().loading).toBe(false);
+    });
+
+    it('does not update gridAttributes in panel props when panel properties change', async () => {
+      const updatedPanel = {
+        ...dashboard.panels[0],
+        loading: false,
+        gridAttributes: {
+          ...dashboard.panels[0].gridAttributes,
+          xPos: 999,
+          yPos: 888,
+        },
+      };
+
+      await wrapper.setProps({
+        value: {
+          ...dashboard,
+          panels: [updatedPanel],
+        },
+      });
+
+      expect(getLatestPanelData()).not.toHaveProperty('gridAttributes');
     });
   });
 

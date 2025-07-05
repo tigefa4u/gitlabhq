@@ -9,6 +9,11 @@ RSpec.describe 'Service Desk Issue Tracker', :js, feature_category: :service_des
   let_it_be(:support_bot) { Users::Internal.support_bot }
 
   before do
+    # TODO: When removing the feature flag,
+    # we won't need the tests for the issues listing page, since we'll be using
+    # the work items listing page.
+    stub_feature_flags(work_item_planning_view: false)
+
     # The following two conditions equate to ServiceDesk.supported == true
     allow(Gitlab::Email::IncomingEmail).to receive(:enabled?).and_return(true)
     allow(Gitlab::Email::IncomingEmail).to receive(:supports_wildcard?).and_return(true)
@@ -43,10 +48,6 @@ RSpec.describe 'Service Desk Issue Tracker', :js, feature_category: :service_des
 
   describe 'issues list' do
     context 'when service desk is supported' do
-      before do
-        stub_feature_flags(frontend_caching: true)
-      end
-
       context 'when there are no issues' do
         describe 'service desk empty state' do
           it 'displays the large empty state, documentation, and the email address' do

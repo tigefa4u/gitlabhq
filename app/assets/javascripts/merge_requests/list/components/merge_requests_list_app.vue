@@ -52,6 +52,8 @@ import {
   TOKEN_TITLE_ENVIRONMENT,
   TOKEN_TYPE_SUBSCRIBED,
   TOKEN_TITLE_SUBSCRIBED,
+  TOKEN_TYPE_SEARCH_WITHIN,
+  TOKEN_TITLE_SEARCH_WITHIN,
 } from '~/vue_shared/components/filtered_search_bar/constants';
 import {
   convertToApiParams,
@@ -471,6 +473,22 @@ export default {
             },
           ],
         },
+        {
+          type: TOKEN_TYPE_SEARCH_WITHIN,
+          title: TOKEN_TITLE_SEARCH_WITHIN,
+          icon: 'search',
+          token: GlFilteredSearchToken,
+          unique: true,
+          operators: OPERATORS_IS,
+          options: [
+            { icon: 'title', value: 'TITLE', title: __('Titles') },
+            {
+              icon: 'text-description',
+              value: 'DESCRIPTION',
+              title: __('Descriptions'),
+            },
+          ],
+        },
       ].filter(Boolean);
     },
     showPaginationControls() {
@@ -851,7 +869,7 @@ export default {
         <gl-link
           v-if="issuable.state === $options.STATUS_OPEN && isMergeRequestBroken(issuable)"
           v-gl-tooltip
-          :href="issuable.webUrl"
+          :href="issuable.webPath"
           :title="__('Cannot be merged automatically')"
           data-testid="merge-request-cannot-merge"
         >

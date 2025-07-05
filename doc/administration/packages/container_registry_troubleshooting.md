@@ -52,7 +52,7 @@ Error response from daemon: Get registry.example.com/v1/users/: x509: certificat
 ```
 
 The Docker daemon running the command expects a cert signed by a recognized CA,
-thus the error above.
+thus the previous error.
 
 While GitLab doesn't support using self-signed certificates with Container
 Registry out of the box, it is possible to make it work by
@@ -71,7 +71,7 @@ Additional information about this: [issue 18239](https://gitlab.com/gitlab-org/g
 
 ## Docker login attempt fails with: 'token signed by untrusted key'
 
-[Registry relies on GitLab to validate credentials](container_registry.md#architecture-of-gitlab-container-registry)
+[Registry relies on GitLab to validate credentials](container_registry.md#container-registry-architecture)
 If the registry fails to authenticate valid login attempts, you get the following error message:
 
 ```shell
@@ -337,6 +337,63 @@ curl "localhost:5001/debug/health"
 curl "localhost:5001/debug/vars"
 ```
 
+## Enable registry debug logs
+
+You can enable debug logs to help troubleshoot issues with the container registry.
+
+{{< alert type="warning" >}}
+
+Debug logs may contain sensitive information such as authentication details, tokens, or repository information.
+Enable debug logs only when necessary, and disable them when troubleshooting is complete.
+
+{{< /alert >}}
+
+{{< tabs >}}
+
+{{< tab title="Linux package (Omnibus)" >}}
+
+1. Edit `/var/opt/gitlab/registry/config.yml`:
+
+   ```yaml
+   level: debug
+   ```
+
+1. Save the file and restart the registry:
+
+   ```shell
+   sudo gitlab-ctl restart registry
+   ```
+
+This configuration is temporary and is discarded when you run `gitlab-ctl reconfigure`.
+
+{{< /tab >}}
+
+{{< tab title="Helm chart (Kubernetes)" >}}
+
+1. Export the Helm values:
+
+   ```shell
+   helm get values gitlab > gitlab_values.yaml
+   ```
+
+1. Edit `gitlab_values.yaml`:
+
+   ```yaml
+   registry:
+     log:
+       level: debug
+   ```
+
+1. Save the file and apply the new values:
+
+   ```shell
+   helm upgrade -f gitlab_values.yaml gitlab gitlab/gitlab --namespace <namespace>
+   ```
+
+{{< /tab >}}
+
+{{< /tabs >}}
+
 ### Enable Registry Prometheus Metrics
 
 If the debug server is enabled, you can also enable Prometheus metrics. This endpoint exposes highly detailed telemetry
@@ -526,7 +583,7 @@ docker login example.s3.amazonaws.com:5050
 docker push example.s3.amazonaws.com:5050/root/docker-test/docker-image
 ```
 
-In the example above, we see the following trace on the mitmproxy window:
+In the previous example, we see the following trace on the mitmproxy window:
 
 ```plaintext
 PUT https://example.s3.amazonaws.com:4567/v2/root/docker-test/blobs/uploads/(UUID)/(QUERYSTRING)

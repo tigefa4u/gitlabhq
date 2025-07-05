@@ -12,7 +12,7 @@ title: Resource group API
 
 {{< /details >}}
 
-You can read more about [controlling the job concurrency with resource groups](../ci/resource_groups/_index.md).
+Use this API to interact with [resource groups](../ci/resource_groups/_index.md).
 
 ## Get all resource groups for a project
 
@@ -113,7 +113,6 @@ Example of response
       "bio": "",
       "location": null,
       "public_email": null,
-      "skype": "",
       "linkedin": "",
       "twitter": "",
       "website_url": "",
@@ -178,7 +177,7 @@ PUT /projects/:id/resource_groups/:key
 | --------------- | ------- | --------------------------------- | -------------------------------  |
 | `id`            | integer/string | yes                        | The ID or [URL-encoded path of the project](rest/_index.md#namespaced-paths)            |
 | `key`           | string  | yes                               |The URL-encoded key of the resource group. For example, use `resource%5Fa` instead of `resource_a`. |
-| `process_mode`  | string  | no                                | The process mode of the resource group. One of `unordered`, `oldest_first` or `newest_first`. Read [process modes](../ci/resource_groups/_index.md#process-modes) for more information. |
+| `process_mode`  | string  | no                                | The process mode of the resource group. One of `unordered`, `oldest_first`, `newest_first`, or `newest_ready_first`. Read [process modes](../ci/resource_groups/_index.md#process-modes) for more information. |
 
 ```shell
 curl --request PUT --data "process_mode=oldest_first" \

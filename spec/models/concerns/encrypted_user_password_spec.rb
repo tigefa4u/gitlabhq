@@ -55,30 +55,11 @@ RSpec.describe User, feature_category: :system_access do
     context 'when the default encryption method is BCrypt' do
       context 'when the user password is hashed with work factor 4' do
         let(:encrypted_password) { "$2a$04$ThzqXSFnlW3uH86uQ79puOU7vARSFuuNzb1nUGfsBeYtCLkdymAQW" }
-        let(:increase_password_storage_stretches) { nil }
 
-        before do
-          stub_feature_flags(increase_password_storage_stretches: increase_password_storage_stretches)
-        end
-
-        context 'when feature flag is set to true' do
-          let(:increase_password_storage_stretches) { true }
-
-          it 'upgrades stretches' do
-            expect(user.encrypted_password).to start_with('$2a$04$')
-            user.valid_password?('security')
-            expect(user.encrypted_password).to start_with('$2a$05$')
-          end
-        end
-
-        context 'when feature flag is set to false' do
-          let(:increase_password_storage_stretches) { false }
-
-          it 'does not upgrade stretches' do
-            expect(user.encrypted_password).to start_with('$2a$04$')
-            user.valid_password?('security')
-            expect(user.encrypted_password).to start_with('$2a$04$')
-          end
+        it 'upgrades stretches' do
+          expect(user.encrypted_password).to start_with('$2a$04$')
+          user.valid_password?('security')
+          expect(user.encrypted_password).to start_with('$2a$05$')
         end
       end
 
@@ -143,8 +124,25 @@ RSpec.describe User, feature_category: :system_access do
   end
 
   describe '#password=' do
-    let(:user) { create(:user) }
+    let(:user) { build(:user) }
     let(:password) { described_class.random_password }
+
+    it 'reuses cached password hash when the same password is set again', :request_store do
+      user.password = password
+      original_result = user.encrypted_password
+      expect(user).not_to receive(:hash_this_password)
+      user.password = password
+      expect(user.encrypted_password).to eq(original_result)
+    end
+
+    it 'computes a new hash when a different password is set', :request_store do
+      user.password = 's3cret'
+      original_result = user.encrypted_password
+      expect(user).to receive(:hash_this_password).with(password).and_call_original
+      user.password = password
+      expect(user.encrypted_password).to be_present
+      expect(user.encrypted_password).not_to eq(original_result)
+    end
 
     def compare_bcrypt_password(user, password)
       Devise::Encryptor.compare(described_class, user.encrypted_password, password)

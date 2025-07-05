@@ -81,8 +81,8 @@ then
 fi
 
 # Do not use dashes (-) in filenames, use underscores (_) instead.
-# Number of filenames with dashes as of 2024-12-26
-FILE_NUMBER_DASHES=66
+# Number of filenames with dashes as of 2025-05-09
+FILE_NUMBER_DASHES=64
 FILE_FIND_DASHES=$(find doc -type f -name "*-*.md" | wc -l)
 # shellcheck disable=2059
 printf "${COLOR_GREEN}INFO: Checking for filenames containing dashes...${COLOR_RESET}\n"
@@ -223,7 +223,7 @@ then
   # shellcheck disable=2059
   printf "${COLOR_GREEN}INFO: Merge request pipeline detected, but no markdown files found. Skipping.${COLOR_RESET}\n"
 else
-  if ! yarn markdownlint ${MD_DOC_PATH};
+  if ! markdownlint-cli2 ${MD_DOC_PATH};
   then
     # shellcheck disable=2059
     printf "${COLOR_RED}ERROR: Markdownlint failed with errors!${COLOR_RESET}\n" >&2

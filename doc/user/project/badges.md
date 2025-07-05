@@ -3,6 +3,7 @@ stage: Tenant Scale
 group: Organizations
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Badges
+description: Pipeline status, group, project, and custom badges.
 ---
 
 {{< details >}}
@@ -82,13 +83,13 @@ For example, you can use code similar to the following to add the test coverage 
 
 The following table shows the default test coverage limits and badge colors:
 
-| Test coverage | Percentage limits | Badge color |
-|---|---|---|
-| Good | 95 up to and including 100% | <span style="color: #4c1">■</span> `#4c1` |
-| Acceptable | 90 up to 95% | <span style="color:#a3c51c"> ■</span> `#a3c51c` |
-| Medium | 75 up to 90% | <span style="color: #dfb317">■</span> `#dfb317` |
-| Low | 0 up to 75%  | <span style="color: #e05d44">■</span> `#e05d44` |
-| Unknown | No coverage | <span style="color: #9f9f9f">■</span> `#9f9f9f` |
+| Test coverage | Percentage limits           | Badge color |
+|---------------|-----------------------------|-------------|
+| Good          | 95 up to and including 100% | <span style="color: #4c1">■</span> `#4c1` |
+| Acceptable    | 90 up to 95%                | <span style="color:#a3c51c"> ■</span> `#a3c51c` |
+| Medium        | 75 up to 90%                | <span style="color: #dfb317">■</span> `#dfb317` |
+| Low           | 0 up to 75%                 | <span style="color: #e05d44">■</span> `#e05d44` |
+| Unknown       | No coverage                 | <span style="color: #9f9f9f">■</span> `#9f9f9f` |
 
 {{< alert type="note" >}}
 
@@ -100,11 +101,11 @@ The following table shows the default test coverage limits and badge colors:
 
 You can override the default limits by passing the following query parameters in the coverage report badge URL:
 
-| Query parameter | Acceptable values | Default |
-|---|---|---|
-| `min_good` | Any value between 3 and 100 | 95 |
-| `min_acceptable` | Any value between 2 and `min_good`−1 | 90 |
-| `min_medium` | Any value between 1 and `min_acceptable`−1 | 75 |
+| Query parameter  | Acceptable values                            | Default |
+|------------------|----------------------------------------------|---------|
+| `min_good`       | Any value between `3` and `100`              | `95`    |
+| `min_acceptable` | Any value between `2` and `min_good`−1       | `90`    |
+| `min_medium`     | Any value between `1` and `min_acceptable`−1 | `75`    |
 
 For example:
 
@@ -235,7 +236,7 @@ Pipeline badges can be rendered in different styles by adding the `style=style_n
   https://gitlab.example.com/<namespace>/<project>/badges/<branch>/coverage.svg?style=flat
   ```
 
-  ![Badge flat style](https://gitlab.com/gitlab-org/gitlab/badges/main/coverage.svg?job=coverage&style=flat)
+  ![Badge flat style](img/badge_flat.svg)
 
 - Flat square:
 
@@ -243,7 +244,7 @@ Pipeline badges can be rendered in different styles by adding the `style=style_n
   https://gitlab.example.com/<namespace>/<project>/badges/<branch>/coverage.svg?style=flat-square
   ```
 
-  ![Badge flat square style](https://gitlab.com/gitlab-org/gitlab/badges/main/coverage.svg?job=coverage&style=flat-square)
+  ![Badge flat square style](img/badge_flat_square.svg)
 
 ### Customize badge text
 
@@ -254,7 +255,7 @@ Customize the badge text and width by adding the `key_text=custom_text` and `key
 https://gitlab.com/gitlab-org/gitlab/badges/main/coverage.svg?job=karma&key_text=Frontend+Coverage&key_width=130
 ```
 
-![Badge with custom text and width](https://gitlab.com/gitlab-org/gitlab/badges/main/coverage.svg?job=karma&key_text=Frontend+Coverage&key_width=130)
+![Badge with custom text and width](img/badge_custom_text.svg)
 
 ### Customize badge image
 

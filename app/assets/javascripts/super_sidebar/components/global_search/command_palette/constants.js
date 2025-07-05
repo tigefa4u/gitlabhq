@@ -23,11 +23,11 @@ export const TRACKING_HANDLE_LABEL_MAP = {
 export const COMMON_HANDLES = [COMMAND_HANDLE, USER_HANDLE, PROJECT_HANDLE, PATH_HANDLE];
 
 export const SEARCH_SCOPE_PLACEHOLDER = {
-  [COMMAND_HANDLE]: s__('CommandPalette|command'),
-  [USER_HANDLE]: s__('CommandPalette|user (enter at least 3 chars)'),
-  [PROJECT_HANDLE]: s__('CommandPalette|project (enter at least 3 chars)'),
+  [COMMAND_HANDLE]: s__('CommandPalette|Search for a page or action'),
+  [USER_HANDLE]: s__('CommandPalette|Search by username (minimum 3 characters)'),
+  [PROJECT_HANDLE]: s__('CommandPalette|Search by project (minimum 3 characters)'),
   [ISSUE_HANDLE]: s__('CommandPalette|issue (enter at least 3 chars)'),
-  [PATH_HANDLE]: s__('CommandPalette|go to project file'),
+  [PATH_HANDLE]: s__('CommandPalette|Search by filename'),
 };
 
 export const SEARCH_SCOPE = {
@@ -39,8 +39,8 @@ export const SEARCH_SCOPE = {
 export const GLOBAL_COMMANDS_GROUP_TITLE = s__('CommandPalette|Global Commands');
 export const USERS_GROUP_TITLE = s__('GlobalSearch|Users');
 export const PAGES_GROUP_TITLE = s__('CommandPalette|Pages');
-export const PROJECTS_GROUP_TITLE = s__('GlobalSearch|Projects');
-export const GROUPS_GROUP_TITLE = s__('GlobalSearch|Groups');
+export const PROJECTS_GROUP_TITLE = s__("GlobalSearch|Projects I'm a member of");
+export const GROUPS_GROUP_TITLE = s__("GlobalSearch|Groups I'm a member of");
 export const ISSUES_GROUP_TITLE = s__('GlobalSearch|Issues');
 export const PATH_GROUP_TITLE = s__('CommandPalette|Project files');
 export const SETTINGS_GROUP_TITLE = s__('CommandPalette|Settings');
@@ -75,3 +75,7 @@ export const OVERLAY_GOTO = s__('GlobalSearch|Go to %{kbdStart}↵%{kbdEnd}');
 
 export const FREQUENTLY_VISITED_PROJECTS_HANDLE = 'FREQUENTLY_VISITED_PROJECTS_HANDLE';
 export const FREQUENTLY_VISITED_GROUPS_HANDLE = 'FREQUENTLY_VISITED_GROUPS_HANDLE';
+
+export const GROUPS_GROUP_HANDLE = 'Groups';
+export const PROJECTS_GROUP_HANDLE = 'Projects';
+export const USER_CATEGORY_VALUE = 'Users';

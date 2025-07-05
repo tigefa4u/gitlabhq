@@ -8,7 +8,6 @@ RSpec.describe Ci::Processable, feature_category: :continuous_integration do
 
   describe 'associations' do
     it { is_expected.to have_one(:trigger).through(:pipeline) }
-    it { is_expected.to belong_to(:trigger_request) }
   end
 
   describe 'delegations' do
@@ -61,7 +60,7 @@ RSpec.describe Ci::Processable, feature_category: :continuous_integration do
       let_it_be(:internal_job_variable) { create(:ci_job_variable, job: processable) }
 
       let(:clone_accessors) do
-        %i[pipeline project ref tag options name allow_failure stage_idx trigger_request yaml_variables
+        %i[pipeline project ref tag options name allow_failure stage_idx yaml_variables
            when environment coverage_regex description tag_list protected needs_attributes job_variables_attributes
            resource_group scheduling_type ci_stage partition_id id_tokens interruptible]
       end
@@ -89,7 +88,7 @@ RSpec.describe Ci::Processable, feature_category: :continuous_integration do
       let(:ignore_accessors) do
         %i[type namespace lock_version target_url base_tags trace_sections
            commit_id deployment erased_by_id project_id project_mirror
-           runner_id taggings tags trigger_request_id trigger trigger_id
+           runner_id taggings tags trigger trigger_id
            user_id auto_canceled_by_id retried failure_reason
            sourced_pipelines sourced_pipeline artifacts_file_store artifacts_metadata_store
            metadata runner_manager_build runner_manager runner_session trace_chunks
@@ -340,6 +339,45 @@ RSpec.describe Ci::Processable, feature_category: :continuous_integration do
           it { is_expected.not_to be_retryable }
         end
       end
+    end
+  end
+
+  it_behaves_like 'a degenerable job' do
+    subject(:job) { create(:ci_bridge, pipeline: pipeline) }
+  end
+
+  describe '#archived?' do
+    shared_examples 'an archivable job' do
+      it { is_expected.not_to be_archived }
+
+      context 'when job is degenerated' do
+        before do
+          job.degenerate!
+        end
+
+        it { is_expected.to be_archived }
+      end
+
+      context 'when pipeline is archived' do
+        before do
+          pipeline.update!(created_at: 1.day.ago)
+          stub_application_setting(archive_builds_in_seconds: 3600)
+        end
+
+        it { is_expected.to be_archived }
+      end
+    end
+
+    context 'when job is a build' do
+      subject(:job) { create(:ci_build, pipeline: pipeline) }
+
+      it_behaves_like 'an archivable job'
+    end
+
+    context 'when job is a bridge' do
+      subject(:job) { create(:ci_bridge, pipeline: pipeline) }
+
+      it_behaves_like 'an archivable job'
     end
   end
 
@@ -688,16 +726,37 @@ RSpec.describe Ci::Processable, feature_category: :continuous_integration do
       expect(processable.trigger).to receive(:short_token)
       processable.trigger_short_token
     end
+  end
 
-    context 'when ff ci_read_trigger_from_ci_pipeline is disabled' do
-      before do
-        stub_feature_flags(ci_read_trigger_from_ci_pipeline: false)
-      end
+  describe '#redis_state' do
+    let(:processable) { build_stubbed(:ci_processable, pipeline: pipeline) }
 
-      it 'delegates to trigger_request' do
-        expect(processable.trigger_request).to receive(:trigger_short_token)
-        processable.trigger_short_token
+    it 'is a memoized Ci::JobRedisState record' do
+      expect(processable.redis_state).to be_an_instance_of(Ci::JobRedisState)
+      expect(processable.strong_memoized?(:redis_state)).to be(true)
+    end
+  end
+
+  describe '#enqueue_immediately?', :clean_gitlab_redis_shared_state do
+    let(:processable) { build_stubbed(:ci_processable, pipeline: pipeline) }
+
+    [true, false].each do |value|
+      context "when enqueue_immediately is set to #{value}" do
+        before do
+          processable.redis_state.enqueue_immediately = value
+        end
+
+        it { expect(processable.enqueue_immediately?).to be(value) }
       end
+    end
+  end
+
+  describe '#set_enqueue_immediately!', :clean_gitlab_redis_shared_state do
+    let(:processable) { build_stubbed(:ci_processable, pipeline: pipeline) }
+
+    it 'changes enqueue_immediately to true' do
+      expect { processable.set_enqueue_immediately! }
+        .to change { processable.enqueue_immediately? }.to(true)
     end
   end
 end

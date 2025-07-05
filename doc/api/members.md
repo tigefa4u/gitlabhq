@@ -1,6 +1,6 @@
 ---
-stage: Software Supply Chain Security
-group: Authentication
+stage: Tenant Scale
+group: Organizations
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Group and project members API
 ---
@@ -118,7 +118,7 @@ Example response:
 
 {{< history >}}
 
-- [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/219230) to return members of the invited private group if the current user is a member of the shared group or project in GitLab 16.10 [with a flag](../administration/feature_flags.md) named `webui_members_inherited_users`. Disabled by default.
+- [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/219230) to return members of the invited private group if the current user is a member of the shared group or project in GitLab 16.10 [with a flag](../administration/feature_flags/_index.md) named `webui_members_inherited_users`. Disabled by default.
 - Feature flag `webui_members_inherited_users` was [enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/219230) in GitLab 17.0.
 - Feature flag `webui_members_inherited_users` [removed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/163627) in GitLab 17.4. Members of invited groups displayed by default.
 
@@ -255,8 +255,23 @@ GET /projects/:id/members/:user_id
 ```shell
 curl --header "PRIVATE-TOKEN: <your_access_token>" \
   --url "https://gitlab.example.com/api/v4/groups/:id/members/:user_id"
+
 curl --header "PRIVATE-TOKEN: <your_access_token>" \
   --url "https://gitlab.example.com/api/v4/projects/:id/members/:user_id"
+```
+
+To update or remove a custom role from a group member, pass an empty `member_role_id` value:
+
+```shell
+# Updates a project membership
+curl --request PUT --header "Content-Type: application/json" \
+  --header "Authorization: Bearer <your_access_token>" \
+  --data '{"member_role_id": null, "access_level": 10}' "https://gitlab.example.com/api/v4/projects/<project_id>/members/<user_id>"
+
+# Updates a group membership
+curl --request PUT --header "Content-Type: application/json" \
+  --header "Authorization: Bearer <your_access_token>" \
+  --data '{"member_role_id": null, "access_level": 10}' "https://gitlab.example.com/api/v4/groups/<group_id>/members/<user_id>"
 ```
 
 Example response:
@@ -290,7 +305,7 @@ Example response:
 {{< history >}}
 
 - [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/17744) in GitLab 12.4.
-- [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/219230) to return members of the invited private group if the current user is a member of the shared group or project in GitLab 16.10 [with a flag](../administration/feature_flags.md) named `webui_members_inherited_users`. Disabled by default.
+- [Changed](https://gitlab.com/gitlab-org/gitlab/-/issues/219230) to return members of the invited private group if the current user is a member of the shared group or project in GitLab 16.10 [with a flag](../administration/feature_flags/_index.md) named `webui_members_inherited_users`. Disabled by default.
 - [Enabled on GitLab.com and GitLab Self-Managed](https://gitlab.com/gitlab-org/gitlab/-/issues/219230) in GitLab 17.0.
 - Feature flag `webui_members_inherited_users` [removed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/163627) in GitLab 17.4. Members of invited groups displayed by default.
 
@@ -651,7 +666,7 @@ POST /projects/:id/members
 | `access_level`   | integer           | yes                                | [A valid access level](access_requests.md#valid-access-levels). |
 | `expires_at`     | string            | no                                 | A date string in the format `YEAR-MONTH-DAY`. |
 | `invite_source`  | string            | no                                 | The source of the invitation that starts the member creation process. GitLab team members can view more information in this confidential issue: `https://gitlab.com/gitlab-org/gitlab/-/issues/327120>`. |
-| `member_role_id` | integer           | no                                 | The ID of a member role. Ultimate only. |
+| `member_role_id` | integer           | no                                 | Ultimate only. The ID of a custom member role. |
 
 ```shell
 curl --request POST --header "PRIVATE-TOKEN: <your_access_token>" \
@@ -746,7 +761,7 @@ PUT /projects/:id/members/:user_id
 | `user_id`        | integer           | yes      | The user ID of the member. |
 | `access_level`   | integer           | yes      | A [valid access level](access_requests.md#valid-access-levels). |
 | `expires_at`     | string            | no       | A date string in the format `YEAR-MONTH-DAY`. |
-| `member_role_id` | integer           | no       | The ID of a member role. Ultimate only. |
+| `member_role_id` | integer           | no       | Ultimate only. The ID of a custom member role. If no value is specified, removes all roles. |
 
 ```shell
 curl --request PUT --header "PRIVATE-TOKEN: <your_access_token>" \

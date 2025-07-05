@@ -25,7 +25,7 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
     it { is_expected.to have_one :root_storage_statistics }
     it { is_expected.to have_one :aggregation_schedule }
     it { is_expected.to have_one :namespace_settings }
-    it { is_expected.to have_one :namespace_details }
+    it { is_expected.to have_one(:namespace_details).autosave(false) }
     it { is_expected.to have_one(:namespace_statistics) }
     it { is_expected.to have_one(:catalog_verified_namespace) }
     it { is_expected.to have_many :custom_emoji }
@@ -35,6 +35,7 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
     it { is_expected.to have_one :namespace_route }
     it { is_expected.to have_many :namespace_members }
     it { is_expected.to have_one :cluster_enabled_grant }
+    it { is_expected.to have_one :placeholder_user_detail }
     it { is_expected.to have_many(:work_items) }
     it { is_expected.to have_many(:work_items_dates_source) }
     it { is_expected.to have_many :achievements }
@@ -43,6 +44,15 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
     it { is_expected.to have_many(:value_streams) }
     it { is_expected.to have_many(:non_archived_projects).class_name('Project') }
     it { is_expected.to have_many(:bot_users).through(:bot_user_details).source(:user) }
+    it { is_expected.to have_one(:deletion_schedule).class_name('Namespaces::DeletionSchedule') }
+
+    it do
+      is_expected.to have_one(:namespace_settings_with_ancestors_inherited_settings)
+                       .class_name('NamespaceSetting')
+                       .with_foreign_key('namespace_id')
+                       .with_primary_key('id')
+                       .inverse_of(:namespace)
+    end
 
     it do
       is_expected.to have_many(:bot_user_details)
@@ -94,7 +104,6 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
   describe 'validations' do
     it { is_expected.to validate_presence_of(:name) }
     it { is_expected.to validate_length_of(:name).is_at_most(255) }
-    it { is_expected.to validate_length_of(:description).is_at_most(500) }
     it { is_expected.to validate_presence_of(:path) }
     it { is_expected.to validate_length_of(:path).is_at_most(255) }
     it { is_expected.to validate_presence_of(:owner) }
@@ -282,6 +291,35 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
         end
       end
     end
+
+    describe '#no_conflict_with_organization_user_details' do
+      let!(:user) { create(:user, :with_namespace, in_organization: organization) }
+      let!(:organization_user_detail) do
+        create(:organization_user_detail, organization: organization, user: user, username: 'test-username')
+      end
+
+      let(:other_organization) { create(:organization) }
+
+      it 'ensures no Organizations::OrganizationUserDetail has username conflicting with path' do
+        namespace = build(:namespace, path: 'test-username', organization: organization)
+
+        expect(namespace).not_to be_valid
+        expect(namespace.errors[:path]).to include('has already been taken')
+      end
+
+      it 'allows conflicting usernames for other organizations' do
+        namespace = build(:namespace, path: 'test-username', organization: other_organization)
+
+        expect(namespace).to be_valid
+      end
+
+      it 'does not check validation unless path has changed' do
+        namespace = create(:namespace)
+
+        expect(namespace).not_to receive(:no_conflict_with_organization_user_details)
+        namespace.update!(two_factor_grace_period: 36)
+      end
+    end
   end
 
   describe "ReferencePatternValidation" do
@@ -291,6 +329,38 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
     it { is_expected.to match("@group1/group2/group3") }
     it { is_expected.to match("@1234/1234/1234") }
     it { is_expected.to match("@.q-w_e") }
+  end
+
+  describe 'save_namespace_details_changes' do
+    let(:namespace) { create(:namespace) }
+    let(:description) { 'my-namespace-description' }
+
+    it 'saves the namespace_details changes' do
+      namespace_details = namespace.namespace_details
+      namespace_details.description = description
+
+      namespace.save!
+
+      namespace_details.reload
+      expect(namespace_details.description).to eq(description)
+    end
+
+    context 'when associated namespace_details does not exist' do
+      before do
+        namespace.namespace_details.delete
+        namespace.reload
+      end
+
+      it 'create namespace_details and saves the changes' do
+        namespace_details = namespace.namespace_details
+        namespace_details.description = description
+
+        namespace.save!
+
+        namespace_details.reload
+        expect(namespace_details.description).to eq(description)
+      end
+    end
   end
 
   describe '#to_reference_base' do
@@ -628,6 +698,94 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
         ).to be_truthy
       end
     end
+
+    describe '.archived' do
+      let_it_be(:non_archived) { create(:group) }
+      let_it_be(:archived) { create(:group, :archived) }
+
+      subject { described_class.archived }
+
+      it 'returns archived groups', :aggregate_failures do
+        is_expected.to include(archived)
+        is_expected.not_to include(non_archived)
+      end
+    end
+
+    describe '.non_archived' do
+      let_it_be(:non_archived) { create(:group) }
+      let_it_be(:archived) { create(:group, :archived) }
+
+      subject { described_class.non_archived }
+
+      it 'returns non-archived groups', :aggregate_failures do
+        is_expected.to include(non_archived)
+        is_expected.not_to include(archived)
+      end
+    end
+
+    describe '.self_or_ancestors_archived' do
+      let_it_be(:non_archived) { create(:group) }
+      let_it_be(:non_archived_subgroup) { create(:group, parent: non_archived) }
+
+      let_it_be(:archived) { create(:group, :archived) }
+
+      let_it_be(:archived_subgroup_with_non_archived_parent) { create(:group, :archived, parent: non_archived) }
+      let_it_be(:non_archived_subgroup_with_archived_parent) { create(:group, parent: archived) }
+
+      subject { described_class.self_or_ancestors_archived }
+
+      it 'returns archived groups' do
+        is_expected.to include(archived)
+      end
+
+      it 'returns archived group with non-archived ancestors' do
+        is_expected.to include(archived_subgroup_with_non_archived_parent)
+      end
+
+      it 'returns non-archived group with archived ancestors' do
+        is_expected.to include(non_archived_subgroup_with_archived_parent)
+      end
+
+      it 'does not return non-archived groups' do
+        is_expected.not_to include(non_archived)
+      end
+
+      it 'does not return groups without archived ancestors' do
+        is_expected.not_to include(non_archived_subgroup)
+      end
+    end
+
+    describe '.self_and_ancestors_non_archived' do
+      let_it_be(:non_archived) { create(:group) }
+      let_it_be(:non_archived_subgroup) { create(:group, parent: non_archived) }
+
+      let_it_be(:archived) { create(:group, :archived) }
+
+      let_it_be(:archived_subgroup_with_non_archived_parent) { create(:group, :archived, parent: non_archived) }
+      let_it_be(:non_archived_subgroup_with_archived_parent) { create(:group, parent: archived) }
+
+      subject { described_class.self_and_ancestors_non_archived }
+
+      it 'returns non-archived groups' do
+        is_expected.to include(non_archived)
+      end
+
+      it 'returns groups without archived ancestors' do
+        is_expected.to include(non_archived_subgroup)
+      end
+
+      it 'does not return archived groups' do
+        is_expected.not_to include(archived)
+      end
+
+      it 'does not return archived group with non-archived ancestors' do
+        is_expected.not_to include(archived_subgroup_with_non_archived_parent)
+      end
+
+      it 'does not return non-archived group with archived ancestors' do
+        is_expected.not_to include(non_archived_subgroup_with_archived_parent)
+      end
+    end
   end
 
   describe 'delegate' do
@@ -647,11 +805,20 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
     it { is_expected.to delegate_method(:archived).to(:namespace_settings).allow_nil }
     it { is_expected.to delegate_method(:add_creator).to(:namespace_details) }
     it { is_expected.to delegate_method(:deleted_at).to(:namespace_details) }
+    it { is_expected.to delegate_method(:description).to(:namespace_details) }
+    it { is_expected.to delegate_method(:description=).to(:namespace_details).with_arguments(:args) }
+    it { is_expected.to delegate_method(:description_html).to(:namespace_details) }
     it { is_expected.to delegate_method(:deleted_at=).to(:namespace_details).with_arguments(:args) }
     it { is_expected.to delegate_method(:resource_access_token_notify_inherited?).to(:namespace_settings) }
     it { is_expected.to delegate_method(:resource_access_token_notify_inherited_locked?).to(:namespace_settings) }
     it { is_expected.to delegate_method(:resource_access_token_notify_inherited_locked_by_ancestor?).to(:namespace_settings) }
     it { is_expected.to delegate_method(:resource_access_token_notify_inherited_locked_by_application_setting?).to(:namespace_settings) }
+    it { is_expected.to delegate_method(:web_based_commit_signing_enabled).to(:namespace_settings) }
+    it { is_expected.to delegate_method(:web_based_commit_signing_enabled?).to(:namespace_settings) }
+    it { is_expected.to delegate_method(:lock_web_based_commit_signing_enabled).to(:namespace_settings) }
+    it { is_expected.to delegate_method(:lock_web_based_commit_signing_enabled?).to(:namespace_settings) }
+    it { is_expected.to delegate_method(:deleting_user).to(:deletion_schedule) }
+    it { is_expected.to delegate_method(:marked_for_deletion_at).to(:deletion_schedule) }
 
     it do
       is_expected.to delegate_method(:prevent_sharing_groups_outside_hierarchy=).to(:namespace_settings)
@@ -834,6 +1001,75 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
     end
   end
 
+  describe '#self_or_ancestor_archived?' do
+    using RSpec::Parameterized::TableSyntax
+
+    let(:grandparent) { create(:group) }
+    let(:parent) { create(:group, parent: grandparent) }
+    let(:namespace) { create(:group, parent: parent) }
+
+    where(:namespace_archived, :parent_archived, :grandparent_archived, :expected_result) do
+      true  | false | false | true
+      true  | false | true  | true
+      true  | true  | false | true
+      true  | true  | true  | true
+      false | true  | true  | true
+      false | true  | false | true
+      false | false | true  | true
+      false | false | false | false
+    end
+
+    with_them do
+      before do
+        namespace.namespace_settings.update!(archived: namespace_archived)
+        parent.namespace_settings.update!(archived: parent_archived)
+        grandparent.namespace_settings.update!(archived: grandparent_archived)
+      end
+
+      it 'returns the expected result' do
+        expect(namespace.self_or_ancestor_archived?).to eq(expected_result)
+      end
+    end
+
+    context 'when group has no parent' do
+      let_it_be(:root) { create(:group) }
+
+      it 'returns true when archived' do
+        root.namespace_settings.update!(archived: true)
+        expect(root.self_or_ancestor_archived?).to eq(true)
+      end
+
+      it 'returns false when not archived' do
+        root.namespace_settings.update!(archived: false)
+        expect(root.self_or_ancestor_archived?).to eq(false)
+      end
+    end
+
+    context 'when namespace_settings_with_ancestors_inherited_settings is loaded' do
+      before do
+        namespace.update!(archived: true)
+        namespace.namespace_settings_with_ancestors_inherited_settings
+      end
+
+      it 'does not execute additional queries' do
+        expect { namespace.self_or_ancestor_archived? }.to match_query_count(0)
+      end
+
+      context 'when namespace_settings is nil' do
+        before do
+          namespace.namespace_settings.destroy!
+          namespace.reload
+          namespace.namespace_settings_with_ancestors_inherited_settings
+        end
+
+        it 'does not raise an error and returns false' do
+          expect { namespace.self_or_ancestor_archived? }.not_to raise_error
+          expect(namespace.self_or_ancestor_archived?).to be false
+        end
+      end
+    end
+  end
+
   describe '#traversal_ids' do
     let(:namespace) { build(:group) }
 
@@ -992,6 +1228,26 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
     it 'calls schedule_sync_event_worker on the updated namespace' do
       expect(namespace1).to receive(:schedule_sync_event_worker)
       namespace1.update!(parent: namespace2)
+    end
+  end
+
+  describe 'traversal_path' do
+    it 'formats the traversal ids with slashes' do
+      expect(namespace.traversal_path).to eq("#{namespace.id}/")
+    end
+
+    context 'for subgroup' do
+      let(:subgroup) { Group.new(traversal_ids: [1, 2, 3], organization_id: 1111) }
+
+      it 'formats the traversal ids with slashes' do
+        expect(subgroup.traversal_path).to eq("1/2/3/")
+      end
+
+      context 'when with_organization option is enabled' do
+        it 'prepends the organization id' do
+          expect(subgroup.traversal_path(with_organization: true)).to eq("1111/1/2/3/")
+        end
+      end
     end
   end
 
@@ -1596,6 +1852,92 @@ RSpec.describe Namespace, feature_category: :groups_and_projects do
       let(:username) { 'CaPyBaRa' }
 
       it { is_expected.to eq(true) }
+    end
+  end
+
+  describe ".username_reserved_for_organization?" do
+    subject(:username_reserved) { described_class.username_reserved_for_organization?(username, organization) }
+
+    let(:username) { 'capyabra' }
+
+    let_it_be(:user) { create(:user, name: 'capybara') }
+    let_it_be(:group) { create(:group, name: 'capybara-group') }
+    let_it_be(:subgroup) { create(:group, parent: group, name: 'capybara-subgroup') }
+    let_it_be(:project) { create(:project, group: group, name: 'capybara-project') }
+
+    let_it_be(:other_organization) { create(:organization) }
+    let_it_be(:user_other_org) do
+      create(:user, :with_namespace, username: 'other-capybara', in_organization: other_organization)
+    end
+
+    let_it_be(:group_other_org) { create(:group, path: 'other-capybara-group', organization: other_organization) }
+
+    context 'when given a project name' do
+      let(:username) { 'capyabra-project' }
+
+      it { is_expected.to eq(false) }
+    end
+
+    context 'when given a sub-group name' do
+      let(:username) { 'capybara-subgroup' }
+
+      it { is_expected.to eq(false) }
+    end
+
+    context 'when given a top-level group' do
+      let(:username) { 'capybara-group' }
+
+      it { is_expected.to eq(true) }
+    end
+
+    context 'when given a top-level group in another organization' do
+      let(:username) { 'other-capybara-group' }
+
+      it { is_expected.to eq(false) }
+    end
+
+    context 'when given an existing username' do
+      let(:username) { 'capybara' }
+
+      it { is_expected.to eq(true) }
+    end
+
+    context 'when excluding a particular namespace from the check' do
+      subject(:username_reserved) do
+        described_class.username_reserved_for_organization?(username, organization, excluding: [user.namespace])
+      end
+
+      let(:username) { 'capybara' }
+
+      it { is_expected.to eq(false) }
+    end
+
+    context 'when exclude parameter contains nil values' do
+      subject(:username_reserved) do
+        described_class.username_reserved_for_organization?(username, organization, excluding: [nil, nil])
+      end
+
+      let(:username) { 'capybara' }
+
+      it { is_expected.to eq(true) }
+    end
+
+    context 'when given an existing username in another organization' do
+      let(:username) { 'other-capybara' }
+
+      it { is_expected.to eq(false) }
+    end
+
+    context 'when given a username with varying capitalization' do
+      let(:username) { 'CaPyBaRa' }
+
+      it { is_expected.to eq(true) }
+    end
+
+    context 'when given a username with varying capitalization in another organization' do
+      let(:username) { 'OtHeR-CaPyBaRa' }
+
+      it { is_expected.to eq(false) }
     end
   end
 

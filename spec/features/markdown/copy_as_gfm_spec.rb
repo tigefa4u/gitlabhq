@@ -7,10 +7,6 @@ RSpec.describe 'Copy as GFM', :js, feature_category: :markdown do
   include RepoHelpers
   include ActionView::Helpers::JavaScriptHelper
 
-  before do
-    stub_feature_flags(downtier_delayed_deletion: false)
-  end
-
   describe 'Copying rendered GFM' do
     before do
       @feat = MarkdownFeature.new
@@ -21,6 +17,7 @@ RSpec.describe 'Copy as GFM', :js, feature_category: :markdown do
       user = create(:user)
       @project.add_maintainer(user)
       sign_in(user)
+      allow(Gitlab::QueryLimiting::Transaction).to receive(:threshold).and_return(101)
       visit project_issue_path(@project, @feat.issue)
     end
 
@@ -837,11 +834,11 @@ RSpec.describe 'Copy as GFM', :js, feature_category: :markdown do
       context 'selecting multiple lines of text' do
         it 'copies as a code block with the correct language' do
           verify(
-            '.line[id="LC27"], .line[id="LC28"]',
+            '.line[id="LC27"], .line[id="LC29"]',
             <<~GFM
               ```json
                   "bio": null,
-                  "skype": "",
+                  "linkedin": "",
               ```
             GFM
           )

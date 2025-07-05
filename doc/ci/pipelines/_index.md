@@ -3,6 +3,7 @@ stage: Verify
 group: Pipeline Authoring
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: CI/CD pipelines
+description: Configuration, automation, stages, schedules, and efficiency.
 ---
 
 {{< details >}}
@@ -82,7 +83,8 @@ and [view your pipeline status](https://marketplace.visualstudio.com/items?itemN
 {{< history >}}
 
 - **Run pipeline** name [changed](https://gitlab.com/gitlab-org/gitlab/-/issues/482718) to **New pipeline** in GitLab 17.7.
-- **Inputs** option [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/525504) in GitLab 17.11 [with a flag](../../administration/feature_flags.md) named `ci_inputs_for_pipelines`. Enabled by default.
+- **Inputs** option [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/525504) in GitLab 17.11 [with a flag](../../administration/feature_flags/_index.md) named `ci_inputs_for_pipelines`. Enabled by default.
+- **Inputs** option [generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/536548) in GitLab 18.1. Feature flag `ci_inputs_for_pipelines` removed.
 
 {{< /history >}}
 
@@ -163,7 +165,7 @@ when running a pipeline manually. To workaround this issue,
 
 {{< history >}}
 
-- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/363660) in GitLab 15.5 [with a flag](../../administration/feature_flags.md) named `run_pipeline_graphql`. Disabled by default.
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/363660) in GitLab 15.5 [with a flag](../../administration/feature_flags/_index.md) named `run_pipeline_graphql`. Disabled by default.
 - The `options` keyword was [introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/105502) in GitLab 15.7.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/106038) in GitLab 15.7. Feature flag `run_pipeline_graphql` removed.
 - The variables list sometimes did not populate correctly due to [a bug](https://gitlab.com/gitlab-org/gitlab/-/issues/386245), which was resolved in GitLab 15.9.
@@ -226,7 +228,7 @@ You can do this straight from the pipeline graph. Select **Run** ({{< icon name=
 
 For example, your pipeline can start automatically, but require a manual action to
 [deploy to production](../environments/deployments.md#configure-manual-deployments).
-In the example below, the `production` stage has a job with a manual action:
+In the following example, the `production` stage has a job with a manual action:
 
 ![Pipeline graph that shows four stages: build, test, canary, and production. First three stages show completed jobs with green checkmarks, while production stage shows a pending deploy job.](img/manual_job_v17_9.png)
 
@@ -261,7 +263,7 @@ See [issue 39503](https://gitlab.com/gitlab-org/gitlab/-/issues/39503) for more 
 
 Deleting a pipeline expires all pipeline caches, and deletes all immediately
 related objects, such as jobs, logs, artifacts, and triggers.
-**This action cannot be undone.**
+**This action cannot be undone**.
 
 {{< /alert >}}
 
@@ -414,7 +416,7 @@ in the merge request.
 
 {{< history >}}
 
-- Pipeline detail view [updated](https://gitlab.com/gitlab-org/gitlab/-/issues/424403) in GitLab 16.6 [with a flag](../../administration/feature_flags.md) named `new_pipeline_graph`. Disabled by default.
+- Pipeline detail view [updated](https://gitlab.com/gitlab-org/gitlab/-/issues/424403) in GitLab 16.6 [with a flag](../../administration/feature_flags/_index.md) named `new_pipeline_graph`. Disabled by default.
 - Updated pipeline detail view [enabled on GitLab.com](https://gitlab.com/gitlab-org/gitlab/-/issues/426902) in GitLab 16.8.
 
 {{< /history >}}
@@ -428,7 +430,7 @@ The pipeline details page displays a graph of all the jobs in the pipeline:
 
 You can use a standard URL to access the details for specific pipelines:
 
-- `gitlab.example.com/my-group/my-project/-/pipelines/pipelines/latest`: The details page
+- `gitlab.example.com/my-group/my-project/-/pipelines/latest`: The details page
   for the latest pipeline for the most recent commit on the default branch in the project.
 - `gitlab.example.com/my-group/my-project/-/pipelines/<branch>/latest`: The details page
   for the latest pipeline for the most recent commit on branch `<branch>` in the project.
@@ -491,7 +493,7 @@ status icon to go to the detail page of that downstream pipeline.
 
 ## Pipeline success and duration charts
 
-Pipeline analytics are available on the [**CI/CD Analytics** page](../../user/analytics/ci_cd_analytics.md#pipeline-success-and-duration-charts).
+Pipeline analytics are available on the [**CI/CD Analytics** page](../../user/analytics/ci_cd_analytics.md).
 
 ## Pipeline badges
 

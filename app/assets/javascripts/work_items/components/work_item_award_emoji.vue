@@ -16,11 +16,15 @@ import { findAwardEmojiWidget } from '../utils';
 
 export default {
   defaultAwards: [EMOJI_THUMBS_UP, EMOJI_THUMBS_DOWN],
-  isLoggedIn: isLoggedIn(),
   components: {
     AwardsList,
   },
   props: {
+    workItemArchived: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
     workItemId: {
       type: String,
       required: true,
@@ -37,10 +41,14 @@ export default {
   },
   data() {
     return {
+      newCustomEmojiPath: '',
       isLoading: false,
     };
   },
   computed: {
+    canAwardEmoji() {
+      return isLoggedIn() && !this.workItemArchived;
+    },
     currentUserId() {
       return window.gon.current_user_id;
     },
@@ -62,6 +70,9 @@ export default {
           name: emoji.user.name,
         },
       }));
+    },
+    customEmojiPath() {
+      return this.newCustomEmojiPath;
     },
     pageInfo() {
       return this.awardEmoji?.pageInfo;
@@ -95,6 +106,8 @@ export default {
           this.isLoading = false;
         }
         if (data) {
+          this.newCustomEmojiPath =
+            findAwardEmojiWidget(data.workspace?.workItem)?.newCustomEmojiPath || '';
           this.$emit('emoji-updated', data.workspace?.workItem);
         }
       },
@@ -241,9 +254,10 @@ export default {
   <div v-if="!isLoading">
     <awards-list
       :awards="awards"
-      :can-award-emoji="$options.isLoggedIn"
+      :can-award-emoji="canAwardEmoji"
       :current-user-id="currentUserId"
       :default-awards="$options.defaultAwards"
+      :custom-emoji-path="customEmojiPath"
       selected-class="selected"
       @award="handleAward"
     />

@@ -1,5 +1,5 @@
 ---
-stage: Systems
+stage: Data Access
 group: Gitaly
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Gitaly TLS support
@@ -133,7 +133,8 @@ The process for configuring TLS support depends on your installation type.
    sudo update-ca-certificates
    ```
 
-1. On the Gitaly clients, edit `storages` in `/home/git/gitlab/config/gitlab.yml` as follows:
+1. On the Gitaly clients, edit `storages` in `/home/git/gitlab/config/gitlab.yml` to change `gitaly_address` to use
+   a TLS address. For example:
 
    ```yaml
    gitlab:
@@ -141,22 +142,14 @@ The process for configuring TLS support depends on your installation type.
        storages:
          default:
            gitaly_address: tls://gitaly1.internal:9999
-           path: /some/local/path
+           gitaly_token: AUTH_TOKEN_1
          storage1:
            gitaly_address: tls://gitaly1.internal:9999
-           path: /some/local/path
+           gitaly_token: AUTH_TOKEN_1
          storage2:
            gitaly_address: tls://gitaly2.internal:9999
-           path: /some/local/path
+           gitaly_token: AUTH_TOKEN_2
    ```
-
-   {{< alert type="note" >}}
-
-   `/some/local/path` should be set to a local folder that exists, however no data is stored
-   in this folder. This requirement is scheduled to be removed when
-   [Gitaly issue #1282](https://gitlab.com/gitlab-org/gitaly/-/issues/1282) is resolved.
-
-   {{< /alert >}}
 
 1. Save the file and [restart GitLab](../restart_gitlab.md#self-compiled-installations).
 1. On the Gitaly servers, create or edit `/etc/default/gitlab` and add:
@@ -218,7 +211,7 @@ To update the Gitaly certificates after initial configuration:
 {{< tab title="Linux package (Omnibus)" >}}
 
 If the content of your SSL certificates under the `/etc/gitlab/ssl` directory have been updated, but no configuration changes have been made to
-`/etc/gitlab/gitlab.rb`, then reconfiguring GitLab doesn’t affect Gitaly. Instead, you must restart Gitaly manually for the certificates to be loaded
+`/etc/gitlab/gitlab.rb`, then reconfiguring GitLab doesn't affect Gitaly. Instead, you must restart Gitaly manually for the certificates to be loaded
 by the Gitaly process:
 
 ```shell

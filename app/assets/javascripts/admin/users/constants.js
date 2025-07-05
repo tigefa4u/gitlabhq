@@ -23,10 +23,13 @@ export const I18N_USER_ACTIONS = {
   untrust: s__('AdminUsers|Untrust user'),
 };
 
+// NOTE: the 'access_level' token is overridden in EE version
+export const ACCESS_LEVEL_TOKEN_TYPE = 'access_level';
+
 export const TOKENS = [
   {
     title: s__('AdminUsers|Access level'),
-    type: 'access_level',
+    type: ACCESS_LEVEL_TOKEN_TYPE,
     token: GlFilteredSearchToken,
     operators: OPERATORS_IS,
     unique: true,
@@ -71,7 +74,19 @@ export const TOKENS = [
     token: GlFilteredSearchToken,
     operators: OPERATORS_IS,
     unique: true,
-    options: [{ value: 'placeholder', title: s__('UserMapping|Placeholder') }],
+    options: [
+      { value: 'without_bots', title: s__('AdminUsers|Humans') },
+      { value: 'bots', title: s__('AdminUsers|Bots') },
+      { value: 'placeholder', title: s__('UserMapping|Placeholder') },
+    ],
+  },
+  {
+    title: s__('AdminUsers|LDAP sync'),
+    type: 'ldap_sync',
+    token: GlFilteredSearchToken,
+    operators: OPERATORS_IS,
+    unique: true,
+    options: [{ value: 'ldap_sync', title: __('True') }],
   },
 ];
 

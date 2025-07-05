@@ -15,6 +15,9 @@ analyzer_project_statuses:
   - table: projects
     column: project_id
     on_delete: async_delete
+  - table: p_ci_builds
+    column: build_id
+    on_delete: async_nullify
 application_settings:
   - table: push_rules
     column: push_rule_id
@@ -32,6 +35,14 @@ approval_merge_request_rules:
   - table: approval_policy_rules
     column: approval_policy_rule_id
     on_delete: async_nullify
+chat_names:
+  - table: users
+    column: user_id
+    on_delete: async_delete
+ci_build_needs:
+  - table: projects
+    column: project_id
+    on_delete: async_delete
 ci_build_report_results:
   - table: projects
     column: project_id
@@ -160,6 +171,10 @@ ci_runner_projects:
   - table: projects
     column: project_id
     on_delete: async_delete
+ci_runner_taggings:
+  - table: tags
+    column: tag_id
+    on_delete: async_delete
 ci_runner_taggings_group_type:
   - table: namespaces
     column: sharding_key_id
@@ -172,13 +187,16 @@ ci_runners:
   - table: users
     column: creator_id
     on_delete: async_nullify
+  - table: organizations
+    column: organization_id
+    on_delete: async_delete
 ci_running_builds:
   - table: projects
     column: project_id
     on_delete: async_delete
   - table: ci_runners
     column: runner_id
-    on_delete: async_nullify
+    on_delete: async_delete
 ci_secure_files:
   - table: projects
     column: project_id
@@ -276,6 +294,9 @@ dast_site_profiles_builds:
   - table: p_ci_builds
     column: ci_build_id
     on_delete: async_delete
+  - table: projects
+    column: project_id
+    on_delete: async_delete
 dast_site_tokens:
   - table: projects
     column: project_id
@@ -309,12 +330,16 @@ dependency_list_exports:
     column: organization_id
     on_delete: async_delete
 deployment_approvals:
-  - table: ci_builds
+  - table: p_ci_builds
     column: ci_build_id
     on_delete: async_delete
 deployment_clusters:
   - table: clusters
     column: cluster_id
+    on_delete: async_delete
+duo_workflows_workloads:
+  - table: p_ci_workloads
+    column: workload_id
     on_delete: async_delete
 events:
   - table: users
@@ -407,8 +432,8 @@ notes:
   - table: vulnerabilities
     column: noteable_id
     conditions:
-      - column: noteable_type
-        value: "Vulnerability"
+    - column: noteable_type
+      value: Vulnerability
     on_delete: async_delete
 notification_settings:
   - table: users
@@ -421,6 +446,19 @@ organization_users:
   - table: users
     column: user_id
     on_delete: async_delete
+p_ai_active_context_code_enabled_namespaces:
+  - table: ai_active_context_connections
+    column: connection_id
+    on_delete: async_delete
+p_ai_active_context_code_repositories:
+  - table: projects
+    column: project_id
+    on_delete: update_column_to
+    target_column: state
+    target_value: 240
+  - table: p_ai_active_context_code_enabled_namespaces
+    column: enabled_namespace_id
+    on_delete: async_nullify
 p_ci_build_names:
   - table: projects
     column: project_id
@@ -477,6 +515,10 @@ p_ci_pipelines:
   - table: projects
     column: project_id
     on_delete: async_delete
+  - table: ci_triggers
+    column: trigger_id
+    on_delete: async_nullify
+    delete_limit: 50
 p_ci_runner_machine_builds:
   - table: ci_runner_machines
     column: runner_machine_id
@@ -488,6 +530,14 @@ p_ci_stages:
   - table: projects
     column: project_id
     on_delete: async_delete
+p_ci_workloads:
+  - table: projects
+    column: project_id
+    on_delete: async_delete
+p_knowledge_graph_replicas:
+  - table: p_knowledge_graph_enabled_namespaces
+    column: knowledge_graph_enabled_namespace_id
+    on_delete: async_nullify
 packages_build_infos:
   - table: p_ci_pipelines
     column: pipeline_id
@@ -511,6 +561,10 @@ pool_repositories:
     column: source_project_id
     on_delete: async_nullify
 project_authorizations:
+  - table: users
+    column: user_id
+    on_delete: async_delete
+project_authorizations_for_migration:
   - table: users
     column: user_id
     on_delete: async_delete
@@ -590,6 +644,10 @@ sbom_sources:
   - table: organizations
     column: organization_id
     on_delete: async_delete
+security_policy_settings:
+  - table: namespaces
+    column: csp_namespace_id
+    on_delete: async_nullify
 security_scans:
   - table: p_ci_builds
     column: build_id
@@ -600,6 +658,10 @@ security_scans:
 security_trainings:
   - table: projects
     column: project_id
+    on_delete: async_delete
+sent_notifications_7abbf02cb6:
+  - table: namespaces
+    column: namespace_id
     on_delete: async_delete
 snippets:
   - table: organizations
@@ -756,6 +818,10 @@ vulnerability_occurrences:
   - table: p_ci_pipelines
     column: latest_pipeline_id
     on_delete: async_nullify
+  - table: projects
+    column: project_id
+    on_delete: async_delete
+vulnerability_partial_scans:
   - table: projects
     column: project_id
     on_delete: async_delete

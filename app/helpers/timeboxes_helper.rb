@@ -295,8 +295,8 @@ module TimeboxesHelper
     limit = Milestone::DISPLAY_ISSUES_LIMIT
     link_options = { milestone_title: @milestone.title }
 
-    message = _('Showing %{limit} of %{total_count} issues. ') % { limit: limit, total_count: total_count }
-    message += link_to(_('View all issues'), milestones_issues_path(link_options))
+    message = _('Showing %{limit} of %{total_count} items. ') % { limit: limit, total_count: total_count }
+    message += link_to(_('View all'), milestones_issues_path(link_options))
 
     message.html_safe
   end

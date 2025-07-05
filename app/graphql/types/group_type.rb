@@ -4,9 +4,11 @@ module Types
   class GroupType < NamespaceType
     graphql_name 'Group'
 
-    include ::NamespacesHelper
+    include ::Namespaces::DeletableHelper
 
     implements ::Types::Namespaces::GroupInterface
+
+    connection_type_class Types::CountableConnectionType
 
     authorize :read_group
 
@@ -317,15 +319,13 @@ module Types
     field :work_item, Types::WorkItemType,
       resolver: Resolvers::Namespaces::WorkItemResolver,
       experiment: { milestone: '16.4' },
-      description: 'Find a work item by IID directly associated with the group. Returns `null` if the ' \
-        '`namespace_level_work_items` feature flag is disabled.'
+      description: 'Find a work item by IID directly associated with the group.'
 
     field :work_item_state_counts,
       Types::WorkItemStateCountsType,
       null: true,
       experiment: { milestone: '16.7' },
-      description: 'Counts of work items by state for the namespace. Returns `null` if the ' \
-        '`namespace_level_work_items` feature flag is disabled.',
+      description: 'Counts of work items by state for the namespace.',
       resolver: Resolvers::Namespaces::WorkItemStateCountsResolver
 
     field :autocomplete_users,
@@ -358,21 +358,35 @@ module Types
       description: 'Cluster agents associated with projects in the group and its subgroups.',
       resolver: ::Resolvers::Clusters::AgentsResolver
 
+    field :marked_for_deletion, GraphQL::Types::Boolean,
+      null: false,
+      description: 'Indicates if group or any ancestor is scheduled to be deleted.',
+      method: :scheduled_for_deletion_in_hierarchy_chain?,
+      experiment: { milestone: '18.2' }
+
     field :marked_for_deletion_on, ::Types::TimeType,
       null: true,
       description: 'Date when group was scheduled to be deleted.',
       experiment: { milestone: '16.11' }
 
-    field :is_adjourned_deletion_enabled, GraphQL::Types::Boolean,
-      null: false,
-      description: 'Indicates if delayed group deletion is enabled.',
-      method: :adjourned_deletion?,
-      experiment: { milestone: '16.11' }
-
     field :permanent_deletion_date, GraphQL::Types::String,
       null: true,
-      description: 'Date when group will be deleted if delayed group deletion is enabled.',
+      description: "For groups pending deletion, returns the group's scheduled deletion date. " \
+        'For groups not pending deletion, returns a theoretical date based on current settings ' \
+        'if marked for deletion today.',
       experiment: { milestone: '16.11' }
+
+    field :is_self_deletion_in_progress, GraphQL::Types::Boolean,
+      null: false,
+      description: 'Indicates if group deletion is in progress.',
+      method: :self_deletion_in_progress?,
+      experiment: { milestone: '18.2' }
+
+    field :is_self_deletion_scheduled, GraphQL::Types::Boolean,
+      null: false,
+      description: 'Indicates if group deletion is scheduled.',
+      method: :self_deletion_scheduled?,
+      experiment: { milestone: '18.2' }
 
     def label(title:)
       BatchLoader::GraphQL.for(title).batch(key: group) do |titles, loader, args|
@@ -470,15 +484,11 @@ module Types
     end
 
     def marked_for_deletion_on
-      return unless group.adjourned_deletion?
-
       group.marked_for_deletion_on
     end
 
     def permanent_deletion_date
-      return unless group.adjourned_deletion_configured?
-
-      permanent_deletion_date_formatted(Date.current)
+      permanent_deletion_date_formatted(group) || permanent_deletion_date_formatted
     end
 
     private

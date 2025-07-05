@@ -16,7 +16,7 @@ describe('Merge request merge checks message component', () => {
     ${'commits_status'}             | ${'Source branch exists and contains commits.'}
     ${'ci_must_pass'}               | ${'Pipeline must succeed.'}
     ${'conflict'}                   | ${'Merge conflicts must be resolved.'}
-    ${'discussions_not_resolved'}   | ${'Unresolved discussions must be resolved.'}
+    ${'discussions_not_resolved'}   | ${'Open threads must be resolved.'}
     ${'draft_status'}               | ${'Merge request must not be draft.'}
     ${'not_open'}                   | ${'Merge request must be open.'}
     ${'need_rebase'}                | ${'Merge request must be rebased, because a fast-forward merge is not possible.'}
@@ -29,7 +29,7 @@ describe('Merge request merge checks message component', () => {
     ${'locked_paths'}               | ${'All paths must be unlocked'}
     ${'locked_lfs_files'}           | ${'All LFS files must be unlocked.'}
     ${'security_policy_violations'} | ${'All policy rules must be satisfied.'}
-    ${'title_regex'}                | ${'The title must match the required regex.'}
+    ${'title_regex'}                | ${'Merge request title must match expected format.'}
   `('renders failure reason text', ({ identifier, expectedText }) => {
     factory({ check: { status: 'success', identifier } });
 

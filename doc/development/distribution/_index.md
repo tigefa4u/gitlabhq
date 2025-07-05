@@ -1,8 +1,8 @@
 ---
-stage: Systems
-group: Distribution
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
-description: Development guidelines for Distribution
+stage: GitLab Delivery
+group: Build
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
+description: Package methods and components for the GitLab application.
 title: Contribute to GitLab Distribution
 ---
 
@@ -16,7 +16,7 @@ to one must be made to the other to retain feature parity.
 ## Contributing
 
 The primary projects handled by Distribution are listed below. For more
-information, visit the [Distribution team engineering handbook page](https://handbook.gitlab.com/handbook/engineering/infrastructure/core-platform/systems/distribution/)
+information, visit the [Distribution team engineering handbook page](https://handbook.gitlab.com/handbook/engineering/infrastructure-platforms/gitlab-delivery/distribution/)
 or select one of the subsections in the navigation bar.
 
 ### GitLab application

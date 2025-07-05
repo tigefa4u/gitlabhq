@@ -47,12 +47,10 @@ class Projects::BlobController < Projects::ApplicationController
 
   before_action do
     push_frontend_feature_flag(:inline_blame, @project)
-    push_frontend_feature_flag(:blob_overflow_menu, current_user)
     push_frontend_feature_flag(:filter_blob_path, current_user)
-    push_frontend_feature_flag(:blob_repository_vue_header_app, @project)
     push_licensed_feature(:file_locks) if @project.licensed_feature_available?(:file_locks)
     push_frontend_feature_flag(:directory_code_dropdown_updates, current_user)
-    push_frontend_feature_flag(:ci_pipeline_status_realtime, @project)
+    push_frontend_feature_flag(:repository_file_tree_browser, @project)
   end
 
   def new
@@ -181,7 +179,7 @@ class Projects::BlobController < Projects::ApplicationController
   attr_reader :branch_name
 
   def rapid_diffs_enabled?
-    ::Feature.enabled?(:rapid_diffs, current_user, type: :wip)
+    ::Feature.enabled?(:rapid_diffs, current_user, type: :beta)
   end
 
   def blob

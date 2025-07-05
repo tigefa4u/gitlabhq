@@ -47,7 +47,6 @@ module Ci
 
     DEGRADATION_THRESHOLD_VARIABLE_NAME = 'DEGRADATION_THRESHOLD'
     RUNNERS_STATUS_CACHE_EXPIRATION = 1.minute
-    CANCELABLE_STATUSES = (HasStatus::CANCELABLE_STATUSES + ['canceling']).freeze
     DEPLOYMENT_NAMES = %w[deploy release rollout].freeze
 
     TOKEN_PREFIX = 'glcbt-'
@@ -144,7 +143,7 @@ module Ci
     delegate :enable_debug_trace!, to: :metadata
 
     serialize :options # rubocop:disable Cop/ActiveRecordSerialize
-    serialize :yaml_variables, Gitlab::Serializer::Ci::Variables # rubocop:disable Cop/ActiveRecordSerialize
+    serialize :yaml_variables, coder: Gitlab::Serializer::Ci::Variables # rubocop:disable Cop/ActiveRecordSerialize
 
     delegate :name, to: :project, prefix: true
 
@@ -166,7 +165,7 @@ module Ci
       preload(
         :job_artifacts_archive, :ci_stage, :job_artifacts, :runner, :tags, :runner_manager, :metadata,
         pipeline: :project,
-        user: [:user_preference, :user_detail, :followees]
+        user: [:user_preference, :user_detail, :followees, :followers]
       )
     end
 
@@ -217,8 +216,10 @@ module Ci
 
     scope :with_pipeline_source_type, ->(pipeline_source_type) { joins(:pipeline).where(pipeline: { source: pipeline_source_type }) }
     scope :created_after, ->(time) { where(arel_table[:created_at].gt(time)) }
+    scope :created_before, ->(time) { where(arel_table[:created_at].lt(time)) }
     scope :updated_after, ->(time) { where(arel_table[:updated_at].gt(time)) }
     scope :for_project_ids, ->(project_ids) { where(project_id: project_ids) }
+    scope :with_token_present, -> { where.not(token_encrypted: nil) }
 
     add_authentication_token_field :token,
       encrypted: :required,
@@ -232,6 +233,7 @@ module Ci
 
     after_commit :track_ci_secrets_management_id_tokens_usage, on: :create, if: :id_tokens?
     after_commit :track_ci_build_created_event, on: :create
+    after_commit :trigger_job_status_change_subscription, if: :saved_change_to_status?
 
     class << self
       # This is needed for url_for to work,
@@ -246,7 +248,7 @@ module Ci
 
       def clone_accessors
         %i[pipeline project ref tag options name
-          allow_failure stage_idx trigger_request
+          allow_failure stage_idx
           yaml_variables when environment coverage_regex
           description tag_list protected needs_attributes
           job_variables_attributes resource_group scheduling_type
@@ -412,6 +414,10 @@ module Ci
       ::Ci::BuildTag
     end
 
+    def trigger_job_status_change_subscription
+      GraphqlTriggers.ci_job_status_updated(self)
+    end
+
     # A Ci::Bridge may transition to `canceling` as a result of strategy: :depend
     # but only a Ci::Build will transition to `canceling`` via `.cancel`
     def supports_canceling?
@@ -488,10 +494,6 @@ module Ci
       super do
         execution_config&.destroy
       end
-    end
-
-    def archived?
-      degenerated? || super
     end
 
     def playable?
@@ -649,7 +651,6 @@ module Ci
         .concat(dependency_proxy_variables)
         .concat(job_jwt_variables)
         .concat(scoped_variables)
-        .concat(job_variables)
         .concat(persisted_environment_variables)
     end
     strong_memoize_attr :base_variables
@@ -741,7 +742,7 @@ module Ci
     end
 
     def ensure_trace_metadata!
-      Ci::BuildTraceMetadata.find_or_upsert_for!(id, partition_id)
+      Ci::BuildTraceMetadata.find_or_upsert_for!(id, partition_id, project_id)
     end
 
     def artifacts_expose_as
@@ -1092,7 +1093,7 @@ module Ci
 
     def debug_mode?
       # perform the check on both sides in case the runner version is old
-      metadata&.debug_trace_enabled? ||
+      debug_trace_enabled? ||
         Gitlab::Utils.to_boolean(variables['CI_DEBUG_SERVICES']&.value, default: false) ||
         Gitlab::Utils.to_boolean(variables['CI_DEBUG_TRACE']&.value, default: false)
     end
@@ -1192,13 +1193,8 @@ module Ci
     end
     strong_memoize_attr :source
 
-    # Can be removed in Rails 7.1. Related to: Gitlab.next_rails?
-    def to_partial_path
-      'jobs/job'
-    end
-
     def token
-      return encoded_jwt if user&.has_composite_identity? || use_jwt_for_ci_cd_job_token?
+      return encoded_jwt if user&.composite_identity_enforced? || use_jwt_for_ci_cd_job_token?
 
       super
     end

@@ -8,8 +8,8 @@ module Gitlab
     class << self
       delegate :flush, to: :tracker
 
-      def enabled?
-        tracker.enabled?
+      def frontend_connect_directly_to_snowplow_collector?
+        Gitlab::CurrentSettings.snowplow_enabled? && !Gitlab::CurrentSettings.snowplow_collector_hostname.blank?
       end
 
       def micro_verification_enabled?
@@ -23,8 +23,7 @@ module Gitlab
 
         contexts = [
           Tracking::StandardContext.new(
-            namespace_id: namespace&.id,
-            plan_name: namespace&.actual_plan_name,
+            namespace: namespace,
             project_id: project_id,
             user: user,
             **extra).to_context, *context
@@ -33,8 +32,8 @@ module Gitlab
         track_struct_event(tracker, category, action, label: label, property: property, value: value, contexts: contexts)
       end
 
-      def options(group)
-        tracker.options(group)
+      def frontend_client_options(group)
+        tracker.frontend_client_options(group)
       end
 
       def collector_hostname

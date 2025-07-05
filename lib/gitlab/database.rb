@@ -4,6 +4,7 @@ module Gitlab
   module Database
     MAIN_DATABASE_NAME = 'main'
     CI_DATABASE_NAME = 'ci'
+    SEC_DATABASE_NAME = 'sec'
     DEFAULT_POOL_HEADROOM = 10
 
     # This constant is used when renaming tables concurrently.
@@ -16,7 +17,7 @@ module Gitlab
 
     # Minimum PostgreSQL version requirement per documentation:
     # https://docs.gitlab.com/ee/install/requirements.html#postgresql-requirements
-    MINIMUM_POSTGRES_VERSION = 14
+    MINIMUM_POSTGRES_VERSION = 16
 
     # https://www.postgresql.org/docs/9.2/static/datatype-numeric.html
     MAX_INT_VALUE = 2147483647
@@ -178,9 +179,12 @@ module Gitlab
     end
 
     def self.database_mode
-      if !has_config?(CI_DATABASE_NAME)
+      secondary_databases = Gitlab::Database.all_database_connections.select { |_, db| db.has_gitlab_shared? }.keys
+      secondary_databases -= [MAIN_DATABASE_NAME]
+
+      if secondary_databases.none? { |db| has_config?(db) }
         MODE_SINGLE_DATABASE
-      elsif has_database?(CI_DATABASE_NAME)
+      elsif secondary_databases.any? { |db| has_database?(db) }
         MODE_MULTIPLE_DATABASES
       else
         MODE_SINGLE_DATABASE_CI_CONNECTION
@@ -314,7 +318,7 @@ module Gitlab
     def self.empty_config?(db_config)
       return true unless db_config
 
-      ::Gitlab.next_rails? && db_config.is_a?(ActiveRecord::ConnectionAdapters::NullPool::NullConfig)
+      db_config.is_a?(ActiveRecord::ConnectionAdapters::NullPool::NullConfig)
     end
 
     # At the moment, the connection can only be retrieved by
@@ -390,15 +394,7 @@ module Gitlab
 
           ::Gitlab::Database::Metrics.subtransactions_increment(self.name) if transaction_type == :sub_transaction
 
-          if ::Gitlab.next_rails?
-            super(**options, &block)
-          else
-            payload = { connection: connection, transaction_type: transaction_type }
-
-            ActiveSupport::Notifications.instrument('transaction.active_record', payload) do
-              super(**options, &block)
-            end
-          end
+          super(**options, &block)
         end
 
         private

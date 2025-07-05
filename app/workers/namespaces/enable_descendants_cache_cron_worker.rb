@@ -24,11 +24,6 @@ module Namespaces
 
     # rubocop: disable CodeReuse/ActiveRecord -- Batching over groups.
     def perform
-      # rubocop: disable Gitlab/FeatureFlagWithoutActor -- This is a global worker.
-      return if Feature.disabled?(:periodical_namespace_descendants_cache_worker)
-
-      # rubocop: enable Gitlab/FeatureFlagWithoutActor
-
       limiter = Gitlab::Metrics::RuntimeLimiter.new(MAX_RUNTIME)
       ids_to_cache = Set.new
       last_id = get_last_id
@@ -68,7 +63,7 @@ module Namespaces
 
     def persist(ids_to_cache)
       ids_to_cache.each_slice(PERSIST_SLICE_SIZE) do |slice|
-        Namespaces::Descendants.upsert_all(slice.map { |id| { namespace_id: id } })
+        Namespaces::Descendants.upsert_all(slice.map { |id| { namespace_id: id, outdated_at: Time.current } })
       end
     end
 

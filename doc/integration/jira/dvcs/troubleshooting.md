@@ -1,6 +1,6 @@
 ---
-stage: Foundations
-group: Import and Integrate
+stage: Plan
+group: Project Management
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
 title: Troubleshooting Jira DVCS connector
 ---
@@ -107,8 +107,8 @@ resynchronize the information:
 1. For the account (group or subgroup), select
    **Refresh repositories** from the {{< icon name="ellipsis_h" >}} (ellipsis) menu.
 1. For each project, next to the **Last activity** date:
-   - To perform a *soft resync*, select the sync icon.
-   - To complete a *full sync*, press `Shift` and select the sync icon.
+   - To perform a soft resync, select the sync icon.
+   - To complete a full sync, press `Shift` and select the sync icon.
 
 For more information, see the
 [Atlassian documentation](https://support.atlassian.com/jira-cloud-administration/docs/integrate-with-development-tools/).

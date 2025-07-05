@@ -88,7 +88,8 @@ RSpec.describe Gitlab::Database::TablesLocker, :suppress_gitlab_schemas_validate
           database_name: database_name,
           with_retries: true,
           logger: anything,
-          dry_run: anything
+          dry_run: anything,
+          force: true
         ).once.and_return(lock_writes_manager)
         expect(lock_writes_manager).to receive(:lock_writes).once
       end
@@ -121,7 +122,8 @@ RSpec.describe Gitlab::Database::TablesLocker, :suppress_gitlab_schemas_validate
           database_name: database_name,
           with_retries: true,
           logger: anything,
-          dry_run: anything
+          dry_run: anything,
+          force: true
         ).once.and_return(lock_writes_manager)
         expect(lock_writes_manager).to receive(:unlock_writes)
       end
@@ -146,7 +148,8 @@ RSpec.describe Gitlab::Database::TablesLocker, :suppress_gitlab_schemas_validate
         database_name: database_name,
         with_retries: true,
         logger: anything,
-        dry_run: anything
+        dry_run: anything,
+        force: true
       ).once.and_return(lock_writes_manager)
       expect(lock_writes_manager).to receive(:lock_writes)
 
@@ -166,7 +169,8 @@ RSpec.describe Gitlab::Database::TablesLocker, :suppress_gitlab_schemas_validate
         database_name: database_name,
         with_retries: true,
         logger: anything,
-        dry_run: anything
+        dry_run: anything,
+        force: true
       ).once.and_return(lock_writes_manager)
       expect(lock_writes_manager).to receive(:unlock_writes)
 
@@ -240,6 +244,32 @@ RSpec.describe Gitlab::Database::TablesLocker, :suppress_gitlab_schemas_validate
       gitlab_main_detached_partition = "#{Gitlab::Database::DYNAMIC_PARTITIONS_SCHEMA}._test_gitlab_main_part_20220101"
       it_behaves_like 'unlock partitions', gitlab_main_detached_partition, 'main'
       it_behaves_like 'lock partitions', gitlab_main_detached_partition, 'ci'
+
+      context 'when scope_to_database is set' do
+        subject { described_class.new(options: { scope_to_database: :main }).lock_writes }
+
+        it_behaves_like 'lock tables', :gitlab_ci, 'main'
+
+        it_behaves_like 'unlock tables', :gitlab_main_clusterwide, 'main'
+        it_behaves_like 'unlock tables', :gitlab_main, 'main'
+        it_behaves_like 'unlock tables', :gitlab_shared, 'main'
+        it_behaves_like 'unlock tables', :gitlab_internal, 'main'
+
+        gitlab_main_partition = "#{Gitlab::Database::DYNAMIC_PARTITIONS_SCHEMA}.zoekt_tasks_test_partition"
+        it_behaves_like 'unlock partitions', gitlab_main_partition, 'main'
+
+        gitlab_main_detached_partition =
+          "#{Gitlab::Database::DYNAMIC_PARTITIONS_SCHEMA}._test_gitlab_main_part_20220101"
+        it_behaves_like 'unlock partitions', gitlab_main_detached_partition, 'main'
+      end
+
+      context 'when an invalid database scope has been passed' do
+        subject { described_class.new(options: { scope_to_database: :unknown }).lock_writes }
+
+        it 'raises an error' do
+          expect { subject }.to raise_error(RuntimeError, 'unknown is not a valid database to scope to.')
+        end
+      end
     end
 
     describe '#unlock_writes' do
@@ -261,6 +291,22 @@ RSpec.describe Gitlab::Database::TablesLocker, :suppress_gitlab_schemas_validate
       gitlab_main_detached_partition = "#{Gitlab::Database::DYNAMIC_PARTITIONS_SCHEMA}._test_gitlab_main_part_20220101"
       it_behaves_like 'unlock partitions', gitlab_main_detached_partition, 'main'
       it_behaves_like 'unlock partitions', gitlab_main_detached_partition, 'ci'
+
+      context 'when scope_to_database is set' do
+        subject { described_class.new(options: { scope_to_database: :main }).unlock_writes }
+
+        it_behaves_like "unlock tables", :gitlab_ci, 'main'
+        it_behaves_like "unlock tables", :gitlab_main, 'main'
+        it_behaves_like "unlock tables", :gitlab_shared, 'main'
+        it_behaves_like "unlock tables", :gitlab_internal, 'main'
+
+        gitlab_main_partition = "#{Gitlab::Database::DYNAMIC_PARTITIONS_SCHEMA}.zoekt_tasks_test_partition"
+        it_behaves_like 'unlock partitions', gitlab_main_partition, 'main'
+
+        gitlab_main_detached_partition =
+          "#{Gitlab::Database::DYNAMIC_PARTITIONS_SCHEMA}._test_gitlab_main_part_20220101"
+        it_behaves_like 'unlock partitions', gitlab_main_detached_partition, 'main'
+      end
     end
 
     context 'when not including partitions' do
@@ -298,7 +344,8 @@ RSpec.describe Gitlab::Database::TablesLocker, :suppress_gitlab_schemas_validate
           database_name: 'ci',
           with_retries: true,
           logger: anything,
-          dry_run: true
+          dry_run: true,
+          force: false
         ).and_return(default_lock_writes_manager)
         expect(default_lock_writes_manager).to receive(:lock_writes)
 
@@ -347,7 +394,8 @@ RSpec.describe Gitlab::Database::TablesLocker, :suppress_gitlab_schemas_validate
         database_name: 'geo',
         with_retries: true,
         logger: anything,
-        dry_run: anything
+        dry_run: anything,
+        force: true
       )
 
       subject
@@ -374,7 +422,8 @@ RSpec.describe Gitlab::Database::TablesLocker, :suppress_gitlab_schemas_validate
         database_name: 'sec',
         with_retries: true,
         logger: anything,
-        dry_run: anything
+        dry_run: anything,
+        force: true
       )
 
       subject

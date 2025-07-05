@@ -30,10 +30,10 @@
 
     -# Badges
     - if @project.badges.present?
-      .project-badges.gl-mb-2{ data: { testid: 'project-badges-content' } }
+      .project-badges.gl-mb-2.gl-flex.gl-flex-wrap.gl-gap-2{ data: { testid: 'project-badges-content' } }
         - @project.badges.each do |badge|
           - badge_link_url = badge.rendered_link_url(@project)
-          %a.gl-mr-3{ href: badge_link_url,
+          %a.gl-leading-1{ href: badge_link_url,
             target: '_blank',
             rel: 'noopener noreferrer',
             data: { testid: 'badge-image-link', qa_link_url: badge_link_url } }>
@@ -42,7 +42,7 @@
               alt: 'Project badge' }>
 
   -# Invite members
-  - if @project.empty_repo? && can_admin_project_member?(@project)
+  - if @project.empty_repo? && can?(current_user, :invite_member, @project)
     .project-page-sidebar-block.gl-py-4.gl-border-b.gl-border-b-subtle
       = render "invite_members_empty_project"
 

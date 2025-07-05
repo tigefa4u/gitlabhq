@@ -1,7 +1,7 @@
 ---
 stage: Plan
 group: Project Management
-info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/ee/development/development_processes.html#development-guidelines-review.
+info: Any user with at least the Maintainer role can merge updates to this content. For details, see https://docs.gitlab.com/development/development_processes/#development-guidelines-review.
 title: Work items and work item types
 ---
 
@@ -239,7 +239,7 @@ First, write a database migration that creates the new record in the `work_item_
 
 Keep the following in mind when you write your migration:
 
-- **Important:** Exclude new type from existing APIs.
+- **Important**: Exclude new type from existing APIs.
   - We probably want to exclude newly created work items of this type from showing
     up in existing features (like issue lists) until we fully release a feature. For this reason,
     we have to add a new type to
@@ -254,7 +254,7 @@ Keep the following in mind when you write your migration:
     This way, follow-up MRs that depend on the type being created can assume it exists right away,
     instead of having to wait for the next release.
 
-    **Important:** Because we use a regular migration, we need to make sure it does two things:
+    **Important**: Because we use a regular migration, we need to make sure it does two things:
 
     1. Don't exceed the [time guidelines](migration_style_guide.md#how-long-a-migration-should-take) of regular migrations.
     1. Make sure the migration is [backwards-compatible](multi_version_compatibility.md).
@@ -277,7 +277,7 @@ Keep the following in mind when you write your migration:
     work item type can have children and of what type. Also, you should specify the hierarchy depth for work items of the same
     type. By default a cross-hierarchy (cross group or project) relationship is disabled when creating new restrictions but
     it can be enabled by specifying a value for `cross_hierarchy_enabled`. Due to the restrictions being cached for the work item type, it's also
-    required to call `clear_reactive_cache!` on the associated work item types.
+    required to call `clear_reactive_cache!` on the associated work item types. 
 - Optional. Create linked item restrictions.
   - Similarly to the `Hierarchy` widget, the `Linked items` widget also supports rules defining which work item types can be
     linked to other types. A restriction can specify if the source type can be related to or blocking a target type. Current restrictions:
@@ -395,10 +395,14 @@ end
 <!-- markdownlint-disable-next-line MD044 -->
 ### Update Gitlab::DatabaseImporters::WorkItems::BaseTypeImporter
 
-The [BaseTypeImporter](https://gitlab.com/gitlab-org/gitlab/-/blob/f816a369d7d6bbd1d8d53d6c0bca4ca3389fdba7/lib/gitlab/database_importers/work_items/base_type_importer.rb)
+The [BaseTypeImporter](https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/database_importers/work_items/base_type_importer.rb)
 is where we can clearly visualize the structure of the types we have and what widgets are associated with each of them.
 `BaseTypeImporter` is the single source of truth for fresh GitLab installs and also our test suite. This should always
 reflect what we change with migrations.
+
+Similarly, the single sources of truth for hierarchy and linked item restrictions are defined in [HierarchyRestrictionsImporter](https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/database_importers/work_items/hierarchy_restrictions_importer.rb) and [RelatedLinksRestrictionsImporter](https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/database_importers/work_items/related_links_restrictions_importer.rb), respectively. 
+
+**Important**: These importers should be updated whenever the corresponding database tables are modified.
 
 ## Custom work item types
 

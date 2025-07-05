@@ -12,6 +12,12 @@ title: SAML SSO for GitLab.com groups
 
 {{< /details >}}
 
+{{< alert type="note" >}}
+
+For GitLab Self-Managed, see [SAML SSO for GitLab Self-Managed](../../../integration/saml.md).
+
+{{< /alert >}}
+
 Users can sign in to GitLab through their SAML identity provider.
 
 [SCIM](scim_setup.md) synchronizes users with the group on GitLab.com.
@@ -341,7 +347,7 @@ When a user tries to sign in with Group SSO, GitLab attempts to find or create a
 
 {{< alert type="note" >}}
 
-If the user is an [enterprise user](../../enterprise_user/_index.md) of that group, the following steps do not apply. The enterprise user must instead [sign in with a SAML account that has the same email as the GitLab account](#returning-users-automatic-identity-relinking). This allows GitLab to link the SAML account to the existing account.
+If the user is an [enterprise user](../../enterprise_user/_index.md) of that group, the following steps do not apply. The enterprise user must instead [sign in with a SAML account that has the same email as the GitLab account](#automatic-identity-linking-for-enterprise-users). This allows GitLab to link the SAML account to the existing account.
 
 {{< /alert >}}
 
@@ -390,7 +396,7 @@ The **NameID** must:
 - Be unique to each user.
 - Be a persistent value that never changes, such as a randomly generated unique user ID.
 - Match exactly on subsequent sign-in attempts, so it should not rely on user input
-  that could change between upper and lower case.
+  that could change between upper and lowercase.
 
 The **NameID** should not be an email address or username because:
 
@@ -501,7 +507,7 @@ Prerequisites:
 - You must have the Owner role for the group that the enterprise user belongs to.
 - Group SSO must be enabled.
 
-You can disable password authentication for all [enterprise users](../../enterprise_user/_index.md) in a group. This also applies to enterprise users who are administrators of the group. Configuring this setting stops enterprise users from changing, resetting, or authenticating with their password. Instead, these users can authenticate with:
+You can disable password authentication for all [enterprise users](../../enterprise_user/_index.md) of the group. This also applies to enterprise users who are administrators of the group. Configuring this setting stops enterprise users from changing, resetting, or authenticating with their password. Instead, these users can authenticate with:
 
 - The group SAML IdP for the GitLab web UI.
 - A personal access token for the GitLab API and Git with HTTP Basic Authentication unless the group has [disabled personal access tokens for enterprise users](../../profile/personal_access_tokens.md#disable-personal-access-tokens-for-enterprise-users).
@@ -513,10 +519,12 @@ To disable password authentication for enterprise users:
 1. Under **Configuration**, select **Disable password authentication for enterprise users**.
 1. Select **Save changes**.
 
-#### Returning users (Automatic Identity Relinking)
+#### Automatic Identity Linking for enterprise users
 
 If an enterprise user is removed from the group and then returns, they can sign in with their enterprise SSO account.
 As long as the user's email address in the identity provider remains the same as the email address on the existing GitLab account, the SSO identity is automatically linked to the account and the user can sign in without any issues.
+
+This functionality also applies to existing users that have been claimed as an enterprise user but who may not have yet signed into the group.
 
 ### Block user access
 
@@ -560,7 +568,7 @@ For example, to unlink the `MyOrg` account:
 
 {{< history >}}
 
-- [Improved](https://gitlab.com/gitlab-org/gitlab/-/issues/215155) in GitLab 15.5 [with a flag](../../../administration/feature_flags.md) named `transparent_sso_enforcement` to include transparent enforcement even when SSO enforcement is not enabled. Disabled on GitLab.com.
+- [Improved](https://gitlab.com/gitlab-org/gitlab/-/issues/215155) in GitLab 15.5 [with a flag](../../../administration/feature_flags/_index.md) named `transparent_sso_enforcement` to include transparent enforcement even when SSO enforcement is not enabled. Disabled on GitLab.com.
 - [Improved](https://gitlab.com/gitlab-org/gitlab/-/issues/375788) in GitLab 15.8 by enabling transparent SSO by default on GitLab.com.
 - [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/389562) in GitLab 15.10. Feature flag `transparent_sso_enforcement` removed.
 
@@ -616,9 +624,10 @@ When the **Enforce SSO-only authentication for web activity for this group** opt
     hidden if your SSO session has expired.
     [Issue 414475](https://gitlab.com/gitlab-org/gitlab/-/issues/414475) proposes to change this
     behavior so that issues are visible.
-  - SSO is not enforced when viewing lists of merge requests where you are the
-    assignee or your review is requested. You can see merge requests even if
+  - SSO is not enforced when viewing merge requests where you are the
+    assignee or reviewer. You can see merge requests even if
     your SSO session has expired.
+  - SSO is not enforced when viewing snippets for private projects where you have at least the Guest role.
 
 SSO enforcement for web activity has the following effects when enabled:
 
@@ -626,7 +635,7 @@ SSO enforcement for web activity has the following effects when enabled:
   group, even if the project is forked.
 - Git activity originating from CI/CD jobs do not have the SSO check enforced.
 - Credentials that are not tied to regular users (for example, project and group
-  access tokens, and deploy keys) do not have the SSO check enforced.
+  access tokens, service accounts, and deploy keys) do not have the SSO check enforced.
 - Users must be signed-in through SSO before they can pull images using the
   [Dependency Proxy](../../packages/dependency_proxy/_index.md).
 - When the **Enforce SSO-only authentication for Git and Dependency Proxy

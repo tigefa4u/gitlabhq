@@ -1,7 +1,6 @@
 <script>
 import { GlAlert } from '@gitlab/ui';
 import * as Sentry from '~/sentry/sentry_browser_wrapper';
-import { s__ } from '~/locale';
 import Composer from '~/packages_and_registries/package_registry/components/details/metadata/composer.vue';
 import Conan from '~/packages_and_registries/package_registry/components/details/metadata/conan.vue';
 import Maven from '~/packages_and_registries/package_registry/components/details/metadata/maven.vue';
@@ -79,7 +78,6 @@ export default {
     },
   },
   i18n: {
-    componentTitle: s__('PackageRegistry|Additional metadata'),
     fetchPackageMetadataErrorMessage: FETCH_PACKAGE_METADATA_ERROR_MESSAGE,
   },
 };
@@ -87,9 +85,6 @@ export default {
 
 <template>
   <div>
-    <h3 v-if="isLoading || showMetadata" class="gl-text-lg" data-testid="title">
-      {{ $options.i18n.componentTitle }}
-    </h3>
     <gl-alert
       v-if="fetchPackageMetadataError"
       variant="danger"

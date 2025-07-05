@@ -2,11 +2,47 @@
 stage: Package
 group: Package Registry
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments
-title: Supported package functionality
+title: Supported package managers and functionality
 ---
 
 The GitLab package registry supports different functionalities for each package type. This support includes publishing
 and pulling packages, request forwarding, managing duplicates, and authentication.
+
+## Supported package managers
+
+{{< details >}}
+
+- Tier: Free, Premium, Ultimate
+- Offering: GitLab.com, GitLab Self-Managed, GitLab Dedicated
+
+{{< /details >}}
+
+{{< alert type="warning" >}}
+
+Not all package manager formats are ready for production use.
+
+{{< /alert >}}
+
+The package registry supports the following package manager types:
+
+| Package type                                      | Status |
+|---------------------------------------------------|--------|
+| [Composer](../composer_repository/_index.md)      | [Beta](https://gitlab.com/groups/gitlab-org/-/epics/6817) |
+| [Conan 1](../conan_1_repository/_index.md)            | [Experiment](https://gitlab.com/groups/gitlab-org/-/epics/6816) |
+| [Conan 2](../conan_2_repository/_index.md)            | [Experiment](https://gitlab.com/groups/gitlab-org/-/epics/8258) |
+| [Debian](../debian_repository/_index.md)          | [Experiment](https://gitlab.com/groups/gitlab-org/-/epics/6057) |
+| [Generic packages](../generic_packages/_index.md) | Generally available     |
+| [Go](../go_proxy/_index.md)                       | [Experiment](https://gitlab.com/groups/gitlab-org/-/epics/3043) |
+| [Helm](../helm_repository/_index.md)              | [Beta](https://gitlab.com/groups/gitlab-org/-/epics/6366) |
+| [Maven](../maven_repository/_index.md)            | Generally available      |
+| [npm](../npm_registry/_index.md)                  | Generally available      |
+| [NuGet](../nuget_repository/_index.md)            | Generally available      |
+| [PyPI](../pypi_repository/_index.md)              | Generally available      |
+| [Ruby gems](../rubygems_registry/_index.md)       | [Experiment](https://gitlab.com/groups/gitlab-org/-/epics/3200) |
+
+[View what each status means](../../../policy/development_stages_support.md).
+
+You can also use the [API](../../../api/packages.md) to administer the package registry.
 
 ## Publishing packages
 
@@ -30,7 +66,8 @@ Packages can be published to your project, group, or instance.
 | [Generic packages](../generic_packages/_index.md)      | Y       | N     | N        |
 | [Terraform](../terraform_module_registry/_index.md)    | Y       | N     | N        |
 | [Composer](../composer_repository/_index.md)           | N       | Y     | N        |
-| [Conan](../conan_repository/_index.md)                 | Y       | N     | Y        |
+| [Conan 1](../conan_1_repository/_index.md)             | Y       | N     | Y        |
+| [Conan 2](../conan_2_repository/_index.md)             | Y       | N     | N        |
 | [Helm](../helm_repository/_index.md)                   | Y       | N     | N        |
 | [Debian](../debian_repository/_index.md)               | Y       | N     | N        |
 | [Go](../go_proxy/_index.md)                            | Y       | N     | N        |
@@ -58,7 +95,8 @@ Packages can be pulled from your project, group, or instance.
 | [Generic packages](../generic_packages/_index.md)      | Y       | N     | N        |
 | [Terraform](../terraform_module_registry/_index.md)    | N       | Y     | N        |
 | [Composer](../composer_repository/_index.md)           | Y       | Y     | N        |
-| [Conan](../conan_repository/_index.md)                 | Y       | N     | Y        |
+| [Conan 1](../conan_1_repository/_index.md)             | Y       | N     | Y        |
+| [Conan 2](../conan_2_repository/_index.md)             | Y       | N     | N        |
 | [Helm](../helm_repository/_index.md)                   | Y       | N     | N        |
 | [Debian](../debian_repository/_index.md)               | Y       | N     | N        |
 | [Go](../go_proxy/_index.md)                            | Y       | N     | Y        |
@@ -81,22 +119,23 @@ To reduce the associated security risks:
 
 - Verify the package is not being actively used.
 - Disable request forwarding:
-  - Instance administrators can disable forwarding in the [**Continuous Integration** section](../../../administration/settings/continuous_integration.md#package-registry-configuration) of the **Admin** area.
+  - Instance administrators can disable forwarding in the [**Continuous Integration** section](../../../administration/settings/continuous_integration.md#control-package-forwarding) of the **Admin** area.
   - Group owners can disable forwarding in the **Packages and Registries** section of the group settings.
 - Implement a version control tool, like Git, to track changes to packages.
 
 | Package type                                           | Supports request forwarding | Security considerations |
 |--------------------------------------------------------|-----------------------------|------------------------|
-| [Maven (with `mvn`)](../maven_repository/_index.md)    | [Yes (disabled by default)](../../../administration/settings/continuous_integration.md#maven-forwarding) | Requires explicit opt-in for security. |
-| [Maven (with `gradle`)](../maven_repository/_index.md) | [Yes (disabled by default)](../../../administration/settings/continuous_integration.md#maven-forwarding) | Requires explicit opt-in for security. |
-| [Maven (with `sbt`)](../maven_repository/_index.md)    | [Yes (disabled by default)](../../../administration/settings/continuous_integration.md#maven-forwarding) | Requires explicit opt-in for security. |
-| [npm](../npm_registry/_index.md)                       | [Yes](../../../administration/settings/continuous_integration.md#npm-forwarding) | Consider disabling for private packages. |
+| [Maven (with `mvn`)](../maven_repository/_index.md)    | [Yes (disabled by default)](../../../administration/settings/continuous_integration.md#control-package-forwarding) | Requires explicit opt-in for security. |
+| [Maven (with `gradle`)](../maven_repository/_index.md) | [Yes (disabled by default)](../../../administration/settings/continuous_integration.md#control-package-forwarding) | Requires explicit opt-in for security. |
+| [Maven (with `sbt`)](../maven_repository/_index.md)    | [Yes (disabled by default)](../../../administration/settings/continuous_integration.md#control-package-forwarding) | Requires explicit opt-in for security. |
+| [npm](../npm_registry/_index.md)                       | [Yes](../../../administration/settings/continuous_integration.md#control-package-forwarding) | Consider disabling for private packages. |
 | [NuGet](../nuget_repository/_index.md)                 | N                           | N |
-| [PyPI](../pypi_repository/_index.md)                   | [Yes](../../../administration/settings/continuous_integration.md#pypi-forwarding) | Consider disabling for private packages. |
+| [PyPI](../pypi_repository/_index.md)                   | [Yes](../../../administration/settings/continuous_integration.md#control-package-forwarding) | Consider disabling for private packages. |
 | [Generic packages](../generic_packages/_index.md)      | N                           | N |
 | [Terraform](../terraform_module_registry/_index.md)    | N                           | N |
 | [Composer](../composer_repository/_index.md)           | N                           | N |
-| [Conan](../conan_repository/_index.md)                 | N                           | N |
+| [Conan 1](../conan_1_repository/_index.md)               | N                           | N |
+| [Conan 2](../conan_2_repository/_index.md)               | N                           | N |
 | [Helm](../helm_repository/_index.md)                   | N                           | N |
 | [Debian](../debian_repository/_index.md)               | N                           | N |
 | [Go](../go_proxy/_index.md)                            | N                           | N |
@@ -116,7 +155,7 @@ To reduce the associated security risks, before deleting a package you can:
 
 - Verify the package is not being actively used.
 - Disable request forwarding:
-  - Instance administrators can disable forwarding in the [**Continuous Integration** section](../../../administration/settings/continuous_integration.md#package-registry-configuration) of the **Admin** area.
+  - Instance administrators can disable forwarding in the [**Continuous Integration** section](../../../administration/settings/continuous_integration.md#control-package-forwarding) of the **Admin** area.
   - Group owners can disable forwarding in the **Packages and Registries** section of the group settings.
 
 ## Importing packages from other repositories
@@ -134,7 +173,8 @@ You can use GitLab pipelines to import packages from other repositories, such as
 | [Generic packages](../generic_packages/_index.md)      | N                   |
 | [Terraform](../terraform_module_registry/_index.md)    | N                   |
 | [Composer](../composer_repository/_index.md)           | N                   |
-| [Conan](../conan_repository/_index.md)                 | N                   |
+| [Conan 1](../conan_1_repository/_index.md)             | N                   |
+| [Conan 2](../conan_2_repository/_index.md)             | N                   |
 | [Helm](../helm_repository/_index.md)                   | N                   |
 | [Debian](../debian_repository/_index.md)               | N                   |
 | [Go](../go_proxy/_index.md)                            | N                   |
@@ -162,13 +202,14 @@ By default, the GitLab package registry either allows or prevents duplicates bas
 | [Generic packages](../generic_packages/_index.md)      | Y (configurable)    |
 | [Terraform](../terraform_module_registry/_index.md)    | N                   |
 | [Composer](../composer_repository/_index.md)           | N                   |
-| [Conan](../conan_repository/_index.md)                 | N                   |
+| [Conan 1](../conan_1_repository/_index.md)             | N                   |
+| [Conan 2](../conan_2_repository/_index.md)             | N                   |
 | [Helm](../helm_repository/_index.md)                   | Y                   |
 | [Debian](../debian_repository/_index.md)               | Y                   |
 | [Go](../go_proxy/_index.md)                            | N                   |
 | [Ruby gems](../rubygems_registry/_index.md)            | Y                   |
 
-## Authentication tokens
+## Authenticate with the registry
 
 {{< details >}}
 
@@ -177,9 +218,17 @@ By default, the GitLab package registry either allows or prevents duplicates bas
 
 {{< /details >}}
 
-GitLab tokens are used to authenticate with the GitLab package registry.
+Authentication depends on the package manager you're using. To learn what authentication protocols are supported for a specific package type, see [Authentication protocols](#authentication-protocols).
 
-The following tokens are supported:
+For most package types, the following authentication tokens are valid:
+
+- [Personal access token](../../profile/personal_access_tokens.md)
+- [Project deploy token](../../project/deploy_tokens/_index.md)
+- [Group deploy token](../../project/deploy_tokens/_index.md)
+- [CI/CD job token](../../../ci/jobs/ci_job_token.md)
+
+The following table lists which authentication tokens are supported
+for a given package manager:
 
 | Package type                                           | Supported tokens                                                       |
 |--------------------------------------------------------|------------------------------------------------------------------------|
@@ -192,13 +241,25 @@ The following tokens are supported:
 | [Generic packages](../generic_packages/_index.md)      | Personal access, job tokens, deploy (project or group), project access |
 | [Terraform](../terraform_module_registry/_index.md)    | Personal access, job tokens, deploy (project or group), project access |
 | [Composer](../composer_repository/_index.md)           | Personal access, job tokens, deploy (project or group), project access |
-| [Conan](../conan_repository/_index.md)                 | Personal access, job tokens, project access                            |
+| [Conan 1](../conan_1_repository/_index.md)                 | Personal access, job tokens, project access                            |
+| [Conan 2](../conan_2_repository/_index.md)                 | Personal access, job tokens, project access                            |
 | [Helm](../helm_repository/_index.md)                   | Personal access, job tokens, deploy (project or group)                 |
 | [Debian](../debian_repository/_index.md)               | Personal access, job tokens, deploy (project or group)                 |
 | [Go](../go_proxy/_index.md)                            | Personal access, job tokens, project access                            |
 | [Ruby gems](../rubygems_registry/_index.md)            | Personal access, job tokens, deploy (project or group)                 |
 
-## Authentication protocols
+{{< alert type="note" >}}
+
+When you configure authentication to the package registry:
+
+- If the **Package registry** project setting is [turned off](_index.md#turn-off-the-package-registry), you receive a `403 Forbidden` error when you interact with the package registry, even if you have the Owner role.
+- If [external authorization](../../../administration/settings/external_authorization.md) is turned on, you can't access the package registry with a deploy token.
+- If your organization uses two-factor authentication (2FA), you must use a personal access token with the scope set to `api`.
+- If you are publishing a package by using CI/CD pipelines, you must use a CI/CD job token.
+
+{{< /alert >}}
+
+### Authentication protocols
 
 {{< details >}}
 
@@ -226,7 +287,8 @@ The following authentication protocols are supported:
 | [Generic packages](../generic_packages/_index.md)      | Basic auth                                                  |
 | [Terraform](../terraform_module_registry/_index.md)    | Token                                                       |
 | [Composer](../composer_repository/_index.md)           | OAuth                                                       |
-| [Conan](../conan_repository/_index.md)                 | OAuth, Basic auth                                           |
+| [Conan 1](../conan_1_repository/_index.md)                 | OAuth, Basic auth                                           |
+| [Conan 2](../conan_2_repository/_index.md)                 | OAuth, Basic auth                                           |
 | [Helm](../helm_repository/_index.md)                   | Basic auth                                                  |
 | [Debian](../debian_repository/_index.md)               | Basic auth                                                  |
 | [Go](../go_proxy/_index.md)                            | Basic auth                                                  |
@@ -255,7 +317,8 @@ The package registry supports the following hash types:
 | [PyPI](../pypi_repository/_index.md)                   | MD5, SHA256                      |
 | [Generic packages](../generic_packages/_index.md)      | SHA256                           |
 | [Composer](../composer_repository/_index.md)           | not applicable                   |
-| [Conan](../conan_repository/_index.md)                 | MD5, SHA1                        |
+| [Conan 1](../conan_1_repository/_index.md)             | MD5, SHA1                        |
+| [Conan 2](../conan_2_repository/_index.md)             | MD5, SHA1                        |
 | [Helm](../helm_repository/_index.md)                   | not applicable                   |
 | [Debian](../debian_repository/_index.md)               | MD5, SHA1, SHA256                |
 | [Go](../go_proxy/_index.md)                            | MD5, SHA1, SHA256                |

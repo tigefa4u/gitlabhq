@@ -99,6 +99,9 @@ describe('DesignWidget', () => {
     uploadError = null,
     uploadErrorVariant = ALERT_VARIANTS.danger,
     canReorderDesign = true,
+    canAddDesign = true,
+    canUpdateDesign = true,
+    canPasteDesign = false,
   } = {}) {
     wrapper = shallowMountExtended(DesignWidget, {
       isLoggedIn: isLoggedIn(),
@@ -112,9 +115,12 @@ describe('DesignWidget', () => {
         uploadError,
         uploadErrorVariant,
         canReorderDesign,
+        canPasteDesign,
         workItemFullPath: 'gitlab-org/gitlab-shell',
         workItemWebUrl: '/gitlab-org/gitlab-shell/-/work_items/1',
         isGroup: false,
+        canAddDesign,
+        canUpdateDesign,
       },
       directives: {
         GlTooltip: createMockDirective('gl-tooltip'),
@@ -153,6 +159,13 @@ describe('DesignWidget', () => {
         acceptDesignFormats: VALID_DESIGN_FILE_MIMETYPE.mimetype,
         uploadDesignOverlayText: 'Drop your images to start the upload.',
       });
+    });
+
+    it('does not render design-dropzone component if canAddDesign prop is false', async () => {
+      createComponent({ canAddDesign: false });
+      await waitForPromises();
+
+      expect(findDesignDropzoneComponent().exists()).toBe(false);
     });
 
     it('calls design collection query without version by default', () => {
@@ -307,6 +320,249 @@ describe('DesignWidget', () => {
 
     it('does not render VueDraggable component if user is logged out', () => {
       expect(findVueDraggable().exists()).toBe(false);
+    });
+  });
+
+  describe('when user does not have permission to add designs', () => {
+    beforeEach(async () => {
+      createComponent({ canAddDesign: false });
+      await waitForPromises();
+    });
+
+    it('does not render the add button', () => {
+      expect(wrapper.findByTestId('add-design').exists()).toBe(false);
+    });
+  });
+
+  describe('when user does not have permission to update designs', () => {
+    beforeEach(async () => {
+      createComponent({ canUpdateDesign: false });
+      await waitForPromises();
+    });
+
+    it('does not render the archive button', () => {
+      expect(wrapper.findByTestId('archive-button').exists()).toBe(false);
+    });
+
+    it('does not render the select all button', () => {
+      expect(wrapper.findByTestId('select-all-designs-button').exists()).toBe(false);
+    });
+
+    it('does not render the design checkboxes', () => {
+      expect(wrapper.findAllByTestId('design-checkbox').length).toBe(0);
+    });
+  });
+
+  describe('when user pastes designs', () => {
+    const defaultClipboardData = {
+      files: [{ name: 'image.png', type: 'image/png' }],
+      getData: () => 'image.png',
+    };
+
+    describe('paste functionality based on design state and route', () => {
+      it('enables paste listener when there are no designs and not in design detail view', async () => {
+        const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
+        createComponent({
+          canPasteDesign: true,
+          canAddDesign: true,
+          designCollectionQueryHandler: allDesignsArchivedQueryHandler,
+          routeArg: MOCK_ROUTE,
+        });
+
+        await waitForPromises();
+
+        expect(addEventListenerSpy).toHaveBeenCalledWith('paste', expect.any(Function));
+      });
+
+      it('disables paste listener when in design detail view', async () => {
+        const removeEventListenerSpy = jest.spyOn(document, 'removeEventListener');
+
+        createComponent({
+          canPasteDesign: true,
+          canAddDesign: true,
+          designCollectionQueryHandler: oneDesignQueryHandler,
+          routeArg: {
+            path: '/designs/1',
+            query: {},
+          },
+        });
+
+        await waitForPromises();
+
+        expect(removeEventListenerSpy).toHaveBeenCalledWith('paste', expect.any(Function));
+      });
+
+      it('does not enable paste on mouseenter when in design detail view', async () => {
+        const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
+        createComponent({
+          canPasteDesign: true,
+          canAddDesign: true,
+          routeArg: {
+            path: '/designs/1',
+            query: {},
+          },
+        });
+
+        await waitForPromises();
+
+        addEventListenerSpy.mockClear();
+
+        wrapper.trigger('mouseenter');
+        await nextTick();
+
+        expect(addEventListenerSpy).not.toHaveBeenCalledWith('paste', expect.any(Function));
+      });
+    });
+
+    describe('when canPasteDesign is true', () => {
+      const mockDate = new Date('2025-05-01T18:18:19.524Z');
+
+      beforeAll(() => {
+        global.Date = jest.fn(() => mockDate);
+        global.Date.now = jest.fn().mockReturnValue(mockDate.getTime());
+        mockDate.toISOString = jest.fn().mockReturnValue('2025-05-01T18:18:19.524Z');
+        global.Date.toISOString = mockDate.toISOString;
+      });
+
+      beforeEach(() => {
+        createComponent({
+          canPasteDesign: true,
+          canAddDesign: true,
+          designCollectionQueryHandler: allDesignsArchivedQueryHandler,
+        });
+      });
+
+      it('does not upload designs if canPasteDesign is false', () => {
+        createComponent({
+          canPasteDesign: false,
+          canAddDesign: true,
+          designCollectionQueryHandler: allDesignsArchivedQueryHandler,
+        });
+
+        const event = new Event('paste');
+        event.clipboardData = defaultClipboardData;
+        event.preventDefault = jest.fn();
+
+        document.dispatchEvent(event);
+
+        expect(wrapper.emitted('upload')).toBeUndefined();
+      });
+
+      it('does not upload designs if canAddDesign is false', () => {
+        createComponent({
+          canPasteDesign: true,
+          canAddDesign: false,
+          designCollectionQueryHandler: allDesignsArchivedQueryHandler,
+        });
+
+        const event = new Event('paste');
+        event.clipboardData = defaultClipboardData;
+        event.preventDefault = jest.fn();
+
+        document.dispatchEvent(event);
+
+        expect(wrapper.emitted('upload')).toBeUndefined();
+      });
+
+      it('does not upload designs if there are existing designs', async () => {
+        createComponent({
+          canPasteDesign: true,
+          canAddDesign: true,
+          designCollectionQueryHandler: oneDesignQueryHandler,
+        });
+
+        await waitForPromises();
+
+        const event = new Event('paste');
+        event.clipboardData = defaultClipboardData;
+        event.preventDefault = jest.fn();
+
+        document.dispatchEvent(event);
+
+        expect(wrapper.emitted('upload')).toBeUndefined();
+      });
+
+      it('does not upload designs if component is destroyed', () => {
+        wrapper.destroy();
+
+        const event = new Event('paste');
+        event.clipboardData = defaultClipboardData;
+
+        document.dispatchEvent(event);
+
+        expect(wrapper.emitted('upload')).toBeUndefined();
+      });
+
+      it('preserves original file name for non-default images', async () => {
+        await waitForPromises();
+
+        const event = new Event('paste');
+        event.clipboardData = {
+          files: [new File([new Blob()], 'custom.png', { type: 'image/png' })],
+          getData: () => 'custom.png',
+        };
+        event.preventDefault = jest.fn();
+
+        document.dispatchEvent(event);
+
+        expect(wrapper.emitted('upload')[0][0][0].name).toBe('custom.png');
+      });
+
+      it('renames a design with timestamp if it has default image.png filename', async () => {
+        await waitForPromises();
+
+        const event = new Event('paste');
+        event.clipboardData = defaultClipboardData;
+        event.preventDefault = jest.fn();
+
+        document.dispatchEvent(event);
+
+        const expectedFilename = 'image_2025-05-01_18_18_19.png';
+        expect(wrapper.emitted('upload')[0][0][0].name).toBe(expectedFilename);
+      });
+
+      it('adds unique suffix for duplicate filenames', async () => {
+        await waitForPromises();
+
+        const event = new Event('paste');
+        event.clipboardData = {
+          files: [
+            new File([new Blob()], 'image.png', { type: 'image/png' }),
+            new File([new Blob()], 'image.png', { type: 'image/png' }),
+            new File([new Blob()], 'image.png', { type: 'image/png' }),
+          ],
+          getData: () => 'image.png',
+        };
+
+        event.preventDefault = jest.fn();
+
+        document.dispatchEvent(event);
+
+        expect(wrapper.emitted('upload').length).toBe(3);
+        expect(wrapper.emitted('upload')[0][0][0].name).toBe('image_2025-05-01_18_18_19.png');
+        expect(wrapper.emitted('upload')[1][0][0].name).toBe('image_2025-05-01_18_18_19_1.png');
+        expect(wrapper.emitted('upload')[2][0][0].name).toBe('image_2025-05-01_18_18_19_2.png');
+
+        jest.restoreAllMocks();
+      });
+
+      it('does not call upload with invalid paste', async () => {
+        await waitForPromises();
+
+        const event = new Event('paste');
+        event.clipboardData = {
+          items: [{ type: 'text/plain' }, { type: 'text' }],
+          files: [],
+          getData: () => 'text',
+        };
+        event.preventDefault = jest.fn();
+
+        document.dispatchEvent(event);
+
+        expect(wrapper.emitted('upload')).toBeUndefined();
+      });
     });
   });
 });

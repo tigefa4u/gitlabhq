@@ -8,6 +8,7 @@ module Users
 
     belongs_to :group
 
+    # NOTE: to avoid false-positive dismissals, use new consecutive enum values for new callout IDs
     enum :feature_name, {
       invite_members_banner: 1,
       approaching_seat_count_threshold: 2, # EE-only
@@ -37,7 +38,9 @@ module Users
       expired_duo_pro_trial_widget: 26, # EE-only
       expired_duo_enterprise_trial_widget: 27, # EE-only
       expired_trial_status_widget: 28, # EE-only
-      namespace_user_cap_reached_alert: 29 # EE-only
+      namespace_user_cap_reached_alert: 29, # EE-only,
+      enable_duo_banner_duo_settings_page: 30, ## EE-only
+      enable_duo_banner_group_page: 31 # EE-only
     }
 
     validates :group, presence: true
