@@ -211,6 +211,27 @@ RSpec.describe 'graphql queries', feature_category: :api do
     end
   end
 
+  # Anonymous visitors load the work item detail queries, so those are bound by the
+  # unauthenticated limit too, not just the authenticated one asserted above. Mutations and
+  # subscriptions need a session, so they are deliberately not listed here.
+  # See https://gitlab.com/gitlab-org/gitlab/-/issues/587972
+  describe 'work item detail query complexity for unauthenticated users', unless: Gitlab.ee? do
+    %w[
+      app/assets/javascripts/work_items/graphql/work_item_by_iid.query.graphql
+      app/assets/javascripts/work_items/graphql/work_item_by_id.query.graphql
+    ].each do |query_path|
+      describe query_path do
+        let(:definition) { Gitlab::Graphql::Queries.find(Rails.root.join(query_path)).first }
+
+        it 'does not exceed unauthenticated max complexity with features enabled' do
+          complexity = query_complexity_with_typename(definition.text, { "useWorkItemFeatures" => true })
+
+          expect(complexity).to be <= GitlabSchema::DEFAULT_MAX_COMPLEXITY
+        end
+      end
+    end
+  end
+
   describe 'return type conflicts exceptions list' do
     let(:fragments) { Gitlab::Graphql::Queries::Fragments.new(Rails.root) }
 

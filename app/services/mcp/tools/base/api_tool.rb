@@ -73,7 +73,7 @@ module Mcp
 
           original_format = request.env['api.format']
           begin
-            status, _, body = route.exec(request.env)
+            status, _, body = route.app.call(request.env)
           ensure
             request.env['api.format'] = original_format
           end

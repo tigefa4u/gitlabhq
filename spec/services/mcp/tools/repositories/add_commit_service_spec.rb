@@ -145,6 +145,15 @@ RSpec.describe Mcp::Tools::Repositories::AddCommitService, feature_category: :mc
         expect(result[:isError]).to be(false)
         expect(project.repository.blob_at_branch(project.default_branch, 'README.md').data).to include('MCP')
       end
+
+      # The truncation guard fails closed, so size dropping out of the shared
+      # get_repository_file query would reject every partial edit.
+      it 'gets a blob size back from the shared query' do
+        nodes = service.send(:read_blobs, params[:arguments].with_indifferent_access, ['README.md'])
+          .dig(:structuredContent, 'repository', 'blobs', 'nodes')
+
+        expect(nodes.first['size']).to be_present
+      end
     end
   end
 
@@ -159,10 +168,16 @@ RSpec.describe Mcp::Tools::Repositories::AddCommitService, feature_category: :mc
     end
 
     let(:blob_content) { 'before old after' }
+    let(:lfs_pointer) do
+      "version https://git-lfs.github.com/spec/v1\noid sha256:#{'a' * 64}\nsize 1024\n"
+    end
+
     let(:blob_result) do
       Mcp::Tools::Base::Response.success([], {
         'repository' => {
-          'blobs' => { 'nodes' => [{ 'path' => 'README.md', 'rawTextBlob' => blob_content }] }
+          'blobs' => { 'nodes' => [{
+            'path' => 'README.md', 'size' => blob_content.bytesize, 'rawTextBlob' => blob_content
+          }] }
         }
       })
     end
@@ -194,7 +209,9 @@ RSpec.describe Mcp::Tools::Repositories::AddCommitService, feature_category: :mc
       base_arguments[:actions][0][:old_str] = 'old'
       allow(service).to receive(:read_blobs).and_return(
         Mcp::Tools::Base::Response.success([], {
-          'repository' => { 'blobs' => { 'nodes' => [{ 'path' => 'README.md', 'rawTextBlob' => 'old old' }] } }
+          'repository' => {
+            'blobs' => { 'nodes' => [{ 'path' => 'README.md', 'size' => 7, 'rawTextBlob' => 'old old' }] }
+          }
         })
       )
 
@@ -224,13 +241,90 @@ RSpec.describe Mcp::Tools::Repositories::AddCommitService, feature_category: :mc
     it 'returns an error for a binary file' do
       allow(service).to receive(:read_blobs).and_return(
         Mcp::Tools::Base::Response.success([], {
-          'repository' => { 'blobs' => { 'nodes' => [{ 'path' => 'README.md', 'rawTextBlob' => nil }] } }
+          'repository' => {
+            'blobs' => { 'nodes' => [{ 'path' => 'README.md', 'size' => 1024, 'rawTextBlob' => nil }] }
+          }
         })
       )
 
       result = service.send(:perform_v0_1_0, base_arguments)
 
       expect(result[:content].first[:text]).to include('is binary')
+    end
+
+    it 'returns an error for a file stored in LFS', :aggregate_failures do
+      allow(service).to receive(:read_blobs).and_return(
+        Mcp::Tools::Base::Response.success([], {
+          'repository' => {
+            'blobs' => { 'nodes' => [{
+              'path' => 'data.csv', 'size' => '134', 'rawTextBlob' => lfs_pointer,
+              'storedExternally' => true, 'externalStorage' => 'lfs'
+            }] }
+          }
+        })
+      )
+      base_arguments[:actions][0].merge!(file_path: 'data.csv', old_str: 'size 1024', new_str: 'size 2048')
+
+      result = service.send(:perform_v0_1_0, base_arguments)
+
+      expect(result[:isError]).to be(true)
+      expect(result[:content].first[:text]).to include("File 'data.csv' is stored in LFS (lfs)")
+    end
+
+    it 'returns an error for a file larger than the display limit', :aggregate_failures do
+      # A string, because the GraphQL size field is a BigInt and serializes that way.
+      oversized = (Gitlab::Git::Blob::MAX_DATA_DISPLAY_SIZE + 1).to_s
+      allow(service).to receive(:read_blobs).and_return(
+        Mcp::Tools::Base::Response.success([], {
+          'repository' => {
+            'blobs' => { 'nodes' => [{ 'path' => 'README.md', 'size' => oversized, 'rawTextBlob' => 'old' }] }
+          }
+        })
+      )
+
+      result = service.send(:perform_v0_1_0, base_arguments)
+
+      expect(result[:isError]).to be(true)
+      expect(result[:content].first[:text]).to include('exceeds the 10 MiB partial-edit size limit')
+    end
+
+    it 'returns an error when the blob size is unknown', :aggregate_failures do
+      allow(service).to receive(:read_blobs).and_return(
+        Mcp::Tools::Base::Response.success([], {
+          'repository' => {
+            'blobs' => { 'nodes' => [{ 'path' => 'README.md', 'size' => nil, 'rawTextBlob' => 'before old after' }] }
+          }
+        })
+      )
+
+      result = service.send(:perform_v0_1_0, base_arguments)
+
+      expect(result[:isError]).to be(true)
+      expect(result[:content].first[:text]).to include('has an unknown size')
+    end
+
+    it 'accepts a file exactly at the display limit', :aggregate_failures do
+      # truncated? reads only size, never the content length, so a fixture claiming the
+      # full limit while carrying 16 bytes costs nothing and pins the > (not >=) boundary.
+      # Real 10 MiB content would allocate 10 MiB per run and cover no extra branch.
+      at_limit = Gitlab::Git::Blob::MAX_DATA_DISPLAY_SIZE
+      allow(service).to receive(:read_blobs).and_return(
+        Mcp::Tools::Base::Response.success([], {
+          'repository' => {
+            'blobs' => { 'nodes' => [{
+              'path' => 'README.md', 'size' => at_limit, 'rawTextBlob' => 'before old after'
+            }] }
+          }
+        })
+      )
+
+      expect(service).to receive(:execute_graphql_tool).with(hash_including(
+        actions: [hash_including(content: 'before new after')]
+      )).and_return(Mcp::Tools::Base::Response.success([]))
+
+      result = service.send(:perform_v0_1_0, base_arguments)
+
+      expect(result[:isError]).to be(false)
     end
 
     it 'applies multiple edits to the same path in sequence' do
@@ -248,7 +342,9 @@ RSpec.describe Mcp::Tools::Repositories::AddCommitService, feature_category: :mc
     it 'handles non-ASCII fragments' do
       allow(service).to receive(:read_blobs).and_return(
         Mcp::Tools::Base::Response.success([], {
-          'repository' => { 'blobs' => { 'nodes' => [{ 'path' => 'README.md', 'rawTextBlob' => 'héllo' }] } }
+          'repository' => {
+            'blobs' => { 'nodes' => [{ 'path' => 'README.md', 'size' => 'héllo'.bytesize, 'rawTextBlob' => 'héllo' }] }
+          }
         })
       )
       base_arguments[:actions][0].merge!(old_str: 'héllo', new_str: 'नमस्ते')

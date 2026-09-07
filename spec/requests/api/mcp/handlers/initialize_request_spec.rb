@@ -20,7 +20,7 @@ RSpec.describe API::Mcp, 'Initialize request', feature_category: :mcp_server do
       }
     end
 
-    context 'when client sends latest protocol version' do
+    context 'when client sends a stateless protocol version' do
       let(:params) do
         base_params.merge(
           params: {
@@ -40,8 +40,8 @@ RSpec.describe API::Mcp, 'Initialize request', feature_category: :mcp_server do
         expect(json_response.keys).to include('result')
       end
 
-      it 'returns latest protocol version' do
-        expect(json_response['result']['protocolVersion']).to eq('2026-07-28')
+      it 'negotiates down to the latest handshake protocol version' do
+        expect(json_response['result']['protocolVersion']).to eq('2025-11-25')
       end
 
       it 'returns capabilities' do
@@ -55,6 +55,25 @@ RSpec.describe API::Mcp, 'Initialize request', feature_category: :mcp_server do
           'name' => 'Official GitLab MCP Server',
           'version' => Gitlab::VERSION
         )
+      end
+    end
+
+    context 'when client sends the latest handshake protocol version' do
+      let(:params) do
+        base_params.merge(
+          params: {
+            protocolVersion: '2025-11-25'
+          }
+        )
+      end
+
+      before do
+        post api('/mcp', user, oauth_access_token: access_token), params: params
+      end
+
+      it 'returns success with that version' do
+        expect(response).to have_gitlab_http_status(:ok)
+        expect(json_response['result']['protocolVersion']).to eq('2025-11-25')
       end
     end
 

@@ -175,6 +175,9 @@ module Mcp
           end
 
           result[:structuredContent].dig('repository', 'blobs', 'nodes').to_h do |node|
+            raise_stored_externally(node['path'], node['externalStorage']) if node['storedExternally']
+            raise_too_large(node['path'], node['size']) if truncated?(node['size'])
+
             [node['path'], node['rawTextBlob']]
           end
         end
@@ -187,6 +190,32 @@ module Mcp
               ref: partial_edit_ref(arguments)
             )
           ).execute
+        end
+
+        # For an LFS file, rawTextBlob is the pointer rather than the content, and `size`
+        # measures the pointer, so the truncation guard below never sees the real file.
+        # A substitution here would rewrite the pointer text and leave a stale oid behind.
+        def raise_stored_externally(path, storage)
+          raise PartialEditError,
+            "File '#{path}' is stored in LFS (#{storage}) and cannot be partially edited"
+        end
+
+        # An absent size fails closed: `nil.to_i` would read as 0 and wave the file through.
+        def truncated?(size)
+          return true if size.nil?
+
+          size.to_i > Gitlab::Git::Blob::MAX_DATA_DISPLAY_SIZE
+        end
+
+        def raise_too_large(path, size)
+          limit = ActiveSupport::NumberHelper.number_to_human_size(Gitlab::Git::Blob::MAX_DATA_DISPLAY_SIZE)
+          reason = if size.nil?
+                     "has an unknown size, which may exceed the #{limit} partial-edit size limit"
+                   else
+                     "(#{size.to_i} bytes) exceeds the #{limit} partial-edit size limit"
+                   end
+
+          raise PartialEditError, "File '#{path}' #{reason}; submit the full file content instead"
         end
 
         # The mutation commits onto `branch` when it already exists, ignoring `start_branch`

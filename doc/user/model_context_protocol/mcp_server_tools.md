@@ -94,7 +94,10 @@ Each object in `actions` accepts the following fields:
 | `execute_filemode` | boolean | No       | Whether the file is executable. Required for `chmod`. |
 
 Partial edits replace exactly one occurrence of `old_str`. If it occurs more than once, provide more surrounding
-context. Partial edits read the complete file on the server and are subject to the 20 MB GraphQL blob request limit.
+context. Partial edits read the complete file on the server, so they are not supported for files larger than 10 MiB.
+For larger files, commit the full file content instead.
+
+Partial edits are not supported for binary files or for files stored in LFS.
 
 Example:
 
